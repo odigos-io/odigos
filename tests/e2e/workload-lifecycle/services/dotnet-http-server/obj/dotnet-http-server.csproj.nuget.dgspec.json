@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/app/dotnet-http-server.csproj": {}
+    "/Users/amirblum/repos/odigos/tests/e2e/workload-lifecycle/services/dotnet-http-server/dotnet-http-server.csproj": {}
   },
   "projects": {
-    "/app/dotnet-http-server.csproj": {
+    "/Users/amirblum/repos/odigos/tests/e2e/workload-lifecycle/services/dotnet-http-server/dotnet-http-server.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/app/dotnet-http-server.csproj",
+        "projectUniqueName": "/Users/amirblum/repos/odigos/tests/e2e/workload-lifecycle/services/dotnet-http-server/dotnet-http-server.csproj",
         "projectName": "dotnet-http-server",
-        "projectPath": "/app/dotnet-http-server.csproj",
-        "packagesPath": "/root/.nuget/packages/",
-        "outputPath": "/app/obj/",
+        "projectPath": "/Users/amirblum/repos/odigos/tests/e2e/workload-lifecycle/services/dotnet-http-server/dotnet-http-server.csproj",
+        "packagesPath": "/Users/amirblum/.nuget/packages/",
+        "outputPath": "/Users/amirblum/repos/odigos/tests/e2e/workload-lifecycle/services/dotnet-http-server/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/root/.nuget/NuGet/NuGet.Config"
+          "/Users/amirblum/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -36,8 +36,9 @@
         "restoreAuditProperties": {
           "enableAudit": "true",
           "auditLevel": "low",
-          "auditMode": "direct"
-        }
+          "auditMode": "all"
+        },
+        "SdkAnalysisLevel": "9.0.100"
       },
       "frameworks": {
         "net8.0": {
@@ -53,6 +54,20 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.10, 8.0.10]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.osx-arm64",
+              "version": "[8.0.10, 8.0.10]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.10, 8.0.10]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.AspNetCore.App": {
               "privateAssets": "none"
@@ -61,7 +76,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.404/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.100-rc.2.24474.11/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
