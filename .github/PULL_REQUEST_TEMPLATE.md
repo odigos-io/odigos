@@ -17,7 +17,7 @@
 
 - [ ] This PR includes changes to how Odigos interacts with Kubernetes
 - [ ] Introduces more calls to API Server that might affect performance and number of requests
-- [ ] Old Kubernetes versions supported
+- [ ] New Query/feature supported in all the k8s versions supported by Odigos
 
 ## User Facing Changes
 
