@@ -123,10 +123,11 @@ func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Objec
 	err = kubeClient.Status().Update(ctx, &instance)
 
 	if err != nil {
+		// In some cases, updating the instance fails due to an outdated version of the instance.
+		// When this error occurs, we should retry the update.
 		if apierrors.IsConflict(err) {
 			return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				// Re-fetch latest version to avoid conflict errors
-				fmt.Println("retrying")
 				instance := odigosv1.InstrumentationInstance{}
 				err := kubeClient.Get(ctx, client.ObjectKey{Namespace: owner.GetNamespace(), Name: instrumentationInstanceName}, &instance)
 				if err != nil {
