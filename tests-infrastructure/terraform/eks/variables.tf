@@ -15,7 +15,7 @@ variable "node_count" {
 
 variable "node_spec" {
   description = "The node spec for the cluster"
-  default     = "m6a.xlarge"
+  default     = "m5.large"
 }
 
 variable "test_scenario" {
