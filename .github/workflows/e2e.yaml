@@ -1,31 +1,19 @@
 name: E2E Tests
 
 on:
-  merge_group:
-  pull_request:
-    branches:
-      - main
-      - stable
-      - greatwall
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: 'Build workflow run ID'
+        required: true
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  wait-for-build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wait for build jobs
-        uses: lewagon/wait-on-check-action@v1.3.1
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          check-regexp: "build.*"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
-
   kubernetes-test:
-    needs: wait-for-build
     runs-on: warp-ubuntu-latest-x64-8x-spot
     strategy:
       fail-fast: false
@@ -85,8 +73,7 @@ jobs:
           path: /tmp/images
           merge-multiple: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: build.yaml
-          run-attempt: completed
+          run-id: ${{ inputs.build_run_id }}
 
       - name: Load Images to Kind
         run: |
@@ -104,6 +91,8 @@ jobs:
         with:
           name: odigos-cli
           path: cli/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.build_run_id }}
       - run: chmod +x cli/odigos
 
       - name: Run E2E Tests

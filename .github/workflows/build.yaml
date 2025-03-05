@@ -233,16 +233,18 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.23.0'
-      - name: Set up Goreleaser
-        uses: goreleaser/goreleaser-action@v5
-        with:
-          version: latest
-          args: build --snapshot --clean
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+      - name: Build CLI
+        run: |
+          cd cli
+          go build -tags=embed_manifests -o odigos
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4
         with:
           name: odigos-cli
-          path: dist/odigos_linux_amd64_v1/odigos
+          path: cli/odigos
 
   test-k8sutils:
     runs-on: warp-ubuntu-latest-x64-4x-spot
@@ -279,3 +281,22 @@ jobs:
         working-directory: ./procdiscovery
         run: |
           go test -v ./...
+
+  trigger-e2e:
+    needs: [build-autoscaler, build-scheduler, build-and-test-instrumentor, build-and-test-odigos-collector, build-and-test-odiglet, build-frontend, build-operator, build-cli, test-k8sutils, test-common, test-procdiscovery]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger E2E workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'e2e.yaml',
+              ref: context.ref,
+              inputs: {
+                build_run_id: context.runId.toString()
+              }
+            });
