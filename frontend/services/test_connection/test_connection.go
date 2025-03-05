@@ -14,6 +14,7 @@ import (
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exportertest"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/collector/confmap/xconfmap"
 )
 
 var (
@@ -129,7 +130,7 @@ func TestConnection(ctx context.Context, dest config.ExporterConfigurer) TestCon
 		return TestConnectionResult{Succeeded: false, Message: err.Error(), Reason: InvalidConfig, DestinationType: destType, StatusCode: http.StatusInternalServerError}
 	}
 
-	if validator, ok := defaultConfig.(component.ConfigValidator); ok {
+	if validator, ok := defaultConfig.(xconfmap.Validator); ok {
 		// if the component has a Validate method, call it to validate the configuration
 		err = validator.Validate()
 		if err != nil {

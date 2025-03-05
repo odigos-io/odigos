@@ -12,7 +12,7 @@ require (
 	github.com/ory/go-acc v0.2.8
 	github.com/pavius/impi v0.0.3
 	github.com/tcnksm/ghr v0.16.2
-	go.opentelemetry.io/collector/cmd/mdatagen v0.120.0
+	go.opentelemetry.io/collector/cmd/mdatagen v0.121.0
 	golang.org/x/tools v0.28.0
 	golang.org/x/vuln v1.1.0
 )
@@ -86,7 +86,7 @@ require (
 	github.com/golangci/plugin-module-register v0.1.1 // indirect
 	github.com/golangci/revgrep v0.5.3 // indirect
 	github.com/golangci/unconvert v0.0.0-20240309020433-c5143eacb3ed // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-github v17.0.0+incompatible // indirect
 	github.com/google/go-github/v47 v47.1.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
@@ -178,9 +178,9 @@ require (
 	github.com/sourcegraph/go-diff v0.7.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
-	github.com/spf13/cobra v1.8.1 // indirect
+	github.com/spf13/cobra v1.9.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/spf13/viper v1.12.0 // indirect
 	github.com/ssgreg/nlreturn/v2 v2.2.1 // indirect
 	github.com/stbenjam/no-sprintf-host-port v0.1.1 // indirect
@@ -206,11 +206,11 @@ require (
 	gitlab.com/bosi/decorder v0.4.2 // indirect
 	go-simpler.org/musttag v0.12.1 // indirect
 	go-simpler.org/sloglint v0.6.0 // indirect
-	go.opentelemetry.io/collector/component v0.120.0 // indirect
-	go.opentelemetry.io/collector/confmap v1.26.0 // indirect
-	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.26.0 // indirect
-	go.opentelemetry.io/collector/filter v0.120.0 // indirect
-	go.opentelemetry.io/collector/pdata v1.26.0 // indirect
+	go.opentelemetry.io/collector/component v1.27.0 // indirect
+	go.opentelemetry.io/collector/confmap v1.27.0 // indirect
+	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.27.0 // indirect
+	go.opentelemetry.io/collector/filter v0.121.0 // indirect
+	go.opentelemetry.io/collector/pdata v1.27.0 // indirect
 	go.opentelemetry.io/otel v1.34.0 // indirect
 	go.opentelemetry.io/otel/metric v1.34.0 // indirect
 	go.opentelemetry.io/otel/trace v1.34.0 // indirect
