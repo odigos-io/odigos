@@ -91,8 +91,12 @@ func runInspectionStage(
 // and if no language is detected, falls back to the expensive checks.
 func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLanguageDetails, error) {
 	procContext := process.NewProcessContext(proc)
-	defer procContext.CloseFiles()
-	// TODO: add error handling for CloseFiles function
+	defer func() {
+		if err := procContext.CloseFiles(); err != nil {
+			fmt.Printf("Error closing files: %v", err)
+		}
+	}()
+
 	detectedLanguageDetails := common.ProgramLanguageDetails{
 		Language: common.UnknownProgrammingLanguage,
 	}
