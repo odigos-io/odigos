@@ -17,7 +17,7 @@
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${workspaceFolder}/instrumentor",
+      "program": "${workspaceFolder}/instrumentor/cmd",
       "cwd": "${workspaceFolder}/instrumentor"
     },
     {

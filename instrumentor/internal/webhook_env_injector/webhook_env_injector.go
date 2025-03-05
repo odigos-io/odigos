@@ -1,19 +1,41 @@
 package webhookenvinjector
 
 import (
+	"context"
+	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
-func InjectOdigosAgentEnvVars(logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
-	otelsdk common.OtelSdk, runtimeDetails *v1alpha1.RuntimeDetailsByContainer) {
+func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
+	otelsdk common.OtelSdk, runtimeDetails *v1alpha1.RuntimeDetailsByContainer, client client.Client) {
+
+	// This is a temporary and should be migrated to distro
+	if runtimeDetails.Language == common.PythonProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity ||
+		runtimeDetails.Language == common.PythonProgrammingLanguage && otelsdk == common.OtelSdkEbpfEnterprise {
+		InjectPythonEnvVars(container)
+	}
+
+	if runtimeDetails.Language == common.JavascriptProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity {
+		injectNodejsCommunityEnvVars(container)
+	}
+
+	if runtimeDetails.Language == common.JavaProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity {
+		injectJavaCommunityEnvVars(ctx, logger, container, client)
+	}
+
 	envVarsPerLanguage := getEnvVarNamesForLanguage(runtimeDetails.Language)
 	if envVarsPerLanguage == nil {
 		return
@@ -138,4 +160,131 @@ func getContainerEnvVarPointer(containerEnv *[]corev1.EnvVar, envVarName string)
 		}
 	}
 	return nil
+}
+
+func injectNodejsCommunityEnvVars(container *corev1.Container) {
+	container.Env = append(container.Env, corev1.EnvVar{
+		Name: "NODE_IP",
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "status.hostIP",
+			},
+		},
+	})
+	container.Env = append(container.Env, corev1.EnvVar{
+		Name:  commonconsts.OpampServerHostEnvName,
+		Value: fmt.Sprintf("$(NODE_IP):%d", commonconsts.OpAMPPort),
+	})
+	container.Env = append(container.Env, corev1.EnvVar{
+		Name:  commonconsts.OtelExporterEndpointEnvName,
+		Value: fmt.Sprintf("http://$(NODE_IP):%d", commonconsts.OTLPHttpPort),
+	})
+}
+
+func injectJavaCommunityEnvVars(ctx context.Context, logger logr.Logger,
+	container *corev1.Container, client client.Client) {
+
+	container.Env = append(container.Env, corev1.EnvVar{
+		Name: "NODE_IP",
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "status.hostIP",
+			},
+		},
+	})
+	container.Env = append(container.Env, corev1.EnvVar{
+		Name:  commonconsts.OtelExporterEndpointEnvName,
+		Value: fmt.Sprintf("http://$(NODE_IP):%d", commonconsts.OTLPHttpPort),
+	})
+
+	// Set the OTEL signals exporter env vars
+	setOtelSignalsExporterEnvVars(ctx, logger, container, client)
+}
+
+func InjectPythonEnvVars(container *corev1.Container) {
+	// Common environment variables for all tiers
+	commonEnvs := []corev1.EnvVar{
+		{
+			Name: "NODE_IP",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "status.hostIP",
+				},
+			},
+		},
+		{
+			Name:  commonconsts.OpampServerHostEnvName,
+			Value: fmt.Sprintf("$(NODE_IP):%d", commonconsts.OpAMPPort),
+		},
+	}
+
+	// Determine envs based on the tier
+	odigosTier := env.GetOdigosTierFromEnv()
+
+	var tierSpecificEnvs []corev1.EnvVar
+	if odigosTier == common.OnPremOdigosTier {
+		tierSpecificEnvs = []corev1.EnvVar{
+			{
+				Name:  commonconsts.OtelPythonConfiguratorEnvName,
+				Value: commonconsts.OtelPythonEBPFConfiguratorEnvValue,
+			},
+		}
+	} else {
+		tierSpecificEnvs = []corev1.EnvVar{
+			{
+				Name:  commonconsts.OtelPythonConfiguratorEnvName,
+				Value: commonconsts.OtelPythonOSSConfiguratorEnvValue,
+			},
+			{
+				Name:  commonconsts.OtelExporterEndpointEnvName,
+				Value: fmt.Sprintf("http://$(NODE_IP):%d", commonconsts.OTLPHttpPort),
+			},
+		}
+	}
+
+	container.Env = append(container.Env, commonEnvs...)
+	container.Env = append(container.Env, tierSpecificEnvs...)
+}
+
+func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger,
+	container *corev1.Container, client client.Client) {
+
+	odigosNamespace := env.GetCurrentNamespace()
+
+	var nodeCollectorGroup odigosv1.CollectorsGroup
+	err := client.Get(ctx, types.NamespacedName{
+		Namespace: odigosNamespace,
+		Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
+	}, &nodeCollectorGroup)
+	if err != nil {
+		// Uses OTEL's default settings by omitting these environment variables.
+		// Although the current default is "otlp," it's safer to set them explicitly
+		// to avoid potential future changes and improve clarity.
+		logger.Error(err, "Failed to get nodeCollectorGroup using default OTEL settings")
+		return
+	}
+
+	signals := nodeCollectorGroup.Status.ReceiverSignals
+
+	// Default values
+	logsExporter := "none"
+	metricsExporter := "none"
+	tracesExporter := "none"
+
+	for _, signal := range signals {
+		switch signal {
+		case common.LogsObservabilitySignal:
+			logsExporter = "otlp"
+		case common.MetricsObservabilitySignal:
+			metricsExporter = "otlp"
+		case common.TracesObservabilitySignal:
+			tracesExporter = "otlp"
+		}
+	}
+
+	container.Env = append(container.Env,
+		corev1.EnvVar{Name: commonconsts.OtelLogsExporter, Value: logsExporter},
+		corev1.EnvVar{Name: commonconsts.OtelMetricsExporter, Value: metricsExporter},
+		corev1.EnvVar{Name: commonconsts.OtelTracesExporter, Value: tracesExporter},
+	)
 }

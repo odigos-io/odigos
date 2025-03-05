@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -14,6 +15,7 @@ import (
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -109,12 +111,20 @@ and apply any required migrations and adaptations.`,
 			config.UiMode = common.UiMode(uiMode)
 		}
 
+		// Migrate images from prior to registry.odigos.io
+		if config.ImagePrefix == "" {
+			config.ImagePrefix = "registry.odigos.io"
+			config.AutoscalerImage = strings.TrimPrefix(config.AutoscalerImage, "keyval/")
+			config.InstrumentorImage = strings.TrimPrefix(config.InstrumentorImage, "keyval/")
+			config.OdigletImage = strings.TrimPrefix(config.OdigletImage, "keyval/")
+		}
+
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
 			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
 			os.Exit(1)
 		}
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, versionFlag)
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")

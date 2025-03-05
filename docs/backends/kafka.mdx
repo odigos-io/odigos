@@ -7,13 +7,18 @@ icon: 'signal-stream'
 
 ### Getting Started
 
-<img src='https://d15jtxgb40qetw.cloudfront.net/kafka.svg' alt='kafka' width="100" height="100" className="not-prose" />
+<img src="https://d15jtxgb40qetw.cloudfront.net/kafka.svg" alt="kafka" className="not-prose h-20" />
 
 {/*
     Add custom content here (under this comment)...
 
-    e.g:
-    [🔗 website](https://odigos.io)
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
 
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
     !! START CUSTOM EDIT !!
@@ -38,7 +43,7 @@ icon: 'signal-stream'
 - **KAFKA_BROKERS** `string[]` : Brokers. The list of kafka brokers
   - This field is optional and defaults to `["localhost:9092"]`
 - **KAFKA_RESOLVE_CANONICAL_BOOTSTRAP_SERVERS_ONLY** `boolean` : Resolve Canonical Bootstrap Servers Only. Whether to resolve then reverse-lookup broker IPs during startup.
-  - This field is optional
+  - This field is optional and defaults to `False`
 - **KAFKA_CLIENT_ID** `string` : Client ID. The client ID to configure the Sarama Kafka client with. The client ID will be used for all produce requests.
   - This field is optional and defaults to `sarama`
 - **KAFKA_TOPIC** `string` : Topic. The name of the default kafka topic to export to (default = otlp_spans for traces, otlp_metrics for metrics, otlp_logs for logs).
@@ -48,11 +53,11 @@ icon: 'signal-stream'
 - **KAFKA_ENCODING** `string` : Encoding. The encoding of the traces sent to kafka.
   - This field is optional and defaults to `otlp_proto`
 - **KAFKA_PARTITION_TRACES_BY_ID** `boolean` : Partition Traces by ID. Configures the exporter to include the trace ID as the message key in trace messages sent to kafka. Please note: this setting does not have any effect on Jaeger encoding exporters since Jaeger exporters include trace ID as the message key by default.
-  - This field is optional
+  - This field is optional and defaults to `False`
 - **KAFKA_PARTITION_METRICS_BY_RESOURCE_ATTRIBUTES** `boolean` : Partition Metrics by Resource Attributes. Configures the exporter to include the hash of sorted resource attributes as the message partitioning key in metric messages sent to kafka.
-  - This field is optional
+  - This field is optional and defaults to `False`
 - **KAFKA_PARTITION_LOGS_BY_RESOURCE_ATTRIBUTES** `boolean` : Partition Logs by Resource Attributes. Configures the exporter to include the hash of sorted resource attributes as the message partitioning key in log messages sent to kafka.
-  - This field is optional
+  - This field is optional and defaults to `False`
 - **KAFKA_AUTH_METHOD** `string` : Auth Method. The auth method to use.
   - This field is required and defaults to `none`
 - **KAFKA_USERNAME** `string` : Username. The username to use.
@@ -60,7 +65,7 @@ icon: 'signal-stream'
 - **KAFKA_PASSWORD** `string` : Password. The password to use.
   - This field is optional
 - **KAFKA_METADATA_FULL** `boolean` : Metadata Full. Whether to maintain a full set of metadata. When disabled, the client does not make the initial request to broker at the startup.
-  - This field is optional
+  - This field is optional and defaults to `False`
 - **KAFKA_METADATA_MAX_RETRY** `string` : Metadata Max Retry. The number of retries to get metadata.
   - This field is optional and defaults to `3`
 - **KAFKA_METADATA_BACKOFF_RETRY** `string` : Metadata Backoff Retry. How long to wait between metadata retries.
@@ -75,12 +80,6 @@ icon: 'signal-stream'
   - This field is optional and defaults to `30s`
 - **KAFKA_RETRY_ON_FAILURE_MAX_ELAPSED_TIME** `string` : Max Elapsed Time. Is the maximum amount of time spent trying to send a batch; ignored if `enabled` is `false`.
   - This field is optional and defaults to `120s`
-- **KAFKA_SENDING_QUEUE_ENABLED** `boolean` : Enable Sending Queue.
-  - This field is optional and defaults to `True`
-- **KAFKA_SENDING_QUEUE_NUM_CONSUMERS** `string` : Number of Consumers. Number of consumers that dequeue batches; ignored if `enabled` is `false`.
-  - This field is optional and defaults to `10`
-- **KAFKA_SENDING_QUEUE_SIZE** `string` : Queue Size. Maximum number of batches kept in memory before dropping data; ignored if `enabled` is `false`. User should calculate this as `num_seconds` * `requests_per_second` where: `num_seconds` is the number of seconds to buffer in case of a backend outage, `requests_per_second` is the average number of requests per seconds.
-  - This field is optional and defaults to `1000`
 - **KAFKA_PRODUCER_MAX_MESSAGE_BYTES** `string` : Producer Max Message Bytes. The maximum permitted size of a message in bytes.
   - This field is optional and defaults to `1000000`
 - **KAFKA_PRODUCER_REQUIRED_ACKS** `string` : Producer Required Acks. Controls when a message is regarded as transmitted.
@@ -150,9 +149,6 @@ There are two primary methods for configuring destinations in Odigos:
         # KAFKA_RETRY_ON_FAILURE_INITIAL_INTERVAL: <Initial Interval (default: 5s)>
         # KAFKA_RETRY_ON_FAILURE_MAX_INTERVAL: <Max Interval (default: 30s)>
         # KAFKA_RETRY_ON_FAILURE_MAX_ELAPSED_TIME: <Max Elapsed Time (default: 120s)>
-        # KAFKA_SENDING_QUEUE_ENABLED: <Enable Sending Queue (default: True)>
-        # KAFKA_SENDING_QUEUE_NUM_CONSUMERS: <Number of Consumers (default: 10)>
-        # KAFKA_SENDING_QUEUE_SIZE: <Queue Size (default: 1000)>
         # KAFKA_PRODUCER_MAX_MESSAGE_BYTES: <Producer Max Message Bytes (default: 1000000)>
         # KAFKA_PRODUCER_REQUIRED_ACKS: <Producer Required Acks (default: 1)>
         # KAFKA_PRODUCER_COMPRESSION: <Producer Compression (default: none) (options: [none, gzip, snappy, lz4, zstd])>

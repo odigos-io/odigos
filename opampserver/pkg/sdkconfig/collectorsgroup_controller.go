@@ -2,11 +2,9 @@ package sdkconfig
 
 import (
 	"context"
-	"slices"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
@@ -38,11 +36,9 @@ func (d *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	tracesEnabled := slices.Contains(collectorsGroup.Status.ReceiverSignals, common.TracesObservabilitySignal)
-
 	d.ConnectionCache.UpdateAllConnectionConfigs(func(connInfo *connection.ConnectionInfo) *protobufs.AgentConfigMap {
 
-		remoteConfigSdk := configsections.CalcSdkRemoteConfig(connInfo.RemoteResourceAttributes, tracesEnabled)
+		remoteConfigSdk := configsections.CalcSdkRemoteConfig(connInfo.RemoteResourceAttributes, collectorsGroup.Status.ReceiverSignals)
 		opampRemoteConfigSdk, sdkSectionName, err := configsections.SdkRemoteConfigToOpamp(remoteConfigSdk)
 		if err != nil {
 			logger.Info("failed to calculate SDK remote config", "error", err)

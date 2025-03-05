@@ -11,8 +11,10 @@ type ProcessEvent = detector.ProcessEvent
 type DetectorOption = detector.DetectorOption
 
 const (
-	ProcessExecEvent = detector.ProcessExecEvent
-	ProcessExitEvent = detector.ProcessExitEvent
+	ProcessExecEvent     = detector.ProcessExecEvent
+	ProcessForkEvent     = detector.ProcessForkEvent
+	ProcessFileOpenEvent = detector.ProcessFileOpenEvent
+	ProcessExitEvent     = detector.ProcessExitEvent
 )
 
 // Detector is used to report process events.

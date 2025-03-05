@@ -7,7 +7,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/ptracetest"
 
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/config/configtelemetry"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor/processortest"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -46,7 +45,6 @@ func TestProcessor_Traces(t *testing.T) {
 
 	set := processortest.NewNopSettings()
 	set.MeterProvider = metricProvider
-	set.MetricsLevel = configtelemetry.LevelBasic
 
 	tmp, err := newThroughputMeasurementProcessor(set, &Config{
 		ResourceAttributesKeys: []string{"service.name", "key1"},

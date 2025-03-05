@@ -1,6 +1,6 @@
 TAG ?= $(shell odigos version --cluster)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
-ORG ?= keyval
+ORG ?= registry.odigos.io
 GOLANGCI_LINT_VERSION ?= v1.63.4
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
 GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
@@ -9,7 +9,8 @@ ifdef FIX_LINT
     LINT_CMD += --fix
 endif
 DOCKERFILE=Dockerfile
-IMG_SUFFIX=
+IMG_PREFIX?=
+IMG_SUFFIX?=
 BUILD_DIR=.
 
 .PHONY: install-golangci-lint
@@ -67,6 +68,14 @@ build-image/%:
 	--build-arg SUMMARY="$(SUMMARY)" \
 	--build-arg DESCRIPTION="$(DESCRIPTION)"
 
+.PHONY: build-operator-index
+build-operator-index:
+	opm index add --bundles $(ORG)/odigos-bundle:$(TAG) --tag $(ORG)/odigos-index:$(TAG) --container-tool=docker
+
+.PHONY: build-operator
+build-operator:
+	$(MAKE) build-image/operator DOCKERFILE=operator/$(DOCKERFILE) SUMMARY="Odigos Operator" DESCRIPTION="Kubernetes Operator for Odigos installs Odigos" TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+
 .PHONY: build-odiglet
 build-odiglet:
 	$(MAKE) build-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
@@ -122,6 +131,10 @@ push-image/%:
 	--build-arg RELEASE=$(TAG) \
 	--build-arg SUMMARY="$(SUMMARY)" \
 	--build-arg DESCRIPTION="$(DESCRIPTION)"
+
+.PHONY: push-operator
+push-operator:
+	$(MAKE) push-image/operator DOCKERFILE=operator/$(DOCKERFILE) SUMMARY="Odigos Operator" DESCRIPTION="Kubernetes Operator for Odigos installs Odigos" TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-odiglet
 push-odiglet:
@@ -227,15 +240,13 @@ update-dep/%: DIR=$*
 update-dep/%:
 	cd $(DIR) && go get $(MODULE)@$(VERSION)
 
-GO_AUTO_VERSION=v0.19.0-alpha
-UNSTABLE_COLLECTOR_VERSION=v0.119.0
-STABLE_COLLECTOR_VERSION=v1.25.0
+UNSTABLE_COLLECTOR_VERSION=v0.120.0
+STABLE_COLLECTOR_VERSION=v1.26.0
 STABLE_OTEL_GO_VERSION=v1.34.0
 UNSTABLE_OTEL_GO_VERSION=v0.59.0
 
 .PHONY: update-otel
 update-otel:
-	$(MAKE) update-dep MODULE=go.opentelemetry.io/auto VERSION=$(GO_AUTO_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/cmd/mdatagen VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/component VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/component/componenttest VERSION=$(UNSTABLE_COLLECTOR_VERSION)
@@ -371,3 +382,84 @@ dev-nop-destination:
 .PHONY: dev-add-backpressue-destination
 dev-backpressue-destination:
 	kubectl apply -f ./tests/backpressure-exporter.yaml
+
+.PHONY: push-workload-lifecycle-images
+push-workload-lifecycle-images:
+	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/nodejs-unsupported-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/nodejs-http-server/unsupported-version.Dockerfile tests/e2e/workload-lifecycle/services/nodejs-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/nodejs-very-old-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/nodejs-http-server/very-old-version.Dockerfile tests/e2e/workload-lifecycle/services/nodejs-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/nodejs-minimum-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/nodejs-http-server/minimum-version.Dockerfile tests/e2e/workload-lifecycle/services/nodejs-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/nodejs-latest-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/nodejs-http-server/latest-version.Dockerfile tests/e2e/workload-lifecycle/services/nodejs-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/nodejs-dockerfile-env:v0.0.1 -f tests/e2e/workload-lifecycle/services/nodejs-http-server/dockerfile-env.Dockerfile tests/e2e/workload-lifecycle/services/nodejs-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/nodejs-manifest-env:v0.0.1 -f tests/e2e/workload-lifecycle/services/nodejs-http-server/manifest-env.Dockerfile tests/e2e/workload-lifecycle/services/nodejs-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/cpp-http-server:v0.0.1 -f tests/e2e/workload-lifecycle/services/cpp-http-server/Dockerfile tests/e2e/workload-lifecycle/services/cpp-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/java-supported-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-supported-version.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/java-azul:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-azul.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/java-supported-docker-env:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-supported-docker-env.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-supported-manifest-env.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/java-latest-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-latest-version.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/java-old-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-old-version.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/python-latest-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-latest tests/e2e/workload-lifecycle/services/python-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/python-other-agent:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-other-agent tests/e2e/workload-lifecycle/services/python-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/python-alpine:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-alpine tests/e2e/workload-lifecycle/services/python-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/python-not-supported:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-not-supported-version tests/e2e/workload-lifecycle/services/python-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/python-min-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-min-version tests/e2e/workload-lifecycle/services/python-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/dotnet8-musl:v0.0.1 -f tests/e2e/workload-lifecycle/services/dotnet-http-server/net8-musl.Dockerfile tests/e2e/workload-lifecycle/services/dotnet-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/dotnet6-musl:v0.0.1 -f tests/e2e/workload-lifecycle/services/dotnet-http-server/net6-musl.Dockerfile tests/e2e/workload-lifecycle/services/dotnet-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/dotnet8-glibc:v0.0.1 -f tests/e2e/workload-lifecycle/services/dotnet-http-server/net8-glibc.Dockerfile tests/e2e/workload-lifecycle/services/dotnet-http-server
+	docker build --platform linux/amd64 -t public.ecr.aws/odigos/dotnet6-glibc:v0.0.1 -f tests/e2e/workload-lifecycle/services/dotnet-http-server/net6-glibc.Dockerfile tests/e2e/workload-lifecycle/services/dotnet-http-server
+	docker push public.ecr.aws/odigos/python-latest-version:v0.0.1
+	docker push public.ecr.aws/odigos/python-other-agent:v0.0.1
+	docker push public.ecr.aws/odigos/python-alpine:v0.0.1
+	docker push public.ecr.aws/odigos/python-not-supported:v0.0.1
+	docker push public.ecr.aws/odigos/python-min-version:v0.0.1
+	docker push public.ecr.aws/odigos/nodejs-unsupported-version:v0.0.1
+	docker push public.ecr.aws/odigos/nodejs-very-old-version:v0.0.1
+	docker push public.ecr.aws/odigos/nodejs-minimum-version:v0.0.1
+	docker push public.ecr.aws/odigos/nodejs-latest-version:v0.0.1
+	docker push public.ecr.aws/odigos/nodejs-dockerfile-env:v0.0.1
+	docker push public.ecr.aws/odigos/nodejs-manifest-env:v0.0.1
+	docker push public.ecr.aws/odigos/cpp-http-server:v0.0.1
+	docker push public.ecr.aws/odigos/java-supported-version:v0.0.1
+	docker push public.ecr.aws/odigos/java-azul:v0.0.1
+	docker push public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
+	docker push public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
+	docker push public.ecr.aws/odigos/java-latest-version:v0.0.1
+	docker push public.ecr.aws/odigos/java-old-version:v0.0.1
+	docker push public.ecr.aws/odigos/dotnet8-musl:v0.0.1
+	docker push public.ecr.aws/odigos/dotnet6-musl:v0.0.1
+	docker push public.ecr.aws/odigos/dotnet8-glibc:v0.0.1
+	docker push public.ecr.aws/odigos/dotnet6-glibc:v0.0.1
+
+
+# Use these to deploy Odigos into an EKS cluster
+
+.PHONY: ecr-login
+ecr-login:
+	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+build-tag-push-eks-image/%:
+	docker build --platform linux/amd64 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+	--build-arg SERVICE_NAME="$*" \
+	--build-arg ODIGOS_VERSION=$(TAG) \
+	--build-arg VERSION=$(TAG) \
+	--build-arg RELEASE=$(TAG) \
+	--build-arg SUMMARY="$(SUMMARY)" \
+	--build-arg DESCRIPTION="$(DESCRIPTION)"
+	docker tag registry.odigos.io/odigos-$*$(IMG_SUFFIX):$(TAG) $(IMG_PREFIX)/odigos-$*$(IMG_SUFFIX):$(TAG)
+	docker push $(IMG_PREFIX)/odigos-$*$(IMG_SUFFIX):$(TAG)
+
+.PHONY: deploy-to-eks
+deploy-to-eks:
+	if [ -z "$(IMG_PREFIX)" ]; then \
+		echo "❌ IMG_PREFIX is not set"; \
+		exit 1; \
+	fi
+	make ecr-login
+	make -j 3 build-tag-push-eks-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-eks-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-eks-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-eks-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-eks-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-eks-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	echo "✅ Deployed Odigos to EKS, now install the CLI"

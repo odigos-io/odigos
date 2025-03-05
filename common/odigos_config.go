@@ -111,5 +111,7 @@ type OdigosConfiguration struct {
 	Profiles                  []ProfileName                  `json:"profiles,omitempty"`
 	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty"`
 	UiMode                    UiMode                         `json:"uiMode,omitempty"`
+	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty"`
 	CentralBackendURL         string                         `json:"centralBackendURL,omitempty"`
+	MountMethod               *MountMethod                   `json:"mountMethod,omitempty"`
 }

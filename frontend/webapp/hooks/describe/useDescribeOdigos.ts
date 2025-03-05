@@ -1,19 +1,24 @@
-import { useQuery } from '@apollo/client';
+import { useLazyQuery } from '@apollo/client';
 import { DESCRIBE_ODIGOS } from '@/graphql';
-import type { DescribeOdigos } from '@odigos/ui-utils';
+import { useNotificationStore } from '@odigos/ui-containers';
+import { CRUD, NOTIFICATION_TYPE, type DescribeOdigos } from '@odigos/ui-utils';
 
 export const useDescribeOdigos = () => {
-  // TODO: change query, to lazy query
-  const { data, loading, error } = useQuery<{ describeOdigos: DescribeOdigos }>(DESCRIBE_ODIGOS, {
-    pollInterval: 5000,
-  });
+  const { addNotification } = useNotificationStore();
 
-  const isPro = ['onprem', 'enterprise'].includes(data?.describeOdigos.tier.value || '');
+  const [fetchDescribeOdigos, { data, loading, error }] = useLazyQuery<{ describeOdigos: DescribeOdigos }>(DESCRIBE_ODIGOS, {
+    onError: (error) =>
+      addNotification({
+        type: NOTIFICATION_TYPE.ERROR,
+        title: error.name || CRUD.READ,
+        message: error.cause?.message || error.message,
+      }),
+  });
 
   return {
     loading,
     error,
     data: data?.describeOdigos,
-    isPro,
+    fetchDescribeOdigos,
   };
 };

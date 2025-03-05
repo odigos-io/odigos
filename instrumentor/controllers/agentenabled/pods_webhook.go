@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -13,10 +14,10 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
-	webhookdeviceinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_device_injector"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,6 +30,7 @@ import (
 
 type PodsWebhook struct {
 	client.Client
+	DistrosGetter *distros.Getter
 }
 
 var _ webhook.CustomDefaulter = &PodsWebhook{}
@@ -69,6 +71,17 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
+	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, p.Client)
+	if err != nil {
+		logger.Error(err, "failed to get ODIGOS config. Skipping Injection of ODIGOS agent")
+		return nil
+	}
+	if odigosConfig.MountMethod == nil {
+		// we are reading the effective config which should already have the mount method resolved or defaulted
+		logger.Error(errors.New("mount method is not set in ODIGOS config"), "Skipping Injection of ODIGOS agent")
+		return nil
+	}
+
 	// this is temporary and should be refactored so the service name and other resource attributes are written to agent config
 	serviceName := p.getServiceNameForEnv(ctx, logger, pw)
 	if serviceName == nil || *serviceName == "" {
@@ -93,7 +106,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 			continue
 		}
 
-		containerVolumeMounted, err := injectOdigosToContainer(containerConfig, podContainerSpec, *pw, *serviceName)
+		containerVolumeMounted, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, *serviceName, *odigosConfig.MountMethod)
 		if err != nil {
 			logger.Error(err, "failed to inject ODIGOS agent to container")
 			continue
@@ -101,7 +114,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		volumeMounted = volumeMounted || containerVolumeMounted
 	}
 
-	if volumeMounted {
+	if *odigosConfig.MountMethod == common.K8sHostPathMountMethod && volumeMounted {
 		// only mount the volume if at least one container has a volume to mount
 		podswebhook.MountPodVolume(pod)
 	}
@@ -174,29 +187,16 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 		if !found {
 			continue
 		}
-
-		// amir: 07 feb 2025. hard-coded temporary list which is removed once all distros migrate away from device
-		// amir: 11 feb 2025. reverted java and nodejs enterprise temporarily
-		if
-		// (runtimeDetails.Language == common.JavascriptProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) ||
-		(runtimeDetails.Language == common.GoProgrammingLanguage && otelSdk == common.OtelSdkEbpfCommunity) ||
-			// (runtimeDetails.Language == common.JavaProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) ||
-			(runtimeDetails.Language == common.MySQLProgrammingLanguage && otelSdk == common.OtelSdkEbpfEnterprise) {
-			// Skip device injection for distros that no longer use it
-		} else {
-			webhookdeviceinjector.InjectOdigosInstrumentationDevice(*pw, container, otelSdk, runtimeDetails)
-		}
-
-		webhookenvinjector.InjectOdigosAgentEnvVars(logger, *pw, container, otelSdk, runtimeDetails)
+		webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, *pw, container, otelSdk, runtimeDetails, p.Client)
 	}
 	return nil
 }
 
-func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container, pw k8sconsts.PodWorkload, serviceName string) (bool, error) {
+func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container, pw k8sconsts.PodWorkload, serviceName string, mountMethod common.MountMethod) (bool, error) {
 
 	distroName := containerConfig.OtelDistroName
 
-	distroMetadata := distros.GetDistroByName(distroName)
+	distroMetadata := p.DistrosGetter.GetDistroByName(distroName)
 	if distroMetadata == nil {
 		return false, fmt.Errorf("distribution %s not found", distroName)
 	}
@@ -209,12 +209,40 @@ func injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, pod
 
 	volumeMounted := false
 	if distroMetadata.RuntimeAgent != nil {
-		for _, agentDirectoryName := range distroMetadata.RuntimeAgent.DirectoryNames {
-			podswebhook.MountDirectory(podContainerSpec, agentDirectoryName)
-			volumeMounted = true
+		if mountMethod == common.K8sHostPathMountMethod {
+			// mount directory only if the mount type is host-path
+			for _, agentDirectoryName := range distroMetadata.RuntimeAgent.DirectoryNames {
+				podswebhook.MountDirectory(podContainerSpec, agentDirectoryName)
+				volumeMounted = true
+			}
 		}
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
 			podswebhook.InjectOtelResourceAndServerNameEnvVars(&existingEnvNames, podContainerSpec, distroName, pw, serviceName)
+		}
+		// TODO: once we have a flag to enable/disable device injection, we should check it here.
+		if distroMetadata.RuntimeAgent.Device != nil {
+
+			// amir 17 feb 2025, this is here only for migration.
+			// even if mount method is not device, we still need to inject the deprecated agent specific device
+			// while we remove them one by one
+			isGenericDevice := *distroMetadata.RuntimeAgent.Device == k8sconsts.OdigosGenericDeviceName
+			if mountMethod == common.K8sVirtualDeviceMountMethod || !isGenericDevice {
+				deviceName := *distroMetadata.RuntimeAgent.Device
+				// TODO: currently devices are composed with glibc as input for dotnet.
+				// as devices will soon converge to a single device, I am hardcoding the logic here,
+				// which will eventually be removed once dotnet specific devices are removed.
+				if containerConfig.DistroParams != nil {
+					libcType, ok := containerConfig.DistroParams[common.LibcTypeDistroParameterName]
+					if ok {
+						libcPrefix := ""
+						if libcType == string(common.Musl) {
+							libcPrefix = "musl-"
+						}
+						deviceName = strings.ReplaceAll(deviceName, "{{param.LIBC_TYPE}}", libcPrefix)
+					}
+				}
+				podswebhook.InjectDeviceToContainer(podContainerSpec, deviceName)
+			}
 		}
 	}
 	podswebhook.InjectOdigosK8sEnvVars(&existingEnvNames, podContainerSpec, distroName, pw.Namespace)

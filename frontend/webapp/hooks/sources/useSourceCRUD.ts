@@ -1,156 +1,196 @@
-import { useMemo } from 'react';
+import { useEffect } from 'react';
 import { useConfig } from '../config';
-import { useMutation } from '@apollo/client';
-import { useNamespace } from '../compute-platform';
 import { usePaginatedStore } from '@/store';
-import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import type { FetchedSource, SourceUpdateInput } from '@/@types';
-import { CONDITION_STATUS, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, K8S_RESOURCE_KIND, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
-import { type NamespaceSelectionFormData, type PendingItem, type SourceSelectionFormData, useFilterStore, useNotificationStore, usePendingStore, useSetupStore } from '@odigos/ui-containers';
+import { useNamespace } from '../compute-platform';
+import { useLazyQuery, useMutation } from '@apollo/client';
+import { GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import type { FetchedSource, NamespaceInstrumentInput, PaginatedData, SourceInstrumentInput, SourceUpdateInput } from '@/@types';
+import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, type Source, type WorkloadId } from '@odigos/ui-utils';
+import { type NamespaceSelectionFormData, type SourceFormData, type SourceSelectionFormData, useInstrumentStore, useNotificationStore, usePendingStore, useSetupStore } from '@odigos/ui-containers';
 
-interface Params {
-  onSuccess?: (type: string) => void;
-  onError?: (type: string) => void;
-}
-
-interface UseSourceCrudResponse {
-  loading: boolean;
-  sources: FetchedSource[];
-  filteredSources: FetchedSource[];
-
+interface UseSourceCrud {
+  sources: Source[];
+  sourcesLoading: boolean;
+  sourcesPaginating: boolean;
+  fetchSourcesPaginated: (getAll?: boolean, nextPage?: string) => Promise<void>;
+  fetchSourceById: (id: WorkloadId, bypassPaginationLoader?: boolean) => Promise<void>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
-  updateSource: (sourceId: WorkloadId, payload: SourceUpdateInput) => Promise<void>;
+  updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
 
-export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
-  const { persistNamespace } = useNamespace();
-
-  const filters = useFilterStore();
+export const useSourceCRUD = (): UseSourceCrud => {
   const { data: config } = useConfig();
-  const { setConfiguredSources } = useSetupStore();
-  const { sources, updateSource } = usePaginatedStore();
+  const { persistNamespace } = useNamespace();
+  const { addNotification } = useNotificationStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
-  const { addNotification, removeNotifications } = useNotificationStore();
+  const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
+  const { setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
+  const { sourcesPaginating, setPaginating, sources, addPaginated, removePaginated } = usePaginatedStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
-    addNotification({
-      type,
-      title,
-      message,
-      crdType: ENTITY_TYPES.SOURCE,
-      target: id ? getSseTargetFromId(id, ENTITY_TYPES.SOURCE) : undefined,
-      hideFromHistory,
-    });
+    addNotification({ type, title, message, crdType: ENTITY_TYPES.SOURCE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.SOURCE) : undefined, hideFromHistory });
   };
 
-  const handleError = (actionType: string, message: string) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, actionType, message);
-    params?.onError?.(actionType);
+  const [queryByPage, { loading: isFetching }] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
+  const [queryById, { loading: isFetchingById }] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
+
+  const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
+    // We should not fetch while sources are being instrumented.
+    if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
+    // We should not re-fetch if we are already paginating.
+    // The backend will simply restart it's "page" due to an invalid hash, which will then force a full re-fetch including this item by ID.
+    if (usePaginatedStore.getState().sourcesPaginating && !bypassPaginationLoader) return;
+
+    const { error, data } = await queryById({ variables: { sourceId: id } });
+
+    if (!!error) {
+      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
+    } else if (!!data?.computePlatform.source) {
+      addPaginated(ENTITY_TYPES.SOURCE, [data.computePlatform.source]);
+    }
   };
 
-  const handleComplete = (actionType: string) => {
-    setConfiguredSources({});
-    params?.onSuccess?.(actionType);
+  const fetchAllSourcesIndividually = async () => {
+    const items = usePaginatedStore.getState().sources;
+
+    for (let i = 0; i < items.length; i++) {
+      const { namespace, name, kind } = items[i];
+      const bypassPaginationLoader = true;
+      await fetchSourceById({ namespace, name, kind }, bypassPaginationLoader);
+    }
+
+    setPaginating(ENTITY_TYPES.SOURCE, false);
   };
 
-  const filtered = useMemo(() => {
-    let arr = [...sources];
+  const fetchSourcesPaginated = async (getAll: boolean = true, page: string = '') => {
+    // We should not fetch while sources are being instrumented.
+    if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
+    // We should not fetch if we are already fetching.
+    if (usePaginatedStore.getState().sourcesPaginating && !page) return;
 
-    if (!!filters.namespace) arr = arr.filter((source) => filters.namespace?.id === source.namespace);
-    if (!!filters.types.length) arr = arr.filter((source) => !!filters.types.find((type) => type.id === source.kind));
-    if (!!filters.onlyErrors) arr = arr.filter((source) => !!source.conditions?.find((cond) => cond.status === CONDITION_STATUS.FALSE));
-    if (!!filters.errors.length) arr = arr.filter((source) => !!filters.errors.find((error) => !!source.conditions?.find((cond) => cond.message === error.id)));
-    if (!!filters.languages.length) arr = arr.filter((source) => !!filters.languages.find((language) => !!source.containers?.find((cont) => cont.language === language.id)));
+    setPaginating(ENTITY_TYPES.SOURCE, true);
 
-    return arr;
-  }, [sources, filters]);
+    const startTime = Date.now();
+    const { error, data } = await queryByPage({ variables: { nextPage: page } });
+    const endTime = Date.now();
 
-  const [persistSources, cdState] = useMutation<{ persistK8sSources: boolean }>(PERSIST_SOURCE, {
-    onError: (error) => handleError('', error.message),
-    onCompleted: (res, req) => {
-      const namespace = req?.variables?.namespace;
-      const count = req?.variables?.sources.length;
+    if (!!error) {
+      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
+    } else if (!!data?.computePlatform?.sources) {
+      const { items, nextPage } = data.computePlatform.sources;
 
-      req?.variables?.sources.forEach(({ name, kind, selected }: { name: string; kind: K8S_RESOURCE_KIND; selected: boolean }) => {
-        if (!selected) removeNotifications(getSseTargetFromId({ namespace, name, kind }, ENTITY_TYPES.SOURCE));
-      });
+      addPaginated(ENTITY_TYPES.SOURCE, items);
 
-      if (count === 1) {
-        const { selected } = req?.variables?.sources?.[0] || {};
-        handleComplete(selected ? CRUD.CREATE : CRUD.DELETE);
-      } else {
-        handleComplete('');
+      if (getAll && !!nextPage) {
+        const halfSecond = 500;
+        const timeElapsed = endTime - startTime;
+
+        if (timeElapsed > halfSecond) {
+          fetchSourcesPaginated(true, nextPage);
+        } else {
+          // timeout helps avoid some lag on quick paginations
+          setTimeout(() => fetchSourcesPaginated(true, nextPage), halfSecond);
+        }
+      } else if (usePaginatedStore.getState().sources.length >= useInstrumentStore.getState().sourcesToCreate) {
+        // if we move "fetchAllSourcesIndividually" elsewhere, we might need to uncomment the following
+        // setPaginating(ENTITY_TYPES.SOURCE, false);
+        setInstrumentCount('sourcesToCreate', 0);
+        setInstrumentCount('sourcesCreated', 0);
+        fetchAllSourcesIndividually();
       }
+    }
+  };
+
+  const [persistSources, cdState] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCE, {
+    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
+    onCompleted: () => {
+      // We wait for SSE
     },
   });
 
-  const [updateSourceName, uState] = useMutation<{ updateK8sActualSource: boolean }>(UPDATE_K8S_ACTUAL_SOURCE, {
-    onError: (error) => handleError(CRUD.UPDATE, error.message),
+  const [updateSourceName, uState] = useMutation<{ updateK8sActualSource: boolean }, { sourceId: WorkloadId; patchSourceRequest: SourceUpdateInput }>(UPDATE_K8S_ACTUAL_SOURCE, {
+    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
-      handleComplete(CRUD.UPDATE);
-
       // This is instead of toasting a k8s modified-event watcher...
       // If we do toast with a watcher, we can't guarantee an SSE will be sent for this update alone. It will definitely include SSE for all updates, even those unexpected.
       // Not that there's anything about a watcher that would break the UI, it's just that we would receive unexpected events with ridiculous amounts.
       setTimeout(() => {
-        const { sourceId, patchSourceRequest } = req?.variables || {};
+        const { sourceId } = req?.variables || {};
 
-        updateSource(sourceId, patchSourceRequest);
         notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${sourceId.name}" source`, sourceId);
         removePendingItems([{ entityType: ENTITY_TYPES.SOURCE, entityId: sourceId }]);
-      }, 2000);
+      }, 1000);
     },
   });
 
+  useEffect(() => {
+    if (!sources.length && !sourcesPaginating) fetchSourcesPaginated();
+  }, []);
+
   return {
-    loading: cdState.loading || uState.loading,
     sources,
-    filteredSources: filtered,
+    sourcesLoading: isFetching || isFetchingById || sourcesPaginating || cdState.loading || uState.loading,
+    sourcesPaginating,
+    fetchSourcesPaginated,
+    fetchSourceById,
 
     persistSources: async (selectAppsList, futureSelectAppsList) => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        const entries = Object.entries(selectAppsList);
-
-        // this is to handle "on success" callback if there are no sources to persist,
-        // and to notify use if there are source to persist
-        let hasSources = false;
         let alreadyNotifiedSources = false;
         let alreadyNotifiedNamespaces = false;
 
-        for (const [namespace, sources] of entries) {
-          if (!!sources.length) {
-            hasSources = true;
+        const persistSourcesPayloads: SourceInstrumentInput[] = [];
+        const persistNamespacesPayloads: NamespaceInstrumentInput[] = [];
+
+        for (const [ns, items] of Object.entries(selectAppsList)) {
+          if (!!items.length) {
             if (!alreadyNotifiedSources) {
               alreadyNotifiedSources = true;
-              notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting sources...', undefined, true);
+              notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Persisting sources...', undefined, true);
+              setInstrumentAwait(true);
             }
+
+            // this is to map selected=undefined to selected=false
+            const mappedItems = items.map(({ name, kind, selected }) => ({ name, kind, selected: !selected ? false : true }));
+
+            const toDelete = mappedItems.filter((src) => !src.selected);
+            const toDeleteCount = toDelete.length;
+            const toAddCount = mappedItems.length - toDeleteCount;
+
+            const { sourcesToCreate, sourcesToDelete } = useInstrumentStore.getState();
+            setInstrumentCount('sourcesToDelete', sourcesToDelete + toDeleteCount);
+            setInstrumentCount('sourcesToCreate', (!!toAddCount && !!sources.length && !sourcesToCreate ? sources.length : 0) + sourcesToCreate + toAddCount);
+
+            // note: in other CRUD hooks we would use "addPendingItems" here, but for sources...
+            // we instantly remove deleted items, and newly added items are not relevant for pending state.
+            removePaginated(
+              ENTITY_TYPES.SOURCE,
+              toDelete.map(({ name, kind }) => ({ namespace: ns, name, kind })),
+            );
+
+            persistSourcesPayloads.push({ namespace: ns, sources: mappedItems });
           }
-
-          const addToPendingStore: PendingItem[] = [];
-
-          sources.forEach(({ name, kind }) => {
-            addToPendingStore.push({
-              entityType: ENTITY_TYPES.SOURCE,
-              entityId: { namespace, name, kind },
-            });
-          });
-
-          addPendingItems(addToPendingStore);
-          await persistSources({ variables: { namespace, sources } });
         }
 
-        for (const [namespace, futureSelected] of Object.entries(futureSelectAppsList)) {
+        for (const [ns, futureSelected] of Object.entries(futureSelectAppsList)) {
           if (!alreadyNotifiedSources && !alreadyNotifiedNamespaces) {
             alreadyNotifiedNamespaces = true;
-            notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Persisting namespaces...', undefined, true);
+            notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Persisting namespaces...', undefined, true);
+            // setInstrumentAwait(true);
           }
 
-          await persistNamespace({ name: namespace, futureSelected });
+          // TODO: estimate the number of sources to create, then uncomment "setInstrumentAwait" above
+
+          persistNamespacesPayloads.push({ name: ns, futureSelected });
         }
 
-        if (!hasSources) handleComplete('');
+        for await (const payload of persistSourcesPayloads) await persistSources({ variables: payload });
+        setConfiguredSources({});
+
+        for await (const payload of persistNamespacesPayloads) await persistNamespace(payload);
+        setConfiguredFutureApps({});
       }
     },
 
@@ -158,7 +198,7 @@ export const useSourceCRUD = (params?: Params): UseSourceCrudResponse => {
       if (config?.readonly) {
         notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
       } else {
-        notifyUser(NOTIFICATION_TYPE.INFO, 'Pending', 'Updating source...', undefined, true);
+        notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Updating source...', undefined, true);
         addPendingItems([{ entityType: ENTITY_TYPES.SOURCE, entityId: sourceId }]);
         await updateSourceName({ variables: { sourceId, patchSourceRequest: payload } });
       }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -30,6 +31,13 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 	var response model.GetConfigResponse
 
 	response.Readonly = IsReadonlyMode(ctx)
+
+	odigosDeployment, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		response.Tier = model.Tier(common.CommunityOdigosTier)
+	} else {
+		response.Tier = model.Tier(odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapTierKey])
+	}
 
 	if !isSourceCreated(ctx) && !isDestinationConnected(ctx) {
 		response.Installation = model.InstallationStatus(NewInstallation)
@@ -75,7 +83,19 @@ func isSourceCreated(ctx context.Context) bool {
 		}
 
 		if len(sourceList.Items) > 0 {
-			return true
+			allDisabled := true
+
+			for _, source := range sourceList.Items {
+				if !source.Spec.DisableInstrumentation {
+					// Found an enabled source, no need to keep checking
+					return true
+				}
+			}
+
+			// If we get here, all sources were disabled
+			if allDisabled {
+				continue
+			}
 		}
 	}
 

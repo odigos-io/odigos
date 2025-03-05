@@ -60,6 +60,55 @@ configured based on your installation mode:
          enabled: true
        ```
   </Tab>
+  <Tab title="Operator">
+       In the OpenShift console, navigate to **Operators** > **OperatorHub** and search for **Odigos**:
+
+       <Frame>
+        <img src="/images/operator/operator-2.png" />
+       </Frame>
+
+       Click **Install**:
+
+       <Frame>
+        <img src="/images/operator/operator-3.png" />
+       </Frame>
+
+       Choose a namespace to install the Operator in (this will be the same namespace that Odigos is installed in) and click **Install**:
+
+       <Frame>
+        <img src="/images/operator/operator-4.png" />
+       </Frame>
+
+       When installation is complete, click **View Operator**:
+
+       <Frame>
+        <img src="/images/operator/operator-5.png" />
+       </Frame>
+
+       Click **Create Instance** to create an `Odigos` custom resource:
+
+       <Frame>
+        <img src="/images/operator/operator-6.png" />
+       </Frame>
+
+       Fill out any necessary fields, for example your **On Prem Token** (for Odigos Enterprise), and check **openshiftEnabled**:
+
+       <Frame>
+        <img src="/images/operator/operator-7.png" />
+       </Frame>
+
+       Scroll down and click **Create**:
+
+       <Frame>
+        <img src="/images/operator/operator-8.png" />
+       </Frame>
+
+       Confirm that the Custom Resource has reached state `OdigosInstalled`:
+
+       <Frame>
+        <img src="/images/operator/operator-9.png" />
+       </Frame>
+  </Tab>
 </Tabs>
 
 OpenShift installation does the following:
@@ -75,3 +124,20 @@ from `registry.connect.redhat.com/odigos`. These images are based on
 the `-ubi9` suffix. These images are also hosted on the Odigos
 DockerHub registry, which you can deploy by setting `--openshift` with
 `--image-prefix docker.io/keyval`.
+
+### Exposing the Odigos UI via OpenShift Routes
+
+To access the Odigos UI in OpenShift, use either the standard `odigos
+ui` command or create a `Route` that exposes the `ui` service on your
+cluster's external address. For example:
+
+```
+oc expose service ui -n odigos-system
+```
+
+Then get the external address for the Route with `oc get routes ui -n
+odigos-system`.
+
+Check the OpenShift documentation or run `oc expose -h` for more
+information on configuring OpenShift routes according to your
+cluster's requirements.

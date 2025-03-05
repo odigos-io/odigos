@@ -18,14 +18,13 @@ import (
 )
 
 var instrumentationConfigAddedEventBatcher *EventBatcher
-var instrumentationConfigModifiedEventBatcher *EventBatcher
 var instrumentationConfigDeletedEventBatcher *EventBatcher
 
 func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) error {
 	instrumentationConfigAddedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     5 * time.Second,
+			Duration:     3 * time.Second,
 			Event:        sse.MessageEventAdded,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
@@ -37,25 +36,10 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 		},
 	)
 
-	instrumentationConfigModifiedEventBatcher = NewEventBatcher(
-		EventBatcherConfig{
-			MinBatchSize: 1,
-			Duration:     5 * time.Second,
-			Event:        sse.MessageEventModified,
-			CRDType:      consts.InstrumentationConfig,
-			SuccessBatchMessageFunc: func(count int, crdType string) string {
-				return fmt.Sprintf("Successfully updated %d sources", count)
-			},
-			FailureBatchMessageFunc: func(count int, crdType string) string {
-				return fmt.Sprintf("Failed to update %d sources", count)
-			},
-		},
-	)
-
 	instrumentationConfigDeletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     5 * time.Second,
+			Duration:     3 * time.Second,
 			Event:        sse.MessageEventDeleted,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
@@ -81,7 +65,6 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
 	defer instrumentationConfigAddedEventBatcher.Cancel()
-	defer instrumentationConfigModifiedEventBatcher.Cancel()
 	defer instrumentationConfigDeletedEventBatcher.Cancel()
 	for {
 		select {
@@ -114,7 +97,7 @@ func handleAddedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConf
 	}
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
-	data := fmt.Sprintf(`Source "%s" created`, name)
+	data := fmt.Sprintf(`Successfully created "%s" source`, name)
 	instrumentationConfigAddedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
 
@@ -127,8 +110,18 @@ func handleModifiedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationC
 	}
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
-	data := fmt.Sprintf(`Source "%s" updated`, name)
-	instrumentationConfigModifiedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
+	data := fmt.Sprintf(`Successfully updated "%s" source`, name)
+
+	// We have to ensure that the event is always an individual event - no batching.
+	// We need to do this because we have to get an event with the target ID, which is not possible with batching.
+	// We need the target ID to fetch the individual entity, instead of fetching all entities.
+	sse.SendMessageToClient(sse.SSEMessage{
+		Type:    sse.MessageTypeSuccess,
+		Event:   sse.MessageEventModified,
+		Data:    data,
+		CRDType: consts.InstrumentationConfig,
+		Target:  target,
+	})
 }
 
 func handleDeletedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConfig) {
@@ -140,6 +133,6 @@ func handleDeletedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationCo
 	}
 
 	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
-	data := fmt.Sprintf(`Source "%s" deleted`, name)
+	data := fmt.Sprintf(`Successfully deleted "%s" source`, name)
 	instrumentationConfigDeletedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }

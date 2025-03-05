@@ -1,18 +1,14 @@
 'use client';
+
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
-import { Stepper } from '@odigos/ui-components';
+import { SetupHeader } from '@/components';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
-import { OnboardingStepperWrapper } from '@/components';
-import SetupHeader from '@/components/lib-imports/setup-header';
 import { DestinationSelectionForm, useSetupStore } from '@odigos/ui-containers';
-import { useDestinationCategories, useDestinationCRUD, usePotentialDestinations, useSSE, useTestConnection } from '@/hooks';
+import { useDestinationCategories, useDestinationCRUD, usePotentialDestinations, useTestConnection } from '@/hooks';
 
 export default function Page() {
-  // call important hooks that should run on page-mount
-  useSSE();
-
   const router = useRouter();
   const { configuredSources } = useSetupStore();
 
@@ -27,18 +23,6 @@ export default function Page() {
   return (
     <>
       <SetupHeader entityType={ENTITY_TYPES.DESTINATION} isLoading={isLoading} setIsLoading={setIsLoading} />
-
-      <OnboardingStepperWrapper>
-        <Stepper
-          currentStep={3}
-          data={[
-            { stepNumber: 1, title: 'INSTALLATION' },
-            { stepNumber: 2, title: 'SOURCES' },
-            { stepNumber: 3, title: 'DESTINATIONS' },
-          ]}
-        />
-      </OnboardingStepperWrapper>
-
       <DestinationSelectionForm
         categories={categories}
         potentialDestinations={potentialDestinations}

@@ -44,6 +44,12 @@ enum InstallationStatus {
   FINISHED
 }
 
+enum Tier {
+  community
+  cloud
+  onprem
+}
+
 type SourceContainer {
   containerName: String!
   language: String!
@@ -226,6 +232,7 @@ type ComputePlatform {
   k8sActualNamespaces: [K8sActualNamespace]!
   k8sActualNamespace(name: String!): K8sActualNamespace
   sources(nextPage: String!): PaginatedSources!
+  source(sourceId: K8sSourceId!): K8sActualSource!
   destinations: [Destination!]!
   actions: [PipelineAction!]!
   instrumentationRules: [InstrumentationRule!]!
@@ -296,6 +303,7 @@ type Destination {
 
 type GetConfigResponse {
   installation: InstallationStatus!
+  tier: Tier!
   readonly: Boolean!
 }
 
@@ -618,21 +626,16 @@ type Query {
 
 type Mutation {
   updateApiToken(token: String!): Boolean!
-
   persistK8sNamespace(namespace: PersistNamespaceItemInput!): Boolean!
-
   persistK8sSources(namespace: String!, sources: [PersistNamespaceSourceInput!]!): Boolean!
   updateK8sActualSource(sourceId: K8sSourceId!, patchSourceRequest: PatchSourceRequestInput!): Boolean!
-
   createNewDestination(destination: DestinationInput!): Destination!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
   deleteDestination(id: ID!): Boolean!
   testConnectionForDestination(destination: DestinationInput!): TestConnectionResponse!
-
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
   deleteAction(id: ID!, actionType: String!): Boolean!
-
   createInstrumentationRule(instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
   updateInstrumentationRule(ruleId: ID!, instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
   deleteInstrumentationRule(ruleId: ID!): Boolean!

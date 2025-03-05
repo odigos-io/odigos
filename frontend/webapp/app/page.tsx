@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect } from 'react';
 import { ROUTES } from '@/utils';
 import { useConfig } from '@/hooks';

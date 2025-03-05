@@ -10,6 +10,10 @@ on:
 
 jobs:
   build-autoscaler:
+    name: build-autoscaler
+    strategy:
+      matrix:
+        dockerfile: ['Dockerfile', 'Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,7 +26,13 @@ jobs:
           push: false
           tags: autoscaler:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=autoscaler
+          file: ${{ matrix.dockerfile }}
+
   build-scheduler:
+    name: build-scheduler
+    strategy:
+      matrix:
+        dockerfile: ['Dockerfile', 'Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +45,13 @@ jobs:
           push: false
           tags: scheduler:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=scheduler
+          file: ${{ matrix.dockerfile }}
+
   build-and-test-instrumentor:
+    name: build-and-test-instrumentor
+    strategy:
+      matrix:
+        dockerfile: ['Dockerfile', 'Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,11 +67,17 @@ jobs:
           push: false
           tags: instrumentor:pr-${{ github.event.number }}
           build-args: SERVICE_NAME=instrumentor
+          file: ${{ matrix.dockerfile }}
       - name: run tests
         working-directory: ./instrumentor
         run: |
           make test
+
   build-and-test-odigos-collector:
+    name: build-and-test-odigos-collector
+    strategy:
+      matrix:
+        dockerfile: ['collector/Dockerfile', 'collector/Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -68,12 +90,17 @@ jobs:
           push: false
           tags: odigos-collector:pr-${{ github.event.number }}
           context: ./collector
-          file: collector/Dockerfile
+          file: ${{ matrix.dockerfile }}
       - name: run tests
         working-directory: ./collector
         run: |
           make test
+
   build-and-test-odiglet:
+    name: build-and-test-odiglet
+    strategy:
+      matrix:
+        dockerfile: ['odiglet/Dockerfile', 'odiglet/Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -85,7 +112,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
-          file: odiglet/Dockerfile
+          file: ${{ matrix.dockerfile }}
           context: .
           push: false
           tags: odiglet:pr-${{ github.event.number }}
@@ -96,7 +123,12 @@ jobs:
         working-directory: ./odiglet
         run: |
           make test
+
   build-frontend:
+    name: build-frontend
+    strategy:
+      matrix:
+        dockerfile: ['frontend/Dockerfile', 'frontend/Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -106,10 +138,29 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
-          file: frontend/Dockerfile
+          file: ${{ matrix.dockerfile }}
           context: .
           push: false
           tags: frontend:pr-${{ github.event.number }}
+
+  build-operator:
+    name: build-operator
+    strategy:
+      matrix:
+        dockerfile: ['operator/Dockerfile', 'operator/Dockerfile.rhel']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Operator Image
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64,linux/arm64
+          file: ${{ matrix.dockerfile }}
+          context: .
+          push: false
+          tags: operator:pr-${{ github.event.number }}
 
   build-cli:
     runs-on: ubuntu-latest
