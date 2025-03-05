@@ -388,20 +388,6 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-components@^0.0.92":
-  version "0.0.92"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.92.tgz#c1470f7ad0550d78417299e9c92004d403f8387e"
-  integrity sha512-OmZeZ2gsqEK/6bMTmUL4HsVzl1znuwz/6WGZZq3CgRFwIYYLRPJpKRRRyhSvJ5h6Pk/lxKl52fdUJZuS2RXm3g==
-  dependencies:
-    "@odigos/ui-icons" "^0.0.14"
-    "@odigos/ui-theme" "^0.0.16"
-    "@odigos/ui-utils" "^0.0.44"
-    prism-react-renderer "^2.4.1"
-    react "^19.0.0"
-    react-dom "^19.0.0"
-    react-lottie "^1.2.10"
-    styled-components "^6.1.15"
-
 "@odigos/ui-components@^0.0.93":
   version "0.0.93"
   resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.93.tgz#6948dc5a59a114fb26674cee1dc49d64bf7761ff"
@@ -416,12 +402,12 @@
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
-"@odigos/ui-containers@^0.0.81":
-  version "0.0.81"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.81.tgz#c1848eacaaf190f805a312fe89cdf932112232ba"
-  integrity sha512-E/KIxD2ASXAfaD/fMoVrISbcmU2Op3XTvIJAuj3xbstPaveugYaW1E2RNkcfHMZ/vqlhO17Metwt4NtoeGsoTQ==
+"@odigos/ui-containers@^0.0.82":
+  version "0.0.82"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.82.tgz#8ec8efa5b2cd77d222648c93a9d7a60107b2095c"
+  integrity sha512-2mb8BN4Q+hLMLHwzq9NTqBKpMrBEvci+Gj4i/49NVsivdtFfIeJQI03USxQ1wfvmp7zUassqfj2ESAMFtQ1qgA==
   dependencies:
-    "@odigos/ui-components" "^0.0.92"
+    "@odigos/ui-components" "^0.0.93"
     "@odigos/ui-icons" "^0.0.14"
     "@odigos/ui-theme" "^0.0.16"
     "@odigos/ui-utils" "^0.0.44"
