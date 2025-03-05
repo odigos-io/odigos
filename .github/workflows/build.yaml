@@ -19,6 +19,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Docker layer caching
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-autoscaler-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-autoscaler-
       - name: Build Autoscaler Image
         uses: docker/build-push-action@v6
         with:
@@ -30,6 +37,12 @@ jobs:
           build-args: SERVICE_NAME=autoscaler
           file: ${{ matrix.dockerfile }}
           outputs: ${{ matrix.dockerfile == 'Dockerfile' && 'type=oci,dest=/tmp/autoscaler.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         if: matrix.dockerfile == 'Dockerfile'
@@ -47,6 +60,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Docker layer caching
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-scheduler-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-scheduler-
       - name: Build Scheduler Image
         uses: docker/build-push-action@v6
         with:
@@ -58,6 +78,12 @@ jobs:
           build-args: SERVICE_NAME=scheduler
           file: ${{ matrix.dockerfile }}
           outputs: ${{ matrix.dockerfile == 'Dockerfile' && 'type=oci,dest=/tmp/scheduler.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         if: matrix.dockerfile == 'Dockerfile'
@@ -78,6 +104,16 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23.0'
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+      - name: Docker layer caching
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-instrumentor-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-instrumentor-
       - name: Build Instrumentor Image
         uses: docker/build-push-action@v6
         with:
@@ -89,6 +125,12 @@ jobs:
           build-args: SERVICE_NAME=instrumentor
           file: ${{ matrix.dockerfile }}
           outputs: ${{ matrix.dockerfile == 'Dockerfile' && 'type=oci,dest=/tmp/instrumentor.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: run tests
         working-directory: ./instrumentor
         run: |
@@ -110,6 +152,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Docker layer caching
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-collector-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-collector-
       - name: build Odigos Collector Image
         uses: docker/build-push-action@v6
         with:
@@ -121,6 +170,12 @@ jobs:
           context: ./collector
           file: ${{ matrix.dockerfile }}
           outputs: ${{ matrix.dockerfile == 'collector/Dockerfile' && 'type=oci,dest=/tmp/odigos-collector.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: run tests
         working-directory: ./collector
         run: |
@@ -142,12 +197,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Docker layer caching
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-odiglet-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-odiglet-
+      - name: Cache build dependencies
+        uses: actions/cache@v3
+        with:
+          path: /var/cache/apt
+          key: ${{ runner.os }}-apt-cache-${{ hashFiles('**/apt-packages.txt') }}
       - name: Build Odiglet Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: ${{ matrix.dockerfile }}
           context: .
           push: false
@@ -155,6 +220,12 @@ jobs:
             odiglet:pr-${{ github.event.number }}
             odiglet:e2e-test
           outputs: ${{ matrix.dockerfile == 'odiglet/Dockerfile' && 'type=oci,dest=/tmp/odiglet.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev
@@ -179,6 +250,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Docker layer caching
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-frontend-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-frontend-
       - name: Build Frontend Image
         uses: docker/build-push-action@v6
         with:
@@ -190,6 +268,12 @@ jobs:
             frontend:pr-${{ github.event.number }}
             frontend:e2e-test
           outputs: ${{ matrix.dockerfile == 'frontend/Dockerfile' && 'type=oci,dest=/tmp/frontend.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         if: matrix.dockerfile == 'frontend/Dockerfile'
@@ -207,6 +291,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Docker layer caching
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-operator-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-operator-
       - name: Build Operator Image
         uses: docker/build-push-action@v6
         with:
@@ -218,6 +309,12 @@ jobs:
             operator:pr-${{ github.event.number }}
             operator:e2e-test
           outputs: ${{ matrix.dockerfile == 'operator/Dockerfile' && 'type=oci,dest=/tmp/operator.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         if: matrix.dockerfile == 'operator/Dockerfile'
@@ -253,6 +350,9 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23.0'
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
       - name: Test k8sutils module
         working-directory: ./k8sutils
         run: |
@@ -265,6 +365,9 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23.0'
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
       - name: Test common module
         working-directory: ./common
         run: |
@@ -277,6 +380,9 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23.0'
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
       - name: Test procdiscovery module
         working-directory: ./procdiscovery
         run: |
