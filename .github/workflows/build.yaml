@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -42,7 +42,7 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -70,7 +70,7 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -105,7 +105,7 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['collector/Dockerfile', 'collector/Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -137,7 +137,7 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['odiglet/Dockerfile', 'odiglet/Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -174,7 +174,7 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['frontend/Dockerfile', 'frontend/Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -202,7 +202,7 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['operator/Dockerfile', 'operator/Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -226,7 +226,7 @@ jobs:
           path: /tmp/operator.tar
 
   build-cli:
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
@@ -245,7 +245,7 @@ jobs:
           path: dist/odigos_linux_amd64_v1/odigos
 
   test-k8sutils:
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -257,7 +257,7 @@ jobs:
           go test -v ./...
 
   test-common:
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -269,7 +269,7 @@ jobs:
           make test
 
   test-procdiscovery:
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
