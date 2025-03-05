@@ -9,7 +9,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -53,26 +52,5 @@ func reconcileWorkload(
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	podWorkload := k8sconsts.PodWorkload{
-		Name:      key.Name,
-		Namespace: key.Namespace,
-		Kind:      objKind,
-	}
-
-	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if enabled {
-		return syncInstrumentWorkload(
-			ctx,
-			k8sClient,
-			podWorkload,
-			scheme)
-	}
-	return syncUninstrumentWorkload(
-		ctx,
-		k8sClient,
-		podWorkload,
-		scheme)
+	return syncWorkload(ctx, k8sClient, scheme, obj)
 }

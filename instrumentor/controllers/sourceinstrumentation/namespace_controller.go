@@ -19,8 +19,6 @@ package sourceinstrumentation
 import (
 	"context"
 
-	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -43,21 +41,5 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	var reconcileFunc reconcileFunction
-	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, &ns)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if enabled {
-		reconcileFunc = syncInstrumentWorkload
-	} else {
-		reconcileFunc = syncUninstrumentWorkload
-	}
-
-	return syncNamespaceWorkloads(
-		ctx,
-		r.Client,
-		r.Scheme,
-		ns.GetName(),
-		reconcileFunc)
+	return syncNamespaceWorkloads(ctx, r.Client, r.Scheme, ns.GetName())
 }

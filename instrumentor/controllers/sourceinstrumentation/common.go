@@ -3,15 +3,12 @@ package sourceinstrumentation
 import (
 	"context"
 	"errors"
-	"slices"
-	"time"
 
 	v1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,20 +22,11 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
-type workloadKindSourceMap map[k8sconsts.WorkloadKind]map[string]*v1alpha1.Source
-type reconcileFunction func(context.Context, client.Client, k8sconsts.PodWorkload, *runtime.Scheme) (ctrl.Result, error)
-
 func syncNamespaceWorkloads(
 	ctx context.Context,
 	k8sClient client.Client,
 	runtimeScheme *runtime.Scheme,
-	namespace string,
-	reconcileFunc reconcileFunction) (ctrl.Result, error) {
-
-	namespaceKindSources, err := getWorkloadSourcesInNamespace(ctx, k8sClient, namespace)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
+	namespace string) (ctrl.Result, error) {
 
 	collectiveRes := ctrl.Result{}
 	var errs error
@@ -54,77 +42,55 @@ func syncNamespaceWorkloads(
 			continue
 		}
 
-		objectKeys := make([]client.ObjectKey, 0)
+		objects := make([]client.Object, 0)
 		switch obj := workloadObjects.(type) {
 		case *v1.DeploymentList:
 			for _, dep := range obj.Items {
-				objectKeys = append(objectKeys, client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace})
+				objects = append(objects, &dep)
 			}
 		case *v1.DaemonSetList:
 			for _, ds := range obj.Items {
-				objectKeys = append(objectKeys, client.ObjectKey{Name: ds.Name, Namespace: ds.Namespace})
+				objects = append(objects, &ds)
 			}
 		case *v1.StatefulSetList:
 			for _, ss := range obj.Items {
-				objectKeys = append(objectKeys, client.ObjectKey{Name: ss.Name, Namespace: ss.Namespace})
+				objects = append(objects, &ss)
 			}
 		}
 
-		for _, key := range objectKeys {
-			// For namespace instrumentation, we only want to reconcile workloads that don't have their own explicit Source object because:
-			// For instrumentation:
-			//  - settings in Workload Sources take priority over settings in Namespace Sources
-			//  - disabled Workload Sources prevent instrumentation
-			// For uninstrumentation:
-			//  - explicit Workload Sources should preserve instrumentation settings if the namespace is uninstrumented
-			// TODO: The semantics of this may change for automatically created Sources (such as the UI, source grouping, non-instrumenting sources, etc)
-			if _, exists := namespaceKindSources[kind][key.Name]; !exists {
-				res, err := reconcileFunc(ctx, k8sClient, k8sconsts.PodWorkload{Name: key.Name, Namespace: key.Namespace, Kind: kind}, runtimeScheme)
-				if err != nil {
-					errs = errors.Join(errs, err)
-				}
-				if res.Requeue {
-					collectiveRes = res
-				}
+		for _, obj := range objects {
+			res, err := syncWorkload(ctx, k8sClient, runtimeScheme, obj)
+			if err != nil {
+				errs = errors.Join(errs, err)
+			}
+			if res.Requeue {
+				collectiveRes = res
 			}
 		}
 	}
 	return collectiveRes, errs
 }
 
-func syncUninstrumentWorkload(
-	ctx context.Context,
-	k8sClient client.Client,
-	podWorkload k8sconsts.PodWorkload,
-	scheme *runtime.Scheme) (ctrl.Result, error) {
-	obj := workload.ClientObjectFromWorkloadKind(podWorkload.Kind)
-	err := k8sClient.Get(ctx, client.ObjectKey{Name: podWorkload.Name, Namespace: podWorkload.Namespace}, obj)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	instrumented, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if !instrumented {
-		err = errors.Join(err, deleteWorkloadInstrumentationConfig(ctx, k8sClient, podWorkload))
-	}
-	return ctrl.Result{}, err
-}
-
-func syncInstrumentWorkload(
-	ctx context.Context,
-	k8sClient client.Client,
-	podWorkload k8sconsts.PodWorkload,
-	scheme *runtime.Scheme) (ctrl.Result, error) {
-
+// syncWorkload checks if the given client.Object is instrumented by a Source.
+// If not, it will attempt to delete any InstrumentationConfig for the Object.
+// If it is instrumented, it will attempt to create an InstrumentationConfig if one does not exist,
+// or update the existing InstrumentationConfig if necessary.
+func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, obj client.Object) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	obj := workload.ClientObjectFromWorkloadKind(podWorkload.Kind)
-	err := k8sClient.Get(ctx, client.ObjectKey{Name: podWorkload.Name, Namespace: podWorkload.Namespace}, obj)
+	enabled, markedForInstrumentationCondition, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
 	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, err
+	}
+
+	podWorkload := k8sconsts.PodWorkload{
+		Name:      obj.GetName(),
+		Namespace: obj.GetNamespace(),
+		Kind:      k8sconsts.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
+	}
+
+	if !enabled {
+		return ctrl.Result{}, deleteWorkloadInstrumentationConfig(ctx, k8sClient, podWorkload)
 	}
 
 	workloadObj, err := workload.ObjectToWorkload(obj)
@@ -132,23 +98,14 @@ func syncInstrumentWorkload(
 		return ctrl.Result{}, err
 	}
 
-	enabled, markedForInstrumentationCondition, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if !enabled {
-		return ctrl.Result{}, nil
-	}
-
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
-	ic, err := createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, podWorkload.Namespace, obj, scheme)
+	ic := &v1alpha1.InstrumentationConfig{}
+	err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: podWorkload.Namespace}, ic)
 	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if ic == nil {
-		ic = &v1alpha1.InstrumentationConfig{}
-		err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: podWorkload.Namespace}, ic)
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, podWorkload.Namespace, obj, scheme)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -207,73 +164,6 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 	return &instConfig, nil
 }
 
-func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig, workloadObj workload.Workload) bool {
-	if meta.FindStatusCondition(ic.Status.Conditions, v1alpha1.RuntimeDetectionStatusConditionType) != nil {
-		// avoid adding the condition if it already exists
-		return false
-	}
-
-	// migration code, add this condition to previous instrumentation configs
-	// which were created before this condition was introduced
-	if len(ic.Status.RuntimeDetailsByContainer) > 0 {
-		ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
-			Type:               v1alpha1.RuntimeDetectionStatusConditionType,
-			Status:             metav1.ConditionTrue,
-			Reason:             string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
-			Message:            "runtime detection completed successfully",
-			LastTransitionTime: metav1.NewTime(time.Now()),
-		})
-		return true
-	}
-
-	// if the workload has no available replicas, we can't detect the runtime
-	if workloadObj.AvailableReplicas() == 0 {
-		ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
-			Type:               v1alpha1.RuntimeDetectionStatusConditionType,
-			Status:             metav1.ConditionFalse,
-			Reason:             string(v1alpha1.RuntimeDetectionReasonNoRunningPods),
-			Message:            "No running pods available to detect source runtime",
-			LastTransitionTime: metav1.NewTime(time.Now()),
-		})
-		return true
-	}
-
-	ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
-		Type:               v1alpha1.RuntimeDetectionStatusConditionType,
-		Status:             metav1.ConditionUnknown,
-		Reason:             string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
-		Message:            "Waiting for odiglet to initiate runtime detection in a node with running pod",
-		LastTransitionTime: metav1.NewTime(time.Now()),
-	})
-
-	return true
-}
-
-func initiateAgentEnabledConditionIfMissing(ic *v1alpha1.InstrumentationConfig) bool {
-	if meta.FindStatusCondition(ic.Status.Conditions, v1alpha1.AgentEnabledStatusConditionType) != nil {
-		// avoid adding the condition if it already exists
-		return false
-	}
-
-	ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
-		Type:               v1alpha1.AgentEnabledStatusConditionType,
-		Status:             metav1.ConditionUnknown,
-		Reason:             string(v1alpha1.AgentEnabledReasonWaitingForRuntimeInspection),
-		Message:            "Waiting for runtime detection to complete",
-		LastTransitionTime: metav1.NewTime(time.Now()),
-	})
-
-	return true
-}
-
-// giving the input conditions array, this function will return a new array with the conditions sorted by logical order
-func sortIcConditionsByLogicalOrder(conditions []metav1.Condition) []metav1.Condition {
-	slices.SortFunc(conditions, func(i, j metav1.Condition) int {
-		return v1alpha1.StatusConditionTypeLogicalOrder(i.Type) - v1alpha1.StatusConditionTypeLogicalOrder(j.Type)
-	})
-	return conditions
-}
-
 func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Client, podWorkload k8sconsts.PodWorkload) error {
 	logger := log.FromContext(ctx)
 	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
@@ -291,52 +181,4 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 	logger.V(1).Info("deleted instrumentationconfig", "name", instrumentationConfigName, "namespace", podWorkload.Namespace)
 
 	return nil
-}
-
-func getWorkloadSourcesInNamespace(ctx context.Context, k8sClient client.Client, namespace string) (workloadKindSourceMap, error) {
-	// pre-process existing Sources for specific workloads so we don't have to make a bunch of API calls
-	// This is used to check if a workload already has an explicit Source, so we don't overwrite its InstrumentationConfig
-	sourceList := v1alpha1.SourceList{}
-	// Filter out Namespace Sources, this function just checks for duplicate Workload Sources
-	nonNamespaceKind, err := labels.NewRequirement(k8sconsts.WorkloadKindLabel, selection.NotIn, []string{string(k8sconsts.WorkloadKindNamespace)})
-	if err != nil {
-		return nil, err
-	}
-	namespaceSelector, err := labels.NewRequirement(k8sconsts.WorkloadNamespaceLabel, selection.In, []string{namespace})
-	if err != nil {
-		return nil, err
-	}
-	labelSelector := labels.NewSelector().Add(*nonNamespaceKind).Add(*namespaceSelector)
-	err = k8sClient.List(ctx, &sourceList, client.InNamespace(namespace), &client.ListOptions{LabelSelector: labelSelector})
-	if err != nil {
-		return nil, err
-	}
-	namespaceKindSources := make(workloadKindSourceMap)
-	// Initialize sub-maps for all 3 kinds
-	namespaceKindSources[k8sconsts.WorkloadKindDaemonSet] = make(map[string]*v1alpha1.Source)
-	namespaceKindSources[k8sconsts.WorkloadKindDeployment] = make(map[string]*v1alpha1.Source)
-	namespaceKindSources[k8sconsts.WorkloadKindStatefulSet] = make(map[string]*v1alpha1.Source)
-	for _, s := range sourceList.Items {
-		// ex: map["Deployment"]["my-app"] = ...
-		namespaceKindSources[s.Spec.Workload.Kind][s.Spec.Workload.Name] = &s
-	}
-	return namespaceKindSources, nil
-}
-
-// SourceStatePermitsInstrumentation returns true if a Source:
-// 1) Inclusive AND NOT terminating, or
-// 2) Exclusive AND terminating
-// This shows whether the Source and its state make it possible for the Source's workload to be instrumented.
-// In general, this determines whether controllers should take an "instrumentation" or "uninstrumentation" path.
-//
-// However, this function alone does not guarantee that the Source's workload _will_ be instrumented, for example:
-//   - A terminating Disabled Source does not mean there is another, non-terminating, inclusive Source for the workload.
-//     Therefore, in that case you must check to see if there is another Source for the workload.
-//   - A non-terminating Enabled Namespace Source could still have specific Workloads disabled by their own Workload Sources.
-//
-// This function is meant to be used as a basic filter for the top level instrumentor controllers
-// (which are triggered by an event for only a single Source).
-// Individual workloads should have their instrumentation state verified before acting on them.
-func SourceStatePermitsInstrumentation(source *v1alpha1.Source) bool {
-	return v1alpha1.IsDisabledSource(source) == k8sutils.IsTerminating(source)
 }
