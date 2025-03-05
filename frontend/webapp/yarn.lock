@@ -402,6 +402,20 @@
     react-lottie "^1.2.10"
     styled-components "^6.1.15"
 
+"@odigos/ui-components@^0.0.93":
+  version "0.0.93"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-components/-/ui-components-0.0.93.tgz#6948dc5a59a114fb26674cee1dc49d64bf7761ff"
+  integrity sha512-YockQfEk4oRuGkkIETJDop9Pn6iXc+saDA19EfXa2HoE86jpXv7qb0ed/vNrPX8NosFRxXypsWQaH1b0K7TwUw==
+  dependencies:
+    "@odigos/ui-icons" "^0.0.14"
+    "@odigos/ui-theme" "^0.0.16"
+    "@odigos/ui-utils" "^0.0.44"
+    prism-react-renderer "^2.4.1"
+    react "^19.0.0"
+    react-dom "^19.0.0"
+    react-lottie "^1.2.10"
+    styled-components "^6.1.15"
+
 "@odigos/ui-containers@^0.0.81":
   version "0.0.81"
   resolved "https://registry.yarnpkg.com/@odigos/ui-containers/-/ui-containers-0.0.81.tgz#c1848eacaaf190f805a312fe89cdf932112232ba"
