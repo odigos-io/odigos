@@ -16,11 +16,11 @@ jobs:
   wait-for-build:
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for build workflow
+      - name: Wait for build jobs
         uses: lewagon/wait-on-check-action@v1.3.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          check-name: build-cli
+          check-regexp: "build.*"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
 
@@ -84,6 +84,9 @@ jobs:
           pattern: '*-image'
           path: /tmp/images
           merge-multiple: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: build.yaml
+          run-attempt: completed
 
       - name: Load Images to Kind
         run: |
