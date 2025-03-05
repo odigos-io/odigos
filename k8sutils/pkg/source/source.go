@@ -8,6 +8,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -93,4 +94,16 @@ func OtelServiceNameBySource(ctx context.Context, k8sClient client.Client, obj c
 	}
 
 	return "", nil
+}
+
+// GetClientObjectFromSource returns the client.Object reference by the Source's spec.workload
+// field, if the object exists.
+func GetClientObjectFromSource(ctx context.Context, kubeClient client.Client, source *odigosv1.Source) (client.Object, error) {
+	obj := workload.ClientObjectFromWorkloadKind(source.Spec.Workload.Kind)
+	err := kubeClient.Get(ctx, client.ObjectKey{Name: source.Spec.Workload.Name, Namespace: source.Spec.Workload.Namespace}, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return obj, nil
 }

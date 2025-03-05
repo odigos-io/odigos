@@ -40,7 +40,7 @@ require (
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/odigos-io/odigos/api v0.0.0 // indirect
 	github.com/odigos-io/odigos/common v0.0.0 // indirect
-	github.com/odigos-io/odigos/k8sutils v0.0.0 // indirect
+	github.com/odigos-io/odigos/k8sutils v1.0.159 // indirect
 	github.com/odigos-io/odigos/profiles v0.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect

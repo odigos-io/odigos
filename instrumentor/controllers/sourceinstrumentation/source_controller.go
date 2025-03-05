@@ -13,6 +13,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
@@ -24,47 +25,41 @@ type SourceReconciler struct {
 func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	source := &v1alpha1.Source{}
-	err := r.Get(ctx, req.NamespacedName, source)
+	var err error
+	err = r.Get(ctx, req.NamespacedName, source)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	logger.Info("Reconciling Source object", "name", req.Name, "namespace", req.Namespace, "workload-kind", source.Spec.Workload.Kind, "workload-name", source.Spec.Workload.Name)
 
-	var reconcileFunc reconcileFunction
-	var action string
-	if SourceStatePermitsInstrumentation(source) {
-		reconcileFunc = syncInstrumentWorkload
-		action = "enable instrumentation"
-	} else {
-		reconcileFunc = syncUninstrumentWorkload
-		action = "disable instrumentation"
-	}
-
-	logger.Info("Reconciling Source object", "name", req.Name, "namespace", req.Namespace, "action", action, "workload-kind", source.Spec.Workload.Kind, "workload-name", source.Spec.Workload.Name)
-
-	// Sync based on the Source object's workload kind
 	var result ctrl.Result
 	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
-		result, err = syncNamespaceWorkloads(
-			ctx,
-			r.Client,
-			r.Scheme,
-			source.Spec.Workload.Namespace,
-			reconcileFunc)
+		result, err = syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Namespace)
 	} else {
-		result, err = reconcileFunc(
-			ctx,
-			r.Client,
-			source.Spec.Workload,
-			r.Scheme)
+		// Get the object referenced by the Source to check whether the workload is being actively instrumented.
+		// The Source itself doesn't have enough information about the global state of this workload:
+		// For example, a deleted Workload Source might still be covered by a Namespace Source.
+		var obj client.Object
+		obj, err = sourceutils.GetClientObjectFromSource(ctx, r.Client, source)
+		if err != nil {
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+		result, err = syncWorkload(ctx, r.Client, r.Scheme, obj)
 	}
-
 	// We could get a non-error Requeue signal from the reconcile functions,
 	// such as a conflict updating the instrumentationconfig status
-	if result.Requeue || !apierrors.IsNotFound(err) {
+	if !result.IsZero() || !apierrors.IsNotFound(err) {
 		return result, err
 	}
 
 	if k8sutils.IsTerminating(source) {
+		// Migration: Remove old finalizers if present, these will be removed
+		if controllerutil.ContainsFinalizer(source, k8sconsts.StartLangDetectionFinalizer) {
+			controllerutil.RemoveFinalizer(source, k8sconsts.StartLangDetectionFinalizer)
+		}
+		if controllerutil.ContainsFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer) {
+			controllerutil.RemoveFinalizer(source, k8sconsts.DeleteInstrumentationConfigFinalizer)
+		}
 		if controllerutil.ContainsFinalizer(source, k8sconsts.SourceInstrumentationFinalizer) {
 			controllerutil.RemoveFinalizer(source, k8sconsts.SourceInstrumentationFinalizer)
 		}
