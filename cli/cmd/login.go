@@ -15,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -80,7 +81,7 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 		odigosCloudApiKeyFlag = scanner.Text()
 	}
 
-	err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
+	err = VerifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
 	if err != nil {
 		fmt.Println("Odigos cloud login failed - invalid api-key format.")
 		os.Exit(1)
@@ -97,7 +98,7 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 	}
 	isPrevOdigosCloud := currentTier == common.CloudOdigosTier
 
-	resourceManagers := resources.CreateResourceManagers(client, ns, common.CloudOdigosTier, &odigosCloudApiKeyFlag, config, currentOdigosVersion)
+	resourceManagers := resources.CreateResourceManagers(client, ns, common.CloudOdigosTier, &odigosCloudApiKeyFlag, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli)
 	err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 	if err != nil {
 		fmt.Println("Odigos cloud login failed - unable to apply Odigos resources.")

@@ -3,7 +3,7 @@ name: Publish Images to Artifact Registry
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
@@ -18,32 +18,36 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui']
+        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator']
         include:
           - service: autoscaler
             runner: ubuntu-latest
-            summary: "Autoscaler for Odigos"
-            description: "Autoscaler manages the installation of Odigos components."
+            summary: 'Autoscaler for Odigos'
+            description: 'Autoscaler manages the installation of Odigos components.'
           - service: scheduler
             runner: ubuntu-latest
-            summary: "Scheduler for Odigos"
-            description: "Scheduler manages the installation of OpenTelemetry Collectors with Odigos."
+            summary: 'Scheduler for Odigos'
+            description: 'Scheduler manages the installation of OpenTelemetry Collectors with Odigos.'
           - service: instrumentor
             runner: ubuntu-latest
-            summary: "Instrumentor for Odigos"
-            description: "Instrumentor manages auto-instrumentation for workloads with Odigos."
+            summary: 'Instrumentor for Odigos'
+            description: 'Instrumentor manages auto-instrumentation for workloads with Odigos.'
           - service: collector
             runner: large-runner
-            summary: "Odigos Collector"
-            description: "The Odigos build of the OpenTelemetry Collector."
+            summary: 'Odigos Collector'
+            description: 'The Odigos build of the OpenTelemetry Collector.'
           - service: odiglet
             runner: ubuntu-latest
-            summary: "Odiglet for Odigos"
-            description: "Odiglet is the core component of Odigos managing auto-instrumentation. This image requires a root user to load and manage eBPF programs."
+            summary: 'Odiglet for Odigos'
+            description: 'Odiglet is the core component of Odigos managing auto-instrumentation. This image requires a root user to load and manage eBPF programs.'
           - service: ui
             runner: ubuntu-latest
-            summary: "UI for Odigos"
-            description: "UI provides the frontend webapp for managing an Odigos installation."
+            summary: 'UI for Odigos'
+            description: 'UI provides the frontend webapp for managing an Odigos installation.'
+          - service: operator
+            runner: ubuntu-latest
+            summary: 'Odigos Operator'
+            description: 'The Odigos Operator installs and manages Odigos in a cluster'
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
@@ -67,7 +71,7 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           access_token_lifetime: 1200s
-        
+
       - name: Login to Artifact Registry
         uses: docker/login-action@v3
         with:
@@ -94,6 +98,7 @@ jobs:
             ${{ matrix.service == 'odiglet' && format('odiglet/{0}', matrix.dockerfile) ||
                 matrix.service == 'collector' && format('collector/{0}', matrix.dockerfile) ||
                 matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
+                matrix.service == 'operator' && format('operator/{0}', matrix.dockerfile) ||
                 matrix.dockerfile }}
           context: >-
             ${{

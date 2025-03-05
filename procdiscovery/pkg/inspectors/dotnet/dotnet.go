@@ -13,6 +13,8 @@ type DotnetInspector struct{}
 
 const processName = "dotnet"
 
+const processName = "dotnet"
+
 func (d *DotnetInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	if strings.HasPrefix(filepath.Base(pcx.ExePath), processName) {
 		return common.DotNetProgrammingLanguage, true

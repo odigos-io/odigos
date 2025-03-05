@@ -3,7 +3,9 @@ package main
 import (
 	"os"
 
+	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/odiglet"
+	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -47,7 +49,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	o, err := odiglet.New(clientset, deviceInjectionCallbacks(), ebpfInstrumentationFactories())
+	dg, err := distros.NewCommunityGetter()
+	if err != nil {
+		log.Logger.Error(err, "Failed to create distro getter")
+		os.Exit(1)
+	}
+
+	instrumentationManagerOptions := ebpf.InstrumentationManagerOptions{
+		Factories:          ebpfInstrumentationFactories(),
+		DistributionGetter: dg,
+	}
+
+	o, err := odiglet.New(clientset, deviceInjectionCallbacks(), instrumentationManagerOptions)
 	if err != nil {
 		log.Logger.Error(err, "Failed to initialize odiglet")
 		os.Exit(1)

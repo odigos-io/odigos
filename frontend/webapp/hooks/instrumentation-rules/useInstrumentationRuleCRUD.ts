@@ -1,95 +1,102 @@
-import { useMemo } from 'react';
+import { useEffect } from 'react';
 import { useConfig } from '../config';
-import { type ComputePlatform } from '@/@types';
+import { usePaginatedStore } from '@/store';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
-import { useMutation, useQuery } from '@apollo/client';
+import { useLazyQuery, useMutation } from '@apollo/client';
+import type { FetchedInstrumentationRule } from '@/@types';
 import { type InstrumentationRuleFormData, useNotificationStore } from '@odigos/ui-containers';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
-import { CRUD, deriveTypeFromRule, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { CRUD, deriveTypeFromRule, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, InstrumentationRule, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
-interface Params {
-  onSuccess?: (type: string) => void;
-  onError?: (type: string) => void;
+interface UseInstrumentationRuleCrud {
+  instrumentationRules: InstrumentationRule[];
+  instrumentationRulesLoading: boolean;
+  fetchInstrumentationRules: () => void;
+  createInstrumentationRule: (instrumentationRule: InstrumentationRuleFormData) => void;
+  updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleFormData) => void;
+  deleteInstrumentationRule: (ruleId: string) => void;
 }
 
-export const useInstrumentationRuleCRUD = (params?: Params) => {
+const mapFetched = (items: FetchedInstrumentationRule[]): InstrumentationRule[] => {
+  return items.map((item) => {
+    const type = deriveTypeFromRule(item);
+
+    return { ...item, type };
+  });
+};
+
+export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
   const { data: config } = useConfig();
-  const { addNotification, removeNotifications } = useNotificationStore();
+  const { addNotification } = useNotificationStore();
+  const { instrumentationRulesPaginating, setPaginating, instrumentationRules, addPaginated, removePaginated } = usePaginatedStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
-    addNotification({
-      type,
-      title,
-      message,
-      crdType: ENTITY_TYPES.INSTRUMENTATION_RULE,
-      target: id ? getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE) : undefined,
-      hideFromHistory,
-    });
+    addNotification({ type, title, message, crdType: ENTITY_TYPES.INSTRUMENTATION_RULE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE) : undefined, hideFromHistory });
   };
 
-  const handleError = (actionType: string, message: string) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, actionType, message);
-    params?.onError?.(actionType);
-  };
-
-  const handleComplete = (actionType: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION_TYPE.SUCCESS, actionType, message, id);
-    refetch();
-    params?.onSuccess?.(actionType);
-  };
-
-  // Fetch data
-  const { data, loading, refetch } = useQuery<ComputePlatform>(GET_INSTRUMENTATION_RULES, {
-    onError: (error) => handleError(error.name || CRUD.READ, error.cause?.message || error.message),
+  const [fetchAll, { loading: isFetching }] = useLazyQuery<{ computePlatform?: { instrumentationRules?: FetchedInstrumentationRule[] } }>(GET_INSTRUMENTATION_RULES, {
+    fetchPolicy: 'cache-and-network',
   });
 
-  // Map fetched data
-  const mapped = useMemo(() => {
-    return (data?.computePlatform?.instrumentationRules || []).map((item) => {
-      const type = deriveTypeFromRule(item);
-      return { ...item, type };
-    });
-  }, [data]);
+  const fetchInstrumentationRules = async () => {
+    setPaginating(ENTITY_TYPES.INSTRUMENTATION_RULE, true);
+    const { error, data } = await fetchAll();
 
-  // Filter mapped data
-  const filtered = mapped; // no filters for rules yet, TBA in future
+    if (!!error) {
+      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
+    } else if (!!data?.computePlatform?.instrumentationRules) {
+      const { instrumentationRules: items } = data.computePlatform;
 
-  const [createInstrumentationRule, cState] = useMutation<{ createInstrumentationRule: { ruleId: string } }, { instrumentationRule: InstrumentationRuleFormData }>(CREATE_INSTRUMENTATION_RULE, {
-    onError: (error) => handleError(CRUD.CREATE, error.message),
-    onCompleted: (res, req) => {
-      const id = res?.createInstrumentationRule?.ruleId;
-      const type = deriveTypeFromRule(req?.variables?.instrumentationRule);
-      handleComplete(CRUD.CREATE, `Rule "${type}" created`, id);
+      addPaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, mapFetched(items));
+      setPaginating(ENTITY_TYPES.INSTRUMENTATION_RULE, false);
+    }
+  };
+
+  const [createInstrumentationRule, cState] = useMutation<{ createInstrumentationRule: FetchedInstrumentationRule }, { instrumentationRule: InstrumentationRuleFormData }>(
+    CREATE_INSTRUMENTATION_RULE,
+    {
+      onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
+      onCompleted: (res) => {
+        const rule = res.createInstrumentationRule;
+        const type = deriveTypeFromRule(rule);
+        addPaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, mapFetched([rule]));
+        notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${type}" rule`, rule.ruleId);
+      },
     },
-  });
+  );
 
-  const [updateInstrumentationRule, uState] = useMutation<{ updateInstrumentationRule: { ruleId: string } }, { ruleId: string; instrumentationRule: InstrumentationRuleFormData }>(
+  const [updateInstrumentationRule, uState] = useMutation<{ updateInstrumentationRule: FetchedInstrumentationRule }, { ruleId: string; instrumentationRule: InstrumentationRuleFormData }>(
     UPDATE_INSTRUMENTATION_RULE,
     {
-      onError: (error) => handleError(CRUD.UPDATE, error.message),
-      onCompleted: (res, req) => {
-        const id = res?.updateInstrumentationRule?.ruleId;
-        const type = deriveTypeFromRule(req?.variables?.instrumentationRule);
-        handleComplete(CRUD.UPDATE, `Rule "${type}" updated`, id);
+      onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
+      onCompleted: (res) => {
+        const rule = res.updateInstrumentationRule;
+        const type = deriveTypeFromRule(rule);
+        addPaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, mapFetched([rule]));
+        notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${type}" rule`, rule.ruleId);
       },
     },
   );
 
   const [deleteInstrumentationRule, dState] = useMutation<{ deleteInstrumentationRule: boolean }, { ruleId: string }>(DELETE_INSTRUMENTATION_RULE, {
-    onError: (error) => handleError(CRUD.DELETE, error.message),
+    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
-      const id = req?.variables?.ruleId;
-      removeNotifications(getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE));
-      // TODO: find a way to derive the type, instead of ID in toast
-      handleComplete(CRUD.DELETE, `Rule "${id}" deleted`, id);
+      const id = req?.variables?.ruleId as string;
+      const rule = instrumentationRules.find((r) => r.ruleId === id);
+      const type = !!rule ? deriveTypeFromRule(rule) : '';
+      removePaginated(ENTITY_TYPES.INSTRUMENTATION_RULE, [id]);
+      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${type || id}" rule`, id);
     },
   });
 
+  useEffect(() => {
+    if (!instrumentationRules.length && !instrumentationRulesPaginating) fetchInstrumentationRules();
+  }, []);
+
   return {
-    loading: loading || cState.loading || uState.loading || dState.loading,
-    instrumentationRules: mapped,
-    filteredInstrumentationRules: filtered,
-    refetchInstrumentationRules: refetch,
+    instrumentationRules,
+    instrumentationRulesLoading: isFetching || instrumentationRulesPaginating || cState.loading || uState.loading || dState.loading,
+    fetchInstrumentationRules,
 
     createInstrumentationRule: (instrumentationRule: InstrumentationRuleFormData) => {
       if (config?.readonly) {

@@ -16,10 +16,9 @@ type JavaInspector struct{}
 // ensuring that we correctly detect the presence of the JVM shared library.
 var libjvmRegex = regexp.MustCompile(`.*/libjvm\.so`)
 
-const processName = "java"
 const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
 
-var re = regexp.MustCompile(JavaVersionRegex)
+var versionRegex = regexp.MustCompile(JavaVersionRegex)
 
 // Matches any file path ending with:
 //   - "java" (e.g., /usr/bin/java)

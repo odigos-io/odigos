@@ -46,11 +46,13 @@ models:
     fields:
       apiTokens:
         resolver: true
-      k8sActualNamespace:
-        resolver: true
       k8sActualNamespaces:
         resolver: true
+      k8sActualNamespace:
+        resolver: true
       sources:
+        resolver: true
+      source:
         resolver: true
       destinations:
         resolver: true

@@ -5,7 +5,7 @@ import { OdigosLogoText } from '@odigos/ui-icons';
 import { Header, Status, Tooltip } from '@odigos/ui-components';
 import { useConfig, useDescribeOdigos, useTokenCRUD } from '@/hooks';
 import { FORM_ALERTS, getPlatformLabel, NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
-import { CliDrawer, NotificationManager, PlatformSelect, SlackInvite } from '@odigos/ui-containers';
+import { CliDrawer, ComputePlatformSelect, NotificationManager, SlackInvite } from '@odigos/ui-containers';
 
 const OverviewHeader = () => {
   const { status, title, message } = useStatusStore();
@@ -18,7 +18,7 @@ const OverviewHeader = () => {
     <Header
       left={[
         <OdigosLogoText key='logo' size={100} />,
-        <PlatformSelect
+        <ComputePlatformSelect
           key='cp-select'
           selected={{
             id: 'default',
@@ -47,4 +47,4 @@ const OverviewHeader = () => {
   );
 };
 
-export default OverviewHeader;
+export { OverviewHeader };

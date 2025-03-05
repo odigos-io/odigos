@@ -107,6 +107,7 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 	gqlHandler := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{
 			MetricsConsumer: odigosMetrics,
+			Logger:          logr.FromSlogHandler(slog.Default().Handler()),
 		},
 	}))
 	r.POST("/graphql", func(c *gin.Context) {
@@ -121,7 +122,8 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 	r.POST("/token/update", services.UpdateToken)
 	r.GET("/describe/odigos", services.DescribeOdigos)
 	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", services.DescribeSource)
-
+	r.POST("/source/namespace/:namespace/kind/:kind/name/:name", services.CreateSourceWithAPI)
+	r.DELETE("/source/namespace/:namespace/kind/:kind/name/:name", services.DeleteSourceWithAPI)
 	return r, nil
 }
 
@@ -150,11 +152,6 @@ func startWatchers(ctx context.Context, flags *Flags) error {
 	err = watchers.StartDestinationWatcher(ctx, flags.Namespace)
 	if err != nil {
 		return fmt.Errorf("error starting Destination watcher: %v", err)
-	}
-
-	err = watchers.StartInstrumentationInstanceWatcher(ctx, "")
-	if err != nil {
-		return fmt.Errorf("error starting InstrumentationInstance watcher: %v", err)
 	}
 
 	return nil

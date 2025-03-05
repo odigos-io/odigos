@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/odigos-io/odigos/profiles"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -47,7 +49,7 @@ var (
 	imagePrefix       string
 )
 
-type ResourceCreationFunc func(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error
+type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string) error
 
 // installCmd represents the install command
 var installCmd = &cobra.Command{
@@ -89,7 +91,7 @@ It will install k8s components that will auto-instrument your applications with 
 		if odigosCloudApiKeyFlag != "" {
 			odigosTier = common.CloudOdigosTier
 			odigosProToken = odigosCloudApiKeyFlag
-			err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
+			err = VerifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
 			if err != nil {
 				fmt.Println("Odigos install failed - invalid api-key format.")
 				os.Exit(1)
@@ -100,17 +102,20 @@ It will install k8s components that will auto-instrument your applications with 
 		}
 
 		// validate user input profiles against available profiles
-		validateUserInputProfiles(odigosTier)
+		err = ValidateUserInputProfiles(odigosTier)
+		if err != nil {
+			os.Exit(1)
+		}
 
-		config := createOdigosConfig(odigosTier)
+		config := CreateOdigosConfig(odigosTier)
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
 		// namespace is created on "install" and is not managed by resource manager
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
-			client, cmd, ns, createNamespace)
+			client, ns, createNamespace)
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config, versionFlag)
+		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
@@ -180,7 +185,7 @@ func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (b
 	}
 }
 
-func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Client, ns string) error {
+func createNamespace(ctx context.Context, client *kube.Client, ns string) error {
 	nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -198,7 +203,7 @@ func createNamespace(ctx context.Context, cmd *cobra.Command, client *kube.Clien
 	return nil
 }
 
-func validateUserInputProfiles(tier common.OdigosTier) {
+func ValidateUserInputProfiles(tier common.OdigosTier) error {
 	// Fetch available profiles for the given tier
 	availableProfiles := profiles.GetAvailableProfilesForTier(tier)
 
@@ -212,12 +217,13 @@ func validateUserInputProfiles(tier common.OdigosTier) {
 	for _, input := range userInputInstallProfiles {
 		if _, exists := profileMap[input]; !exists {
 			fmt.Printf("\033[31mERROR\033[0m Profile '%s' not available.\n", input)
-			os.Exit(1)
+			return errors.New("profile " + input + " not available")
 		}
 	}
+	return nil
 }
 
-func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
+func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
 	selectedProfiles := []common.ProfileName{}
 	for _, profile := range userInputInstallProfiles {
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))
@@ -250,9 +256,9 @@ func createOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 	}
 }
 
-func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, cmd *cobra.Command, ns string, create ResourceCreationFunc) {
+func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, ns string, create ResourceCreationFunc) {
 	l := log.Print(msg)
-	err := create(ctx, cmd, client, ns)
+	err := create(ctx, client, ns)
 	if err != nil {
 		l.Error(err)
 	}
@@ -270,7 +276,7 @@ func init() {
 	installCmd.Flags().BoolVar(&openshiftEnabled, "openshift", false, "configure requirements for OpenShift: required selinux settings, RBAC roles, and will use OpenShift certified images (if --image-prefix is not set)")
 	installCmd.Flags().BoolVar(&skipWebhookIssuerCreation, "skip-webhook-issuer-creation", false, "Skip creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.")
 	installCmd.Flags().StringVar(&odigletImage, "odiglet-image", "", "odiglet container image name")
-	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", k8sconsts.InstrumentorImageName, "instrumentor container image name")
+	installCmd.Flags().StringVar(&instrumentorImage, "instrumentor-image", k8sconsts.InstrumentorImage, "instrumentor container image name")
 	installCmd.Flags().StringVar(&autoScalerImage, "autoscaler-image", k8sconsts.AutoScalerImageName, "autoscaler container image name")
 	installCmd.Flags().StringVar(&imagePrefix, "image-prefix", "registry.odigos.io", "prefix for all container images.")
 	installCmd.Flags().BoolVar(&psp, "psp", false, "enable pod security policy")
