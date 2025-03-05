@@ -90,6 +90,7 @@ func runInspectionStage(
 // DetectLanguage creates a process context, runs the light checks first,
 // and if no language is detected, falls back to the expensive checks.
 func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLanguageDetails, error) {
+	// Step 1: Initialize process context
 	procContext := process.NewProcessContext(proc)
 	defer func() {
 		if err := procContext.CloseFiles(); err != nil {
@@ -97,34 +98,47 @@ func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLa
 		}
 	}()
 
+	// Step 2: Set up default language detection result
 	detectedLanguageDetails := common.ProgramLanguageDetails{
 		Language: common.UnknownProgrammingLanguage,
 	}
 
-	// Helper function to run inspection for each process
-	runInspection := func(scanFunc func(Inspector) InspectFunc) (common.ProgramLanguageDetails, error) {
+	// Step 3: Define a reusable function to inspect the process
+	runInspection := func(selectInspectionMethod func(Inspector) InspectFunc) (common.ProgramLanguageDetails, error) {
 		for _, inspector := range inspectorsByLanguage {
-			if detectedLanguage, err := runInspectionStage(procContext, containerURL, &detectedLanguageDetails, inspector, scanFunc(inspector)); err != nil || detectedLanguage.Language != common.UnknownProgrammingLanguage {
+			// Try detecting the programming language using the selected method (Quick or Deep Scan)
+			detectedLanguage, err := runInspectionStage(procContext, containerURL, &detectedLanguageDetails, inspector, selectInspectionMethod(inspector))
+
+			// Stop and return immediately if an error occurs
+			if err != nil {
 				return detectedLanguage, err
 			}
+
+			// Stop and return if we successfully detect a known programming language
+			if detectedLanguage.Language != common.UnknownProgrammingLanguage {
+				return detectedLanguage, nil
+			}
 		}
+
+		// If no language was detected, return the default result
 		return detectedLanguageDetails, nil
 	}
 
-	// Stage 1: Quick Scan
+	// Step 4: Perform a Quick Scan for rapid detection
 	if detectedLanguage, err := runInspection(func(inspector Inspector) InspectFunc {
 		return inspector.QuickScan
 	}); err != nil || detectedLanguage.Language != common.UnknownProgrammingLanguage {
 		return detectedLanguage, err
 	}
 
-	// Stage 2: Deep Scan (only if no language was detected in Stage 1)
+	// Step 5: Perform a Deep Scan if Quick Scan didn’t find anything
 	if detectedLanguage, err := runInspection(func(inspector Inspector) InspectFunc {
 		return inspector.DeepScan
 	}); err != nil || detectedLanguage.Language != common.UnknownProgrammingLanguage {
 		return detectedLanguage, err
 	}
 
+	// Step 6: Return final detection result
 	return detectedLanguageDetails, nil
 }
 
