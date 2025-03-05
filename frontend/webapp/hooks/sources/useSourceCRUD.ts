@@ -4,7 +4,7 @@ import { useNamespace } from '../compute-platform';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import type { FetchedSource, NamespaceInstrumentInput, PaginatedData, SourceInstrumentInput, SourceUpdateInput } from '@/@types';
-import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, PROGRAMMING_LANGUAGES, type Source, type WorkloadId } from '@odigos/ui-utils';
+import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, PROGRAMMING_LANGUAGES, sleep, type Source, type WorkloadId } from '@odigos/ui-utils';
 import {
   type NamespaceSelectionFormData,
   type SourceFormData,
@@ -63,7 +63,17 @@ export const useSourceCRUD = (): UseSourceCrud => {
     for (let i = 0; i < items.length; i++) {
       const { namespace, name, kind } = items[i];
       const bypassPaginationLoader = true;
+
+      const startTime = Date.now();
       await fetchSourceById({ namespace, name, kind }, bypassPaginationLoader);
+      const endTime = Date.now();
+
+      const halfSecond = 500;
+      const timeElapsed = endTime - startTime;
+      if (timeElapsed < halfSecond) {
+        // timeout helps avoid some lag on quick paginations
+        await sleep(halfSecond);
+      }
     }
 
     setEntitiesLoading(ENTITY_TYPES.SOURCE, false);
