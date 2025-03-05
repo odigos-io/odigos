@@ -1,17 +1,24 @@
 import { useEffect } from 'react';
 import { useConfig } from '../config';
-import { usePaginatedStore } from '@/store';
 import { useNamespace } from '../compute-platform';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import type { FetchedSource, NamespaceInstrumentInput, PaginatedData, SourceInstrumentInput, SourceUpdateInput } from '@/@types';
-import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, type Source, type WorkloadId } from '@odigos/ui-utils';
-import { type NamespaceSelectionFormData, type SourceFormData, type SourceSelectionFormData, useInstrumentStore, useNotificationStore, usePendingStore, useSetupStore } from '@odigos/ui-containers';
+import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, PROGRAMMING_LANGUAGES, type Source, type WorkloadId } from '@odigos/ui-utils';
+import {
+  type NamespaceSelectionFormData,
+  type SourceFormData,
+  type SourceSelectionFormData,
+  useEntityStore,
+  useInstrumentStore,
+  useNotificationStore,
+  usePendingStore,
+  useSetupStore,
+} from '@odigos/ui-containers';
 
 interface UseSourceCrud {
   sources: Source[];
   sourcesLoading: boolean;
-  sourcesPaginating: boolean;
   fetchSourcesPaginated: (getAll?: boolean, nextPage?: string) => Promise<void>;
   fetchSourceById: (id: WorkloadId, bypassPaginationLoader?: boolean) => Promise<void>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
@@ -25,33 +32,33 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
   const { setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
-  const { sourcesPaginating, setPaginating, sources, addPaginated, removePaginated } = usePaginatedStore();
+  const { sourcesLoading, setEntitiesLoading, sources, addEntities, removeEntities } = useEntityStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.SOURCE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.SOURCE) : undefined, hideFromHistory });
   };
 
-  const [queryByPage, { loading: isFetching }] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
-  const [queryById, { loading: isFetchingById }] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
+  const [queryByPage] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
+  const [queryById] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
 
   const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
     // We should not fetch while sources are being instrumented.
     if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
     // We should not re-fetch if we are already paginating.
     // The backend will simply restart it's "page" due to an invalid hash, which will then force a full re-fetch including this item by ID.
-    if (usePaginatedStore.getState().sourcesPaginating && !bypassPaginationLoader) return;
+    if (useEntityStore.getState().sourcesLoading && !bypassPaginationLoader) return;
 
     const { error, data } = await queryById({ variables: { sourceId: id } });
 
     if (!!error) {
       notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
     } else if (!!data?.computePlatform.source) {
-      addPaginated(ENTITY_TYPES.SOURCE, [data.computePlatform.source]);
+      addEntities(ENTITY_TYPES.SOURCE, [data.computePlatform.source]);
     }
   };
 
   const fetchAllSourcesIndividually = async () => {
-    const items = usePaginatedStore.getState().sources;
+    const items = useEntityStore.getState().sources;
 
     for (let i = 0; i < items.length; i++) {
       const { namespace, name, kind } = items[i];
@@ -59,16 +66,16 @@ export const useSourceCRUD = (): UseSourceCrud => {
       await fetchSourceById({ namespace, name, kind }, bypassPaginationLoader);
     }
 
-    setPaginating(ENTITY_TYPES.SOURCE, false);
+    setEntitiesLoading(ENTITY_TYPES.SOURCE, false);
   };
 
   const fetchSourcesPaginated = async (getAll: boolean = true, page: string = '') => {
     // We should not fetch while sources are being instrumented.
     if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
     // We should not fetch if we are already fetching.
-    if (usePaginatedStore.getState().sourcesPaginating && !page) return;
+    if (useEntityStore.getState().sourcesLoading && !page) return;
 
-    setPaginating(ENTITY_TYPES.SOURCE, true);
+    setEntitiesLoading(ENTITY_TYPES.SOURCE, true);
 
     const startTime = Date.now();
     const { error, data } = await queryByPage({ variables: { nextPage: page } });
@@ -79,7 +86,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     } else if (!!data?.computePlatform?.sources) {
       const { items, nextPage } = data.computePlatform.sources;
 
-      addPaginated(ENTITY_TYPES.SOURCE, items);
+      addEntities(ENTITY_TYPES.SOURCE, items);
 
       if (getAll && !!nextPage) {
         const halfSecond = 500;
@@ -91,9 +98,9 @@ export const useSourceCRUD = (): UseSourceCrud => {
           // timeout helps avoid some lag on quick paginations
           setTimeout(() => fetchSourcesPaginated(true, nextPage), halfSecond);
         }
-      } else if (usePaginatedStore.getState().sources.length >= useInstrumentStore.getState().sourcesToCreate) {
+      } else if (useEntityStore.getState().sources.length >= useInstrumentStore.getState().sourcesToCreate) {
         // if we move "fetchAllSourcesIndividually" elsewhere, we might need to uncomment the following
-        // setPaginating(ENTITY_TYPES.SOURCE, false);
+        // setEntitiesLoading(ENTITY_TYPES.SOURCE, false);
         setInstrumentCount('sourcesToCreate', 0);
         setInstrumentCount('sourcesCreated', 0);
         fetchAllSourcesIndividually();
@@ -124,13 +131,12 @@ export const useSourceCRUD = (): UseSourceCrud => {
   });
 
   useEffect(() => {
-    if (!sources.length && !sourcesPaginating) fetchSourcesPaginated();
+    if (!sources.length && !sourcesLoading) fetchSourcesPaginated();
   }, []);
 
   return {
     sources,
-    sourcesLoading: isFetching || isFetchingById || sourcesPaginating || cdState.loading || uState.loading,
-    sourcesPaginating,
+    sourcesLoading: sourcesLoading || cdState.loading || uState.loading,
     fetchSourcesPaginated,
     fetchSourceById,
 
@@ -165,7 +171,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
             // note: in other CRUD hooks we would use "addPendingItems" here, but for sources...
             // we instantly remove deleted items, and newly added items are not relevant for pending state.
-            removePaginated(
+            removeEntities(
               ENTITY_TYPES.SOURCE,
               toDelete.map(({ name, kind }) => ({ namespace: ns, name, kind })),
             );

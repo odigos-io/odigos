@@ -94,7 +94,7 @@ func convertConditions(conditions []v1.Condition) []*model.Condition {
 
 			// force "warning" status ovverrides for certain "reasons"
 			if reason == string(v1alpha1.AgentEnabledReasonUnsupportedProgrammingLanguage) || reason == string(v1alpha1.AgentEnabledReasonUnsupportedRuntimeVersion) || reason == string(v1alpha1.RuntimeDetectionReasonNoRunningPods) || reason == string(v1alpha1.AgentEnabledReasonIgnoredContainer) || reason == string(v1alpha1.AgentEnabledReasonNoAvailableAgent) || reason == string(v1alpha1.AgentEnabledReasonOtherAgentDetected) {
-				status = model.ConditionStatusWarning
+				status = model.ConditionStatusDisabled
 			}
 
 			result = append(result, &model.Condition{

@@ -16,10 +16,10 @@ import {
 const OverviewModalsAndDrawers = () => {
   const { isEnterprise } = useConfig();
 
-  const { sources, persistSources, updateSource } = useSourceCRUD();
-  const { actions, createAction, updateAction, deleteAction } = useActionCRUD();
-  const { destinations, createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
-  const { instrumentationRules, createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
+  const { persistSources, updateSource } = useSourceCRUD();
+  const { createAction, updateAction, deleteAction } = useActionCRUD();
+  const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
+  const { createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   const [selectedNamespace, setSelectedNamespace] = useState('');
   const { namespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
@@ -53,18 +53,17 @@ const OverviewModalsAndDrawers = () => {
       <ActionModal createAction={createAction} />
 
       {/* drawers */}
-      <SourceDrawer sources={sources} persistSources={persistSources} updateSource={updateSource} fetchDescribeSource={fetchDescribeSource} />
+      <SourceDrawer persistSources={persistSources} updateSource={updateSource} fetchDescribeSource={fetchDescribeSource} />
       <DestinationDrawer
         categories={categories}
-        destinations={destinations}
         updateDestination={updateDestination}
         deleteDestination={deleteDestination}
         testConnection={testConnection}
         testLoading={testLoading}
         testResult={testResult}
       />
-      <InstrumentationRuleDrawer instrumentationRules={instrumentationRules} updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />
-      <ActionDrawer actions={actions} updateAction={updateAction} deleteAction={deleteAction} />
+      <InstrumentationRuleDrawer updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />
+      <ActionDrawer updateAction={updateAction} deleteAction={deleteAction} />
     </>
   );
 };

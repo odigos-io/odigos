@@ -12,7 +12,7 @@ enum K8sResourceKind {
 enum ConditionStatus {
   success
   error
-  warning
+  disabled
   loading
 }
 
