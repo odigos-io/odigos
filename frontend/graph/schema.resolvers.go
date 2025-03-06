@@ -1003,6 +1003,7 @@ func (r *queryResolver) Instances(ctx context.Context, sourceIds []*model.K8sSou
 		return nil, err
 	}
 
+	close(channel)
 	for ch := range channel {
 		if ch.Condition != nil {
 			result = append(result, &ch)
