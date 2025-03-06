@@ -12,23 +12,32 @@ import (
 
 type NodejsInspector struct{}
 
-var v8Regex = regexp.MustCompile(`^(?:.*/)?node(\d+)?$`)
+// Matches any file path ending with:
+//   - "node" (e.g., /usr/bin/node)
+//   - "node" followed by version digits (e.g., node8, node11, node17).
+var nodeExeRegex = regexp.MustCompile(`node(\d+)?$`)
 
 var nodeExecutables = map[string]bool{
 	"npm":  true,
 	"yarn": true,
 }
 
-func (n *NodejsInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
-	if v8Regex.MatchString(filepath.Base(proc.ExePath)) || nodeExecutables[filepath.Base(proc.ExePath)] {
+func (n *NodejsInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	proc := pcx.Details
+	baseExe := filepath.Base(proc.ExePath)
+	if nodeExeRegex.MatchString(baseExe) || nodeExecutables[baseExe] {
 		return common.JavascriptProgrammingLanguage, true
 	}
 
 	return "", false
 }
 
-func (n *NodejsInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
-	if value, exists := proc.GetDetailedEnvsValue(process.NodeVersionConst); exists {
+func (n *NodejsInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	return "", false
+}
+
+func (n *NodejsInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
+	if value, exists := pcx.Details.GetDetailedEnvsValue(process.NodeVersionConst); exists {
 		return common.GetVersion(value)
 	}
 
