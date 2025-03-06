@@ -8,6 +8,10 @@ on:
       - stable
       - greatwall
 
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   build-autoscaler:
     name: build-autoscaler
@@ -391,6 +395,8 @@ jobs:
   trigger-e2e:
     needs: [build-autoscaler, build-scheduler, build-and-test-instrumentor, build-and-test-odigos-collector, build-and-test-odiglet, build-frontend, build-operator, build-cli, test-k8sutils, test-common, test-procdiscovery]
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     steps:
       - name: Trigger E2E workflow
         uses: actions/github-script@v7
