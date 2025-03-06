@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
-import { usePaginatedStore } from '@/store';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import type { ActionInput, ParsedActionSpec, FetchedAction } from '@/@types';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { type ActionFormData, useNotificationStore } from '@odigos/ui-containers';
+import { type ActionFormData, useEntityStore, useNotificationStore } from '@odigos/ui-containers';
 import { type Action, ACTION_TYPE, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse, SIGNAL_TYPE } from '@odigos/ui-utils';
 
 interface UseActionCrud {
@@ -131,18 +130,18 @@ const mapFormToInput = (action: ActionFormData): ActionInput => {
 export const useActionCRUD = (): UseActionCrud => {
   const { data: config } = useConfig();
   const { addNotification } = useNotificationStore();
-  const { actionsPaginating, setPaginating, actions, addPaginated, removePaginated } = usePaginatedStore();
+  const { actionsLoading, setEntitiesLoading, actions, addEntities, removeEntities } = useEntityStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.ACTION, target: id ? getSseTargetFromId(id, ENTITY_TYPES.ACTION) : undefined, hideFromHistory });
   };
 
-  const [fetchAll, { loading: isFetching }] = useLazyQuery<{ computePlatform?: { actions?: FetchedAction[] } }>(GET_ACTIONS, {
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { actions?: FetchedAction[] } }>(GET_ACTIONS, {
     fetchPolicy: 'cache-and-network',
   });
 
   const fetchActions = async () => {
-    setPaginating(ENTITY_TYPES.ACTION, true);
+    setEntitiesLoading(ENTITY_TYPES.ACTION, true);
     const { error, data } = await fetchAll();
 
     if (!!error) {
@@ -150,8 +149,8 @@ export const useActionCRUD = (): UseActionCrud => {
     } else if (!!data?.computePlatform?.actions) {
       const { actions: items } = data.computePlatform;
 
-      addPaginated(ENTITY_TYPES.ACTION, mapFetched(items));
-      setPaginating(ENTITY_TYPES.ACTION, false);
+      addEntities(ENTITY_TYPES.ACTION, mapFetched(items));
+      setEntitiesLoading(ENTITY_TYPES.ACTION, false);
     }
   };
 
@@ -180,18 +179,18 @@ export const useActionCRUD = (): UseActionCrud => {
     onCompleted: (res, req) => {
       const id = req?.variables?.id as string;
       const type = req?.variables?.actionType;
-      removePaginated(ENTITY_TYPES.ACTION, [id]);
+      removeEntities(ENTITY_TYPES.ACTION, [id]);
       notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${type}" action`, id);
     },
   });
 
   useEffect(() => {
-    if (!actions.length && !actionsPaginating) fetchActions();
+    if (!actions.length && !actionsLoading) fetchActions();
   }, []);
 
   return {
     actions,
-    actionsLoading: isFetching || actionsPaginating || cState.loading || uState.loading || dState.loading,
+    actionsLoading: actionsLoading || cState.loading || uState.loading || dState.loading,
     fetchActions,
 
     createAction: (action) => {

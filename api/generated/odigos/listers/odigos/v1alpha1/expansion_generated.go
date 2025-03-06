@@ -65,14 +65,6 @@ type InstrumentedApplicationListerExpansion interface{}
 // InstrumentedApplicationNamespaceLister.
 type InstrumentedApplicationNamespaceListerExpansion interface{}
 
-// OdigosConfigurationListerExpansion allows custom methods to be added to
-// OdigosConfigurationLister.
-type OdigosConfigurationListerExpansion interface{}
-
-// OdigosConfigurationNamespaceListerExpansion allows custom methods to be added to
-// OdigosConfigurationNamespaceLister.
-type OdigosConfigurationNamespaceListerExpansion interface{}
-
 // ProcessorListerExpansion allows custom methods to be added to
 // ProcessorLister.
 type ProcessorListerExpansion interface{}
