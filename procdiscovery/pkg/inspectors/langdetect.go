@@ -32,9 +32,6 @@ type Inspector interface {
 	DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool)
 }
 
-type LanguageInspector interface {
-	Inspect(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool)
-}
 type VersionInspector interface {
 	GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version
 }
