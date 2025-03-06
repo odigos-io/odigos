@@ -3,7 +3,6 @@ package sourceinstrumentation
 import (
 	"context"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -41,15 +40,21 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// For example, a deleted Workload Source might still be covered by a Namespace Source.
 		var obj client.Object
 		obj, err = sourceutils.GetClientObjectFromSource(ctx, r.Client, source)
-		if err != nil {
-			return ctrl.Result{}, client.IgnoreNotFound(err)
+		if client.IgnoreNotFound(err) != nil {
+			// re-queue on any error besides NotFound
+			return ctrl.Result{}, err
 		}
-		result, err = syncWorkload(ctx, r.Client, r.Scheme, obj)
+		if obj != nil {
+			// NotFound will return a nil object, nothing to sync without a workload obj
+			result, err = syncWorkload(ctx, r.Client, r.Scheme, obj)
+		}
 	}
 	// We could get a non-error Requeue signal from the reconcile functions,
 	// such as a conflict updating the instrumentationconfig status
-	if !result.IsZero() || !apierrors.IsNotFound(err) {
-		return result, err
+	if !result.IsZero() || client.IgnoreNotFound(err) != nil {
+		// either the result is non-zero, or we had a non-NotFound error
+		// need to filter NotFound errors out
+		return result, client.IgnoreNotFound(err)
 	}
 
 	if k8sutils.IsTerminating(source) {
