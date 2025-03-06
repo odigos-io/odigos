@@ -20,7 +20,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Docker layer caching
-        uses: actions/cache@v3
+        uses: WarpBuilds/cache@v1
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-autoscaler-${{ github.sha }}
@@ -29,7 +29,7 @@ jobs:
       - name: Build Autoscaler Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
           tags: |
             autoscaler:pr-${{ github.event.number }}
@@ -61,7 +61,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Docker layer caching
-        uses: actions/cache@v3
+        uses: WarpBuilds/cache@v1
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-scheduler-${{ github.sha }}
@@ -70,7 +70,7 @@ jobs:
       - name: Build Scheduler Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
           tags: |
             scheduler:pr-${{ github.event.number }}
@@ -108,7 +108,7 @@ jobs:
           cache-dependency-path: |
             **/go.sum
       - name: Docker layer caching
-        uses: actions/cache@v3
+        uses: WarpBuilds/cache@v1
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-instrumentor-${{ github.sha }}
@@ -117,7 +117,7 @@ jobs:
       - name: Build Instrumentor Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
           tags: |
             instrumentor:pr-${{ github.event.number }}
@@ -153,7 +153,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Docker layer caching
-        uses: actions/cache@v3
+        uses: WarpBuilds/cache@v1
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-collector-${{ github.sha }}
@@ -162,7 +162,7 @@ jobs:
       - name: build Odigos Collector Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
           tags: |
             odigos-collector:pr-${{ github.event.number }}
@@ -198,14 +198,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Docker layer caching
-        uses: actions/cache@v3
+        uses: WarpBuilds/cache@v1
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-odiglet-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-odiglet-
       - name: Cache build dependencies
-        uses: actions/cache@v3
+        uses: WarpBuilds/cache@v1
         with:
           path: /var/cache/apt
           key: ${{ runner.os }}-apt-cache-${{ hashFiles('**/apt-packages.txt') }}
@@ -251,7 +251,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Docker layer caching
-        uses: actions/cache@v3
+        uses: WarpBuilds/cache@v1
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-frontend-${{ github.sha }}
@@ -260,7 +260,7 @@ jobs:
       - name: Build Frontend Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: ${{ matrix.dockerfile }}
           context: .
           push: false
@@ -292,7 +292,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Docker layer caching
-        uses: actions/cache@v3
+        uses: WarpBuilds/cache@v1
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-operator-${{ github.sha }}
@@ -301,7 +301,7 @@ jobs:
       - name: Build Operator Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: ${{ matrix.dockerfile }}
           context: .
           push: false
