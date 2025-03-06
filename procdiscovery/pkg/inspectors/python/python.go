@@ -2,6 +2,7 @@ package python
 
 import (
 	"debug/elf"
+	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -19,7 +20,8 @@ const (
 
 func (p *PythonInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	proc := pcx.Details
-	if strings.Contains(proc.ExePath, pythonProcessName) || strings.Contains(proc.CmdLine, pythonProcessName) {
+	// Check if the executable name starts with "python"
+	if strings.HasPrefix(filepath.Base(proc.ExePath), pythonProcessName) {
 		return common.PythonProgrammingLanguage, true
 	}
 
