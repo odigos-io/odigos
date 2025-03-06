@@ -5,7 +5,7 @@ import { OdigosLogoText } from '@odigos/ui-icons';
 import { Header, Status, Tooltip } from '@odigos/ui-components';
 import { useConfig, useDescribeOdigos, useTokenCRUD } from '@/hooks';
 import { FORM_ALERTS, getPlatformLabel, NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
-import { CliDrawer, ComputePlatformSelect, NotificationManager, SlackInvite } from '@odigos/ui-containers';
+import { ComputePlatformSelect, NotificationManager, SlackInvite, SystemOverview } from '@odigos/ui-containers';
 
 const OverviewHeader = () => {
   const { status, title, message } = useStatusStore();
@@ -40,7 +40,7 @@ const OverviewHeader = () => {
       right={[
         <Theme.ToggleDarkMode key='toggle-theme' />,
         <NotificationManager key='notifs' />,
-        <CliDrawer key='cli' tokens={tokens} saveToken={updateToken} fetchDescribeOdigos={fetchDescribeOdigos} />,
+        <SystemOverview key='cli' tokens={tokens} saveToken={updateToken} fetchDescribeOdigos={fetchDescribeOdigos} />,
         <SlackInvite key='slack' />,
       ]}
     />

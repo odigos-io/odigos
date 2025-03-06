@@ -75,15 +75,32 @@ func convertConditions(conditions []v1.Condition) []*model.Condition {
 	var result []*model.Condition
 	for _, c := range conditions {
 		if c.Type != "AppliedInstrumentationDevice" {
+			reason := c.Reason
 			message := c.Message
 			if message == "" {
 				message = string(c.Reason)
 			}
 
+			var status model.ConditionStatus
+
+			switch c.Status {
+			case v1.ConditionUnknown:
+				status = model.ConditionStatusLoading
+			case v1.ConditionTrue:
+				status = model.ConditionStatusSuccess
+			case v1.ConditionFalse:
+				status = model.ConditionStatusError
+			}
+
+			// force "disabled" status ovverrides for certain "reasons"
+			if v1alpha1.IsReasonStatusDisabled(reason) {
+				status = model.ConditionStatusDisabled
+			}
+
 			result = append(result, &model.Condition{
-				Status:             model.ConditionStatus(c.Status),
+				Status:             status,
 				Type:               c.Type,
-				Reason:             &c.Reason,
+				Reason:             &reason,
 				Message:            &message,
 				LastTransitionTime: k8sLastTransitionTimeToGql(c.LastTransitionTime),
 			})
