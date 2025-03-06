@@ -19,7 +19,6 @@ import (
 type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
-	Directors     ebpf.DirectorsMap
 	ConfigUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
 }
 
@@ -48,18 +47,6 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 			return ctrl.Result{}, nil
 		} else {
 			return ctrl.Result{}, err
-		}
-	}
-
-	langs := instrumentationConfig.Languages()
-
-	for key, director := range i.Directors {
-		// Apply the configuration only for languages specified in the InstrumentationConfig
-		if _, ok := langs[key.Language]; ok {
-			err = director.ApplyInstrumentationConfiguration(ctx, &podWorkload, instrumentationConfig)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
 		}
 	}
 

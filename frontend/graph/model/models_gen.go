@@ -756,20 +756,22 @@ func (e ComputePlatformType) MarshalGQL(w io.Writer) {
 type ConditionStatus string
 
 const (
-	ConditionStatusTrue    ConditionStatus = "True"
-	ConditionStatusFalse   ConditionStatus = "False"
-	ConditionStatusUnknown ConditionStatus = "Unknown"
+	ConditionStatusSuccess  ConditionStatus = "success"
+	ConditionStatusError    ConditionStatus = "error"
+	ConditionStatusDisabled ConditionStatus = "disabled"
+	ConditionStatusLoading  ConditionStatus = "loading"
 )
 
 var AllConditionStatus = []ConditionStatus{
-	ConditionStatusTrue,
-	ConditionStatusFalse,
-	ConditionStatusUnknown,
+	ConditionStatusSuccess,
+	ConditionStatusError,
+	ConditionStatusDisabled,
+	ConditionStatusLoading,
 }
 
 func (e ConditionStatus) IsValid() bool {
 	switch e {
-	case ConditionStatusTrue, ConditionStatusFalse, ConditionStatusUnknown:
+	case ConditionStatusSuccess, ConditionStatusError, ConditionStatusDisabled, ConditionStatusLoading:
 		return true
 	}
 	return false
