@@ -6,6 +6,7 @@ import (
 	"regexp"
 
 	"github.com/hashicorp/go-version"
+
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )

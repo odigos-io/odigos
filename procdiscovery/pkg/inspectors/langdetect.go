@@ -65,7 +65,6 @@ func runInspectionStage(
 			detectedLanguageDetailes.Language = languageDetected
 			if v, ok := inspector.(VersionInspector); ok {
 				detectedLanguageDetailes.RuntimeVersion = v.GetRuntimeVersion(&process.ProcessContext{}, containerURL)
-
 			}
 		}
 		// If a conflict is found, return an error.
