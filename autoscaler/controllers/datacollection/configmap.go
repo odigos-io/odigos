@@ -151,7 +151,15 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			"action": "upsert",
 		}},
 	}
-	processorsCfg["resourcedetection"] = config.GenericMap{"detectors": []string{"ec2", "gcp", "azure"}}
+	processorsCfg["resourcedetection"] = config.GenericMap{
+		"detectors": []string{"ec2", "azure"},
+		"timeout":   "2s",
+	}
+	if commonconf.ControllerConfig.OnGKE {
+		resourceDetectionProcessor := processorsCfg["resourcedetection"].(config.GenericMap)
+		resourceDetectionProcessor["detectors"] = append(resourceDetectionProcessor["detectors"].([]string), "gcp")
+	}
+
 	processorsCfg["odigostrafficmetrics"] = config.GenericMap{
 		// adding the following resource attributes to the metrics allows to aggregate the metrics by source.
 		"res_attributes_keys": []string{
