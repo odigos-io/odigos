@@ -35,8 +35,6 @@ type Interface interface {
 	InstrumentationRules() InstrumentationRuleInformer
 	// InstrumentedApplications returns a InstrumentedApplicationInformer.
 	InstrumentedApplications() InstrumentedApplicationInformer
-	// OdigosConfigurations returns a OdigosConfigurationInformer.
-	OdigosConfigurations() OdigosConfigurationInformer
 	// Processors returns a ProcessorInformer.
 	Processors() ProcessorInformer
 	// Sources returns a SourceInformer.
@@ -82,11 +80,6 @@ func (v *version) InstrumentationRules() InstrumentationRuleInformer {
 // InstrumentedApplications returns a InstrumentedApplicationInformer.
 func (v *version) InstrumentedApplications() InstrumentedApplicationInformer {
 	return &instrumentedApplicationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// OdigosConfigurations returns a OdigosConfigurationInformer.
-func (v *version) OdigosConfigurations() OdigosConfigurationInformer {
-	return &odigosConfigurationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Processors returns a ProcessorInformer.
