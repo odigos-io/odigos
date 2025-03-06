@@ -86,7 +86,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	podWorkload := k8sconsts.PodWorkload{
 		Name:      obj.GetName(),
 		Namespace: obj.GetNamespace(),
-		Kind:      k8sconsts.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
+		Kind:      workload.WorkloadKindFromClientObject(obj),
 	}
 
 	if !enabled {
