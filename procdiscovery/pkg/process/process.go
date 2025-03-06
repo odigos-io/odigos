@@ -80,6 +80,10 @@ func (pcx *ProcessContext) GetExeFile() (*os.File, error) {
 			return nil, err
 		}
 		pcx.ExeFile = fileData
+	} else {
+		if _, err := pcx.ExeFile.Seek(0, 0); err != nil {
+			return nil, err // Return the seek error if it fails
+		}
 	}
 
 	return pcx.ExeFile, nil
@@ -93,6 +97,10 @@ func (pcx *ProcessContext) GetMapsFile() (*os.File, error) {
 			return nil, err
 		}
 		pcx.MapsFile = fileData
+	} else {
+		if _, err := pcx.MapsFile.Seek(0, 0); err != nil {
+			return nil, err // Return the seek error if it fails
+		}
 	}
 	return pcx.MapsFile, nil
 }
