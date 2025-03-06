@@ -12,7 +12,10 @@ import (
 
 type NodejsInspector struct{}
 
-var v8Regex = regexp.MustCompile(`^(?:.*/)?node(\d+)?$`)
+// Matches any file path ending with:
+//   - "node" (e.g., /usr/bin/node)
+//   - "node" followed by version digits (e.g., node8, node11, node17).
+var nodeExeRegex = regexp.MustCompile(`node(\d+)?$`)
 
 var nodeExecutables = map[string]bool{
 	"npm":  true,
@@ -22,7 +25,7 @@ var nodeExecutables = map[string]bool{
 func (n *NodejsInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	proc := pcx.Details
 	baseExe := filepath.Base(proc.ExePath)
-	if v8Regex.MatchString(baseExe) || nodeExecutables[baseExe] {
+	if nodeExeRegex.MatchString(baseExe) || nodeExecutables[baseExe] {
 		return common.JavascriptProgrammingLanguage, true
 	}
 
