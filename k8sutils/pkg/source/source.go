@@ -98,6 +98,7 @@ func OtelServiceNameBySource(ctx context.Context, k8sClient client.Client, obj c
 
 // GetClientObjectFromSource returns the client.Object reference by the Source's spec.workload
 // field, if the object exists.
+// It is not valid to call this function with a namespace Source.
 func GetClientObjectFromSource(ctx context.Context, kubeClient client.Client, source *odigosv1.Source) (client.Object, error) {
 	obj := workload.ClientObjectFromWorkloadKind(source.Spec.Workload.Kind)
 	err := kubeClient.Get(ctx, client.ObjectKey{Name: source.Spec.Workload.Name, Namespace: source.Spec.Workload.Namespace}, obj)
