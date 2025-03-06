@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { useNamespace } from '../compute-platform';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import { GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { GET_INSTANCES, GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import type { FetchedSource, NamespaceInstrumentInput, PaginatedData, SourceInstrumentInput, SourceUpdateInput } from '@/@types';
-import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, sleep, type Source, type WorkloadId } from '@odigos/ui-utils';
+import { Condition, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, sleep, type Source, type WorkloadId } from '@odigos/ui-utils';
 import {
   type NamespaceSelectionFormData,
   type SourceFormData,
@@ -40,6 +40,9 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const [queryByPage] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
   const [queryById] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
+  const [queryInstances] = useLazyQuery<{ instances: { namespace: WorkloadId['namespace']; name: WorkloadId['name']; kind: WorkloadId['kind']; condition: Condition }[] }, { sourceIds: WorkloadId[] }>(
+    GET_INSTANCES,
+  );
 
   const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
     // We should not fetch while sources are being instrumented.
@@ -57,26 +60,29 @@ export const useSourceCRUD = (): UseSourceCrud => {
     }
   };
 
-  const fetchAllSourcesIndividually = async () => {
-    const items = useEntityStore.getState().sources;
+  const fetchAllInstances = async () => {
+    const sourcesFromStore = useEntityStore.getState().sources;
+    const { data } = await queryInstances({ variables: { sourceIds: sourcesFromStore.map(({ namespace, name, kind }) => ({ namespace, name, kind })) } });
 
-    for (let i = 0; i < items.length; i++) {
-      const { namespace, name, kind } = items[i];
-      const bypassPaginationLoader = true;
+    if (!!data?.instances) {
+      const sourcesWithInstances: Source[] = JSON.parse(JSON.stringify(sourcesFromStore));
 
-      const startTime = Date.now();
-      await fetchSourceById({ namespace, name, kind }, bypassPaginationLoader);
-      const endTime = Date.now();
+      for (const { namespace, name, kind, condition } of data.instances) {
+        if (!!condition?.status) {
+          const foundIdx = sourcesWithInstances.findIndex((x) => x.namespace === namespace && x.name === name && x.kind === kind);
 
-      const halfSecond = 500;
-      const timeElapsed = endTime - startTime;
-      if (timeElapsed < halfSecond) {
-        // timeout helps avoid some lag on quick paginations
-        await sleep(halfSecond);
+          if (foundIdx !== -1) {
+            if (!!sourcesWithInstances[foundIdx].conditions) {
+              sourcesWithInstances[foundIdx].conditions.push(condition);
+            } else {
+              sourcesWithInstances[foundIdx].conditions = [condition];
+            }
+          }
+        }
       }
-    }
 
-    setEntitiesLoading(ENTITY_TYPES.SOURCE, false);
+      addEntities(ENTITY_TYPES.SOURCE, sourcesWithInstances);
+    }
   };
 
   const fetchSourcesPaginated = async (getAll: boolean = true, page: string = '') => {
@@ -109,11 +115,10 @@ export const useSourceCRUD = (): UseSourceCrud => {
           setTimeout(() => fetchSourcesPaginated(true, nextPage), halfSecond);
         }
       } else if (useEntityStore.getState().sources.length >= useInstrumentStore.getState().sourcesToCreate) {
-        // if we move "fetchAllSourcesIndividually" elsewhere, we might need to uncomment the following
-        // setEntitiesLoading(ENTITY_TYPES.SOURCE, false);
+        setEntitiesLoading(ENTITY_TYPES.SOURCE, false);
         setInstrumentCount('sourcesToCreate', 0);
         setInstrumentCount('sourcesCreated', 0);
-        fetchAllSourcesIndividually();
+        fetchAllInstances();
       }
     }
   };

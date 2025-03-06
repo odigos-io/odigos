@@ -23,6 +23,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"golang.org/x/sync/errgroup"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -163,8 +164,15 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 	}
 
 	src := instrumentationConfigToActualSource(*ic)
-	// note: the following is done only for fetch-by-id, we removed this from paginate-all due to peformance issues
-	services.AddHealthyInstrumentationInstancesCondition(ctx, ic, src)
+
+	// note: the following is done only for fetch-source-by-id, we removed this from paginate-all-sources due to peformance issues
+	condition, err := services.AddHealthyInstrumentationInstancesCondition(ctx, ns, name, string(kind))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get InstrumentationInstance: %w", err)
+	}
+	if condition.Status != "" {
+		src.Conditions = append(src.Conditions, &condition)
+	}
 
 	return src, nil
 }
@@ -958,6 +966,43 @@ func (r *queryResolver) DescribeOdigos(ctx context.Context) (*model.OdigosAnalyz
 // DescribeSource is the resolver for the describeSource field.
 func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error) {
 	return source_describe.GetSourceDescription(ctx, namespace, kind, name)
+}
+
+// Instances is the resolver for the instances field.
+func (r *queryResolver) Instances(ctx context.Context, sourceIds []*model.K8sSourceID) ([]*model.InstanceStatus, error) {
+	var result []*model.InstanceStatus
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
+
+	for _, id := range sourceIds {
+		g.Go(func() error {
+			ns := id.Namespace
+			name := id.Name
+			kind := id.Kind
+
+			condition, err := services.AddHealthyInstrumentationInstancesCondition(ctx, ns, name, string(kind))
+			if err != nil {
+				return fmt.Errorf("failed to get InstrumentationInstance: %w", err)
+			}
+			if condition.Status != "" {
+				result = append(result, &model.InstanceStatus{
+					Namespace: ns,
+					Name:      name,
+					Kind:      kind,
+					Condition: &condition,
+				})
+			}
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return result, err
+	}
+
+	return result, nil
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.
