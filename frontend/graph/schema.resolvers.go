@@ -970,7 +970,8 @@ func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, ki
 
 // Instances is the resolver for the instances field.
 func (r *queryResolver) Instances(ctx context.Context, sourceIds []*model.K8sSourceID) ([]*model.InstanceStatus, error) {
-	var result []*model.InstanceStatus
+	result := make([]*model.InstanceStatus, 0)
+	channel := make(chan model.InstanceStatus, len(sourceIds))
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
@@ -986,12 +987,12 @@ func (r *queryResolver) Instances(ctx context.Context, sourceIds []*model.K8sSou
 				return fmt.Errorf("failed to get InstrumentationInstance: %w", err)
 			}
 			if condition.Status != "" {
-				result = append(result, &model.InstanceStatus{
+				channel <- model.InstanceStatus{
 					Namespace: ns,
 					Name:      name,
 					Kind:      kind,
 					Condition: &condition,
-				})
+				}
 			}
 
 			return nil
@@ -999,7 +1000,13 @@ func (r *queryResolver) Instances(ctx context.Context, sourceIds []*model.K8sSou
 	}
 
 	if err := g.Wait(); err != nil {
-		return result, err
+		return nil, err
+	}
+
+	for ch := range channel {
+		if ch.Condition != nil {
+			result = append(result, &ch)
+		}
 	}
 
 	return result, nil
