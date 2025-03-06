@@ -68,3 +68,14 @@ After we have the desired Source we can patch it:
 kubectl patch source/<source-name> -n <namespace> --type=merge -p '{"spec":{"otelServiceName":"<serviceName>"}}'
 ```
 
+If you don't know the name of a Source object (such as when a Source
+is automatically created by instrumentation done via the UI), you can
+combine the use of Source labels with the `kubectl patch` command. For
+example:
+
+```shell
+kubectl patch source \
+$(kubectl get source -l 'odigos.io/workload-name=<workloadName>,odigos.io/workload-kind=<Deployment/StatefulSet/DaemonSet>' --no-headers -o custom-columns=":metadata.name") \
+--type=merge \
+-p '{"spec":{"otelServiceName":"<serviceName>"}}'
+```
