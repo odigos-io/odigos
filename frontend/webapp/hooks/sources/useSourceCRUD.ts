@@ -4,7 +4,7 @@ import { useNamespace } from '../compute-platform';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { GET_INSTANCES, GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import type { FetchedSource, NamespaceInstrumentInput, PaginatedData, SourceInstrumentInput, SourceUpdateInput } from '@/@types';
-import { Condition, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, sleep, type Source, type WorkloadId } from '@odigos/ui-utils';
+import { Condition, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, type Source, type WorkloadId } from '@odigos/ui-utils';
 import {
   type NamespaceSelectionFormData,
   type SourceFormData,
