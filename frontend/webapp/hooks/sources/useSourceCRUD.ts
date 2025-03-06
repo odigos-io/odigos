@@ -92,10 +92,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (useEntityStore.getState().sourcesLoading && !page) return;
 
     setEntitiesLoading(ENTITY_TYPES.SOURCE, true);
-
-    const startTime = Date.now();
     const { error, data } = await queryByPage({ variables: { nextPage: page } });
-    const endTime = Date.now();
 
     if (!!error) {
       notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
@@ -105,15 +102,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
       addEntities(ENTITY_TYPES.SOURCE, items);
 
       if (getAll && !!nextPage) {
-        const halfSecond = 500;
-        const timeElapsed = endTime - startTime;
-
-        if (timeElapsed > halfSecond) {
-          fetchSourcesPaginated(true, nextPage);
-        } else {
-          // timeout helps avoid some lag on quick paginations
-          setTimeout(() => fetchSourcesPaginated(true, nextPage), halfSecond);
-        }
+        fetchSourcesPaginated(true, nextPage);
       } else if (useEntityStore.getState().sources.length >= useInstrumentStore.getState().sourcesToCreate) {
         setEntitiesLoading(ENTITY_TYPES.SOURCE, false);
         setInstrumentCount('sourcesToCreate', 0);
