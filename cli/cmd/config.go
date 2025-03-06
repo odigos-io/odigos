@@ -52,12 +52,8 @@ var setConfigCmd = &cobra.Command{
 
 		config, err := resources.GetCurrentConfig(ctx, client, ns)
 		if err != nil {
-			odigosConfig, err := resources.GetDeprecatedConfig(ctx, client, ns)
-			if err != nil {
-				l.Error(fmt.Errorf("unable to read the current Odigos configuration: %w", err))
-				os.Exit(1)
-			}
-			config = odigosConfig.ToCommonConfig()
+			l.Error(fmt.Errorf("unable to read the current Odigos configuration: %w", err))
+			os.Exit(1)
 		}
 
 		config.ConfigVersion += 1

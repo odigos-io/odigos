@@ -59,7 +59,6 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 
 	kubeManagerOptions := kube.KubeManagerOptions{
 		Mgr:           mgr,
-		EbpfDirectors: nil,
 		Clientset:     clientset,
 		ConfigUpdates: configUpdates,
 		CriClient:     &criWrapper,
