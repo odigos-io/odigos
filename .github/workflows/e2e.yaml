@@ -131,3 +131,17 @@ jobs:
       - name: Run E2E Tests
         run: |
           chainsaw test tests/e2e/${{ matrix.test-scenario }}
+
+      - name: Run diagnose command
+        if: ${{ failure() }}
+        run: |
+          ./cli/odigos diagnose
+        continue-on-error: true
+
+      - name: Upload run details artifact
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-details-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
+          path: odigos_debug*.tar.gz
+        continue-on-error: true
