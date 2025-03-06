@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deleteinstrumentationconfig
+package sourceinstrumentation
 
 import (
 	"context"
@@ -33,7 +33,6 @@ import (
 )
 
 func getObjectByOwnerReference(ctx context.Context, k8sClient client.Client, ownerRef metav1.OwnerReference, namespace string) (client.Object, error) {
-
 	key := client.ObjectKey{
 		Name:      ownerRef.Name,
 		Namespace: namespace,

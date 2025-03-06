@@ -1,4 +1,4 @@
-package deleteinstrumentationconfig_test
+package sourceinstrumentation_test
 
 import (
 	"context"
@@ -36,7 +36,7 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 			Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
 			sourceNamespace = testutil.NewMockSource(namespace)
 			sourceNamespace.Spec.DisableInstrumentation = false
-			sourceNamespace.Finalizers = []string{k8sconsts.DeleteInstrumentationConfigFinalizer}
+			sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
 			Expect(k8sClient.Create(ctx, sourceNamespace)).Should(Succeed())
 		})
 
@@ -52,16 +52,13 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 
 				// these workloads has instrumentation application because the namespace has instrumentation enabled
 				instrumentationConfigDeployment = testutil.NewMockInstrumentationConfig(deployment)
-				Expect(k8sClient.Create(ctx, instrumentationConfigDeployment)).Should(Succeed())
 				instrumentationConfigDaemonSet = testutil.NewMockInstrumentationConfig(daemonSet)
-				Expect(k8sClient.Create(ctx, instrumentationConfigDaemonSet)).Should(Succeed())
 				instrumentationConfigStatefulSet = testutil.NewMockInstrumentationConfig(statefulSet)
-				Expect(k8sClient.Create(ctx, instrumentationConfigStatefulSet)).Should(Succeed())
 			})
 
 			It("should delete instrumented application", func() {
 				sourceNamespace.Spec.DisableInstrumentation = true
-				sourceNamespace.Finalizers = []string{k8sconsts.StartLangDetectionFinalizer}
+				sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
 				Expect(k8sClient.Update(ctx, sourceNamespace)).Should(Succeed())
 
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfigDeployment)
@@ -69,16 +66,6 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfigStatefulSet)
 			})
 
-			It("should delete reported name annotation", func() {
-
-				sourceNamespace.Spec.DisableInstrumentation = true
-				sourceNamespace.Finalizers = []string{k8sconsts.StartLangDetectionFinalizer}
-				Expect(k8sClient.Update(ctx, sourceNamespace)).Should(Succeed())
-
-				testutil.AssertReportedNameAnnotationDeletedDeployment(ctx, k8sClient, deployment)
-				testutil.AssertReportedNameAnnotationDeletedDaemonSet(ctx, k8sClient, daemonSet)
-				testutil.AssertReportedNameAnnotationDeletedStatefulSet(ctx, k8sClient, statefulSet)
-			})
 		})
 
 		Context("workloads instrumentation source enabled (override namespace)", func() {
@@ -98,18 +85,14 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 				sourceStatefulSet = testutil.NewMockSource(statefulSet)
 				Expect(k8sClient.Create(ctx, sourceStatefulSet)).Should(Succeed())
 
-				// these workloads has instrumentation application because the namespace has instrumentation enabled
 				instrumentationConfigDeployment = testutil.NewMockInstrumentationConfig(deployment)
-				Expect(k8sClient.Create(ctx, instrumentationConfigDeployment)).Should(Succeed())
 				instrumentationConfigDaemonSet = testutil.NewMockInstrumentationConfig(daemonSet)
-				Expect(k8sClient.Create(ctx, instrumentationConfigDaemonSet)).Should(Succeed())
 				instrumentationConfigStatefulSet = testutil.NewMockInstrumentationConfig(statefulSet)
-				Expect(k8sClient.Create(ctx, instrumentationConfigStatefulSet)).Should(Succeed())
 			})
 
 			It("should retain instrumented application", func() {
 				sourceNamespace.Spec.DisableInstrumentation = true
-				sourceNamespace.Finalizers = []string{k8sconsts.StartLangDetectionFinalizer}
+				sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
 				Expect(k8sClient.Update(ctx, sourceNamespace)).Should(Succeed())
 
 				testutil.AssertInstrumentationConfigRetained(ctx, k8sClient, instrumentationConfigDeployment)
