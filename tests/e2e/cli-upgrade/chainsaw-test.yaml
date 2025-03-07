@@ -140,7 +140,7 @@ spec:
     - name: Simple-demo instrumented after upgrade
       try:
         - assert:
-            file: ../../common/assert/simple-demo-instrumented-full.yaml
+            file: ../../common/assert/simple-demo-instrumented.yaml
 
     - name: Generate Traffic
       try:
