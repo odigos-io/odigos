@@ -32,11 +32,6 @@ spec:
               fi
         - assert:
             file: ../../common/assert/odigos-installed.yaml
-    - name: Assert Tempo Is Up
-      try:
-        - assert:
-            timeout: 5m
-            file: ../../common/assert/tempo-running.yaml
     - name: Install Demo App
       try:
         - script:
@@ -68,7 +63,11 @@ spec:
               kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
-
+    - name: Assert Tempo Is Up
+      try:
+        - assert:
+            timeout: 5m
+            file: ../../common/assert/tempo-running.yaml
     - name: Instrument Deployments using Sources with otelServiceName field set
       try:
         - apply:

@@ -8,51 +8,99 @@ on:
       - stable
       - greatwall
 
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   build-autoscaler:
     name: build-autoscaler
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Docker layer caching
+        uses: WarpBuilds/cache@v1
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-autoscaler-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-autoscaler-
       - name: Build Autoscaler Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
-          tags: autoscaler:pr-${{ github.event.number }}
+          tags: |
+            autoscaler:pr-${{ github.event.number }}
+            autoscaler:e2e-test
           build-args: SERVICE_NAME=autoscaler
           file: ${{ matrix.dockerfile }}
+          outputs: ${{ matrix.dockerfile == 'Dockerfile' && 'type=oci,dest=/tmp/autoscaler.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'Dockerfile'
+        with:
+          name: autoscaler-image
+          path: /tmp/autoscaler.tar
 
   build-scheduler:
     name: build-scheduler
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Docker layer caching
+        uses: WarpBuilds/cache@v1
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-scheduler-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-scheduler-
       - name: Build Scheduler Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
-          tags: scheduler:pr-${{ github.event.number }}
+          tags: |
+            scheduler:pr-${{ github.event.number }}
+            scheduler:e2e-test
           build-args: SERVICE_NAME=scheduler
           file: ${{ matrix.dockerfile }}
+          outputs: ${{ matrix.dockerfile == 'Dockerfile' && 'type=oci,dest=/tmp/scheduler.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'Dockerfile'
+        with:
+          name: scheduler-image
+          path: /tmp/scheduler.tar
 
   build-and-test-instrumentor:
     name: build-and-test-instrumentor
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -60,62 +108,128 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23.0'
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+      - name: Docker layer caching
+        uses: WarpBuilds/cache@v1
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-instrumentor-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-instrumentor-
       - name: Build Instrumentor Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
-          tags: instrumentor:pr-${{ github.event.number }}
+          tags: |
+            instrumentor:pr-${{ github.event.number }}
+            instrumentor:e2e-test
           build-args: SERVICE_NAME=instrumentor
           file: ${{ matrix.dockerfile }}
+          outputs: ${{ matrix.dockerfile == 'Dockerfile' && 'type=oci,dest=/tmp/instrumentor.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: run tests
         working-directory: ./instrumentor
         run: |
           make test
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'Dockerfile'
+        with:
+          name: instrumentor-image
+          path: /tmp/instrumentor.tar
 
   build-and-test-odigos-collector:
     name: build-and-test-odigos-collector
     strategy:
       matrix:
         dockerfile: ['collector/Dockerfile', 'collector/Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Docker layer caching
+        uses: WarpBuilds/cache@v1
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-collector-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-collector-
       - name: build Odigos Collector Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
-          tags: odigos-collector:pr-${{ github.event.number }}
+          tags: |
+            odigos-collector:pr-${{ github.event.number }}
+            odigos-collector:e2e-test
           context: ./collector
           file: ${{ matrix.dockerfile }}
+          outputs: ${{ matrix.dockerfile == 'collector/Dockerfile' && 'type=oci,dest=/tmp/odigos-collector.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: run tests
         working-directory: ./collector
         run: |
           make test
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'collector/Dockerfile'
+        with:
+          name: odigos-collector-image
+          path: /tmp/odigos-collector.tar
 
   build-and-test-odiglet:
     name: build-and-test-odiglet
     strategy:
       matrix:
         dockerfile: ['odiglet/Dockerfile', 'odiglet/Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Docker layer caching
+        uses: WarpBuilds/cache@v1
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-odiglet-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-odiglet-
+      - name: Cache build dependencies
+        uses: WarpBuilds/cache@v1
+        with:
+          path: /var/cache/apt
+          key: ${{ runner.os }}-apt-cache-${{ hashFiles('**/apt-packages.txt') }}
       - name: Build Odiglet Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: ${{ matrix.dockerfile }}
           context: .
           push: false
-          tags: odiglet:pr-${{ github.event.number }}
+          tags: |
+            odiglet:pr-${{ github.event.number }}
+            odiglet:e2e-test
+          outputs: ${{ matrix.dockerfile == 'odiglet/Dockerfile' && 'type=oci,dest=/tmp/odiglet.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev
@@ -123,90 +237,156 @@ jobs:
         working-directory: ./odiglet
         run: |
           make test
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'odiglet/Dockerfile'
+        with:
+          name: odiglet-image
+          path: /tmp/odiglet.tar
 
   build-frontend:
     name: build-frontend
     strategy:
       matrix:
         dockerfile: ['frontend/Dockerfile', 'frontend/Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Docker layer caching
+        uses: WarpBuilds/cache@v1
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-frontend-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-frontend-
       - name: Build Frontend Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: ${{ matrix.dockerfile }}
           context: .
           push: false
-          tags: frontend:pr-${{ github.event.number }}
+          tags: |
+            frontend:pr-${{ github.event.number }}
+            frontend:e2e-test
+          outputs: ${{ matrix.dockerfile == 'frontend/Dockerfile' && 'type=oci,dest=/tmp/frontend.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'frontend/Dockerfile'
+        with:
+          name: frontend-image
+          path: /tmp/frontend.tar
 
   build-operator:
     name: build-operator
     strategy:
       matrix:
         dockerfile: ['operator/Dockerfile', 'operator/Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Docker layer caching
+        uses: WarpBuilds/cache@v1
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-operator-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-operator-
       - name: Build Operator Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: ${{ matrix.dockerfile }}
           context: .
           push: false
-          tags: operator:pr-${{ github.event.number }}
+          tags: |
+            operator:pr-${{ github.event.number }}
+            operator:e2e-test
+          outputs: ${{ matrix.dockerfile == 'operator/Dockerfile' && 'type=oci,dest=/tmp/operator.tar' || 'type=image' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.dockerfile == 'operator/Dockerfile'
+        with:
+          name: operator-image
+          path: /tmp/operator.tar
 
   build-cli:
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.23.0'
-      - name: Set up Goreleaser
-        uses: goreleaser/goreleaser-action@v5
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+      - name: Build CLI
+        run: |
+          cd cli
+          go build -tags=embed_manifests -o odigos
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
         with:
-          version: latest
-          args: build --snapshot --clean
+          name: odigos-cli
+          path: cli/odigos
 
   test-k8sutils:
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23.0'
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
       - name: Test k8sutils module
         working-directory: ./k8sutils
         run: |
           go test -v ./...
 
   test-common:
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23.0'
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
       - name: Test common module
         working-directory: ./common
         run: |
           make test
 
   test-procdiscovery:
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-4x-spot
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.23.0'
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
       - name: Test procdiscovery module
         working-directory: ./procdiscovery
         run: |
