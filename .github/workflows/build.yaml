@@ -391,24 +391,3 @@ jobs:
         working-directory: ./procdiscovery
         run: |
           go test -v ./...
-
-  trigger-e2e:
-    needs: [build-autoscaler, build-scheduler, build-and-test-instrumentor, build-and-test-odigos-collector, build-and-test-odiglet, build-frontend, build-operator, build-cli, test-k8sutils, test-common, test-procdiscovery]
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-    steps:
-      - name: Trigger E2E workflow
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'e2e.yaml',
-              ref: context.ref,
-              inputs: {
-                build_run_id: context.runId.toString()
-              }
-            });

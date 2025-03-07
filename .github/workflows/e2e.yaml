@@ -1,12 +1,10 @@
 name: E2E Tests
 
 on:
-  workflow_dispatch:
-    inputs:
-      build_run_id:
-        description: 'Build workflow run ID'
-        required: true
-        type: string
+  workflow_run:
+    workflows: ['build']
+    types:
+      - completed
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -14,6 +12,7 @@ concurrency:
 
 jobs:
   kubernetes-test:
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: warp-ubuntu-latest-x64-8x-spot
     strategy:
       fail-fast: false
@@ -40,6 +39,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -73,7 +74,7 @@ jobs:
           path: /tmp/images
           merge-multiple: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ inputs.build_run_id }}
+          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Load Images to Kind
         run: |
@@ -92,7 +93,7 @@ jobs:
           name: odigos-cli
           path: cli/
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ inputs.build_run_id }}
+          run-id: ${{ github.event.workflow_run.id }}
       - run: chmod +x cli/odigos
 
       - name: Run E2E Tests
