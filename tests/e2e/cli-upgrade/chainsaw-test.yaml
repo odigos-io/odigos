@@ -136,6 +136,11 @@ spec:
       try:
         - assert:
             file:  ../../common/assert/pipeline-ready.yaml
+        - script:
+            content: |
+              # Make sure there are no leftover gateway pods from pre-upgrade
+              kubectl rollout status deployment -n odigos-test odigos-gateway --timeout=60s
+            timeout: 1m
 
     - name: Simple-demo instrumented after upgrade
       try:

@@ -46,7 +46,7 @@ function process_yaml_file() {
   start_epoch=$(($current_epoch - one_hour))
   end_epoch=$(($current_epoch + one_hour))
 
-  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search\?end=$end_epoch\&start=$start_epoch\&q=$encoded_query\&limit=50)
+  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search\?end=$end_epoch\&start=$start_epoch\&q=$encoded_query\&limit=50\&spss=50)
 
   if [ "$verbose" == "true" ]; then
     echo "==============Raw response from tempo===================="
