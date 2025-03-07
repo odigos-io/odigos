@@ -221,6 +221,7 @@ status:
   readyReplicas: 1
   updatedReplicas: 1
   availableReplicas: 1
+  observedGeneration: 2 # make sure the "updatedReplicas" is for the new generation
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
