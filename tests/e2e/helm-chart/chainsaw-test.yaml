@@ -76,10 +76,12 @@ spec:
                 docker pull registry.odigos.io/odigos-demo-inventory:v0.1
                 docker pull registry.odigos.io/odigos-demo-membership:v0.1
                 docker pull registry.odigos.io/odigos-demo-coupon:v0.1
+                docker pull registry.odigos.io/odigos-demo-pricing:v0.1
                 docker pull registry.odigos.io/odigos-demo-frontend:v0.2
                 kind load docker-image registry.odigos.io/odigos-demo-inventory:v0.1
                 kind load docker-image registry.odigos.io/odigos-demo-membership:v0.1
                 kind load docker-image registry.odigos.io/odigos-demo-coupon:v0.1
+                kind load docker-image registry.odigos.io/odigos-demo-pricing:v0.1
                 kind load docker-image registry.odigos.io/odigos-demo-frontend:v0.2
               else
                 echo "Skipping docker pull and kind load for cross-cloud-tests mode"

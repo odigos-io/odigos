@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: default
+  (generation > 1): true
   labels:
     app: frontend
   name: frontend
@@ -16,12 +17,12 @@ status:
   updatedReplicas: 1
   readyReplicas: 1
   availableReplicas: 1
-  (observedGeneration > 1): true # this makes sure odigos has rolled out the deployment and the updatedReplicas refer to the new generation
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: default
+  (generation > 1): true
   labels:
     app: coupon
   name: coupon
@@ -35,12 +36,12 @@ status:
   updatedReplicas: 1
   readyReplicas: 1
   availableReplicas: 1
-  (observedGeneration > 1): true # this makes sure odigos has rolled out the deployment and the updatedReplicas refer to the new generation
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: default
+  (generation > 1): true
   labels:
     app: inventory
   name: inventory
@@ -54,12 +55,12 @@ status:
   updatedReplicas: 1
   readyReplicas: 1
   availableReplicas: 1
-  (observedGeneration > 1): true # this makes sure odigos has rolled out the deployment and the updatedReplicas refer to the new generation
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: default
+  (generation > 1): true
   labels:
     app: membership
   name: membership
@@ -73,12 +74,12 @@ status:
   updatedReplicas: 1
   readyReplicas: 1
   availableReplicas: 1
-  (observedGeneration > 1): true # this makes sure odigos has rolled out the deployment and the updatedReplicas refer to the new generation
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: default
+  (generation > 1): true
   labels:
     app: pricing
   name: pricing
@@ -92,7 +93,6 @@ status:
   updatedReplicas: 1
   readyReplicas: 1
   availableReplicas: 1
-  (observedGeneration > 1): true # this makes sure odigos has rolled out the deployment and the updatedReplicas refer to the new generation
 ---
 ### Simple-demo Pods ### 
 apiVersion: v1
