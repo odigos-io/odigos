@@ -1,3 +1,99 @@
+### Simple-demo Deployments ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  labels:
+    app: frontend
+  name: frontend
+spec:
+  template:
+    metadata:
+      annotations:
+        (kubectl.kubernetes.io/restartedAt != null): true # verify odigos rolled out the deployment by setting this annotation
+status:
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  (observedGeneration > 1): true # this makes sure odigos has rolled out the deployment and the updatedReplicas refer to the new generation
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  labels:
+    app: coupon
+  name: coupon
+spec:
+  template:
+    metadata:
+      annotations:
+        (kubectl.kubernetes.io/restartedAt != null): true # verify odigos rolled out the deployment by setting this annotation
+status:
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  (observedGeneration > 1): true # this makes sure odigos has rolled out the deployment and the updatedReplicas refer to the new generation
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  labels:
+    app: inventory
+  name: inventory
+spec:
+  template:
+    metadata:
+      annotations:
+        (kubectl.kubernetes.io/restartedAt != null): true # verify odigos rolled out the deployment by setting this annotation
+status:
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  (observedGeneration > 1): true # this makes sure odigos has rolled out the deployment and the updatedReplicas refer to the new generation
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  labels:
+    app: membership
+  name: membership
+spec:
+  template:
+    metadata:
+      annotations:
+        (kubectl.kubernetes.io/restartedAt != null): true # verify odigos rolled out the deployment by setting this annotation
+status:
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  (observedGeneration > 1): true # this makes sure odigos has rolled out the deployment and the updatedReplicas refer to the new generation
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  labels:
+    app: pricing
+  name: pricing
+spec:
+  template:
+    metadata:
+      annotations:
+        (kubectl.kubernetes.io/restartedAt != null): true # verify odigos rolled out the deployment by setting this annotation
+status:
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  (observedGeneration > 1): true # this makes sure odigos has rolled out the deployment and the updatedReplicas refer to the new generation
+---
 ### Simple-demo Pods ### 
 apiVersion: v1
 kind: Pod
