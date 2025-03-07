@@ -181,6 +181,7 @@ spec:
         - script:
             content: |
               ../../common/traceql_runner.sh ../../common/traceql/all_traces.yaml --verbose
+              ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
 
     - name: Verify Trace - Context Propagation
       try:
