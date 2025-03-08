@@ -174,6 +174,7 @@ In some scenarios, Odigos may create Sources for you automatically.
 * When choosing **Include future workloads** in the UI, Odigos will create a Namespace Source for the namespace.
 * When creating a Source grouping in the UI, Odigos will create a Workload Source for each Workload in the group.
 * In v1.0.144+, when setting the `odigos-instrumentation` label on a workload or namespace, Odigos will automatically create a Source to migrate from the legacy label to Sources. Note that deleting the label will not remove the Source once it is automatically created.
+* **In v1.0.161+, workload instrumentation can no longer be modified through the `odigos-instrumentation` label. Odigos will continue to create a Source from the legacy label if one does not already exist. This functionality will be removed in a future release.**
 
 In all of these cases, if a Source already exists, Odigos will either patch the existing Source or
 return an error if it can't.
