@@ -54,8 +54,6 @@ function process_yaml_file() {
       exit 1
   fi
 
-
-
   if [ "$verbose" == "true" ]; then
     echo "============== Raw response from Tempo ===================="
     echo "$response" | jq .
@@ -72,6 +70,8 @@ function process_yaml_file() {
     done
   fi
 
+  echo "Debug print response:"
+  echo "$response"
   num_of_traces=$(echo $response | jq '.traces | length')
 
   if [ "$expected_count" != "null" ]; then
