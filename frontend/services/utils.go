@@ -26,7 +26,7 @@ func GetImageURL(image string) string {
 }
 
 func GetPageLimit(ctx context.Context) (int, error) {
-	defaultValue := 10
+	defaultValue := 100
 	odigosNs := env.GetCurrentNamespace()
 
 	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosNs).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})

@@ -15,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -59,24 +60,23 @@ func GetWorkload(c context.Context, ns string, kind string, name string) (metav1
 	}
 }
 
-func AddHealthyInstrumentationInstancesCondition(ctx context.Context, instruConfig *v1alpha1.InstrumentationConfig, source *model.K8sActualSource) error {
-	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, instruConfig.Name)
-	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(instruConfig.Namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: labelSelector,
+func AddHealthyInstrumentationInstancesCondition(ctx context.Context, namespace string, name string, kind string) (model.Condition, error) {
+	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, workload.CalculateWorkloadRuntimeObjectName(name, kind)),
 	})
-
 	if err != nil {
-		return err
+		return model.Condition{}, err
 	}
 
 	totalInstances := len(instancesList.Items)
 	if totalInstances == 0 {
 		// no instances so nothing to report
-		return nil
+		return model.Condition{}, nil
 	}
 
 	healthyInstances := 0
 	latestStatusTime := metav1.NewTime(time.Time{})
+
 	for _, instance := range instancesList.Items {
 		if instance.Status.Healthy != nil && *instance.Status.Healthy {
 			healthyInstances++
@@ -87,20 +87,25 @@ func AddHealthyInstrumentationInstancesCondition(ctx context.Context, instruConf
 	}
 
 	status := model.ConditionStatusSuccess
-	if healthyInstances < totalInstances {
+	if totalInstances == 0 {
+		status = model.ConditionStatusLoading
+	} else if healthyInstances < totalInstances {
 		status = model.ConditionStatusError
 	}
 
+	reason := "HealthyInstrumentationInstances"
 	message := fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances)
 	lastTransitionTime := Metav1TimeToString(latestStatusTime)
-	source.Conditions = append(source.Conditions, &model.Condition{
-		Type:               "HealthyInstrumentationInstances",
-		Status:             status,
-		LastTransitionTime: &lastTransitionTime,
-		Message:            &message,
-	})
 
-	return nil
+	condition := model.Condition{
+		Type:               reason,
+		Status:             status,
+		Reason:             &reason,
+		Message:            &message,
+		LastTransitionTime: &lastTransitionTime,
+	}
+
+	return condition, nil
 }
 
 func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {

@@ -60,3 +60,20 @@ export const GET_SOURCE = gql`
     }
   }
 `;
+
+export const GET_INSTANCES = gql`
+  query GetInstances($sourceIds: [K8sSourceId!]!) {
+    instances(sourceIds: $sourceIds) {
+      namespace
+      name
+      kind
+      condition {
+        status
+        type
+        reason
+        message
+        lastTransitionTime
+      }
+    }
+  }
+`;
