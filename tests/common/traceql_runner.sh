@@ -48,7 +48,13 @@ function process_yaml_file() {
 
   tempo_search_query="/api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search?end=$end_epoch&start=$start_epoch&q=$encoded_query&limit=50&spss=50"
   echo "running search call to tempo: $tempo_search_query"
-  response=$(kubectl get --raw "$tempo_search_query")
+  if ! response=$(kubectl get --raw "$tempo_search_query" 2>/tmp/kubectl_error.log); then
+      echo "Error occurred:"
+      cat /tmp/kubectl_error.log
+      exit 1
+  fi
+
+
 
   if [ "$verbose" == "true" ]; then
     echo "============== Raw response from Tempo ===================="
