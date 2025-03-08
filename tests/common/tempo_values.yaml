@@ -28,7 +28,11 @@ query_frontend:
     throughput_bytes_slo: 1.073741824e+09
 
 ingester:
-  max_block_duration: 5m               # cut the headblock when this much time passes. this is being set for demo purposes and should probably be left alone normally
+  flush_check_period: 1s
+  max_block_duration: 2s
+  max_block_bytes: 1
+  trace_idle_period: 5s
+
 
 compactor:
   compaction:
