@@ -41,8 +41,8 @@ type Details struct {
 type ProcessContext struct {
 	Details
 
-	ExeFile  *os.File
-	MapsFile *os.File
+	exeFile  *os.File
+	mapsFile *os.File
 }
 
 func NewProcessContext(details Details) *ProcessContext {
@@ -55,54 +55,54 @@ func NewProcessContext(details Details) *ProcessContext {
 func (pcx *ProcessContext) CloseFiles() error {
 	var firstErr error
 
-	if pcx.ExeFile != nil {
-		if err := pcx.ExeFile.Close(); err != nil && firstErr == nil {
+	if pcx.exeFile != nil {
+		if err := pcx.exeFile.Close(); err != nil && firstErr == nil {
 			firstErr = err
 		}
-		pcx.ExeFile = nil
+		pcx.exeFile = nil
 	}
 
-	if pcx.MapsFile != nil {
-		if err := pcx.MapsFile.Close(); err != nil && firstErr == nil {
+	if pcx.mapsFile != nil {
+		if err := pcx.mapsFile.Close(); err != nil && firstErr == nil {
 			firstErr = err
 		}
-		pcx.MapsFile = nil
+		pcx.mapsFile = nil
 	}
 
 	return firstErr
 }
 
 func (pcx *ProcessContext) GetExeFile() (*os.File, error) {
-	if pcx.ExeFile == nil {
+	if pcx.exeFile == nil {
 		path := fmt.Sprintf("/proc/%d/exe", pcx.ProcessID)
 		fileData, err := os.Open(path)
 		if err != nil {
 			return nil, err
 		}
-		pcx.ExeFile = fileData
+		pcx.exeFile = fileData
 	} else {
-		if _, err := pcx.ExeFile.Seek(0, 0); err != nil {
+		if _, err := pcx.exeFile.Seek(0, 0); err != nil {
 			return nil, err // Return the seek error if it fails
 		}
 	}
 
-	return pcx.ExeFile, nil
+	return pcx.exeFile, nil
 }
 
 func (pcx *ProcessContext) GetMapsFile() (*os.File, error) {
-	if pcx.MapsFile == nil {
+	if pcx.mapsFile == nil {
 		mapsPath := fmt.Sprintf("/proc/%d/maps", pcx.ProcessID)
 		fileData, err := os.Open(mapsPath)
 		if err != nil {
 			return nil, err
 		}
-		pcx.MapsFile = fileData
+		pcx.mapsFile = fileData
 	} else {
-		if _, err := pcx.MapsFile.Seek(0, 0); err != nil {
+		if _, err := pcx.mapsFile.Seek(0, 0); err != nil {
 			return nil, err // Return the seek error if it fails
 		}
 	}
-	return pcx.MapsFile, nil
+	return pcx.mapsFile, nil
 }
 
 type ProcessEnvs struct {
