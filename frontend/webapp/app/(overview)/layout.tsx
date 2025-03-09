@@ -6,9 +6,9 @@ import { ROUTES } from '@/utils';
 import styled from 'styled-components';
 import { ENTITY_TYPES } from '@odigos/ui-utils';
 import { FlexColumn, FlexRow } from '@odigos/ui-components';
+import { useNamespace, useSSE, useTokenTracker } from '@/hooks';
 import { ErrorBoundary, OverviewHeader, OverviewModalsAndDrawers } from '@/components';
 import { DataFlowActionsMenu, NAV_ICON_IDS, SideNav, ToastList } from '@odigos/ui-containers';
-import { useActionCRUD, useDestinationCRUD, useInstrumentationRuleCRUD, useNamespace, useSourceCRUD, useSSE, useTokenTracker } from '@/hooks';
 
 const PageContent = styled(FlexColumn)`
   width: 100%;
@@ -37,12 +37,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
 
   const pathname = usePathname();
   const router = useRouter();
-
-  const { sources } = useSourceCRUD();
-  const { actions } = useActionCRUD();
   const { namespaces } = useNamespace();
-  const { destinations } = useDestinationCRUD();
-  const { instrumentationRules } = useInstrumentationRuleCRUD();
 
   return (
     <ErrorBoundary>
@@ -52,10 +47,6 @@ function OverviewLayout({ children }: PropsWithChildren) {
         <ContentWithActions>
           <DataFlowActionsMenu
             namespaces={namespaces}
-            sources={sources}
-            destinations={destinations}
-            actions={actions}
-            instrumentationRules={instrumentationRules}
             addEntity={
               pathname === ROUTES.OVERVIEW_SOURCES
                 ? ENTITY_TYPES.SOURCE

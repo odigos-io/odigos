@@ -86,9 +86,9 @@ func AddHealthyInstrumentationInstancesCondition(ctx context.Context, instruConf
 		}
 	}
 
-	status := model.ConditionStatusTrue
+	status := model.ConditionStatusSuccess
 	if healthyInstances < totalInstances {
-		status = model.ConditionStatusFalse
+		status = model.ConditionStatusError
 	}
 
 	message := fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances)

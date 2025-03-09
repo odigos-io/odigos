@@ -1,4 +1,4 @@
-import type { DestinationCategories, FetchedCondition } from '@odigos/ui-utils';
+import type { Condition, DestinationCategories } from '@odigos/ui-utils';
 import type { DestinationDynamicField, DestinationFormData } from '@odigos/ui-containers';
 
 export interface FetchedDestination {
@@ -10,7 +10,7 @@ export interface FetchedDestination {
     logs: boolean;
   };
   fields: string;
-  conditions: FetchedCondition[] | null;
+  conditions: Condition[] | null;
   destinationType: {
     type: string;
     displayName: string;
