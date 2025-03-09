@@ -135,7 +135,6 @@ jobs:
           chainsaw test tests/e2e/${{ matrix.test-scenario }} --values - <<EOF
           k8sMinorVersion: ${MINOR_VERSION}
           EOF
-          chainsaw test tests/e2e/${{ matrix.test-scenario }}
 
       - name: Run diagnose command
         if: ${{ failure() }}
