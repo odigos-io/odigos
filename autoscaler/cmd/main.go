@@ -17,9 +17,11 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -60,6 +62,8 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
 
 	//+kubebuilder:scaffold:imports
+
+	googlecloudmetadata "cloud.google.com/go/compute/metadata"
 
 	_ "net/http/pprof"
 )
@@ -212,10 +216,20 @@ func main() {
 
 	// TODO: this should be removed once the hpa logic uses the feature package for its checks
 	k8sVersion := feature.K8sVersion()
+	// this is a workaround because the GKE detector does not respect the timeout configuration for the resource detection processor.
+	// it could lead to long initialization times for the data-collection,
+	// as a workaround we try to understand here if we're on GKE with a timeout of 2 seconds.
+	// TODO: remove this once https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/issues/1026 is resolved.
+	// DO NOT ADD SIMILAR FUNCTIONS FOR OTHER PLATFORMS
+	onGKE := isRunningOnGKE(ctx)
+	if onGKE {
+		setupLog.Info("Running on GKE")
+	}
 
 	commonconfig.ControllerConfig = &controllerconfig.ControllerConfig{
 		K8sVersion:     k8sVersion,
 		CollectorImage: collectorImage,
+		OnGKE:          onGKE,
 	}
 
 	if err = (&controllers.DestinationReconciler{
@@ -310,4 +324,14 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+// based on https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/blob/19c4db6ea12211308fbd2cba12cc8665a5b7c890/detectors/gcp/gke.go#L34
+func isRunningOnGKE(ctx context.Context) bool {
+	c := googlecloudmetadata.NewClient(nil)
+	ctx, cancel := context.WithTimeout(ctx, 2 * time.Second)
+	defer cancel()
+
+	_, err := c.InstanceAttributeValueWithContext(ctx, "cluster-location")
+	return err == nil
 }
