@@ -130,7 +130,11 @@ jobs:
 
       - name: Run E2E Tests
         run: |
-          chainsaw test tests/e2e/${{ matrix.test-scenario }}
+          MINOR_VERSION=$(echo ${{ matrix.kube-version }} | sed -E 's/^1\.([0-9]+).*$/\1/')
+
+          chainsaw test tests/e2e/${{ matrix.test-scenario }} --values - <<EOF
+          k8sMinorVersion: ${MINOR_VERSION}
+          EOF
 
       - name: Run diagnose command
         if: ${{ failure() }}
