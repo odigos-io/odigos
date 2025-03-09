@@ -2,6 +2,11 @@ image:
   tag: ''
 imagePullSecrets: []
 
+# By default, images are pulled from odigos registry at `registry.odigos.io`
+# If you use custom or internal registry to serve in your cluster, you can set the imagePrefix to your registry.
+# For example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-<component>:<tag>`
+imagePrefix: 
+
 # namespaces list not to show in odigos ui
 # set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease, odigos-system
 # you can add additional namespaces to ignore by adding them to the list
@@ -97,24 +102,18 @@ collectorNode:
   goMemLimitMiB: 360
 
 autoscaler:
-  image:
-    repository: registry.odigos.io/odigos-autoscaler
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
 
 scheduler:
-  image:
-    repository: registry.odigos.io/odigos-scheduler
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
 
 ui:
-  image:
-    repository: registry.odigos.io/odigos-ui
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
@@ -135,9 +134,6 @@ instrumentor:
   # k8s-virtual-device: default method using a virtual device
   # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
   mountMethod: 'k8s-virtual-device'
-  deleteLangDetectionPods: true
-  image:
-    repository: registry.odigos.io/odigos-instrumentor
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
@@ -155,9 +151,6 @@ instrumentor:
   skipWebhookIssuerCreation: false
 
 odiglet:
-  image:
-    repository: registry.odigos.io/odigos-odiglet
-    enterpriseRepository: registry.odigos.io/odigos-enterprise-odiglet
   nodeSelector:
     kubernetes.io/os: linux
   tolerations:

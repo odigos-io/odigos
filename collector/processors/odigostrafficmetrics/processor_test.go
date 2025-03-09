@@ -43,7 +43,7 @@ func TestProcessor_Traces(t *testing.T) {
 	)
 	defer metricProvider.Shutdown(context.Background())
 
-	set := processortest.NewNopSettings()
+	set := processortest.NewNopSettings(processortest.NopType)
 	set.MeterProvider = metricProvider
 
 	tmp, err := newThroughputMeasurementProcessor(set, &Config{
