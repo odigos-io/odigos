@@ -51,10 +51,6 @@ func (c *FakeOdigosV1alpha1) InstrumentedApplications(namespace string) v1alpha1
 	return newFakeInstrumentedApplications(c, namespace)
 }
 
-func (c *FakeOdigosV1alpha1) OdigosConfigurations(namespace string) v1alpha1.OdigosConfigurationInterface {
-	return newFakeOdigosConfigurations(c, namespace)
-}
-
 func (c *FakeOdigosV1alpha1) Processors(namespace string) v1alpha1.ProcessorInterface {
 	return newFakeProcessors(c, namespace)
 }

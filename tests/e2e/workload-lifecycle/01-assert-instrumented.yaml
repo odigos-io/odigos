@@ -85,7 +85,7 @@ status:
       value: "14.0.0"
     - key: telemetry.distro.version
       value: e2e-test
-    - key: process.pid
+    - key: process.vpid
       (value != null): true
     - key: k8s.namespace.name
       (value != null): true
@@ -135,7 +135,7 @@ status:
       (value != null): true
     - key: telemetry.distro.version
       value: e2e-test
-    - key: process.pid
+    - key: process.vpid
       (value != null): true
     - key: k8s.namespace.name
       (value != null): true
@@ -185,7 +185,7 @@ status:
       value: "20.17.0"
     - key: telemetry.distro.version
       value: e2e-test
-    - key: process.pid
+    - key: process.vpid
       (value != null): true
     - key: k8s.namespace.name
       (value != null): true
@@ -235,7 +235,7 @@ status:
       value: "20.17.0"
     - key: telemetry.distro.version
       value: e2e-test
-    - key: process.pid
+    - key: process.vpid
       (value != null): true
     - key: k8s.namespace.name
       (value != null): true

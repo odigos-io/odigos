@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/fsnotify/fsnotify v1.8.0
-	go.opentelemetry.io/collector/confmap v1.26.0
+	go.opentelemetry.io/collector/confmap v1.27.0
 	go.uber.org/zap v1.27.0
 )
 
