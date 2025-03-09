@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useConfig } from '../config';
+import { deepClone, getWorkloadId } from '@/utils';
 import { useNamespace } from '../compute-platform';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { GET_INSTANCES, GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
@@ -40,9 +41,10 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const [queryByPage] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
   const [queryById] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
-  const [queryInstances] = useLazyQuery<{ instances: { namespace: WorkloadId['namespace']; name: WorkloadId['name']; kind: WorkloadId['kind']; condition: Condition }[] }, { sourceIds: WorkloadId[] }>(
-    GET_INSTANCES,
-  );
+  const [queryInstances] = useLazyQuery<
+    { instrumentationInstancesHealth: { namespace: WorkloadId['namespace']; name: WorkloadId['name']; kind: WorkloadId['kind']; condition: Condition }[] },
+    { sourceIds: WorkloadId[] }
+  >(GET_INSTANCES);
 
   const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
     // We should not fetch while sources are being instrumented.
@@ -62,12 +64,12 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const fetchAllInstances = async () => {
     const sourcesFromStore = useEntityStore.getState().sources;
-    const { data } = await queryInstances({ variables: { sourceIds: sourcesFromStore.map(({ namespace, name, kind }) => ({ namespace, name, kind })) } });
+    const { data } = await queryInstances({ variables: { sourceIds: sourcesFromStore.map(getWorkloadId) } });
 
-    if (!!data?.instances) {
-      const sourcesWithInstances: Source[] = JSON.parse(JSON.stringify(sourcesFromStore));
+    if (!!data?.instrumentationInstancesHealth) {
+      const sourcesWithInstances = deepClone<Source[]>(sourcesFromStore);
 
-      for (const { namespace, name, kind, condition } of data.instances) {
+      for (const { namespace, name, kind, condition } of data.instrumentationInstancesHealth) {
         if (!!condition?.status) {
           const foundIdx = sourcesWithInstances.findIndex((x) => x.namespace === namespace && x.name === name && x.kind === kind);
 

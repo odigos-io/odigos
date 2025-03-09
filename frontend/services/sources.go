@@ -60,7 +60,7 @@ func GetWorkload(c context.Context, ns string, kind string, name string) (metav1
 	}
 }
 
-func AddHealthyInstrumentationInstancesCondition(ctx context.Context, namespace string, name string, kind string) (model.Condition, error) {
+func GetInstrumentationInstancesHealthyCondition(ctx context.Context, namespace string, name string, kind string) (model.Condition, error) {
 	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, workload.CalculateWorkloadRuntimeObjectName(name, kind)),
 	})
@@ -75,27 +75,20 @@ func AddHealthyInstrumentationInstancesCondition(ctx context.Context, namespace 
 	}
 
 	healthyInstances := 0
-	latestStatusTime := metav1.NewTime(time.Time{})
-
 	for _, instance := range instancesList.Items {
 		if instance.Status.Healthy != nil && *instance.Status.Healthy {
 			healthyInstances++
 		}
-		if instance.Status.LastStatusTime.After(latestStatusTime.Time) {
-			latestStatusTime = instance.Status.LastStatusTime
-		}
 	}
 
 	status := model.ConditionStatusSuccess
-	if totalInstances == 0 {
-		status = model.ConditionStatusLoading
-	} else if healthyInstances < totalInstances {
+	if healthyInstances < totalInstances {
 		status = model.ConditionStatusError
 	}
 
-	reason := "HealthyInstrumentationInstances"
+	reason := v1alpha1.InstrumentationInstancesHealth
 	message := fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances)
-	lastTransitionTime := Metav1TimeToString(latestStatusTime)
+	lastTransitionTime := Metav1TimeToString(metav1.NewTime(time.Time{}))
 
 	condition := model.Condition{
 		Type:               reason,

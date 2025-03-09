@@ -166,7 +166,7 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 	src := instrumentationConfigToActualSource(*ic)
 
 	// note: the following is done only for fetch-source-by-id, we removed this from paginate-all-sources due to peformance issues
-	condition, err := services.AddHealthyInstrumentationInstancesCondition(ctx, ns, name, string(kind))
+	condition, err := services.GetInstrumentationInstancesHealthyCondition(ctx, ns, name, string(kind))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get InstrumentationInstance: %w", err)
 	}
@@ -968,10 +968,10 @@ func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, ki
 	return source_describe.GetSourceDescription(ctx, namespace, kind, name)
 }
 
-// Instances is the resolver for the instances field.
-func (r *queryResolver) Instances(ctx context.Context, sourceIds []*model.K8sSourceID) ([]*model.InstanceStatus, error) {
-	result := make([]*model.InstanceStatus, 0)
-	channel := make(chan model.InstanceStatus, len(sourceIds))
+// InstrumentationInstancesHealth is the resolver for the instrumentationInstancesHealth field.
+func (r *queryResolver) InstrumentationInstancesHealth(ctx context.Context, sourceIds []*model.K8sSourceID) ([]*model.InstrumentationInstanceHealth, error) {
+	result := make([]*model.InstrumentationInstanceHealth, 0)
+	channel := make(chan model.InstrumentationInstanceHealth, len(sourceIds))
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
@@ -982,12 +982,12 @@ func (r *queryResolver) Instances(ctx context.Context, sourceIds []*model.K8sSou
 			name := id.Name
 			kind := id.Kind
 
-			condition, err := services.AddHealthyInstrumentationInstancesCondition(ctx, ns, name, string(kind))
+			condition, err := services.GetInstrumentationInstancesHealthyCondition(ctx, ns, name, string(kind))
 			if err != nil {
 				return fmt.Errorf("failed to get InstrumentationInstance: %w", err)
 			}
 			if condition.Status != "" {
-				channel <- model.InstanceStatus{
+				channel <- model.InstrumentationInstanceHealth{
 					Namespace: ns,
 					Name:      name,
 					Kind:      kind,

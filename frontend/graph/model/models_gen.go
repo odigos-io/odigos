@@ -298,17 +298,17 @@ type HTTPPayloadCollectionInput struct {
 	DropPartialPayloads *bool     `json:"dropPartialPayloads,omitempty"`
 }
 
-type InstanceStatus struct {
-	Namespace string          `json:"namespace"`
-	Name      string          `json:"name"`
-	Kind      K8sResourceKind `json:"kind"`
-	Condition *Condition      `json:"condition,omitempty"`
-}
-
 type InstrumentationInstanceAnalyze struct {
 	Healthy               *EntityProperty   `json:"healthy"`
 	Message               *EntityProperty   `json:"message,omitempty"`
 	IdentifyingAttributes []*EntityProperty `json:"identifyingAttributes"`
+}
+
+type InstrumentationInstanceHealth struct {
+	Namespace string          `json:"namespace"`
+	Name      string          `json:"name"`
+	Kind      K8sResourceKind `json:"kind"`
+	Condition *Condition      `json:"condition,omitempty"`
 }
 
 type InstrumentationLibraryGlobalID struct {
