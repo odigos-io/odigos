@@ -15,6 +15,7 @@ import (
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -97,12 +98,8 @@ and apply any required migrations and adaptations.`,
 
 		config, err := resources.GetCurrentConfig(ctx, client, ns)
 		if err != nil {
-			odigosConfig, err := resources.GetDeprecatedConfig(ctx, client, ns)
-			if err != nil {
-				fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
-				os.Exit(1)
-			}
-			config = odigosConfig.ToCommonConfig()
+			fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
+			os.Exit(1)
 		}
 
 		// update the config on upgrade
@@ -145,7 +142,7 @@ odigos upgrade
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
 	upgradeCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
-	updateCmd.Flags().StringVarP(&uiMode, "ui-mode", "", "", "set the UI mode (one-of: normal, readonly)")
+	updateCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", "", "set the UI mode (one-of: normal, readonly)")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
