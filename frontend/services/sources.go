@@ -409,19 +409,10 @@ func GetInstrumentationInstancesHealthConditions(ctx context.Context) ([]*model.
 			return result, err
 		}
 
-		payload := model.InstrumentationInstanceHealth{
-			Namespace:        namespace,
-			Name:             name,
-			Kind:             model.K8sResourceKind(kind),
-			TotalInstances:   0,
-			HealthyInstances: 0,
-			Condition:        nil,
-		}
-
-		foundResultItem := false
+		alreadyAppendedToResult := false
 		for _, resultItem := range result {
-			if resultItem.Namespace == payload.Namespace && resultItem.Name == payload.Name && resultItem.Kind == payload.Kind {
-				foundResultItem = true
+			if resultItem.Namespace == namespace && resultItem.Name == name && resultItem.Kind == model.K8sResourceKind(kind) {
+				alreadyAppendedToResult = true
 
 				resultItem.TotalInstances++
 				if instance.Status.Healthy != nil && *instance.Status.Healthy {
@@ -432,8 +423,15 @@ func GetInstrumentationInstancesHealthConditions(ctx context.Context) ([]*model.
 			}
 		}
 
-		if !foundResultItem {
-			result = append(result, &payload)
+		if !alreadyAppendedToResult {
+			result = append(result, &model.InstrumentationInstanceHealth{
+				Namespace:        namespace,
+				Name:             name,
+				Kind:             model.K8sResourceKind(kind),
+				TotalInstances:   0,
+				HealthyInstances: 0,
+				Condition:        nil,
+			})
 		}
 	}
 
