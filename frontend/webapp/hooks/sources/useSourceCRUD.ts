@@ -40,10 +40,9 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const [queryByPage] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
   const [queryById] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
-  const [queryInstances] = useLazyQuery<
-    { instrumentationInstancesHealth: { namespace: WorkloadId['namespace']; name: WorkloadId['name']; kind: WorkloadId['kind']; condition: Condition }[] },
-    { sourceIds: WorkloadId[] }
-  >(GET_INSTANCES);
+  const [queryInstances] = useLazyQuery<{ instrumentationInstancesHealth: { namespace: WorkloadId['namespace']; name: WorkloadId['name']; kind: WorkloadId['kind']; condition: Condition }[] }>(
+    GET_INSTANCES,
+  );
 
   const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
     // We should not fetch while sources are being instrumented.
@@ -63,7 +62,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const fetchAllInstances = async () => {
     const sourcesFromStore = useEntityStore.getState().sources;
-    const { data } = await queryInstances({ variables: { sourceIds: sourcesFromStore.map(getWorkloadId) } });
+    const { data } = await queryInstances();
 
     if (!!data?.instrumentationInstancesHealth) {
       const sourcesWithInstances = deepClone<Source[]>(sourcesFromStore);

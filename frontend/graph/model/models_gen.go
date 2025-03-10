@@ -305,10 +305,12 @@ type InstrumentationInstanceAnalyze struct {
 }
 
 type InstrumentationInstanceHealth struct {
-	Namespace string          `json:"namespace"`
-	Name      string          `json:"name"`
-	Kind      K8sResourceKind `json:"kind"`
-	Condition *Condition      `json:"condition,omitempty"`
+	Namespace        string          `json:"namespace"`
+	Name             string          `json:"name"`
+	Kind             K8sResourceKind `json:"kind"`
+	TotalInstances   int             `json:"totalInstances"`
+	HealthyInstances int             `json:"healthyInstances"`
+	Condition        *Condition      `json:"condition,omitempty"`
 }
 
 type InstrumentationLibraryGlobalID struct {
