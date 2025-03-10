@@ -27,6 +27,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	// Increase the QPS and Burst to avoid client throttling
+	// Observed mainly in large clusters once updating big amount of instrumentationInstances
+	cfg.QPS = 200
+	cfg.Burst = 200
+
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		panic(err)
