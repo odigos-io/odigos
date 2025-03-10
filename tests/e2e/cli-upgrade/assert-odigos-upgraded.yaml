@@ -147,7 +147,7 @@ spec:
   containers:
     - name: data-collection
       image: registry.odigos.io/odigos-collector:e2e-test
-  hostNetwork: true
+  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   nodeName: kind-control-plane
   nodeSelector:
     kubernetes.io/os: linux
@@ -177,7 +177,7 @@ spec:
   containers:
     - name: data-collection
       image: registry.odigos.io/odigos-collector:e2e-test
-  hostNetwork: true
+  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   nodeName: kind-worker
   nodeSelector:
     kubernetes.io/os: linux
