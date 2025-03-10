@@ -38,6 +38,73 @@ type Details struct {
 	Environments ProcessEnvs
 }
 
+type ProcessContext struct {
+	Details
+
+	exeFile  *os.File
+	mapsFile *os.File
+}
+
+func NewProcessContext(details Details) *ProcessContext {
+	return &ProcessContext{
+		Details: details,
+	}
+}
+
+// Close method to close any open file handles.
+func (pcx *ProcessContext) CloseFiles() error {
+	var firstErr error
+
+	if pcx.exeFile != nil {
+		if err := pcx.exeFile.Close(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+		pcx.exeFile = nil
+	}
+
+	if pcx.mapsFile != nil {
+		if err := pcx.mapsFile.Close(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+		pcx.mapsFile = nil
+	}
+
+	return firstErr
+}
+
+func (pcx *ProcessContext) GetExeFile() (*os.File, error) {
+	if pcx.exeFile == nil {
+		path := fmt.Sprintf("/proc/%d/exe", pcx.ProcessID)
+		fileData, err := os.Open(path)
+		if err != nil {
+			return nil, err
+		}
+		pcx.exeFile = fileData
+	} else {
+		if _, err := pcx.exeFile.Seek(0, 0); err != nil {
+			return nil, err // Return the seek error if it fails
+		}
+	}
+
+	return pcx.exeFile, nil
+}
+
+func (pcx *ProcessContext) GetMapsFile() (*os.File, error) {
+	if pcx.mapsFile == nil {
+		mapsPath := fmt.Sprintf("/proc/%d/maps", pcx.ProcessID)
+		fileData, err := os.Open(mapsPath)
+		if err != nil {
+			return nil, err
+		}
+		pcx.mapsFile = fileData
+	} else {
+		if _, err := pcx.mapsFile.Seek(0, 0); err != nil {
+			return nil, err // Return the seek error if it fails
+		}
+	}
+	return pcx.mapsFile, nil
+}
+
 type ProcessEnvs struct {
 	DetailedEnvs map[string]string
 	// OverwriteEnvs only contains environment variables that Odigos is using for auto-instrumentation and may need to be overwritten
