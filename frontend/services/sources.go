@@ -373,7 +373,7 @@ func GetInstrumentationInstancesHealthCondition(ctx context.Context, namespace s
 	}
 
 	reason := v1alpha1.InstrumentationInstancesHealth
-	lastTransitionTime := Metav1TimeToString(metav1.NewTime(time.Time{}))
+	lastTransitionTime := Metav1TimeToString(metav1.NewTime(time.Now()))
 	if message == "" {
 		message = fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances)
 	}

@@ -163,8 +163,6 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 	}
 
 	src := instrumentationConfigToActualSource(*ic)
-
-	// note: the following is done only for fetch-source-by-id, we removed this from paginate-all-sources due to peformance issues
 	condition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
 	if condition.Status != "" {
 		src.Conditions = append(src.Conditions, &condition)
