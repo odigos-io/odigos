@@ -5,7 +5,7 @@ imagePullSecrets: []
 # By default, images are pulled from odigos registry at `registry.odigos.io`
 # If you use custom or internal registry to serve in your cluster, you can set the imagePrefix to your registry.
 # For example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-<component>:<tag>`
-imagePrefix: 
+imagePrefix:
 
 # namespaces list not to show in odigos ui
 # set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease, odigos-system
@@ -125,7 +125,7 @@ ui:
   uiMode: 'normal'
   # uiPaginationLimit:
   #  - This flag controls the number of items to fetch per paginated-batch in the UI.
-  #  - If not set, the UI will fetch 10 items per paginated-batch.
+  #  - If not set, the UI will fetch 100 items per paginated-batch.
   uiPaginationLimit: 0
   centralBackendURL: ''
 

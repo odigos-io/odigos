@@ -202,9 +202,26 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 
 	var conditions []*model.Condition
 	for _, condition := range k8sDest.Status.Conditions {
+		var status model.ConditionStatus
+
+		switch condition.Status {
+		case metav1.ConditionUnknown:
+			status = model.ConditionStatusLoading
+		case metav1.ConditionTrue:
+			status = model.ConditionStatusSuccess
+		case metav1.ConditionFalse:
+			status = model.ConditionStatusError
+		}
+
+		// force "disabled" status ovverrides for certain "reasons"
+		if v1alpha1.IsReasonStatusDisabled(condition.Reason) {
+			status = model.ConditionStatusDisabled
+		}
+
 		conditions = append(conditions, &model.Condition{
+			Status:             status,
 			Type:               condition.Type,
-			Status:             model.ConditionStatus(condition.Status),
+			Reason:             &condition.Reason,
 			Message:            &condition.Message,
 			LastTransitionTime: func(s string) *string { return &s }(condition.LastTransitionTime.String()),
 		})

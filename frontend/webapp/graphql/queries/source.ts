@@ -60,3 +60,20 @@ export const GET_SOURCE = gql`
     }
   }
 `;
+
+export const GET_INSTANCES = gql`
+  query GetInstrumentationInstancesHealth {
+    instrumentationInstancesHealth {
+      namespace
+      name
+      kind
+      condition {
+        status
+        type
+        reason
+        message
+        lastTransitionTime
+      }
+    }
+  }
+`;

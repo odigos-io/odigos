@@ -163,8 +163,10 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 	}
 
 	src := instrumentationConfigToActualSource(*ic)
-	// note: the following is done only for fetch-by-id, we removed this from paginate-all due to peformance issues
-	services.AddHealthyInstrumentationInstancesCondition(ctx, ic, src)
+	condition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
+	if condition.Status != "" {
+		src.Conditions = append(src.Conditions, &condition)
+	}
 
 	return src, nil
 }
@@ -958,6 +960,11 @@ func (r *queryResolver) DescribeOdigos(ctx context.Context) (*model.OdigosAnalyz
 // DescribeSource is the resolver for the describeSource field.
 func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error) {
 	return source_describe.GetSourceDescription(ctx, namespace, kind, name)
+}
+
+// InstrumentationInstancesHealth is the resolver for the instrumentationInstancesHealth field.
+func (r *queryResolver) InstrumentationInstancesHealth(ctx context.Context) ([]*model.InstrumentationInstanceHealth, error) {
+	return services.GetInstrumentationInstancesHealthConditions(ctx)
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.
