@@ -46,32 +46,14 @@ function process_yaml_file() {
   start_epoch=$(($current_epoch - one_hour))
   end_epoch=$(($current_epoch + one_hour))
 
-  tempo_search_query="/api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search?end=$end_epoch&start=$start_epoch&q=$encoded_query&limit=50&spss=50"
-  echo "running search call to tempo: $tempo_search_query"
-  if ! response=$(kubectl get --raw "$tempo_search_query" 2>/tmp/kubectl_error.log); then
-      echo "Error occurred:"
-      cat /tmp/kubectl_error.log
-      exit 1
-  fi
+  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/search\?end=$end_epoch\&start=$start_epoch\&q=$encoded_query\&limit=50)
 
   if [ "$verbose" == "true" ]; then
-    echo "============== Raw response from Tempo ===================="
-    echo "$response" | jq .
-
-    echo "============== Query each trace for full content ===================="
-
-    # Read trace IDs and fetch each trace's full details
-    echo "$response" | jq -r '.traces[].traceID' | while read -r traceID; do
-      echo "Fetching full trace for: $traceID"
-      full_trace=$(kubectl get --raw "/api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/api/traces/$traceID")
-      
-      # Print formatted trace data
-      echo "$full_trace" | jq .
-    done
+    echo "==============Raw response from tempo===================="
+    echo "$response" | jq .traces
+    echo "========================================================="
   fi
 
-  echo "Debug print response:"
-  echo "$response"
   num_of_traces=$(echo $response | jq '.traces | length')
 
   if [ "$expected_count" != "null" ]; then
