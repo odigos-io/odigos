@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/go-version"
 
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/dotnet"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/golang"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/java"
@@ -90,7 +91,7 @@ func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLa
 	procContext := process.NewProcessContext(proc)
 	defer func() {
 		if err := procContext.CloseFiles(); err != nil {
-			fmt.Printf("Error closing files: %v", err)
+			log.Logger.Error(err, "Error closing files")
 		}
 	}()
 
