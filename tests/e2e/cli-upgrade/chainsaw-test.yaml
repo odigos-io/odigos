@@ -76,12 +76,12 @@ spec:
               docker pull registry.odigos.io/odigos-demo-inventory:v0.1
               docker pull registry.odigos.io/odigos-demo-membership:v0.1
               docker pull registry.odigos.io/odigos-demo-coupon:v0.1
-              docker pull registry.odigos.io/odigos-demo-inventory:v0.1
+              docker pull registry.odigos.io/odigos-demo-pricing:v0.1
               docker pull registry.odigos.io/odigos-demo-frontend:v0.2
               kind load docker-image registry.odigos.io/odigos-demo-inventory:v0.1
               kind load docker-image registry.odigos.io/odigos-demo-membership:v0.1
               kind load docker-image registry.odigos.io/odigos-demo-coupon:v0.1
-              kind load docker-image registry.odigos.io/odigos-demo-inventory:v0.1
+              kind load docker-image registry.odigos.io/odigos-demo-pricing:v0.1
               kind load docker-image registry.odigos.io/odigos-demo-frontend:v0.2
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
@@ -90,12 +90,8 @@ spec:
 
     - name: Instrument Namespace
       try:
-      # Using the deprecated way of instrumenting a namespace,
-      # after v1.0.144, use ../../common/apply/instrument-default-ns.yaml
-        - script:
-            content: kubectl label namespace default odigos-instrumentation=enabled
-        # - apply:
-        #     file: ../../common/apply/instrument-default-ns.yaml
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
 
     - name: Assert Runtime Detected
       try:
