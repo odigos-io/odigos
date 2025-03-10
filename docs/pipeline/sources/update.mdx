@@ -4,6 +4,10 @@ sidebarTitle: "Configuration"
 icon: "gear"
 ---
 
+Beyond just enabling or disabling instrumentation, Source objects can be used to configure instrumentation settings as well.
+
+All Source settings can be configured with the Odigos CLI (see [CLI documentation on updating Sources](/cli/odigos_sources_update)) or Kubernetes-native tools like `kubectl`.
+
 ## service.name
 
 The `service.name` attribute is a fundamental resource attribute in [OpenTelemetry](https://opentelemetry.io/docs/specs/semconv/resource/#service).<br />
@@ -41,6 +45,25 @@ odigos ui
 
 And then, in the sources page, select the source you want to edit and fill in the value for the `service.name` field.
 To undo the override, simply erase the value from the `service.name` field.
+
+### Odigos CLI
+
+To set the `service.name` using the Odigos CLI, use the `odigos sources update` command ([see documentation](/cli/odigos_sources_update)).
+
+If you know the name of the Source object to update, pass that to `odigos sources update` along with the `--otel-service` flag:
+
+```shell
+odigos sources update <mysource> --otel-service=my-service-name -n <namespace>
+```
+
+If you don't know the name of the Source object to update, you can provide flags to `odigos sources update` to identify the Source by workload:
+
+```shell
+odigos sources update --workload-kind=<Deployment/StatefulSet/DaemonSet> \
+--workload-name=<my-workload> \
+--workload-namespace=<namespace> \
+--otel-service=my-service-name
+```
 
 ### Kubernetes Manifest
 
