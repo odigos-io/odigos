@@ -61,8 +61,16 @@ func GetWorkload(c context.Context, ns string, kind string, name string) (metav1
 }
 
 func GetInstrumentationInstancesHealthyCondition(ctx context.Context, namespace string, name string, kind string) (model.Condition, error) {
+	objectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
+	if len(objectName) > 63 {
+		// prevents k8s error: must be no more than 63 characters
+		// see https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
+		return model.Condition{}, nil
+	}
+
+	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, objectName)
 	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, workload.CalculateWorkloadRuntimeObjectName(name, kind)),
+		LabelSelector: labelSelector,
 	})
 	if err != nil {
 		return model.Condition{}, err
