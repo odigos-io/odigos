@@ -28,7 +28,8 @@ var configCmd = &cobra.Command{
 	- "skip-webhook-issuer-creation": Skips webhook issuer creation (true/false).
 	- "allow-concurrent-agents": Allows concurrent agents (true/false).
 	- "image-prefix": Sets the image prefix.
-	- "ui-mode": Sets the UI mode(normal/readonly).
+	- "ui-mode": Sets the UI mode (normal/readonly).
+	- "ui-pagination-limit": Controls the number of items to fetch per paginated-batch in the UI.
 	- "ignored-namespaces": List of namespaces to be ignored.
 	- "ignored-containers": List of containers to be ignored.
 	- "mount-method": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
@@ -126,7 +127,7 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 		}
 
 	case consts.ImagePrefixProperty, consts.OdigletImageProperty, consts.InstrumentorImageProperty,
-		consts.AutoscalerImageProperty, consts.UiModeProperty:
+		consts.AutoscalerImageProperty, consts.UiModeProperty, consts.UiPaginationLimit:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -142,6 +143,12 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			config.AutoscalerImage = value[0]
 		case consts.UiModeProperty:
 			config.UiMode = common.UiMode(value[0])
+		case consts.UiPaginationLimit:
+			intValue, err := strconv.Atoi(value[0])
+			if err != nil {
+				return fmt.Errorf("invalid integer value for %s: %s", property, value[0])
+			}
+			config.UiPaginationLimit = intValue
 		}
 
 	case consts.IgnoredNamespacesProperty:
