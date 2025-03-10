@@ -111,10 +111,12 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 			Relationship:
 			- RetryPeriod < RenewDeadline < LeaseDuration
 			- This ensures proper failover timing and system stability.
+
+			Setting the leader election params to 30s/20s/5s should provide a good balance between stability and quick failover.
 		*/
-		LeaseDuration: durationPointer(5 * time.Second),
-		RenewDeadline: durationPointer(4 * time.Second),
-		RetryPeriod:   durationPointer(1 * time.Second),
+		LeaseDuration: durationPointer(30 * time.Second),
+		RenewDeadline: durationPointer(20 * time.Second),
+		RetryPeriod:   durationPointer(5 * time.Second),
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
