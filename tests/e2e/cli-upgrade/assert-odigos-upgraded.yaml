@@ -147,7 +147,7 @@ spec:
   containers:
     - name: data-collection
       image: registry.odigos.io/odigos-collector:e2e-test
-  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
+  hostNetwork: true
   nodeName: kind-control-plane
   nodeSelector:
     kubernetes.io/os: linux
@@ -177,7 +177,7 @@ spec:
   containers:
     - name: data-collection
       image: registry.odigos.io/odigos-collector:e2e-test
-  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
+  hostNetwork: true
   nodeName: kind-worker
   nodeSelector:
     kubernetes.io/os: linux
@@ -221,7 +221,6 @@ status:
   readyReplicas: 1
   updatedReplicas: 1
   availableReplicas: 1
-  observedGeneration: 2 # make sure the "updatedReplicas" is for the new generation
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition

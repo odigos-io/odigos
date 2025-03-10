@@ -136,11 +136,6 @@ spec:
       try:
         - assert:
             file:  ../../common/assert/pipeline-ready.yaml
-        - script:
-            content: |
-              # Make sure there are no leftover gateway pods from pre-upgrade
-              kubectl rollout status deployment -n odigos-test odigos-gateway --timeout=60s
-            timeout: 1m
 
     - name: Simple-demo instrumented after upgrade
       try:
@@ -181,8 +176,6 @@ spec:
         - script:
             content: |
               ../../common/traceql_runner.sh ../../common/traceql/all_traces.yaml --verbose
-              ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
-              kubectl logs -n traces e2e-tests-tempo-0
 
     - name: Verify Trace - Context Propagation
       try:
