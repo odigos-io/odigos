@@ -18,7 +18,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string) error {
+func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string,
+	updateChannel chan InstrumentationUpdateTask) error {
 	listenEndpoint := fmt.Sprintf("0.0.0.0:%d", commonconsts.OpAMPPort)
 	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
 
@@ -89,11 +90,14 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				return
 			}
 		}
-		if connectionInfo != nil {
-			err = handlers.UpdateInstrumentationInstanceStatus(ctx, &agentToServer, connectionInfo)
-			if err != nil {
-				logger.Error(err, "Failed to persist instrumentation device status")
-				// still return the opamp response
+
+		// Only update the InstrumentationInstance if the message contains the relevant data
+		// This is to avoid unnecessary updates when the message is a heartbeat
+		if connectionInfo != nil && (agentToServer.AgentDescription != nil || agentToServer.Health != nil) {
+			select {
+			case updateChannel <- InstrumentationUpdateTask{ctx, handlers, &agentToServer, connectionInfo}:
+			default:
+				logger.Error(nil, "Update channel is full, dropping task")
 			}
 		}
 
@@ -175,4 +179,31 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 
 	wg.Wait()
 	return nil
+}
+
+type InstrumentationUpdateTask struct {
+	ctx            context.Context
+	handlers       *ConnectionHandlers
+	agentToServer  *protobufs.AgentToServer
+	connectionInfo *connection.ConnectionInfo
+}
+
+func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan InstrumentationUpdateTask, logger logr.Logger) {
+	logger.Info("Starting instrumentation update worker")
+
+	for {
+		select {
+		case <-ctx.Done():
+			logger.Info("Shutting down instrumentation update worker")
+			return
+		case task := <-updateChannel:
+			err := task.handlers.UpdateInstrumentationInstanceStatus(task.ctx, task.agentToServer, task.connectionInfo)
+
+			if err != nil {
+				logger.Error(err, "Failed to update instrumentation instance")
+			} else {
+				logger.Info("Successfully updated instrumentation instance")
+			}
+		}
+	}
 }
