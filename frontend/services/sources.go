@@ -390,70 +390,70 @@ func GetInstrumentationInstancesHealthCondition(ctx context.Context, namespace s
 }
 
 func GetInstrumentationInstancesHealthConditions(ctx context.Context) ([]*model.InstrumentationInstanceHealth, error) {
-	result := make([]*model.InstrumentationInstanceHealth, 0)
+	// Map for efficient lookup
+	resultMap := make(map[string]*model.InstrumentationInstanceHealth)
+
+	// Fetch InstrumentationInstances
 	list, err := kube.DefaultClient.OdigosClient.InstrumentationInstances("").List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return result, err
-	}
-
-	totalInstances := len(list.Items)
-	if totalInstances == 0 {
-		// no instances so nothing to report
-		return result, nil
+		return nil, err
 	}
 
 	for _, instance := range list.Items {
 		namespace := instance.Namespace
-		name, kind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instance.Labels[consts.InstrumentedAppNameLabel])
+		objectName, exists := instance.Labels[consts.InstrumentedAppNameLabel]
+		if !exists {
+			fmt.Printf("Instance %s in namespace %s is missing the expected label %s", instance.Name, namespace, consts.InstrumentedAppNameLabel)
+			continue
+		}
+
+		name, kind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(objectName)
 		if err != nil {
-			return result, err
+			fmt.Printf("Failed to extract workload info from object name %s: %v", objectName, err)
+			continue
 		}
 
-		alreadyAppendedToResult := false
-		for _, resultItem := range result {
-			if resultItem.Namespace == namespace && resultItem.Name == name && resultItem.Kind == model.K8sResourceKind(kind) {
-				alreadyAppendedToResult = true
+		key := fmt.Sprintf("%s/%s/%s", namespace, name, kind)
 
-				resultItem.TotalInstances++
-				if instance.Status.Healthy != nil && *instance.Status.Healthy {
-					resultItem.HealthyInstances++
-				}
-
-				break
-			}
-		}
-
-		if !alreadyAppendedToResult {
-			result = append(result, &model.InstrumentationInstanceHealth{
+		// If not already in map, create a new entry
+		if _, exists := resultMap[key]; !exists {
+			resultMap[key] = &model.InstrumentationInstanceHealth{
 				Namespace:        namespace,
 				Name:             name,
 				Kind:             model.K8sResourceKind(kind),
 				TotalInstances:   0,
 				HealthyInstances: 0,
-				Condition:        nil,
-			})
+			}
+		}
+
+		// Increment instance counts
+		resultMap[key].TotalInstances++
+		if instance.Status.Healthy != nil && *instance.Status.Healthy {
+			resultMap[key].HealthyInstances++
 		}
 	}
 
-	for _, resultItem := range result {
-		if resultItem.TotalInstances > 0 {
-			status := model.ConditionStatusSuccess
-			if resultItem.HealthyInstances < resultItem.TotalInstances {
-				status = model.ConditionStatusError
-			}
-
-			reason := v1alpha1.InstrumentationInstancesHealth
-			message := fmt.Sprintf("%d/%d instances are healthy", resultItem.HealthyInstances, resultItem.TotalInstances)
-			lastTransitionTime := Metav1TimeToString(metav1.NewTime(time.Time{}))
-
-			resultItem.Condition = &model.Condition{
-				Type:               reason,
-				Status:             status,
-				Reason:             &reason,
-				Message:            &message,
-				LastTransitionTime: &lastTransitionTime,
-			}
+	// Convert map to slice and compute conditions
+	result := make([]*model.InstrumentationInstanceHealth, 0, len(resultMap))
+	for _, item := range resultMap {
+		status := model.ConditionStatusSuccess
+		if item.HealthyInstances < item.TotalInstances {
+			status = model.ConditionStatusError
 		}
+
+		reason := v1alpha1.InstrumentationInstancesHealth
+		message := fmt.Sprintf("%d/%d instances are healthy", item.HealthyInstances, item.TotalInstances)
+		lastTransitionTime := Metav1TimeToString(metav1.NewTime(time.Now()))
+
+		item.Condition = &model.Condition{
+			Type:               reason,
+			Status:             status,
+			Reason:             &reason,
+			Message:            &message,
+			LastTransitionTime: &lastTransitionTime,
+		}
+
+		result = append(result, item)
 	}
 
 	return result, nil
