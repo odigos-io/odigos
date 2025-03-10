@@ -35,7 +35,11 @@ func (g *GolangInspector) DeepScan(pcx *process.ProcessContext) (common.Programm
 }
 
 func (g *GolangInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
-	buildInfo, err := buildinfo.Read(pcx.ExeFile)
+	exeFile, err := pcx.GetExeFile()
+	if err != nil {
+		return nil
+	}
+	buildInfo, err := buildinfo.Read(exeFile)
 	if err != nil || buildInfo == nil {
 		return nil
 	}
