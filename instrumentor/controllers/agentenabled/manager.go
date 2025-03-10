@@ -18,7 +18,7 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		For(&odigosv1.CollectorsGroup{}).
 		WithEventFilter(predicate.And(&odigospredicate.OdigosCollectorsGroupNodePredicate, &odigospredicate.CgBecomesReadyPredicate{})).
 		Complete(&CollectorsGroupReconciler{
-			Client: mgr.GetClient(),
+			Client:          mgr.GetClient(),
 			DistrosProvider: dp,
 		})
 	if err != nil {
@@ -33,7 +33,7 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		// When the instrumentation config is deleted, we need to roll out the workload to un-instrument it.
 		WithEventFilter(predicate.Or(&instrumentorpredicate.RuntimeDetailsChangedPredicate{}, odigospredicate.DeletionPredicate{})).
 		Complete(&InstrumentationConfigReconciler{
-			Client: mgr.GetClient(),
+			Client:          mgr.GetClient(),
 			DistrosProvider: dp,
 		})
 	if err != nil {
@@ -46,7 +46,7 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		For(&odigosv1.InstrumentationRule{}).
 		WithEventFilter(&instrumentorpredicate.OtelSdkInstrumentationRulePredicate{}).
 		Complete(&InstrumentationRuleReconciler{
-			Client: mgr.GetClient(),
+			Client:          mgr.GetClient(),
 			DistrosProvider: dp,
 		})
 	if err != nil {
@@ -59,7 +59,7 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		For(&corev1.ConfigMap{}).
 		WithEventFilter(odigospredicate.OdigosEffectiveConfigMapPredicate).
 		Complete(&EffectiveConfigReconciler{
-			Client: mgr.GetClient(),
+			Client:          mgr.GetClient(),
 			DistrosProvider: dp,
 		})
 	if err != nil {
@@ -70,7 +70,7 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		WebhookManagedBy(mgr).
 		For(&corev1.Pod{}).
 		WithDefaulter(&PodsWebhook{
-			Client: mgr.GetClient(),
+			Client:        mgr.GetClient(),
 			DistrosGetter: dp.Getter,
 		}).
 		Complete()

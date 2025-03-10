@@ -18,7 +18,7 @@ import (
 )
 
 type Instrumentor struct {
-	mgr controllerruntime.Manager
+	mgr    controllerruntime.Manager
 	logger logr.Logger
 }
 
@@ -48,14 +48,14 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		return nil, fmt.Errorf("unable to set up health check: %w", err)
 	}
 
-	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error{
+	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error {
 		return mgr.GetWebhookServer().StartedChecker()(req)
 	}); err != nil {
 		return nil, fmt.Errorf("unable to set up ready check: %w", err)
 	}
 
 	return &Instrumentor{
-		mgr: mgr,
+		mgr:    mgr,
 		logger: opts.Logger,
 	}, nil
 }

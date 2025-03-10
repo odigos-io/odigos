@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deleteinstrumentationconfig_test
+package sourceinstrumentation_test
 
 import (
 	"context"
@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentationconfig"
+	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -47,7 +47,7 @@ var (
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "DeleteInstrumentationConfig Controllers Suite")
+	RunSpecs(t, "SourceInstrumentation Controllers Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -81,7 +81,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = deleteinstrumentationconfig.SetupWithManager(k8sManager)
+	err = sourceinstrumentation.SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
