@@ -91,7 +91,7 @@ func GetInstrumentationInstancesHealthyCondition(ctx context.Context, namespace 
 	}
 
 	status := model.ConditionStatusSuccess
-	if healthyInstances < totalInstances {
+	if healthyInstances < totalInstances || message != "" {
 		status = model.ConditionStatusError
 	}
 
