@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 
@@ -13,22 +14,13 @@ import (
 
 type JavaInspector struct{}
 
-// libjvmRegex is a regular expression that matches any path containing "libjvm.so",
-// ensuring that we correctly detect the presence of the JVM shared library.
-var libjvmRegex = regexp.MustCompile(`.*/libjvm\.so`)
-
 const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
 
 var versionRegex = regexp.MustCompile(JavaVersionRegex)
 
-// Matches any file path ending with:
-//   - "java" (e.g., /usr/bin/java)
-//   - "javaw" (though less common on Linux)
-//   - "java" / "javaw" followed by version digits (e.g., java8, java11, java17).
-var exeRegex = regexp.MustCompile(`^javaw?(?:\d+)?$`)
-
 func (j *JavaInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	if exeRegex.MatchString(filepath.Base(pcx.ExePath)) {
+	// Check if the executable name starts with "java"
+	if strings.HasPrefix(filepath.Base(pcx.ExePath), "java") {
 		return common.JavaProgrammingLanguage, true
 	}
 
@@ -42,7 +34,9 @@ func (j *JavaInspector) DeepScan(pcx *process.ProcessContext) (common.Programmin
 	}
 	scanner := bufio.NewScanner(mapsFile)
 	for scanner.Scan() {
-		if libjvmRegex.MatchString(scanner.Text()) {
+		// Check if the shared library "libjvm.so" is loaded in the process memory
+		// Ensures "libjvm.so" appears within a path (because of the "/" prefix)
+		if strings.Contains(scanner.Text(), "/libjvm.so") {
 			return common.JavaProgrammingLanguage, true
 		}
 	}
