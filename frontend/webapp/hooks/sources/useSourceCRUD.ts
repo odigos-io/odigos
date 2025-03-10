@@ -65,17 +65,17 @@ export const useSourceCRUD = (): UseSourceCrud => {
     const { data } = await queryInstances();
 
     if (!!data?.instrumentationInstancesHealth) {
-      const sourcesWithInstances = deepClone<Source[]>(sourcesFromStore);
+      const sourcesWithInstances: Source[] = [];
 
       for (const { namespace, name, kind, condition } of data.instrumentationInstancesHealth) {
         if (!!condition?.status) {
-          const foundIdx = sourcesWithInstances.findIndex((x) => x.namespace === namespace && x.name === name && x.kind === kind);
+          const foundIdx = sourcesFromStore.findIndex((x) => x.namespace === namespace && x.name === name && x.kind === kind);
 
           if (foundIdx !== -1) {
-            if (!!sourcesWithInstances[foundIdx].conditions) {
-              sourcesWithInstances[foundIdx].conditions.push(condition);
+            if (!!sourcesFromStore[foundIdx].conditions) {
+              sourcesWithInstances.push({ ...sourcesFromStore[foundIdx], conditions: sourcesFromStore[foundIdx].conditions.concat([condition]) });
             } else {
-              sourcesWithInstances[foundIdx].conditions = [condition];
+              sourcesWithInstances.push({ ...sourcesFromStore[foundIdx], conditions: [condition] });
             }
           }
         }
