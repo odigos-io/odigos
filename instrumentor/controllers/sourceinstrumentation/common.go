@@ -59,11 +59,16 @@ func syncNamespaceWorkloads(
 		}
 
 		for _, obj := range objects {
+			workload := workload.ClientObjectFromWorkloadKind(kind)
+			err := k8sClient.Get(ctx, client.ObjectKeyFromObject(obj), workload)
+			if client.IgnoreNotFound(err) != nil {
+				return collectiveRes, err
+			}
 			res, err := syncWorkload(ctx, k8sClient, runtimeScheme, obj)
 			if err != nil {
 				errs = errors.Join(errs, err)
 			}
-			if res.Requeue {
+			if !res.IsZero() {
 				collectiveRes = res
 			}
 		}
@@ -89,40 +94,40 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		Kind:      workload.WorkloadKindFromClientObject(obj),
 	}
 
-	if !enabled {
+	if enabled {
+		workloadObj, err := workload.ObjectToWorkload(obj)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		instConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
+		ic := &v1alpha1.InstrumentationConfig{}
+		err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: podWorkload.Namespace}, ic)
+		if err != nil {
+			if !apierrors.IsNotFound(err) {
+				return ctrl.Result{}, err
+			}
+			ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, podWorkload.Namespace, obj, scheme)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
+		markedForInstChanged := meta.SetStatusCondition(&ic.Status.Conditions, markedForInstrumentationCondition)
+		runtimeDetailsChanged := initiateRuntimeDetailsConditionIfMissing(ic, workloadObj)
+		agentEnabledChanged := initiateAgentEnabledConditionIfMissing(ic)
+
+		if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged {
+			ic.Status.Conditions = sortIcConditionsByLogicalOrder(ic.Status.Conditions)
+
+			err = k8sClient.Status().Update(ctx, ic)
+			if err != nil {
+				logger.Info("Failed to update status conditions of InstrumentationConfig", "name", instConfigName, "namespace", podWorkload.Namespace, "error", err.Error())
+				return k8sutils.K8SUpdateErrorHandler(err)
+			}
+		}
+	} else {
 		return ctrl.Result{}, deleteWorkloadInstrumentationConfig(ctx, k8sClient, podWorkload)
-	}
-
-	workloadObj, err := workload.ObjectToWorkload(obj)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	instConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
-	ic := &v1alpha1.InstrumentationConfig{}
-	err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: podWorkload.Namespace}, ic)
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
-		}
-		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, podWorkload.Namespace, obj, scheme)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
-	markedForInstChanged := meta.SetStatusCondition(&ic.Status.Conditions, markedForInstrumentationCondition)
-	runtimeDetailsChanged := initiateRuntimeDetailsConditionIfMissing(ic, workloadObj)
-	agentEnabledChanged := initiateAgentEnabledConditionIfMissing(ic)
-
-	if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged {
-		ic.Status.Conditions = sortIcConditionsByLogicalOrder(ic.Status.Conditions)
-
-		err = k8sClient.Status().Update(ctx, ic)
-		if err != nil {
-			logger.Info("Failed to update status conditions of InstrumentationConfig", "name", instConfigName, "namespace", podWorkload.Namespace, "error", err.Error())
-			return k8sutils.K8SUpdateErrorHandler(err)
-		}
 	}
 
 	return ctrl.Result{}, nil
@@ -160,7 +165,7 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 		return nil, client.IgnoreAlreadyExists(err)
 	}
 
-	logger.V(0).Info("Requested calculation of runtime details from odiglets", "name", instConfigName, "namespace", namespace)
+	logger.V(0).Info("Created instrumentation config object for workload to trigger instrumentation", "name", instConfigName, "namespace", namespace)
 	return &instConfig, nil
 }
 
