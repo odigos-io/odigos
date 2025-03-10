@@ -166,10 +166,7 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 	src := instrumentationConfigToActualSource(*ic)
 
 	// note: the following is done only for fetch-source-by-id, we removed this from paginate-all-sources due to peformance issues
-	condition, err := services.GetInstrumentationInstancesHealthyCondition(ctx, ns, name, string(kind))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get InstrumentationInstance: %w", err)
-	}
+	condition, _ := services.GetInstrumentationInstancesHealthyCondition(ctx, ns, name, string(kind))
 	if condition.Status != "" {
 		src.Conditions = append(src.Conditions, &condition)
 	}
@@ -982,10 +979,7 @@ func (r *queryResolver) InstrumentationInstancesHealth(ctx context.Context, sour
 			name := id.Name
 			kind := id.Kind
 
-			condition, err := services.GetInstrumentationInstancesHealthyCondition(ctx, ns, name, string(kind))
-			if err != nil {
-				return fmt.Errorf("failed to get InstrumentationInstance: %w", err)
-			}
+			condition, _ := services.GetInstrumentationInstancesHealthyCondition(ctx, ns, name, string(kind))
 			if condition.Status != "" {
 				channel <- model.InstrumentationInstanceHealth{
 					Namespace: ns,

@@ -68,12 +68,13 @@ func GetInstrumentationInstancesHealthyCondition(ctx context.Context, namespace 
 		return model.Condition{}, nil
 	}
 
+	var message string
 	labelSelector := fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, objectName)
 	instancesList, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
-		return model.Condition{}, err
+		message = err.Error()
 	}
 
 	totalInstances := len(instancesList.Items)
@@ -95,8 +96,10 @@ func GetInstrumentationInstancesHealthyCondition(ctx context.Context, namespace 
 	}
 
 	reason := v1alpha1.InstrumentationInstancesHealth
-	message := fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances)
 	lastTransitionTime := Metav1TimeToString(metav1.NewTime(time.Time{}))
+	if message == "" {
+		message = fmt.Sprintf("%d/%d instances are healthy", healthyInstances, totalInstances)
+	}
 
 	condition := model.Condition{
 		Type:               reason,
