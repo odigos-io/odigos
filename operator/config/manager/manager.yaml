@@ -77,6 +77,8 @@ spec:
             configMapKeyRef:
               name: odigos-version
               key: ODIGOS_VERSION
+        - name: RELATED_IMAGE_AUTOSCALER
+          value: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.159
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

@@ -3,6 +3,9 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
+- name: autoscaler
+  newName: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9
+  newTag: v1.0.159
 - name: controller
   newName: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9
   newTag: v1.0.159

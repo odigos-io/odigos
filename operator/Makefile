@@ -51,6 +51,7 @@ endif
 OPERATOR_SDK_VERSION ?= v1.39.1
 # Image URL to use all building/pushing image targets
 IMG ?= registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v$(VERSION)
+AUTOSCALER_IMG ?= registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v$(VERSION)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.31.0
 
@@ -271,6 +272,7 @@ endif
 bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image autoscaler=$(AUTOSCALER_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set configmap odigos-version --from-literal=ODIGOS_VERSION=$(VERSION)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 	$(OPERATOR_SDK) bundle validate ./bundle

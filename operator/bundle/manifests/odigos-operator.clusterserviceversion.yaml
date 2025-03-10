@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:5e5d0d43080c2402504ecb2227feaa8f6210f77d60c6b846657857fe4967d188
-    createdAt: "2025-03-03T20:42:45Z"
+    createdAt: "2025-03-10T21:29:50Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and eBPF.
     features.operators.openshift.io/disconnected: "false"
     features.operators.openshift.io/fips-compliant: "true"
@@ -416,6 +416,8 @@ spec:
                           configMapKeyRef:
                             key: ODIGOS_VERSION
                             name: odigos-operator-odigos-version-55dgk4kht7
+                      - name: RELATED_IMAGE_AUTOSCALER
+                        value: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:28acf3b915126c3263db2087f4a2afd25d06d6e24dc67d75e882003ee2772418
                     image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:5e5d0d43080c2402504ecb2227feaa8f6210f77d60c6b846657857fe4967d188
                     livenessProbe:
                       httpGet:
@@ -514,6 +516,8 @@ spec:
     name: Odigos
     url: https://odigos.io
   relatedImages:
+    - image: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:28acf3b915126c3263db2087f4a2afd25d06d6e24dc67d75e882003ee2772418
+      name: autoscaler
     - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:5e5d0d43080c2402504ecb2227feaa8f6210f77d60c6b846657857fe4967d188
       name: manager
     - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:5e5d0d43080c2402504ecb2227feaa8f6210f77d60c6b846657857fe4967d188
