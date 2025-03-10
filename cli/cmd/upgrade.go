@@ -15,6 +15,7 @@ import (
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -141,7 +142,7 @@ odigos upgrade
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
 	upgradeCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
-	updateCmd.Flags().StringVarP(&uiMode, "ui-mode", "", "", "set the UI mode (one-of: normal, readonly)")
+	updateCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", "", "set the UI mode (one-of: normal, readonly)")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
