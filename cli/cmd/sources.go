@@ -56,8 +56,7 @@ var sourcesCmd = &cobra.Command{
 	Use:   "sources [command] [flags]",
 	Short: "Manage Odigos Sources in a cluster",
 	Long:  "This command can be used to create, delete, or update Sources to configure workload or namespace auto-instrumentation",
-	Example: `
-# Create a Source "foo-source" for deployment "foo" in namespace "default"
+	Example: `# Create a Source "foo-source" for deployment "foo" in namespace "default"
 odigos sources create foo-source --workload-kind=Deployment --workload-name=foo --workload-namespace=default -n default
 
 # Update all existing Sources in namespace "default" to disable instrumentation
@@ -113,10 +112,8 @@ var sourceDeleteCmd = &cobra.Command{
 	Use:   "delete [name] [flags]",
 	Short: "Delete Odigos Sources",
 	Long: `This command will delete the named Source object or any Source objects that match the provided Workload info.
-
-If a [name] is provided, that Source object will be deleted in the given namespace using the --namespace (-n) flag.
-
-For example, to delete the Source named "mysource-abc123" in namespace "myapp", run:
+If a [name] is provided, that Source object will be deleted in the given namespace using the --namespace (-n) flag.`,
+	Example: `For example, to delete the Source named "mysource-abc123" in namespace "myapp", run:
 
 $ odigos sources delete mysource-abc123 -n myapp
 
@@ -196,10 +193,8 @@ var sourceUpdateCmd = &cobra.Command{
 	Use:   "update [name] [flags]",
 	Short: "Update Odigos Sources",
 	Long: `This command will update the named Source object or any Source objects that match the provided Workload info.
-
-If a [name] is provided, that Source object will be updated in the given namespace using the --namespace (-n) flag.
-
-For example, to update the Source named "mysource-abc123" in namespace "myapp", run:
+If a [name] is provided, that Source object will be updated in the given namespace using the --namespace (-n) flag.`,
+	Example: `For example, to update the Source named "mysource-abc123" in namespace "myapp", run:
 
 $ odigos sources update mysource-abc123 -n myapp <flags>
 

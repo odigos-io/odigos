@@ -138,23 +138,25 @@ func createOrUpdateSourceForObject(ctx context.Context,
 		}
 	}
 
-	create := false
-	if source == nil {
-		create = true
-		source = &v1alpha1.Source{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: workload.CalculateWorkloadRuntimeObjectName(obj.GetName(), kind),
-				Namespace:    namespace,
-			},
-			Spec: v1alpha1.SourceSpec{
-				Workload: k8sconsts.PodWorkload{
-					Name:      obj.GetName(),
-					Namespace: namespace,
-					Kind:      kind,
-				},
-			},
-		}
+	if source != nil {
+		logger.Info("Source already exists for workload. Please remove deprecated odigos-instrumentation label and migrate to Source objects. Support for this will be entirely removed in a future version. See https://docs.odigos.io/pipeline/sources.", "workload", obj.GetName(), "kind", kind, "namespace", namespace, "source", source.Spec)
+		return nil
 	}
+
+	source = &v1alpha1.Source{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: workload.CalculateWorkloadRuntimeObjectName(obj.GetName(), kind),
+			Namespace:    namespace,
+		},
+		Spec: v1alpha1.SourceSpec{
+			Workload: k8sconsts.PodWorkload{
+				Name:      obj.GetName(),
+				Namespace: namespace,
+				Kind:      kind,
+			},
+		},
+	}
+
 	source.Spec.DisableInstrumentation = disableInstrumentation
 	// migrate the reported name from the workload to the Source only if the Source is not a namespace Source
 	// and the workload Source does not already have a service name.
@@ -172,10 +174,6 @@ func createOrUpdateSourceForObject(ctx context.Context,
 			"serviceName", serviceNameFromWorkload)
 	}
 
-	if create {
-		logger.Info("creating source", "source", source.Spec)
-		return k8sClient.Create(ctx, source)
-	}
-	logger.Info("updating source", "source", source.Spec)
-	return k8sClient.Update(ctx, source)
+	logger.Info("creating source", "source", source.Spec)
+	return k8sClient.Create(ctx, source)
 }

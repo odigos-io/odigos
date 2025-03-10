@@ -9,9 +9,15 @@ Delete Odigos Sources
 ### Synopsis
 
 This command will delete the named Source object or any Source objects that match the provided Workload info.
-
 If a [name] is provided, that Source object will be deleted in the given namespace using the --namespace (-n) flag.
 
+```
+odigos sources delete [name] [flags]
+```
+
+### Examples
+
+```
 For example, to delete the Source named "mysource-abc123" in namespace "myapp", run:
 
 $ odigos sources delete mysource-abc123 -n myapp
@@ -40,9 +46,6 @@ This command will delete any Sources in the namespace "myapp-namespace" that ins
 
 It is important to note that if a Source [name] is provided, all --workload-* flags will be ignored to delete only the named Source.
 
-
-```
-odigos sources delete [name] [flags]
 ```
 
 ### Options

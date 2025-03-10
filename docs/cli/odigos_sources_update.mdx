@@ -9,9 +9,15 @@ Update Odigos Sources
 ### Synopsis
 
 This command will update the named Source object or any Source objects that match the provided Workload info.
-
 If a [name] is provided, that Source object will be updated in the given namespace using the --namespace (-n) flag.
 
+```
+odigos sources update [name] [flags]
+```
+
+### Examples
+
+```
 For example, to update the Source named "mysource-abc123" in namespace "myapp", run:
 
 $ odigos sources update mysource-abc123 -n myapp <flags>
@@ -40,9 +46,6 @@ This command will update any Sources in the namespace "myapp-namespace" that ins
 
 It is important to note that if a Source [name] is provided, all --workload-* flags will be ignored to update only the named Source.
 
-
-```
-odigos sources update [name] [flags]
 ```
 
 ### Options
