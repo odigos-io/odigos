@@ -63,11 +63,6 @@ spec:
               ./odigos install --namespace odigos-test
         - assert:
             file: ../../common/assert/odigos-installed.yaml
-    - name: Assert Tempo Is Up
-      try:
-        - assert:
-            timeout: 5m
-            file: ../../common/assert/tempo-running.yaml
     - name: Install Demo App
       try:
         - script:
@@ -87,7 +82,11 @@ spec:
             file: ../../common/apply/install-simple-demo.yaml
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
-
+    - name: Assert Tempo Is Up
+      try:
+        - assert:
+            timeout: 5m
+            file: ../../common/assert/tempo-running.yaml
     - name: Instrument Namespace
       try:
       # Using the deprecated way of instrumenting a namespace,
