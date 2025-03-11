@@ -18,8 +18,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string,
-	updateChannel chan InstrumentationUpdateTask) error {
+func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string) error {
 	listenEndpoint := fmt.Sprintf("0.0.0.0:%d", commonconsts.OpAMPPort)
 	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
 
@@ -35,6 +34,9 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		scheme:        mgr.GetScheme(),
 		nodeName:      nodeName,
 	}
+
+	// Buffered channel for instrumentation instances updates
+	updateChannel := make(chan InstrumentationUpdateTask, 300)
 
 	http.HandleFunc("POST /v1/opamp", func(w http.ResponseWriter, req *http.Request) {
 
@@ -142,6 +144,13 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 	server := &http.Server{Addr: listenEndpoint, Handler: nil}
 	var wg sync.WaitGroup
 
+	// Start the worker goroutine to process instrumentation instances updates sequentially
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ProcessInstrumentationUpdates(ctx, updateChannel, logger)
+	}()
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -159,6 +168,10 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		for {
 			select {
 			case <-ctx.Done():
+
+				// Close the updateChannel here so the worker goroutine exits
+				close(updateChannel)
+
 				if err := server.Shutdown(ctx); err != nil {
 					logger.Error(err, "Failed to shut down the http server for incoming connections")
 				}
@@ -196,13 +209,16 @@ func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan Instr
 		case <-ctx.Done():
 			logger.Info("Shutting down instrumentation update worker")
 			return
-		case task := <-updateChannel:
+		case task, ok := <-updateChannel:
+			if !ok {
+				logger.Info("Update channel closed, shutting down instrumentation update worker")
+				return
+			}
+
 			err := task.handlers.UpdateInstrumentationInstanceStatus(task.ctx, task.agentToServer, task.connectionInfo)
 
 			if err != nil {
 				logger.Error(err, "Failed to update instrumentation instance")
-			} else {
-				logger.Info("Successfully updated instrumentation instance")
 			}
 		}
 	}

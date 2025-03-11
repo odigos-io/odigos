@@ -120,19 +120,10 @@ func (o *Odiglet) Run(ctx context.Context) {
 		return err
 	})
 
-	// Create a buffered channel for instrumentation instances updates
-	updateChannel := make(chan server.InstrumentationUpdateTask, 300)
-
-	// Start the worker goroutine to process instrumentation instances updates sequentially
-	g.Go(func() error {
-		server.ProcessInstrumentationUpdates(groupCtx, updateChannel, log.Logger)
-		return nil
-	})
-
 	// start OpAmp server
 	odigosNs := k8senv.GetCurrentNamespace()
 	g.Go(func() error {
-		err := server.StartOpAmpServer(groupCtx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs, updateChannel)
+		err := server.StartOpAmpServer(groupCtx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
 		if err != nil {
 			log.Logger.Error(err, "Failed to start opamp server")
 		}
