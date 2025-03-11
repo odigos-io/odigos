@@ -85,7 +85,12 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8s
 
 	markedForInstChanged := meta.SetStatusCondition(&ic.Status.Conditions, markedForInstrumentationCondition)
 	runtimeDetailsChanged := initiateRuntimeDetailsConditionIfMissing(ic, workloadObj)
-	agentEnabledChanged := initiateAgentEnabledConditionIfMissing(ic)
+	agentEnabledChanged := false
+
+	// Set agent enabled condition only if replicas are available to prevent infinite UI loading.
+	if workloadObj.AvailableReplicas() > 0 {
+		agentEnabledChanged = initiateAgentEnabledConditionIfMissing(ic)
+	}
 
 	if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged {
 		logger.Info("Updating initial instrumentation status condition of InstrumentationConfig", "name", instConfigName, "namespace", req.Namespace)
