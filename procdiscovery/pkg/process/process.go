@@ -39,11 +39,17 @@ type Details struct {
 	Environments ProcessEnvs
 }
 
+// ProcessFile is a read-only interface that supports reading, seeking, and reading at specific positions.
+// Write operations should be avoided.
+type ProcessFile interface {
+	io.ReadSeekCloser
+	io.ReaderAt
+}
+
 type ProcessContext struct {
 	Details
-
-	exeFile  *os.File
-	mapsFile *os.File
+	exeFile  ProcessFile
+	mapsFile ProcessFile
 }
 
 func NewProcessContext(details Details) *ProcessContext {
@@ -66,7 +72,7 @@ func (pcx *ProcessContext) CloseFiles() error {
 	return err
 }
 
-func (pcx *ProcessContext) GetExeFile() (*os.File, error) {
+func (pcx *ProcessContext) GetExeFile() (ProcessFile, error) {
 	if pcx.exeFile == nil {
 		path := fmt.Sprintf("/proc/%d/exe", pcx.ProcessID)
 		fileData, err := os.Open(path)
@@ -83,7 +89,7 @@ func (pcx *ProcessContext) GetExeFile() (*os.File, error) {
 	return pcx.exeFile, nil
 }
 
-func (pcx *ProcessContext) GetMapsFile() (*os.File, error) {
+func (pcx *ProcessContext) GetMapsFile() (ProcessFile, error) {
 	if pcx.mapsFile == nil {
 		mapsPath := fmt.Sprintf("/proc/%d/maps", pcx.ProcessID)
 		fileData, err := os.Open(mapsPath)
