@@ -85,9 +85,9 @@ func reconcileWorkload(ctx context.Context, k8sClient client.Client, objKind k8s
 
 	markedForInstChanged := meta.SetStatusCondition(&ic.Status.Conditions, markedForInstrumentationCondition)
 	runtimeDetailsChanged := initiateRuntimeDetailsConditionIfMissing(ic, workloadObj)
-	agentEnabledChanged := false
 
 	// Set agent enabled condition only if replicas are available to prevent infinite UI loading.
+	agentEnabledChanged := false
 	if workloadObj.AvailableReplicas() > 0 {
 		agentEnabledChanged = initiateAgentEnabledConditionIfMissing(ic)
 	}
