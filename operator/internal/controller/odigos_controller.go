@@ -343,6 +343,10 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		odigosConfig.OdigletImage = k8sconsts.OdigletImageUBI9
 		odigosConfig.InstrumentorImage = k8sconsts.InstrumentorImageUBI9
 		odigosConfig.AutoscalerImage = k8sconsts.AutoScalerImageUBI9
+	} else {
+		if odigos.Spec.ImagePrefix == "" {
+			odigosConfig.ImagePrefix = k8sconsts.OdigosImagePrefix
+		}
 	}
 
 	logger.Info("Installing Odigos version " + version + " in namespace " + ns)
