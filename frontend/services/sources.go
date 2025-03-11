@@ -400,13 +400,11 @@ func GetInstrumentationInstancesHealthConditions(ctx context.Context) ([]*model.
 		namespace := instance.Namespace
 		objectName, exists := instance.Labels[consts.InstrumentedAppNameLabel]
 		if !exists {
-			fmt.Printf("Instance %s in namespace %s is missing the expected label %s", instance.Name, namespace, consts.InstrumentedAppNameLabel)
 			continue
 		}
 
 		name, kind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(objectName)
 		if err != nil {
-			fmt.Printf("Failed to extract workload info from object name %s: %v", objectName, err)
 			continue
 		}
 
