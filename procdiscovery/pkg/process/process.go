@@ -2,6 +2,7 @@ package process
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -53,23 +54,16 @@ func NewProcessContext(details Details) *ProcessContext {
 
 // Close method to close any open file handles.
 func (pcx *ProcessContext) CloseFiles() error {
-	var firstErr error
-
+	var err error
 	if pcx.exeFile != nil {
-		if err := pcx.exeFile.Close(); err != nil && firstErr == nil {
-			firstErr = err
-		}
+		err = errors.Join(err, pcx.exeFile.Close())
 		pcx.exeFile = nil
 	}
-
 	if pcx.mapsFile != nil {
-		if err := pcx.mapsFile.Close(); err != nil && firstErr == nil {
-			firstErr = err
-		}
+		err = errors.Join(err, pcx.mapsFile.Close())
 		pcx.mapsFile = nil
 	}
-
-	return firstErr
+	return err
 }
 
 func (pcx *ProcessContext) GetExeFile() (*os.File, error) {
