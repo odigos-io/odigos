@@ -699,21 +699,6 @@ func NewInstrumentorResourceManager(client *kube.Client, ns string, config *comm
 func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
-	imageName := a.config.InstrumentorImage
-	if imageName == "" || imageName == k8sconsts.InstrumentorImage || imageName == k8sconsts.InstrumentorImageUBI9 {
-		if a.tier == common.CommunityOdigosTier {
-			if imageName != k8sconsts.InstrumentorImageUBI9 {
-				imageName = k8sconsts.InstrumentorImage
-			}
-		} else {
-			if imageName == k8sconsts.InstrumentorImageUBI9 {
-				imageName = k8sconsts.InstrumentorEnterpriseImageUBI9
-			} else {
-				imageName = k8sconsts.InstrumentorEnterpriseImage
-			}
-		}
-	}
-
 	resources := []kube.Object{
 		NewInstrumentorServiceAccount(a.ns),
 		NewInstrumentorLeaderElectionRoleBinding(a.ns),
@@ -721,7 +706,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(a.config.OpenshiftEnabled),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, imageName, a.tier),
+		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.config.ImageReferences.InstrumentorImage, a.tier),
 		NewInstrumentorService(a.ns),
 	}
 

@@ -223,6 +223,42 @@ func ValidateUserInputProfiles(tier common.OdigosTier) error {
 	return nil
 }
 
+func GetImageReferences(odigosTier common.OdigosTier, openshift bool) common.ImageReferences {
+	var imageReferences common.ImageReferences
+	if openshift {
+		imageReferences = common.ImageReferences{
+			AutoscalerImage:   k8sconsts.AutoScalerImageUBI9,
+			CollectorImage:    k8sconsts.OdigosClusterCollectorImageUBI9,
+			InstrumentorImage: k8sconsts.InstrumentorImageUBI9,
+			OdigletImage:      k8sconsts.OdigletImageUBI9,
+			KeyvalProxyImage:  k8sconsts.KeyvalProxyImage,
+			SchedulerImage:    k8sconsts.SchedulerImageUBI9,
+			UIImage:           k8sconsts.UIImageUBI9,
+		}
+	} else {
+		imageReferences = common.ImageReferences{
+			AutoscalerImage:   k8sconsts.AutoScalerImageName,
+			CollectorImage:    k8sconsts.OdigosClusterCollectorImage,
+			InstrumentorImage: k8sconsts.InstrumentorImage,
+			OdigletImage:      k8sconsts.OdigletImageName,
+			KeyvalProxyImage:  k8sconsts.KeyvalProxyImage,
+			SchedulerImage:    k8sconsts.SchedulerImage,
+			UIImage:           k8sconsts.UIImage,
+		}
+	}
+
+	if odigosTier == common.OnPremOdigosTier {
+		if openshift {
+			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImageUBI9
+			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageUBI9
+		} else {
+			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImage
+			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageName
+		}
+	}
+	return imageReferences
+}
+
 func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
 	selectedProfiles := []common.ProfileName{}
 	for _, profile := range userInputInstallProfiles {
@@ -253,6 +289,7 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		Profiles:                  selectedProfiles,
 		UiMode:                    common.UiMode(uiMode),
 		CentralBackendURL:         centralBackendURL,
+		ImageReferences:           GetImageReferences(odigosTier, openshiftEnabled),
 	}
 }
 

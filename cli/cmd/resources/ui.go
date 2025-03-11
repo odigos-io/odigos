@@ -385,17 +385,13 @@ func NewUIService(ns string) *corev1.Service {
 }
 
 func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
-	imageName := k8sconsts.UIImage
-	if u.config.OpenshiftEnabled {
-		imageName = k8sconsts.UIImageUBI9
-	}
 	resources := []kube.Object{
 		NewUIServiceAccount(u.ns),
 		NewUIRole(u.ns, u.readonly),
 		NewUIRoleBinding(u.ns),
 		NewUIClusterRole(u.readonly),
 		NewUIClusterRoleBinding(u.ns),
-		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, imageName),
+		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.config.ImageReferences.UIImage),
 		NewUIService(u.ns),
 	}
 	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources)
