@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/report"
 	"github.com/odigos-io/odigos/instrumentor/runtimemigration"
+	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"golang.org/x/sync/errgroup"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -22,6 +23,11 @@ type Instrumentor struct {
 }
 
 func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrumentor, error) {
+	err := feature.Setup()
+	if err != nil {
+		return nil, err
+	}
+
 	mgr, err := controllers.CreateManager(opts)
 	if err != nil {
 		return nil, err

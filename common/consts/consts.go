@@ -49,6 +49,25 @@ const (
 	Destination             = "Destination"
 )
 
+// Odigos config properties
+const (
+	TelemetryEnabledProperty          = "telemetry-enabled"
+	OpenshiftEnabledProperty          = "openshift-enabled"
+	PspProperty                       = "psp"
+	SkipWebhookIssuerCreationProperty = "skip-webhook-issuer-creation"
+	AllowConcurrentAgentsProperty     = "allow-concurrent-agents"
+	ImagePrefixProperty               = "image-prefix"
+	OdigletImageProperty              = "odiglet-image"
+	InstrumentorImageProperty         = "instrumentor-image"
+	AutoscalerImageProperty           = "autoscaler-image"
+	UiModeProperty                    = "ui-mode"
+	UiPaginationLimit                 = "ui-pagination-limit"
+	IgnoredNamespacesProperty         = "ignored-namespaces"
+	IgnoredContainersProperty         = "ignored-containers"
+	MountMethodProperty               = "mount-method"
+	CentralBackendURLProperty         = "central-backend-url"
+)
+
 var (
 	ErrorPodsNotFound = errors.New("could not find a ready pod")
 )

@@ -28,7 +28,8 @@ var configCmd = &cobra.Command{
 	- "skip-webhook-issuer-creation": Skips webhook issuer creation (true/false).
 	- "allow-concurrent-agents": Allows concurrent agents (true/false).
 	- "image-prefix": Sets the image prefix.
-	- "ui-mode": Sets the UI mode(normal/readonly).
+	- "ui-mode": Sets the UI mode (normal/readonly).
+	- "ui-pagination-limit": Controls the number of items to fetch per paginated-batch in the UI.
 	- "ignored-namespaces": List of namespaces to be ignored.
 	- "ignored-containers": List of containers to be ignored.
 	- "mount-method": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
@@ -95,13 +96,15 @@ var setConfigCmd = &cobra.Command{
 
 func setConfigProperty(config *common.OdigosConfiguration, property string, value []string) error {
 	switch property {
-	case "central-backend-url":
+	case consts.CentralBackendURLProperty:
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
 		}
 		config.CentralBackendURL = value[0]
 
-	case "telemetry-enabled", "openshift-enabled", "psp", "skip-webhook-issuer-creation", "allow-concurrent-agents":
+	case consts.TelemetryEnabledProperty, consts.OpenshiftEnabledProperty, consts.PspProperty,
+		consts.SkipWebhookIssuerCreationProperty, consts.AllowConcurrentAgentsProperty:
+
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value (true/false)", property)
 		}
@@ -111,59 +114,67 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 		}
 
 		switch property {
-		case "telemetry-enabled":
+		case consts.TelemetryEnabledProperty:
 			config.TelemetryEnabled = boolValue
-		case "openshift-enabled":
+		case consts.OpenshiftEnabledProperty:
 			config.OpenshiftEnabled = boolValue
-		case "psp":
+		case consts.PspProperty:
 			config.Psp = boolValue
-		case "skip-webhook-issuer-creation":
+		case consts.SkipWebhookIssuerCreationProperty:
 			config.SkipWebhookIssuerCreation = boolValue
-		case "allow-concurrent-agents":
+		case consts.AllowConcurrentAgentsProperty:
 			config.AllowConcurrentAgents = &boolValue
 		}
 
-	case "image-prefix", "odiglet-image", "instrumentor-image", "autoscaler-image", "ui-mode":
+	case consts.ImagePrefixProperty, consts.OdigletImageProperty, consts.InstrumentorImageProperty,
+		consts.AutoscalerImageProperty, consts.UiModeProperty, consts.UiPaginationLimit:
+
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
 		}
 		switch property {
-		case "image-prefix":
+		case consts.ImagePrefixProperty:
 			config.ImagePrefix = value[0]
-		case "odiglet-image":
+		case consts.OdigletImageProperty:
 			config.OdigletImage = value[0]
-		case "instrumentor-image":
+		case consts.InstrumentorImageProperty:
 			config.InstrumentorImage = value[0]
-		case "autoscaler-image":
+		case consts.AutoscalerImageProperty:
 			config.AutoscalerImage = value[0]
-		case "ui-mode":
+		case consts.UiModeProperty:
 			config.UiMode = common.UiMode(value[0])
+		case consts.UiPaginationLimit:
+			intValue, err := strconv.Atoi(value[0])
+			if err != nil {
+				return fmt.Errorf("invalid integer value for %s: %s", property, value[0])
+			}
+			config.UiPaginationLimit = intValue
 		}
 
-	case "ignored-namespaces":
+	case consts.IgnoredNamespacesProperty:
 		if len(value) < 1 {
 			return fmt.Errorf("%s expects at least one value", property)
 		}
 		config.IgnoredNamespaces = value
 
-	case "ignored-containers":
+	case consts.IgnoredContainersProperty:
 		if len(value) < 1 {
 			return fmt.Errorf("%s expects at least one value", property)
 		}
 		config.IgnoredContainers = value
 
-	case "mount-method":
+	case consts.MountMethodProperty:
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
 		}
 		mountMethod := common.MountMethod(value[0])
 		switch mountMethod {
-		case common.K8sHostPathMountMethod:
-		case common.K8sVirtualDeviceMountMethod:
+		case common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod:
+			config.MountMethod = &mountMethod
 		default:
-			return fmt.Errorf("invalid mount method: %s (valid values: %s, %s)", value[0], common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod)
+			return fmt.Errorf("invalid mount method: %s (valid values: %s, %s)", value[0],
+				common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod)
 		}
-		config.MountMethod = &mountMethod
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
