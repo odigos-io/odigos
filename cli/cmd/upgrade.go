@@ -117,6 +117,9 @@ and apply any required migrations and adaptations.`,
 			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
 			os.Exit(1)
 		}
+
+		config.ImageReferences = GetImageReferences(currentTier, config.OpenshiftEnabled)
+
 		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
 		if err != nil {
