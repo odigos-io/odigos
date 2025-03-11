@@ -62,8 +62,8 @@ export const GET_SOURCE = gql`
 `;
 
 export const GET_INSTANCES = gql`
-  query GetInstrumentationInstancesHealth {
-    instrumentationInstancesHealth {
+  query GetInstrumentationInstancesHealth($sourceIds: [K8sSourceId!]!) {
+    instrumentationInstancesHealth(sourceIds: $sourceIds) {
       namespace
       name
       kind

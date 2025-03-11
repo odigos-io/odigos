@@ -238,12 +238,10 @@ type ComplexityRoot struct {
 	}
 
 	InstrumentationInstanceHealth struct {
-		Condition        func(childComplexity int) int
-		HealthyInstances func(childComplexity int) int
-		Kind             func(childComplexity int) int
-		Name             func(childComplexity int) int
-		Namespace        func(childComplexity int) int
-		TotalInstances   func(childComplexity int) int
+		Condition func(childComplexity int) int
+		Kind      func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Namespace func(childComplexity int) int
 	}
 
 	InstrumentationLibraryGlobalId struct {
@@ -455,7 +453,7 @@ type ComplexityRoot struct {
 		DescribeSource                 func(childComplexity int, namespace string, kind string, name string) int
 		DestinationCategories          func(childComplexity int) int
 		GetOverviewMetrics             func(childComplexity int) int
-		InstrumentationInstancesHealth func(childComplexity int) int
+		InstrumentationInstancesHealth func(childComplexity int, sourceIds []*model.K8sSourceID) int
 		PotentialDestinations          func(childComplexity int) int
 	}
 
@@ -561,7 +559,7 @@ type QueryResolver interface {
 	GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error)
 	DescribeOdigos(ctx context.Context) (*model.OdigosAnalyze, error)
 	DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error)
-	InstrumentationInstancesHealth(ctx context.Context) ([]*model.InstrumentationInstanceHealth, error)
+	InstrumentationInstancesHealth(ctx context.Context, sourceIds []*model.K8sSourceID) ([]*model.InstrumentationInstanceHealth, error)
 }
 
 type executableSchema struct {
@@ -1417,13 +1415,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationInstanceHealth.Condition(childComplexity), true
 
-	case "InstrumentationInstanceHealth.healthyInstances":
-		if e.complexity.InstrumentationInstanceHealth.HealthyInstances == nil {
-			break
-		}
-
-		return e.complexity.InstrumentationInstanceHealth.HealthyInstances(childComplexity), true
-
 	case "InstrumentationInstanceHealth.kind":
 		if e.complexity.InstrumentationInstanceHealth.Kind == nil {
 			break
@@ -1444,13 +1435,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationInstanceHealth.Namespace(childComplexity), true
-
-	case "InstrumentationInstanceHealth.totalInstances":
-		if e.complexity.InstrumentationInstanceHealth.TotalInstances == nil {
-			break
-		}
-
-		return e.complexity.InstrumentationInstanceHealth.TotalInstances(childComplexity), true
 
 	case "InstrumentationLibraryGlobalId.language":
 		if e.complexity.InstrumentationLibraryGlobalId.Language == nil {
@@ -2463,7 +2447,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.InstrumentationInstancesHealth(childComplexity), true
+		args, err := ec.field_Query_instrumentationInstancesHealth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.InstrumentationInstancesHealth(childComplexity, args["sourceIds"].([]*model.K8sSourceID)), true
 
 	case "Query.potentialDestinations":
 		if e.complexity.Query.PotentialDestinations == nil {
@@ -3249,6 +3238,21 @@ func (ec *executionContext) field_Query_describeSource_args(ctx context.Context,
 		}
 	}
 	args["name"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_instrumentationInstancesHealth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []*model.K8sSourceID
+	if tmp, ok := rawArgs["sourceIds"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceIds"))
+		arg0, err = ec.unmarshalNK8sSourceId2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceIDᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sourceIds"] = arg0
 	return args, nil
 }
 
@@ -8862,94 +8866,6 @@ func (ec *executionContext) fieldContext_InstrumentationInstanceHealth_kind(_ co
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type K8sResourceKind does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InstrumentationInstanceHealth_totalInstances(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceHealth) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentationInstanceHealth_totalInstances(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalInstances, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentationInstanceHealth_totalInstances(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentationInstanceHealth",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InstrumentationInstanceHealth_healthyInstances(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceHealth) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentationInstanceHealth_healthyInstances(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.HealthyInstances, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentationInstanceHealth_healthyInstances(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentationInstanceHealth",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -15635,7 +15551,7 @@ func (ec *executionContext) _Query_instrumentationInstancesHealth(ctx context.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().InstrumentationInstancesHealth(rctx)
+		return ec.resolvers.Query().InstrumentationInstancesHealth(rctx, fc.Args["sourceIds"].([]*model.K8sSourceID))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15652,7 +15568,7 @@ func (ec *executionContext) _Query_instrumentationInstancesHealth(ctx context.Co
 	return ec.marshalNInstrumentationInstanceHealth2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationInstanceHealthᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_instrumentationInstancesHealth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_instrumentationInstancesHealth(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -15666,15 +15582,22 @@ func (ec *executionContext) fieldContext_Query_instrumentationInstancesHealth(_ 
 				return ec.fieldContext_InstrumentationInstanceHealth_name(ctx, field)
 			case "kind":
 				return ec.fieldContext_InstrumentationInstanceHealth_kind(ctx, field)
-			case "totalInstances":
-				return ec.fieldContext_InstrumentationInstanceHealth_totalInstances(ctx, field)
-			case "healthyInstances":
-				return ec.fieldContext_InstrumentationInstanceHealth_healthyInstances(ctx, field)
 			case "condition":
 				return ec.fieldContext_InstrumentationInstanceHealth_condition(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationInstanceHealth", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_instrumentationInstancesHealth_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -21840,16 +21763,6 @@ func (ec *executionContext) _InstrumentationInstanceHealth(ctx context.Context, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "totalInstances":
-			out.Values[i] = ec._InstrumentationInstanceHealth_totalInstances(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "healthyInstances":
-			out.Values[i] = ec._InstrumentationInstanceHealth_healthyInstances(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "condition":
 			out.Values[i] = ec._InstrumentationInstanceHealth_condition(ctx, field, obj)
 		default:
@@ -25452,6 +25365,28 @@ func (ec *executionContext) marshalNK8sResourceKind2githubᚗcomᚋodigosᚑio�
 func (ec *executionContext) unmarshalNK8sSourceId2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceID(ctx context.Context, v interface{}) (model.K8sSourceID, error) {
 	res, err := ec.unmarshalInputK8sSourceId(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNK8sSourceId2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceIDᚄ(ctx context.Context, v interface{}) ([]*model.K8sSourceID, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.K8sSourceID, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNK8sSourceId2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceID(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNK8sSourceId2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceID(ctx context.Context, v interface{}) (*model.K8sSourceID, error) {
+	res, err := ec.unmarshalInputK8sSourceId(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNNodeCollectorAnalyze2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNodeCollectorAnalyze(ctx context.Context, sel ast.SelectionSet, v *model.NodeCollectorAnalyze) graphql.Marshaler {
