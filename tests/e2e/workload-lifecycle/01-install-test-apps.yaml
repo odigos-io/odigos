@@ -505,7 +505,7 @@ spec:
     spec:
       containers:
         - name: java-special-exec
-          image: java-special-exec:v0.0.1
+          image: public.ecr.aws/odigos/java-special-exec:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
