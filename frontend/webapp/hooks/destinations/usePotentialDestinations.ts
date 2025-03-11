@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
-import { safeJsonParse } from '@odigos/ui-utils';
 import { GET_POTENTIAL_DESTINATIONS } from '@/graphql';
+import { deepClone, safeJsonParse } from '@odigos/ui-utils';
 import { useDestinationCategories } from './useDestinationCategories';
 import { type ISetupState, useSetupStore } from '@odigos/ui-containers';
 
@@ -43,7 +43,7 @@ export const usePotentialDestinations = () => {
     if (!categories || !potentialDestinations) return [];
 
     // Create a deep copy of destination types to manipulate
-    const parsed: typeof categories = JSON.parse(JSON.stringify(categories));
+    const parsed = deepClone<typeof categories>(categories);
 
     // Map over the potential destinations
     return potentialDestinations
