@@ -23,7 +23,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"golang.org/x/sync/errgroup"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -964,45 +963,8 @@ func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, ki
 }
 
 // InstrumentationInstancesHealth is the resolver for the instrumentationInstancesHealth field.
-func (r *queryResolver) InstrumentationInstancesHealth(ctx context.Context, sourceIds []*model.K8sSourceID) ([]*model.InstrumentationInstanceHealth, error) {
-	result := make([]*model.InstrumentationInstanceHealth, 0)
-	channel := make(chan model.InstrumentationInstanceHealth, len(sourceIds))
-
-	g, ctx := errgroup.WithContext(ctx)
-	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
-
-	for _, id := range sourceIds {
-		g.Go(func() error {
-			ns := id.Namespace
-			name := id.Name
-			kind := id.Kind
-
-			condition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
-			if condition.Status != "" {
-				channel <- model.InstrumentationInstanceHealth{
-					Namespace: ns,
-					Name:      name,
-					Kind:      kind,
-					Condition: &condition,
-				}
-			}
-
-			return nil
-		})
-	}
-
-	if err := g.Wait(); err != nil {
-		return nil, err
-	}
-
-	close(channel)
-	for ch := range channel {
-		if ch.Condition != nil {
-			result = append(result, &ch)
-		}
-	}
-
-	return result, nil
+func (r *queryResolver) InstrumentationInstancesHealth(ctx context.Context) ([]*model.InstrumentationInstanceHealth, error) {
+	return services.GetInstrumentationInstancesHealthConditions(ctx)
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.
