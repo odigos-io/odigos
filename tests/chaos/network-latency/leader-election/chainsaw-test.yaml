@@ -60,6 +60,7 @@ spec:
     - name: Update deployment probes
       try:
         - script:
+            # The test adds latency to all of the requests in the pod, the purpose of this patch is to prevent kubernetes from assuming the service is in not healthy (The probes would fail with timeout otherwise)
             timeout: 3m
             content: |
               kubectl patch deployment odigos-instrumentor -n odigos-test --type=json -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/readinessProbe/timeoutSeconds", "value":10}, {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/timeoutSeconds", "value":10}]'
