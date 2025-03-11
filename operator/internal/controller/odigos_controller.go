@@ -62,6 +62,32 @@ type OdigosReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+// relatedImageEnvVars is a reverse-lookup map to quickly find the environment variable
+// for component images when openshift is enabled
+var relatedImageEnvVars = map[string]string{
+	k8sconsts.AutoScalerImageName: "RELATED_IMAGE_AUTOSCALER",
+	k8sconsts.AutoScalerImageUBI9: "RELATED_IMAGE_AUTOSCALER",
+
+	k8sconsts.OdigosClusterCollectorImage:     "RELATED_IMAGE_COLLECTOR",
+	k8sconsts.OdigosClusterCollectorImageUBI9: "RELATED_IMAGE_COLLECTOR",
+
+	k8sconsts.InstrumentorImage:               "RELATED_IMAGE_INSTRUMENTOR",
+	k8sconsts.InstrumentorImageUBI9:           "RELATED_IMAGE_INSTRUMENTOR",
+	k8sconsts.InstrumentorEnterpriseImage:     "RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR",
+	k8sconsts.InstrumentorEnterpriseImageUBI9: "RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR",
+
+	k8sconsts.UIImage:     "RELATED_IMAGE_FRONTEND",
+	k8sconsts.UIImageUBI9: "RELATED_IMAGE_FRONTEND",
+
+	k8sconsts.OdigletImageName:           "RELATED_IMAGE_ODIGLET",
+	k8sconsts.OdigletImageUBI9:           "RELATED_IMAGE_ODIGLET",
+	k8sconsts.OdigletEnterpriseImageName: "RELATED_IMAGE_ODIGLET",
+	k8sconsts.OdigletEnterpriseImageUBI9: "RELATED_IMAGE_ODIGLET",
+
+	k8sconsts.SchedulerImage:     "RELATED_IMAGE_SCHEDULER",
+	k8sconsts.SchedulerImageUBI9: "RELATED_IMAGE_SCHEDULER",
+}
+
 // +kubebuilder:rbac:groups=operator.odigos.io,resources=odigos,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operator.odigos.io,resources=odigos/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=operator.odigos.io,resources=odigos/finalizers,verbs=update
@@ -315,6 +341,17 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	odigosConfig.AutoscalerImage = k8sconsts.AutoScalerImageName
 	odigosConfig.InstrumentorImage = k8sconsts.InstrumentorImage
 
+	imageReferences := cmd.GetImageReferences(odigosTier, odigos.Spec.OpenShiftEnabled)
+	if odigos.Spec.OpenShiftEnabled {
+		imageReferences.AutoscalerImage = os.Getenv(relatedImageEnvVars[imageReferences.AutoscalerImage])
+		imageReferences.CollectorImage = os.Getenv(relatedImageEnvVars[imageReferences.CollectorImage])
+		imageReferences.UIImage = os.Getenv(relatedImageEnvVars[imageReferences.UIImage])
+		imageReferences.InstrumentorImage = os.Getenv(relatedImageEnvVars[imageReferences.InstrumentorImage])
+		imageReferences.OdigletImage = os.Getenv(relatedImageEnvVars[imageReferences.OdigletImage])
+		imageReferences.SchedulerImage = os.Getenv(relatedImageEnvVars[imageReferences.SchedulerImage])
+	}
+	odigosConfig.ImageReferences = imageReferences
+
 	defaultMountMethod := common.K8sVirtualDeviceMountMethod
 	if len(odigos.Spec.MountMethod) == 0 {
 		odigosConfig.MountMethod = &defaultMountMethod
@@ -337,9 +374,6 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	}
 
 	if odigos.Spec.OpenShiftEnabled {
-		if odigos.Spec.ImagePrefix == "" {
-			odigosConfig.ImagePrefix = k8sconsts.RedHatImagePrefix
-		}
 		odigosConfig.OdigletImage = k8sconsts.OdigletImageUBI9
 		odigosConfig.InstrumentorImage = k8sconsts.InstrumentorImageUBI9
 		odigosConfig.AutoscalerImage = k8sconsts.AutoScalerImageUBI9
