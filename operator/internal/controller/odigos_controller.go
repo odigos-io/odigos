@@ -338,8 +338,6 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	odigosConfig.ImagePrefix = odigos.Spec.ImagePrefix
 	odigosConfig.Profiles = odigos.Spec.Profiles
 	odigosConfig.UiMode = common.UiMode(odigos.Spec.UIMode)
-	odigosConfig.AutoscalerImage = k8sconsts.AutoScalerImageName
-	odigosConfig.InstrumentorImage = k8sconsts.InstrumentorImage
 
 	imageReferences := cmd.GetImageReferences(odigosTier, odigos.Spec.OpenShiftEnabled)
 	if odigos.Spec.OpenShiftEnabled {
@@ -373,11 +371,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		odigosConfig.MountMethod = &odigos.Spec.MountMethod
 	}
 
-	if odigos.Spec.OpenShiftEnabled {
-		odigosConfig.OdigletImage = k8sconsts.OdigletImageUBI9
-		odigosConfig.InstrumentorImage = k8sconsts.InstrumentorImageUBI9
-		odigosConfig.AutoscalerImage = k8sconsts.AutoScalerImageUBI9
-	} else {
+	if !odigos.Spec.OpenShiftEnabled {
 		if odigos.Spec.ImagePrefix == "" {
 			odigosConfig.ImagePrefix = k8sconsts.OdigosImagePrefix
 		}

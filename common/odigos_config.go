@@ -102,9 +102,6 @@ type OdigosConfiguration struct {
 	IgnoredContainers         []string                       `json:"ignoredContainers,omitempty"`
 	Psp                       bool                           `json:"psp,omitempty"`
 	ImagePrefix               string                         `json:"imagePrefix,omitempty"`
-	OdigletImage              string                         `json:"odigletImage,omitempty"`
-	InstrumentorImage         string                         `json:"instrumentorImage,omitempty"`
-	AutoscalerImage           string                         `json:"autoscalerImage,omitempty"`
 	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty"`
 	CollectorGateway          *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
 	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`

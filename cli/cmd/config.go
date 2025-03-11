@@ -126,8 +126,7 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			config.AllowConcurrentAgents = &boolValue
 		}
 
-	case consts.ImagePrefixProperty, consts.OdigletImageProperty, consts.InstrumentorImageProperty,
-		consts.AutoscalerImageProperty, consts.UiModeProperty, consts.UiPaginationLimit:
+	case consts.ImagePrefixProperty, consts.UiModeProperty, consts.UiPaginationLimit:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -135,12 +134,6 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 		switch property {
 		case consts.ImagePrefixProperty:
 			config.ImagePrefix = value[0]
-		case consts.OdigletImageProperty:
-			config.OdigletImage = value[0]
-		case consts.InstrumentorImageProperty:
-			config.InstrumentorImage = value[0]
-		case consts.AutoscalerImageProperty:
-			config.AutoscalerImage = value[0]
 		case consts.UiModeProperty:
 			config.UiMode = common.UiMode(value[0])
 		case consts.UiPaginationLimit:
