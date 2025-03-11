@@ -3,10 +3,10 @@ package inspectors
 import (
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-version"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/dotnet"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/golang"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/java"
@@ -86,12 +86,12 @@ func runInspectionStage(
 // if error or language detectors has conflict common.UnknownProgrammingLanguage is also returned.
 // DetectLanguage creates a process context, runs the light checks first,
 // and if no language is detected, falls back to the expensive checks.
-func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLanguageDetails, error) {
+func DetectLanguage(proc process.Details, containerURL string, logger logr.Logger) (common.ProgramLanguageDetails, error) {
 	// Step 1: Initialize process context
 	procContext := process.NewProcessContext(proc)
 	defer func() {
 		if err := procContext.CloseFiles(); err != nil {
-			log.Logger.Error(err, "Error closing files")
+			logger.Error(err, "Error closing files")
 		}
 	}()
 
