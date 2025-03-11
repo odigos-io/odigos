@@ -70,7 +70,7 @@ Scenarios are written in yaml files called `chainsaw-test.yaml` according to the
 
 See the [following document](https://kyverno.github.io/chainsaw/latest/test/) for more information on how to write scenarios.
 
-Scenarios should be placed in the `tests/chaos/<fault-created>/<scenraio-name>` directory.
+Scenarios should be placed in the `tests/chaos/<fault-created>/<scenario-name>` directory.
 
 Tests that expect to validate traces should have TraceQL validations and have them be placed in the `tests/chaos/<fault-created>/<scenraio-name>/traceql` directory.
 
