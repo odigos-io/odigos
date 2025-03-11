@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { useNamespace } from '../compute-platform';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import { GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { GET_INSTANCES, GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import type { FetchedSource, NamespaceInstrumentInput, PaginatedData, SourceInstrumentInput, SourceUpdateInput } from '@/@types';
-import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, sleep, type Source, type WorkloadId } from '@odigos/ui-utils';
+import { Condition, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, type Source, type WorkloadId } from '@odigos/ui-utils';
 import {
   type NamespaceSelectionFormData,
   type SourceFormData,
@@ -40,6 +40,9 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const [queryByPage] = useLazyQuery<{ computePlatform: { sources: PaginatedData<FetchedSource> } }>(GET_SOURCES);
   const [queryById] = useLazyQuery<{ computePlatform: { source: FetchedSource } }, { sourceId: WorkloadId }>(GET_SOURCE);
+  const [queryInstances] = useLazyQuery<{ instrumentationInstancesHealth: { namespace: WorkloadId['namespace']; name: WorkloadId['name']; kind: WorkloadId['kind']; condition: Condition }[] }>(
+    GET_INSTANCES,
+  );
 
   const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
     // We should not fetch while sources are being instrumented.
@@ -57,26 +60,29 @@ export const useSourceCRUD = (): UseSourceCrud => {
     }
   };
 
-  const fetchAllSourcesIndividually = async () => {
-    const items = useEntityStore.getState().sources;
+  const fetchAllInstances = async () => {
+    const sourcesFromStore = useEntityStore.getState().sources;
+    const { data } = await queryInstances();
 
-    for (let i = 0; i < items.length; i++) {
-      const { namespace, name, kind } = items[i];
-      const bypassPaginationLoader = true;
+    if (!!data?.instrumentationInstancesHealth) {
+      const sourcesWithInstances: Source[] = [];
 
-      const startTime = Date.now();
-      await fetchSourceById({ namespace, name, kind }, bypassPaginationLoader);
-      const endTime = Date.now();
+      for (const { namespace, name, kind, condition } of data.instrumentationInstancesHealth) {
+        if (!!condition?.status) {
+          const foundIdx = sourcesFromStore.findIndex((x) => x.namespace === namespace && x.name === name && x.kind === kind);
 
-      const halfSecond = 500;
-      const timeElapsed = endTime - startTime;
-      if (timeElapsed < halfSecond) {
-        // timeout helps avoid some lag on quick paginations
-        await sleep(halfSecond);
+          if (foundIdx !== -1) {
+            if (!!sourcesFromStore[foundIdx].conditions) {
+              sourcesWithInstances.push({ ...sourcesFromStore[foundIdx], conditions: sourcesFromStore[foundIdx].conditions.concat([condition]) });
+            } else {
+              sourcesWithInstances.push({ ...sourcesFromStore[foundIdx], conditions: [condition] });
+            }
+          }
+        }
       }
-    }
 
-    setEntitiesLoading(ENTITY_TYPES.SOURCE, false);
+      addEntities(ENTITY_TYPES.SOURCE, sourcesWithInstances);
+    }
   };
 
   const fetchSourcesPaginated = async (getAll: boolean = true, page: string = '') => {
@@ -86,10 +92,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (useEntityStore.getState().sourcesLoading && !page) return;
 
     setEntitiesLoading(ENTITY_TYPES.SOURCE, true);
-
-    const startTime = Date.now();
     const { error, data } = await queryByPage({ variables: { nextPage: page } });
-    const endTime = Date.now();
 
     if (!!error) {
       notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
@@ -99,21 +102,12 @@ export const useSourceCRUD = (): UseSourceCrud => {
       addEntities(ENTITY_TYPES.SOURCE, items);
 
       if (getAll && !!nextPage) {
-        const halfSecond = 500;
-        const timeElapsed = endTime - startTime;
-
-        if (timeElapsed > halfSecond) {
-          fetchSourcesPaginated(true, nextPage);
-        } else {
-          // timeout helps avoid some lag on quick paginations
-          setTimeout(() => fetchSourcesPaginated(true, nextPage), halfSecond);
-        }
+        fetchSourcesPaginated(true, nextPage);
       } else if (useEntityStore.getState().sources.length >= useInstrumentStore.getState().sourcesToCreate) {
-        // if we move "fetchAllSourcesIndividually" elsewhere, we might need to uncomment the following
-        // setEntitiesLoading(ENTITY_TYPES.SOURCE, false);
+        setEntitiesLoading(ENTITY_TYPES.SOURCE, false);
         setInstrumentCount('sourcesToCreate', 0);
         setInstrumentCount('sourcesCreated', 0);
-        fetchAllSourcesIndividually();
+        fetchAllInstances();
       }
     }
   };
