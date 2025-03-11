@@ -390,10 +390,7 @@ func GetInstrumentationInstancesHealthCondition(ctx context.Context, namespace s
 }
 
 func GetInstrumentationInstancesHealthConditions(ctx context.Context) ([]*model.InstrumentationInstanceHealth, error) {
-	// Map for efficient lookup
 	resultMap := make(map[string]*model.InstrumentationInstanceHealth)
-
-	// Fetch InstrumentationInstances
 	list, err := kube.DefaultClient.OdigosClient.InstrumentationInstances("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -415,7 +412,6 @@ func GetInstrumentationInstancesHealthConditions(ctx context.Context) ([]*model.
 
 		key := fmt.Sprintf("%s/%s/%s", namespace, name, kind)
 
-		// If not already in map, create a new entry
 		if _, exists := resultMap[key]; !exists {
 			resultMap[key] = &model.InstrumentationInstanceHealth{
 				Namespace:        namespace,
@@ -426,14 +422,12 @@ func GetInstrumentationInstancesHealthConditions(ctx context.Context) ([]*model.
 			}
 		}
 
-		// Increment instance counts
 		resultMap[key].TotalInstances++
 		if instance.Status.Healthy != nil && *instance.Status.Healthy {
 			resultMap[key].HealthyInstances++
 		}
 	}
 
-	// Convert map to slice and compute conditions
 	result := make([]*model.InstrumentationInstanceHealth, 0, len(resultMap))
 	for _, item := range resultMap {
 		status := model.ConditionStatusSuccess
