@@ -1,4 +1,4 @@
-package deleteinstrumentationconfig_test
+package sourceinstrumentation_test
 
 import (
 	"context"

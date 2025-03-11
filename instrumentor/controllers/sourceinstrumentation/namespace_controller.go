@@ -14,40 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package deleteinstrumentationconfig
+package sourceinstrumentation
 
 import (
 	"context"
 
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
-	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type DaemonSetReconciler struct {
+type NamespaceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+	logger.Info("Syncing instrumentation for workloads in namespace", "namespace", req.Name)
 
-	var ds appsv1.DaemonSet
-	err := r.Get(ctx, req.NamespacedName, &ds)
+	var ns corev1.Namespace
+	err := r.Get(ctx, client.ObjectKey{Name: req.Name}, &ns)
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-
-		logger.Error(err, "error fetching daemonset object")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	err = reconcileWorkloadObject(ctx, r.Client, &ds)
-	return k8sutils.K8SUpdateErrorHandler(err)
+	return syncNamespaceWorkloads(ctx, r.Client, r.Scheme, ns.GetName())
 }
