@@ -10,8 +10,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
-	"k8s.io/apimachinery/pkg/util/version"
-	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -47,7 +46,7 @@ type DelayManager struct {
 
 // RunSyncDaemonSetWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
 func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int, dests *odigosv1.DestinationList,
-	collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string, k8sVersion *version.Version) {
+	collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string) {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 
@@ -76,7 +75,7 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 		}()
 
 		for i := 0; i < retries; i++ {
-			_, err = syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version, k8sVersion)
+			_, err = syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version)
 			if err == nil {
 				return
 			}
@@ -91,7 +90,7 @@ func (dm *DelayManager) finishProgress() {
 }
 
 func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version) (*appsv1.DaemonSet, error) {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
 
 	odigletDaemonsetPodSpec, err := getOdigletDaemonsetPodSpec(ctx, c, datacollection.Namespace)
@@ -112,7 +111,7 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 		logger.Error(err, "Failed to get signals from otelcol config")
 		return nil, err
 	}
-	desiredDs, err := getDesiredDaemonSet(datacollection, scheme, imagePullSecrets, odigosVersion, k8sVersion, odigletDaemonsetPodSpec)
+	desiredDs, err := getDesiredDaemonSet(datacollection, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -169,7 +168,7 @@ func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace 
 }
 
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
-	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, k8sVersion *version.Version,
+	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
 	odigletDaemonsetPodSpec *corev1.PodSpec) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
 
@@ -185,7 +184,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 		MaxUnavailable: &maxUnavailable,
 	}
 	// maxSurge was added to the Kubernetes api at version 1.21.alpha1, we want to be sure so we used 1.22 for the check, the fallback is without it
-	if k8sVersion != nil && k8sVersion.AtLeast(version.MustParse("1.22.0")) {
+	if feature.DaemonSetUpdateSurge(feature.Beta) {
 		maxSurge := intstr.FromInt(0)
 		rollingUpdate.MaxSurge = &maxSurge
 	}
@@ -271,7 +270,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					Containers: []corev1.Container{
 						{
 							Name:    containerName,
-							Image:   commonconfig.ControllerConfig.CollectorImage,
+							Image:   common.ControllerConfig.CollectorImage,
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosNodeCollectorConfigMapKey)},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -365,12 +364,16 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 							},
 						},
 					},
-					HostNetwork:       true,
 					DNSPolicy:         corev1.DNSClusterFirstWithHostNet,
 					PriorityClassName: "system-node-critical",
 				},
 			},
 		},
+	}
+
+	// if the service internal traffic policy is not enabled, the datacollection pod should be host networked
+	if !feature.ServiceInternalTrafficPolicy(feature.GA) {
+		desiredDs.Spec.Template.Spec.HostNetwork = true
 	}
 
 	if len(imagePullSecrets) > 0 {
