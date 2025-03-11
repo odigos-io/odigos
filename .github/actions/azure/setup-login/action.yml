@@ -1,0 +1,13 @@
+name: "Setup Azure Credentials"
+description: "Automatically configures Azure credentials for local runs and GitHub Actions (OIDC)."
+runs:
+  using: "composite"
+  steps:
+    - name: Run Azure Setup Script
+      shell: bash
+      run: ${{ github.action_path }}/entrypoint.sh
+      env:
+        AZURE_CLIENT_ID: ${{ env.AZURE_CLIENT_ID }}
+        AZURE_TENANT_ID: ${{ env.AZURE_TENANT_ID }}
+        AZURE_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
+        GITHUB_ACTIONS_OIDC: ${{ env.GITHUB_ACTIONS }}

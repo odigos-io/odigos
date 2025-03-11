@@ -1,0 +1,8 @@
+name: "Login to Amazon public ECR"
+description: "Login the docker daemon to our public ecr"
+runs:
+  using: "composite"
+  steps:
+    - name: Run AWS Client Check & Install Script
+      shell: bash
+      run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws

@@ -1,0 +1,8 @@
+name: "AWS Client Installer"
+description: "Checks if the AWS CLI is installed on the runner and installs it if missing."
+runs:
+  using: "composite"
+  steps:
+    - name: Run AWS Client Check & Install Script
+      shell: bash
+      run: ${{ github.action_path }}/entrypoint.sh
