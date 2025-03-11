@@ -61,6 +61,7 @@ const (
 	InstrumentorImageProperty         = "instrumentor-image"
 	AutoscalerImageProperty           = "autoscaler-image"
 	UiModeProperty                    = "ui-mode"
+	UiPaginationLimit                 = "ui-pagination-limit"
 	IgnoredNamespacesProperty         = "ignored-namespaces"
 	IgnoredContainersProperty         = "ignored-containers"
 	MountMethodProperty               = "mount-method"
