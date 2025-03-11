@@ -36,7 +36,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 	}
 
 	// Buffered channel for instrumentation instances updates
-	updateChannel := make(chan InstrumentationUpdateTask, 300)
+	updateChannel := make(chan InstrumentationUpdateTask, 1000)
 
 	http.HandleFunc("POST /v1/opamp", func(w http.ResponseWriter, req *http.Request) {
 
@@ -97,7 +97,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		// This is to avoid unnecessary updates when the message is a heartbeat
 		if connectionInfo != nil && (agentToServer.AgentDescription != nil || agentToServer.Health != nil) {
 			select {
-			case updateChannel <- InstrumentationUpdateTask{ctx, handlers, &agentToServer, connectionInfo}:
+			case updateChannel <- InstrumentationUpdateTask{ctx, &agentToServer, connectionInfo}:
 			default:
 				logger.Error(nil, "Update channel is full, dropping task")
 			}
@@ -148,7 +148,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		ProcessInstrumentationUpdates(ctx, updateChannel, logger)
+		ProcessInstrumentationUpdates(ctx, updateChannel, handlers, logger)
 	}()
 
 	wg.Add(1)
@@ -196,30 +196,19 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 
 type InstrumentationUpdateTask struct {
 	ctx            context.Context
-	handlers       *ConnectionHandlers
 	agentToServer  *protobufs.AgentToServer
 	connectionInfo *connection.ConnectionInfo
 }
 
-func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan InstrumentationUpdateTask, logger logr.Logger) {
-	logger.Info("Starting instrumentation update worker")
+func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan InstrumentationUpdateTask, handlers *ConnectionHandlers, logger logr.Logger) {
+	logger.Info("Starting instrumentation instance update worker")
 
-	for {
-		select {
-		case <-ctx.Done():
-			logger.Info("Shutting down instrumentation update worker")
-			return
-		case task, ok := <-updateChannel:
-			if !ok {
-				logger.Info("Update channel closed, shutting down instrumentation update worker")
-				return
-			}
-
-			err := task.handlers.UpdateInstrumentationInstanceStatus(task.ctx, task.agentToServer, task.connectionInfo)
-
-			if err != nil {
-				logger.Error(err, "Failed to update instrumentation instance")
-			}
+	for task := range updateChannel {
+		err := handlers.UpdateInstrumentationInstanceStatus(task.ctx, task.agentToServer, task.connectionInfo)
+		if err != nil {
+			logger.Error(err, "Failed to update instrumentation instance")
 		}
 	}
+
+	logger.Info("Shutting down instrumentation update worker")
 }
