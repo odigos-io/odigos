@@ -109,6 +109,8 @@ It will install k8s components that will auto-instrument your applications with 
 
 		config := CreateOdigosConfig(odigosTier)
 
+		client.ImageReferences = GetImageReferences(odigosTier, openshiftEnabled)
+
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
 		// namespace is created on "install" and is not managed by resource manager
@@ -223,10 +225,10 @@ func ValidateUserInputProfiles(tier common.OdigosTier) error {
 	return nil
 }
 
-func GetImageReferences(odigosTier common.OdigosTier, openshift bool) common.ImageReferences {
-	var imageReferences common.ImageReferences
+func GetImageReferences(odigosTier common.OdigosTier, openshift bool) kube.ImageReferences {
+	var imageReferences kube.ImageReferences
 	if openshift {
-		imageReferences = common.ImageReferences{
+		imageReferences = kube.ImageReferences{
 			AutoscalerImage:   k8sconsts.AutoScalerImageUBI9,
 			CollectorImage:    k8sconsts.OdigosClusterCollectorImageUBI9,
 			InstrumentorImage: k8sconsts.InstrumentorImageUBI9,
@@ -236,7 +238,7 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) common.Ima
 			UIImage:           k8sconsts.UIImageUBI9,
 		}
 	} else {
-		imageReferences = common.ImageReferences{
+		imageReferences = kube.ImageReferences{
 			AutoscalerImage:   k8sconsts.AutoScalerImageName,
 			CollectorImage:    k8sconsts.OdigosClusterCollectorImage,
 			InstrumentorImage: k8sconsts.InstrumentorImage,
@@ -286,7 +288,6 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		Profiles:                  selectedProfiles,
 		UiMode:                    common.UiMode(uiMode),
 		CentralBackendURL:         centralBackendURL,
-		ImageReferences:           GetImageReferences(odigosTier, openshiftEnabled),
 	}
 }
 

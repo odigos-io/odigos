@@ -35,6 +35,17 @@ type Client struct {
 	OdigosClient    v1alpha1.OdigosV1alpha1Interface
 	Config          *rest.Config
 	OwnerReferences []metav1.OwnerReference
+	ImageReferences ImageReferences
+}
+
+type ImageReferences struct {
+	AutoscalerImage   string
+	CollectorImage    string
+	InstrumentorImage string
+	OdigletImage      string
+	KeyvalProxyImage  string
+	SchedulerImage    string
+	UIImage           string
 }
 
 // Identical to the Object interface defined in controller-runtime: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client#Object

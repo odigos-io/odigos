@@ -118,7 +118,7 @@ and apply any required migrations and adaptations.`,
 			os.Exit(1)
 		}
 
-		config.ImageReferences = GetImageReferences(currentTier, config.OpenshiftEnabled)
+		client.ImageReferences = GetImageReferences(currentTier, config.OpenshiftEnabled)
 
 		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)

@@ -391,7 +391,7 @@ func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewUIRoleBinding(u.ns),
 		NewUIClusterRole(u.readonly),
 		NewUIClusterRoleBinding(u.ns),
-		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.config.ImageReferences.UIImage),
+		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.client.ImageReferences.UIImage),
 		NewUIService(u.ns),
 	}
 	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources)

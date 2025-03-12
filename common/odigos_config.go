@@ -111,15 +111,4 @@ type OdigosConfiguration struct {
 	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty"`
 	CentralBackendURL         string                         `json:"centralBackendURL,omitempty"`
 	MountMethod               *MountMethod                   `json:"mountMethod,omitempty"`
-	ImageReferences           ImageReferences                `json:"imageReferences,omitempty"`
-}
-
-type ImageReferences struct {
-	AutoscalerImage   string `json:"autoscalerImage,omitempty"`
-	CollectorImage    string `json:"collectorImage,omitempty"`
-	InstrumentorImage string `json:"instrumentorImage,omitempty"`
-	OdigletImage      string `json:"odigletImage,omitempty"`
-	KeyvalProxyImage  string `json:"keyvalProxyImage,omitempty"`
-	SchedulerImage    string `json:"schedulerImage,omitempty"`
-	UIImage           string `json:"uiImage,omitempty"`
 }

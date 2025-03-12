@@ -587,7 +587,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
 	resources = append(resources,
-		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, a.config.ImageReferences.OdigletImage, a.odigosTier, a.config.OpenshiftEnabled,
+		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, a.client.ImageReferences.OdigletImage, a.odigosTier, a.config.OpenshiftEnabled,
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
 				K8SVersion: cmdcontext.K8SVersionFromContext(ctx),

@@ -348,7 +348,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		imageReferences.OdigletImage = os.Getenv(relatedImageEnvVars[imageReferences.OdigletImage])
 		imageReferences.SchedulerImage = os.Getenv(relatedImageEnvVars[imageReferences.SchedulerImage])
 	}
-	odigosConfig.ImageReferences = imageReferences
+	kubeClient.ImageReferences = imageReferences
 
 	defaultMountMethod := common.K8sVirtualDeviceMountMethod
 	if len(odigos.Spec.MountMethod) == 0 {
