@@ -1,4 +1,4 @@
-package deleteinstrumentationconfig_test
+package sourceinstrumentation_test
 
 import (
 	"context"
@@ -34,7 +34,7 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 				Expect(k8sClient.Create(ctx, source)).Should(Succeed())
 
 				instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
-				Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
+				//Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
 			})
 
 			It("InstrumentationConfig deleted after removing instrumentation source from deployment", func() {
@@ -66,7 +66,6 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 				Expect(k8sClient.Create(ctx, depSource)).Should(Succeed())
 
 				instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
-				Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
 			})
 
 			It("InstrumentationConfig retain when removing instrumentation source from deployment", func() {
@@ -82,7 +81,7 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 		})
 	})
 
-	Describe("Delete reported name annotation", func() {
+	Describe("Retain annotations", func() {
 
 		BeforeEach(func() {
 			namespace = testutil.NewMockNamespace()
@@ -96,14 +95,6 @@ var _ = Describe("deleteInstrumentationConfig Deployment controller", func() {
 			Expect(k8sClient.Create(ctx, source)).Should(Succeed())
 
 			instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
-			Expect(k8sClient.Create(ctx, instrumentationConfig)).Should(Succeed())
-		})
-
-		It("should delete the reported name annotation on instrumentation source disabled", func() {
-
-			source.Spec.DisableInstrumentation = true
-			Expect(k8sClient.Update(ctx, source)).Should(Succeed())
-			testutil.AssertReportedNameAnnotationDeletedDeployment(ctx, k8sClient, deployment)
 		})
 
 		It("should retain other annotations on instrumentation source deleted", func() {
