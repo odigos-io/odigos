@@ -164,6 +164,8 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: coupon
+      language: javascript
+      runtimeVersion: 18.3.0
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -179,6 +181,8 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: frontend
+      language: java
+      runtimeVersion: 17.0.14+7
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -194,6 +198,8 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: inventory
+      language: python
+      runtimeVersion: 3.11.11
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -209,6 +215,8 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: membership
+      language: go
+      runtimeVersion: 1.21.4
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -224,6 +232,7 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: pricing
+      language: dotnet
 ---
 ### Instrumentation Instances ###
 apiVersion: odigos.io/v1alpha1
@@ -234,6 +243,23 @@ metadata:
     instrumented-app: deployment-coupon
 status:
   healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: nodejs
+    - key: process.runtime.version
+      (value != null): true
+    - key: telemetry.distro.version
+      (value != null): true
+    - key: process.vpid
+      (value != null): true
+    - key: k8s.namespace.name
+      (value != null): true
+    - key: k8s.container.name
+      (value != null): true
+    - key: k8s.pod.name
+      (value != null): true      
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -243,6 +269,19 @@ metadata:
     instrumented-app: deployment-inventory
 status:
   healthy: true
+  identifyingAttributes:
+    - key: service.instance.id
+      (value != null): true
+    - key: process.pid
+      (value != null): true
+    - key: telemetry.sdk.language
+      value: python
+    - key: k8s.namespace.name
+      (value != null): true
+    - key: k8s.container.name
+      (value != null): true
+    - key: k8s.pod.name
+      (value != null): true        
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -252,3 +291,4 @@ metadata:
     instrumented-app: deployment-membership
 status:
   healthy: true
+  reason: LoadedSuccessfully

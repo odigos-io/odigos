@@ -18,7 +18,7 @@
     "@odigos/ui-containers": "^0.0.82",
     "@odigos/ui-icons": "^0.0.14",
     "@odigos/ui-theme": "^0.0.16",
-    "@odigos/ui-utils": "^0.0.44",
+    "@odigos/ui-utils": "^0.0.45",
     "graphql": "^16.10.0",
     "next": "15.2.1",
     "react": "19.0.0",

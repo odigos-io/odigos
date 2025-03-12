@@ -77,4 +77,3 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 
 	return &relevantIr, nil
 }
-
