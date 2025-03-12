@@ -242,8 +242,8 @@ update-dep/%:
 
 UNSTABLE_COLLECTOR_VERSION=v0.121.0
 STABLE_COLLECTOR_VERSION=v1.27.0
-STABLE_OTEL_GO_VERSION=v1.34.0
-UNSTABLE_OTEL_GO_VERSION=v0.59.0
+STABLE_OTEL_GO_VERSION=v1.35.0
+UNSTABLE_OTEL_GO_VERSION=v0.60.0
 
 .PHONY: update-otel
 update-otel:
@@ -263,7 +263,7 @@ update-otel:
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/nopexporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/otlpexporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/otlphttpexporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
-	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/extension VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/extension VERSION=$(STABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/extension/zpagesextension VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/otelcol VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/pdata VERSION=$(STABLE_COLLECTOR_VERSION)
