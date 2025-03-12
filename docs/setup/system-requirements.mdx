@@ -28,3 +28,43 @@ This allows users to maintain observability on nodes that meet the requirements 
 - [Amazon Elastic Kubernetes Service (EKS)](https://aws.amazon.com/eks/)
 - [Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine)
 - [Azure Kubernetes Service (AKS)](https://azure.microsoft.com/en-us/products/kubernetes-service)
+
+## Resource Requirements
+
+To achieve its functionality Odigos uses a set of Deployments and Daemonsets.
+
+### Cluster
+
+The following components runs as Deployment and request the following resources **(per pod)**:
+
+| Component Name | Memory Request | Memory Limit | CPU Request | CPU Limit |
+|---------------|---------------|-------------|------------|----------|
+| odigos-autoscaler      | 64Mi         | 512Mi       | 10m       | 500m     |
+| odigos-instrumentor (2 replicas)       | 64Mi         | 512Mi       | 10m       | 500m     |
+| odigos-schedualer      | 64Mi         | 512Mi       | 10m       | 500m     |
+| odigos-ui | 64Mi         | 512Mi       | 10m       | 500m     |
+
+In addition, Odigos deploys OpenTelemetry Collector Deployment, 
+with auto scaling (multiple replicas) and configurable resources requests and limits.
+The default values (unless overridden) are:
+
+| Component Name | Memory Request | Memory Limit | CPU Request | CPU Limit |
+|---------------|---------------|-------------|------------|----------|
+| odigos-gateway      | 300Mi         | 300Mi       | 150m       | 300m     |
+
+Read more [here](/pipeline/configuration).
+
+### Per Node
+
+2 Daemonsets are deployed on each node in the cluster and consumes resources as follows:
+
+- **odiglet** - Does not set requests and limits. it will consume resources as needed depending on the number of pods running on the node and the amount of data being recorded.
+- **odigos-data-collection** - cpu and memory limits and requests are set by default to:
+
+| Component Name | Memory Request | Memory Limit | CPU Request | CPU Limit |
+|---------------|---------------|-------------|------------|----------|
+| odigos-data-collection | 150Mi         | 300Mi       | 150m       | 300m     |
+
+You can override these values by providing a custom configuration (read more [here](/pipeline/configuration)).
+
+
