@@ -34,6 +34,8 @@ jobs:
   build-images:
     if: ${{ github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/build-dev-images.yml
+    with:
+      target_tag: ${{ github.sha }}
 
   run-test:
     runs-on: warp-ubuntu-latest-x64-8x-spot
