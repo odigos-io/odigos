@@ -100,7 +100,7 @@ var relatedImageEnvVars = map[string]string{
 // +kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups="",resources=configmaps;endpoints;secrets,verbs=get;list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;get;list;watch;patch
+// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;get;list;watch;patch;delete
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;patch
 // +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch;patch
 // +kubebuilder:rbac:groups="",resources=nodes/proxy,verbs=get;list
