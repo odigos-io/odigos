@@ -21,7 +21,7 @@ require (
 	go.opentelemetry.io/otel v1.35.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.35.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/sync v0.11.0
+	golang.org/x/sync v0.12.0
 	k8s.io/api v0.32.2
 	k8s.io/apimachinery v0.32.2
 	k8s.io/client-go v0.32.2
