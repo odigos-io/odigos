@@ -23,7 +23,6 @@ on:
         required: true
         type: string
         default: public.ecr.aws/y2v0v6s7
-  pull_request:  # Trigger on pull request
 
 permissions:
   id-token: write
