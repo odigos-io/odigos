@@ -9,7 +9,7 @@ on:
         type: string
       registry:
         description: 'The registry to push images to'
-        required: true
+        required: false
         type: string
         default: public.ecr.aws/y2v0v6s7
   workflow_dispatch: # Manual trigger
@@ -20,7 +20,7 @@ on:
         type: string
       registry:
         description: 'The registry to push images to'
-        required: true
+        required: false
         type: string
         default: public.ecr.aws/y2v0v6s7
 
