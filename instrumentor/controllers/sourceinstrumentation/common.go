@@ -115,7 +115,12 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 
 		markedForInstChanged := meta.SetStatusCondition(&ic.Status.Conditions, markedForInstrumentationCondition)
 		runtimeDetailsChanged := initiateRuntimeDetailsConditionIfMissing(ic, workloadObj)
-		agentEnabledChanged := initiateAgentEnabledConditionIfMissing(ic)
+
+		// Set agent enabled condition only if replicas are available to prevent infinite UI loading.
+		agentEnabledChanged := false
+		if workloadObj.AvailableReplicas() > 0 {
+			agentEnabledChanged = initiateAgentEnabledConditionIfMissing(ic)
+		}
 
 		if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged {
 			ic.Status.Conditions = sortIcConditionsByLogicalOrder(ic.Status.Conditions)
