@@ -31,7 +31,11 @@ env:
   GITHUB_REPOSITORY: ${{ github.repository }}
 
 jobs:
-  test:
+  build-images:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/build-dev-images.yml
+
+  run-test:
     runs-on: warp-ubuntu-latest-x64-8x-spot
     env:
       TF_REGION: us-east-1
