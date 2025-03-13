@@ -102,22 +102,13 @@ jobs:
       # Configure kube config for every provider
       - name: Get kubeconfig for AKS
         if: ${{ inputs.provider == 'aks' }}
-        uses: azure/aks-set-context@v1
-        with:
-          resource-group: ${{ env.CLUSTER_NAME }}
-          cluster-name: ${{ env.CLUSTER_NAME }}
+        run: |
+          az aks get-credentials --resource-group ${{ env.CLUSTER_NAME }} --name ${{ env.CLUSTER_NAME }}
 
       - name: Get kubeconfig for EKS
         if: ${{ inputs.provider == 'eks' }}
         run: |
           aws eks update-kubeconfig --region us-east-1 --name $CLUSTER_NAME
-
-      - name: Get kubeconfig for GKE # Not tested
-        if: ${{ inputs.provider == 'gke' }}
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: ${{ env.CLUSTER_NAME }}
-          location: ${{ env.TF_REGION }}
 
       # Test cluster access
       - name: Verify Cluster Access
