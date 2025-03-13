@@ -24,6 +24,7 @@ type uiResourceManager struct {
 	config        *common.OdigosConfiguration
 	odigosVersion string
 	readonly      bool
+	managerOpts   resourcemanager.ManagerOpts
 }
 
 func (u *uiResourceManager) Name() string {
@@ -391,18 +392,19 @@ func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewUIRoleBinding(u.ns),
 		NewUIClusterRole(u.readonly),
 		NewUIClusterRoleBinding(u.ns),
-		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.client.ImageReferences.UIImage),
+		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.managerOpts.ImageReferences.UIImage),
 		NewUIService(u.ns),
 	}
-	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources)
+	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources, u.managerOpts)
 }
 
-func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string) resourcemanager.ResourceManager {
+func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
 	return &uiResourceManager{
 		client:        client,
 		ns:            ns,
 		config:        config,
 		odigosVersion: odigosVersion,
 		readonly:      config.UiMode == common.ReadonlyUiMode,
+		managerOpts:   managerOpts,
 	}
 }

@@ -2,7 +2,24 @@ package resourcemanager
 
 import (
 	"context"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+type ManagerOpts struct {
+	ImageReferences ImageReferences
+	OwnerReferences []metav1.OwnerReference
+}
+
+type ImageReferences struct {
+	AutoscalerImage   string
+	CollectorImage    string
+	InstrumentorImage string
+	OdigletImage      string
+	KeyvalProxyImage  string
+	SchedulerImage    string
+	UIImage           string
+}
 
 type ResourceManager interface {
 	Name() string

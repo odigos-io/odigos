@@ -16,6 +16,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/log"
@@ -109,7 +110,9 @@ It will install k8s components that will auto-instrument your applications with 
 
 		config := CreateOdigosConfig(odigosTier)
 
-		client.ImageReferences = GetImageReferences(odigosTier, openshiftEnabled)
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences: GetImageReferences(odigosTier, openshiftEnabled),
+		}
 
 		fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
@@ -117,7 +120,7 @@ It will install k8s components that will auto-instrument your applications with 
 		createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
 			client, ns, createNamespace)
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli)
+		resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, &config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
@@ -225,10 +228,10 @@ func ValidateUserInputProfiles(tier common.OdigosTier) error {
 	return nil
 }
 
-func GetImageReferences(odigosTier common.OdigosTier, openshift bool) kube.ImageReferences {
-	var imageReferences kube.ImageReferences
+func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcemanager.ImageReferences {
+	var imageReferences resourcemanager.ImageReferences
 	if openshift {
-		imageReferences = kube.ImageReferences{
+		imageReferences = resourcemanager.ImageReferences{
 			AutoscalerImage:   k8sconsts.AutoScalerImageUBI9,
 			CollectorImage:    k8sconsts.OdigosClusterCollectorImageUBI9,
 			InstrumentorImage: k8sconsts.InstrumentorImageUBI9,
@@ -238,7 +241,7 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) kube.Image
 			UIImage:           k8sconsts.UIImageUBI9,
 		}
 	} else {
-		imageReferences = kube.ImageReferences{
+		imageReferences = resourcemanager.ImageReferences{
 			AutoscalerImage:   k8sconsts.AutoScalerImageName,
 			CollectorImage:    k8sconsts.OdigosClusterCollectorImage,
 			InstrumentorImage: k8sconsts.InstrumentorImage,

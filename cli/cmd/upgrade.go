@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/common"
@@ -118,9 +119,11 @@ and apply any required migrations and adaptations.`,
 			os.Exit(1)
 		}
 
-		client.ImageReferences = GetImageReferences(currentTier, config.OpenshiftEnabled)
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences: GetImageReferences(currentTier, openshiftEnabled),
+		}
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli)
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")

@@ -37,6 +37,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -163,14 +164,6 @@ func (r *OdigosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		OdigosClient:  odigosClient,
 		Config:        k8sConfig,
 	}
-
-	ownerReference := metav1.OwnerReference{
-		APIVersion: odigos.APIVersion,
-		Kind:       odigos.Kind,
-		Name:       odigos.GetName(),
-		UID:        odigos.GetUID(),
-	}
-	kubeClient.OwnerReferences = []metav1.OwnerReference{ownerReference}
 
 	if odigos.ObjectMeta.DeletionTimestamp.IsZero() {
 		return r.install(ctx, kubeClient, odigos)
@@ -339,6 +332,15 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	odigosConfig.Profiles = odigos.Spec.Profiles
 	odigosConfig.UiMode = common.UiMode(odigos.Spec.UIMode)
 
+	ownerReference := metav1.OwnerReference{
+		APIVersion: odigos.APIVersion,
+		Kind:       odigos.Kind,
+		Name:       odigos.GetName(),
+		UID:        odigos.GetUID(),
+	}
+	managerOpts := resourcemanager.ManagerOpts{
+		OwnerReferences: []metav1.OwnerReference{ownerReference},
+	}
 	imageReferences := cmd.GetImageReferences(odigosTier, odigos.Spec.OpenShiftEnabled)
 	if odigos.Spec.OpenShiftEnabled {
 		imageReferences.AutoscalerImage = os.Getenv(relatedImageEnvVars[imageReferences.AutoscalerImage])
@@ -348,7 +350,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		imageReferences.OdigletImage = os.Getenv(relatedImageEnvVars[imageReferences.OdigletImage])
 		imageReferences.SchedulerImage = os.Getenv(relatedImageEnvVars[imageReferences.SchedulerImage])
 	}
-	kubeClient.ImageReferences = imageReferences
+	managerOpts.ImageReferences = imageReferences
 
 	defaultMountMethod := common.K8sVirtualDeviceMountMethod
 	if len(odigos.Spec.MountMethod) == 0 {
@@ -379,7 +381,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 
 	logger.Info("Installing Odigos version " + version + " in namespace " + ns)
 
-	resourceManagers := resources.CreateResourceManagers(kubeClient, ns, odigosTier, &odigosProToken, &odigosConfig, version, installationmethod.K8sInstallationMethodOdigosOperator)
+	resourceManagers := resources.CreateResourceManagers(kubeClient, ns, odigosTier, &odigosProToken, &odigosConfig, version, installationmethod.K8sInstallationMethodOdigosOperator, managerOpts)
 	err = resources.ApplyResourceManagers(ctx, kubeClient, resourceManagers, "Creating")
 	if err != nil {
 		return ctrl.Result{}, err

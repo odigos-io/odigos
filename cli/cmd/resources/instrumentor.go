@@ -684,15 +684,17 @@ type instrumentorResourceManager struct {
 	config        *common.OdigosConfiguration
 	odigosVersion string
 	tier          common.OdigosTier
+	managerOpts   resourcemanager.ManagerOpts
 }
 
-func NewInstrumentorResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, tier common.OdigosTier, odigosVersion string) resourcemanager.ResourceManager {
+func NewInstrumentorResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, tier common.OdigosTier, odigosVersion string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
 	return &instrumentorResourceManager{
 		client:        client,
 		ns:            ns,
 		config:        config,
 		odigosVersion: odigosVersion,
 		tier:          tier,
+		managerOpts:   managerOpts,
 	}
 }
 
@@ -706,7 +708,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(a.config.OpenshiftEnabled),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.client.ImageReferences.InstrumentorImage, a.tier),
+		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.managerOpts.ImageReferences.InstrumentorImage, a.tier),
 		NewInstrumentorService(a.ns),
 	}
 
@@ -732,5 +734,5 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	},
 		resources...)
 
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }
