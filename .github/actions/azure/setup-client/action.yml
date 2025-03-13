@@ -1,8 +1,0 @@
-name: "Azure CLI Installer"
-description: "Checks if the Azure CLI is installed on the runner and installs it if missing."
-runs:
-  using: "composite"
-  steps:
-    - name: Run Azure CLI Check & Install Script
-      shell: bash
-      run: ${{ github.action_path }}/entrypoint.sh

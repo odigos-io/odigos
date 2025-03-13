@@ -51,14 +51,6 @@ jobs:
           role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
           aws-region: us-east-1
 
-      # - name: Configure AWS Credentials
-      #   uses: aws-actions/configure-aws-credentials@v4
-      #   with:
-      #     aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-      #     aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-      #     aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
-      #     aws-region: ${{ env.TF_REGION }}  # Ensure TF_REGION is set or replace with static region
-
       - name: Login to Amazon ECR
         run: |
           aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
