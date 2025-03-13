@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -10,7 +11,10 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/sources_utils"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
@@ -65,6 +69,45 @@ odigos sources update --disable-instrumentation -n default
 # Delete all Sources in group "mygroup"
 odigos sources delete --group mygroup --all-namespaces
 	`,
+}
+
+var kindAliases = map[k8sconsts.WorkloadKind][]string{
+	k8sconsts.WorkloadKindDeployment:  []string{"deploy", "deployments", "deploy.apps", "deployment.apps", "deployments.apps"},
+	k8sconsts.WorkloadKindDaemonSet:   []string{"ds", "daemonsets", "ds.apps", "daemonset.apps", "daemonsets.apps"},
+	k8sconsts.WorkloadKindStatefulSet: []string{"sts", "statefulsets", "sts.apps", "statefulset.apps", "statefulsets.apps"},
+	k8sconsts.WorkloadKindNamespace:   []string{"ns", "namespaces"},
+}
+
+var sourceDisableCmd = &cobra.Command{
+	Use:   "disable [workload type] [workload name] [flags]",
+	Short: "Disable a source for Odigos instrumentation.",
+	Long:  "This command disables the given workload for Odigos instrumentation. It will create a Source object (if one does not already exist)",
+	Example: `
+# Disable deployment "foo" in namespace "default"
+odigos sources disable deployment foo
+
+# Disable namespace "bar" in namespace "default"
+odigos sources disable namespace bar
+
+# Disable statefulset "foo" in namespace "bar"
+odigos sources disable statefulset foo -n bar
+`,
+}
+
+var sourceEnableCmd = &cobra.Command{
+	Use:   "enable [workload type] [workload name] [flags]",
+	Short: "Enable a source for Odigos instrumentation.",
+	Long:  "This command enables the given workload for Odigos instrumentation. It will create a Source object (if one does not already exist)",
+	Example: `
+# Enable deployment "foo" in namespace "default"
+odigos sources enable deployment foo
+
+# Enable namespace "bar" in namespace "default"
+odigos sources enable namespace bar
+
+# Enable statefulset "foo" in namespace "bar"
+odigos sources enable statefulset foo -n bar
+`,
 }
 
 var sourceCreateCmd = &cobra.Command{
@@ -330,6 +373,109 @@ var sourceStatusCmd = &cobra.Command{
 	},
 }
 
+func enableOrDisableSource(cmd *cobra.Command, args []string, workloadKind k8sconsts.WorkloadKind, disableInstrumentation bool) {
+	msg := "enable"
+	if disableInstrumentation {
+		msg = "disable"
+	}
+
+	ctx := cmd.Context()
+	client := cmdcontext.KubeClientFromContextOrExit(ctx)
+	source, err := updateOrCreateSourceForObject(ctx, client, workloadKind, args[0], disableInstrumentation)
+	if err != nil {
+		fmt.Printf("\033[31mERROR\033[0m Cannot %s Source: %+v\n", msg, err)
+		os.Exit(1)
+	}
+	fmt.Printf("%sd Source %s for %s %s\n", msg, source.GetName(), source.Spec.Workload.Kind, source.Spec.Workload.Name)
+}
+
+func enableOrDisableSourceCmd(workloadKind k8sconsts.WorkloadKind, disableInstrumentation bool) *cobra.Command {
+	msg := "enable"
+	if disableInstrumentation {
+		msg = "disable"
+	}
+
+	return &cobra.Command{
+		Use:     fmt.Sprintf("%s [name]", workload.WorkloadKindLowerCaseFromKind(workloadKind)),
+		Short:   fmt.Sprintf("%s a %s for Odigos instrumentation", msg, workloadKind),
+		Long:    fmt.Sprintf("This command %ss the provided %s for Odigos instrumentatin. It will create a Source object if one does not already exists, or update the existing one if it does.", msg, workloadKind),
+		Args:    cobra.ExactArgs(1),
+		Aliases: kindAliases[workloadKind],
+		Run: func(cmd *cobra.Command, args []string) {
+			enableOrDisableSource(cmd, args, workloadKind, disableInstrumentation)
+		},
+	}
+}
+
+func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, workloadKind k8sconsts.WorkloadKind, argName string, disableInstrumentation bool) (*v1alpha1.Source, error) {
+	var err error
+	obj := workload.ClientObjectFromWorkloadKind(workloadKind)
+	var objName, objNamespace, sourceNamespace string
+	switch workloadKind {
+	case k8sconsts.WorkloadKindDaemonSet:
+		obj, err = client.Clientset.AppsV1().DaemonSets(sourceNamespaceFlag).Get(ctx, argName, metav1.GetOptions{})
+		objName = obj.GetName()
+		objNamespace = obj.GetNamespace()
+		sourceNamespace = sourceNamespaceFlag
+	case k8sconsts.WorkloadKindDeployment:
+		obj, err = client.Clientset.AppsV1().Deployments(sourceNamespaceFlag).Get(ctx, argName, metav1.GetOptions{})
+		objName = obj.GetName()
+		objNamespace = obj.GetNamespace()
+		sourceNamespace = sourceNamespaceFlag
+	case k8sconsts.WorkloadKindStatefulSet:
+		obj, err = client.Clientset.AppsV1().StatefulSets(sourceNamespaceFlag).Get(ctx, argName, metav1.GetOptions{})
+		objName = obj.GetName()
+		objNamespace = obj.GetNamespace()
+		sourceNamespace = sourceNamespaceFlag
+	case k8sconsts.WorkloadKindNamespace:
+		obj, err = client.Clientset.CoreV1().Namespaces().Get(ctx, argName, metav1.GetOptions{})
+		objName = obj.GetName()
+		objNamespace = obj.GetName()
+		sourceNamespace = obj.GetName()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	var source *v1alpha1.Source
+	selector := labels.SelectorFromSet(labels.Set{
+		k8sconsts.WorkloadNameLabel:      obj.GetName(),
+		k8sconsts.WorkloadNamespaceLabel: sourceNamespace,
+		k8sconsts.WorkloadKindLabel:      string(workloadKind),
+	})
+	sources, err := client.OdigosClient.Sources(sourceNamespace).List(ctx, metav1.ListOptions{LabelSelector: selector.String()})
+	if len(sources.Items) > 0 {
+		source = &sources.Items[0]
+	} else {
+		source = &v1alpha1.Source{
+			ObjectMeta: v1.ObjectMeta{
+				GenerateName: workload.CalculateWorkloadRuntimeObjectName(objName, workloadKind),
+				Namespace:    sourceNamespace,
+			},
+			Spec: v1alpha1.SourceSpec{
+				Workload: k8sconsts.PodWorkload{
+					Kind:      workloadKind,
+					Name:      objName,
+					Namespace: objNamespace,
+				},
+			},
+		}
+
+	}
+
+	source.Spec.DisableInstrumentation = disableInstrumentation
+
+	if len(sources.Items) > 0 {
+		source, err = client.OdigosClient.Sources(sourceNamespace).Update(ctx, source, v1.UpdateOptions{})
+	} else {
+		source, err = client.OdigosClient.Sources(sourceNamespace).Create(ctx, source, v1.CreateOptions{})
+	}
+	if err != nil {
+		return nil, err
+	}
+	return source, nil
+}
+
 func parseSourceLabelFlags() (string, string, string, labels.Set) {
 	labelSet := labels.Set{}
 	providedWorkloadFlags := ""
@@ -371,6 +517,19 @@ func init() {
 	sourcesCmd.AddCommand(sourceDeleteCmd)
 	sourcesCmd.AddCommand(sourceUpdateCmd)
 	sourcesCmd.AddCommand(sourceStatusCmd)
+
+	sourcesCmd.AddCommand(sourceEnableCmd)
+	sourceEnableCmd.PersistentFlags().StringVarP(&sourceNamespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
+	sourceEnableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindDeployment, false))
+	sourceEnableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindDaemonSet, false))
+	sourceEnableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindStatefulSet, false))
+	sourceEnableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindNamespace, false))
+	sourcesCmd.AddCommand(sourceDisableCmd)
+	sourceDisableCmd.PersistentFlags().StringVarP(&sourceNamespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
+	sourceDisableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindDeployment, true))
+	sourceDisableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindDaemonSet, true))
+	sourceDisableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindStatefulSet, true))
+	sourceDisableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindNamespace, true))
 
 	sourceCreateCmd.Flags().AddFlagSet(sourceFlags)
 	sourceCreateCmd.Flags().BoolVar(&disableInstrumentationFlag, disableInstrumentationFlagName, false, "Disable instrumentation for Source")
