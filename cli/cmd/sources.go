@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -472,6 +473,25 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	if workloadKind == k8sconsts.WorkloadKindNamespace {
+		// if toggling a namespace, check for individually instrumented workloads
+		// alert the user that these workloads won't be affected by the command
+		selector := labels.NewSelector()
+		workloadKindRequirement, err := labels.NewRequirement(k8sconsts.WorkloadKindLabel, selection.NotIn, []string{string(k8sconsts.WorkloadKindNamespace)})
+		if err != nil {
+			return nil, err
+		}
+		selector.Add(*workloadKindRequirement)
+		sources, err := client.OdigosClient.Sources(sourceNamespace).List(ctx, metav1.ListOptions{LabelSelector: selector.String()})
+		if len(sources.Items) > 0 {
+			fmt.Printf("NOTE: Configured Namespace Source, but the following Workload Sources will not be affected:\n")
+			for _, source := range sources.Items {
+				fmt.Printf("Source: %s (Workload=%s, Kind=%s)\n", source.GetName(), source.Spec.Workload.Name, source.Spec.Workload.Kind)
+			}
+		}
+
 	}
 	return source, nil
 }
