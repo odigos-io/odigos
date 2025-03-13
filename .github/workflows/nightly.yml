@@ -1,6 +1,8 @@
 name: Nightly
 
 on:
+  schedule:
+    - cron: '0 0 * * *' # Nightly run at midnight
   workflow_call:
   workflow_dispatch:
 
