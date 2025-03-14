@@ -84,10 +84,11 @@ type odigosDeploymentResourceManager struct {
 	odigosTier         common.OdigosTier
 	odigosVersion      string
 	installationMethod installationmethod.K8sInstallationMethod
+	managerOpts        resourcemanager.ManagerOpts
 }
 
-func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string, installationMethod installationmethod.K8sInstallationMethod) resourcemanager.ResourceManager {
-	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion, installationMethod: installationMethod}
+func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string, installationMethod installationmethod.K8sInstallationMethod, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
+	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion, installationMethod: installationMethod, managerOpts: managerOpts}
 }
 
 func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployment" }
@@ -108,5 +109,5 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 		resources = append(resources, c)
 	}
 
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }
