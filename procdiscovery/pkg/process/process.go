@@ -2,6 +2,7 @@ package process
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -36,6 +37,72 @@ type Details struct {
 	ExePath      string
 	CmdLine      string
 	Environments ProcessEnvs
+}
+
+// ProcessFile is a read-only interface that supports reading, seeking, and reading at specific positions.
+// Write operations should be avoided.
+type ProcessFile interface {
+	io.ReadSeekCloser
+	io.ReaderAt
+}
+
+type ProcessContext struct {
+	Details
+	exeFile  ProcessFile
+	mapsFile ProcessFile
+}
+
+func NewProcessContext(details Details) *ProcessContext {
+	return &ProcessContext{
+		Details: details,
+	}
+}
+
+// Close method to close any open file handles.
+func (pcx *ProcessContext) CloseFiles() error {
+	var err error
+	if pcx.exeFile != nil {
+		err = errors.Join(err, pcx.exeFile.Close())
+		pcx.exeFile = nil
+	}
+	if pcx.mapsFile != nil {
+		err = errors.Join(err, pcx.mapsFile.Close())
+		pcx.mapsFile = nil
+	}
+	return err
+}
+
+func (pcx *ProcessContext) GetExeFile() (ProcessFile, error) {
+	if pcx.exeFile == nil {
+		path := fmt.Sprintf("/proc/%d/exe", pcx.ProcessID)
+		fileData, err := os.Open(path)
+		if err != nil {
+			return nil, err
+		}
+		pcx.exeFile = fileData
+	} else {
+		if _, err := pcx.exeFile.Seek(0, 0); err != nil {
+			return nil, err // Return the seek error if it fails
+		}
+	}
+
+	return pcx.exeFile, nil
+}
+
+func (pcx *ProcessContext) GetMapsFile() (ProcessFile, error) {
+	if pcx.mapsFile == nil {
+		mapsPath := fmt.Sprintf("/proc/%d/maps", pcx.ProcessID)
+		fileData, err := os.Open(mapsPath)
+		if err != nil {
+			return nil, err
+		}
+		pcx.mapsFile = fileData
+	} else {
+		if _, err := pcx.mapsFile.Seek(0, 0); err != nil {
+			return nil, err // Return the seek error if it fails
+		}
+	}
+	return pcx.mapsFile, nil
 }
 
 type ProcessEnvs struct {
