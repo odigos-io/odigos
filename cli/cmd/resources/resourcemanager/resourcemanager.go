@@ -6,8 +6,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ManagerOpts is used to pass options to each Resource Manager that installs Odigos resources.
 type ManagerOpts struct {
+	// ImageReferences refers to the images for each Odigos component.
 	ImageReferences ImageReferences
+	// OwnerReferences is a slice of metav1.OwnerReferences to be applied to each installed resource.
 	OwnerReferences []metav1.OwnerReference
 }
 

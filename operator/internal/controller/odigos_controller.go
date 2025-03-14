@@ -82,8 +82,8 @@ var relatedImageEnvVars = map[string]string{
 
 	k8sconsts.OdigletImageName:           "RELATED_IMAGE_ODIGLET",
 	k8sconsts.OdigletImageUBI9:           "RELATED_IMAGE_ODIGLET",
-	k8sconsts.OdigletEnterpriseImageName: "RELATED_IMAGE_ODIGLET",
-	k8sconsts.OdigletEnterpriseImageUBI9: "RELATED_IMAGE_ODIGLET",
+	k8sconsts.OdigletEnterpriseImageName: "RELATED_IMAGE_ENTERPRISE_ODIGLET",
+	k8sconsts.OdigletEnterpriseImageUBI9: "RELATED_IMAGE_ENTERPRISE_ODIGLET",
 
 	k8sconsts.SchedulerImage:     "RELATED_IMAGE_SCHEDULER",
 	k8sconsts.SchedulerImageUBI9: "RELATED_IMAGE_SCHEDULER",
