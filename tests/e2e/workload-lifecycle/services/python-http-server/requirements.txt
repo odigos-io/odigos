@@ -1,5 +1,5 @@
 Django
-protobuf==5.28.2
+protobuf==6.30.1
 importlib_metadata
 packaging
 asgiref
