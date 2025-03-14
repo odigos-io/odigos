@@ -17,7 +17,7 @@ This command disables the given workload for Odigos instrumentation. It will cre
 # Disable deployment "foo" in namespace "default"
 odigos sources disable deployment foo
 
-# Disable namespace "bar" in namespace "default"
+# Disable namespace "bar"
 odigos sources disable namespace bar
 
 # Disable statefulset "foo" in namespace "bar"
@@ -28,8 +28,7 @@ odigos sources disable statefulset foo -n bar
 ### Options
 
 ```
-  -h, --help               help for disable
-  -n, --namespace string   Kubernetes Namespace for Source (default "default")
+  -h, --help   help for disable
 ```
 
 ### Options inherited from parent commands

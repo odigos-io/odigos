@@ -17,7 +17,7 @@ This command enables the given workload for Odigos instrumentation. It will crea
 # Enable deployment "foo" in namespace "default"
 odigos sources enable deployment foo
 
-# Enable namespace "bar" in namespace "default"
+# Enable namespace "bar"
 odigos sources enable namespace bar
 
 # Enable statefulset "foo" in namespace "bar"
@@ -28,8 +28,7 @@ odigos sources enable statefulset foo -n bar
 ### Options
 
 ```
-  -h, --help               help for enable
-  -n, --namespace string   Kubernetes Namespace for Source (default "default")
+  -h, --help   help for enable
 ```
 
 ### Options inherited from parent commands

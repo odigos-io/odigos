@@ -17,7 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -80,14 +79,15 @@ var kindAliases = map[k8sconsts.WorkloadKind][]string{
 }
 
 var sourceDisableCmd = &cobra.Command{
-	Use:   "disable [workload type] [workload name] [flags]",
-	Short: "Disable a source for Odigos instrumentation.",
-	Long:  "This command disables the given workload for Odigos instrumentation. It will create a Source object (if one does not already exist)",
+	Use:     "disable [workload type] [workload name] [flags]",
+	Short:   "Disable a source for Odigos instrumentation.",
+	Long:    "This command disables the given workload for Odigos instrumentation. It will create a Source object (if one does not already exist)",
+	Aliases: []string{"uninstrument"},
 	Example: `
 # Disable deployment "foo" in namespace "default"
 odigos sources disable deployment foo
 
-# Disable namespace "bar" in namespace "default"
+# Disable namespace "bar"
 odigos sources disable namespace bar
 
 # Disable statefulset "foo" in namespace "bar"
@@ -96,14 +96,15 @@ odigos sources disable statefulset foo -n bar
 }
 
 var sourceEnableCmd = &cobra.Command{
-	Use:   "enable [workload type] [workload name] [flags]",
-	Short: "Enable a source for Odigos instrumentation.",
-	Long:  "This command enables the given workload for Odigos instrumentation. It will create a Source object (if one does not already exist)",
+	Use:     "enable [workload type] [workload name] [flags]",
+	Short:   "Enable a source for Odigos instrumentation.",
+	Long:    "This command enables the given workload for Odigos instrumentation. It will create a Source object (if one does not already exist)",
+	Aliases: []string{"instrument"},
 	Example: `
 # Enable deployment "foo" in namespace "default"
 odigos sources enable deployment foo
 
-# Enable namespace "bar" in namespace "default"
+# Enable namespace "bar"
 odigos sources enable namespace bar
 
 # Enable statefulset "foo" in namespace "bar"
@@ -447,6 +448,10 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 	sources, err := client.OdigosClient.Sources(sourceNamespace).List(ctx, metav1.ListOptions{LabelSelector: selector.String()})
 	if len(sources.Items) > 0 {
 		source = &sources.Items[0]
+		if source.Spec.DisableInstrumentation == disableInstrumentation {
+			fmt.Printf("NOTE: Source %s unchanged.\n", source.Name)
+			return source, nil
+		}
 	} else {
 		source = &v1alpha1.Source{
 			ObjectMeta: v1.ObjectMeta{
@@ -478,20 +483,39 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 	if workloadKind == k8sconsts.WorkloadKindNamespace {
 		// if toggling a namespace, check for individually instrumented workloads
 		// alert the user that these workloads won't be affected by the command
-		selector := labels.NewSelector()
-		workloadKindRequirement, err := labels.NewRequirement(k8sconsts.WorkloadKindLabel, selection.NotIn, []string{string(k8sconsts.WorkloadKindNamespace)})
+		selector := fmt.Sprintf("%s != %s", k8sconsts.WorkloadKindLabel, k8sconsts.WorkloadKindNamespace)
+		sources, err := client.OdigosClient.Sources(sourceNamespace).List(ctx, metav1.ListOptions{LabelSelector: selector})
 		if err != nil {
-			return nil, err
+			return source, err
 		}
-		selector.Add(*workloadKindRequirement)
-		sources, err := client.OdigosClient.Sources(sourceNamespace).List(ctx, metav1.ListOptions{LabelSelector: selector.String()})
 		if len(sources.Items) > 0 {
-			fmt.Printf("NOTE: Configured Namespace Source, but the following Workload Sources will not be affected:\n")
+			sourceList := make([]string, 0)
 			for _, source := range sources.Items {
-				fmt.Printf("Source: %s (Workload=%s, Kind=%s)\n", source.GetName(), source.Spec.Workload.Name, source.Spec.Workload.Kind)
+				if source.Spec.DisableInstrumentation != disableInstrumentation {
+					sourceList = append(sourceList, fmt.Sprintf("Source: %s (Workload=%s, Kind=%s, disabled=%t)\n", source.GetName(), source.Spec.Workload.Name, source.Spec.Workload.Kind, source.Spec.DisableInstrumentation))
+				}
+			}
+			if len(sourceList) > 0 {
+				fmt.Printf("NOTE: Configured Namespace Source, but the following Workload Sources will not be affected (individual Workload Sources take priority over Namespace Sources):\n")
+				for _, line := range sourceList {
+					fmt.Printf(line)
+				}
 			}
 		}
-
+	} else {
+		// if toggling a workload, check if there is a namespace source and alert the user of that
+		selector := fmt.Sprintf("%s = %s", k8sconsts.WorkloadKindLabel, k8sconsts.WorkloadKindNamespace)
+		sources, err := client.OdigosClient.Sources(sourceNamespace).List(ctx, metav1.ListOptions{LabelSelector: selector})
+		if err != nil {
+			return source, err
+		}
+		if len(sources.Items) > 0 {
+			for _, source := range sources.Items {
+				if source.Spec.DisableInstrumentation != disableInstrumentation {
+					fmt.Printf("NOTE: Workload Source configuration (disabled=%t) is different from Namespace Source %s (disabled=%t). Workload Source will take priority.\n", disableInstrumentation, source.GetName(), source.Spec.DisableInstrumentation)
+				}
+			}
+		}
 	}
 	return source, nil
 }
@@ -539,17 +563,23 @@ func init() {
 	sourcesCmd.AddCommand(sourceStatusCmd)
 
 	sourcesCmd.AddCommand(sourceEnableCmd)
-	sourceEnableCmd.PersistentFlags().StringVarP(&sourceNamespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
-	sourceEnableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindDeployment, false))
-	sourceEnableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindDaemonSet, false))
-	sourceEnableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindStatefulSet, false))
-	sourceEnableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindNamespace, false))
 	sourcesCmd.AddCommand(sourceDisableCmd)
-	sourceDisableCmd.PersistentFlags().StringVarP(&sourceNamespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
-	sourceDisableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindDeployment, true))
-	sourceDisableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindDaemonSet, true))
-	sourceDisableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindStatefulSet, true))
-	sourceDisableCmd.AddCommand(enableOrDisableSourceCmd(k8sconsts.WorkloadKindNamespace, true))
+
+	for _, kind := range []k8sconsts.WorkloadKind{
+		k8sconsts.WorkloadKindDeployment,
+		k8sconsts.WorkloadKindDaemonSet,
+		k8sconsts.WorkloadKindStatefulSet,
+		k8sconsts.WorkloadKindNamespace,
+	} {
+		enableCmd := enableOrDisableSourceCmd(kind, false)
+		disableCmd := enableOrDisableSourceCmd(kind, true)
+		if kind != k8sconsts.WorkloadKindNamespace {
+			enableCmd.Flags().StringVarP(&sourceNamespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
+			disableCmd.Flags().StringVarP(&sourceNamespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
+		}
+		sourceEnableCmd.AddCommand(enableCmd)
+		sourceDisableCmd.AddCommand(disableCmd)
+	}
 
 	sourceCreateCmd.Flags().AddFlagSet(sourceFlags)
 	sourceCreateCmd.Flags().BoolVar(&disableInstrumentationFlag, disableInstrumentationFlagName, false, "Disable instrumentation for Source")
