@@ -174,16 +174,15 @@ spec:
             name: odiglet
             namespace: odigos-test
 
-    # - name: Verify Trace - Resource Attributes
-    #   try:
-    #     - script:
-    #         timeout: 5m
-    #         content: |
-    #           ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
-    #   catch:
-    #     - podLogs:
-    #         name: odiglet
-    #         namespace: odigos-test
+    - name: Verify Trace - Resource Attributes
+      try:
+        - script:
+            content: |
+              ../../common/simple_trace_db_query_runner.sh tracesql/resource-attributes.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
 
     # - name: Verify Trace - Span Attributes
     #   try:
