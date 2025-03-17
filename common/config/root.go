@@ -243,7 +243,7 @@ func getBasicConfig(memoryLimiterConfig GenericMap) (*Config, []string) {
 				"resource/odigos-version": GenericMap{
 					"attributes": []GenericMap{
 						{
-							"key":    "odigos.versionfoobar",
+							"key":    "odigos.version",
 							"value":  "${ODIGOS_VERSION}",
 							"action": "upsert",
 						},
