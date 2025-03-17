@@ -3,8 +3,32 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
+- name: autoscaler
+  newName: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9
+  newTag: v1.0.159
+- name: collector
+  newName: registry.connect.redhat.com/odigos/odigos-collector-ubi9
+  newTag: v1.0.159
 - name: controller
   newName: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9
+  newTag: v1.0.159
+- name: enterprise-instrumentor
+  newName: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9
+  newTag: v1.0.159
+- name: enterprise-odiglet
+  newName: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9
+  newTag: v1.0.159
+- name: frontend
+  newName: registry.connect.redhat.com/odigos/odigos-ui-ubi9
+  newTag: v1.0.159
+- name: instrumentor
+  newName: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9
+  newTag: v1.0.159
+- name: odiglet
+  newName: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9
+  newTag: v1.0.159
+- name: scheduler
+  newName: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9
   newTag: v1.0.159
 configMapGenerator:
 - literals:

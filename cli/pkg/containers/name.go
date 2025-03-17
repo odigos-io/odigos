@@ -1,10 +1,21 @@
 package containers
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func GetImageName(imagePrefix string, name string, version string) string {
+	var fullName string
+	if strings.Contains(name, "@") {
+		// don't append the tag if the image is pinned to a SHA, for example:
+		// registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@SHA26:ab312...
+		fullName = name
+	} else {
+		fullName = fmt.Sprintf("%s:%s", name, version)
+	}
 	if imagePrefix == "" {
-		return fmt.Sprintf("%s:%s", name, version)
+		return fullName
 	}
 
 	// if ImagePrefix has a trailing slash, remove it
@@ -12,5 +23,5 @@ func GetImageName(imagePrefix string, name string, version string) string {
 		imagePrefix = imagePrefix[:len(imagePrefix)-1]
 	}
 
-	return fmt.Sprintf("%s/%s:%s", imagePrefix, name, version)
+	return fmt.Sprintf("%s/%s", imagePrefix, fullName)
 }

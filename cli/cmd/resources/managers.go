@@ -11,32 +11,32 @@ import (
 // set apiKey to nil for no-op.
 // set to empty string for "no api key" (non odigos cloud mode).
 // set to a valid api key for odigos cloud mode.
-func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier common.OdigosTier, proTierToken *string, config *common.OdigosConfiguration, odigosVersion string, installationMethod installationmethod.K8sInstallationMethod) []resourcemanager.ResourceManager {
+func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier common.OdigosTier, proTierToken *string, config *common.OdigosConfiguration, odigosVersion string, installationMethod installationmethod.K8sInstallationMethod, managerOpts resourcemanager.ManagerOpts) []resourcemanager.ResourceManager {
 
 	// Note - the order of resource managers is important.
 	// If resource B depends on resource A, then B must be installed after A.
 	resourceManagers := []resourcemanager.ResourceManager{
-		NewOdigosDeploymentResourceManager(client, odigosNs, config, odigosTier, odigosVersion, installationMethod),
-		NewOdigosConfigResourceManager(client, odigosNs, config, odigosTier),
+		NewOdigosDeploymentResourceManager(client, odigosNs, config, odigosTier, odigosVersion, installationMethod, managerOpts),
+		NewOdigosConfigResourceManager(client, odigosNs, config, odigosTier, managerOpts),
 	}
 
 	if odigosTier != common.CommunityOdigosTier {
-		resourceManagers = append(resourceManagers, odigospro.NewOdigosProResourceManager(client, odigosNs, config, odigosTier, proTierToken))
+		resourceManagers = append(resourceManagers, odigospro.NewOdigosProResourceManager(client, odigosNs, config, odigosTier, proTierToken, managerOpts))
 	}
 
 	// odigos core components are installed for all tiers.
 	resourceManagers = append(resourceManagers, []resourcemanager.ResourceManager{
-		NewOwnTelemetryResourceManager(client, odigosNs, config, odigosTier, odigosVersion),
-		NewDataCollectionResourceManager(client, odigosNs, config),
-		NewInstrumentorResourceManager(client, odigosNs, config, odigosTier, odigosVersion),
-		NewSchedulerResourceManager(client, odigosNs, config, odigosVersion),
-		NewOdigletResourceManager(client, odigosNs, config, odigosTier, odigosVersion),
-		NewAutoScalerResourceManager(client, odigosNs, config, odigosVersion),
-		NewUIResourceManager(client, odigosNs, config, odigosVersion),
+		NewOwnTelemetryResourceManager(client, odigosNs, config, odigosTier, odigosVersion, managerOpts),
+		NewDataCollectionResourceManager(client, odigosNs, config, managerOpts),
+		NewInstrumentorResourceManager(client, odigosNs, config, odigosTier, odigosVersion, managerOpts),
+		NewSchedulerResourceManager(client, odigosNs, config, odigosVersion, managerOpts),
+		NewOdigletResourceManager(client, odigosNs, config, odigosTier, odigosVersion, managerOpts),
+		NewAutoScalerResourceManager(client, odigosNs, config, odigosVersion, managerOpts),
+		NewUIResourceManager(client, odigosNs, config, odigosVersion, managerOpts),
 	}...)
 
 	if odigosTier == common.CloudOdigosTier {
-		resourceManagers = append(resourceManagers, NewKeyvalProxyResourceManager(client, odigosNs, config))
+		resourceManagers = append(resourceManagers, NewKeyvalProxyResourceManager(client, odigosNs, config, managerOpts))
 	}
 
 	return resourceManagers
