@@ -163,7 +163,3 @@ func GetSources(ctx context.Context, kubeClient client.Client, obj client.Object
 func IsDisabledSource(source *Source) bool {
 	return source.Spec.DisableInstrumentation
 }
-
-func init() {
-	SchemeBuilder.Register(&Source{}, &SourceList{})
-}

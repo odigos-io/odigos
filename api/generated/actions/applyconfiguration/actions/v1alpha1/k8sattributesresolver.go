@@ -39,7 +39,7 @@ func K8sAttributesResolver(name, namespace string) *K8sAttributesResolverApplyCo
 	b.WithName(name)
 	b.WithNamespace(namespace)
 	b.WithKind("K8sAttributesResolver")
-	b.WithAPIVersion("actions/v1alpha1")
+	b.WithAPIVersion("actions.odigos.io/v1alpha1")
 	return b
 }
 

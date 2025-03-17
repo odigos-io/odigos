@@ -22,8 +22,6 @@ package v1alpha1
 
 import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // GroupName specifies the group name used to register the objects.
@@ -72,10 +70,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&InstrumentationRuleList{},
 		&InstrumentedApplication{},
 		&InstrumentedApplicationList{},
-		&OdigosConfiguration{},
-		&OdigosConfigurationList{},
 		&Processor{},
 		&ProcessorList{},
+		&Source{},
+		&SourceList{},
 	)
 	// AddToGroupVersion allows the serialization of client types like ListOptions.
 	v1.AddToGroupVersion(scheme, SchemeGroupVersion)

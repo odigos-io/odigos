@@ -109,7 +109,3 @@ type K8sAttributesResolverList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []K8sAttributesResolver `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&K8sAttributesResolver{}, &K8sAttributesResolverList{})
-}
