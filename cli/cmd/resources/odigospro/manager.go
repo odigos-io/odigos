@@ -15,14 +15,15 @@ type odigosCloudResourceManager struct {
 	config       *common.OdigosConfiguration
 	odigosTier   common.OdigosTier
 	proTierToken *string
+	managerOpts  resourcemanager.ManagerOpts
 }
 
 // the odigos pro resource manager supports the following flows:
 // 1. odigos tier is community - the resource manager should not be installed.
 // 2. User has provided a cloud api key or onprem token - the resource manager should be initialized with the pro tier token.
 // 3. User wishes to update resources but leave the token as is - proTierToken should be nil.
-func NewOdigosProResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, proTierToken *string) resourcemanager.ResourceManager {
-	return &odigosCloudResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, proTierToken: proTierToken}
+func NewOdigosProResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, proTierToken *string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
+	return &odigosCloudResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, proTierToken: proTierToken, managerOpts: managerOpts}
 }
 
 func (a *odigosCloudResourceManager) Name() string { return "Odigos Pro" }
@@ -61,5 +62,5 @@ func (a *odigosCloudResourceManager) InstallFromScratch(ctx context.Context) err
 	}
 
 	resources := []kube.Object{secret}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

@@ -37,6 +37,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -62,6 +63,32 @@ type OdigosReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+// relatedImageEnvVars is a reverse-lookup map to quickly find the environment variable
+// for component images when openshift is enabled
+var relatedImageEnvVars = map[string]string{
+	k8sconsts.AutoScalerImageName: "RELATED_IMAGE_AUTOSCALER",
+	k8sconsts.AutoScalerImageUBI9: "RELATED_IMAGE_AUTOSCALER",
+
+	k8sconsts.OdigosClusterCollectorImage:     "RELATED_IMAGE_COLLECTOR",
+	k8sconsts.OdigosClusterCollectorImageUBI9: "RELATED_IMAGE_COLLECTOR",
+
+	k8sconsts.InstrumentorImage:               "RELATED_IMAGE_INSTRUMENTOR",
+	k8sconsts.InstrumentorImageUBI9:           "RELATED_IMAGE_INSTRUMENTOR",
+	k8sconsts.InstrumentorEnterpriseImage:     "RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR",
+	k8sconsts.InstrumentorEnterpriseImageUBI9: "RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR",
+
+	k8sconsts.UIImage:     "RELATED_IMAGE_FRONTEND",
+	k8sconsts.UIImageUBI9: "RELATED_IMAGE_FRONTEND",
+
+	k8sconsts.OdigletImageName:           "RELATED_IMAGE_ODIGLET",
+	k8sconsts.OdigletImageUBI9:           "RELATED_IMAGE_ODIGLET",
+	k8sconsts.OdigletEnterpriseImageName: "RELATED_IMAGE_ENTERPRISE_ODIGLET",
+	k8sconsts.OdigletEnterpriseImageUBI9: "RELATED_IMAGE_ENTERPRISE_ODIGLET",
+
+	k8sconsts.SchedulerImage:     "RELATED_IMAGE_SCHEDULER",
+	k8sconsts.SchedulerImageUBI9: "RELATED_IMAGE_SCHEDULER",
+}
+
 // +kubebuilder:rbac:groups=operator.odigos.io,resources=odigos,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operator.odigos.io,resources=odigos/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=operator.odigos.io,resources=odigos/finalizers,verbs=update
@@ -73,7 +100,7 @@ type OdigosReconciler struct {
 // +kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups="",resources=configmaps;endpoints;secrets,verbs=get;list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;get;list;watch;patch
+// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;get;list;watch;patch;delete
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;patch
 // +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch;patch
 // +kubebuilder:rbac:groups="",resources=nodes/proxy,verbs=get;list
@@ -137,14 +164,6 @@ func (r *OdigosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		OdigosClient:  odigosClient,
 		Config:        k8sConfig,
 	}
-
-	ownerReference := metav1.OwnerReference{
-		APIVersion: odigos.APIVersion,
-		Kind:       odigos.Kind,
-		Name:       odigos.GetName(),
-		UID:        odigos.GetUID(),
-	}
-	kubeClient.OwnerReferences = []metav1.OwnerReference{ownerReference}
 
 	if odigos.ObjectMeta.DeletionTimestamp.IsZero() {
 		return r.install(ctx, kubeClient, odigos)
@@ -312,8 +331,26 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	odigosConfig.ImagePrefix = odigos.Spec.ImagePrefix
 	odigosConfig.Profiles = odigos.Spec.Profiles
 	odigosConfig.UiMode = common.UiMode(odigos.Spec.UIMode)
-	odigosConfig.AutoscalerImage = k8sconsts.AutoScalerImageName
-	odigosConfig.InstrumentorImage = k8sconsts.InstrumentorImage
+
+	ownerReference := metav1.OwnerReference{
+		APIVersion: odigos.APIVersion,
+		Kind:       odigos.Kind,
+		Name:       odigos.GetName(),
+		UID:        odigos.GetUID(),
+	}
+	managerOpts := resourcemanager.ManagerOpts{
+		OwnerReferences: []metav1.OwnerReference{ownerReference},
+	}
+	imageReferences := cmd.GetImageReferences(odigosTier, odigos.Spec.OpenShiftEnabled)
+	if odigos.Spec.OpenShiftEnabled {
+		imageReferences.AutoscalerImage = os.Getenv(relatedImageEnvVars[imageReferences.AutoscalerImage])
+		imageReferences.CollectorImage = os.Getenv(relatedImageEnvVars[imageReferences.CollectorImage])
+		imageReferences.UIImage = os.Getenv(relatedImageEnvVars[imageReferences.UIImage])
+		imageReferences.InstrumentorImage = os.Getenv(relatedImageEnvVars[imageReferences.InstrumentorImage])
+		imageReferences.OdigletImage = os.Getenv(relatedImageEnvVars[imageReferences.OdigletImage])
+		imageReferences.SchedulerImage = os.Getenv(relatedImageEnvVars[imageReferences.SchedulerImage])
+	}
+	managerOpts.ImageReferences = imageReferences
 
 	defaultMountMethod := common.K8sVirtualDeviceMountMethod
 	if len(odigos.Spec.MountMethod) == 0 {
@@ -336,18 +373,15 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		odigosConfig.MountMethod = &odigos.Spec.MountMethod
 	}
 
-	if odigos.Spec.OpenShiftEnabled {
+	if !odigos.Spec.OpenShiftEnabled {
 		if odigos.Spec.ImagePrefix == "" {
-			odigosConfig.ImagePrefix = k8sconsts.RedHatImagePrefix
+			odigosConfig.ImagePrefix = k8sconsts.OdigosImagePrefix
 		}
-		odigosConfig.OdigletImage = k8sconsts.OdigletImageUBI9
-		odigosConfig.InstrumentorImage = k8sconsts.InstrumentorImageUBI9
-		odigosConfig.AutoscalerImage = k8sconsts.AutoScalerImageUBI9
 	}
 
 	logger.Info("Installing Odigos version " + version + " in namespace " + ns)
 
-	resourceManagers := resources.CreateResourceManagers(kubeClient, ns, odigosTier, &odigosProToken, &odigosConfig, version, installationmethod.K8sInstallationMethodOdigosOperator)
+	resourceManagers := resources.CreateResourceManagers(kubeClient, ns, odigosTier, &odigosProToken, &odigosConfig, version, installationmethod.K8sInstallationMethodOdigosOperator, managerOpts)
 	err = resources.ApplyResourceManagers(ctx, kubeClient, resourceManagers, "Creating")
 	if err != nil {
 		return ctrl.Result{}, err
