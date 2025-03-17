@@ -19,8 +19,21 @@ const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
 var versionRegex = regexp.MustCompile(JavaVersionRegex)
 
 func (j *JavaInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	// Check if the executable name starts with "java"
-	if strings.HasPrefix(filepath.Base(pcx.ExePath), "java") {
+	baseExe := filepath.Base(pcx.ExePath)
+
+	// Check if baseExe starts with "java"
+	if len(baseExe) >= 4 && baseExe[:4] == "java" {
+		// If it's exactly "java", return true
+		if len(baseExe) == 4 {
+			return common.JavaProgrammingLanguage, true
+		}
+
+		// Ensure all remaining characters are digits
+		for i := 4; i < len(baseExe); i++ {
+			if baseExe[i] < '0' || baseExe[i] > '9' {
+				return "", false
+			}
+		}
 		return common.JavaProgrammingLanguage, true
 	}
 
