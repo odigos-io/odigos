@@ -27,7 +27,8 @@ func (e ErrLanguageDetectionConflict) Error() string {
 
 type InspectFunc func(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool)
 
-// Inspector holds two kinds of checks as well as an optional runtime version getter.
+// Inspector performs two types of scans (QuickScan and DeepScan), each using a
+// different approach to determine the programming language of a given process.
 type Inspector interface {
 	QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool)
 	DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool)
@@ -102,17 +103,23 @@ func DetectLanguage(proc process.Details, containerURL string, logger logr.Logge
 	})
 }
 
-func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage) bool {
+func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage, logger logr.Logger) bool {
 	inspector, ok := inspectorsByLanguage[lang]
 	if !ok {
 		return false
 	}
-	procContext := process.NewProcessContext(proc)
 
-	_, lightDetected := inspector.QuickScan(procContext)
-	if lightDetected {
+	procContext := process.NewProcessContext(proc)
+	defer func() {
+		if err := procContext.CloseFiles(); err != nil {
+			logger.Error(err, "Error closing files")
+		}
+	}()
+
+	_, quickDetected := inspector.QuickScan(procContext)
+	if quickDetected {
 		return true
 	}
-	_, expensiveDetected := inspector.DeepScan(procContext)
-	return expensiveDetected
+	_, deepDetected := inspector.DeepScan(procContext)
+	return deepDetected
 }
