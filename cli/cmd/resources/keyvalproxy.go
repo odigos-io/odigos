@@ -356,13 +356,14 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 }
 
 type keyvalProxyResourceManager struct {
-	client *kube.Client
-	ns     string
-	config *common.OdigosConfiguration
+	client      *kube.Client
+	ns          string
+	config      *common.OdigosConfiguration
+	managerOpts resourcemanager.ManagerOpts
 }
 
-func NewKeyvalProxyResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration) resourcemanager.ResourceManager {
-	return &keyvalProxyResourceManager{client: client, ns: ns, config: config}
+func NewKeyvalProxyResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
+	return &keyvalProxyResourceManager{client: client, ns: ns, config: config, managerOpts: managerOpts}
 }
 
 func (a *keyvalProxyResourceManager) Name() string { return "CloudProxy" }
@@ -376,5 +377,5 @@ func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) err
 		NewKeyvalProxyClusterRoleBinding(a.ns),
 		NewKeyvalProxyDeployment(k8sconsts.OdigosCloudProxyVersion, a.ns, a.config.ImagePrefix),
 	}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

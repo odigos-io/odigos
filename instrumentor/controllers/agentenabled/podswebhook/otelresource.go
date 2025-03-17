@@ -22,6 +22,10 @@ func getResourceAttributes(podWorkload k8sconsts.PodWorkload, containerName stri
 	workloadKindKey := getWorkloadKindAttributeKey(podWorkload.Kind)
 	return []resourceAttribute{
 		{
+			Key:   semconv.K8SPodNameKey,
+			Value: "$(ODIGOS_POD_NAME)",
+		},
+		{
 			Key:   semconv.K8SContainerNameKey,
 			Value: containerName,
 		},

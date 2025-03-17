@@ -555,34 +555,16 @@ type odigletResourceManager struct {
 	config        *common.OdigosConfiguration
 	odigosTier    common.OdigosTier
 	odigosVersion string
+	managerOpts   resourcemanager.ManagerOpts
 }
 
-func NewOdigletResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string) resourcemanager.ResourceManager {
-	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion}
+func NewOdigletResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
+	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion, managerOpts: managerOpts}
 }
 
 func (a *odigletResourceManager) Name() string { return "Odiglet" }
 
 func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
-
-	odigletImage := a.config.OdigletImage
-	// if the user specified an image, use it. otherwise, use the default image.
-	// prev v1.0.4 - the cli would automatically store "keyval/odigos-odiglet" instead of empty value,
-	// thus we need to treat the default image name as empty value.
-	if odigletImage == "" || odigletImage == k8sconsts.OdigletImageName || odigletImage == k8sconsts.OdigletImageUBI9 {
-		if a.odigosTier == common.CommunityOdigosTier {
-			if odigletImage != k8sconsts.OdigletImageUBI9 {
-				odigletImage = k8sconsts.OdigletImageName
-			}
-		} else {
-			if odigletImage == k8sconsts.OdigletImageUBI9 {
-				odigletImage = k8sconsts.OdigletEnterpriseImageUBI9
-			} else {
-				odigletImage = k8sconsts.OdigletEnterpriseImageName
-			}
-		}
-	}
-
 	resources := []kube.Object{
 		NewOdigletServiceAccount(a.ns),
 		NewOdigletRole(a.ns),
@@ -606,11 +588,11 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
 	resources = append(resources,
-		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled,
+		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.OdigletImage, a.odigosTier, a.config.OpenshiftEnabled,
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
 				K8SVersion: cmdcontext.K8SVersionFromContext(ctx),
 			}))
 
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

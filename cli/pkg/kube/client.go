@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -34,7 +35,6 @@ type Client struct {
 	ApiExtensions   apiextensionsclient.Interface
 	OdigosClient    v1alpha1.OdigosV1alpha1Interface
 	Config          *rest.Config
-	OwnerReferences []metav1.OwnerReference
 }
 
 // Identical to the Object interface defined in controller-runtime: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client#Object
@@ -101,9 +101,9 @@ func PrintClientErrorAndExit(err error) {
 	os.Exit(-1)
 }
 
-func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []Object) error {
+func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []Object, managerOpts resourcemanager.ManagerOpts) error {
 	for _, obj := range objs {
-		err := c.ApplyResource(ctx, configVersion, obj)
+		err := c.ApplyResource(ctx, configVersion, obj, managerOpts)
 		if err != nil {
 			return err
 		}
@@ -111,7 +111,7 @@ func (c *Client) ApplyResources(ctx context.Context, configVersion int, objs []O
 	return nil
 }
 
-func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Object) error {
+func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Object, managerOpts resourcemanager.ManagerOpts) error {
 
 	labels := obj.GetLabels()
 	if labels == nil {
@@ -121,7 +121,7 @@ func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Objec
 	labels[k8sconsts.OdigosSystemConfigLabelKey] = strconv.Itoa(configVersion)
 	obj.SetLabels(labels)
 
-	obj.SetOwnerReferences(c.OwnerReferences)
+	obj.SetOwnerReferences(managerOpts.OwnerReferences)
 
 	depBytes, _ := yaml.Marshal(obj)
 
