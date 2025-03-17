@@ -25,10 +25,8 @@ type Instrumentor struct {
 func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrumentor, error) {
 	err := feature.Setup()
 	if err != nil {
-		fmt.Println("Setup failed")
 		return nil, err
 	}
-	fmt.Println("Setup successful")
 
 	mgr, err := controllers.CreateManager(opts)
 	if err != nil {
