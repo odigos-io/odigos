@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: traces
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-trace-db
+  namespace: traces
+  labels:
+    app: simple-trace-db
+spec:
+  selector:
+    matchLabels:
+      app: simple-trace-db
+  template:
+    metadata:
+      labels:
+        app: simple-trace-db
+    spec:
+      containers:
+        - name: simple-trace-db
+          image: registry.odigos.io/simple-trace-db:0.0.6
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4318
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: simple-trace-db
+  namespace: traces
+spec:
+  selector:
+    app: simple-trace-db
+  ports:
+    - protocol: TCP
+      port: 4318
