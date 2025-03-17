@@ -2,8 +2,8 @@ package nodejs
 
 import (
 	"path/filepath"
+	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/hashicorp/go-version"
 
@@ -22,18 +22,22 @@ func (n *NodejsInspector) QuickScan(pcx *process.ProcessContext) (common.Program
 	proc := pcx.Details
 	baseExe := filepath.Base(proc.ExePath)
 
-	// Check if the executable is:
-	// - "node" (exact match)
-	// - "node" followed by digits (e.g., "node8", "node10", etc.)
-	// - One of the recognized package managers: "npm" or "yarn"
-	//
-	// The check:
-	// - `strings.HasPrefix(baseExe, "node")` ensures it starts with "node".
-	// - `len(baseExe) == 4` allows "node" as a standalone executable.
-	// - `unicode.IsDigit(rune(baseExe[4]))` ensures that if there’s an extra character (char at the 5th position), it's a number (rejecting cases like "nodejs").
-	if strings.HasPrefix(baseExe, "node") &&
-		(len(baseExe) == 4 || unicode.IsDigit(rune(baseExe[4]))) ||
-		nodeExecutables[baseExe] {
+	// Check if the string starts with "node"
+	if strings.HasPrefix(baseExe, "node") {
+		// If the string is exactly "node", return true
+		if len(baseExe) == 4 {
+			return common.JavascriptProgrammingLanguage, true
+		}
+
+		// If there's extra text after "node", verify it's purely numeric (e.g., "node10", "node16")
+		if _, err := strconv.Atoi(baseExe[4:]); err == nil {
+			return common.JavascriptProgrammingLanguage, true
+		}
+
+	}
+
+	// Check if the executable is a recognized Node.js package manager (npm, yarn)
+	if nodeExecutables[baseExe] {
 		return common.JavascriptProgrammingLanguage, true
 	}
 
