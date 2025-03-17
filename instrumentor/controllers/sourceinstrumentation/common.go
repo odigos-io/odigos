@@ -109,7 +109,11 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 			}
 			ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, podWorkload.Namespace, obj, scheme)
 			if err != nil {
-				return ctrl.Result{}, err
+				if apierrors.IsAlreadyExists(err) {
+					return ctrl.Result{Requeue: true}, nil
+				} else {
+					return ctrl.Result{}, err
+				}
 			}
 		}
 

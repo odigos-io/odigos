@@ -5,14 +5,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func InjectOdigosK8sEnvVars(existingEnvNames *map[string]struct{}, container *corev1.Container, distroName string, ns string) {
-
-	injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarContainerName, container.Name)
-	injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarDistroName, distroName)
-	injectEnvVarObjectFieldRefToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarPodName, "metadata.name")
-	injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarNamespace, ns)
-}
-
 func injectEnvVarObjectFieldRefToPodContainer(existingEnvNames *map[string]struct{}, container *corev1.Container, envVarName, envVarRef string) {
 	if _, exists := (*existingEnvNames)[envVarName]; exists {
 		return
@@ -41,4 +33,15 @@ func injectEnvVarToPodContainer(existingEnvNames *map[string]struct{}, container
 	})
 
 	(*existingEnvNames)[envVarName] = struct{}{}
+}
+
+func InjectOdigosK8sEnvVars(existingEnvNames *map[string]struct{}, container *corev1.Container, distroName string, ns string) {
+	injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarContainerName, container.Name)
+	injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarDistroName, distroName)
+	injectEnvVarObjectFieldRefToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarPodName, "metadata.name")
+	injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarNamespace, ns)
+}
+
+func InjectStaticEnvVar(existingEnvNames *map[string]struct{}, container *corev1.Container, envVarName string, envVarValue string) {
+	injectEnvVarToPodContainer(existingEnvNames, container, envVarName, envVarValue)
 }

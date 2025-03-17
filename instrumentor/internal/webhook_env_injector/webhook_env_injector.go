@@ -233,10 +233,6 @@ func InjectPythonEnvVars(container *corev1.Container) {
 	} else {
 		tierSpecificEnvs = []corev1.EnvVar{
 			{
-				Name:  commonconsts.OtelPythonConfiguratorEnvName,
-				Value: commonconsts.OtelPythonOSSConfiguratorEnvValue,
-			},
-			{
 				Name:  commonconsts.OtelExporterEndpointEnvName,
 				Value: service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
 			},
