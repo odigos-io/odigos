@@ -16,10 +16,10 @@ spec:
       - "{{ODIGOS_AGENTS_DIR}}/java"
     k8sAttrsViaEnvVars: true
     device: 'instrumentation.odigos.io/generic'
-  environmentVariables:
-    - envName: JAVA_OPTS
-      envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
-      delimiter: ' '
-    - envName: JAVA_TOOL_OPTIONS
-      envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
-      delimiter: ' '
+    environmentVariables:
+      - envName: JAVA_OPTS
+        envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
+        delimiter: ' '
+      - envName: JAVA_TOOL_OPTIONS
+        envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
+        delimiter: ' '

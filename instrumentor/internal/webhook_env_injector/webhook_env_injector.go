@@ -23,12 +23,6 @@ import (
 func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
 	otelsdk common.OtelSdk, runtimeDetails *v1alpha1.RuntimeDetailsByContainer, client client.Client) {
 
-	// This is a temporary and should be migrated to distro
-	if runtimeDetails.Language == common.PythonProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity ||
-		runtimeDetails.Language == common.PythonProgrammingLanguage && otelsdk == common.OtelSdkEbpfEnterprise {
-		InjectPythonEnvVars(container)
-	}
-
 	if runtimeDetails.Language == common.JavascriptProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity {
 		injectNodejsCommunityEnvVars(container)
 	}
@@ -200,47 +194,6 @@ func injectJavaCommunityEnvVars(ctx context.Context, logger logr.Logger,
 
 	// Set the OTEL signals exporter env vars
 	setOtelSignalsExporterEnvVars(ctx, logger, container, client)
-}
-
-func InjectPythonEnvVars(container *corev1.Container) {
-	// Common environment variables for all tiers
-	commonEnvs := []corev1.EnvVar{
-		{
-			Name: "NODE_IP",
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "status.hostIP",
-				},
-			},
-		},
-		{
-			Name:  commonconsts.OpampServerHostEnvName,
-			Value: fmt.Sprintf("$(NODE_IP):%d", commonconsts.OpAMPPort),
-		},
-	}
-
-	// Determine envs based on the tier
-	odigosTier := env.GetOdigosTierFromEnv()
-
-	var tierSpecificEnvs []corev1.EnvVar
-	if odigosTier == common.OnPremOdigosTier {
-		tierSpecificEnvs = []corev1.EnvVar{
-			{
-				Name:  commonconsts.OtelPythonConfiguratorEnvName,
-				Value: commonconsts.OtelPythonEBPFConfiguratorEnvValue,
-			},
-		}
-	} else {
-		tierSpecificEnvs = []corev1.EnvVar{
-			{
-				Name:  commonconsts.OtelExporterEndpointEnvName,
-				Value: service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
-			},
-		}
-	}
-
-	container.Env = append(container.Env, commonEnvs...)
-	container.Env = append(container.Env, tierSpecificEnvs...)
 }
 
 func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger,

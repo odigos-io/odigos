@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/odigos-io/odigos/distros"
@@ -70,17 +71,20 @@ func main() {
 
 	distrosGetter, err := distros.NewCommunityGetter()
 	if err != nil {
+		fmt.Println("Failed to initialize distro getter", err.Error())
 		setupLog.Error(err, "Failed to initialize distro getter")
 		os.Exit(1)
 	}
 	dp, err := distros.NewProvider(distros.NewCommunityDefaulter(), distrosGetter)
 	if err != nil {
+		fmt.Println("Failed to initialize distro provider", err.Error())
 		setupLog.Error(err, "Failed to initialize distro provider")
 		os.Exit(1)
 	}
 
 	i, err := instrumentor.New(managerOptions, dp)
 	if err != nil {
+		fmt.Println("Failed to initialize instrumentor")
 		setupLog.Error(err, "Failed to initialize instrumentor")
 		os.Exit(1)
 	}
