@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	v1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -42,6 +43,8 @@ func WorkloadKindLowerCaseFromKind(pascalCase k8sconsts.WorkloadKind) k8sconsts.
 		return k8sconsts.WorkloadKindLowerCaseDaemonSet
 	case k8sconsts.WorkloadKindStatefulSet:
 		return k8sconsts.WorkloadKindLowerCaseStatefulSet
+	case k8sconsts.WorkloadKindNamespace:
+		return k8sconsts.WorkloadKindLowerCaseNamespace
 	}
 	return ""
 }
@@ -94,6 +97,8 @@ func ClientObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object {
 		return &v1.DaemonSet{}
 	case k8sconsts.WorkloadKindStatefulSet:
 		return &v1.StatefulSet{}
+	case k8sconsts.WorkloadKindNamespace:
+		return &corev1.Namespace{}
 	default:
 		return nil
 	}
