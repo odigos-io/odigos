@@ -14,11 +14,16 @@ type DotnetInspector struct{}
 const processName = "dotnet"
 
 func (d *DotnetInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	if strings.HasPrefix(filepath.Base(pcx.ExePath), processName) {
+	baseExe := filepath.Base(pcx.ExePath)
+
+	// checking exe command directly
+	if len(baseExe) >= len(processName) && baseExe[:len(processName)] == processName {
 		return common.DotNetProgrammingLanguage, true
 	}
+
 	return "", false
 }
+
 func (d *DotnetInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	// Heavy check: read the process maps from cache and look for "libcoreclr.so"
 	mapsFile, err := pcx.GetMapsFile()
