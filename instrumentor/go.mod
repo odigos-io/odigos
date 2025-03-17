@@ -15,7 +15,7 @@ require (
 	go.opentelemetry.io/otel v1.35.0
 	golang.org/x/sync v0.12.0
 	k8s.io/api v0.32.2
-	k8s.io/apimachinery v0.32.2
+	k8s.io/apimachinery v0.32.3
 	k8s.io/client-go v0.32.2
 	sigs.k8s.io/controller-runtime v0.20.3
 )
