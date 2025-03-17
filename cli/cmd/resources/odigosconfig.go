@@ -33,14 +33,15 @@ func NewOdigosConfiguration(ns string, config *common.OdigosConfiguration) (kube
 }
 
 type odigosConfigResourceManager struct {
-	client     *kube.Client
-	ns         string
-	config     *common.OdigosConfiguration
-	odigosTier common.OdigosTier
+	client      *kube.Client
+	ns          string
+	config      *common.OdigosConfiguration
+	odigosTier  common.OdigosTier
+	managerOpts resourcemanager.ManagerOpts
 }
 
-func NewOdigosConfigResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier) resourcemanager.ResourceManager {
-	return &odigosConfigResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier}
+func NewOdigosConfigResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
+	return &odigosConfigResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, managerOpts: managerOpts}
 }
 
 func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
@@ -55,5 +56,5 @@ func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) er
 	resources := []kube.Object{
 		obj,
 	}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }
