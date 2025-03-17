@@ -20,8 +20,21 @@ const (
 
 func (p *PythonInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	proc := pcx.Details
-	// Check if the executable name starts with "python"
-	if strings.HasPrefix(filepath.Base(proc.ExePath), pythonProcessName) {
+	baseExe := filepath.Base(proc.ExePath)
+
+	// Check if baseExe starts with "python"
+	if len(baseExe) >= 6 && baseExe[:6] == "python" {
+		// If it's exactly "python", return true
+		if len(baseExe) == 6 {
+			return common.PythonProgrammingLanguage, true
+		}
+
+		// Ensure all remaining characters are digits
+		for i := 6; i < len(baseExe); i++ {
+			if baseExe[i] < '0' || baseExe[i] > '9' {
+				return "", false
+			}
+		}
 		return common.PythonProgrammingLanguage, true
 	}
 
