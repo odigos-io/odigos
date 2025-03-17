@@ -2,8 +2,6 @@ package nodejs
 
 import (
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/hashicorp/go-version"
 
@@ -22,17 +20,20 @@ func (n *NodejsInspector) QuickScan(pcx *process.ProcessContext) (common.Program
 	proc := pcx.Details
 	baseExe := filepath.Base(proc.ExePath)
 
-	// Check if the string starts with "node"
-	if strings.HasPrefix(baseExe, "node") {
-		// If the string is exactly "node", return true
+	// Check if baseExe starts with "node"
+	if len(baseExe) >= 4 && baseExe[:4] == "node" {
+		// If it's exactly "node", return true
 		if len(baseExe) == 4 {
 			return common.JavascriptProgrammingLanguage, true
 		}
 
-		// If there's extra text after "node", verify it's purely numeric (e.g., "node10", "node16")
-		if _, err := strconv.Atoi(baseExe[4:]); err == nil {
-			return common.JavascriptProgrammingLanguage, true
+		// Ensure all remaining characters are digits (e.g., "node10", "node16")
+		for i := 4; i < len(baseExe); i++ {
+			if baseExe[i] < '0' || baseExe[i] > '9' {
+				return "", false
+			}
 		}
+		return common.JavascriptProgrammingLanguage, true
 	}
 
 	// Check if the executable is a recognized Node.js package manager (npm, yarn)
