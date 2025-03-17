@@ -1,7 +1,7 @@
 import { useLazyQuery } from '@apollo/client';
 import { DESCRIBE_SOURCE } from '@/graphql';
-import { useNotificationStore } from '@odigos/ui-containers';
-import { CRUD, NOTIFICATION_TYPE, type DescribeSource, type WorkloadId } from '@odigos/ui-utils';
+import { useNotificationStore } from '@odigos/ui-kit/store';
+import { CRUD, type DescribeSource, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-kit/types';
 
 export const useDescribeSource = () => {
   const { addNotification } = useNotificationStore();

@@ -1,4 +1,4 @@
-import type { InstrumentationRule, WorkloadId } from '@odigos/ui-utils';
+import type { InstrumentationRule, WorkloadId } from '@odigos/ui-kit/types';
 
 export interface FetchedInstrumentationRule {
   ruleId: string;

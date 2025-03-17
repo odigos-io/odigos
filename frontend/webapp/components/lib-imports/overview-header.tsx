@@ -1,11 +1,12 @@
 import React from 'react';
-import Theme from '@odigos/ui-theme';
 import { useStatusStore } from '@/store';
-import { OdigosLogoText } from '@odigos/ui-icons';
-import { Header, Status, Tooltip } from '@odigos/ui-components';
+import { OdigosLogoText } from '@odigos/ui-kit/icons';
+import { FORM_ALERTS } from '@odigos/ui-kit/constants';
+import { getPlatformLabel } from '@odigos/ui-kit/functions';
+import { Header, Status, Tooltip } from '@odigos/ui-kit/components';
 import { useConfig, useDescribeOdigos, useTokenCRUD } from '@/hooks';
-import { FORM_ALERTS, getPlatformLabel, NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-utils';
-import { ComputePlatformSelect, NotificationManager, SlackInvite, SystemOverview } from '@odigos/ui-containers';
+import { NOTIFICATION_TYPE, PLATFORM_TYPE } from '@odigos/ui-kit/types';
+import { ComputePlatformSelect, NotificationManager, SlackInvite, SystemOverview, ToggleDarkMode } from '@odigos/ui-kit/containers';
 
 const OverviewHeader = () => {
   const { status, title, message } = useStatusStore();
@@ -26,7 +27,7 @@ const OverviewHeader = () => {
             type: PLATFORM_TYPE.K8S,
             connectionStatus: NOTIFICATION_TYPE.SUCCESS,
           }}
-          computePlatforms={[]}
+          connections={[]}
           onSelect={() => {}}
           onViewAll={() => {}}
         />,
@@ -38,7 +39,7 @@ const OverviewHeader = () => {
         ),
       ]}
       right={[
-        <Theme.ToggleDarkMode key='toggle-theme' />,
+        <ToggleDarkMode key='toggle-theme' />,
         <NotificationManager key='notifs' />,
         <SystemOverview key='cli' tokens={tokens} saveToken={updateToken} fetchDescribeOdigos={fetchDescribeOdigos} />,
         <SlackInvite key='slack' />,

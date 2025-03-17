@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { GET_POTENTIAL_DESTINATIONS } from '@/graphql';
-import { deepClone, safeJsonParse } from '@odigos/ui-utils';
+import { deepClone, safeJsonParse } from '@odigos/ui-kit/functions';
 import { useDestinationCategories } from './useDestinationCategories';
-import { type ISetupState, useSetupStore } from '@odigos/ui-containers';
+import { useSetupStore, type ISetupState } from '@odigos/ui-kit/store';
 
 interface PotentialDestination {
   type: string;

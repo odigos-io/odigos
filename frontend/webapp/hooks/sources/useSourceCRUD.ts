@@ -2,19 +2,12 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { useNamespace } from '../compute-platform';
 import { useLazyQuery, useMutation } from '@apollo/client';
+import { getSseTargetFromId } from '@odigos/ui-kit/functions';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { GET_INSTANCES, GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import type { FetchedSource, NamespaceInstrumentInput, PaginatedData, SourceInstrumentInput, SourceUpdateInput } from '@/@types';
-import { Condition, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, type Source, type WorkloadId } from '@odigos/ui-utils';
-import {
-  type NamespaceSelectionFormData,
-  type SourceFormData,
-  type SourceSelectionFormData,
-  useEntityStore,
-  useInstrumentStore,
-  useNotificationStore,
-  usePendingStore,
-  useSetupStore,
-} from '@odigos/ui-containers';
+import { type WorkloadId, type Source, type SourceFormData, ENTITY_TYPES, NOTIFICATION_TYPE, CRUD, type Condition } from '@odigos/ui-kit/types';
+import { type NamespaceSelectionFormData, type SourceSelectionFormData, useEntityStore, useInstrumentStore, useNotificationStore, usePendingStore, useSetupStore } from '@odigos/ui-kit/store';
 
 interface UseSourceCrud {
   sources: Source[];

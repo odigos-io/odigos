@@ -3,8 +3,8 @@ import { useEffect } from 'react';
 import { GET_CONFIG } from '@/graphql';
 import { type FetchedConfig } from '@/@types';
 import { useSuspenseQuery } from '@apollo/client';
-import { useNotificationStore } from '@odigos/ui-containers';
-import { CRUD, NOTIFICATION_TYPE, TIER } from '@odigos/ui-utils';
+import { useNotificationStore } from '@odigos/ui-kit/store';
+import { CRUD, NOTIFICATION_TYPE, TIER } from '@odigos/ui-kit/types';
 
 export const useConfig = () => {
   const { addNotification } = useNotificationStore();

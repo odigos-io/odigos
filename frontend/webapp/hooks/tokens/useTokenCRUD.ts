@@ -2,8 +2,10 @@ import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
 import { UPDATE_API_TOKEN } from '@/graphql/mutations';
 import { useComputePlatform } from '../compute-platform';
-import { useNotificationStore } from '@odigos/ui-containers';
-import { CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { useNotificationStore } from '@odigos/ui-kit/store';
+import { getSseTargetFromId } from '@odigos/ui-kit/functions';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import { CRUD, ENTITY_TYPES, NOTIFICATION_TYPE } from '@odigos/ui-kit/types';
 
 interface UseTokenCrudParams {
   onSuccess?: (type: string) => void;

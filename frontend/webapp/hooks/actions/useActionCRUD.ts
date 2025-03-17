@@ -2,10 +2,12 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
 import { useLazyQuery, useMutation } from '@apollo/client';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import { useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
+import { getSseTargetFromId, safeJsonParse } from '@odigos/ui-kit/functions';
 import type { ActionInput, ParsedActionSpec, FetchedAction } from '@/@types';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { type ActionFormData, useEntityStore, useNotificationStore } from '@odigos/ui-containers';
-import { type Action, ACTION_TYPE, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse, SIGNAL_TYPE } from '@odigos/ui-utils';
+import { ACTION_TYPE, CRUD, ENTITY_TYPES, NOTIFICATION_TYPE, SIGNAL_TYPE, type Action, type ActionFormData } from '@odigos/ui-kit/types';
 
 interface UseActionCrud {
   actions: Action[];

@@ -4,11 +4,11 @@ import React, { type PropsWithChildren } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import styled from 'styled-components';
-import { ENTITY_TYPES } from '@odigos/ui-utils';
-import { FlexColumn, FlexRow } from '@odigos/ui-components';
+import { ENTITY_TYPES } from '@odigos/ui-kit/types';
 import { useNamespace, useSSE, useTokenTracker } from '@/hooks';
-import { ErrorBoundary, OverviewHeader, OverviewModalsAndDrawers } from '@/components';
-import { DataFlowActionsMenu, NAV_ICON_IDS, SideNav, ToastList } from '@odigos/ui-containers';
+import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
+import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
+import { DataFlowActionsMenu, NAV_ICON_IDS, SideNav, ToastList } from '@odigos/ui-kit/containers';
 
 const PageContent = styled(FlexColumn)`
   width: 100%;

@@ -1,12 +1,12 @@
 import React, { Dispatch, SetStateAction, type FC, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
-import Theme from '@odigos/ui-theme';
-import { ENTITY_TYPES } from '@odigos/ui-utils';
+import { ENTITY_TYPES } from '@odigos/ui-kit/types';
+import { useSetupStore } from '@odigos/ui-kit/store';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
-import { ArrowIcon, OdigosLogoText } from '@odigos/ui-icons';
-import { type SourceSelectionFormRef, useSetupStore } from '@odigos/ui-containers';
-import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos/ui-components';
+import { ArrowIcon, OdigosLogoText } from '@odigos/ui-kit/icons';
+import { ToggleDarkMode, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
+import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos/ui-kit/components';
 
 interface SetupHeaderProps {
   entityType: ENTITY_TYPES;
@@ -86,7 +86,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ formRef, entityType, isLoading, set
           START WITH ODIGOS
         </Text>,
       ]}
-      right={[<Theme.ToggleDarkMode key='toggle-theme' />, <NavigationButtons key='nav-buttons' buttons={navButtons} />]}
+      right={[<ToggleDarkMode key='toggle-theme' />, <NavigationButtons key='nav-buttons' buttons={navButtons} />]}
     />
   );
 };

@@ -5,7 +5,7 @@ import { ROUTES } from '@/utils';
 import { useConfig } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { CONFIG_INSTALLATION } from '@/@types';
-import { CenterThis, FadeLoader } from '@odigos/ui-components';
+import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 
 export default function App() {
   const router = useRouter();

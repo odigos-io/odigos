@@ -3,8 +3,8 @@
 import React, { useRef, useState } from 'react';
 import { useNamespace } from '@/hooks';
 import { SetupHeader } from '@/components';
-import { ENTITY_TYPES } from '@odigos/ui-utils';
-import { SourceSelectionForm, type SourceSelectionFormRef } from '@odigos/ui-containers';
+import { ENTITY_TYPES } from '@odigos/ui-kit/types';
+import { SourceSelectionForm, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
 
 export default function Page() {
   const formRef = useRef<SourceSelectionFormRef>(null);

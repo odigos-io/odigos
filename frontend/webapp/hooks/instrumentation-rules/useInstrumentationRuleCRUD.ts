@@ -3,9 +3,11 @@ import { useConfig } from '../config';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import type { FetchedInstrumentationRule } from '@/@types';
-import { type InstrumentationRuleFormData, useEntityStore, useNotificationStore } from '@odigos/ui-containers';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import { useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
+import { deriveTypeFromRule, getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
-import { CRUD, deriveTypeFromRule, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, InstrumentationRule, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { CRUD, ENTITY_TYPES, type InstrumentationRule, type InstrumentationRuleFormData, NOTIFICATION_TYPE } from '@odigos/ui-kit/types';
 
 interface UseInstrumentationRuleCrud {
   instrumentationRules: InstrumentationRule[];

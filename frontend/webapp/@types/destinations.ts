@@ -1,5 +1,4 @@
-import type { Condition, DestinationCategories } from '@odigos/ui-utils';
-import type { DestinationDynamicField, DestinationFormData } from '@odigos/ui-containers';
+import type { Condition, DestinationCategories } from '@odigos/ui-kit/types';
 
 export interface FetchedDestination {
   id: string;
@@ -34,7 +33,3 @@ export interface FetchedDestinationCategories {
     categories: DestinationCategories;
   };
 }
-
-export interface FetchedDestinationDynamicField extends DestinationDynamicField {}
-
-export interface DestinationInput extends DestinationFormData {}

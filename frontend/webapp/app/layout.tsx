@@ -2,13 +2,13 @@
 
 import React, { type PropsWithChildren } from 'react';
 import dynamic from 'next/dynamic';
-import Theme from '@odigos/ui-theme';
+import { useDarkMode } from '@odigos/ui-kit/store';
 import ApolloProvider from '@/components/providers/apollo-provider';
 
 const ThemeProvider = dynamic(() => import('@/components/providers/theme-provider'), { ssr: false });
 
 function RootLayout({ children }: PropsWithChildren) {
-  const { darkMode } = Theme.useDarkMode();
+  const { darkMode } = useDarkMode();
 
   return (
     <html lang='en'>

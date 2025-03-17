@@ -3,8 +3,10 @@ import { API } from '@/utils';
 import { useStatusStore } from '@/store';
 import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
-import { type NotifyPayload, useInstrumentStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
-import { CRD_TYPES, DISPLAY_TITLES, ENTITY_TYPES, getIdFromSseTarget, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-utils';
+import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';
+import { getIdFromSseTarget } from '@odigos/ui-kit/functions';
+import { CRD_TYPES, ENTITY_TYPES, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-kit/types';
+import { type NotifyPayload, useInstrumentStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 
 const CONNECTED = 'CONNECTED';
 
@@ -16,8 +18,8 @@ const EVENT_TYPES = {
 
 export const useSSE = () => {
   const { setPendingItems } = usePendingStore();
-  const { title, setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
+  const { title, setStatusStore } = useStatusStore();
   const { fetchDestinations } = useDestinationCRUD();
   const { fetchSourcesPaginated, fetchSourceById } = useSourceCRUD();
 

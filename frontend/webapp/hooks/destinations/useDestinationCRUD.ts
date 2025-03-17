@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { GET_DESTINATIONS } from '@/graphql';
+import type { FetchedDestination } from '@/@types';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import type { DestinationInput, FetchedDestination } from '@/@types';
+import { getSseTargetFromId } from '@odigos/ui-kit/functions';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import { useEntityStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
-import { type DestinationFormData, useEntityStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
-import { CRUD, type Destination, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { CRUD, ENTITY_TYPES, NOTIFICATION_TYPE, type Destination, type DestinationFormData } from '@odigos/ui-kit/types';
 
 interface UseDestinationCrud {
   destinations: Destination[];
@@ -67,7 +69,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     }
   };
 
-  const [mutateCreate, cState] = useMutation<{ createNewDestination: FetchedDestination }, { destination: DestinationInput }>(CREATE_DESTINATION, {
+  const [mutateCreate, cState] = useMutation<{ createNewDestination: FetchedDestination }, { destination: DestinationFormData }>(CREATE_DESTINATION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
     onCompleted: (res) => {
       const destination = res.createNewDestination;
@@ -76,7 +78,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     },
   });
 
-  const [mutateUpdate, uState] = useMutation<{ updateDestination: { id: string } }, { id: string; destination: DestinationInput }>(UPDATE_DESTINATION, {
+  const [mutateUpdate, uState] = useMutation<{ updateDestination: { id: string } }, { id: string; destination: DestinationFormData }>(UPDATE_DESTINATION, {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       setTimeout(() => {

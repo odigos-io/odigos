@@ -1,9 +1,9 @@
 import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
-import { type DestinationInput } from '@/@types';
 import { TEST_CONNECTION_MUTATION } from '@/graphql';
-import { useNotificationStore } from '@odigos/ui-containers';
-import { DISPLAY_TITLES, FORM_ALERTS, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { useNotificationStore } from '@odigos/ui-kit/store';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import { NOTIFICATION_TYPE, type DestinationFormData } from '@odigos/ui-kit/types';
 
 interface TestConnectionResponse {
   succeeded: boolean;
@@ -18,7 +18,7 @@ export const useTestConnection = () => {
   const { addNotification } = useNotificationStore();
 
   // TODO: change mutation, to lazy query
-  const [testConnectionMutation, { loading, error, data }] = useMutation<{ testConnectionForDestination: TestConnectionResponse }, { destination: DestinationInput }>(TEST_CONNECTION_MUTATION, {
+  const [testConnectionMutation, { loading, error, data }] = useMutation<{ testConnectionForDestination: TestConnectionResponse }, { destination: DestinationFormData }>(TEST_CONNECTION_MUTATION, {
     onError: (error) => {
       console.error('Error testing connection:', error);
     },
@@ -32,7 +32,7 @@ export const useTestConnection = () => {
     error,
     data: data?.testConnectionForDestination,
 
-    testConnection: (destination: DestinationInput) => {
+    testConnection: (destination: DestinationFormData) => {
       if (config?.readonly) {
         addNotification({ type: NOTIFICATION_TYPE.WARNING, title: DISPLAY_TITLES.READONLY, message: FORM_ALERTS.READONLY_WARNING, hideFromHistory: true });
       } else {

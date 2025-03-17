@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useMetrics } from '@/hooks';
-import { DestinationTable } from '@odigos/ui-containers';
+import { DestinationTable } from '@odigos/ui-kit/containers';
 
 export default function Page() {
   const { metrics } = useMetrics();

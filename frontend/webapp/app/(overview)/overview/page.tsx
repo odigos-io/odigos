@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useMetrics, useSourceCRUD } from '@/hooks';
-import { DataFlow, MultiSourceControl } from '@odigos/ui-containers';
+import { DataFlow, MultiSourceControl } from '@odigos/ui-kit/containers';
 
 export default function Page() {
   const { metrics } = useMetrics();

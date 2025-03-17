@@ -1,8 +1,8 @@
 import type { FetchedSource } from './sources';
 import type { FetchedAction } from './actions';
 import type { FetchedNamespace } from './namespace';
-import type { TokenPayload } from '@odigos/ui-utils';
 import type { FetchedDestination } from './destinations';
+import type { TokenPayload } from '@odigos/ui-kit/types';
 import type { FetchedInstrumentationRule } from './instrumentation-rules';
 
 export interface PaginatedData<T = any> {

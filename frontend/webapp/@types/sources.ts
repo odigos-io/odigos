@@ -1,4 +1,4 @@
-import type { Source } from '@odigos/ui-utils';
+import type { Source } from '@odigos/ui-kit/types';
 
 export interface FetchedSource extends Source {}
 

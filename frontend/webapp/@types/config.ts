@@ -1,4 +1,4 @@
-import { TIER } from '@odigos/ui-utils';
+import { TIER } from '@odigos/ui-kit/types';
 
 export enum CONFIG_INSTALLATION {
   NEW = 'NEW',

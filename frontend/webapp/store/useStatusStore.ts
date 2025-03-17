@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { NOTIFICATION_TYPE } from '@odigos/ui-kit/types';
 
 interface StoreValues {
   status: NOTIFICATION_TYPE;
