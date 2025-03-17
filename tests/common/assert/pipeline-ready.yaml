@@ -176,7 +176,7 @@ spec:
               (memory != null): true
             limits:
               (memory != null): true
-      hostNetwork: true
+      (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
       nodeSelector:
         kubernetes.io/os: linux
       securityContext: {}

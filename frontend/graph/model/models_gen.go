@@ -304,6 +304,15 @@ type InstrumentationInstanceAnalyze struct {
 	IdentifyingAttributes []*EntityProperty `json:"identifyingAttributes"`
 }
 
+type InstrumentationInstanceHealth struct {
+	Namespace        string          `json:"namespace"`
+	Name             string          `json:"name"`
+	Kind             K8sResourceKind `json:"kind"`
+	TotalInstances   int             `json:"totalInstances"`
+	HealthyInstances int             `json:"healthyInstances"`
+	Condition        *Condition      `json:"condition,omitempty"`
+}
+
 type InstrumentationLibraryGlobalID struct {
 	Name     string               `json:"name"`
 	SpanKind *SpanKind            `json:"spanKind,omitempty"`
@@ -756,20 +765,22 @@ func (e ComputePlatformType) MarshalGQL(w io.Writer) {
 type ConditionStatus string
 
 const (
-	ConditionStatusTrue    ConditionStatus = "True"
-	ConditionStatusFalse   ConditionStatus = "False"
-	ConditionStatusUnknown ConditionStatus = "Unknown"
+	ConditionStatusSuccess  ConditionStatus = "success"
+	ConditionStatusError    ConditionStatus = "error"
+	ConditionStatusDisabled ConditionStatus = "disabled"
+	ConditionStatusLoading  ConditionStatus = "loading"
 )
 
 var AllConditionStatus = []ConditionStatus{
-	ConditionStatusTrue,
-	ConditionStatusFalse,
-	ConditionStatusUnknown,
+	ConditionStatusSuccess,
+	ConditionStatusError,
+	ConditionStatusDisabled,
+	ConditionStatusLoading,
 }
 
 func (e ConditionStatus) IsValid() bool {
 	switch e {
-	case ConditionStatusTrue, ConditionStatusFalse, ConditionStatusUnknown:
+	case ConditionStatusSuccess, ConditionStatusError, ConditionStatusDisabled, ConditionStatusLoading:
 		return true
 	}
 	return false

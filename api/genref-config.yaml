@@ -28,13 +28,12 @@ externalPackages:
   - match: ^go\.opentelemetry\.io/otel/attribute\.Key$
     target: https://pkg.go.dev/go.opentelemetry.io/otel/attribute#Key
 
-  - match: ^github\.com/odigos-io/odigos/k8sutils/pkg/workload\.PodWorkload$
-    target: https://pkg.go.dev/github.com/odigos-io/odigos/k8sutils/pkg/workload#PodWorkload
-
   - match: ^github\.com/odigos-io/odigos/common.(.*)$
     target: https://pkg.go.dev/github.com/odigos-io/odigos/common#{{- .TypeIdentifier -}}
   - match: ^github\.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules.(.*)$
     target: https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#{{- .TypeIdentifier -}}
+  - match: ^github\.com/odigos-io/odigos/api/k8sconsts.(.*)$
+    target: https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#{{- .TypeIdentifier -}}
 
 hideTypePatterns:
   - "ParseError$"

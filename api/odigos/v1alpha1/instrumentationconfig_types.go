@@ -137,6 +137,23 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 	}
 }
 
+// some conditions with "status: false" should be considered as "disabled" status.
+// this function returns true if the reason is considered as "disabled" status.
+func IsReasonStatusDisabled(reason string) bool {
+	switch reason {
+	case string(AgentEnabledReasonUnsupportedProgrammingLanguage),
+		string(AgentEnabledReasonUnsupportedRuntimeVersion),
+		string(RuntimeDetectionReasonNoRunningPods),
+		string(AgentEnabledReasonIgnoredContainer),
+		string(AgentEnabledReasonNoAvailableAgent),
+		string(AgentEnabledReasonOtherAgentDetected):
+
+		return true
+	default:
+		return false
+	}
+}
+
 type OtherAgent struct {
 	Name string `json:"name,omitempty"`
 }

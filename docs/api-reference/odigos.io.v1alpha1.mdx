@@ -16,7 +16,6 @@ auto_generated: true
 - [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)
 - [InstrumentationRule](#odigos-io-v1alpha1-InstrumentationRule)
 - [InstrumentedApplication](#odigos-io-v1alpha1-InstrumentedApplication)
-- [OdigosConfiguration](#odigos-io-v1alpha1-OdigosConfiguration)
 - [Processor](#odigos-io-v1alpha1-Processor)
 - [Source](#odigos-io-v1alpha1-Source)
   
@@ -314,45 +313,6 @@ auto_generated: true
 </tbody>
 </table>
 
-## `OdigosConfiguration` <a id="odigos-io-v1alpha1-OdigosConfiguration"></a>
-    
-<p>OdigosConfiguration is the Schema for the odigos configuration</p>
-<p>Deprecated: Use common.OdigosConfiguration instead</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
-<tr><td><code>kind</code></td><td>string</td><td><code>OdigosConfiguration</code></td></tr>
-    
-  
-<tr>
-<td>
-<code>metadata</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
-   </td>
-</tr>
-<tr>
-<td>
-<code>spec</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-OdigosConfigurationSpec"><code>OdigosConfigurationSpec</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-</tbody>
-</table>
-
 ## `Processor` <a id="odigos-io-v1alpha1-Processor"></a>
     
 <p>Processor is the Schema for an Opentelemetry Collector Processor that is added to Odigos pipeline</p>
@@ -594,75 +554,6 @@ This entity is refered to a rule in Odigos terminology for head-sampling.</p>
    <p>The fraction of spans to sample, in the range [0, 1].
 If the fraction is 0, no spans are sampled.
 If the fraction is 1, all spans are sampled.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `CollectorGatewayConfiguration` <a id="odigos-io-v1alpha1-CollectorGatewayConfiguration"></a>
-    
-
-**Appears in:**
-
-- [OdigosConfigurationSpec](#odigos-io-v1alpha1-OdigosConfigurationSpec)
-
-<p>Deprecated: Use common.OdigosConfiguration instead</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>requestMemoryMiB</code> <B>[Required]</B>
-</td>
-<td>
-<code>int</code>
-</td>
-<td>
-   <p>RequestMemoryMiB is the memory request for the cluster gateway collector deployment.
-it will be embedded in the deployment as a resource request of the form <code>memory: &lt;value&gt;Mi</code>
-default value is 500Mi</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>memoryLimiterLimitMiB</code> <B>[Required]</B>
-</td>
-<td>
-<code>int</code>
-</td>
-<td>
-   <p>this parameter sets the &quot;limit_mib&quot; parameter in the memory limiter configuration for the collector gateway.
-it is the hard limit after which a force garbage collection will be performed.
-if not set, it will be 50Mi below the memory request.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>memoryLimiterSpikeLimitMiB</code> <B>[Required]</B>
-</td>
-<td>
-<code>int</code>
-</td>
-<td>
-   <p>this parameter sets the &quot;spike_limit_mib&quot; parameter in the memory limiter configuration for the collector gateway.
-note that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.
-if not set, this will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>goMemLimitMiB</code> <B>[Required]</B>
-</td>
-<td>
-<code>int</code>
-</td>
-<td>
-   <p>the GOMEMLIMIT environment variable value for the collector gateway deployment.
-this is when go runtime will start garbage collection.
-if not specified, it will be set to 80% of the hard limit of the memory limiter.</p>
 </td>
 </tr>
 </tbody>
@@ -2007,168 +1898,6 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `OdigosConfigurationSpec` <a id="odigos-io-v1alpha1-OdigosConfigurationSpec"></a>
-    
-
-**Appears in:**
-
-- [OdigosConfiguration](#odigos-io-v1alpha1-OdigosConfiguration)
-
-<p>OdigosConfigurationSpec defines the desired state of OdigosConfiguration</p>
-<p>Deprecated: Use common.OdigosConfiguration instead</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>odigosVersion</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>configVersion</code> <B>[Required]</B>
-</td>
-<td>
-<code>int</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>telemetryEnabled</code> <B>[Required]</B>
-</td>
-<td>
-<code>bool</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>openshiftEnabled</code> <B>[Required]</B>
-</td>
-<td>
-<code>bool</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>ignoredNamespaces</code> <B>[Required]</B>
-</td>
-<td>
-<code>[]string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>ignoredContainers</code> <B>[Required]</B>
-</td>
-<td>
-<code>[]string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>psp</code> <B>[Required]</B>
-</td>
-<td>
-<code>bool</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>imagePrefix</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>odigletImage</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>instrumentorImage</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>autoscalerImage</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>collectorGateway</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-CollectorGatewayConfiguration"><code>CollectorGatewayConfiguration</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>goAutoIncludeCodeAttributes</code> <B>[Required]</B>
-</td>
-<td>
-<code>bool</code>
-</td>
-<td>
-   <p>this is internal currently, and is not exposed on the CLI / helm
-used for odigos enterprise</p>
-</td>
-</tr>
-</tbody>
-</table>
-
 ## `Operator` <a id="odigos-io-v1alpha1-Operator"></a>
     
 (Alias of `string`)
@@ -2625,7 +2354,7 @@ This means the destination will receive data only from sources labeled with &quo
 <code>workload</code> <B>[Required]</B>
 </td>
 <td>
-<code>k8sconsts.PodWorkload</code>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#PodWorkload"><code>k8sconsts.PodWorkload</code></a>
 </td>
 <td>
    <p>Workload represents the workload or namespace to be instrumented.
