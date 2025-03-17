@@ -2,7 +2,6 @@ package webhookenvinjector
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -17,15 +16,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
-	otelsdk common.OtelSdk, runtimeDetails *v1alpha1.RuntimeDetailsByContainer, client client.Client) {
-
-	if runtimeDetails.Language == common.JavascriptProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity {
-		injectNodejsCommunityEnvVars(container)
-	}
+	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, client client.Client) {
 
 	if runtimeDetails.Language == common.JavaProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity {
 		injectJavaCommunityEnvVars(ctx, logger, container, client)
@@ -81,7 +75,7 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 }
 
 func injectEnvVarsFromRuntime(logger logr.Logger, container *corev1.Container, envVarName string,
-	otelsdk common.OtelSdk, runtimeDetails *v1alpha1.RuntimeDetailsByContainer) error {
+	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer) error {
 	logger.Info("Inject Odigos values based on runtime details", "envVarName", envVarName, "container", container.Name)
 
 	if !shouldInject(runtimeDetails, logger, container.Name) {
@@ -93,7 +87,7 @@ func injectEnvVarsFromRuntime(logger logr.Logger, container *corev1.Container, e
 	return nil
 }
 
-func processEnvVarsFromRuntimeDetails(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, envVarName string, otelsdk common.OtelSdk) []corev1.EnvVar {
+func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContainer, envVarName string, otelsdk common.OtelSdk) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 
 	odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
@@ -126,7 +120,7 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *v1alpha1.RuntimeDetailsByC
 	return envVars
 }
 
-func shouldInject(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, logger logr.Logger, containerName string) bool {
+func shouldInject(runtimeDetails *odigosv1.RuntimeDetailsByContainer, logger logr.Logger, containerName string) bool {
 
 	// Skip injection if runtimeDetails.RuntimeUpdateState is nil.
 	// This indicates that either the new runtime detection or the new runtime detection migrator did not run for this container.
@@ -135,7 +129,7 @@ func shouldInject(runtimeDetails *v1alpha1.RuntimeDetailsByContainer, logger log
 		return false
 	}
 
-	if *runtimeDetails.RuntimeUpdateState == v1alpha1.ProcessingStateFailed {
+	if *runtimeDetails.RuntimeUpdateState == odigosv1.ProcessingStateFailed {
 		var criErrorMessage string
 		if runtimeDetails.CriErrorMessage != nil {
 			criErrorMessage = *runtimeDetails.CriErrorMessage
@@ -155,25 +149,6 @@ func getContainerEnvVarPointer(containerEnv *[]corev1.EnvVar, envVarName string)
 		}
 	}
 	return nil
-}
-
-func injectNodejsCommunityEnvVars(container *corev1.Container) {
-	container.Env = append(container.Env, corev1.EnvVar{
-		Name: "NODE_IP",
-		ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "status.hostIP",
-			},
-		},
-	})
-	container.Env = append(container.Env, corev1.EnvVar{
-		Name:  commonconsts.OpampServerHostEnvName,
-		Value: fmt.Sprintf("$(NODE_IP):%d", commonconsts.OpAMPPort),
-	})
-	container.Env = append(container.Env, corev1.EnvVar{
-		Name:  commonconsts.OtelExporterEndpointEnvName,
-		Value: service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
-	})
 }
 
 func injectJavaCommunityEnvVars(ctx context.Context, logger logr.Logger,
