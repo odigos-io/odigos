@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
 import { useConfig } from '../config';
-import { usePaginatedStore } from '@/store';
 import { GET_DESTINATIONS } from '@/graphql';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import type { DestinationInput, FetchedDestination } from '@/@types';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
-import { type DestinationFormData, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
+import { type DestinationFormData, useEntityStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
 import { CRUD, type Destination, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
 
 interface UseDestinationCrud {
@@ -45,26 +44,26 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
   const { data: config } = useConfig();
   const { addNotification } = useNotificationStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
-  const { destinationsPaginating, setPaginating, destinations, addPaginated, removePaginated } = usePaginatedStore();
+  const { destinationsLoading, setEntitiesLoading, destinations, addEntities, removeEntities } = useEntityStore();
 
   const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.DESTINATION, target: id ? getSseTargetFromId(id, ENTITY_TYPES.DESTINATION) : undefined, hideFromHistory });
   };
 
-  const [fetchAll, { loading: isFetching }] = useLazyQuery<{ computePlatform?: { destinations?: FetchedDestination[] } }>(GET_DESTINATIONS, {
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: FetchedDestination[] } }>(GET_DESTINATIONS, {
     fetchPolicy: 'cache-and-network',
   });
 
   const fetchDestinations = async () => {
-    setPaginating(ENTITY_TYPES.DESTINATION, true);
+    setEntitiesLoading(ENTITY_TYPES.DESTINATION, true);
     const { error, data } = await fetchAll();
 
     if (!!error) {
       notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
     } else if (!!data?.computePlatform?.destinations) {
       const { destinations: items } = data.computePlatform;
-      addPaginated(ENTITY_TYPES.DESTINATION, mapFetched(items));
-      setPaginating(ENTITY_TYPES.DESTINATION, false);
+      addEntities(ENTITY_TYPES.DESTINATION, mapFetched(items));
+      setEntitiesLoading(ENTITY_TYPES.DESTINATION, false);
     }
   };
 
@@ -72,7 +71,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
     onCompleted: (res) => {
       const destination = res.createNewDestination;
-      addPaginated(ENTITY_TYPES.DESTINATION, mapFetched([destination]));
+      addEntities(ENTITY_TYPES.DESTINATION, mapFetched([destination]));
       notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${destination.destinationType.type}" destination`, destination.id);
     },
   });
@@ -95,18 +94,18 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     onCompleted: (res, req) => {
       const id = req?.variables?.id as string;
       const destination = destinations.find((r) => r.id === id);
-      removePaginated(ENTITY_TYPES.DESTINATION, [id]);
+      removeEntities(ENTITY_TYPES.DESTINATION, [id]);
       notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${destination?.destinationType.type || id}" destination`, id);
     },
   });
 
   useEffect(() => {
-    if (!destinations.length && !destinationsPaginating) fetchDestinations();
+    if (!destinations.length && !destinationsLoading) fetchDestinations();
   }, []);
 
   return {
     destinations,
-    destinationsLoading: isFetching || destinationsPaginating || cState.loading || uState.loading || dState.loading,
+    destinationsLoading: destinationsLoading || cState.loading || uState.loading || dState.loading,
     fetchDestinations,
 
     createDestination: (destination) => {

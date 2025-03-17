@@ -20,6 +20,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// reports the health of the instrumentation instances.
+	InstrumentationInstancesHealth = "InstrumentationInstancesHealth"
+)
+
 type InstrumentationInstanceSpec struct {
 	// +required
 	// stores the name of the container in the pod where the SDK is running.

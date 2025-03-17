@@ -7,6 +7,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -120,8 +121,27 @@ func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Objec
 
 	instance.Status = updateInstrumentationInstanceStatus(instance.Status, options...)
 	err = kubeClient.Status().Update(ctx, &instance)
+
 	if err != nil {
-		return err
+		// Updating the instance may fail if the version is outdated or if the cached client hasn't been updated yet.
+		// If the update fails, apply a retry mechanism for any type of error.
+		retryBackoff := retry.DefaultBackoff
+		retryBackoff.Steps = 6
+		return retry.OnError(retryBackoff, func(err error) bool {
+			// retry on any error
+			return true
+		}, func() error {
+			// Re-fetch latest version to avoid conflict errors
+			instance := odigosv1.InstrumentationInstance{}
+			err := kubeClient.Get(ctx, client.ObjectKey{Namespace: owner.GetNamespace(), Name: instrumentationInstanceName}, &instance)
+			if err != nil {
+				return err
+			}
+
+			instance.Status = updateInstrumentationInstanceStatus(instance.Status, options...)
+
+			return kubeClient.Status().Update(ctx, &instance)
+		})
 	}
 
 	return nil

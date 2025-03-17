@@ -199,7 +199,7 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 
 	cfg.GRPC.NetAddr.Endpoint = fmt.Sprintf("0.0.0.0:%d", consts.OTLPPort)
 
-	r, err := f.CreateMetrics(ctx, receivertest.NewNopSettings(), cfg, c)
+	r, err := f.CreateMetrics(ctx, receivertest.NewNopSettings(f.Type()), cfg, c)
 	if err != nil {
 		panic("failed to create receiver")
 	}

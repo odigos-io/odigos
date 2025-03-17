@@ -10,7 +10,7 @@ export default function Page() {
 
   return (
     <>
-      <SourceTable sources={sources} metrics={metrics} maxHeight='calc(100vh - 220px)' maxWidth='calc(100vw - 70px)' />
+      <SourceTable metrics={metrics} maxHeight='calc(100vh - 220px)' maxWidth='calc(100vw - 70px)' />
       <MultiSourceControl totalSourceCount={sources.length} uninstrumentSources={(payload) => persistSources(payload, {})} />
     </>
   );

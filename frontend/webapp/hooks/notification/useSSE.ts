@@ -19,7 +19,7 @@ export const useSSE = () => {
   const { title, setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
   const { fetchDestinations } = useDestinationCRUD();
-  const { fetchSources, fetchSourceById } = useSourceCRUD();
+  const { fetchSourcesPaginated, fetchSourceById } = useSourceCRUD();
 
   const retryCount = useRef(0);
   const maxRetries = 10;
@@ -70,7 +70,7 @@ export const useSSE = () => {
               if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
                 addNotification({ type: NOTIFICATION_TYPE.SUCCESS, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
                 setInstrumentAwait(false);
-                fetchSources();
+                fetchSourcesPaginated();
               }
               break;
 
