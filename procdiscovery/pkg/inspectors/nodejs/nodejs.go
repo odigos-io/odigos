@@ -33,7 +33,6 @@ func (n *NodejsInspector) QuickScan(pcx *process.ProcessContext) (common.Program
 		if _, err := strconv.Atoi(baseExe[4:]); err == nil {
 			return common.JavascriptProgrammingLanguage, true
 		}
-
 	}
 
 	// Check if the executable is a recognized Node.js package manager (npm, yarn)
