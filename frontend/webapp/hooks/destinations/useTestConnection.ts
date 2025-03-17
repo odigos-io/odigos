@@ -3,7 +3,7 @@ import { useMutation } from '@apollo/client';
 import { TEST_CONNECTION_MUTATION } from '@/graphql';
 import { useNotificationStore } from '@odigos/ui-kit/store';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import { NOTIFICATION_TYPE, type DestinationFormData } from '@odigos/ui-kit/types';
+import { CRUD, NOTIFICATION_TYPE, type DestinationFormData } from '@odigos/ui-kit/types';
 
 interface TestConnectionResponse {
   succeeded: boolean;
@@ -14,30 +14,32 @@ interface TestConnectionResponse {
 }
 
 export const useTestConnection = () => {
-  const { data: config } = useConfig();
+  const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
 
+  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, hideFromHistory?: boolean) => {
+    addNotification({ type, title, message, hideFromHistory });
+  };
+
   // TODO: change mutation, to lazy query
-  const [testConnectionMutation, { loading, error, data }] = useMutation<{ testConnectionForDestination: TestConnectionResponse }, { destination: DestinationFormData }>(TEST_CONNECTION_MUTATION, {
-    onError: (error) => {
-      console.error('Error testing connection:', error);
+  const [testConnectionMutation, { loading: isTestConnectionLoading, data }] = useMutation<{ testConnectionForDestination: TestConnectionResponse }, { destination: DestinationFormData }>(
+    TEST_CONNECTION_MUTATION,
+    {
+      onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message),
     },
-    onCompleted: (data) => {
-      console.log('Successfully tested connection:', data);
-    },
-  });
+  );
+
+  const testConnection = (destination: DestinationFormData) => {
+    if (isReadonly) {
+      notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, true);
+    } else {
+      testConnectionMutation({ variables: { destination: { ...destination, fields: destination.fields.map((f) => ({ ...f, value: f.value || '' })) } } });
+    }
+  };
 
   return {
-    loading,
-    error,
-    data: data?.testConnectionForDestination,
-
-    testConnection: (destination: DestinationFormData) => {
-      if (config?.readonly) {
-        addNotification({ type: NOTIFICATION_TYPE.WARNING, title: DISPLAY_TITLES.READONLY, message: FORM_ALERTS.READONLY_WARNING, hideFromHistory: true });
-      } else {
-        testConnectionMutation({ variables: { destination: { ...destination, fields: destination.fields.map((f) => ({ ...f, value: f.value || '' })) } } });
-      }
-    },
+    testConnection,
+    isTestConnectionLoading,
+    testConnectionResult: data?.testConnectionForDestination,
   };
 };

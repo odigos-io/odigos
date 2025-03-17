@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useMetrics, useSourceCRUD } from '@/hooks';
+import { TABLE_MAX_HEIGHT, TABLE_MAX_WIDTH } from '@/utils';
 import { MultiSourceControl, SourceTable } from '@odigos/ui-kit/containers';
 
 export default function Page() {
@@ -10,7 +11,7 @@ export default function Page() {
 
   return (
     <>
-      <SourceTable metrics={metrics} maxHeight='calc(100vh - 220px)' maxWidth='calc(100vw - 70px)' />
+      <SourceTable metrics={metrics} maxHeight={TABLE_MAX_HEIGHT} maxWidth={TABLE_MAX_WIDTH} />
       <MultiSourceControl totalSourceCount={sources.length} uninstrumentSources={(payload) => persistSources(payload, {})} />
     </>
   );

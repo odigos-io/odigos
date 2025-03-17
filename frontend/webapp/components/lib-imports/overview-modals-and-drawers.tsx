@@ -3,7 +3,7 @@ import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, Instrum
 import {
   useActionCRUD,
   useConfig,
-  useDescribeSource,
+  useDescribe,
   useDestinationCategories,
   useDestinationCRUD,
   useInstrumentationRuleCRUD,
@@ -16,18 +16,17 @@ import {
 const OverviewModalsAndDrawers = () => {
   const { isEnterprise } = useConfig();
 
+  const { fetchDescribeSource } = useDescribe();
+  const { categories } = useDestinationCategories();
   const { persistSources, updateSource } = useSourceCRUD();
+  const { potentialDestinations } = usePotentialDestinations();
   const { createAction, updateAction, deleteAction } = useActionCRUD();
+  const { testConnection, testConnectionResult, isTestConnectionLoading } = useTestConnection();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
   const { createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   const [selectedNamespace, setSelectedNamespace] = useState('');
-  const { namespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
-
-  const { categories } = useDestinationCategories();
-  const { fetchDescribeSource } = useDescribeSource();
-  const { potentialDestinations } = usePotentialDestinations();
-  const { data: testResult, loading: testLoading, testConnection } = useTestConnection();
+  const { namespaces, namespace, loading: nsLoad } = useNamespace(selectedNamespace);
 
   return (
     <>
@@ -46,8 +45,8 @@ const OverviewModalsAndDrawers = () => {
         potentialDestinations={potentialDestinations}
         createDestination={createDestination}
         testConnection={testConnection}
-        testLoading={testLoading}
-        testResult={testResult}
+        testResult={testConnectionResult}
+        testLoading={isTestConnectionLoading}
       />
       <InstrumentationRuleModal isEnterprise={isEnterprise} createInstrumentationRule={createInstrumentationRule} />
       <ActionModal createAction={createAction} />
@@ -59,8 +58,8 @@ const OverviewModalsAndDrawers = () => {
         updateDestination={updateDestination}
         deleteDestination={deleteDestination}
         testConnection={testConnection}
-        testLoading={testLoading}
-        testResult={testResult}
+        testResult={testConnectionResult}
+        testLoading={isTestConnectionLoading}
       />
       <InstrumentationRuleDrawer updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />
       <ActionDrawer updateAction={updateAction} deleteAction={deleteAction} />

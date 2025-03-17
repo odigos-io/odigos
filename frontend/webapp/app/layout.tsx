@@ -3,9 +3,9 @@
 import React, { type PropsWithChildren } from 'react';
 import dynamic from 'next/dynamic';
 import { useDarkMode } from '@odigos/ui-kit/store';
-import ApolloProvider from '@/components/providers/apollo-provider';
+import ApolloProvider from '@/lib/apollo-provider';
 
-const ThemeProvider = dynamic(() => import('@/components/providers/theme-provider'), { ssr: false });
+const ThemeProvider = dynamic(() => import('@/lib/theme-provider'), { ssr: false });
 
 function RootLayout({ children }: PropsWithChildren) {
   const { darkMode } = useDarkMode();

@@ -17,11 +17,10 @@ interface SetupHeaderProps {
 
 const SetupHeader: FC<SetupHeaderProps> = ({ formRef, entityType, isLoading, setIsLoading }) => {
   const router = useRouter();
-  const { setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
 
   const { persistSources } = useSourceCRUD();
   const { createDestination } = useDestinationCRUD();
-  const { configuredSources, configuredFutureApps, configuredDestinations, resetState } = useSetupStore();
+  const { configuredSources, configuredFutureApps, configuredDestinations, setAvailableSources, setConfiguredSources, setConfiguredFutureApps, resetState } = useSetupStore();
 
   const onNext = () => {
     if (formRef?.current) {

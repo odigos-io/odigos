@@ -26,11 +26,7 @@ export const useTokenTracker = () => {
         };
 
         addNotification(notif);
-        setStatusStore({
-          status: NOTIFICATION_TYPE.ERROR,
-          title: notif.title,
-          message: notif.message,
-        });
+        setStatusStore({ status: notif.type, title: notif.title, message: notif.message });
       } else if (isOverTime(expiresAt, TOKEN_ABOUT_TO_EXPIRE)) {
         const notif = {
           type: NOTIFICATION_TYPE.WARNING,
@@ -39,11 +35,7 @@ export const useTokenTracker = () => {
         };
 
         addNotification(notif);
-        setStatusStore({
-          status: NOTIFICATION_TYPE.WARNING,
-          title: notif.title,
-          message: notif.message,
-        });
+        setStatusStore({ status: notif.type, title: notif.title, message: notif.message });
       }
     });
   }, [tokens]);

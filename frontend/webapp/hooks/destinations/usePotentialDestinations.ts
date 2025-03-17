@@ -22,6 +22,8 @@ const checkIfConfigured = (configuredDest: ISetupState['configuredDestinations']
 
   for (const { key, value } of configuredDest.form.fields) {
     if (Object.hasOwn(autoFilledFields, key)) {
+      // An exact match is when all "ifs" result in true.
+      // If one resulted with false, it is not an exact match and therefore not an "already configured destination".
       if (autoFilledFields[key] === value) {
         fieldsMatch = true;
       } else {
@@ -37,7 +39,7 @@ const checkIfConfigured = (configuredDest: ISetupState['configuredDestinations']
 export const usePotentialDestinations = () => {
   const { configuredDestinations } = useSetupStore();
   const { categories } = useDestinationCategories();
-  const { loading, error, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
+  const { loading, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
 
   const mappedPotentialDestinations = useMemo(() => {
     if (!categories || !potentialDestinations) return [];
@@ -75,7 +77,6 @@ export const usePotentialDestinations = () => {
 
   return {
     loading,
-    error,
     potentialDestinations: mappedPotentialDestinations,
   };
 };

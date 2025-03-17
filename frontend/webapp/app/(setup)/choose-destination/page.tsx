@@ -16,7 +16,7 @@ export default function Page() {
   const { categories } = useDestinationCategories();
   const { createDestination } = useDestinationCRUD();
   const { potentialDestinations } = usePotentialDestinations();
-  const { testConnection, loading: testLoading, data: testResult } = useTestConnection();
+  const { testConnection, testConnectionResult, isTestConnectionLoading } = useTestConnection();
 
   // we need this state, because "loading" from CRUD hooks is a bit delayed, and allows the user to double-click, as well as see elements render in the UI when they should not be rendered.
   const [isLoading, setIsLoading] = useState(false);
@@ -30,8 +30,8 @@ export default function Page() {
         createDestination={createDestination}
         isLoading={isLoading}
         testConnection={testConnection}
-        testLoading={testLoading}
-        testResult={testResult}
+        testResult={testConnectionResult}
+        testLoading={isTestConnectionLoading}
         isSourcesListEmpty={!Object.values(configuredSources).some((sources) => !!sources.length)}
         goToSources={() => router.push(ROUTES.CHOOSE_SOURCES)}
       />

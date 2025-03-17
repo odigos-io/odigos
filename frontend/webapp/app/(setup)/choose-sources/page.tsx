@@ -12,7 +12,7 @@ export default function Page() {
   const [selectedNamespace, setSelectedNamespace] = useState('');
   const onSelectNamespace = (ns: string) => setSelectedNamespace((prev) => (prev === ns ? '' : ns));
 
-  const { namespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
+  const { namespaces, namespace, loading: nsLoad } = useNamespace(selectedNamespace);
 
   return (
     <>

@@ -7,9 +7,7 @@ export enum CONFIG_INSTALLATION {
 }
 
 export interface FetchedConfig {
-  config: {
-    installation: CONFIG_INSTALLATION;
-    tier: TIER;
-    readonly: boolean;
-  };
+  installation: CONFIG_INSTALLATION;
+  tier: TIER;
+  readonly: boolean;
 }
