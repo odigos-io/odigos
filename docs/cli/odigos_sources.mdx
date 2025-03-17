@@ -13,7 +13,6 @@ This command can be used to create, delete, or update Sources to configure workl
 ### Examples
 
 ```
-
 # Create a Source "foo-source" for deployment "foo" in namespace "default"
 odigos sources create foo-source --workload-kind=Deployment --workload-name=foo --workload-namespace=default -n default
 
@@ -44,5 +43,7 @@ odigos sources delete --group mygroup --all-namespaces
 * [odigos](/cli/odigos)	 - Automate OpenTelemetry Observability in Kubernetes
 * [odigos sources create](/cli/odigos_sources_create)	 - Create an Odigos Source
 * [odigos sources delete](/cli/odigos_sources_delete)	 - Delete Odigos Sources
+* [odigos sources disable](/cli/odigos_sources_disable)	 - Disable a source for Odigos instrumentation.
+* [odigos sources enable](/cli/odigos_sources_enable)	 - Enable a source for Odigos instrumentation.
 * [odigos sources status](/cli/odigos_sources_status)	 - Show the status of all Odigos Sources
 * [odigos sources update](/cli/odigos_sources_update)	 - Update Odigos Sources

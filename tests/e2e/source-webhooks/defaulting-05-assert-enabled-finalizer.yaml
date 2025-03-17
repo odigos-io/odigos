@@ -1,0 +1,12 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: 05-disabled-finalizer
+  namespace: default
+  finalizers:
+  - odigos.io/source-instrumentation-finalizer
+spec:
+  workload:
+    name: disabled-finalizer
+    namespace: default
+    kind: Deployment
