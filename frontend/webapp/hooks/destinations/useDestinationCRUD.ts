@@ -36,9 +36,9 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     setEntitiesLoading(ENTITY_TYPES.DESTINATION, true);
     const { error, data } = await fetchAll();
 
-    if (!!error) {
+    if (error) {
       notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
-    } else if (!!data?.computePlatform?.destinations) {
+    } else if (data?.computePlatform?.destinations) {
       const { destinations: items } = data.computePlatform;
       addEntities(ENTITY_TYPES.DESTINATION, mapFetchedDestinations(items));
       setEntitiesLoading(ENTITY_TYPES.DESTINATION, false);

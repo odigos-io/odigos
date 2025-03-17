@@ -43,9 +43,9 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     setEntitiesLoading(ENTITY_TYPES.INSTRUMENTATION_RULE, true);
     const { error, data } = await fetchAll();
 
-    if (!!error) {
+    if (error) {
       notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
-    } else if (!!data?.computePlatform?.instrumentationRules) {
+    } else if (data?.computePlatform?.instrumentationRules) {
       const { instrumentationRules: items } = data.computePlatform;
 
       addEntities(ENTITY_TYPES.INSTRUMENTATION_RULE, mapFetched(items));
@@ -81,7 +81,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     onCompleted: (res, req) => {
       const id = req?.variables?.ruleId as string;
       const rule = instrumentationRules.find((r) => r.ruleId === id);
-      const type = !!rule ? deriveTypeFromRule(rule) : '';
+      const type = rule ? deriveTypeFromRule(rule) : '';
       removeEntities(ENTITY_TYPES.INSTRUMENTATION_RULE, [id]);
       notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${type || id}" rule`, id);
     },

@@ -36,9 +36,9 @@ export const useActionCRUD = (): UseActionCrud => {
     setEntitiesLoading(ENTITY_TYPES.ACTION, true);
     const { error, data } = await fetchAll();
 
-    if (!!error) {
+    if (error) {
       notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
-    } else if (!!data?.computePlatform?.actions) {
+    } else if (data?.computePlatform?.actions) {
       const { actions: items } = data.computePlatform;
 
       addEntities(ENTITY_TYPES.ACTION, mapFetchedActions(items));

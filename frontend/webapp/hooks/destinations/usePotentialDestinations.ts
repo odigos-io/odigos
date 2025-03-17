@@ -52,7 +52,7 @@ export const usePotentialDestinations = () => {
       .map((pd) => {
         for (const category of parsed) {
           const autoFilledFields = safeJsonParse<{ [key: string]: string }>(pd.fields, {});
-          const alreadyConfigured = !!configuredDestinations.find((cd) => checkIfConfigured(cd, pd, autoFilledFields));
+          const alreadyConfigured = configuredDestinations.find((cd) => checkIfConfigured(cd, pd, autoFilledFields));
 
           if (!alreadyConfigured) {
             const idx = category.items.findIndex((item) => item.type === pd.type);
@@ -72,7 +72,7 @@ export const usePotentialDestinations = () => {
 
         return null;
       })
-      .filter((pd) => !!pd);
+      .filter((pd) => pd);
   }, [configuredDestinations, categories, potentialDestinations]);
 
   return {

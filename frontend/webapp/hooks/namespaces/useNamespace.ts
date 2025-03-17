@@ -51,7 +51,7 @@ export const useNamespace = (namespaceName?: string) => {
   }, []);
 
   useEffect(() => {
-    if (!!namespaceName && !singleLoading) querySingle({ namespaceName });
+    if (namespaceName && !singleLoading) querySingle({ namespaceName });
   }, [namespaceName]);
 
   const namespaces = useMemo(
@@ -66,7 +66,7 @@ export const useNamespace = (namespaceName?: string) => {
 
   const namespace = useMemo(
     () =>
-      !!singleNamespace?.computePlatform?.k8sActualNamespace
+      singleNamespace?.computePlatform?.k8sActualNamespace
         ? {
             name: singleNamespace.computePlatform.k8sActualNamespace.name,
             selected: singleNamespace.computePlatform.k8sActualNamespace.selected,

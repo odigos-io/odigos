@@ -59,7 +59,7 @@ export const useSSE = () => {
         } else if (isSource) {
           switch (notification.title) {
             case EVENT_TYPES.MODIFIED:
-              if (!isAwaitingInstrumentation && !!notification.target) {
+              if (!isAwaitingInstrumentation && notification.target) {
                 const id = getIdFromSseTarget(notification.target, ENTITY_TYPES.SOURCE);
                 fetchSourceById(id as WorkloadId);
               }

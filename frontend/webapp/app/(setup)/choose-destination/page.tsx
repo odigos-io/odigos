@@ -32,7 +32,7 @@ export default function Page() {
         testConnection={testConnection}
         testResult={testConnectionResult}
         testLoading={isTestConnectionLoading}
-        isSourcesListEmpty={!Object.values(configuredSources).some((sources) => !!sources.length)}
+        isSourcesListEmpty={!Object.values(configuredSources).some((sources) => sources.length)}
         goToSources={() => router.push(ROUTES.CHOOSE_SOURCES)}
       />
     </>
