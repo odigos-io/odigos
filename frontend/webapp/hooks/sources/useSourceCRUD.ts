@@ -44,6 +44,13 @@ export const useSourceCRUD = (): UseSourceCrud => {
     GET_INSTANCES,
   );
 
+  const handleInstrumentationCount = (toAddCount: number, toDeleteCount: number) => {
+    const { sourcesToCreate, sourcesToDelete } = useInstrumentStore.getState();
+
+    setInstrumentCount('sourcesToDelete', sourcesToDelete + toDeleteCount);
+    setInstrumentCount('sourcesToCreate', sourcesToCreate + toAddCount);
+  };
+
   const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
     // We should not fetch while sources are being instrumented.
     if (useInstrumentStore.getState().isAwaitingInstrumentation) return;
@@ -169,9 +176,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
             const toDeleteCount = toDelete.length;
             const toAddCount = mappedItems.length - toDeleteCount;
 
-            const { sourcesToCreate, sourcesToDelete } = useInstrumentStore.getState();
-            setInstrumentCount('sourcesToDelete', sourcesToDelete + toDeleteCount);
-            setInstrumentCount('sourcesToCreate', (!!toAddCount && !!sources.length && !sourcesToCreate ? sources.length : 0) + sourcesToCreate + toAddCount);
+            handleInstrumentationCount(toAddCount, toDeleteCount);
 
             // note: in other CRUD hooks we would use "addPendingItems" here, but for sources...
             // we instantly remove deleted items, and newly added items are not relevant for pending state.
