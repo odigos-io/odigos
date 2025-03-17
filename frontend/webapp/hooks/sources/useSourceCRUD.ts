@@ -113,7 +113,12 @@ export const useSourceCRUD = (): UseSourceCrud => {
   };
 
   const [persistSources, cdState] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCE, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
+    onError: (error) => {
+      setInstrumentCount('sourcesToCreate', 0);
+      setInstrumentCount('sourcesCreated', 0);
+      setInstrumentAwait(false);
+      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message)
+    },
     onCompleted: () => {
       // We wait for SSE
     },
