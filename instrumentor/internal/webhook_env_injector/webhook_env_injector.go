@@ -10,7 +10,6 @@ import (
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -153,19 +152,6 @@ func getContainerEnvVarPointer(containerEnv *[]corev1.EnvVar, envVarName string)
 
 func injectJavaCommunityEnvVars(ctx context.Context, logger logr.Logger,
 	container *corev1.Container, client client.Client) {
-
-	container.Env = append(container.Env, corev1.EnvVar{
-		Name: "NODE_IP",
-		ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "status.hostIP",
-			},
-		},
-	})
-	container.Env = append(container.Env, corev1.EnvVar{
-		Name:  commonconsts.OtelExporterEndpointEnvName,
-		Value: service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)"),
-	})
 
 	// Set the OTEL signals exporter env vars
 	setOtelSignalsExporterEnvVars(ctx, logger, container, client)
