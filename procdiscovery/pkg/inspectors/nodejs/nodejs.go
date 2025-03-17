@@ -30,7 +30,7 @@ func (n *NodejsInspector) QuickScan(pcx *process.ProcessContext) (common.Program
 	// The check:
 	// - `strings.HasPrefix(baseExe, "node")` ensures it starts with "node".
 	// - `len(baseExe) == 4` allows "node" as a standalone executable.
-	// - `unicode.IsDigit(rune(baseExe[4]))` ensures that if there’s an extra character, it's a number (rejecting cases like "nodejs").
+	// - `unicode.IsDigit(rune(baseExe[4]))` ensures that if there’s an extra character (char at the 5th position), it's a number (rejecting cases like "nodejs").
 	if strings.HasPrefix(baseExe, "node") &&
 		(len(baseExe) == 4 || unicode.IsDigit(rune(baseExe[4]))) ||
 		nodeExecutables[baseExe] {
