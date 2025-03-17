@@ -10,6 +10,27 @@ icon: "trash"
   If a workload is deleted without deleting the Source, the Source will resume its effects if the workload is re-created later.
 </Info>
 
+## With Odigos CLI
+
+The Odigos CLI supports instrumenting and uninstrumenting workloads with the [`odigos sources enable`](/cli/odigos_sources_enable)
+and [`odigos sources disable`](/cli/odigos_sources_disable) commands.
+
+Each of these commands accepts a source type, name, and namespace.
+
+For example, to remove a source from odigos, run:
+
+```shell
+odigos sources disable deployment <deployment-name> -n <deployment-namespace>
+```
+
+This command will rollout existing pods to restart without any odigos additions.
+
+It can be undone (re-instrumented) by running: "
+
+```shell
+odigos sources enable deployment <deployment-name> -n <deployment-namespace>
+```
+
 ## With Odigos UI
 
 The easiest way to remove a source from Odigos is to use the Odigos UI.<br />

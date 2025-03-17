@@ -263,9 +263,10 @@ type ownTelemetryResourceManager struct {
 	config        *common.OdigosConfiguration
 	odigosTier    common.OdigosTier
 	odigosVersion string
+	managerOpts   resourcemanager.ManagerOpts
 }
 
-func NewOwnTelemetryResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string) resourcemanager.ResourceManager {
+func NewOwnTelemetryResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
 	return &ownTelemetryResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion}
 }
 
@@ -285,5 +286,5 @@ func (a *ownTelemetryResourceManager) InstallFromScratch(ctx context.Context) er
 			NewOwnTelemetryConfigMapDisabled(a.ns),
 		}
 	}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }
