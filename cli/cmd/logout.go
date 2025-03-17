@@ -6,6 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/common"
@@ -73,7 +74,11 @@ You can run 'odigos ui' to manage your Odigos installation locally.
 		config.ConfigVersion += 1
 
 		emptyApiKey := ""
-		resourceManagers := resources.CreateResourceManagers(client, ns, common.CommunityOdigosTier, &emptyApiKey, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli)
+
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences: GetImageReferences(currentTier, openshiftEnabled),
+		}
+		resourceManagers := resources.CreateResourceManagers(client, ns, common.CommunityOdigosTier, &emptyApiKey, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 		if err != nil {
 			fmt.Println("Odigos cloud logout failed - unable to apply Odigos resources.")

@@ -20,7 +20,7 @@
     "@odigos/ui-theme": "^0.0.16",
     "@odigos/ui-utils": "^0.0.45",
     "graphql": "^16.10.0",
-    "next": "15.2.1",
+    "next": "15.2.2",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-error-boundary": "^5.0.0",

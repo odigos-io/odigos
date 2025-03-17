@@ -7,6 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
@@ -76,7 +77,11 @@ var setConfigCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli)
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences: GetImageReferences(currentTier, openshiftEnabled),
+		}
+
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating Config")
 		if err != nil {
 			l.Error(fmt.Errorf("failed to apply updated configuration: %w", err))
@@ -126,8 +131,7 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			config.AllowConcurrentAgents = &boolValue
 		}
 
-	case consts.ImagePrefixProperty, consts.OdigletImageProperty, consts.InstrumentorImageProperty,
-		consts.AutoscalerImageProperty, consts.UiModeProperty, consts.UiPaginationLimit:
+	case consts.ImagePrefixProperty, consts.UiModeProperty, consts.UiPaginationLimit:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -135,12 +139,6 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 		switch property {
 		case consts.ImagePrefixProperty:
 			config.ImagePrefix = value[0]
-		case consts.OdigletImageProperty:
-			config.OdigletImage = value[0]
-		case consts.InstrumentorImageProperty:
-			config.InstrumentorImage = value[0]
-		case consts.AutoscalerImageProperty:
-			config.AutoscalerImage = value[0]
 		case consts.UiModeProperty:
 			config.UiMode = common.UiMode(value[0])
 		case consts.UiPaginationLimit:
