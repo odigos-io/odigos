@@ -13,6 +13,7 @@ type NodejsInspector struct{}
 
 var nodeExecutables = map[string]bool{
 	"npm":  true,
+	"npx":  true,
 	"yarn": true,
 }
 
