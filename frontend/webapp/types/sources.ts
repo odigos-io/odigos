@@ -1,6 +1,4 @@
-import type { Source } from '@odigos/ui-utils';
-
-export interface FetchedSource extends Source {}
+import type { Source, Condition, WorkloadId } from '@odigos/ui-kit/types';
 
 export interface SourceInstrumentInput {
   namespace: string;
@@ -10,3 +8,7 @@ export interface SourceInstrumentInput {
 export interface SourceUpdateInput {
   otelServiceName: string;
 }
+
+export type InstrumentationInstancesHealth = WorkloadId & {
+  condition: Condition;
+};
