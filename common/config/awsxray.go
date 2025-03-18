@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 )
@@ -36,136 +37,112 @@ func (m *AWSXRay) DestType() common.DestinationType {
 func (m *AWSXRay) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 	uniqueUri := "awsxray-" + dest.GetID()
+	exporterName := "awsxray/" + uniqueUri
+	exporterConfig := make(GenericMap)
 	var pipelineNames []string
 
-	exporterName := "awsxray/" + uniqueUri
-	exporterConfig := GenericMap{}
-
-	region, exists := config[AWS_XRAY_REGION]
-	if exists {
-		exporterConfig["region"] = region
+	// Map string keys to their config fields
+	stringFields := map[string]string{
+		AWS_XRAY_REGION:                 "region",
+		AWS_XRAY_ENDPOINT:               "endpoint",
+		AWS_XRAY_PROXY_ADDRESS:          "proxy_address",
+		AWS_XRAY_RESOURCE_ARN:           "resource_arn",
+		AWS_XRAY_ROLE_ARN:               "role_arn",
+		AWS_XRAY_EXTERNAL_ID:            "external_id",
+		AWS_XRAY_TELEMETRY_HOSTNAME:     "telemetry.hostname",
+		AWS_XRAY_TELEMETRY_INSTANCE_ID:  "telemetry.instance_id",
+		AWS_XRAY_TELEMETRY_RESOURCE_ARN: "telemetry.resource_arn",
 	}
 
-	endpoint, exists := config[AWS_XRAY_ENDPOINT]
-	if exists {
-		exporterConfig["endpoint"] = endpoint
+	// Map boolean keys to their config fields
+	boolFields := map[string]string{
+		AWS_XRAY_DISABLE_SSL:                "no_verify_ssl",
+		AWS_XRAY_LOCAL_MODE:                 "local_mode",
+		AWS_XRAY_INDEX_ALL_ATTRIBUTES:       "index_all_attributes",
+		AWS_XRAY_TELEMETRY_ENABLED:          "telemetry.enabled",
+		AWS_XRAY_TELEMETRY_INCLUDE_METADATA: "telemetry.include_metadata",
 	}
 
-	proxyAddress, exists := config[AWS_XRAY_PROXY_ADDRESS]
-	if exists {
-		exporterConfig["proxy_address"] = proxyAddress
-	}
-
-	disableSsl, exists := config[AWS_XRAY_DISABLE_SSL]
-	if exists {
-		exporterConfig["no_verify_ssl"] = parseBool(disableSsl)
-	}
-
-	localMode, exists := config[AWS_XRAY_LOCAL_MODE]
-	if exists {
-		exporterConfig["local_mode"] = parseBool(localMode)
-	}
-
-	resourceArn, exists := config[AWS_XRAY_RESOURCE_ARN]
-	if exists {
-		exporterConfig["resource_arn"] = resourceArn
-	}
-
-	roleArn, exists := config[AWS_XRAY_ROLE_ARN]
-	if exists {
-		exporterConfig["role_arn"] = roleArn
-	}
-
-	externalId, exists := config[AWS_XRAY_EXTERNAL_ID]
-	if exists {
-		exporterConfig["external_id"] = externalId
-	}
-
-	indexAllAttributes, exists := config[AWS_XRAY_INDEX_ALL_ATTRIBUTES]
-	if exists {
-		exporterConfig["index_all_attributes"] = parseBool(indexAllAttributes)
-	}
-
-	indexedAttributes, exists := config[AWS_XRAY_INDEXED_ATTRIBUTES]
-	if exists {
-		var list []string
-
-		err := json.Unmarshal([]byte(indexedAttributes), &list)
-		if err != nil {
-			return nil, errors.Join(err, errors.New(
-				"failed to parse AWS X-Ray destination parameter \"AWS_XRAY_INDEXED_ATTRIBUTES\" as JSON string in the format: string[]",
-			))
+	// Apply string fields
+	for key, field := range stringFields {
+		if value, exists := config[key]; exists {
+			setNestedMapValue(exporterConfig, field, value)
 		}
-
-		exporterConfig["indexed_attributes"] = indexedAttributes
 	}
 
-	logGroups, exists := config[AWS_XRAY_LOG_GROUPS]
-	if exists {
-		var list []string
-
-		err := json.Unmarshal([]byte(logGroups), &list)
-		if err != nil {
-			return nil, errors.Join(err, errors.New(
-				"failed to parse AWS X-Ray destination parameter \"AWS_XRAY_LOG_GROUPS\" as JSON string in the format: string[]",
-			))
+	// Apply boolean fields
+	for key, field := range boolFields {
+		if value, exists := config[key]; exists {
+			setNestedMapValue(exporterConfig, field, parseBool(value))
 		}
-
-		exporterConfig["aws_log_groups"] = list
 	}
 
-	telemetryConfig := GenericMap{}
-
-	telemetryEnabled, exists := config[AWS_XRAY_TELEMETRY_ENABLED]
-	if exists {
-		telemetryConfig["enabled"] = parseBool(telemetryEnabled)
+	// Handle JSON-encoded list fields
+	jsonFields := map[string]string{
+		AWS_XRAY_INDEXED_ATTRIBUTES:     "indexed_attributes",
+		AWS_XRAY_LOG_GROUPS:             "aws_log_groups",
+		AWS_XRAY_TELEMETRY_CONTRIBUTORS: "telemetry.contributors",
 	}
 
-	telemetryIncludeMetadata, exists := config[AWS_XRAY_TELEMETRY_INCLUDE_METADATA]
-	if exists {
-		telemetryConfig["include_metadata"] = parseBool(telemetryIncludeMetadata)
-	}
-
-	telemetryHostname, exists := config[AWS_XRAY_TELEMETRY_HOSTNAME]
-	if exists {
-		telemetryConfig["hostname"] = telemetryHostname
-	}
-
-	telemetryInstanceId, exists := config[AWS_XRAY_TELEMETRY_INSTANCE_ID]
-	if exists {
-		telemetryConfig["instance_id"] = telemetryInstanceId
-	}
-
-	telemetryResourceArn, exists := config[AWS_XRAY_TELEMETRY_RESOURCE_ARN]
-	if exists {
-		telemetryConfig["resource_arn"] = telemetryResourceArn
-	}
-
-	telemetryContributors, exists := config[AWS_XRAY_TELEMETRY_CONTRIBUTORS]
-	if exists {
-		var list []string
-
-		err := json.Unmarshal([]byte(telemetryContributors), &list)
-		if err != nil {
-			return nil, errors.Join(err, errors.New(
-				"failed to parse AWS X-Ray destination parameter \"AWS_XRAY_TELEMETRY_CONTRIBUTORS\" as JSON string in the format: string[]",
-			))
+	for key, field := range jsonFields {
+		if err := parseJSONStringArray(config, key, exporterConfig, field); err != nil {
+			return nil, err
 		}
-
-		telemetryConfig["contributors"] = list
 	}
 
-	exporterConfig["telemetry"] = telemetryConfig
 	currentConfig.Exporters[exporterName] = exporterConfig
 
+	// Configure tracing pipeline
 	if isTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
-
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	return pipelineNames, nil
+}
+
+// **Helper Functions**
+
+// setNestedMapValue sets a nested field in a map using dot notation.
+func setNestedMapValue(m GenericMap, field string, value interface{}) {
+	parts := splitField(field)
+	subMap := m
+
+	// Traverse the map structure
+	for i, part := range parts {
+		if i == len(parts)-1 {
+			subMap[part] = value
+		} else {
+			if _, exists := subMap[part]; !exists {
+				subMap[part] = make(GenericMap)
+			}
+			subMap = subMap[part].(GenericMap)
+		}
+	}
+}
+
+// splitField splits a field path into its nested parts (e.g., "telemetry.enabled" → ["telemetry", "enabled"])
+func splitField(field string) []string {
+	return strings.Split(field, ".")
+}
+
+// parseJSONStringArray extracts and sets a JSON-encoded string array in the destination map.
+func parseJSONStringArray(config map[string]string, key string, dest GenericMap, field string) error {
+	value, exists := config[key]
+	if !exists {
+		return nil
+	}
+
+	var list []string
+	if err := json.Unmarshal([]byte(value), &list); err != nil {
+		return errors.Join(err, errors.New(
+			"failed to parse AWS X-Ray destination parameter \""+key+"\" as JSON string in the format: string[]",
+		))
+	}
+
+	setNestedMapValue(dest, field, list)
+	return nil
 }
