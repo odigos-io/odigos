@@ -81,3 +81,40 @@ spec:
       componentProps:
         required: false
         tooltip: 'Local mode to skip EC2 instance metadata check.'
+    - name: AWS_XRAY_RESOURCE_ARN
+      displayName: Resource ARN
+      componentType: input
+      componentProps:
+        required: false
+        tooltip: 'Amazon Resource Name (ARN) of the AWS resource running the collector.'
+    - name: AWS_XRAY_ROLE_ARN
+      displayName: Role ARN
+      componentType: input
+      componentProps:
+        required: false
+        tooltip: 'IAM role to upload segments to a different account.'
+    - name: AWS_XRAY_EXTERNAL_ID
+      displayName: External ID
+      componentType: input
+      componentProps:
+        required: false
+        tooltip: 'Shared identitier used when assuming an IAM role in an external AWS account.'
+    - name: AWS_XRAY_INDEX_ALL_ATTRIBUTES
+      displayName: Index All Attributes
+      componentType: checkbox
+      initialValue: true
+      componentProps:
+        required: false
+        tooltip: 'Enable or disable conversion of all OpenTelemetry attributes to X-Ray annotations.'
+    - name: AWS_XRAY_INDEXED_ATTRIBUTES
+      displayName: Indexed Attributes
+      componentType: multiInput
+      componentProps:
+        required: false
+        tooltip: 'List of attribute names to be converted to X-Ray annotations.'
+    - name: AWS_XRAY_LOG_GROUPS
+      displayName: Log Groups
+      componentType: multiInput
+      componentProps:
+        required: false
+        tooltip: 'List of log group names for CloudWatch.'
