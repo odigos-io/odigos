@@ -39,7 +39,7 @@ spec:
               apiVersion: v1
               fieldPath: status.hostIP
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
-        - value: 'http://odigos-data-collection-local-traffic.odigos-test:4318'
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
       (env[?name == 'OTEL_SERVICE_NAME']):
         - value: frontend
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
@@ -95,10 +95,10 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-      (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
+      (env[?name == 'ODIGOS_OPAMP_SERVER_HOST']):
         - value: '$(NODE_IP):4320'
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
-        - value: 'http://odigos-data-collection-local-traffic.odigos-test:4318'
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
       (env[?name == 'NODE_OPTIONS']):
         - value: '--require /var/odigos/nodejs/autoinstrumentation.js'
 status:
@@ -151,7 +151,7 @@ spec:
       (env[?name == 'ODIGOS_OPAMP_SERVER_HOST']):
         - value: '$(NODE_IP):4320'
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
-        - value: 'http://odigos-data-collection-local-traffic.odigos-test:4318'
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
       (env[?name == 'PYTHONPATH']):
         - value: '/bar:/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation'
 status:
