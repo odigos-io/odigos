@@ -8,17 +8,23 @@ import (
 )
 
 const (
-	AWS_XRAY_REGION               = "AWS_XRAY_REGION"
-	AWS_XRAY_ENDPOINT             = "AWS_XRAY_ENDPOINT"
-	AWS_XRAY_PROXY_ADDRESS        = "AWS_XRAY_PROXY_ADDRESS"
-	AWS_XRAY_DISABLE_SSL          = "AWS_XRAY_DISABLE_SSL"
-	AWS_XRAY_LOCAL_MODE           = "AWS_XRAY_LOCAL_MODE"
-	AWS_XRAY_RESOURCE_ARN         = "AWS_XRAY_RESOURCE_ARN"
-	AWS_XRAY_ROLE_ARN             = "AWS_XRAY_ROLE_ARN"
-	AWS_XRAY_EXTERNAL_ID          = "AWS_XRAY_EXTERNAL_ID"
-	AWS_XRAY_INDEX_ALL_ATTRIBUTES = "AWS_XRAY_INDEX_ALL_ATTRIBUTES"
-	AWS_XRAY_INDEXED_ATTRIBUTES   = "AWS_XRAY_INDEXED_ATTRIBUTES"
-	AWS_XRAY_LOG_GROUPS           = "AWS_XRAY_LOG_GROUPS"
+	AWS_XRAY_REGION                     = "AWS_XRAY_REGION"
+	AWS_XRAY_ENDPOINT                   = "AWS_XRAY_ENDPOINT"
+	AWS_XRAY_PROXY_ADDRESS              = "AWS_XRAY_PROXY_ADDRESS"
+	AWS_XRAY_DISABLE_SSL                = "AWS_XRAY_DISABLE_SSL"
+	AWS_XRAY_LOCAL_MODE                 = "AWS_XRAY_LOCAL_MODE"
+	AWS_XRAY_RESOURCE_ARN               = "AWS_XRAY_RESOURCE_ARN"
+	AWS_XRAY_ROLE_ARN                   = "AWS_XRAY_ROLE_ARN"
+	AWS_XRAY_EXTERNAL_ID                = "AWS_XRAY_EXTERNAL_ID"
+	AWS_XRAY_INDEX_ALL_ATTRIBUTES       = "AWS_XRAY_INDEX_ALL_ATTRIBUTES"
+	AWS_XRAY_INDEXED_ATTRIBUTES         = "AWS_XRAY_INDEXED_ATTRIBUTES"
+	AWS_XRAY_LOG_GROUPS                 = "AWS_XRAY_LOG_GROUPS"
+	AWS_XRAY_TELEMETRY_ENABLED          = "AWS_XRAY_TELEMETRY_ENABLED"
+	AWS_XRAY_TELEMETRY_INCLUDE_METADATA = "AWS_XRAY_TELEMETRY_INCLUDE_METADATA"
+	AWS_XRAY_TELEMETRY_HOSTNAME         = "AWS_XRAY_TELEMETRY_HOSTNAME"
+	AWS_XRAY_TELEMETRY_INSTANCE_ID      = "AWS_XRAY_TELEMETRY_INSTANCE_ID"
+	AWS_XRAY_TELEMETRY_RESOURCE_ARN     = "AWS_XRAY_TELEMETRY_RESOURCE_ARN"
+	AWS_XRAY_TELEMETRY_CONTRIBUTORS     = "AWS_XRAY_TELEMETRY_CONTRIBUTORS"
 )
 
 type AWSXRay struct{}
@@ -108,6 +114,48 @@ func (m *AWSXRay) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 		exporterConfig["aws_log_groups"] = list
 	}
 
+	telemetryConfig := GenericMap{}
+
+	telemetryEnabled, exists := config[AWS_XRAY_TELEMETRY_ENABLED]
+	if exists {
+		telemetryConfig["enabled"] = parseBool(telemetryEnabled)
+	}
+
+	telemetryIncludeMetadata, exists := config[AWS_XRAY_TELEMETRY_INCLUDE_METADATA]
+	if exists {
+		telemetryConfig["include_metadata"] = parseBool(telemetryIncludeMetadata)
+	}
+
+	telemetryHostname, exists := config[AWS_XRAY_TELEMETRY_HOSTNAME]
+	if exists {
+		telemetryConfig["hostname"] = telemetryHostname
+	}
+
+	telemetryInstanceId, exists := config[AWS_XRAY_TELEMETRY_INSTANCE_ID]
+	if exists {
+		telemetryConfig["instance_id"] = telemetryInstanceId
+	}
+
+	telemetryResourceArn, exists := config[AWS_XRAY_TELEMETRY_RESOURCE_ARN]
+	if exists {
+		telemetryConfig["resource_arn"] = telemetryResourceArn
+	}
+
+	telemetryContributors, exists := config[AWS_XRAY_TELEMETRY_CONTRIBUTORS]
+	if exists {
+		var list []string
+
+		err := json.Unmarshal([]byte(telemetryContributors), &list)
+		if err != nil {
+			return nil, errors.Join(err, errors.New(
+				"failed to parse AWS X-Ray destination parameter \"AWS_XRAY_TELEMETRY_CONTRIBUTORS\" as JSON string in the format: string[]",
+			))
+		}
+
+		telemetryConfig["contributors"] = list
+	}
+
+	exporterConfig["telemetry"] = telemetryConfig
 	currentConfig.Exporters[exporterName] = exporterConfig
 
 	if isTracingEnabled(dest) {
