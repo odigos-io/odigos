@@ -3,11 +3,11 @@ package python
 import (
 	"debug/elf"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
@@ -18,22 +18,21 @@ const (
 	libPythonStr      = "libpython3"
 )
 
+// pythonExeRegex matches executable names that represent Python interpreters.
+// It allows for the following formats:
+//   - python           (generic python executable)
+//   - python3          (major version specified)
+//   - python311        (major and minor version without a dot)
+//   - python3.12       (major and minor version with a dot)
+//
+// The pattern ensures that after the "python" prefix, only numeric versions (optionally with a single dot) are allowed.
+var pythonExeRegex = regexp.MustCompile(`^python(\d+(\.\d+)?)?$`)
+
 func (p *PythonInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	proc := pcx.Details
-	baseExe := filepath.Base(proc.ExePath)
+	baseExe := filepath.Base(pcx.Details.ExePath)
 
-	// Check if baseExe starts with "python"
-	if len(baseExe) >= 6 && baseExe[:6] == "python" {
-		// If it's exactly "python", return true
-		if len(baseExe) == 6 {
-			return common.PythonProgrammingLanguage, true
-		}
-
-		// Use IsDigitsOnly from utils to ensure all remaining characters are digits
-		if utils.IsDigitsOnly(baseExe[6:]) {
-			return common.PythonProgrammingLanguage, true
-		}
-		return "", false
+	if pythonExeRegex.MatchString(baseExe) {
+		return common.PythonProgrammingLanguage, true
 	}
 
 	return "", false
