@@ -3,7 +3,7 @@ import { useTokenCRUD } from '.';
 import { useStatusStore } from '@/store';
 import { useTimeAgo } from '@odigos/ui-kit/hooks';
 import { isOverTime } from '@odigos/ui-kit/functions';
-import { NOTIFICATION_TYPE } from '@odigos/ui-kit/types';
+import { STATUS_TYPE } from '@odigos/ui-kit/types';
 import { useNotificationStore } from '@odigos/ui-kit/store';
 import { DISPLAY_TITLES, TOKEN_ABOUT_TO_EXPIRE } from '@odigos/ui-kit/constants';
 
@@ -20,7 +20,7 @@ export const useTokenTracker = () => {
     tokens.forEach(({ expiresAt, name }) => {
       if (isOverTime(expiresAt)) {
         const notif = {
-          type: NOTIFICATION_TYPE.ERROR,
+          type: STATUS_TYPE.ERROR,
           title: DISPLAY_TITLES.API_TOKEN,
           message: `The token "${name}" has expired ${timeago.format(expiresAt)}.`,
         };
@@ -29,7 +29,7 @@ export const useTokenTracker = () => {
         setStatusStore({ status: notif.type, title: notif.title, message: notif.message });
       } else if (isOverTime(expiresAt, TOKEN_ABOUT_TO_EXPIRE)) {
         const notif = {
-          type: NOTIFICATION_TYPE.WARNING,
+          type: STATUS_TYPE.WARNING,
           title: DISPLAY_TITLES.API_TOKEN,
           message: `The token "${name}" is about to expire ${timeago.format(expiresAt)}.`,
         };

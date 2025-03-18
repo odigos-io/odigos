@@ -5,7 +5,7 @@ import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
 import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';
 import { getIdFromSseTarget } from '@odigos/ui-kit/functions';
-import { CRD_TYPES, ENTITY_TYPES, NOTIFICATION_TYPE, type WorkloadId } from '@odigos/ui-kit/types';
+import { CRD_TYPES, ENTITY_TYPES, STATUS_TYPE, type WorkloadId } from '@odigos/ui-kit/types';
 import { type NotifyPayload, useInstrumentStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 
 const CONNECTED = 'CONNECTED';
@@ -54,7 +54,7 @@ export const useSSE = () => {
         if (isConnected) {
           // If the current status in store is API Token related, we don't want to override it with the connected message
           if (title !== DISPLAY_TITLES.API_TOKEN) {
-            setStatusStore({ status: NOTIFICATION_TYPE.SUCCESS, title: notification.title as string, message: notification.message as string });
+            setStatusStore({ status: STATUS_TYPE.SUCCESS, title: notification.title as string, message: notification.message as string });
           }
         } else if (isSource) {
           switch (notification.title) {
@@ -70,7 +70,7 @@ export const useSSE = () => {
               setInstrumentCount('sourcesCreated', created);
 
               if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
-                addNotification({ type: NOTIFICATION_TYPE.SUCCESS, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
+                addNotification({ type: STATUS_TYPE.SUCCESS, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
                 setInstrumentAwait(false);
                 fetchSourcesPaginated();
               }
@@ -81,7 +81,7 @@ export const useSSE = () => {
               setInstrumentCount('sourcesDeleted', deleted);
 
               if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && deleted >= sourcesToDelete)) {
-                addNotification({ type: NOTIFICATION_TYPE.SUCCESS, title: EVENT_TYPES.DELETED, message: `Successfully deleted ${deleted} sources` });
+                addNotification({ type: STATUS_TYPE.SUCCESS, title: EVENT_TYPES.DELETED, message: `Successfully deleted ${deleted} sources` });
                 setInstrumentAwait(false);
                 setInstrumentCount('sourcesToDelete', 0);
                 setInstrumentCount('sourcesDeleted', 0);
@@ -117,7 +117,7 @@ export const useSSE = () => {
         if (retryCount.current < maxRetries) {
           retryCount.current += 1;
           setStatusStore({
-            status: NOTIFICATION_TYPE.WARNING,
+            status: STATUS_TYPE.WARNING,
             title: 'Disconnected',
             message: `Disconnected from the server. Retrying connection (${retryCount.current})`,
           });
@@ -126,12 +126,12 @@ export const useSSE = () => {
           setTimeout(() => connect(), Math.min(10000, 1000 * Math.pow(2, retryCount.current)));
         } else {
           setStatusStore({
-            status: NOTIFICATION_TYPE.ERROR,
+            status: STATUS_TYPE.ERROR,
             title: `Connection lost on ${new Date().toLocaleString()}`,
             message: 'Please reboot the application',
           });
           addNotification({
-            type: NOTIFICATION_TYPE.ERROR,
+            type: STATUS_TYPE.ERROR,
             title: 'Connection Error',
             message: 'Connection to the server failed. Please reboot the application.',
           });

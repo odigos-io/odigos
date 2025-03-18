@@ -7,7 +7,7 @@ import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import type { PaginatedData, SourceInstrumentInput, SourceUpdateInput } from '@/types';
 import { addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
 import { GET_INSTANCES, GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type WorkloadId, type Source, type SourceFormData, ENTITY_TYPES, NOTIFICATION_TYPE, CRUD, type Condition } from '@odigos/ui-kit/types';
+import { type WorkloadId, type Source, type SourceFormData, ENTITY_TYPES, STATUS_TYPE, CRUD, type Condition } from '@odigos/ui-kit/types';
 import { type NamespaceSelectionFormData, type SourceSelectionFormData, useEntityStore, useInstrumentStore, useNotificationStore, usePendingStore, useSetupStore } from '@odigos/ui-kit/store';
 
 interface UseSourceCrud {
@@ -28,7 +28,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const { setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
   const { sourcesLoading, setEntitiesLoading, sources, addEntities, removeEntities } = useEntityStore();
 
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
+  const notifyUser = (type: STATUS_TYPE, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.SOURCE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.SOURCE) : undefined, hideFromHistory });
   };
 
@@ -43,12 +43,12 @@ export const useSourceCRUD = (): UseSourceCrud => {
       setInstrumentCount('sourcesToCreate', 0);
       setInstrumentCount('sourcesCreated', 0);
       setInstrumentAwait(false);
-      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message);
+      notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message);
     },
   });
 
   const [mutateUpdate] = useMutation<{ updateK8sActualSource: boolean }, { sourceId: WorkloadId; patchSourceRequest: SourceUpdateInput }>(UPDATE_K8S_ACTUAL_SOURCE, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
+    onError: (error) => notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
   });
 
   const shouldFetchSource = (allowFetchDuringLoadTrue?: boolean) => {
@@ -90,7 +90,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     const { error, data } = await queryByPage({ variables: { nextPage: page } });
 
     if (error) {
-      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
+      notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
     } else if (data?.computePlatform?.sources) {
       const { items, nextPage } = data.computePlatform.sources;
 
@@ -113,7 +113,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     const { error, data } = await queryById({ variables: { sourceId: id } });
 
     if (error) {
-      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
+      notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
     } else if (data?.computePlatform?.source) {
       addEntities(ENTITY_TYPES.SOURCE, [data.computePlatform.source]);
     }
@@ -121,7 +121,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const persistSources: UseSourceCrud['persistSources'] = async (selectAppsList, futureSelectAppsList) => {
     if (isReadonly) {
-      notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      notifyUser(STATUS_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       let alreadyNotified = false;
       const { payloads: persistSourcesPayloads, isEmpty: sourcesEmpty } = prepareSourcePayloads(selectAppsList, handleInstrumentationCount, removeEntities);
@@ -129,12 +129,12 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
       if (!sourcesEmpty && !alreadyNotified) {
         alreadyNotified = true;
-        notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Persisting sources...', undefined, true);
+        notifyUser(STATUS_TYPE.DEFAULT, 'Pending', 'Persisting sources...', undefined, true);
         setInstrumentAwait(true);
       }
       if (!futueAppsEmpty && !alreadyNotified) {
         alreadyNotified = true;
-        notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Persisting namespaces...', undefined, true);
+        notifyUser(STATUS_TYPE.DEFAULT, 'Pending', 'Persisting namespaces...', undefined, true);
         // TODO: estimate the number of instrumentationConfigs to create for future apps in "handleInstrumentationCount", then uncomment the below
         // setInstrumentAwait(true);
       }
@@ -151,15 +151,15 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const updateSource: UseSourceCrud['updateSource'] = async (sourceId, payload) => {
     if (isReadonly) {
-      notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      notifyUser(STATUS_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
-      notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Updating source...', undefined, true);
+      notifyUser(STATUS_TYPE.DEFAULT, 'Pending', 'Updating source...', undefined, true);
       addPendingItems([{ entityType: ENTITY_TYPES.SOURCE, entityId: sourceId }]);
 
       const patchSourceRequest: SourceUpdateInput = payload;
       const { errors } = await mutateUpdate({ variables: { sourceId, patchSourceRequest } });
 
-      if (!errors?.length) notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${sourceId.name}" source`, sourceId);
+      if (!errors?.length) notifyUser(STATUS_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${sourceId.name}" source`, sourceId);
       removePendingItems([{ entityType: ENTITY_TYPES.SOURCE, entityId: sourceId }]);
 
       // !! no "fetch"

@@ -5,7 +5,7 @@ import { GET_CONFIG } from '@/graphql';
 import type { FetchedConfig } from '@/types';
 import { useSuspenseQuery } from '@apollo/client';
 import { useNotificationStore } from '@odigos/ui-kit/store';
-import { CRUD, NOTIFICATION_TYPE, TIER } from '@odigos/ui-kit/types';
+import { CRUD, STATUS_TYPE, TIER } from '@odigos/ui-kit/types';
 
 export const useConfig = () => {
   const { addNotification } = useNotificationStore();
@@ -17,7 +17,7 @@ export const useConfig = () => {
   useEffect(() => {
     if (error) {
       addNotification({
-        type: NOTIFICATION_TYPE.ERROR,
+        type: STATUS_TYPE.ERROR,
         title: error.name || CRUD.READ,
         message: error.cause?.message || error.message,
       });

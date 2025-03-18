@@ -8,7 +8,7 @@ import { mapActionsFormToGqlInput, mapFetchedActions } from '@/utils';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { ACTION_TYPE, CRUD, ENTITY_TYPES, NOTIFICATION_TYPE, type Action, type ActionFormData } from '@odigos/ui-kit/types';
+import { ACTION_TYPE, CRUD, ENTITY_TYPES, STATUS_TYPE, type Action, type ActionFormData } from '@odigos/ui-kit/types';
 
 interface UseActionCrud {
   actions: Action[];
@@ -24,7 +24,7 @@ export const useActionCRUD = (): UseActionCrud => {
   const { addNotification } = useNotificationStore();
   const { actionsLoading, setEntitiesLoading, actions, addEntities, removeEntities } = useEntityStore();
 
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
+  const notifyUser = (type: STATUS_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.ACTION, target: id ? getSseTargetFromId(id, ENTITY_TYPES.ACTION) : undefined, hideFromHistory });
   };
 
@@ -37,7 +37,7 @@ export const useActionCRUD = (): UseActionCrud => {
     const { error, data } = await fetchAll();
 
     if (error) {
-      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
+      notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
     } else if (data?.computePlatform?.actions) {
       const { actions: items } = data.computePlatform;
 
@@ -47,38 +47,38 @@ export const useActionCRUD = (): UseActionCrud => {
   };
 
   const [mutateCreate] = useMutation<{ createAction: { id: string; type: ACTION_TYPE } }, { action: ActionInput }>(CREATE_ACTION, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
+    onError: (error) => notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
     onCompleted: (res) => {
       const id = res.createAction.id;
       const type = res.createAction.type;
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${type}" action`, id);
+      notifyUser(STATUS_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${type}" action`, id);
       fetchActions();
     },
   });
 
   const [mutateUpdate] = useMutation<{ updateAction: { id: string; type: ACTION_TYPE } }, { id: string; action: ActionInput }>(UPDATE_ACTION, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
+    onError: (error) => notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
     onCompleted: (res) => {
       const id = res.updateAction.id;
       const type = res.updateAction.type;
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${type}" action`, id);
+      notifyUser(STATUS_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${type}" action`, id);
       fetchActions();
     },
   });
 
   const [mutateDelete] = useMutation<{ deleteAction: boolean }, { id: string; actionType: ACTION_TYPE }>(DELETE_ACTION, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
+    onError: (error) => notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id as string;
       const type = req?.variables?.actionType;
       removeEntities(ENTITY_TYPES.ACTION, [id]);
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${type}" action`, id);
+      notifyUser(STATUS_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${type}" action`, id);
     },
   });
 
   const createAction: UseActionCrud['createAction'] = (action) => {
     if (isReadonly) {
-      notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      notifyUser(STATUS_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       mutateCreate({ variables: { action: mapActionsFormToGqlInput({ ...action }) } });
     }
@@ -86,7 +86,7 @@ export const useActionCRUD = (): UseActionCrud => {
 
   const updateAction: UseActionCrud['updateAction'] = (id, action) => {
     if (isReadonly) {
-      notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      notifyUser(STATUS_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       mutateUpdate({ variables: { id, action: mapActionsFormToGqlInput({ ...action }) } });
     }
@@ -94,7 +94,7 @@ export const useActionCRUD = (): UseActionCrud => {
 
   const deleteAction: UseActionCrud['deleteAction'] = (id, actionType) => {
     if (isReadonly) {
-      notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+      notifyUser(STATUS_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       mutateDelete({ variables: { id, actionType } });
     }
