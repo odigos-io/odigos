@@ -35,7 +35,13 @@ export const useNamespace = (namespaceName?: string) => {
   });
 
   const [mutatePersist] = useMutation<{ persistK8sNamespace: boolean }>(PERSIST_NAMESPACE, {
-    onError: (error) => addNotification({ type: NOTIFICATION_TYPE.ERROR, title: error.name || CRUD.UPDATE, message: error.cause?.message || error.message }),
+    onError: (error) => {
+      // TODO: after estimating the number of instrumentationConfigs to create for future apps in "useSourceCRUD" hook, then uncomment the below
+      // setInstrumentCount('sourcesToCreate', 0);
+      // setInstrumentCount('sourcesCreated', 0);
+      // setInstrumentAwait(false);
+      addNotification({ type: NOTIFICATION_TYPE.ERROR, title: error.name || CRUD.UPDATE, message: error.cause?.message || error.message });
+    },
   });
 
   const persistNamespace = async (payload: NamespaceInstrumentInput) => {

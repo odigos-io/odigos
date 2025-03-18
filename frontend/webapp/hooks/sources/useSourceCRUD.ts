@@ -43,7 +43,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
       setInstrumentCount('sourcesToCreate', 0);
       setInstrumentCount('sourcesCreated', 0);
       setInstrumentAwait(false);
-      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message)
+      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message);
     },
   });
 
