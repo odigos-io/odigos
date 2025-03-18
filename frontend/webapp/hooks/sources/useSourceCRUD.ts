@@ -4,7 +4,7 @@ import { useNamespace } from '../namespaces';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import type { PaginatedData, SourceInstrumentInput, SourceUpdateInput } from '@/types';
+import type { InstrumentationInstancesHealth, PaginatedData, SourceInstrumentInput, SourceUpdateInput } from '@/types';
 import { addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
 import { GET_INSTANCES, GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { type WorkloadId, type Source, type SourceFormData, ENTITY_TYPES, STATUS_TYPE, CRUD, type Condition } from '@odigos/ui-kit/types';
@@ -34,9 +34,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const [queryByPage] = useLazyQuery<{ computePlatform: { sources: PaginatedData<Source> } }>(GET_SOURCES);
   const [queryById] = useLazyQuery<{ computePlatform: { source: Source } }, { sourceId: WorkloadId }>(GET_SOURCE);
-  const [queryInstances] = useLazyQuery<{ instrumentationInstancesHealth: { namespace: WorkloadId['namespace']; name: WorkloadId['name']; kind: WorkloadId['kind']; condition: Condition }[] }>(
-    GET_INSTANCES,
-  );
+  const [queryInstances] = useLazyQuery<{ instrumentationInstancesHealth: InstrumentationInstancesHealth[] }>(GET_INSTANCES);
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCE, {
     onError: (error) => {
