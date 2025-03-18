@@ -1,4 +1,4 @@
-import { TIER } from '@odigos/ui-utils';
+import { TIER } from '@odigos/ui-kit/types';
 
 export enum CONFIG_INSTALLATION {
   NEW = 'NEW',
@@ -7,9 +7,7 @@ export enum CONFIG_INSTALLATION {
 }
 
 export interface FetchedConfig {
-  config: {
-    installation: CONFIG_INSTALLATION;
-    tier: TIER;
-    readonly: boolean;
-  };
+  installation: CONFIG_INSTALLATION;
+  tier: TIER;
+  readonly: boolean;
 }

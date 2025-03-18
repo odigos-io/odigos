@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { useMetrics } from '@/hooks';
-import { DestinationTable } from '@odigos/ui-containers';
+import { TABLE_MAX_HEIGHT, TABLE_MAX_WIDTH } from '@/utils';
+import { DestinationTable } from '@odigos/ui-kit/containers';
 
 export default function Page() {
   const { metrics } = useMetrics();
 
-  return <DestinationTable metrics={metrics} maxHeight='calc(100vh - 220px)' maxWidth='calc(100vw - 70px)' />;
+  return <DestinationTable metrics={metrics} maxHeight={TABLE_MAX_HEIGHT} maxWidth={TABLE_MAX_WIDTH} />;
 }
