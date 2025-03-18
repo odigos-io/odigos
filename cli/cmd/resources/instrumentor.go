@@ -364,7 +364,7 @@ func NewSourceMutatingWebhookConfiguration(ns string, caBundle []byte) *admissio
 						},
 					},
 				},
-				FailurePolicy:      ptrGeneric(admissionregistrationv1.Ignore),
+				FailurePolicy:      ptrGeneric(admissionregistrationv1.Fail),
 				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.IfNeededReinvocationPolicy),
 				SideEffects:        ptrGeneric(admissionregistrationv1.SideEffectClassNone),
 				TimeoutSeconds:     intPtr(10),
