@@ -16,8 +16,8 @@ const processName = "dotnet"
 func (d *DotnetInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	baseExe := filepath.Base(pcx.ExePath)
 
-	// checking exe command directly
-	if len(baseExe) >= len(processName) && baseExe[:len(processName)] == processName {
+	// Only allow exact match for "dotnet"
+	if baseExe == processName {
 		return common.DotNetProgrammingLanguage, true
 	}
 
