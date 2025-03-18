@@ -61,7 +61,7 @@ webhooks:
         apiVersions: ["v1alpha1"]
         resources: ["sources"]
         scope: Namespaced
-    failurePolicy: Ignore
+    failurePolicy: Fail
     reinvocationPolicy: IfNeeded
     sideEffects: None
     timeoutSeconds: 10
