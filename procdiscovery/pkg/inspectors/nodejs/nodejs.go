@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 
 	"github.com/hashicorp/go-version"
-
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
@@ -27,13 +27,11 @@ func (n *NodejsInspector) QuickScan(pcx *process.ProcessContext) (common.Program
 			return common.JavascriptProgrammingLanguage, true
 		}
 
-		// Ensure all remaining characters are digits (e.g., "node10", "node16")
-		for i := 4; i < len(baseExe); i++ {
-			if baseExe[i] < '0' || baseExe[i] > '9' {
-				return "", false
-			}
+		// Use the helper function to check remaining characters
+		if utils.IsDigitsOnly(baseExe[4:]) {
+			return common.JavascriptProgrammingLanguage, true
 		}
-		return common.JavascriptProgrammingLanguage, true
+		return "", false
 	}
 
 	// Check if the executable is a recognized Node.js package manager (npm, yarn)

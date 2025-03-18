@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-version"
-
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
@@ -28,13 +28,11 @@ func (j *JavaInspector) QuickScan(pcx *process.ProcessContext) (common.Programmi
 			return common.JavaProgrammingLanguage, true
 		}
 
-		// Ensure all remaining characters are digits
-		for i := 4; i < len(baseExe); i++ {
-			if baseExe[i] < '0' || baseExe[i] > '9' {
-				return "", false
-			}
+		// Use IsDigitsOnly from utils to ensure all remaining characters are digits
+		if utils.IsDigitsOnly(baseExe[4:]) {
+			return common.JavaProgrammingLanguage, true
 		}
-		return common.JavaProgrammingLanguage, true
+		return "", false
 	}
 
 	return "", false

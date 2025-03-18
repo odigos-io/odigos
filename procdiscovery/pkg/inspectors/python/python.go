@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-version"
-
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
@@ -29,13 +29,11 @@ func (p *PythonInspector) QuickScan(pcx *process.ProcessContext) (common.Program
 			return common.PythonProgrammingLanguage, true
 		}
 
-		// Ensure all remaining characters are digits
-		for i := 6; i < len(baseExe); i++ {
-			if baseExe[i] < '0' || baseExe[i] > '9' {
-				return "", false
-			}
+		// Use IsDigitsOnly from utils to ensure all remaining characters are digits
+		if utils.IsDigitsOnly(baseExe[6:]) {
+			return common.PythonProgrammingLanguage, true
 		}
-		return common.PythonProgrammingLanguage, true
+		return "", false
 	}
 
 	return "", false
