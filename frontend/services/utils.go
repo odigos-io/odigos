@@ -91,3 +91,12 @@ func CheckWorkloadKind(kind WorkloadKind) error {
 		return errors.New("unsupported workload kind: " + string(kind))
 	}
 }
+
+func areAllKeysNull(obj map[string]interface{}) bool {
+	for _, v := range obj {
+		if v != nil {
+			return false
+		}
+	}
+	return true
+}

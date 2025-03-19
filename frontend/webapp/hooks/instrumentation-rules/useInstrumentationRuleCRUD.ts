@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import type { FetchedInstrumentationRule } from '@/types';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
 import { deriveTypeFromRule, getSseTargetFromId } from '@odigos/ui-kit/functions';
@@ -18,14 +17,6 @@ interface UseInstrumentationRuleCrud {
   deleteInstrumentationRule: (ruleId: string) => void;
 }
 
-const mapFetched = (items: FetchedInstrumentationRule[]): InstrumentationRule[] => {
-  return items.map((item) => {
-    const type = deriveTypeFromRule(item);
-
-    return { ...item, type };
-  });
-};
-
 export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
@@ -35,7 +26,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.INSTRUMENTATION_RULE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE) : undefined, hideFromHistory });
   };
 
-  const [fetchAll, { loading: isFetching }] = useLazyQuery<{ computePlatform?: { instrumentationRules?: FetchedInstrumentationRule[] } }>(GET_INSTRUMENTATION_RULES, {
+  const [fetchAll, { loading: isFetching }] = useLazyQuery<{ computePlatform?: { instrumentationRules?: InstrumentationRule[] } }>(GET_INSTRUMENTATION_RULES, {
     fetchPolicy: 'cache-and-network',
   });
 
@@ -48,33 +39,30 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     } else if (data?.computePlatform?.instrumentationRules) {
       const { instrumentationRules: items } = data.computePlatform;
 
-      addEntities(ENTITY_TYPES.INSTRUMENTATION_RULE, mapFetched(items));
+      addEntities(ENTITY_TYPES.INSTRUMENTATION_RULE, items);
       setEntitiesLoading(ENTITY_TYPES.INSTRUMENTATION_RULE, false);
     }
   };
 
-  const [mutateCreate, cState] = useMutation<{ createInstrumentationRule: FetchedInstrumentationRule }, { instrumentationRule: InstrumentationRuleFormData }>(CREATE_INSTRUMENTATION_RULE, {
+  const [mutateCreate, cState] = useMutation<{ createInstrumentationRule: InstrumentationRule }, { instrumentationRule: InstrumentationRuleFormData }>(CREATE_INSTRUMENTATION_RULE, {
     onError: (error) => notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
     onCompleted: (res) => {
       const rule = res.createInstrumentationRule;
       const type = deriveTypeFromRule(rule);
-      addEntities(ENTITY_TYPES.INSTRUMENTATION_RULE, mapFetched([rule]));
+      addEntities(ENTITY_TYPES.INSTRUMENTATION_RULE, [rule]);
       notifyUser(STATUS_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${type}" rule`, rule.ruleId);
     },
   });
 
-  const [mutateUpdate, uState] = useMutation<{ updateInstrumentationRule: FetchedInstrumentationRule }, { ruleId: string; instrumentationRule: InstrumentationRuleFormData }>(
-    UPDATE_INSTRUMENTATION_RULE,
-    {
-      onError: (error) => notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
-      onCompleted: (res) => {
-        const rule = res.updateInstrumentationRule;
-        const type = deriveTypeFromRule(rule);
-        addEntities(ENTITY_TYPES.INSTRUMENTATION_RULE, mapFetched([rule]));
-        notifyUser(STATUS_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${type}" rule`, rule.ruleId);
-      },
+  const [mutateUpdate, uState] = useMutation<{ updateInstrumentationRule: InstrumentationRule }, { ruleId: string; instrumentationRule: InstrumentationRuleFormData }>(UPDATE_INSTRUMENTATION_RULE, {
+    onError: (error) => notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
+    onCompleted: (res) => {
+      const rule = res.updateInstrumentationRule;
+      const type = deriveTypeFromRule(rule);
+      addEntities(ENTITY_TYPES.INSTRUMENTATION_RULE, [rule]);
+      notifyUser(STATUS_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${type}" rule`, rule.ruleId);
     },
-  );
+  });
 
   const [mutateDelete, dState] = useMutation<{ deleteInstrumentationRule: boolean }, { ruleId: string }>(DELETE_INSTRUMENTATION_RULE, {
     onError: (error) => notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),

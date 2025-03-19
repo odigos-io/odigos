@@ -15,6 +15,58 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Converts PayloadCollection to a map[string]interface{} for areAllKeysNull
+func convertPayloadCollectionToMap(payload *model.PayloadCollection) map[string]interface{} {
+	result := make(map[string]interface{})
+	if payload.HTTPRequest != nil {
+		result["HTTPRequest"] = payload.HTTPRequest
+	}
+	if payload.HTTPResponse != nil {
+		result["HTTPResponse"] = payload.HTTPResponse
+	}
+	if payload.DbQuery != nil {
+		result["DbQuery"] = payload.DbQuery
+	}
+	if payload.Messaging != nil {
+		result["Messaging"] = payload.Messaging
+	}
+	return result
+}
+
+// Converts CodeAttributes to a map[string]interface{} for areAllKeysNull
+func convertCodeAttributesToMap(codeAttributes *model.CodeAttributes) map[string]interface{} {
+	result := make(map[string]interface{})
+	if codeAttributes.Column != nil {
+		result["Column"] = codeAttributes.Column
+	}
+	if codeAttributes.FilePath != nil {
+		result["FilePath"] = codeAttributes.FilePath
+	}
+	if codeAttributes.Function != nil {
+		result["Function"] = codeAttributes.Function
+	}
+	if codeAttributes.LineNumber != nil {
+		result["LineNumber"] = codeAttributes.LineNumber
+	}
+	if codeAttributes.Namespace != nil {
+		result["Namespace"] = codeAttributes.Namespace
+	}
+	if codeAttributes.Stacktrace != nil {
+		result["Stacktrace"] = codeAttributes.Stacktrace
+	}
+	return result
+}
+
+func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRuleType {
+	if rule.PayloadCollection != nil && !areAllKeysNull(convertPayloadCollectionToMap(rule.PayloadCollection)) {
+		return model.InstrumentationRuleTypePayloadCollection
+	} else if rule.CodeAttributes != nil && !areAllKeysNull(convertCodeAttributesToMap(rule.CodeAttributes)) {
+		return model.InstrumentationRuleTypeCodeAttributes
+	}
+
+	return model.InstrumentationRuleTypeUnknownType
+}
+
 // ListInstrumentationRules fetches all instrumentation rules
 func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule, error) {
 	ns := env.GetCurrentNamespace()
@@ -25,23 +77,26 @@ func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule
 	}
 
 	var gqlRules []*model.InstrumentationRule
-	for _, rule := range instrumentationRules.Items {
-		annotations := rule.GetAnnotations()
+	for _, r := range instrumentationRules.Items {
+		annotations := r.GetAnnotations()
 		profileName := annotations[k8sconsts.OdigosProfileAnnotation]
 		mutable := profileName == ""
 
-		gqlRules = append(gqlRules, &model.InstrumentationRule{
-			RuleID:                   rule.Name,
-			RuleName:                 &rule.Spec.RuleName,
-			Notes:                    &rule.Spec.Notes,
-			Disabled:                 &rule.Spec.Disabled,
+		rule := &model.InstrumentationRule{
+			RuleID:                   r.Name,
+			RuleName:                 &r.Spec.RuleName,
+			Notes:                    &r.Spec.Notes,
+			Disabled:                 &r.Spec.Disabled,
 			Mutable:                  mutable,
 			ProfileName:              profileName,
-			Workloads:                convertWorkloads(rule.Spec.Workloads),
-			InstrumentationLibraries: convertInstrumentationLibraries(rule.Spec.InstrumentationLibraries),
-			PayloadCollection:        convertPayloadCollection(rule.Spec.PayloadCollection),
-			CodeAttributes:           (*model.CodeAttributes)(rule.Spec.CodeAttributes),
-		})
+			Workloads:                convertWorkloads(r.Spec.Workloads),
+			InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
+			PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
+			CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
+		}
+
+		rule.Type = deriveTypeFromRule(rule)
+		gqlRules = append(gqlRules, rule)
 	}
 	return gqlRules, nil
 }
@@ -49,20 +104,29 @@ func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule
 func GetInstrumentationRule(ctx context.Context, id string) (*model.InstrumentationRule, error) {
 	ns := env.GetCurrentNamespace()
 
-	rule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Get(ctx, id, metav1.GetOptions{})
+	r, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return nil, handleNotFoundError(err, id, "instrumentation rule")
 	}
 
-	return &model.InstrumentationRule{
-		RuleID:                   rule.Name,
-		RuleName:                 &rule.Spec.RuleName,
-		Notes:                    &rule.Spec.Notes,
-		Disabled:                 &rule.Spec.Disabled,
-		Workloads:                convertWorkloads(rule.Spec.Workloads),
-		InstrumentationLibraries: convertInstrumentationLibraries(rule.Spec.InstrumentationLibraries),
-		PayloadCollection:        convertPayloadCollection(rule.Spec.PayloadCollection),
-	}, nil
+	annotations := r.GetAnnotations()
+	profileName := annotations[k8sconsts.OdigosProfileAnnotation]
+	mutable := profileName == ""
+
+	rule := &model.InstrumentationRule{
+		RuleID:                   r.Name,
+		RuleName:                 &r.Spec.RuleName,
+		Notes:                    &r.Spec.Notes,
+		Disabled:                 &r.Spec.Disabled,
+		Mutable:                  mutable,
+		ProfileName:              profileName,
+		Workloads:                convertWorkloads(r.Spec.Workloads),
+		InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
+		PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
+	}
+
+	rule.Type = deriveTypeFromRule(rule)
+	return rule, nil
 }
 
 func UpdateInstrumentationRule(ctx context.Context, id string, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
