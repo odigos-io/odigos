@@ -15,52 +15,24 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Converts PayloadCollection to a map[string]interface{} for areAllKeysNull
-func convertPayloadCollectionToMap(payload *model.PayloadCollection) map[string]interface{} {
-	result := make(map[string]interface{})
-	if payload.HTTPRequest != nil {
-		result["HTTPRequest"] = payload.HTTPRequest
+func isPayloadCollectionType(payload *model.PayloadCollection) bool {
+	if payload.HTTPRequest != nil || payload.HTTPResponse != nil || payload.DbQuery != nil || payload.Messaging != nil {
+		return true
 	}
-	if payload.HTTPResponse != nil {
-		result["HTTPResponse"] = payload.HTTPResponse
-	}
-	if payload.DbQuery != nil {
-		result["DbQuery"] = payload.DbQuery
-	}
-	if payload.Messaging != nil {
-		result["Messaging"] = payload.Messaging
-	}
-	return result
+	return false
 }
 
-// Converts CodeAttributes to a map[string]interface{} for areAllKeysNull
-func convertCodeAttributesToMap(codeAttributes *model.CodeAttributes) map[string]interface{} {
-	result := make(map[string]interface{})
-	if codeAttributes.Column != nil {
-		result["Column"] = codeAttributes.Column
+func isCodeAttributesType(payload *model.CodeAttributes) bool {
+	if payload.Column != nil || payload.FilePath != nil || payload.Function != nil || payload.LineNumber != nil || payload.Namespace != nil || payload.Stacktrace != nil {
+		return true
 	}
-	if codeAttributes.FilePath != nil {
-		result["FilePath"] = codeAttributes.FilePath
-	}
-	if codeAttributes.Function != nil {
-		result["Function"] = codeAttributes.Function
-	}
-	if codeAttributes.LineNumber != nil {
-		result["LineNumber"] = codeAttributes.LineNumber
-	}
-	if codeAttributes.Namespace != nil {
-		result["Namespace"] = codeAttributes.Namespace
-	}
-	if codeAttributes.Stacktrace != nil {
-		result["Stacktrace"] = codeAttributes.Stacktrace
-	}
-	return result
+	return false
 }
 
 func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRuleType {
-	if rule.PayloadCollection != nil && !areAllKeysNull(convertPayloadCollectionToMap(rule.PayloadCollection)) {
+	if rule.PayloadCollection != nil && isPayloadCollectionType(rule.PayloadCollection) {
 		return model.InstrumentationRuleTypePayloadCollection
-	} else if rule.CodeAttributes != nil && !areAllKeysNull(convertCodeAttributesToMap(rule.CodeAttributes)) {
+	} else if rule.CodeAttributes != nil && isCodeAttributesType(rule.CodeAttributes) {
 		return model.InstrumentationRuleTypeCodeAttributes
 	}
 
@@ -129,6 +101,58 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 	return rule, nil
 }
 
+func getPayloadCollectionInput(input model.InstrumentationRuleInput) *instrumentationrules.PayloadCollection {
+	if input.PayloadCollection == nil {
+		return nil
+	}
+
+	payloadCollection := &instrumentationrules.PayloadCollection{}
+
+	if input.PayloadCollection.HTTPRequest != nil {
+		payloadCollection.HttpRequest = &instrumentationrules.HttpPayloadCollection{}
+	}
+	if input.PayloadCollection.HTTPResponse != nil {
+		payloadCollection.HttpResponse = &instrumentationrules.HttpPayloadCollection{}
+	}
+	if input.PayloadCollection.DbQuery != nil {
+		payloadCollection.DbQuery = &instrumentationrules.DbQueryPayloadCollection{}
+	}
+	if input.PayloadCollection.Messaging != nil {
+		payloadCollection.Messaging = &instrumentationrules.MessagingPayloadCollection{}
+	}
+
+	return payloadCollection
+}
+
+func getCodeAttributesInput(input model.InstrumentationRuleInput) *instrumentationrules.CodeAttributes {
+	if input.CodeAttributes == nil {
+		return nil
+	}
+
+	codeAttributes := &instrumentationrules.CodeAttributes{}
+
+	if input.CodeAttributes.Column != nil {
+		codeAttributes.Column = input.CodeAttributes.Column
+	}
+	if input.CodeAttributes.FilePath != nil {
+		codeAttributes.FilePath = input.CodeAttributes.FilePath
+	}
+	if input.CodeAttributes.Function != nil {
+		codeAttributes.Function = input.CodeAttributes.Function
+	}
+	if input.CodeAttributes.LineNumber != nil {
+		codeAttributes.LineNumber = input.CodeAttributes.LineNumber
+	}
+	if input.CodeAttributes.Namespace != nil {
+		codeAttributes.Namespace = input.CodeAttributes.Namespace
+	}
+	if input.CodeAttributes.Stacktrace != nil {
+		codeAttributes.Stacktrace = input.CodeAttributes.Stacktrace
+	}
+
+	return codeAttributes
+}
+
 func UpdateInstrumentationRule(ctx context.Context, id string, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
 	ns := env.GetCurrentNamespace()
 
@@ -170,50 +194,13 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	}
 
 	if input.PayloadCollection != nil {
-		payloadCollection := &instrumentationrules.PayloadCollection{}
-
-		if input.PayloadCollection.HTTPRequest != nil {
-			payloadCollection.HttpRequest = &instrumentationrules.HttpPayloadCollection{}
-		}
-		if input.PayloadCollection.HTTPResponse != nil {
-			payloadCollection.HttpResponse = &instrumentationrules.HttpPayloadCollection{}
-		}
-		if input.PayloadCollection.DbQuery != nil {
-			payloadCollection.DbQuery = &instrumentationrules.DbQueryPayloadCollection{}
-		}
-		if input.PayloadCollection.Messaging != nil {
-			payloadCollection.Messaging = &instrumentationrules.MessagingPayloadCollection{}
-		}
-
-		existingRule.Spec.PayloadCollection = payloadCollection
+		existingRule.Spec.PayloadCollection = getPayloadCollectionInput(input)
 	} else {
 		existingRule.Spec.PayloadCollection = nil
 	}
 
-	var codeAttributes *instrumentationrules.CodeAttributes
 	if input.CodeAttributes != nil {
-		codeAttributes = &instrumentationrules.CodeAttributes{}
-
-		if input.CodeAttributes.Column != nil {
-			codeAttributes.Column = input.CodeAttributes.Column
-		}
-		if input.CodeAttributes.FilePath != nil {
-			codeAttributes.FilePath = input.CodeAttributes.FilePath
-		}
-		if input.CodeAttributes.Function != nil {
-			codeAttributes.Function = input.CodeAttributes.Function
-		}
-		if input.CodeAttributes.LineNumber != nil {
-			codeAttributes.LineNumber = input.CodeAttributes.LineNumber
-		}
-		if input.CodeAttributes.Namespace != nil {
-			codeAttributes.Namespace = input.CodeAttributes.Namespace
-		}
-		if input.CodeAttributes.Stacktrace != nil {
-			codeAttributes.Stacktrace = input.CodeAttributes.Stacktrace
-		}
-
-		existingRule.Spec.CodeAttributes = codeAttributes
+		existingRule.Spec.CodeAttributes = getCodeAttributesInput(input)
 	} else {
 		existingRule.Spec.CodeAttributes = nil
 	}
@@ -227,7 +214,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	annotations := updatedRule.GetAnnotations()
 	profileName := annotations[k8sconsts.OdigosProfileAnnotation]
 
-	return &model.InstrumentationRule{
+	rule := model.InstrumentationRule{
 		RuleID:                   updatedRule.Name,
 		RuleName:                 &updatedRule.Spec.RuleName,
 		Notes:                    &updatedRule.Spec.Notes,
@@ -238,7 +225,10 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		InstrumentationLibraries: convertInstrumentationLibraries(updatedRule.Spec.InstrumentationLibraries),
 		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
 		CodeAttributes:           (*model.CodeAttributes)(updatedRule.Spec.CodeAttributes),
-	}, nil
+	}
+	rule.Type = deriveTypeFromRule(&rule)
+
+	return &rule, nil
 }
 
 func DeleteInstrumentationRule(ctx context.Context, id string) (bool, error) {
@@ -284,48 +274,6 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		instrumentationLibraries = &convertedLibraries
 	}
 
-	var payloadCollection *instrumentationrules.PayloadCollection
-	if input.PayloadCollection != nil {
-		payloadCollection = &instrumentationrules.PayloadCollection{}
-
-		if input.PayloadCollection.HTTPRequest != nil {
-			payloadCollection.HttpRequest = &instrumentationrules.HttpPayloadCollection{}
-		}
-		if input.PayloadCollection.HTTPResponse != nil {
-			payloadCollection.HttpResponse = &instrumentationrules.HttpPayloadCollection{}
-		}
-		if input.PayloadCollection.DbQuery != nil {
-			payloadCollection.DbQuery = &instrumentationrules.DbQueryPayloadCollection{}
-		}
-		if input.PayloadCollection.Messaging != nil {
-			payloadCollection.Messaging = &instrumentationrules.MessagingPayloadCollection{}
-		}
-	}
-
-	var codeAttributes *instrumentationrules.CodeAttributes
-	if input.CodeAttributes != nil {
-		codeAttributes = &instrumentationrules.CodeAttributes{}
-
-		if input.CodeAttributes.Column != nil {
-			codeAttributes.Column = input.CodeAttributes.Column
-		}
-		if input.CodeAttributes.FilePath != nil {
-			codeAttributes.FilePath = input.CodeAttributes.FilePath
-		}
-		if input.CodeAttributes.Function != nil {
-			codeAttributes.Function = input.CodeAttributes.Function
-		}
-		if input.CodeAttributes.LineNumber != nil {
-			codeAttributes.LineNumber = input.CodeAttributes.LineNumber
-		}
-		if input.CodeAttributes.Namespace != nil {
-			codeAttributes.Namespace = input.CodeAttributes.Namespace
-		}
-		if input.CodeAttributes.Stacktrace != nil {
-			codeAttributes.Stacktrace = input.CodeAttributes.Stacktrace
-		}
-	}
-
 	// Define the new rule spec based on the input
 	newRule := &v1alpha1.InstrumentationRule{
 		ObjectMeta: metav1.ObjectMeta{
@@ -337,8 +285,8 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			Disabled:                 disabled,
 			Workloads:                workloads,
 			InstrumentationLibraries: instrumentationLibraries,
-			PayloadCollection:        payloadCollection,
-			CodeAttributes:           codeAttributes,
+			PayloadCollection:        getPayloadCollectionInput(input),
+			CodeAttributes:           getCodeAttributesInput(input),
 		},
 	}
 
@@ -349,7 +297,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	}
 
 	// Convert to GraphQL model and return
-	return &model.InstrumentationRule{
+	rule := model.InstrumentationRule{
 		RuleID:                   createdRule.Name,
 		RuleName:                 &createdRule.Spec.RuleName,
 		Notes:                    &createdRule.Spec.Notes,
@@ -360,7 +308,10 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		InstrumentationLibraries: convertInstrumentationLibraries(createdRule.Spec.InstrumentationLibraries),
 		PayloadCollection:        convertPayloadCollection(createdRule.Spec.PayloadCollection),
 		CodeAttributes:           (*model.CodeAttributes)(createdRule.Spec.CodeAttributes),
-	}, nil
+	}
+	rule.Type = deriveTypeFromRule(&rule)
+
+	return &rule, nil
 }
 
 func handleNotFoundError(err error, id string, entity string) error {

@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
 import { useLazyQuery, useMutation } from '@apollo/client';
+import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
-import { deriveTypeFromRule, getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
 import { CRUD, ENTITY_TYPES, type InstrumentationRule, type InstrumentationRuleFormData, STATUS_TYPE } from '@odigos/ui-kit/types';
 
@@ -26,7 +26,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     addNotification({ type, title, message, crdType: ENTITY_TYPES.INSTRUMENTATION_RULE, target: id ? getSseTargetFromId(id, ENTITY_TYPES.INSTRUMENTATION_RULE) : undefined, hideFromHistory });
   };
 
-  const [fetchAll, { loading: isFetching }] = useLazyQuery<{ computePlatform?: { instrumentationRules?: InstrumentationRule[] } }>(GET_INSTRUMENTATION_RULES, {
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { instrumentationRules?: InstrumentationRule[] } }>(GET_INSTRUMENTATION_RULES, {
     fetchPolicy: 'cache-and-network',
   });
 
@@ -44,32 +44,32 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     }
   };
 
-  const [mutateCreate, cState] = useMutation<{ createInstrumentationRule: InstrumentationRule }, { instrumentationRule: InstrumentationRuleFormData }>(CREATE_INSTRUMENTATION_RULE, {
+  const [mutateCreate] = useMutation<{ createInstrumentationRule: InstrumentationRule }, { instrumentationRule: InstrumentationRuleFormData }>(CREATE_INSTRUMENTATION_RULE, {
     onError: (error) => notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
     onCompleted: (res) => {
       const rule = res.createInstrumentationRule;
-      const type = deriveTypeFromRule(rule);
+      const type = rule.type;
       addEntities(ENTITY_TYPES.INSTRUMENTATION_RULE, [rule]);
       notifyUser(STATUS_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${type}" rule`, rule.ruleId);
     },
   });
 
-  const [mutateUpdate, uState] = useMutation<{ updateInstrumentationRule: InstrumentationRule }, { ruleId: string; instrumentationRule: InstrumentationRuleFormData }>(UPDATE_INSTRUMENTATION_RULE, {
+  const [mutateUpdate] = useMutation<{ updateInstrumentationRule: InstrumentationRule }, { ruleId: string; instrumentationRule: InstrumentationRuleFormData }>(UPDATE_INSTRUMENTATION_RULE, {
     onError: (error) => notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
     onCompleted: (res) => {
       const rule = res.updateInstrumentationRule;
-      const type = deriveTypeFromRule(rule);
+      const type = rule.type;
       addEntities(ENTITY_TYPES.INSTRUMENTATION_RULE, [rule]);
       notifyUser(STATUS_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${type}" rule`, rule.ruleId);
     },
   });
 
-  const [mutateDelete, dState] = useMutation<{ deleteInstrumentationRule: boolean }, { ruleId: string }>(DELETE_INSTRUMENTATION_RULE, {
+  const [mutateDelete] = useMutation<{ deleteInstrumentationRule: boolean }, { ruleId: string }>(DELETE_INSTRUMENTATION_RULE, {
     onError: (error) => notifyUser(STATUS_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.ruleId as string;
       const rule = instrumentationRules.find((r) => r.ruleId === id);
-      const type = rule ? deriveTypeFromRule(rule) : '';
+      const type = rule?.type || '';
       removeEntities(ENTITY_TYPES.INSTRUMENTATION_RULE, [id]);
       notifyUser(STATUS_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${type || id}" rule`, id);
     },
@@ -105,7 +105,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
 
   return {
     instrumentationRules,
-    instrumentationRulesLoading: isFetching || instrumentationRulesLoading || cState.loading || uState.loading || dState.loading,
+    instrumentationRulesLoading,
     fetchInstrumentationRules,
     createInstrumentationRule,
     updateInstrumentationRule,
