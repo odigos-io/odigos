@@ -4,6 +4,7 @@ export const GET_INSTRUMENTATION_RULES = gql`
   query GetInstrumentationRules {
     computePlatform {
       instrumentationRules {
+        type
         ruleId
         ruleName
         notes

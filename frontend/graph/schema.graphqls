@@ -51,6 +51,12 @@ enum Tier {
   onprem
 }
 
+enum InstrumentationRuleType {
+  PayloadCollection
+  CodeAttributes
+  UnknownType
+}
+
 type SourceContainer {
   containerName: String!
   language: String!
@@ -122,6 +128,7 @@ input K8sSourceId {
 }
 
 type InstrumentationRule {
+  type: InstrumentationRuleType!
   ruleId: ID!
   ruleName: String
   notes: String
