@@ -366,14 +366,12 @@ func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *
 		return nil, err
 	}
 
-	var namespaceSource *v1alpha1.Source
-
 	// Convert workloads to []*model.K8sActualSource
 	nsSources := make([]*model.K8sActualSource, len(workloads))
+	var namespaceSource *v1alpha1.Source
+	var workloadSource *v1alpha1.Source
 
 	for i, workload := range workloads {
-		var workloadSource *v1alpha1.Source
-
 		for _, source := range sources.Items {
 			if services.WorkloadKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace && source.Spec.Workload.Name == workload.Namespace {
 				namespaceSource = &source
@@ -392,6 +390,8 @@ func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *
 
 		nsSources[i] = &workload
 		nsSources[i].Selected = &isInstrumented
+
+		workloadSource = nil
 	}
 
 	return nsSources, nil
