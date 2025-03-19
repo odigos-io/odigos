@@ -361,40 +361,36 @@ func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *
 		return nil, err
 	}
 
-	sources, err := kube.DefaultClient.OdigosClient.Sources(ns).List(ctx, metav1.ListOptions{})
+	sourceList, err := kube.DefaultClient.OdigosClient.Sources(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert workloads to []*model.K8sActualSource
-	nsSources := make([]*model.K8sActualSource, len(workloads))
 	var namespaceSource *v1alpha1.Source
-	var workloadSource *v1alpha1.Source
-
-	for i, workload := range workloads {
-		for _, source := range sources.Items {
-			if services.WorkloadKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace && source.Spec.Workload.Name == workload.Namespace {
-				namespaceSource = &source
-			}
-			if services.WorkloadKind(source.Spec.Workload.Kind) == services.WorkloadKind(workload.Kind) && source.Spec.Workload.Name == workload.Name {
-				workloadSource = &source
-			}
-			if namespaceSource != nil && workloadSource != nil {
-				break
-			}
+	sourceObjects := make(map[string]*v1alpha1.Source)
+	for _, source := range sourceList.Items {
+		if services.WorkloadKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace {
+			namespaceSource = &source
+		} else {
+			key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
+			sourceObjects[key] = &source
 		}
+	}
+
+	// Convert workloads to []*model.K8sActualSource
+	sources := make([]*model.K8sActualSource, len(workloads))
+	for i, workload := range workloads {
+		workloadSource := sourceObjects[fmt.Sprintf("%s/%s/%s", workload.Namespace, workload.Name, workload.Kind)]
 
 		namespaceInstrumented := namespaceSource != nil && !namespaceSource.Spec.DisableInstrumentation
 		sourceInstrumented := workloadSource != nil && !workloadSource.Spec.DisableInstrumentation
 		isInstrumented := (namespaceInstrumented && (sourceInstrumented || workloadSource == nil)) || (!namespaceInstrumented && sourceInstrumented)
 
-		nsSources[i] = &workload
-		nsSources[i].Selected = &isInstrumented
-
-		workloadSource = nil
+		sources[i] = &workload
+		sources[i].Selected = &isInstrumented
 	}
 
-	return nsSources, nil
+	return sources, nil
 }
 
 // UpdateAPIToken is the resolver for the updateApiToken field.
