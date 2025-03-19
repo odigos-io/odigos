@@ -15,25 +15,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func isPayloadCollectionType(payload *model.PayloadCollection) bool {
-	if payload.HTTPRequest != nil || payload.HTTPResponse != nil || payload.DbQuery != nil || payload.Messaging != nil {
-		return true
-	}
-	return false
-}
-
-func isCodeAttributesType(payload *model.CodeAttributes) bool {
-	if payload.Column != nil || payload.FilePath != nil || payload.Function != nil || payload.LineNumber != nil || payload.Namespace != nil || payload.Stacktrace != nil {
-		return true
-	}
-	return false
-}
-
 func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRuleType {
-	if rule.PayloadCollection != nil && isPayloadCollectionType(rule.PayloadCollection) {
-		return model.InstrumentationRuleTypePayloadCollection
-	} else if rule.CodeAttributes != nil && isCodeAttributesType(rule.CodeAttributes) {
-		return model.InstrumentationRuleTypeCodeAttributes
+	if rule.PayloadCollection != nil {
+		if rule.PayloadCollection.HTTPRequest != nil || rule.PayloadCollection.HTTPResponse != nil || rule.PayloadCollection.DbQuery != nil || rule.PayloadCollection.Messaging != nil {
+			return model.InstrumentationRuleTypePayloadCollection
+		}
+	}
+
+	if rule.CodeAttributes != nil {
+		if rule.CodeAttributes.Column != nil || rule.CodeAttributes.FilePath != nil || rule.CodeAttributes.Function != nil || rule.CodeAttributes.LineNumber != nil || rule.CodeAttributes.Namespace != nil || rule.CodeAttributes.Stacktrace != nil {
+			return model.InstrumentationRuleTypeCodeAttributes
+		}
 	}
 
 	return model.InstrumentationRuleTypeUnknownType
