@@ -116,7 +116,6 @@ func GetManagedResources(odigosNamespace string) []ResourceAndNs {
 		{Resource: newApiExtensionsV1CustomResourceDefinition(), Namespace: ""},
 		{Resource: newAppsV1Deployments(), Namespace: odigosNamespace},
 		{Resource: newAppsV1DaemonSet(), Namespace: odigosNamespace},
-		{Resource: deprecatedOdigosConfigs(), Namespace: odigosNamespace},
 		{Resource: newCoreV1ConfigMaps(), Namespace: odigosNamespace},
 		{Resource: newCoreV1Services(), Namespace: odigosNamespace},
 		{Resource: newCoreV1Secrets(), Namespace: odigosNamespace},
