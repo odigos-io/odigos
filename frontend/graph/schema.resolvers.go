@@ -352,8 +352,8 @@ func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj 
 	return services.ListInstrumentationRules(ctx)
 }
 
-// K8sActualSources is the resolver for the k8sActualSources field.
-func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error) {
+// Sources is the resolver for the sources field.
+func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error) {
 	ns := obj.Name
 
 	workloads, err := services.GetWorkloadsInNamespace(ctx, ns)

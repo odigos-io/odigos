@@ -3,7 +3,7 @@ import type { Source } from '@odigos/ui-kit/types';
 export interface FetchedNamespace {
   name: string;
   selected: boolean;
-  k8sActualSources?: Source[];
+  sources?: Source[];
 }
 
 export interface NamespaceInstrumentInput {
