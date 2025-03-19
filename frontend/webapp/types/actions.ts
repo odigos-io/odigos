@@ -1,4 +1,4 @@
-import { ACTION_TYPE, type Condition } from '@odigos/ui-utils';
+import { ACTION_TYPE, type Condition } from '@odigos/ui-kit/types';
 
 export interface FetchedAction {
   id: string;

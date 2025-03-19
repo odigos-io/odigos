@@ -1,9 +1,9 @@
-import { FetchedSource } from './sources';
+import type { Source } from '@odigos/ui-kit/types';
 
 export interface FetchedNamespace {
   name: string;
   selected: boolean;
-  k8sActualSources?: FetchedSource[];
+  k8sActualSources?: Source[];
 }
 
 export interface NamespaceInstrumentInput {
