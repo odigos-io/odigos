@@ -7,7 +7,6 @@ extensions:
   health_check: {}
 processors:
   batch: {}
-  odigosresourcename: {}
   resource:
     attributes:
     - action: upsert
@@ -101,7 +100,6 @@ service:
       - otlp/gateway
       processors:
       - batch
-      - odigosresourcename
       - resource
       - resourcedetection
       - test_type/test_processor
