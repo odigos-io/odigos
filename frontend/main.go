@@ -28,6 +28,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube/watchers"
 	"github.com/odigos-io/odigos/frontend/services"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
+	"github.com/odigos-io/odigos/frontend/services/db"
 	"github.com/odigos-io/odigos/frontend/services/sse"
 	"github.com/odigos-io/odigos/frontend/version"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -158,6 +159,17 @@ func startWatchers(ctx context.Context, flags *Flags) error {
 }
 
 func main() {
+
+	// Initialize SQLite database
+	database, err := db.NewSQLiteDB("/data/data.db")
+	if err != nil {
+		log.Println(err, "Failed to connect to DB") // TODO: Move to fatal once db requiered
+	}
+	defer database.Close()
+
+	// Run migrations
+	db.AutoMigrate(database.GetDB())
+
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := parseFlags()
 
@@ -177,7 +189,7 @@ func main() {
 	go common.StartPprofServer(ctx, logr.FromSlogHandler(slog.Default().Handler()))
 
 	// Load destinations data
-	err := destinations.Load()
+	err = destinations.Load()
 	if err != nil {
 		log.Fatalf("Error loading destinations data: %s", err)
 	}
