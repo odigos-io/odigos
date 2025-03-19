@@ -34,14 +34,6 @@ func newCoreV1ConfigMaps() schema.GroupVersionResource {
 	}
 }
 
-func deprecatedOdigosConfigs() schema.GroupVersionResource {
-	return schema.GroupVersionResource{
-		Group:    "odigos.io",
-		Version:  "v1alpha1",
-		Resource: "odigosconfigurations",
-	}
-}
-
 func newCoreV1Services() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "", // core group is represented by an empty string
