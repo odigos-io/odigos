@@ -66,8 +66,8 @@ func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule
 			PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 			CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
 		}
-
 		rule.Type = deriveTypeFromRule(rule)
+
 		gqlRules = append(gqlRules, rule)
 	}
 	return gqlRules, nil
@@ -96,8 +96,8 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 		PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 	}
-
 	rule.Type = deriveTypeFromRule(rule)
+
 	return rule, nil
 }
 
