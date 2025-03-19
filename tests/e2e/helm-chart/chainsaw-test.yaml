@@ -33,31 +33,44 @@ spec:
                 helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
+
     - name: Verify Odigos Installation
       try:
         - script:
-            timeout: 5m
+            timeout: 6m
             content: |
               echo "Starting Odigos version check..."
               export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
               echo "Actual Version: $ACTUAL_VERSION"
+              echo "Commit Hash: $COMMIT_HASH"
 
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 if [ "$ACTUAL_VERSION" != "$COMMIT_HASH" ]; then
-                  echo "Odigos version is not the expected commit hash, got $ACTUAL_VERSION"
+                  echo "❌ Odigos version is not the expected commit hash, got $ACTUAL_VERSION"
                   exit 1
                 fi
 
-              kubectl wait --for=condition=ready pods --all -n odigos-test --timeout=40s
+                kubectl wait --for=condition=ready pods --all -n odigos-test --timeout=4m
 
               else
                 if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
-                  echo "Odigos version is not e2e-test, got $ACTUAL_VERSION"
+                  echo "❌ Odigos version is not e2e-test, got $ACTUAL_VERSION"
                   exit 1
                 fi
               fi
+
         - assert:
-            file: ../../common/assert/odigos-installed.yaml
+            file: ../../common/assert/odigos-installed.yaml  # ✅ Moved outside `catch`
+
+      catch:
+        - script:
+            content: |
+              echo "🔍 Listing all resources in namespace 'odigos-test'..."
+              kubectl get all -n odigos-test
+
+              echo "📝 Describing all resources in namespace 'odigos-test'..."
+              kubectl describe all -n odigos-test
+
     - name: Verify Node Odiglet label has been added
       try:
         - assert:

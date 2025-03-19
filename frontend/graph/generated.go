@@ -262,6 +262,7 @@ type ComplexityRoot struct {
 		ProfileName              func(childComplexity int) int
 		RuleID                   func(childComplexity int) int
 		RuleName                 func(childComplexity int) int
+		Type                     func(childComplexity int) int
 		Workloads                func(childComplexity int) int
 	}
 
@@ -273,9 +274,9 @@ type ComplexityRoot struct {
 	}
 
 	K8sActualNamespace struct {
-		K8sActualSources func(childComplexity int) int
-		Name             func(childComplexity int) int
-		Selected         func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Selected func(childComplexity int) int
+		Sources  func(childComplexity int) int
 	}
 
 	K8sActualSource struct {
@@ -535,7 +536,7 @@ type ComputePlatformResolver interface {
 	InstrumentationRules(ctx context.Context, obj *model.ComputePlatform) ([]*model.InstrumentationRule, error)
 }
 type K8sActualNamespaceResolver interface {
-	K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error)
+	Sources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error)
 }
 type MutationResolver interface {
 	UpdateAPIToken(ctx context.Context, token string) (bool, error)
@@ -1536,6 +1537,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationRule.RuleName(childComplexity), true
 
+	case "InstrumentationRule.type":
+		if e.complexity.InstrumentationRule.Type == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.Type(childComplexity), true
+
 	case "InstrumentationRule.workloads":
 		if e.complexity.InstrumentationRule.Workloads == nil {
 			break
@@ -1571,13 +1579,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationSourcesAnalyze.Workload(childComplexity), true
 
-	case "K8sActualNamespace.k8sActualSources":
-		if e.complexity.K8sActualNamespace.K8sActualSources == nil {
-			break
-		}
-
-		return e.complexity.K8sActualNamespace.K8sActualSources(childComplexity), true
-
 	case "K8sActualNamespace.name":
 		if e.complexity.K8sActualNamespace.Name == nil {
 			break
@@ -1591,6 +1592,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sActualNamespace.Selected(childComplexity), true
+
+	case "K8sActualNamespace.sources":
+		if e.complexity.K8sActualNamespace.Sources == nil {
+			break
+		}
+
+		return e.complexity.K8sActualNamespace.Sources(childComplexity), true
 
 	case "K8sActualSource.conditions":
 		if e.complexity.K8sActualSource.Conditions == nil {
@@ -4765,8 +4773,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_k8sActualNamespaces(_ c
 				return ec.fieldContext_K8sActualNamespace_name(ctx, field)
 			case "selected":
 				return ec.fieldContext_K8sActualNamespace_selected(ctx, field)
-			case "k8sActualSources":
-				return ec.fieldContext_K8sActualNamespace_k8sActualSources(ctx, field)
+			case "sources":
+				return ec.fieldContext_K8sActualNamespace_sources(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualNamespace", field.Name)
 		},
@@ -4814,8 +4822,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_k8sActualNamespace(ctx 
 				return ec.fieldContext_K8sActualNamespace_name(ctx, field)
 			case "selected":
 				return ec.fieldContext_K8sActualNamespace_selected(ctx, field)
-			case "k8sActualSources":
-				return ec.fieldContext_K8sActualNamespace_k8sActualSources(ctx, field)
+			case "sources":
+				return ec.fieldContext_K8sActualNamespace_sources(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualNamespace", field.Name)
 		},
@@ -5121,6 +5129,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "type":
+				return ec.fieldContext_InstrumentationRule_type(ctx, field)
 			case "ruleId":
 				return ec.fieldContext_InstrumentationRule_ruleId(ctx, field)
 			case "ruleName":
@@ -9134,6 +9144,50 @@ func (ec *executionContext) fieldContext_InstrumentationLibraryGlobalId_language
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationRule_type(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InstrumentationRuleType)
+	fc.Result = res
+	return ec.marshalNInstrumentationRuleType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InstrumentationRuleType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationRule_ruleId(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRule_ruleId(ctx, field)
 	if err != nil {
@@ -9888,8 +9942,8 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_selected(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sActualNamespace_k8sActualSources(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualNamespace) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sActualNamespace_k8sActualSources(ctx, field)
+func (ec *executionContext) _K8sActualNamespace_sources(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualNamespace) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sActualNamespace_sources(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -9902,7 +9956,7 @@ func (ec *executionContext) _K8sActualNamespace_k8sActualSources(ctx context.Con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.K8sActualNamespace().K8sActualSources(rctx, obj)
+		return ec.resolvers.K8sActualNamespace().Sources(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9919,7 +9973,7 @@ func (ec *executionContext) _K8sActualNamespace_k8sActualSources(ctx context.Con
 	return ec.marshalNK8sActualSource2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sActualSource(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sActualNamespace_k8sActualSources(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sActualNamespace_sources(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sActualNamespace",
 		Field:      field,
@@ -12107,6 +12161,8 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "type":
+				return ec.fieldContext_InstrumentationRule_type(ctx, field)
 			case "ruleId":
 				return ec.fieldContext_InstrumentationRule_ruleId(ctx, field)
 			case "ruleName":
@@ -12184,6 +12240,8 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "type":
+				return ec.fieldContext_InstrumentationRule_type(ctx, field)
 			case "ruleId":
 				return ec.fieldContext_InstrumentationRule_ruleId(ctx, field)
 			case "ruleName":
@@ -21929,6 +21987,11 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("InstrumentationRule")
+		case "type":
+			out.Values[i] = ec._InstrumentationRule_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "ruleId":
 			out.Values[i] = ec._InstrumentationRule_ruleId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -22047,7 +22110,7 @@ func (ec *executionContext) _K8sActualNamespace(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "k8sActualSources":
+		case "sources":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -22056,7 +22119,7 @@ func (ec *executionContext) _K8sActualNamespace(ctx context.Context, sel ast.Sel
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._K8sActualNamespace_k8sActualSources(ctx, field, obj)
+				res = ec._K8sActualNamespace_sources(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -25204,6 +25267,16 @@ func (ec *executionContext) marshalNInstrumentationRule2ᚖgithubᚗcomᚋodigos
 func (ec *executionContext) unmarshalNInstrumentationRuleInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleInput(ctx context.Context, v interface{}) (model.InstrumentationRuleInput, error) {
 	res, err := ec.unmarshalInputInstrumentationRuleInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNInstrumentationRuleType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleType(ctx context.Context, v interface{}) (model.InstrumentationRuleType, error) {
+	var res model.InstrumentationRuleType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInstrumentationRuleType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleType(ctx context.Context, sel ast.SelectionSet, v model.InstrumentationRuleType) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNInstrumentationSourcesAnalyze2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationSourcesAnalyze(ctx context.Context, sel ast.SelectionSet, v *model.InstrumentationSourcesAnalyze) graphql.Marshaler {
