@@ -109,6 +109,10 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 			}
 			ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, podWorkload.Namespace, obj, scheme)
 			if err != nil {
+				if apierrors.IsAlreadyExists(err) {
+					// If we hit AlreadyExists here, we just hit a race in the api/cache and want to requeue. No need to log an error
+					return ctrl.Result{Requeue: true}, nil
+				}
 				return ctrl.Result{}, err
 			}
 		}
@@ -162,7 +166,7 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 
 	err = k8sClient.Create(ctx, &instConfig)
 	if err != nil {
-		return nil, client.IgnoreAlreadyExists(err)
+		return nil, err
 	}
 
 	logger.V(0).Info("Created instrumentation config object for workload to trigger instrumentation", "name", instConfigName, "namespace", namespace)

@@ -17,9 +17,10 @@ const (
 
 var availableConfigers = []Configer{
 	&AppDynamics{},
-	&Axiom{},
 	&AWSCloudWatch{},
 	&AWSS3{},
+	&AWSXRay{},
+	&Axiom{},
 	&AzureBlobStorage{},
 	&BetterStack{},
 	&Causely{},
