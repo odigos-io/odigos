@@ -1,14 +1,14 @@
 'use client';
 
-import React, { type PropsWithChildren } from 'react';
+import React, { useCallback, useMemo, type PropsWithChildren } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import styled from 'styled-components';
-import { ENTITY_TYPES } from '@odigos/ui-utils';
-import { FlexColumn, FlexRow } from '@odigos/ui-components';
+import { ENTITY_TYPES } from '@odigos/ui-kit/types';
 import { useNamespace, useSSE, useTokenTracker } from '@/hooks';
-import { ErrorBoundary, OverviewHeader, OverviewModalsAndDrawers } from '@/components';
-import { DataFlowActionsMenu, NAV_ICON_IDS, SideNav, ToastList } from '@odigos/ui-containers';
+import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
+import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
+import { DataFlowActionsMenu, NAV_ICON_IDS, SideNav, ToastList } from '@odigos/ui-kit/containers';
 
 const PageContent = styled(FlexColumn)`
   width: 100%;
@@ -30,14 +30,59 @@ const ContentUnderActions = styled(FlexRow)`
   width: calc(100% - 12px);
 `;
 
+const getEntityType = (pathname: string) => {
+  return pathname.includes(ROUTES.SOURCES)
+    ? ENTITY_TYPES.SOURCE
+    : pathname.includes(ROUTES.DESTINATIONS)
+    ? ENTITY_TYPES.DESTINATION
+    : pathname.includes(ROUTES.ACTIONS)
+    ? ENTITY_TYPES.ACTION
+    : pathname.includes(ROUTES.INSTRUMENTATION_RULES)
+    ? ENTITY_TYPES.INSTRUMENTATION_RULE
+    : undefined;
+};
+
+const getSelectedId = (pathname: string) => {
+  return pathname.includes(ROUTES.OVERVIEW)
+    ? NAV_ICON_IDS.OVERVIEW
+    : pathname.includes(ROUTES.SOURCES)
+    ? NAV_ICON_IDS.SOURCES
+    : pathname.includes(ROUTES.DESTINATIONS)
+    ? NAV_ICON_IDS.DESTINATIONS
+    : pathname.includes(ROUTES.ACTIONS)
+    ? NAV_ICON_IDS.ACTIONS
+    : pathname.includes(ROUTES.INSTRUMENTATION_RULES)
+    ? NAV_ICON_IDS.INSTRUMENTATION_RULES
+    : undefined;
+};
+
+const routesMap = {
+  [NAV_ICON_IDS.OVERVIEW]: ROUTES.OVERVIEW,
+  [NAV_ICON_IDS.SOURCES]: ROUTES.SOURCES,
+  [NAV_ICON_IDS.DESTINATIONS]: ROUTES.DESTINATIONS,
+  [NAV_ICON_IDS.ACTIONS]: ROUTES.ACTIONS,
+  [NAV_ICON_IDS.INSTRUMENTATION_RULES]: ROUTES.INSTRUMENTATION_RULES,
+};
+
 function OverviewLayout({ children }: PropsWithChildren) {
   // call important hooks that should run on page-mount
   useSSE();
   useTokenTracker();
 
-  const pathname = usePathname();
   const router = useRouter();
+  const pathname = usePathname();
   const { namespaces } = useNamespace();
+
+  const entityType = useMemo(() => getEntityType(pathname), [pathname]);
+  const selectedId = useMemo(() => getSelectedId(pathname), [pathname]);
+
+  const onClickId = useCallback(
+    (navId: NAV_ICON_IDS) => {
+      const route = routesMap[navId];
+      if (route) router.push(route);
+    },
+    [router],
+  );
 
   return (
     <ErrorBoundary>
@@ -45,58 +90,9 @@ function OverviewLayout({ children }: PropsWithChildren) {
         <OverviewHeader />
 
         <ContentWithActions>
-          <DataFlowActionsMenu
-            namespaces={namespaces}
-            addEntity={
-              pathname === ROUTES.OVERVIEW_SOURCES
-                ? ENTITY_TYPES.SOURCE
-                : pathname === ROUTES.OVERVIEW_DESTINATIONS
-                ? ENTITY_TYPES.DESTINATION
-                : pathname === ROUTES.OVERVIEW_ACTIONS
-                ? ENTITY_TYPES.ACTION
-                : pathname === ROUTES.OVERVIEW_INSTRUMENTATION_RULES
-                ? ENTITY_TYPES.INSTRUMENTATION_RULE
-                : undefined
-            }
-          />
+          <DataFlowActionsMenu namespaces={namespaces} addEntity={entityType} />
           <ContentUnderActions>
-            <SideNav
-              defaultSelectedId={
-                pathname === ROUTES.OVERVIEW
-                  ? NAV_ICON_IDS.OVERVIEW
-                  : pathname === ROUTES.OVERVIEW_SOURCES
-                  ? NAV_ICON_IDS.SOURCES
-                  : pathname === ROUTES.OVERVIEW_DESTINATIONS
-                  ? NAV_ICON_IDS.DESTINATIONS
-                  : pathname === ROUTES.OVERVIEW_ACTIONS
-                  ? NAV_ICON_IDS.ACTIONS
-                  : pathname === ROUTES.OVERVIEW_INSTRUMENTATION_RULES
-                  ? NAV_ICON_IDS.INSTRUMENTATION_RULES
-                  : undefined
-              }
-              onClickId={(id) => {
-                switch (id) {
-                  case NAV_ICON_IDS.OVERVIEW:
-                    router.push(ROUTES.OVERVIEW);
-                    break;
-                  case NAV_ICON_IDS.SOURCES:
-                    router.push(ROUTES.OVERVIEW_SOURCES);
-                    break;
-                  case NAV_ICON_IDS.DESTINATIONS:
-                    router.push(ROUTES.OVERVIEW_DESTINATIONS);
-                    break;
-                  case NAV_ICON_IDS.ACTIONS:
-                    router.push(ROUTES.OVERVIEW_ACTIONS);
-                    break;
-                  case NAV_ICON_IDS.INSTRUMENTATION_RULES:
-                    router.push(ROUTES.OVERVIEW_INSTRUMENTATION_RULES);
-                    break;
-                  default:
-                    console.warn('unhandled nav icon id', id);
-                    break;
-                }
-              }}
-            />
+            <SideNav defaultSelectedId={selectedId} onClickId={onClickId} />
             {children}
           </ContentUnderActions>
         </ContentWithActions>

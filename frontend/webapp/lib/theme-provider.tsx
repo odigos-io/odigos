@@ -1,7 +1,7 @@
 'use client';
 
 import React, { type FC, type PropsWithChildren, useState } from 'react';
-import Theme from '@odigos/ui-theme';
+import Theme from '@odigos/ui-kit/theme';
 import { useServerInsertedHTML } from 'next/navigation';
 import { ServerStyleSheet, StyleSheetManager } from 'styled-components';
 
