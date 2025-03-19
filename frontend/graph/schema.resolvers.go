@@ -355,34 +355,46 @@ func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj 
 // K8sActualSources is the resolver for the k8sActualSources field.
 func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error) {
 	ns := obj.Name
-	nsWorkloads, err := services.GetWorkloadsInNamespace(ctx, ns)
+
+	workloads, err := services.GetWorkloadsInNamespace(ctx, ns)
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert nsWorkloads to []*model.K8sActualSource
-	nsActualSources := make([]*model.K8sActualSource, len(nsWorkloads))
-	for i, workload := range nsWorkloads {
-		nsActualSources[i] = &workload
-
-		namespaceSource, err := services.GetSourceCRD(ctx, ns, ns, services.WorkloadKindNamespace)
-		if err != nil && !strings.Contains(err.Error(), "not found") {
-			return make([]*model.K8sActualSource, 0), err
-		}
-
-		workloadSource, err := services.GetSourceCRD(ctx, ns, workload.Name, services.WorkloadKind(workload.Kind))
-		if err != nil && !strings.Contains(err.Error(), "not found") {
-			return make([]*model.K8sActualSource, 0), err
-		}
-
-		nsInstrumented := namespaceSource != nil && !namespaceSource.Spec.DisableInstrumentation
-		srcInstrumented := workloadSource != nil && !workloadSource.Spec.DisableInstrumentation
-
-		instrumented := (nsInstrumented && (srcInstrumented || workloadSource == nil)) || (!nsInstrumented && srcInstrumented)
-		nsActualSources[i].Selected = &instrumented
+	sources, err := kube.DefaultClient.OdigosClient.Sources(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
 	}
 
-	return nsActualSources, nil
+	var namespaceSource *v1alpha1.Source
+
+	// Convert workloads to []*model.K8sActualSource
+	nsSources := make([]*model.K8sActualSource, len(workloads))
+
+	for i, workload := range workloads {
+		var workloadSource *v1alpha1.Source
+
+		for _, source := range sources.Items {
+			if services.WorkloadKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace && source.Spec.Workload.Name == workload.Namespace {
+				namespaceSource = &source
+			}
+			if services.WorkloadKind(source.Spec.Workload.Kind) == services.WorkloadKind(workload.Kind) && source.Spec.Workload.Name == workload.Name {
+				workloadSource = &source
+			}
+			if namespaceSource != nil && workloadSource != nil {
+				break
+			}
+		}
+
+		namespaceInstrumented := namespaceSource != nil && !namespaceSource.Spec.DisableInstrumentation
+		sourceInstrumented := workloadSource != nil && !workloadSource.Spec.DisableInstrumentation
+		isInstrumented := (namespaceInstrumented && (sourceInstrumented || workloadSource == nil)) || (!namespaceInstrumented && sourceInstrumented)
+
+		nsSources[i] = &workload
+		nsSources[i].Selected = &isInstrumented
+	}
+
+	return nsSources, nil
 }
 
 // UpdateAPIToken is the resolver for the updateApiToken field.
