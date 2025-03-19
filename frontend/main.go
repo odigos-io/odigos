@@ -163,7 +163,7 @@ func main() {
 	// Initialize SQLite database
 	database, err := db.NewSQLiteDB("/data/data.db")
 	if err != nil {
-		log.Println(err, "Failed to connect to DB") // TODO: Move to fatal once db requiered
+		log.Println(err, "Failed to connect to DB") // TODO: Move to fatal once db required
 	}
 	defer database.Close()
 
