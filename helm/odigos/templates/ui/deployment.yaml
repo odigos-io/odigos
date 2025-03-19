@@ -48,10 +48,16 @@ spec:
             memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
+        volumeMounts:
+          - name: ui-db-storage
+            mountPath: /data          
       securityContext:
         runAsNonRoot: true
       serviceAccountName: odigos-ui
       terminationGracePeriodSeconds: 10
+      volumes:
+        - name: ui-db-storage
+          emptyDir: {}      
 {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 6 }}
