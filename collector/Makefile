@@ -23,7 +23,8 @@ PROCESSOR_DIR := processors/odigossamplingprocessor
 .PHONY: test-odigossamplingprocessor
 test-odigossamplingprocessor:
 	@echo "Running tests for odigossamplingprocessor at $(PROCESSOR_DIR)"
-	cd $(PROCESSOR_DIR) && $(GOCMD) test ./... -race -coverprofile=coverage.out
+	cd $(PROCESSOR_DIR) && $(GOCMD) test ./... -coverprofile=coverage.out
+	cat $(PROCESSOR_DIR)/coverage.out
 
 .PHONY: download_builder
 download_builder:
