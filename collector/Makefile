@@ -20,11 +20,6 @@ MDATAGENCMD?= mdatagen
 
 PROCESSOR_DIR := processors/odigossamplingprocessor
 
-.PHONY: test-odigossamplingprocessor
-test-odigossamplingprocessor:
-	@echo "Running tests for odigossamplingprocessor at $(PROCESSOR_DIR)"
-	cd $(PROCESSOR_DIR) && $(GOCMD) test ./... -coverprofile=coverage.out
-	cat $(PROCESSOR_DIR)/coverage.out
 
 .PHONY: download_builder
 download_builder:
@@ -37,6 +32,11 @@ download_builder:
 .PHONY: genodigoscol
 genodigoscol: download_builder
 	$(BUILDER) --config builder-config.yaml
+
+.PHONY: test-odigossamplingprocessor
+test-odigossamplingprocessor:
+	@echo "Running tests for odigossamplingprocessor at $(PROCESSOR_DIR)"
+	cd $(PROCESSOR_DIR) && GOOS=$(HOST_GOOS) GOARCH=$(HOST_GOARCH) $(GOCMD) test ./...
 
 .PHONY: build-odigoscol
 build-odigoscol: download_builder test-odigossamplingprocessor
