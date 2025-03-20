@@ -17,7 +17,7 @@ export const GET_NAMESPACE = gql`
       k8sActualNamespace(name: $namespaceName) {
         name
         selected
-        k8sActualSources {
+        sources {
           kind
           name
           numberOfInstances

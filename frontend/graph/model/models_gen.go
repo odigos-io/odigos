@@ -357,9 +357,9 @@ type InstrumentationSourcesAnalyze struct {
 }
 
 type K8sActualNamespace struct {
-	Name             string             `json:"name"`
-	Selected         bool               `json:"selected"`
-	K8sActualSources []*K8sActualSource `json:"k8sActualSources"`
+	Name     string             `json:"name"`
+	Selected bool               `json:"selected"`
+	Sources  []*K8sActualSource `json:"sources"`
 }
 
 type K8sActualSource struct {
