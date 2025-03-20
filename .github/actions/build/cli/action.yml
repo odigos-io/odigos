@@ -1,0 +1,11 @@
+name: "Build Odigos CLI"
+description: "Build odigos CLI binary"
+runs:
+  using: "composite"
+  steps:
+    - name: Build
+      shell: bash
+      run: |
+        cd cli
+        go build -tags=embed_manifests -o odigos
+        chmod +x odigos

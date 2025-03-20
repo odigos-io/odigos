@@ -7,10 +7,16 @@ const config: Cypress.ConfigOptions = {
   e2e: {
     baseUrl: BASE_URL,
     supportFile: false,
-    waitForAnimations: true,
+    waitForAnimations: false,
+    viewportWidth: 1920,
+    viewportHeight: 1080,
+    retries: {
+      runMode: 1,
+      openMode: 0,
+    },
     setupNodeEvents(on, config) {
       on('task', {
-        log(message) {
+        log: (message) => {
           console.log(message);
           return null;
         },
