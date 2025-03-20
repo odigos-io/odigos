@@ -1,6 +1,8 @@
 package sampling
 
 import (
+	"errors"
+
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
@@ -8,32 +10,34 @@ type ErrorRule struct {
 	FallbackSamplingRatio float64 `mapstructure:"fallback_sampling_ratio"`
 }
 
-func (tlr *ErrorRule) Validate() error {
+var _ SamplingDecision = (*ErrorRule)(nil)
+
+// Validate ensures the rule's configuration is correct.
+func (r *ErrorRule) Validate() error {
+	if r.FallbackSamplingRatio < 0 || r.FallbackSamplingRatio > 100 {
+		return errors.New("fallback_sampling_ratio must be between 0 and 100")
+	}
 	return nil
 }
 
-func (tlr *ErrorRule) KeepTraceDecision(td ptrace.Traces) (conditionMatch bool) {
-
+// Evaluate checks if the trace contains any spans with errors.
+// - matched is always true because the error rule is global (or service-level, if configured).
+// - satisfied is true if an error span is found (always sample).
+// - fallbackRatio used if no error span is found (probabilistic sampling).
+func (r *ErrorRule) Evaluate(td ptrace.Traces) (matched bool, satisfied bool, fallbackRatio float64) {
 	resources := td.ResourceSpans()
 
-	// Iterate over resources
-	for r := 0; r < resources.Len(); r++ {
-		scoreSpan := resources.At(r).ScopeSpans()
-
-		// Iterate over scopes
-		for j := 0; j < scoreSpan.Len(); j++ {
-			ils := scoreSpan.At(j)
-
-			// iterate over spans
-			for k := 0; k < ils.Spans().Len(); k++ {
-				span := ils.Spans().At(k)
-
-				statusCode := span.Status().Code().String()
-				if statusCode == ptrace.StatusCodeError.String() {
-					return true
+	for i := 0; i < resources.Len(); i++ {
+		scopeSpans := resources.At(i).ScopeSpans()
+		for j := 0; j < scopeSpans.Len(); j++ {
+			spans := scopeSpans.At(j).Spans()
+			for k := 0; k < spans.Len(); k++ {
+				if spans.At(k).Status().Code() == ptrace.StatusCodeError {
+					return true, true, 0 // Immediate sample if an error is found
 				}
 			}
 		}
 	}
-	return false
+
+	return true, false, r.FallbackSamplingRatio // Probabilistic fallback if no errors found
 }
