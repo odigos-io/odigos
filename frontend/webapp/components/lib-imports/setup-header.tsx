@@ -1,7 +1,7 @@
 import React, { Dispatch, SetStateAction, type FC, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
-import { ENTITY_TYPES } from '@odigos/ui-kit/types';
+import { EntityTypes } from '@odigos/ui-kit/types';
 import { useSetupStore } from '@odigos/ui-kit/store';
 import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { ArrowIcon, OdigosLogoText } from '@odigos/ui-kit/icons';
@@ -9,7 +9,7 @@ import { ToggleDarkMode, type SourceSelectionFormRef } from '@odigos/ui-kit/cont
 import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos/ui-kit/components';
 
 interface SetupHeaderProps {
-  entityType: ENTITY_TYPES;
+  entityType: EntityTypes;
   formRef?: RefObject<SourceSelectionFormRef | null>; // in sources
   isLoading?: boolean; // in destinations
   setIsLoading?: Dispatch<SetStateAction<boolean>>; // in destinations
@@ -50,7 +50,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ formRef, entityType, isLoading, set
   };
 
   const navButtons: NavigationButtonsProps['buttons'] =
-    entityType === ENTITY_TYPES.SOURCE
+    entityType === EntityTypes.Source
       ? [
           {
             label: 'NEXT',
@@ -59,7 +59,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ formRef, entityType, isLoading, set
             variant: 'primary',
           },
         ]
-      : entityType === ENTITY_TYPES.DESTINATION
+      : entityType === EntityTypes.Destination
       ? [
           {
             label: 'BACK',

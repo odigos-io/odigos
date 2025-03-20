@@ -1,13 +1,13 @@
-import { TIER } from '@odigos/ui-kit/types';
+import { Tier } from '@odigos/ui-kit/types';
 
-export enum CONFIG_INSTALLATION {
-  NEW = 'NEW',
-  APPS_SELECTED = 'APPS_SELECTED',
-  FINISHED = 'FINISHED',
+export enum ConfigInstallation {
+  New = 'NEW',
+  AppsSelected = 'APPS_SELECTED',
+  Finished = 'FINISHED',
 }
 
 export interface FetchedConfig {
-  installation: CONFIG_INSTALLATION;
-  tier: TIER;
+  installation: ConfigInstallation;
+  tier: Tier;
   readonly: boolean;
 }
