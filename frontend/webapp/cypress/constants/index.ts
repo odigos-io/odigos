@@ -49,7 +49,7 @@ export const DATA_IDS = {
   ADD_SOURCE: '[data-id=add-source]',
   ADD_DESTINATION: '[data-id=add-destination]',
   ADD_ACTION: '[data-id=add-action]',
-  ADD_INSTRUMENTATION_RULE: '[data-id=add-instrumentation rule]',
+  ADD_INSTRUMENTATION_RULE: '[data-id="add-instrumentation rule"]',
 
   MODAL: '[data-id=modal]',
   MODAL_ADD_SOURCE: '[data-id=modal-Add-Source]',
