@@ -1,4 +1,4 @@
-export * from './useTestConnection';
-export * from './usePotentialDestinations';
-export * from './useDestinationCRUD';
 export * from './useDestinationCategories';
+export * from './useDestinationCRUD';
+export * from './usePotentialDestinations';
+export * from './useTestConnection';
