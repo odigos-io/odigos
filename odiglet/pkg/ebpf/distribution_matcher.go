@@ -6,6 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/instrumentation"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/container"
+	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
@@ -27,7 +28,7 @@ func (dm *podDeviceDistributionMatcher) Distribution(ctx context.Context, e K8sP
 		Environments: process.ProcessEnvs{
 			DetailedEnvs: e.procEvent.ExecDetails.Environments,
 		},
-	}, lang); ok {
+	}, lang, log.Logger); ok {
 		return instrumentation.OtelDistribution{Language: lang, OtelSdk: sdk}, nil
 	}
 
