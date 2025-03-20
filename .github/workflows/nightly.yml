@@ -41,7 +41,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        provider: [aks]
+        provider: [aks, eks]
         test_scenario: [multi-apps, helm-chart]
 
     steps:
