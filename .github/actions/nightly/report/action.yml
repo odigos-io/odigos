@@ -1,0 +1,94 @@
+name: "Report Outcome"
+description: "Prints a report of a test suite outcome and notifies Slack on failure or success."
+inputs:
+  status:
+    description: "Outcome status (success or failure)"
+    required: true
+    type: string
+  suite_name:
+    description: "Name of the test suite (e.g. cross-cloud-tests, chaos-tests)"
+    required: true
+    type: string
+  suite_parameters:
+    description: "Parameters for the test suite (JSON or string)"
+    required: false
+    default: ""
+  slack_webhook_url:
+    description: "Slack Webhook URL for notifications"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    # Slack Notification on Failure
+    - name: Notify Slack on Failure or Cancellation
+      if: ${{ inputs.status == 'failure' }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
+      shell: bash
+      run: |
+        if [[ -z "$SLACK_WEBHOOK_URL" ]]; then
+          echo "Skipping Slack notification because webhook URL is not provided."
+          exit 0
+        fi
+
+        curl -X POST -H 'Content-type: application/json' --data '
+        {
+          "blocks": [
+              {
+                  "type": "section",
+                  "text": {
+                      "type": "mrkdwn",
+                      "text": "*ERROR*: Providers tests failed > `${{ inputs.suite_name }} - ${{ inputs.suite_parameters }} `"
+                  }
+              },
+              {
+                  "type": "section",
+                  "fields": [
+                      {
+                          "type": "mrkdwn",
+                          "text": "*Link:*\n<https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}|View the GitHub Run>"
+                      }
+                  ]
+              }
+          ]
+        }' $SLACK_WEBHOOK_URL
+
+    # Slack Notification on Success
+    - name: Notify Slack on Success
+      if: ${{ inputs.status == 'success' }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
+      shell: bash
+      run: |
+        if [[ -z "$SLACK_WEBHOOK_URL" ]]; then
+          echo "Skipping Slack notification because webhook URL is not provided."
+          exit 0
+        fi
+
+        curl -X POST -H 'Content-type: application/json' --data '
+        {
+          "blocks": [
+              {
+                  "type": "section",
+                  "text": {
+                      "type": "mrkdwn",
+                      "text": "*SUCCESS*: Providers tests succeeded > `${{ inputs.suite_name }} - ${{ inputs.suite_parameters }} `"
+                  }
+              },
+              {
+                  "type": "section",
+                  "fields": [
+                      {
+                          "type": "mrkdwn",
+                          "text": "*Link:*\n<https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}|View the GitHub Run>"
+                      }
+                  ]
+              }
+          ]
+        }' $SLACK_WEBHOOK_URL
