@@ -95,10 +95,24 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "ui-db-storage",
+									MountPath: "/data",
+								},
+							},
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            k8sconsts.UIServiceAccountName,
+					Volumes: []corev1.Volume{
+						{
+							Name: "ui-db-storage",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+					ServiceAccountName: k8sconsts.UIServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},

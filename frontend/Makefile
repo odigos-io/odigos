@@ -15,7 +15,10 @@ go-licenses: tools
 
 .PHONY: licenses
 licenses: go-licenses
+	# `modernc.org/mathutil` is licensed under BSD-3-Clause,
+	# which is a permissive open-source license. However, `go-licenses` does not automatically 
+	# detect its license file, so we explicitly ignore it to prevent errors.
 	@if [ -d "$(PWD)/licenses" ]; then \
 		rm -rf $(PWD)/licenses; \
 	fi
-	$(TOOLS)/go-licenses save . --save_path=licenses
+	$(TOOLS)/go-licenses save . --save_path=licenses --ignore=modernc.org/mathutil
