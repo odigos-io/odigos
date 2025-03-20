@@ -73,9 +73,9 @@ interface UpdateEntityOptions {
 
 export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: UpdateEntityOptions, callback?: () => void) => {
   if (!!nodeContains) {
-    cy.contains(nodeId, nodeContains).should('exist').click();
+    cy.contains(nodeId, nodeContains).should('exist').click({ force: true });
   } else {
-    cy.get(nodeId).should('exist').click();
+    cy.get(nodeId).should('exist').click({ force: true });
   }
 
   cy.get(DATA_IDS.DRAWER).should('exist');
