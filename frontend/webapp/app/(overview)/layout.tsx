@@ -4,11 +4,11 @@ import React, { useCallback, useMemo, type PropsWithChildren } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import styled from 'styled-components';
-import { ENTITY_TYPES } from '@odigos/ui-kit/types';
+import { EntityTypes } from '@odigos/ui-kit/types';
 import { useNamespace, useSSE, useTokenTracker } from '@/hooks';
 import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
 import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
-import { DataFlowActionsMenu, NAV_ICON_IDS, SideNav, ToastList } from '@odigos/ui-kit/containers';
+import { DataFlowActionsMenu, NavIconIds, SideNav, ToastList } from '@odigos/ui-kit/containers';
 
 const PageContent = styled(FlexColumn)`
   width: 100%;
@@ -32,36 +32,36 @@ const ContentUnderActions = styled(FlexRow)`
 
 const getEntityType = (pathname: string) => {
   return pathname.includes(ROUTES.SOURCES)
-    ? ENTITY_TYPES.SOURCE
+    ? EntityTypes.Source
     : pathname.includes(ROUTES.DESTINATIONS)
-    ? ENTITY_TYPES.DESTINATION
+    ? EntityTypes.Destination
     : pathname.includes(ROUTES.ACTIONS)
-    ? ENTITY_TYPES.ACTION
+    ? EntityTypes.Action
     : pathname.includes(ROUTES.INSTRUMENTATION_RULES)
-    ? ENTITY_TYPES.INSTRUMENTATION_RULE
+    ? EntityTypes.InstrumentationRule
     : undefined;
 };
 
 const getSelectedId = (pathname: string) => {
   return pathname.includes(ROUTES.OVERVIEW)
-    ? NAV_ICON_IDS.OVERVIEW
+    ? NavIconIds.Overview
     : pathname.includes(ROUTES.SOURCES)
-    ? NAV_ICON_IDS.SOURCES
+    ? NavIconIds.Sources
     : pathname.includes(ROUTES.DESTINATIONS)
-    ? NAV_ICON_IDS.DESTINATIONS
+    ? NavIconIds.Destinations
     : pathname.includes(ROUTES.ACTIONS)
-    ? NAV_ICON_IDS.ACTIONS
+    ? NavIconIds.Actions
     : pathname.includes(ROUTES.INSTRUMENTATION_RULES)
-    ? NAV_ICON_IDS.INSTRUMENTATION_RULES
+    ? NavIconIds.InstrumentationRules
     : undefined;
 };
 
 const routesMap = {
-  [NAV_ICON_IDS.OVERVIEW]: ROUTES.OVERVIEW,
-  [NAV_ICON_IDS.SOURCES]: ROUTES.SOURCES,
-  [NAV_ICON_IDS.DESTINATIONS]: ROUTES.DESTINATIONS,
-  [NAV_ICON_IDS.ACTIONS]: ROUTES.ACTIONS,
-  [NAV_ICON_IDS.INSTRUMENTATION_RULES]: ROUTES.INSTRUMENTATION_RULES,
+  [NavIconIds.Overview]: ROUTES.OVERVIEW,
+  [NavIconIds.Sources]: ROUTES.SOURCES,
+  [NavIconIds.Destinations]: ROUTES.DESTINATIONS,
+  [NavIconIds.Actions]: ROUTES.ACTIONS,
+  [NavIconIds.InstrumentationRules]: ROUTES.INSTRUMENTATION_RULES,
 };
 
 function OverviewLayout({ children }: PropsWithChildren) {
@@ -77,7 +77,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
   const selectedId = useMemo(() => getSelectedId(pathname), [pathname]);
 
   const onClickId = useCallback(
-    (navId: NAV_ICON_IDS) => {
+    (navId: NavIconIds) => {
       const route = routesMap[navId];
       if (route) router.push(route);
     },
