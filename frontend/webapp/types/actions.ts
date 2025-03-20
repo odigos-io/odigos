@@ -1,8 +1,8 @@
-import { ACTION_TYPE, type Condition } from '@odigos/ui-kit/types';
+import { ActionType, type Condition } from '@odigos/ui-kit/types';
 
 export interface FetchedAction {
   id: string;
-  type: ACTION_TYPE;
+  type: ActionType;
   conditions: Condition[];
   spec: string;
 }
@@ -36,7 +36,7 @@ export interface ParsedActionSpec {
 }
 
 export interface ActionInput {
-  type: ACTION_TYPE;
+  type: ActionType;
   name: string;
   notes: string;
   disable: boolean;
