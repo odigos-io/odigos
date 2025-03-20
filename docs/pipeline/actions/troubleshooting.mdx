@@ -53,7 +53,7 @@ kubectl logs -n odigos-system <pod-name>
 You might find an error message like this:
 
 ```
-* error decoding 'processors': unknown type: "invalid" for id: "invalid/example-processor" (valid values: [datadog experimental_metricsgeneration metricstransform resource servicegraph spanmetrics sumologic batch tail_sampling cumulativetodelta resourcedetection remotetap memory_limiter filter redaction routing span attributes deltatorate groupbyattrs groupbytrace k8sattributes probabilistic_sampler odigosresourcename])
+* error decoding 'processors': unknown type: "invalid" for id: "invalid/example-processor" (valid values: [datadog experimental_metricsgeneration metricstransform resource servicegraph spanmetrics sumologic batch tail_sampling cumulativetodelta resourcedetection remotetap memory_limiter filter redaction routing span attributes deltatorate groupbyattrs groupbytrace k8sattributes probabilistic_sampler])
 ```
 
 If this is the case, then please follow the instructions in the error message to correct the processor configuration.
