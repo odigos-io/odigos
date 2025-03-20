@@ -7,7 +7,7 @@ const config: Cypress.ConfigOptions = {
   e2e: {
     baseUrl: BASE_URL,
     supportFile: false,
-    waitForAnimations: false,
+    waitForAnimations: true,
     viewportWidth: 1920,
     viewportHeight: 1080,
     retries: {

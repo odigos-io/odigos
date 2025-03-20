@@ -5,7 +5,7 @@ import { GET_CONFIG } from '@/graphql';
 import type { FetchedConfig } from '@/types';
 import { useSuspenseQuery } from '@apollo/client';
 import { useNotificationStore } from '@odigos/ui-kit/store';
-import { CRUD, STATUS_TYPE, TIER } from '@odigos/ui-kit/types';
+import { Crud, StatusType, Tier } from '@odigos/ui-kit/types';
 
 export const useConfig = () => {
   const { addNotification } = useNotificationStore();
@@ -17,8 +17,8 @@ export const useConfig = () => {
   useEffect(() => {
     if (error) {
       addNotification({
-        type: STATUS_TYPE.ERROR,
-        title: error.name || CRUD.READ,
+        type: StatusType.Error,
+        title: error.name || Crud.Read,
         message: error.cause?.message || error.message,
       });
     }
@@ -26,8 +26,8 @@ export const useConfig = () => {
 
   const config = data?.config;
   const isReadonly = data?.config?.readonly || false;
-  const isCommunity = (config?.tier && [TIER.COMMUNITY].includes(config.tier)) || false;
-  const isEnterprise = (config?.tier && [TIER.ONPREM].includes(config.tier)) || false;
+  const isCommunity = (config?.tier && [Tier.Community].includes(config.tier)) || false;
+  const isEnterprise = (config?.tier && [Tier.Onprem].includes(config.tier)) || false;
 
   return { config, isReadonly, isCommunity, isEnterprise };
 };
