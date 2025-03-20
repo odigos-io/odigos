@@ -7,7 +7,8 @@ import (
 
 	sqlitedialect "gorm.io/driver/sqlite"
 
-	_ "github.com/glebarez/sqlite" // Pure Go SQLite driver (no CGO required)
+	_ "github.com/glebarez/sqlite" // Pure Go SQLite driver (No CGO, but has modernc dependency)
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -18,13 +19,18 @@ type SQLiteDB struct {
 
 // NewSQLiteDB creates a new SQLite database connection
 func NewSQLiteDB(dbPath string) (*SQLiteDB, error) {
-	// By default, GORM's SQLite dialect uses github.com/mattn/go-sqlite3 which requires CGO.
-	// Here, we're creating a custom setup that uses github.com/glebarez/sqlite (pure Go SQLite implementation) instead.
+	// By default, GORM's SQLite dialect uses github.com/mattn/go-sqlite3, which requires CGO.
+	// Here, we're creating a custom setup that uses github.com/glebarez/sqlite
+	// (a pure Go SQLite implementation) instead.
+	//
 	// This allows us to build with CGO_ENABLED=0 while still using GORM's SQLite dialect.
+	//
 	// The approach works because:
-	// 1. github.com/glebarez/sqlite registers itself with the same driver name ("sqlite")
-	// 2. We can pass our own sql.DB connection to GORM's dialector
-	// 3. GORM will use our connection with the glebarez/sqlite driver instead of creating its own with mattn/go-sqlite3
+	// 1. github.com/glebarez/sqlite registers itself with the driver name "sqlite".
+	// 2. We open an sql.DB connection using sql.Open("sqlite", dbPath).
+	// 3. We pass our own sql.DB connection to GORM's dialector.
+	// 4. GORM will use our connection with the glebarez/sqlite driver instead of creating its own
+	//    with mattn/go-sqlite3.
 	sqlDB, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open sqlite database: %w", err)
