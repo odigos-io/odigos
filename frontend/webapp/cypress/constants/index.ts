@@ -46,10 +46,10 @@ export const DATA_IDS = {
   SELECT_DESTINATION: `[data-id=select-potential-destination-${SELECTED_ENTITIES.DESTINATION.TYPE}]`,
   SELECT_DESTINATION_AUTOFILL_FIELD: `[data-id=${SELECTED_ENTITIES.DESTINATION.AUTOFILL_FIELD}]`,
 
-  ADD_SOURCE: '[data-id=add-source]',
-  ADD_DESTINATION: '[data-id=add-destination]',
-  ADD_ACTION: '[data-id=add-action]',
-  ADD_INSTRUMENTATION_RULE: '[data-id=add-instrumentation-rule]',
+  ADD_SOURCE: '[data-id=add-Source]',
+  ADD_DESTINATION: '[data-id=add-Destination]',
+  ADD_ACTION: '[data-id=add-Action]',
+  ADD_INSTRUMENTATION_RULE: '[data-id=add-InstrumentationRule]',
 
   MODAL: '[data-id=modal]',
   MODAL_ADD_SOURCE: '[data-id=modal-Add-Source]',
