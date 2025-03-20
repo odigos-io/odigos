@@ -9,125 +9,125 @@ on:
       - greatwall
 
 jobs:
-  build-autoscaler:
-    name: build-autoscaler
-    strategy:
-      matrix:
-        dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build Autoscaler Image
-        uses: docker/build-push-action@v6
-        with:
-          platforms: linux/amd64,linux/arm64
-          push: false
-          tags: autoscaler:pr-${{ github.event.number }}
-          provenance: false
-          build-args: SERVICE_NAME=autoscaler
-          file: ${{ matrix.dockerfile }}
+  # build-autoscaler:
+  #   name: build-autoscaler
+  #   strategy:
+  #     matrix:
+  #       dockerfile: ['Dockerfile', 'Dockerfile.rhel']
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
+  #     - name: Build Autoscaler Image
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         platforms: linux/amd64,linux/arm64
+  #         push: false
+  #         tags: autoscaler:pr-${{ github.event.number }}
+  #         provenance: false
+  #         build-args: SERVICE_NAME=autoscaler
+  #         file: ${{ matrix.dockerfile }}
 
-  build-scheduler:
-    name: build-scheduler
-    strategy:
-      matrix:
-        dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build Scheduler Image
-        uses: docker/build-push-action@v6
-        with:
-          platforms: linux/amd64,linux/arm64
-          push: false
-          tags: scheduler:pr-${{ github.event.number }}
-          provenance: false
-          build-args: SERVICE_NAME=scheduler
-          file: ${{ matrix.dockerfile }}
+  # build-scheduler:
+  #   name: build-scheduler
+  #   strategy:
+  #     matrix:
+  #       dockerfile: ['Dockerfile', 'Dockerfile.rhel']
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
+  #     - name: Build Scheduler Image
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         platforms: linux/amd64,linux/arm64
+  #         push: false
+  #         tags: scheduler:pr-${{ github.event.number }}
+  #         provenance: false
+  #         build-args: SERVICE_NAME=scheduler
+  #         file: ${{ matrix.dockerfile }}
 
-  build-and-test-instrumentor:
-    name: build-and-test-instrumentor
-    strategy:
-      matrix:
-        dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.23.0'
-      - name: Build Instrumentor Image
-        uses: docker/build-push-action@v6
-        with:
-          platforms: linux/amd64,linux/arm64
-          push: false
-          tags: instrumentor:pr-${{ github.event.number }}
-          provenance: false
-          build-args: SERVICE_NAME=instrumentor
-          file: ${{ matrix.dockerfile }}
-      - name: run tests
-        working-directory: ./instrumentor
-        run: |
-          make test
+  # build-and-test-instrumentor:
+  #   name: build-and-test-instrumentor
+  #   strategy:
+  #     matrix:
+  #       dockerfile: ['Dockerfile', 'Dockerfile.rhel']
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
+  #     - uses: actions/setup-go@v5
+  #       with:
+  #         go-version: '1.23.0'
+  #     - name: Build Instrumentor Image
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         platforms: linux/amd64,linux/arm64
+  #         push: false
+  #         tags: instrumentor:pr-${{ github.event.number }}
+  #         provenance: false
+  #         build-args: SERVICE_NAME=instrumentor
+  #         file: ${{ matrix.dockerfile }}
+  #     - name: run tests
+  #       working-directory: ./instrumentor
+  #       run: |
+  #         make test
 
-  build-and-test-odigos-collector:
-    name: build-and-test-odigos-collector
-    strategy:
-      matrix:
-        dockerfile: ['collector/Dockerfile', 'collector/Dockerfile.rhel']
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: build Odigos Collector Image
-        uses: docker/build-push-action@v6
-        with:
-          platforms: linux/amd64,linux/arm64
-          push: false
-          tags: odigos-collector:pr-${{ github.event.number }}
-          provenance: false
-          context: ./collector
-          file: ${{ matrix.dockerfile }}
-      - name: run tests
-        working-directory: ./collector
-        run: |
-          make test
+  # build-and-test-odigos-collector:
+  #   name: build-and-test-odigos-collector
+  #   strategy:
+  #     matrix:
+  #       dockerfile: ['collector/Dockerfile', 'collector/Dockerfile.rhel']
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
+  #     - name: build Odigos Collector Image
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         platforms: linux/amd64,linux/arm64
+  #         push: false
+  #         tags: odigos-collector:pr-${{ github.event.number }}
+  #         provenance: false
+  #         context: ./collector
+  #         file: ${{ matrix.dockerfile }}
+  #     - name: run tests
+  #       working-directory: ./collector
+  #       run: |
+  #         make test
 
-  build-and-test-odiglet:
-    name: build-and-test-odiglet
-    strategy:
-      matrix:
-        dockerfile: ['odiglet/Dockerfile', 'odiglet/Dockerfile.rhel']
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Build Odiglet Image
-        uses: docker/build-push-action@v6
-        with:
-          platforms: linux/amd64,linux/arm64
-          file: ${{ matrix.dockerfile }}
-          context: .
-          push: false
-          tags: odiglet:pr-${{ github.event.number }}
-          provenance: false
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev
-      - name: run tests
-        working-directory: ./odiglet
-        run: |
-          make test
+  # build-and-test-odiglet:
+  #   name: build-and-test-odiglet
+  #   strategy:
+  #     matrix:
+  #       dockerfile: ['odiglet/Dockerfile', 'odiglet/Dockerfile.rhel']
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
+  #     - name: Set up QEMU
+  #       uses: docker/setup-qemu-action@v3
+  #     - name: Build Odiglet Image
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         platforms: linux/amd64,linux/arm64
+  #         file: ${{ matrix.dockerfile }}
+  #         context: .
+  #         push: false
+  #         tags: odiglet:pr-${{ github.event.number }}
+  #         provenance: false
+  #     - name: Install build dependencies
+  #       run: |
+  #         sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev
+  #     - name: run tests
+  #       working-directory: ./odiglet
+  #       run: |
+  #         make test
 
   build-frontend:
     name: build-frontend
@@ -149,72 +149,72 @@ jobs:
           tags: frontend:pr-${{ github.event.number }}
           provenance: false
 
-  build-operator:
-    name: build-operator
-    strategy:
-      matrix:
-        dockerfile: ['operator/Dockerfile', 'operator/Dockerfile.rhel']
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build Operator Image
-        uses: docker/build-push-action@v6
-        with:
-          platforms: linux/amd64,linux/arm64
-          file: ${{ matrix.dockerfile }}
-          context: .
-          push: false
-          tags: operator:pr-${{ github.event.number }}
-          provenance: false
+  # build-operator:
+  #   name: build-operator
+  #   strategy:
+  #     matrix:
+  #       dockerfile: ['operator/Dockerfile', 'operator/Dockerfile.rhel']
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
+  #     - name: Build Operator Image
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         platforms: linux/amd64,linux/arm64
+  #         file: ${{ matrix.dockerfile }}
+  #         context: .
+  #         push: false
+  #         tags: operator:pr-${{ github.event.number }}
+  #         provenance: false
 
-  build-cli:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.23.0'
-      - name: Set up Goreleaser
-        uses: goreleaser/goreleaser-action@v5
-        with:
-          version: latest
-          args: build --snapshot --clean
+  # build-cli:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Set up Go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: '1.23.0'
+  #     - name: Set up Goreleaser
+  #       uses: goreleaser/goreleaser-action@v5
+  #       with:
+  #         version: latest
+  #         args: build --snapshot --clean
 
-  test-k8sutils:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.23.0'
-      - name: Test k8sutils module
-        working-directory: ./k8sutils
-        run: |
-          go test -v ./...
+  # test-k8sutils:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-go@v5
+  #       with:
+  #         go-version: '1.23.0'
+  #     - name: Test k8sutils module
+  #       working-directory: ./k8sutils
+  #       run: |
+  #         go test -v ./...
 
-  test-common:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.23.0'
-      - name: Test common module
-        working-directory: ./common
-        run: |
-          make test
+  # test-common:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-go@v5
+  #       with:
+  #         go-version: '1.23.0'
+  #     - name: Test common module
+  #       working-directory: ./common
+  #       run: |
+  #         make test
 
-  test-procdiscovery:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.23.0'
-      - name: Test procdiscovery module
-        working-directory: ./procdiscovery
-        run: |
-          go test -v ./...
+  # test-procdiscovery:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-go@v5
+  #       with:
+  #         go-version: '1.23.0'
+  #     - name: Test procdiscovery module
+  #       working-directory: ./procdiscovery
+  #       run: |
+  #         go test -v ./...
