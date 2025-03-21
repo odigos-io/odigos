@@ -206,7 +206,18 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	for _, envVar := range podContainerSpec.Env {
 		existingEnvNames[envVar.Name] = struct{}{}
 	}
+
+	// inject various kinds of distro environment variables
 	podswebhook.InjectOdigosK8sEnvVars(&existingEnvNames, podContainerSpec, distroName, pw.Namespace)
+	for _, envVar := range distroMetadata.EnvironmentVariables.StaticVariables {
+		podswebhook.InjectStaticEnvVar(&existingEnvNames, podContainerSpec, envVar.EnvName, envVar.EnvValue)
+	}
+	if distroMetadata.EnvironmentVariables.OpAmpClientEnvironments {
+		podswebhook.InjectOpampServerEnvVar(&existingEnvNames, podContainerSpec)
+	}
+	if distroMetadata.EnvironmentVariables.OtlpHttpLocalNode {
+		podswebhook.InjectOtlpHttpEndpointEnvVar(&existingEnvNames, podContainerSpec)
+	}
 
 	volumeMounted := false
 	if distroMetadata.RuntimeAgent != nil {

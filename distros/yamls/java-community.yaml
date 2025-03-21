@@ -12,14 +12,16 @@ spec:
   description: |
     This distribution is for JVM-based applications (Java, Scala, Kotlin, etc.) using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
   environmentVariables:
-    - envName: JAVA_OPTS
-      envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
-      delimiter: ' '
-    - envName: JAVA_TOOL_OPTIONS
-      envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
-      delimiter: ' '
+    otlpHttpLocalNode: true
   runtimeAgent:
     directoryNames:
       - "{{ODIGOS_AGENTS_DIR}}/java"
     k8sAttrsViaEnvVars: true
     device: 'instrumentation.odigos.io/generic'
+    environmentVariables:
+      - envName: JAVA_OPTS
+        envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
+        delimiter: ' '
+      - envName: JAVA_TOOL_OPTIONS
+        envValue: '-javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
+        delimiter: ' '

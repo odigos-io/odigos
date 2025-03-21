@@ -93,7 +93,7 @@ spec:
     - name: '[2 - Workload Instrumentation] Simple-demo instrumented after destination added'
       try:
         - assert:
-            file: ../../common/assert/simple-demo-instrumented-full.yaml
+            file: ../../common/assert/simple-demo-instrumented.yaml
         - assert:
             timeout: 2m
             file: 01-workloads.yaml
@@ -208,7 +208,7 @@ spec:
     - name: '[4 - Namespace Instrumentation] Simple demo instrumented after runtime detection'
       try:
         - assert:
-            file: ../../common/assert/simple-demo-instrumented-full.yaml
+            file: ../../common/assert/simple-demo-instrumented.yaml
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh

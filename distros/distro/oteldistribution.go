@@ -22,9 +22,33 @@ type Framework struct {
 	FrameworkVersion string `yaml:"frameworkVersion"`
 }
 
+// static name-value environment variable that need to be set in the application runtime.
+type StaticEnvironmentVariable struct {
+	// The name of the environment variable to set.
+	EnvName string `yaml:"envName"`
+
+	// The value of the environment variable to set.
+	EnvValue string `yaml:"envValue"`
+}
+
+type EnvironmentVariables struct {
+
+	// if this distribution runs an opamp client, add the environment variables that configures the server endpoint (local node)
+	OpAmpClientEnvironments bool `yaml:"opAmpClientEnvironments,omitempty"`
+
+	// set to true if this distribution uses the OTLP HTTP protocol to emit telemetry data to node collector.
+	// if `true` the OTEL_EXPORTER_OTLP_ENDPOINT environment variable will be set to LocalTrafficOTLPHttpDataCollectionEndpoint
+	OtlpHttpLocalNode bool `yaml:"otlpHttpLocalNode,omitempty"`
+
+	// list of static environment variables that need to be set in the application runtime.
+	StaticVariables []StaticEnvironmentVariable `yaml:"staticVariables,omitempty"`
+}
+
 // this struct describes environment variables that needs to be set in the application runtime
 // to enable the distribution.
-type EnvironmentVariable struct {
+// This environment variable should be patched with odigos value if it already exists in the manifest.
+// If this value is determined to arrive from Container Runtime during runtime inspection, this value should be set in manifest so not to break the application.
+type RuntimeAgentEnvironmentVariable struct {
 
 	// The name of the environment variable to set or patch.
 	EnvName string `yaml:"envName"`
@@ -61,6 +85,10 @@ type RuntimeAgent struct {
 	// This list contains the full path of the files that need to be opened for the agent to properly start.
 	// All these paths must be contained in one of the directoryNames.
 	FileOpenTriggers []string `yaml:"fileOpenTriggers,omitempty"`
+
+	// List of environment variables that need to be set in the application runtime to enable the distribution.
+	// those are patched if exist in the manifest, and supplemented from runtime inspection when relevant (value from docker runtime).
+	EnvironmentVariables []RuntimeAgentEnvironmentVariable `yaml:"environmentVariables,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
@@ -97,9 +125,9 @@ type OtelDistro struct {
 	// Free text description of the distribution, what it includes, it's use cases, etc.
 	Description string `yaml:"description"`
 
-	// a list of environment variables that needs to be set in the application runtime
+	// categories of environments variables that need to be set in the application runtime
 	// to enable the distribution.
-	EnvironmentVariables []EnvironmentVariable `yaml:"environmentVariables,omitempty"`
+	EnvironmentVariables EnvironmentVariables `yaml:"environmentVariables,omitempty"`
 
 	// Metadata and properties of the runtime agent that is used to enable the distribution.
 	// Can be nil in case no runtime agent is required.
