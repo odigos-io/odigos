@@ -1558,9 +1558,11 @@ spec:
               value: "non-web"
           "io.opentelemetry.elasticsearch-rest-7.0":
             - new_attribute: "odigos.category"
-              value: "Search Engine"
+              value: "HTTP"
             - new_attribute: "odigos.transaction.type"
-              value: "non-web"
+              value: "web"
+            - new_attribute: "odigos.sub_category"
+              from_field: "http.request.method"
           "io.opentelemetry.elasticsearch-transport-5.0":
             - new_attribute: "odigos.category"
               value: "Search Engine"

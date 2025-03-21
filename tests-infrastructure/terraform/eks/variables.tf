@@ -17,13 +17,3 @@ variable "node_spec" {
   description = "The node spec for the cluster"
   default     = "m6a.large"
 }
-
-variable "test_scenario" {
-  description = "Test scenario to differentiate state files"
-  type        = string
-}
-
-variable "run_id" {
-  description = "GitHub run ID for uniquely identifying state files"
-  type        = string
-}

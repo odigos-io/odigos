@@ -1,4 +1,3 @@
-# This pipeline was created in order to allow manual triggering of the job (Build images + run)
 name: Cross-Cloud Chainsaw Tests
 
 on:
@@ -12,7 +11,6 @@ on:
           - all
           - aks
           - eks
-
       test_scenario:
         description: 'The test suite to run (e.g. helm-chart, multi-apps)'
         required: true
@@ -34,17 +32,21 @@ jobs:
   build-images:
     uses: ./.github/workflows/build-dev-images.yml
 
+
   test:
-      needs: build-images
-      runs-on: warp-ubuntu-latest-x64-8x-spot
-      strategy:
-        fail-fast: false
-        matrix:
-          provider: ${{ fromJSON(inputs.provider == 'all' && '["eks", "aks"]' || format('["{0}"]', inputs.provider)) }}
-          test_scenario: ${{ fromJSON(inputs.test_scenario == 'all' && '["multi-apps", "helm-chart"]' || format('["{0}"]', inputs.test_scenario)) }}
-      steps:
-        - name: Run cross-cloud tests
-          uses: ./.github/workflows/run-cross-cloud-tests.yml
-          with:
-            provider: ${{ matrix.provider }}
-            test_scenario: ${{ matrix.test_scenario }}
+    needs: build-images
+    runs-on: warp-ubuntu-latest-x64-8x-spot
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: ${{ fromJSON(inputs.provider == 'all' && '["eks", "aks"]' || format('["{0}"]', inputs.provider)) }}
+        test_scenario: ${{ fromJSON(inputs.test_scenario == 'all' && '["multi-apps", "helm-chart"]' || format('["{0}"]', inputs.test_scenario)) }}
+    steps:
+      - name: Cross-Cloud Tests
+        uses: ./.github/actions/cross-cloud-tests
+        with:
+          provider: ${{ matrix.provider }}
+          test_scenario: ${{ matrix.test_scenario }}
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SHA: ${{ github.sha }}
