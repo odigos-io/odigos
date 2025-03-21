@@ -32,7 +32,7 @@ func createTracesProcessor(
 	cfg component.Config,
 	nextConsumer consumer.Traces) (processor.Traces, error) {
 
-	proc := &samplingProcessor{logger: set.Logger, config: cfg.(*Config)}
+	proc := newSamplingProcessor(set.Logger, cfg.(*Config))
 
 	return processorhelper.NewTraces(
 		ctx,
