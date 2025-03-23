@@ -167,8 +167,8 @@ func main() {
 	}
 	defer database.Close()
 
-	// Run migrations
-	db.AutoMigrate(database.GetDB())
+	// InitializeDatabaseSchema sets up the initial database schema.
+	db.InitializeDatabaseSchema(database.GetDB())
 
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := parseFlags()

@@ -17,19 +17,19 @@ import (
 // - `created_at` → Ensures uniqueness even if the same PID is reused after a pod restart.
 
 type InstrumentedProcess struct {
-	OdigletName       string    `gorm:"column:odiglet_name; type:text; not null"`                           // Agent/collector name
-	NodeName          string    `gorm:"column:k8s_node_name; type:text; not null"`                          // Kubernetes node
-	WorkloadName      string    `gorm:"column:workload_name; type:text; not null"`                          // Kubernetes workload name
-	WorkloadKind      string    `gorm:"column:workload_kind; type:text; not null"`                          // Kubernetes workload kind [sts/ds/deploy]
-	PodName           string    `gorm:"primaryKey; column:k8s_pod_name; type:text; not null"`               // Kubernetes pod name (PK)
-	PID               int       `gorm:"primaryKey; column:process_pid; not null"`                           // Process ID inside the container (PK)
-	Namespace         string    `gorm:"primaryKey; column:k8s_namespace_name; type:text; not null"`         // Kubernetes namespace (PK)
-	ContainerName     string    `gorm:"primaryKey; column:k8s_container_name; type:text; not null"`         // Container name inside the pod (PK)
-	CreatedAt         time.Time `gorm:"primaryKey; column:created_at; not null; default:CURRENT_TIMESTAMP"` // Timestamp when the process was detected (PK)
-	TelemetryLang     string    `gorm:"column:telemetry_sdk_language; type:text; not null"`                 // Language of the telemetry SDK
-	ServiceInstanceID string    `gorm:"column:service_instance_id; type:text; not null"`                    // Service instance identifier
-	Healthy           bool      `gorm:"column:healthy; not null"`                                           // Process health status
-	HealthyReason     string    `gorm:"column:healthy_reason; type:text"`                                   // Reason for health status (optional)
+	OdigletName       string    `gorm:"column:odiglet_name; type:text; not null"`                                                                     // Agent/collector name
+	NodeName          string    `gorm:"column:k8s_node_name; type:text; not null"`                                                                    // Kubernetes node
+	WorkloadName      string    `gorm:"column:workload_name; type:text; not null"`                                                                    // Kubernetes workload name
+	WorkloadKind      string    `gorm:"column:workload_kind; type:text; not null; check:workload_kind IN ('Deployment', 'StatefulSet', 'DaemonSet')"` // Kubernetes workload kind [Deployment/StatefulSet/DaemonSet]
+	PodName           string    `gorm:"primaryKey; column:k8s_pod_name; type:text; not null"`                                                         // Kubernetes pod name (PK)
+	PID               int       `gorm:"primaryKey; column:process_pid; not null"`                                                                     // Process ID inside the container (PK)
+	Namespace         string    `gorm:"primaryKey; column:k8s_namespace_name; type:text; not null"`                                                   // Kubernetes namespace (PK)
+	ContainerName     string    `gorm:"primaryKey; column:k8s_container_name; type:text; not null"`                                                   // Container name inside the pod (PK)
+	CreatedAt         time.Time `gorm:"primaryKey; column:created_at; not null; default:CURRENT_TIMESTAMP"`                                           // Timestamp when the process was detected (PK)
+	TelemetryLang     string    `gorm:"column:telemetry_sdk_language; type:text; not null"`                                                           // Language of the telemetry SDK
+	ServiceInstanceID string    `gorm:"column:service_instance_id; type:text; not null"`                                                              // Service instance identifier
+	Healthy           bool      `gorm:"column:healthy; not null"`                                                                                     // Process health status
+	HealthyReason     string    `gorm:"column:healthy_reason; type:text"`                                                                             // Reason for health status (optional)
 }
 
 func (InstrumentedProcess) TableName() string {
@@ -58,7 +58,7 @@ func (InstrumentedProcessError) TableName() string {
 	return "instrumented_processes_errors"
 }
 
-func AutoMigrate(db *gorm.DB) {
+func InitializeDatabaseSchema(db *gorm.DB) {
 	db.AutoMigrate(&InstrumentedProcess{})
 	db.AutoMigrate(&InstrumentedProcessError{})
 
