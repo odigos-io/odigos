@@ -59,6 +59,14 @@ func (c *FakeActionsV1alpha1) RenameAttributes(namespace string) v1alpha1.Rename
 	return newFakeRenameAttributes(c, namespace)
 }
 
+func (c *FakeActionsV1alpha1) ServiceNameSamplers(namespace string) v1alpha1.ServiceNameSamplerInterface {
+	return newFakeServiceNameSamplers(c, namespace)
+}
+
+func (c *FakeActionsV1alpha1) SpanAttributeSamplers(namespace string) v1alpha1.SpanAttributeSamplerInterface {
+	return newFakeSpanAttributeSamplers(c, namespace)
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeActionsV1alpha1) RESTClient() rest.Interface {
