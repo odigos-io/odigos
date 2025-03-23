@@ -12,6 +12,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+# Needed for AWS CLI to work
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build-cli:
     runs-on: ubuntu-latest
