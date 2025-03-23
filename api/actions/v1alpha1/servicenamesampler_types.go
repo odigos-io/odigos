@@ -14,7 +14,7 @@ type ServiceNameSamplerSpec struct {
 
 	// List of services to sample based on presence in the trace
 	// +kubebuilder:validation:Required
-	Services []ServiceNameFilter `json:"services"`
+	Services []ServiceNameFilter `json:"services"` // ✅ fixed
 }
 
 type ServiceNameFilter struct {

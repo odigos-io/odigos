@@ -10,10 +10,10 @@ import (
 )
 
 var SamplingSupportedActions = map[reflect.Type]ActionHandler{
-	reflect.TypeOf(&actionv1.LatencySampler{}):      &LatencySamplerHandler{},
-	reflect.TypeOf(&actionv1.ErrorSampler{}):        &ErrorSamplerHandler{},
-	reflect.TypeOf(&actionv1.ServiceNameFilter{}):   &ServiceNameSamplerHandler{},
-	reflect.TypeOf(&actionv1.SpanAttributeFilter{}): &SpanAttributeSamplerHandler{},
+	reflect.TypeOf(&actionv1.LatencySampler{}):       &LatencySamplerHandler{},
+	reflect.TypeOf(&actionv1.ErrorSampler{}):         &ErrorSamplerHandler{},
+	reflect.TypeOf(&actionv1.ServiceNameSampler{}):   &ServiceNameSamplerHandler{},
+	reflect.TypeOf(&actionv1.SpanAttributeSampler{}): &SpanAttributeSamplerHandler{},
 	// Add more action types here
 }
 
