@@ -16,14 +16,14 @@ const (
 	AttributeConditionNotEquals SpanAttributeCondition = "not_equals"
 )
 
-type SpanAttributeSampler struct {
+type SpanAttribute struct {
 	AttributeKey          string                 `mapstructure:"attribute_key"`
 	AttributeCondition    SpanAttributeCondition `mapstructure:"condition"`
 	ExpectedValue         string                 `mapstructure:"expected_value,omitempty"`
 	FallbackSamplingRatio float64                `mapstructure:"fallback_sampling_ratio"`
 }
 
-func (s *SpanAttributeSampler) Validate() error {
+func (s *SpanAttribute) Validate() error {
 	if s.AttributeKey == "" {
 		return errors.New("attribute key cannot be empty")
 	}
@@ -40,7 +40,7 @@ func (s *SpanAttributeSampler) Validate() error {
 	return nil
 }
 
-func (s *SpanAttributeSampler) Evaluate(td ptrace.Traces) (filterMatch bool, conditionMatch bool, fallbackRatio float64) {
+func (s *SpanAttribute) Evaluate(td ptrace.Traces) (filterMatch bool, conditionMatch bool, fallbackRatio float64) {
 	rs := td.ResourceSpans()
 	for i := 0; i < rs.Len(); i++ {
 		scopeSpans := rs.At(i).ScopeSpans()

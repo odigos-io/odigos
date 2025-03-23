@@ -42,27 +42,27 @@ func (r *Rule) Validate() error {
 		return errors.New("rule details cannot be nil")
 	}
 
+	var details sampling.SamplingDecision
+
 	switch r.Type {
 	case "http_latency":
-		var details sampling.HttpRouteLatencyRule
-		if err := mapstructure.Decode(r.RuleDetails, &details); err != nil {
-			return err
-		}
-		if err := details.Validate(); err != nil {
-			return err
-		}
-		r.RuleDetails = &details
+		details = &sampling.HttpRouteLatencyRule{}
 	case "error":
-		var details sampling.ErrorRule
-		if err := mapstructure.Decode(r.RuleDetails, &details); err != nil {
-			return err
-		}
-		if err := details.Validate(); err != nil {
-			return err
-		}
-		r.RuleDetails = &details
+		details = &sampling.ErrorRule{}
+	case "span_attribute":
+		details = &sampling.SpanAttribute{}
+	case "service_name":
+		details = &sampling.ServiceName{}
 	default:
 		return fmt.Errorf("unknown rule type: %s", r.Type)
 	}
+
+	if err := mapstructure.Decode(r.RuleDetails, &details); err != nil {
+		return err
+	}
+	if err := details.Validate(); err != nil {
+		return err
+	}
+	r.RuleDetails = &details
 	return nil
 }
