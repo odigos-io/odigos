@@ -11,6 +11,8 @@
 - [PiiMasking](#PiiMasking)
 - [ProbabilisticSampler](#ProbabilisticSampler)
 - [RenameAttribute](#RenameAttribute)
+- [ServiceNameSampler](#ServiceNameSampler)
+- [SpanAttributeSampler](#SpanAttributeSampler)
   
     
     
@@ -399,6 +401,100 @@
 </td>
 <td>
 <a href="#RenameAttributeStatus"><code>RenameAttributeStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `ServiceNameSampler` <a id="ServiceNameSampler"></a>
+    
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>ServiceNameSampler</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ServiceNameSamplerSpec"><code>ServiceNameSamplerSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ServiceNameSamplerStatus"><code>ServiceNameSamplerStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `SpanAttributeSampler` <a id="SpanAttributeSampler"></a>
+    
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>SpanAttributeSampler</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#SpanAttributeSamplerSpec"><code>SpanAttributeSamplerSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#SpanAttributeSamplerStatus"><code>SpanAttributeSamplerStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -1445,6 +1541,298 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
    <p>Represents the observations of a RenameAttribute's current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
 </td>
+</tr>
+</tbody>
+</table>
+
+## `ServiceNameFilter` <a id="ServiceNameFilter"></a>
+    
+
+**Appears in:**
+
+- [ServiceNameSamplerSpec](#ServiceNameSamplerSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>service_name</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>fallback_sampling_ratio</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `ServiceNameSamplerSpec` <a id="ServiceNameSamplerSpec"></a>
+    
+
+**Appears in:**
+
+- [ServiceNameSampler](#ServiceNameSampler)
+
+<p>ServiceNameSamplerSpec defines the desired state of ServiceNameSampler</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>actionName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>signals</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>services</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ServiceNameFilter"><code>[]ServiceNameFilter</code></a>
+</td>
+<td>
+   <p>List of services to sample based on presence in the trace</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `ServiceNameSamplerStatus` <a id="ServiceNameSamplerStatus"></a>
+    
+
+**Appears in:**
+
+- [ServiceNameSampler](#ServiceNameSampler)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `SpanAttributeFilter` <a id="SpanAttributeFilter"></a>
+    
+
+**Appears in:**
+
+- [SpanAttributeSamplerSpec](#SpanAttributeSamplerSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>attribute_key</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>condition</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Supported: exists, equals, not_equals</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>expected_value</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Optional: only required for equals and not_equals</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fallback_sampling_ratio</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `SpanAttributeSamplerSpec` <a id="SpanAttributeSamplerSpec"></a>
+    
+
+**Appears in:**
+
+- [SpanAttributeSampler](#SpanAttributeSampler)
+
+<p>SpanAttributeSamplerSpec defines the desired state of SpanAttributeSampler</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>actionName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>signals</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>attributes_filters</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#SpanAttributeFilter"><code>[]SpanAttributeFilter</code></a>
+</td>
+<td>
+   <p>Filters based on span attributes (e.g. env=prod, http.method, etc.)</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `SpanAttributeSamplerStatus` <a id="SpanAttributeSamplerStatus"></a>
+    
+
+**Appears in:**
+
+- [SpanAttributeSampler](#SpanAttributeSampler)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 </tbody>
 </table>

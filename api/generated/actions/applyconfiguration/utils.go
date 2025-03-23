@@ -87,6 +87,22 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.RenameAttributeSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RenameAttributeStatus"):
 		return &actionsv1alpha1.RenameAttributeStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ServiceNameFilter"):
+		return &actionsv1alpha1.ServiceNameFilterApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ServiceNameSampler"):
+		return &actionsv1alpha1.ServiceNameSamplerApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ServiceNameSamplerSpec"):
+		return &actionsv1alpha1.ServiceNameSamplerSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ServiceNameSamplerStatus"):
+		return &actionsv1alpha1.ServiceNameSamplerStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SpanAttributeFilter"):
+		return &actionsv1alpha1.SpanAttributeFilterApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SpanAttributeSampler"):
+		return &actionsv1alpha1.SpanAttributeSamplerApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SpanAttributeSamplerSpec"):
+		return &actionsv1alpha1.SpanAttributeSamplerSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SpanAttributeSamplerStatus"):
+		return &actionsv1alpha1.SpanAttributeSamplerStatusApplyConfiguration{}
 
 	}
 	return nil
