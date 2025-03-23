@@ -7,15 +7,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSpanAttributeExistsSampler_AttributeExists(t *testing.T) {
-	s := SpanAttributeExistsSampler{
-		AttributeKey:          "user.id",
-		FallbackSamplingRatio: 20.0,
+func TestSpanAttributeSampler_ExistsCondition(t *testing.T) {
+	s := SpanAttributeSampler{
+		AttributeKey:          "env",
+		AttributeCondition:    AttributeConditionExists,
+		FallbackSamplingRatio: 10.0,
 	}
 
 	trace := testutil.NewTrace().
-		AddResource("user-service").
-		AddSpan("create-user", testutil.WithAttribute("user.id", "abc123")).
+		AddResource("test").
+		AddSpan("span1", testutil.WithAttribute("env", "prod")).
 		Done().
 		Build()
 
@@ -23,40 +24,61 @@ func TestSpanAttributeExistsSampler_AttributeExists(t *testing.T) {
 
 	assert.True(t, filterMatch)
 	assert.True(t, conditionMatch)
-	assert.Equal(t, 20.0, fallback)
+	assert.Equal(t, 10.0, fallback)
 }
 
-func TestSpanAttributeExistsSampler_AttributeMissing(t *testing.T) {
-	s := SpanAttributeExistsSampler{
-		AttributeKey:          "session.token",
-		FallbackSamplingRatio: 3.0,
+func TestSpanAttributeSampler_Equals_Match(t *testing.T) {
+	s := SpanAttributeSampler{
+		AttributeKey:          "env",
+		AttributeCondition:    AttributeConditionEquals,
+		ExpectedValue:         "prod",
+		FallbackSamplingRatio: 5.0,
 	}
 
 	trace := testutil.NewTrace().
-		AddResource("auth-service").
-		AddSpan("auth-request").
+		AddResource("web").
+		AddSpan("homepage", testutil.WithAttribute("env", "prod")).
 		Done().
 		Build()
 
 	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
 
-	assert.False(t, filterMatch)
-	assert.False(t, conditionMatch)
-	assert.Equal(t, 3.0, fallback)
+	assert.True(t, filterMatch)
+	assert.True(t, conditionMatch)
+	assert.Equal(t, 5.0, fallback)
 }
 
-func TestSpanAttributeExistsSampler_ExistsInOneOfManySpans(t *testing.T) {
-	s := SpanAttributeExistsSampler{
-		AttributeKey:          "feature.flag",
+func TestSpanAttributeSampler_Equals_NoMatch(t *testing.T) {
+	s := SpanAttributeSampler{
+		AttributeKey:          "env",
+		AttributeCondition:    AttributeConditionEquals,
+		ExpectedValue:         "staging",
+		FallbackSamplingRatio: 5.0,
+	}
+
+	trace := testutil.NewTrace().
+		AddResource("web").
+		AddSpan("homepage", testutil.WithAttribute("env", "prod")).
+		Done().
+		Build()
+
+	filterMatch, conditionMatch, _ := s.Evaluate(trace)
+
+	assert.False(t, filterMatch)
+	assert.False(t, conditionMatch)
+}
+
+func TestSpanAttributeSampler_NotEquals_Match(t *testing.T) {
+	s := SpanAttributeSampler{
+		AttributeKey:          "env",
+		AttributeCondition:    AttributeConditionNotEquals,
+		ExpectedValue:         "prod",
 		FallbackSamplingRatio: 12.0,
 	}
 
 	trace := testutil.NewTrace().
-		AddResource("feature-service").
-		AddSpan("evaluate").
-		Done().
-		AddResource("feature-service").
-		AddSpan("check-flag", testutil.WithAttribute("feature.flag", "beta-mode")).
+		AddResource("service").
+		AddSpan("process", testutil.WithAttribute("env", "dev")).
 		Done().
 		Build()
 
@@ -65,4 +87,53 @@ func TestSpanAttributeExistsSampler_ExistsInOneOfManySpans(t *testing.T) {
 	assert.True(t, filterMatch)
 	assert.True(t, conditionMatch)
 	assert.Equal(t, 12.0, fallback)
+}
+
+func TestSpanAttributeSampler_NotEquals_NoMatch(t *testing.T) {
+	s := SpanAttributeSampler{
+		AttributeKey:          "env",
+		AttributeCondition:    AttributeConditionNotEquals,
+		ExpectedValue:         "prod",
+		FallbackSamplingRatio: 12.0,
+	}
+
+	trace := testutil.NewTrace().
+		AddResource("service").
+		AddSpan("process", testutil.WithAttribute("env", "prod")).
+		Done().
+		Build()
+
+	filterMatch, conditionMatch, _ := s.Evaluate(trace)
+
+	assert.False(t, filterMatch)
+	assert.False(t, conditionMatch)
+}
+
+func TestSpanAttributeSampler_Validate(t *testing.T) {
+	valid := SpanAttributeSampler{
+		AttributeKey:       "feature.flag",
+		AttributeCondition: AttributeConditionEquals,
+		ExpectedValue:      "enabled",
+	}
+
+	err := valid.Validate()
+	assert.NoError(t, err)
+
+	missingKey := SpanAttributeSampler{
+		AttributeKey:       "",
+		AttributeCondition: AttributeConditionExists,
+	}
+	assert.ErrorContains(t, missingKey.Validate(), "attribute key cannot be empty")
+
+	missingValue := SpanAttributeSampler{
+		AttributeKey:       "env",
+		AttributeCondition: AttributeConditionEquals,
+	}
+	assert.ErrorContains(t, missingValue.Validate(), "expected_value must be set")
+
+	invalidCondition := SpanAttributeSampler{
+		AttributeKey:       "env",
+		AttributeCondition: "invalid",
+	}
+	assert.ErrorContains(t, invalidCondition.Validate(), "invalid attribute condition")
 }
