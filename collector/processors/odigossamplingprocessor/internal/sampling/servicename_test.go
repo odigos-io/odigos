@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestServiceNameSampler_MatchingServiceExists ensures that a trace with a resource span
+// matching the specified service name is correctly identified and marked for sampling.
 func TestServiceNameSampler_MatchingServiceExists(t *testing.T) {
 	s := ServiceNameSampler{
 		ServiceName:           "checkout-service",
@@ -26,6 +28,8 @@ func TestServiceNameSampler_MatchingServiceExists(t *testing.T) {
 	assert.Equal(t, 10.0, fallback)
 }
 
+// TestServiceNameSampler_NoMatchingService verifies that when no resource span matches
+// the specified service name, the rule does not match and fallback is returned.
 func TestServiceNameSampler_NoMatchingService(t *testing.T) {
 	s := ServiceNameSampler{
 		ServiceName:           "checkout-service",
@@ -45,6 +49,8 @@ func TestServiceNameSampler_NoMatchingService(t *testing.T) {
 	assert.Equal(t, 5.0, fallback)
 }
 
+// TestServiceNameSampler_MultipleResources_OneMatches confirms that if at least one resource
+// in the trace matches the service name, the rule is satisfied even if other resources don't match.
 func TestServiceNameSampler_MultipleResources_OneMatches(t *testing.T) {
 	s := ServiceNameSampler{
 		ServiceName:           "auth-service",
@@ -65,4 +71,43 @@ func TestServiceNameSampler_MultipleResources_OneMatches(t *testing.T) {
 	assert.True(t, filterMatch)
 	assert.True(t, conditionMatch)
 	assert.Equal(t, 15.0, fallback)
+}
+
+// TestServiceNameSampler_EmptyTrace ensures that an empty trace does not cause panic
+// and results in a non-match with fallback ratio applied.
+func TestServiceNameSampler_EmptyTrace(t *testing.T) {
+	s := ServiceNameSampler{
+		ServiceName:           "any-service",
+		FallbackSamplingRatio: 20.0,
+	}
+
+	trace := testutil.NewTrace().Build()
+
+	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
+
+	assert.False(t, filterMatch)
+	assert.False(t, conditionMatch)
+	assert.Equal(t, 20.0, fallback)
+}
+
+// TestServiceNameSampler_InvalidServiceKey ensures that a trace with no "service.name" attribute
+// does not match the sampler rule and returns fallback.
+func TestServiceNameSampler_InvalidServiceKey(t *testing.T) {
+	s := ServiceNameSampler{
+		ServiceName:           "expected-service",
+		FallbackSamplingRatio: 30.0,
+	}
+
+	// Create a resource with a different key
+	trace := testutil.NewTrace().
+		AddEmptyResource(). // this doesn't set any attributes
+		AddSpan("generic").
+		Done().
+		Build()
+
+	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
+
+	assert.False(t, filterMatch)
+	assert.False(t, conditionMatch)
+	assert.Equal(t, 30.0, fallback)
 }

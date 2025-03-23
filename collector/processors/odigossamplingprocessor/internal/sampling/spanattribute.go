@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
@@ -48,9 +49,8 @@ func (s *SpanAttributeSampler) Evaluate(td ptrace.Traces) (filterMatch bool, con
 			for k := 0; k < spans.Len(); k++ {
 				attrs := spans.At(k).Attributes()
 				val, found := attrs.Get(s.AttributeKey)
-
-				if !found {
-					continue
+				if !found || val.Type() != pcommon.ValueTypeStr {
+					continue // skip if not found or not a string
 				}
 
 				switch s.AttributeCondition {

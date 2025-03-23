@@ -5,8 +5,11 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor/internal/sampling/testutil"
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
+// TestSpanAttributeSampler_ExistsCondition verifies that the sampler matches
+// when the specified attribute key exists on any span in the trace.
 func TestSpanAttributeSampler_ExistsCondition(t *testing.T) {
 	s := SpanAttributeSampler{
 		AttributeKey:          "env",
@@ -27,6 +30,8 @@ func TestSpanAttributeSampler_ExistsCondition(t *testing.T) {
 	assert.Equal(t, 10.0, fallback)
 }
 
+// TestSpanAttributeSampler_Equals_Match ensures the sampler matches when the attribute value
+// exactly equals the expected value (case-insensitive).
 func TestSpanAttributeSampler_Equals_Match(t *testing.T) {
 	s := SpanAttributeSampler{
 		AttributeKey:          "env",
@@ -48,6 +53,8 @@ func TestSpanAttributeSampler_Equals_Match(t *testing.T) {
 	assert.Equal(t, 5.0, fallback)
 }
 
+// TestSpanAttributeSampler_Equals_NoMatch ensures the sampler does not match
+// if the attribute value does not match the expected value.
 func TestSpanAttributeSampler_Equals_NoMatch(t *testing.T) {
 	s := SpanAttributeSampler{
 		AttributeKey:          "env",
@@ -68,6 +75,8 @@ func TestSpanAttributeSampler_Equals_NoMatch(t *testing.T) {
 	assert.False(t, conditionMatch)
 }
 
+// TestSpanAttributeSampler_NotEquals_Match checks that the sampler matches
+// when the attribute value is different from the expected value.
 func TestSpanAttributeSampler_NotEquals_Match(t *testing.T) {
 	s := SpanAttributeSampler{
 		AttributeKey:          "env",
@@ -89,6 +98,8 @@ func TestSpanAttributeSampler_NotEquals_Match(t *testing.T) {
 	assert.Equal(t, 12.0, fallback)
 }
 
+// TestSpanAttributeSampler_NotEquals_NoMatch ensures the sampler does not match
+// when the attribute value exactly equals the expected value.
 func TestSpanAttributeSampler_NotEquals_NoMatch(t *testing.T) {
 	s := SpanAttributeSampler{
 		AttributeKey:          "env",
@@ -109,6 +120,8 @@ func TestSpanAttributeSampler_NotEquals_NoMatch(t *testing.T) {
 	assert.False(t, conditionMatch)
 }
 
+// TestSpanAttributeSampler_Validate tests validation logic for missing keys,
+// missing values, and unsupported conditions.
 func TestSpanAttributeSampler_Validate(t *testing.T) {
 	valid := SpanAttributeSampler{
 		AttributeKey:       "feature.flag",
@@ -136,4 +149,69 @@ func TestSpanAttributeSampler_Validate(t *testing.T) {
 		AttributeCondition: "invalid",
 	}
 	assert.ErrorContains(t, invalidCondition.Validate(), "invalid attribute condition")
+}
+
+// TestSpanAttributeSampler_MultipleSpans_OneMatch verifies that if any one span
+// in the trace satisfies the rule, the entire trace is marked for sampling.
+func TestSpanAttributeSampler_MultipleSpans_OneMatch(t *testing.T) {
+	s := SpanAttributeSampler{
+		AttributeKey:          "env",
+		AttributeCondition:    AttributeConditionEquals,
+		ExpectedValue:         "prod",
+		FallbackSamplingRatio: 50.0,
+	}
+
+	trace := testutil.NewTrace().
+		AddResource("multi").
+		AddSpan("init", testutil.WithAttribute("env", "dev")).
+		AddSpan("main", testutil.WithAttribute("env", "prod")).
+		Done().Build()
+
+	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
+
+	assert.True(t, filterMatch)
+	assert.True(t, conditionMatch)
+	assert.Equal(t, 50.0, fallback)
+}
+
+// TestSpanAttributeSampler_NonStringAttribute ensures that attributes with non-string values
+// are ignored and do not cause a crash or false match.
+func TestSpanAttributeSampler_NonStringAttribute(t *testing.T) {
+	s := SpanAttributeSampler{
+		AttributeKey:          "http.status_code",
+		AttributeCondition:    AttributeConditionEquals,
+		ExpectedValue:         "200",
+		FallbackSamplingRatio: 25.0,
+	}
+
+	trace := testutil.NewTrace().
+		AddResource("service").
+		AddSpan("span", func(span ptrace.Span) {
+			span.Attributes().PutInt("http.status_code", 200)
+		}).
+		Done().Build()
+
+	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
+
+	assert.False(t, filterMatch)
+	assert.False(t, conditionMatch)
+	assert.Equal(t, 25.0, fallback)
+}
+
+// TestSpanAttributeSampler_EmptyTrace verifies that an empty trace does not crash
+// and returns a fallback decision with no match.
+func TestSpanAttributeSampler_EmptyTrace(t *testing.T) {
+	s := SpanAttributeSampler{
+		AttributeKey:          "env",
+		AttributeCondition:    AttributeConditionExists,
+		FallbackSamplingRatio: 42.0,
+	}
+
+	trace := testutil.NewTrace().Build()
+
+	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
+
+	assert.False(t, filterMatch)
+	assert.False(t, conditionMatch)
+	assert.Equal(t, 42.0, fallback)
 }
