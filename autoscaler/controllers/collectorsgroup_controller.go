@@ -35,10 +35,9 @@ import (
 
 type CollectorsGroupReconciler struct {
 	client.Client
-	Scheme               *runtime.Scheme
-	ImagePullSecrets     []string
-	OdigosVersion        string
-	DisableNameProcessor bool
+	Scheme           *runtime.Scheme
+	ImagePullSecrets []string
+	OdigosVersion    string
 }
 
 func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -50,7 +49,7 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion, r.DisableNameProcessor)
+	err = datacollection.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

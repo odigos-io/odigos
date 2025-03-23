@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import { STATUS_TYPE } from '@odigos/ui-kit/types';
+import { StatusType } from '@odigos/ui-kit/types';
 
 interface StoreValues {
-  status: STATUS_TYPE;
+  status: StatusType;
   title: string;
   message: string;
 }
@@ -12,7 +12,7 @@ interface StoreSetters {
 }
 
 export const useStatusStore = create<StoreValues & StoreSetters>((set) => ({
-  status: STATUS_TYPE.DEFAULT,
+  status: StatusType.Default,
   title: 'Connecting...',
   message: '',
 

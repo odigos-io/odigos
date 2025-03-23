@@ -1,4 +1,4 @@
-import { ENTITY_TYPES, WorkloadId, type Source } from '@odigos/ui-kit/types';
+import { EntityTypes, type WorkloadId, type Source } from '@odigos/ui-kit/types';
 import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigos/ui-kit/store';
 import type { InstrumentationInstancesHealth, NamespaceInstrumentInput, SourceInstrumentInput } from '@/types';
 
@@ -22,7 +22,7 @@ export const addConditionToSources = ({ namespace, name, kind, condition }: Inst
 export const prepareSourcePayloads = (
   selectAppsList: SourceSelectionFormData,
   handleInstrumentationCount: (toAddCount: number, toDeleteCount: number) => void,
-  removeEntities: (entityType: ENTITY_TYPES, entityIds: WorkloadId[]) => void,
+  removeEntities: (entityType: EntityTypes, entityIds: WorkloadId[]) => void,
 ) => {
   let isEmpty = true;
   const payloads: SourceInstrumentInput[] = [];
@@ -40,7 +40,7 @@ export const prepareSourcePayloads = (
       const toAddCount = mappedItems.length - toDeleteCount;
 
       handleInstrumentationCount(toAddCount, toDeleteCount);
-      removeEntities(ENTITY_TYPES.SOURCE, toDelete);
+      removeEntities(EntityTypes.Source, toDelete);
 
       payloads.push({ namespace: ns, sources: mappedItems });
     }

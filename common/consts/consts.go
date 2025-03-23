@@ -76,9 +76,6 @@ var (
 	OtelTracesExporter          = "OTEL_TRACES_EXPORTER"
 	OtelExporterEndpointEnvName = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	// Python related ones
-	OtelPythonConfiguratorEnvName      = "OTEL_PYTHON_CONFIGURATOR"
-	OtelPythonOSSConfiguratorEnvValue  = "odigos-python-configurator"
-	OtelPythonEBPFConfiguratorEnvValue = "ebpf"
-	OpampServerHostEnvName             = "ODIGOS_OPAMP_SERVER_HOST"
-	OpAMPPort                          = 4320
+	OpampServerHostEnvName = "ODIGOS_OPAMP_SERVER_HOST"
+	OpAMPPort              = 4320
 )
