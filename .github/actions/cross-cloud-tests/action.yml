@@ -1,0 +1,177 @@
+name: "Cross-Cloud Tests"
+description: "Provision infra, run cross-cloud E2E tests, and tear down resources"
+
+inputs:
+  provider:
+    description: "Cloud provider to test against (e.g., eks or aks)"
+    required: true
+  test_scenario:
+    description: "Test scenario to run (e.g., multi-apps, helm-chart)"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    # 1) Check out code
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2) Validate Cloud Provider Input & Directory
+    - name: Validate Cloud Provider Input & Directory
+      shell: bash
+      run: |
+        # Construct TF_DIR on the fly:
+        TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
+
+        if [ -z "${{ inputs.provider }}" ]; then
+          echo "❌ Error: Cloud provider input is missing!"
+          exit 1
+        fi
+
+        if [ ! -d "$TF_DIR" ]; then
+          echo "❌ Error: Unknown provider '${{ inputs.provider }}' or missing Terraform directory '$TF_DIR'"
+          exit 1
+        fi
+
+    # 3) Build Odigos CLI
+    - name: Build Odigos CLI
+      uses: ./.github/actions/build/cli
+
+    # 4) Install OpenTofu
+    - name: Init tofu (OpenTofu)
+      uses: opentofu/setup-opentofu@v1
+      with:
+        tofu_wrapper: false
+        tofu_version: "1.9.0"
+
+    # 5) Configure AWS Credentials for EKS
+    - name: Configure AWS Credentials for EKS
+      if: ${{ inputs.provider == 'eks' }}
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::061717858829:role/GitHubActionsEKSCreatorRole
+        aws-region: us-east-1
+
+    # 6) Configure Azure Credentials for
+    - name: Configure Azure Credentials for AKS
+      if: ${{ inputs.provider == 'aks' }}
+      shell: bash
+      run: |
+        echo "ARM_CLIENT_ID=$AZURE_CLIENT_ID" >> $GITHUB_ENV
+        echo "ARM_CLIENT_SECRET=$AZURE_CLIENT_SECRET" >> $GITHUB_ENV
+        echo "ARM_TENANT_ID=$AZURE_TENANT_ID" >> $GITHUB_ENV
+        echo "ARM_SUBSCRIPTION_ID=$AZURE_SUBSCRIPTION_ID" >> $GITHUB_ENV
+
+        az login --service-principal \
+          -u "$AZURE_CLIENT_ID" \
+          -p "$AZURE_CLIENT_SECRET" \
+          --tenant "$AZURE_TENANT_ID"
+
+        az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+
+    # 7) Initialize Tofu (Terraform)
+    - name: Tofu Init
+      shell: bash
+      run: |
+        export TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_run_id="${GITHUB_RUN_ID}"
+        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        tofu -chdir="$TF_DIR" init
+
+    - name: Tofu Plan
+      shell: bash
+      run: |
+        export TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_run_id="${GITHUB_RUN_ID}"
+        tofu -chdir="$TF_DIR" plan
+
+    - name: Apply OpenTofu Configuration
+      shell: bash
+      run: |
+        export TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_run_id="${GITHUB_RUN_ID}"
+        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        tofu -chdir="$TF_DIR" apply -auto-approve
+
+    # 8) Configure Kubeconfig for AKS
+    - name: Get kubeconfig for AKS
+      if: ${{ inputs.provider == 'aks' }}
+      shell: bash
+      run: |
+        CLUSTER_NAME="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        az aks get-credentials \
+          --resource-group "$CLUSTER_NAME" \
+          --name "$CLUSTER_NAME"
+
+    # 9) Configure Kubeconfig for EKS
+    - name: Get kubeconfig for EKS
+      if: ${{ inputs.provider == 'eks' }}
+      shell: bash
+      run: |
+        CLUSTER_NAME="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        aws eks update-kubeconfig --region "us-east-1" --name "$CLUSTER_NAME"
+
+    # 10) Verify Cluster Access
+    - name: Verify Cluster Access
+      shell: bash
+      run: |
+        kubectl get nodes || exit 1
+
+    # 11) Install Chainsaw
+    - name: Install Chainsaw
+      uses: kyverno/action-install-chainsaw@v0.2.12
+
+    # 12) Optional: Install FE dependencies if needed
+    - name: Install FE
+      if: ${{ inputs.test_scenario == 'multi-apps' || inputs.test_scenario == 'helm-chart' }}
+      shell: bash
+      run: |
+        cd frontend/webapp
+        yarn install
+
+    # 13) Run E2E Tests
+    - name: Run E2E Tests
+      shell: bash
+      run: |
+        export MODE="cross-cloud-tests"
+        export COMMIT_HASH="${GITHUB_SHA}"
+        chainsaw test "tests/e2e/${{ inputs.test_scenario }}"
+
+    # 14) Run Diagnose Command (always attempts)
+    - name: Run Diagnose Command
+      if: always()
+      shell: bash
+      run: ./cli/odigos diagnose
+      continue-on-error: true
+
+    # 15) Upload Artifact (always)
+    - name: Upload Run Details Artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: run-details-${{ inputs.provider }}-${{ inputs.test_scenario }}
+        path: odigos_debug*.tar.gz
+      continue-on-error: true
+
+    # 16) Destroy Resources (always attempts)
+    - name: Destroy Resources
+      if: always()
+      shell: bash
+      run: |
+        export TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_run_id="${GITHUB_RUN_ID}"
+        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        tofu -chdir="$TF_DIR" destroy -auto-approve
+      continue-on-error: true
+
+    # 17) Extract Tag (optional)
+    - name: Extract Tag
+      if: always()
+      id: extract_tag
+      shell: bash
+      run: |
+        echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT

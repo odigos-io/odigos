@@ -251,14 +251,6 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 							},
 						},
 						{
-							Name: "kubeletpodresources",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/lib/kubelet/pod-resources", // TODO: remove this when removing name resoultion processor from collector
-								},
-							},
-						},
-						{
 							Name: "hostfs",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
@@ -285,11 +277,6 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 								{
 									Name:      "varlog",
 									MountPath: "/var/log",
-									ReadOnly:  true,
-								},
-								{
-									Name:      "kubeletpodresources",
-									MountPath: "/var/lib/kubelet/pod-resources",
 									ReadOnly:  true,
 								},
 								{

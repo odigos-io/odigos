@@ -1,94 +1,72 @@
-name: "Report Outcome"
-description: "Prints a report of a test suite outcome and notifies Slack on failure or success."
+name: "Nightly Slack Report"
+description: "Posts a Slack message reporting the outcome of a test suite."
+
 inputs:
   status:
-    description: "Outcome status (success or failure)"
+    description: "Job status (success, failure, etc.)."
     required: true
-    type: string
+
   suite_name:
-    description: "Name of the test suite (e.g. cross-cloud-tests, chaos-tests)"
+    description: "Name of the test suite."
     required: true
-    type: string
+
   suite_parameters:
-    description: "Parameters for the test suite (JSON or string)"
+    description: "Additional details (e.g. JSON or string describing the test scenario)."
     required: false
-    default: ""
+    default: "{}"
+
   slack_webhook_url:
-    description: "Slack Webhook URL for notifications"
-    required: false
-    default: ""
+    description: "Slack Incoming Webhook URL."
+    required: true
 
 runs:
   using: "composite"
   steps:
-    # Slack Notification on Failure
-    - name: Notify Slack on Failure or Cancellation
-      if: ${{ inputs.status == 'failure' }}
-      env:
-        SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
-        GITHUB_RUN_ID: ${{ github.run_id }}
+    - name: Send Slack Notification
       shell: bash
       run: |
-        if [[ -z "$SLACK_WEBHOOK_URL" ]]; then
-          echo "Skipping Slack notification because webhook URL is not provided."
-          exit 0
+        # Decide if status is SUCCESS or FAILURE.
+        if [[ "${{ inputs.status }}" == "success" ]]; then
+          STATUS_MSG="*SUCCESS*"
+        else
+          STATUS_MSG="*FAILURE*"
         fi
 
-        curl -X POST -H 'Content-type: application/json' --data '
-        {
-          "blocks": [
+        # Build a link to this GitHub run (if env vars exist).
+        GITHUB_LINK="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-}/actions/runs/${GITHUB_RUN_ID:-}"
+
+        # Construct Slack payload with jq so that special characters in suite_parameters are properly escaped.
+        SLACK_JSON=$(jq -n \
+          --arg status_msg  "$STATUS_MSG" \
+          --arg suite_name  "${{ inputs.suite_name }}" \
+          --arg suite_params "${{ inputs.suite_parameters }}" \
+          --arg link        "$GITHUB_LINK" \
+          '{
+            "blocks": [
               {
-                  "type": "section",
-                  "text": {
-                      "type": "mrkdwn",
-                      "text": "*ERROR*: Providers tests failed > `${{ inputs.suite_name }} - ${{ inputs.suite_parameters }} `"
-                  }
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "\($status_msg): \($suite_name) completed\n```\($suite_params)```"
+                }
               },
               {
-                  "type": "section",
-                  "fields": [
-                      {
-                          "type": "mrkdwn",
-                          "text": "*Link:*\n<https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}|View the GitHub Run>"
-                      }
-                  ]
-              }
-          ]
-        }' $SLACK_WEBHOOK_URL
-
-    # Slack Notification on Success
-    - name: Notify Slack on Success
-      if: ${{ inputs.status == 'success' }}
-      env:
-        SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
-        GITHUB_RUN_ID: ${{ github.run_id }}
-      shell: bash
-      run: |
-        if [[ -z "$SLACK_WEBHOOK_URL" ]]; then
-          echo "Skipping Slack notification because webhook URL is not provided."
-          exit 0
-        fi
-
-        curl -X POST -H 'Content-type: application/json' --data '
-        {
-          "blocks": [
-              {
-                  "type": "section",
-                  "text": {
-                      "type": "mrkdwn",
-                      "text": "*SUCCESS*: Providers tests succeeded > `${{ inputs.suite_name }} - ${{ inputs.suite_parameters }} `"
+                "type": "section",
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Link:*\n<\($link)|View the GitHub Run>"
                   }
-              },
-              {
-                  "type": "section",
-                  "fields": [
-                      {
-                          "type": "mrkdwn",
-                          "text": "*Link:*\n<https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}|View the GitHub Run>"
-                      }
-                  ]
+                ]
               }
-          ]
-        }' $SLACK_WEBHOOK_URL
+            ]
+          }'
+        )
+
+        echo "Slack payload is:"
+        echo "$SLACK_JSON"
+
+        # Send the JSON to Slack via the webhook
+        curl -X POST -H 'Content-type: application/json' \
+          --data "$SLACK_JSON" \
+          "${{ inputs.slack_webhook_url }}"

@@ -1,6 +1,6 @@
 import { safeJsonParse } from '@odigos/ui-kit/functions';
 import type { ActionInput, FetchedAction, ParsedActionSpec } from '@/types';
-import { ACTION_TYPE, SIGNAL_TYPE, type Action, type ActionFormData } from '@odigos/ui-kit/types';
+import { ActionType, SignalType, type Action, type ActionFormData } from '@odigos/ui-kit/types';
 
 export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
   return items.map((item) => {
@@ -9,7 +9,7 @@ export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
     const spec: Partial<Action['spec']> = {};
 
     switch (type) {
-      case ACTION_TYPE.K8S_ATTRIBUTES:
+      case ActionType.K8sAttributes:
         spec.collectContainerAttributes = parsedSpec.collectContainerAttributes || false;
         spec.collectWorkloadId = parsedSpec.collectWorkloadUID || false;
         spec.collectClusterId = parsedSpec.collectClusterUID || false;
@@ -17,31 +17,31 @@ export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
         spec.annotationsAttributes = parsedSpec.annotationsAttributes;
         break;
 
-      case ACTION_TYPE.ADD_CLUSTER_INFO:
+      case ActionType.AddClusterInfo:
         spec.clusterAttributes = parsedSpec.clusterAttributes;
         break;
 
-      case ACTION_TYPE.DELETE_ATTRIBUTES:
+      case ActionType.DeleteAttributes:
         spec.attributeNamesToDelete = parsedSpec.attributeNamesToDelete;
         break;
 
-      case ACTION_TYPE.RENAME_ATTRIBUTES:
+      case ActionType.RenameAttributes:
         spec.renames = parsedSpec.renames;
         break;
 
-      case ACTION_TYPE.PII_MASKING:
+      case ActionType.PiiMasking:
         spec.piiCategories = parsedSpec.piiCategories;
         break;
 
-      case ACTION_TYPE.ERROR_SAMPLER:
+      case ActionType.ErrorSampler:
         spec.fallbackSamplingRatio = parsedSpec.fallback_sampling_ratio;
         break;
 
-      case ACTION_TYPE.PROBABILISTIC_SAMPLER:
+      case ActionType.ProbabilisticSampler:
         spec.samplingPercentage = Number(parsedSpec.sampling_percentage);
         break;
 
-      case ACTION_TYPE.LATENCY_SAMPLER:
+      case ActionType.LatencySampler:
         spec.endpointsFilters = parsedSpec.endpoints_filters?.map(({ service_name, http_route, minimum_latency_threshold, fallback_sampling_ratio }) => ({
           serviceName: service_name,
           httpRoute: http_route,
@@ -61,7 +61,7 @@ export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
         actionName: parsedSpec.actionName,
         notes: parsedSpec.notes,
         disabled: parsedSpec.disabled,
-        signals: parsedSpec.signals.map((str) => str.toLowerCase() as SIGNAL_TYPE),
+        signals: parsedSpec.signals.map((str) => str.toLowerCase() as SignalType),
       },
     };
   });
@@ -98,7 +98,7 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
   };
 
   switch (type) {
-    case ACTION_TYPE.K8S_ATTRIBUTES:
+    case ActionType.K8sAttributes:
       payload['details'] = JSON.stringify({
         collectContainerAttributes,
         collectWorkloadId,
@@ -108,31 +108,31 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
       });
       break;
 
-    case ACTION_TYPE.ADD_CLUSTER_INFO:
+    case ActionType.AddClusterInfo:
       payload['details'] = JSON.stringify({ clusterAttributes });
       break;
 
-    case ACTION_TYPE.DELETE_ATTRIBUTES:
+    case ActionType.DeleteAttributes:
       payload['details'] = JSON.stringify({ attributeNamesToDelete });
       break;
 
-    case ACTION_TYPE.RENAME_ATTRIBUTES:
+    case ActionType.RenameAttributes:
       payload['details'] = JSON.stringify({ renames });
       break;
 
-    case ACTION_TYPE.PII_MASKING:
+    case ActionType.PiiMasking:
       payload['details'] = JSON.stringify({ piiCategories });
       break;
 
-    case ACTION_TYPE.ERROR_SAMPLER:
+    case ActionType.ErrorSampler:
       payload['details'] = JSON.stringify({ fallback_sampling_ratio: fallbackSamplingRatio });
       break;
 
-    case ACTION_TYPE.PROBABILISTIC_SAMPLER:
+    case ActionType.ProbabilisticSampler:
       payload['details'] = JSON.stringify({ sampling_percentage: String(samplingPercentage) });
       break;
 
-    case ACTION_TYPE.LATENCY_SAMPLER:
+    case ActionType.LatencySampler:
       payload['details'] = JSON.stringify({
         endpoints_filters:
           endpointsFilters?.map(({ serviceName, httpRoute, minimumLatencyThreshold, fallbackSamplingRatio }) => ({

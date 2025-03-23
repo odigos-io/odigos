@@ -18,7 +18,6 @@ var KratosProfile = profile.Profile{
 		"hostname-as-podname",
 		"code-attributes",
 		"query-operation-detector",
-		"disable-name-processor",
 		"small-batches",
 		"size_m",
 		"allow_concurrent_agents",

@@ -1,21 +1,19 @@
 package podswebhook
 
 import (
+	"fmt"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonconsts "github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func InjectOdigosK8sEnvVars(existingEnvNames *map[string]struct{}, container *corev1.Container, distroName string, ns string) {
+type EnvVarNamesMap map[string]struct{}
 
-	injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarContainerName, container.Name)
-	injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarDistroName, distroName)
-	injectEnvVarObjectFieldRefToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarPodName, "metadata.name")
-	injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarNamespace, ns)
-}
-
-func injectEnvVarObjectFieldRefToPodContainer(existingEnvNames *map[string]struct{}, container *corev1.Container, envVarName, envVarRef string) {
-	if _, exists := (*existingEnvNames)[envVarName]; exists {
-		return
+func injectEnvVarObjectFieldRefToPodContainer(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVarName, envVarRef string) EnvVarNamesMap {
+	if _, exists := (existingEnvNames)[envVarName]; exists {
+		return existingEnvNames
 	}
 
 	container.Env = append(container.Env, corev1.EnvVar{
@@ -26,13 +24,13 @@ func injectEnvVarObjectFieldRefToPodContainer(existingEnvNames *map[string]struc
 			},
 		},
 	})
-
-	(*existingEnvNames)[envVarName] = struct{}{}
+	existingEnvNames[envVarName] = struct{}{}
+	return existingEnvNames
 }
 
-func injectEnvVarToPodContainer(existingEnvNames *map[string]struct{}, container *corev1.Container, envVarName, envVarValue string) {
-	if _, exists := (*existingEnvNames)[envVarName]; exists {
-		return
+func injectEnvVarToPodContainer(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVarName, envVarValue string) EnvVarNamesMap {
+	if _, exists := existingEnvNames[envVarName]; exists {
+		return existingEnvNames
 	}
 
 	container.Env = append(container.Env, corev1.EnvVar{
@@ -40,5 +38,36 @@ func injectEnvVarToPodContainer(existingEnvNames *map[string]struct{}, container
 		Value: envVarValue,
 	})
 
-	(*existingEnvNames)[envVarName] = struct{}{}
+	existingEnvNames[envVarName] = struct{}{}
+	return existingEnvNames
+}
+
+func injectNodeIpEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
+	return injectEnvVarObjectFieldRefToPodContainer(existingEnvNames, container, k8sconsts.NodeIPEnvVar, "status.hostIP")
+}
+
+func InjectOdigosK8sEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, distroName string, ns string) EnvVarNamesMap {
+	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarContainerName, container.Name)
+	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarDistroName, distroName)
+	existingEnvNames = injectEnvVarObjectFieldRefToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarPodName, "metadata.name")
+	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarNamespace, ns)
+	return existingEnvNames
+}
+
+func InjectStaticEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVarName string, envVarValue string) EnvVarNamesMap {
+	return injectEnvVarToPodContainer(existingEnvNames, container, envVarName, envVarValue)
+}
+
+func InjectOpampServerEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
+	existingEnvNames = injectNodeIpEnvVar(existingEnvNames, container)
+	opAmpServerHost := fmt.Sprintf("$(NODE_IP):%d", commonconsts.OpAMPPort)
+	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OpampServerHostEnvName, opAmpServerHost)
+	return existingEnvNames
+}
+
+func InjectOtlpHttpEndpointEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
+	existingEnvNames = injectNodeIpEnvVar(existingEnvNames, container)
+	otlpHttpEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)")
+	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelExporterEndpointEnvName, otlpHttpEndpoint)
+	return existingEnvNames
 }
