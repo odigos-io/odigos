@@ -57,7 +57,8 @@ spec:
       terminationGracePeriodSeconds: 10
       volumes:
         - name: ui-db-storage
-          emptyDir: {}      
+          emptyDir:
+            sizeLimit: 50Mi
 {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 6 }}

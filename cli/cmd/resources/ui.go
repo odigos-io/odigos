@@ -108,7 +108,9 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 						{
 							Name: "ui-db-storage",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: resource.NewQuantity(50*1024*1024, resource.BinarySI), // 50 MiB in bytes
+								},
 							},
 						},
 					},
