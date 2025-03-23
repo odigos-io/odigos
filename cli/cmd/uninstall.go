@@ -107,6 +107,13 @@ func UninstallOdigosResources(ctx context.Context, client *kube.Client, ns strin
 		client, ns, uninstallRBAC)
 	createKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
 		client, ns, uninstallSecrets)
+	// Without deleting the mutating and validating webhook configurations, the CRDs cannot be deleted.
+	// E.g deleting "Sources" at later stage will fail as the CRD is still in use.
+	createKubeResourceWithLogging(ctx, "Uninstalling Odigos MutatingWebhookConfigurations",
+		client, ns, uninstallMutatingWebhookConfigs)
+
+	createKubeResourceWithLogging(ctx, "Uninstalling Odigos ValidatingWebhookConfigurations",
+		client, ns, uninstallValidatingWebhookConfigs)
 }
 
 // UninstallClusterResources removes cluster-wide Odigos resources, such as node labels,
@@ -134,11 +141,6 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 	createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
 		client, ns, uninstallCRDs)
 
-	createKubeResourceWithLogging(ctx, "Uninstalling Odigos MutatingWebhookConfigurations",
-		client, ns, uninstallMutatingWebhookConfigs)
-
-	createKubeResourceWithLogging(ctx, "Uninstalling Odigos ValidatingWebhookConfigurations",
-		client, ns, uninstallValidatingWebhookConfigs)
 }
 
 func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns string) {
