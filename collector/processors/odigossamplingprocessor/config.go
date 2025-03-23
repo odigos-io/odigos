@@ -32,8 +32,14 @@ type Rule struct {
 }
 
 func (r *Rule) Validate() error {
-	if r.Name == "" || r.Type == "" || r.RuleDetails == nil {
-		return errors.New("invalid rule: missing required fields")
+	if r.Name == "" {
+		return errors.New("rule name cannot be empty")
+	}
+	if r.Type == "" {
+		return errors.New("rule type cannot be empty")
+	}
+	if r.RuleDetails == nil {
+		return errors.New("rule details cannot be nil")
 	}
 
 	switch r.Type {

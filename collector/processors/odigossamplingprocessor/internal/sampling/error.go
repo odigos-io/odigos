@@ -24,20 +24,18 @@ func (r *ErrorRule) Validate() error {
 // - matched is always true because the error rule is global (or service-level, if configured).
 // - satisfied is true if an error span is found (always sample).
 // - fallbackRatio used if no error span is found (probabilistic sampling).
-func (r *ErrorRule) Evaluate(td ptrace.Traces) (matched bool, satisfied bool, fallbackRatio float64) {
-	resources := td.ResourceSpans()
-
-	for i := 0; i < resources.Len(); i++ {
-		scopeSpans := resources.At(i).ScopeSpans()
+func (r *ErrorRule) Evaluate(td ptrace.Traces) (bool, bool, float64) {
+	rs := td.ResourceSpans()
+	for i := 0; i < rs.Len(); i++ {
+		scopeSpans := rs.At(i).ScopeSpans()
 		for j := 0; j < scopeSpans.Len(); j++ {
 			spans := scopeSpans.At(j).Spans()
 			for k := 0; k < spans.Len(); k++ {
 				if spans.At(k).Status().Code() == ptrace.StatusCodeError {
-					return true, true, 0 // Immediate sample if an error is found
+					return true, true, 0.0 // Immediate sample if an error is found
 				}
 			}
 		}
 	}
-
 	return true, false, r.FallbackSamplingRatio // Probabilistic fallback if no errors found
 }
