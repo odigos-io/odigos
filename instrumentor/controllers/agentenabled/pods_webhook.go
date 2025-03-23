@@ -202,21 +202,21 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 
 	// check for existing env vars so we don't introduce them again
-	existingEnvNames := make(map[string]struct{})
+	existingEnvNames := make(podswebhook.EnvVarNamesMap)
 	for _, envVar := range podContainerSpec.Env {
 		existingEnvNames[envVar.Name] = struct{}{}
 	}
 
 	// inject various kinds of distro environment variables
-	podswebhook.InjectOdigosK8sEnvVars(&existingEnvNames, podContainerSpec, distroName, pw.Namespace)
+	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroName, pw.Namespace)
 	for _, envVar := range distroMetadata.EnvironmentVariables.StaticVariables {
-		podswebhook.InjectStaticEnvVar(&existingEnvNames, podContainerSpec, envVar.EnvName, envVar.EnvValue)
+		existingEnvNames = podswebhook.InjectStaticEnvVar(existingEnvNames, podContainerSpec, envVar.EnvName, envVar.EnvValue)
 	}
 	if distroMetadata.EnvironmentVariables.OpAmpClientEnvironments {
-		podswebhook.InjectOpampServerEnvVar(&existingEnvNames, podContainerSpec)
+		existingEnvNames = podswebhook.InjectOpampServerEnvVar(existingEnvNames, podContainerSpec)
 	}
 	if distroMetadata.EnvironmentVariables.OtlpHttpLocalNode {
-		podswebhook.InjectOtlpHttpEndpointEnvVar(&existingEnvNames, podContainerSpec)
+		existingEnvNames = podswebhook.InjectOtlpHttpEndpointEnvVar(existingEnvNames, podContainerSpec)
 	}
 
 	volumeMounted := false
@@ -229,7 +229,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 			}
 		}
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
-			podswebhook.InjectOtelResourceAndServerNameEnvVars(&existingEnvNames, podContainerSpec, distroName, pw, serviceName)
+			podswebhook.InjectOtelResourceAndServerNameEnvVars(existingEnvNames, podContainerSpec, distroName, pw, serviceName)
 		}
 		// TODO: once we have a flag to enable/disable device injection, we should check it here.
 		if distroMetadata.RuntimeAgent.Device != nil {
