@@ -12,6 +12,11 @@ jobs:
   build-images:
     uses: ./.github/workflows/build-dev-images.yml
 
-  test:
+  chaos-tests:
     needs: build-images
-    uses: ./.github/workflows/run-chaos-tests.yml
+    runs-on: warp-ubuntu-latest-x64-8x-spot
+    steps:
+      - name: Run chaos-tests
+        uses: ./.github/actions/chaos-tests
+        env:
+          GITHUB_SHA: ${{ github.sha }}

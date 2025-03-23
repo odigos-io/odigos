@@ -1,17 +1,17 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { useMutation, useQuery } from '@apollo/client';
+import type { NamespaceInstrumentInput } from '@/types';
 import { useNotificationStore } from '@odigos/ui-kit/store';
-import { CRUD, STATUS_TYPE } from '@odigos/ui-kit/types';
+import { Crud, Namespace, StatusType } from '@odigos/ui-kit/types';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import type { NamespaceInstrumentInput, FetchedNamespace } from '@/types';
 import { GET_NAMESPACE, GET_NAMESPACES, PERSIST_NAMESPACE } from '@/graphql';
 
 export const useNamespace = (namespaceName?: string) => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
 
-  const notifyUser = (type: STATUS_TYPE, title: string, message: string, hideFromHistory?: boolean) => {
+  const notifyUser = (type: StatusType, title: string, message: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, hideFromHistory });
   };
 
@@ -19,8 +19,8 @@ export const useNamespace = (namespaceName?: string) => {
     refetch: queryAll,
     data: allNamespaces,
     loading: allLoading,
-  } = useQuery<{ computePlatform?: { k8sActualNamespaces?: FetchedNamespace[] } }>(GET_NAMESPACES, {
-    onError: (error) => addNotification({ type: STATUS_TYPE.ERROR, title: error.name || CRUD.READ, message: error.cause?.message || error.message }),
+  } = useQuery<{ computePlatform?: { k8sActualNamespaces?: Namespace[] } }>(GET_NAMESPACES, {
+    onError: (error) => addNotification({ type: StatusType.Error, title: error.name || Crud.Read, message: error.cause?.message || error.message }),
   });
 
   // TODO: change query, to lazy query
@@ -28,10 +28,10 @@ export const useNamespace = (namespaceName?: string) => {
     refetch: querySingle,
     data: singleNamespace,
     loading: singleLoading,
-  } = useQuery<{ computePlatform?: { k8sActualNamespace?: FetchedNamespace } }>(GET_NAMESPACE, {
+  } = useQuery<{ computePlatform?: { k8sActualNamespace?: Namespace } }>(GET_NAMESPACE, {
     skip: !namespaceName,
     variables: { namespaceName },
-    onError: (error) => addNotification({ type: STATUS_TYPE.ERROR, title: error.name || CRUD.READ, message: error.cause?.message || error.message }),
+    onError: (error) => addNotification({ type: StatusType.Error, title: error.name || Crud.Read, message: error.cause?.message || error.message }),
   });
 
   const [mutatePersist] = useMutation<{ persistK8sNamespace: boolean }>(PERSIST_NAMESPACE, {
@@ -40,13 +40,13 @@ export const useNamespace = (namespaceName?: string) => {
       // setInstrumentCount('sourcesToCreate', 0);
       // setInstrumentCount('sourcesCreated', 0);
       // setInstrumentAwait(false);
-      addNotification({ type: STATUS_TYPE.ERROR, title: error.name || CRUD.UPDATE, message: error.cause?.message || error.message });
+      addNotification({ type: StatusType.Error, title: error.name || Crud.Update, message: error.cause?.message || error.message });
     },
   });
 
   const persistNamespace = async (payload: NamespaceInstrumentInput) => {
     if (isReadonly) {
-      notifyUser(STATUS_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, true);
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, true);
     } else {
       await mutatePersist({ variables: { namespace: payload } });
     }
@@ -60,27 +60,8 @@ export const useNamespace = (namespaceName?: string) => {
     if (namespaceName && !singleLoading) querySingle({ namespaceName });
   }, [namespaceName]);
 
-  const namespaces = useMemo(
-    () =>
-      (allNamespaces?.computePlatform?.k8sActualNamespaces || []).map(({ name, selected, k8sActualSources }) => ({
-        name,
-        selected,
-        sources: k8sActualSources,
-      })),
-    [allNamespaces],
-  );
-
-  const namespace = useMemo(
-    () =>
-      singleNamespace?.computePlatform?.k8sActualNamespace
-        ? {
-            name: singleNamespace.computePlatform.k8sActualNamespace.name,
-            selected: singleNamespace.computePlatform.k8sActualNamespace.selected,
-            sources: singleNamespace.computePlatform.k8sActualNamespace.k8sActualSources,
-          }
-        : undefined,
-    [singleNamespace],
-  );
+  const namespaces = allNamespaces?.computePlatform?.k8sActualNamespaces || [];
+  const namespace = singleNamespace?.computePlatform?.k8sActualNamespace;
 
   return {
     loading: allLoading || singleLoading,

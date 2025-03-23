@@ -18,6 +18,9 @@ BUILDER_URL = https://github.com/open-telemetry/opentelemetry-collector-releases
 GOCMD?= go
 MDATAGENCMD?= mdatagen
 
+PROCESSOR_DIR := processors/odigossamplingprocessor
+
+
 .PHONY: download_builder
 download_builder:
 	mkdir -p $(TOOLS_BIN_DIR)
@@ -30,8 +33,13 @@ download_builder:
 genodigoscol: download_builder
 	$(BUILDER) --config builder-config.yaml
 
+.PHONY: test-odigossamplingprocessor
+test-odigossamplingprocessor:
+	@echo "Running tests for odigossamplingprocessor at $(PROCESSOR_DIR)"
+	cd $(PROCESSOR_DIR) && GOOS=$(HOST_GOOS) GOARCH=$(HOST_GOARCH) $(GOCMD) test ./...
+
 .PHONY: build-odigoscol
-build-odigoscol: download_builder
+build-odigoscol: download_builder test-odigossamplingprocessor
 	$(BUILDER) --config builder-config.yaml --skip-generate --skip-get-modules
 
 .PHONY: install-tools

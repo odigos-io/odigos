@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { useNamespace } from '@/hooks';
 import { SetupHeader } from '@/components';
-import { ENTITY_TYPES } from '@odigos/ui-kit/types';
+import { EntityTypes } from '@odigos/ui-kit/types';
 import { SourceSelectionForm, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
 
 export default function Page() {
@@ -16,7 +16,7 @@ export default function Page() {
 
   return (
     <>
-      <SetupHeader entityType={ENTITY_TYPES.SOURCE} formRef={formRef} />
+      <SetupHeader entityType={EntityTypes.Source} formRef={formRef} />
       <SourceSelectionForm
         ref={formRef}
         componentType='FAST'
