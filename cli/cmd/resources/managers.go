@@ -41,3 +41,11 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 
 	return resourceManagers
 }
+
+func CreateCentralizedManagers(client *kube.Client) []resourcemanager.ResourceManager {
+	return []resourcemanager.ResourceManager{}
+}
+
+func CreateProxyManagers(client *kube.Client, clusterName, backendURL string) []resourcemanager.ResourceManager {
+	return []resourcemanager.ResourceManager{}
+}

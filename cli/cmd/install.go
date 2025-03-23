@@ -42,12 +42,16 @@ var (
 	userInputIgnoredContainers []string
 	userInputInstallProfiles   []string
 	uiMode                     string
-	centralBackendURL          string
 
 	instrumentorImage string
 	odigletImage      string
 	autoScalerImage   string
 	imagePrefix       string
+
+	installCentralized bool
+	installProxy       bool
+	clusterName        string
+	centralBackendURL  string
 )
 
 type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string) error
@@ -63,9 +67,25 @@ It will install k8s components that will auto-instrument your applications with 
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 		ns := cmd.Flag("namespace").Value.String()
 
-		// Check if Odigos already installed
-		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-		if err == nil && cm != nil {
+		installed, err := isOdigosInstalled(ctx, client, ns)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to check Odigos installation: %v\n", err)
+			os.Exit(1)
+		}
+
+		if (installCentralized || installProxy) && !installed {
+			fmt.Println("\033[31mERROR\033[0m Odigos must be installed before using --install-centralized or --install-proxy")
+			os.Exit(1)
+		}
+
+		if installProxy {
+			if clusterName == "" || centralBackendURL == "" {
+				fmt.Println("\033[31mERROR\033[0m --install-proxy requires both --cluster-name and --central-backend-url.")
+				os.Exit(1)
+			}
+		}
+
+		if installed && !(installCentralized || installProxy) {
 			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace\n")
 			os.Exit(1)
 		}
@@ -100,6 +120,30 @@ It will install k8s components that will auto-instrument your applications with 
 		} else if odigosOnPremToken != "" {
 			odigosTier = common.OnPremOdigosTier
 			odigosProToken = odigosOnPremToken
+		}
+
+		if installCentralized {
+			fmt.Println("Installing centralized Odigos backend and UI ...")
+			resourceManagers := resources.CreateCentralizedManagers(client)
+			err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
+			if err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Failed to install centralized Odigos: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Centralized Odigos installed.\n")
+			return
+		}
+
+		if installProxy {
+			fmt.Println("Installing proxy to connect to centralized backend ...")
+			resourceManagers := resources.CreateProxyManagers(client, clusterName, centralBackendURL)
+			err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
+			if err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos proxy: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos proxy installed.\n")
+			return
 		}
 
 		// validate user input profiles against available profiles
@@ -151,7 +195,24 @@ odigos install --kubeconfig <path-to-kubeconfig>
 
 # Install Odigos onprem tier for enterprise users
 odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
+
+# Install centralized backend and UI (must run in the central cluster after installing Odigos)
+odigos install --install-centralized
+
+# Install proxy to forward data to centralized backend
+odigos install --install-proxy --cluster-name my-cluster --central-backend-url https://central.odigos.local
 `,
+}
+
+func isOdigosInstalled(ctx context.Context, client *kube.Client, ns string) (bool, error) {
+	cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return cm != nil, nil
 }
 
 func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (bool, error) {
@@ -290,7 +351,6 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		ImagePrefix:               imagePrefix,
 		Profiles:                  selectedProfiles,
 		UiMode:                    common.UiMode(uiMode),
-		CentralBackendURL:         centralBackendURL,
 	}
 }
 
@@ -319,7 +379,10 @@ func init() {
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
-	installCmd.Flags().StringVar(&centralBackendURL, consts.CentralBackendURLProperty, "", "URL for centralized Odigos backend")
+	installCmd.Flags().BoolVar(&installCentralized, "install-centralized", false, "Install centralized Odigos UI and backend")
+	installCmd.Flags().BoolVar(&installProxy, "install-proxy", false, "Install Odigos proxy to connect this cluster to centralized backend")
+	installCmd.Flags().StringVar(&clusterName, "cluster-name", "", "Name of this cluster (required with --install-proxy)")
+	installCmd.Flags().StringVar(&centralBackendURL, "central-backend-url", "", "URL of centralized Odigos backend (required with --install-proxy)")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
