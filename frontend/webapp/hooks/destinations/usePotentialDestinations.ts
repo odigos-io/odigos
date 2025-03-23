@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { GET_POTENTIAL_DESTINATIONS } from '@/graphql';
-import { deepClone, safeJsonParse } from '@odigos/ui-utils';
+import { deepClone, safeJsonParse } from '@odigos/ui-kit/functions';
 import { useDestinationCategories } from './useDestinationCategories';
-import { type ISetupState, useSetupStore } from '@odigos/ui-containers';
+import { useSetupStore, type ISetupState } from '@odigos/ui-kit/store';
 
 interface PotentialDestination {
   type: string;
@@ -22,6 +22,8 @@ const checkIfConfigured = (configuredDest: ISetupState['configuredDestinations']
 
   for (const { key, value } of configuredDest.form.fields) {
     if (Object.hasOwn(autoFilledFields, key)) {
+      // An exact match is when all "ifs" result in true.
+      // If one resulted with false, it is not an exact match and therefore not an "already configured destination".
       if (autoFilledFields[key] === value) {
         fieldsMatch = true;
       } else {
@@ -37,7 +39,7 @@ const checkIfConfigured = (configuredDest: ISetupState['configuredDestinations']
 export const usePotentialDestinations = () => {
   const { configuredDestinations } = useSetupStore();
   const { categories } = useDestinationCategories();
-  const { loading, error, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
+  const { loading, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
 
   const mappedPotentialDestinations = useMemo(() => {
     if (!categories || !potentialDestinations) return [];
@@ -50,7 +52,7 @@ export const usePotentialDestinations = () => {
       .map((pd) => {
         for (const category of parsed) {
           const autoFilledFields = safeJsonParse<{ [key: string]: string }>(pd.fields, {});
-          const alreadyConfigured = !!configuredDestinations.find((cd) => checkIfConfigured(cd, pd, autoFilledFields));
+          const alreadyConfigured = configuredDestinations.find((cd) => checkIfConfigured(cd, pd, autoFilledFields));
 
           if (!alreadyConfigured) {
             const idx = category.items.findIndex((item) => item.type === pd.type);
@@ -70,12 +72,11 @@ export const usePotentialDestinations = () => {
 
         return null;
       })
-      .filter((pd) => !!pd);
+      .filter((pd) => pd);
   }, [configuredDestinations, categories, potentialDestinations]);
 
   return {
     loading,
-    error,
     potentialDestinations: mappedPotentialDestinations,
   };
 };

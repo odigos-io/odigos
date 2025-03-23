@@ -364,7 +364,7 @@ func NewSourceMutatingWebhookConfiguration(ns string, caBundle []byte) *admissio
 						},
 					},
 				},
-				FailurePolicy:      ptrGeneric(admissionregistrationv1.Ignore),
+				FailurePolicy:      ptrGeneric(admissionregistrationv1.Fail),
 				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.IfNeededReinvocationPolicy),
 				SideEffects:        ptrGeneric(admissionregistrationv1.SideEffectClassNone),
 				TimeoutSeconds:     intPtr(10),
@@ -684,36 +684,23 @@ type instrumentorResourceManager struct {
 	config        *common.OdigosConfiguration
 	odigosVersion string
 	tier          common.OdigosTier
+	managerOpts   resourcemanager.ManagerOpts
 }
 
-func NewInstrumentorResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, tier common.OdigosTier, odigosVersion string) resourcemanager.ResourceManager {
+func NewInstrumentorResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, tier common.OdigosTier, odigosVersion string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
 	return &instrumentorResourceManager{
 		client:        client,
 		ns:            ns,
 		config:        config,
 		odigosVersion: odigosVersion,
 		tier:          tier,
+		managerOpts:   managerOpts,
 	}
 }
 
 func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
-	imageName := a.config.InstrumentorImage
-	if imageName == "" || imageName == k8sconsts.InstrumentorImage || imageName == k8sconsts.InstrumentorImageUBI9 {
-		if a.tier == common.CommunityOdigosTier {
-			if imageName != k8sconsts.InstrumentorImageUBI9 {
-				imageName = k8sconsts.InstrumentorImage
-			}
-		} else {
-			if imageName == k8sconsts.InstrumentorImageUBI9 {
-				imageName = k8sconsts.InstrumentorEnterpriseImageUBI9
-			} else {
-				imageName = k8sconsts.InstrumentorEnterpriseImage
-			}
-		}
-	}
-
 	resources := []kube.Object{
 		NewInstrumentorServiceAccount(a.ns),
 		NewInstrumentorLeaderElectionRoleBinding(a.ns),
@@ -721,7 +708,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(a.config.OpenshiftEnabled),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, imageName, a.tier),
+		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.managerOpts.ImageReferences.InstrumentorImage, a.tier),
 		NewInstrumentorService(a.ns),
 	}
 
@@ -747,5 +734,5 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 	},
 		resources...)
 
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }
