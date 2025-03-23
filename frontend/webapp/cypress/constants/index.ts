@@ -90,7 +90,7 @@ export const BUTTONS = {
   BACK: 'BACK',
   NEXT: 'NEXT',
   DONE: 'DONE',
-  ADD_DESTINATION: 'ADD Destination',
+  ADD_DESTINATION: 'ADD DESTINATION',
   UNINSTRUMENT: 'Uninstrument',
 };
 
