@@ -368,7 +368,7 @@ status:
   identifyingAttributes:
     - key: service.instance.id
       (value != null): true
-    - key: process.pid
+    - key: process.vpid
       (value != null): true
     - key: telemetry.sdk.language
       value: python
