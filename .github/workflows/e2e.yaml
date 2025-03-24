@@ -137,13 +137,13 @@ jobs:
           EOF
 
       - name: Run diagnose command
-        if: ${{ failure() }}
+        if: ${{ failure() && matrix.test-scenario != 'ui' }}
         run: |
           ./cli/odigos diagnose
         continue-on-error: true
 
       - name: Upload diagnose artifact
-        if: ${{ failure() }}
+        if: ${{ failure() && matrix.test-scenario != 'ui' }}
         uses: actions/upload-artifact@v4
         with:
           name: run-details-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
