@@ -25,7 +25,7 @@ type SamplingDecision interface {
 	//     *if the rule matched but the condition was not satisfied*.
 	//
 	// The fallback ratio is ignored if the condition was satisfied or if the trace did not match the rule at all.
-	Evaluate(td ptrace.Traces) (matched bool, satisfied bool, fallbackRatio float64)
+	Evaluate(td ptrace.Traces) (filterMatch bool, conditionMatch bool, fallbackRatio float64)
 
 	// Validate ensures the rule is correctly configured (e.g. required fields are set).
 	// It returns an error if the rule is invalid and should not be used.

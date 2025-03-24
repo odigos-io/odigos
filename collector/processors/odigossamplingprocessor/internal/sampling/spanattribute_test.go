@@ -11,7 +11,7 @@ import (
 // TestSpanAttribute_ExistsCondition verifies that the sampler matches
 // when the specified attribute key exists on any span in the trace.
 func TestSpanAttribute_ExistsCondition(t *testing.T) {
-	s := SpanAttribute{
+	s := SpanAttributeRule{
 		AttributeKey:          "env",
 		AttributeCondition:    AttributeConditionExists,
 		FallbackSamplingRatio: 10.0,
@@ -33,7 +33,7 @@ func TestSpanAttribute_ExistsCondition(t *testing.T) {
 // TestSpanAttribute_Equals_Match ensures the sampler matches when the attribute value
 // exactly equals the expected value (case-insensitive).
 func TestSpanAttribute_Equals_Match(t *testing.T) {
-	s := SpanAttribute{
+	s := SpanAttributeRule{
 		AttributeKey:          "env",
 		AttributeCondition:    AttributeConditionEquals,
 		ExpectedValue:         "prod",
@@ -56,7 +56,7 @@ func TestSpanAttribute_Equals_Match(t *testing.T) {
 // TestSpanAttribute_Equals_NoMatch ensures the sampler does not match
 // if the attribute value does not match the expected value.
 func TestSpanAttribute_Equals_NoMatch(t *testing.T) {
-	s := SpanAttribute{
+	s := SpanAttributeRule{
 		AttributeKey:          "env",
 		AttributeCondition:    AttributeConditionEquals,
 		ExpectedValue:         "staging",
@@ -78,7 +78,7 @@ func TestSpanAttribute_Equals_NoMatch(t *testing.T) {
 // TestSpanAttribute_NotEquals_Match checks that the sampler matches
 // when the attribute value is different from the expected value.
 func TestSpanAttribute_NotEquals_Match(t *testing.T) {
-	s := SpanAttribute{
+	s := SpanAttributeRule{
 		AttributeKey:          "env",
 		AttributeCondition:    AttributeConditionNotEquals,
 		ExpectedValue:         "prod",
@@ -101,7 +101,7 @@ func TestSpanAttribute_NotEquals_Match(t *testing.T) {
 // TestSpanAttribute_NotEquals_NoMatch ensures the sampler does not match
 // when the attribute value exactly equals the expected value.
 func TestSpanAttribute_NotEquals_NoMatch(t *testing.T) {
-	s := SpanAttribute{
+	s := SpanAttributeRule{
 		AttributeKey:          "env",
 		AttributeCondition:    AttributeConditionNotEquals,
 		ExpectedValue:         "prod",
@@ -123,7 +123,7 @@ func TestSpanAttribute_NotEquals_NoMatch(t *testing.T) {
 // TestSpanAttribute_Validate tests validation logic for missing keys,
 // missing values, and unsupported conditions.
 func TestSpanAttribute_Validate(t *testing.T) {
-	valid := SpanAttribute{
+	valid := SpanAttributeRule{
 		AttributeKey:       "feature.flag",
 		AttributeCondition: AttributeConditionEquals,
 		ExpectedValue:      "enabled",
@@ -132,19 +132,19 @@ func TestSpanAttribute_Validate(t *testing.T) {
 	err := valid.Validate()
 	assert.NoError(t, err)
 
-	missingKey := SpanAttribute{
+	missingKey := SpanAttributeRule{
 		AttributeKey:       "",
 		AttributeCondition: AttributeConditionExists,
 	}
 	assert.ErrorContains(t, missingKey.Validate(), "attribute key cannot be empty")
 
-	missingValue := SpanAttribute{
+	missingValue := SpanAttributeRule{
 		AttributeKey:       "env",
 		AttributeCondition: AttributeConditionEquals,
 	}
 	assert.ErrorContains(t, missingValue.Validate(), "expected_value must be set")
 
-	invalidCondition := SpanAttribute{
+	invalidCondition := SpanAttributeRule{
 		AttributeKey:       "env",
 		AttributeCondition: "invalid",
 	}
@@ -154,7 +154,7 @@ func TestSpanAttribute_Validate(t *testing.T) {
 // TestSpanAttribute_MultipleSpans_OneMatch verifies that if any one span
 // in the trace satisfies the rule, the entire trace is marked for sampling.
 func TestSpanAttribute_MultipleSpans_OneMatch(t *testing.T) {
-	s := SpanAttribute{
+	s := SpanAttributeRule{
 		AttributeKey:          "env",
 		AttributeCondition:    AttributeConditionEquals,
 		ExpectedValue:         "prod",
@@ -177,7 +177,7 @@ func TestSpanAttribute_MultipleSpans_OneMatch(t *testing.T) {
 // TestSpanAttribute_NonStringAttribute ensures that attributes with non-string values
 // are ignored and do not cause a crash or false match.
 func TestSpanAttribute_NonStringAttribute(t *testing.T) {
-	s := SpanAttribute{
+	s := SpanAttributeRule{
 		AttributeKey:          "http.status_code",
 		AttributeCondition:    AttributeConditionEquals,
 		ExpectedValue:         "200",
@@ -201,7 +201,7 @@ func TestSpanAttribute_NonStringAttribute(t *testing.T) {
 // TestSpanAttribute_EmptyTrace verifies that an empty trace does not crash
 // and returns a fallback decision with no match.
 func TestSpanAttribute_EmptyTrace(t *testing.T) {
-	s := SpanAttribute{
+	s := SpanAttributeRule{
 		AttributeKey:          "env",
 		AttributeCondition:    AttributeConditionExists,
 		FallbackSamplingRatio: 42.0,

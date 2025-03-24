@@ -10,7 +10,7 @@ import (
 // TestServiceName_MatchingServiceExists ensures that a trace with a resource span
 // matching the specified service name is correctly identified and marked for sampling.
 func TestServiceName_MatchingServiceExists(t *testing.T) {
-	s := ServiceName{
+	s := ServiceNameRule{
 		ServiceName:           "checkout-service",
 		FallbackSamplingRatio: 10.0,
 	}
@@ -31,7 +31,7 @@ func TestServiceName_MatchingServiceExists(t *testing.T) {
 // TestServiceName_NoMatchingService verifies that when no resource span matches
 // the specified service name, the rule does not match and fallback is returned.
 func TestServiceName_NoMatchingService(t *testing.T) {
-	s := ServiceName{
+	s := ServiceNameRule{
 		ServiceName:           "checkout-service",
 		FallbackSamplingRatio: 5.0,
 	}
@@ -52,7 +52,7 @@ func TestServiceName_NoMatchingService(t *testing.T) {
 // TestServiceName_MultipleResources_OneMatches confirms that if at least one resource
 // in the trace matches the service name, the rule is satisfied even if other resources don't match.
 func TestServiceName_MultipleResources_OneMatches(t *testing.T) {
-	s := ServiceName{
+	s := ServiceNameRule{
 		ServiceName:           "auth-service",
 		FallbackSamplingRatio: 15.0,
 	}
@@ -76,7 +76,7 @@ func TestServiceName_MultipleResources_OneMatches(t *testing.T) {
 // TestServiceName_EmptyTrace ensures that an empty trace does not cause panic
 // and results in a non-match with fallback ratio applied.
 func TestServiceName_EmptyTrace(t *testing.T) {
-	s := ServiceName{
+	s := ServiceNameRule{
 		ServiceName:           "any-service",
 		FallbackSamplingRatio: 20.0,
 	}
@@ -93,7 +93,7 @@ func TestServiceName_EmptyTrace(t *testing.T) {
 // TestServiceName_InvalidServiceKey ensures that a trace with no "service.name" attribute
 // does not match the sampler rule and returns fallback.
 func TestServiceName_InvalidServiceKey(t *testing.T) {
-	s := ServiceName{
+	s := ServiceNameRule{
 		ServiceName:           "expected-service",
 		FallbackSamplingRatio: 30.0,
 	}
