@@ -73,8 +73,8 @@ It will install k8s components that will auto-instrument your applications with 
 			os.Exit(1)
 		}
 
-		if (installCentralized || installProxy) && !installed {
-			fmt.Println("\033[31mERROR\033[0m Odigos must be installed before using --install-centralized or --install-proxy")
+		if installProxy && !installed {
+			fmt.Println("\033[31mERROR\033[0m Odigos must be installed before using --install-proxy")
 			os.Exit(1)
 		}
 
@@ -85,7 +85,7 @@ It will install k8s components that will auto-instrument your applications with 
 			}
 		}
 
-		if installed && !(installCentralized || installProxy) {
+		if installed && !installProxy {
 			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace\n")
 			os.Exit(1)
 		}
@@ -124,7 +124,14 @@ It will install k8s components that will auto-instrument your applications with 
 
 		if installCentralized {
 			fmt.Println("Installing centralized Odigos backend and UI ...")
-			resourceManagers := resources.CreateCentralizedManagers(client)
+			managerOpts := resourcemanager.ManagerOpts{
+				ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+			}
+
+			createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
+				client, ns, createNamespace)
+
+			resourceManagers := resources.CreateCentralizedManagers(client, managerOpts)
 			err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
 			if err != nil {
 				fmt.Printf("\033[31mERROR\033[0m Failed to install centralized Odigos: %s\n", err)
