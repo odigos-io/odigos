@@ -12,11 +12,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-# Needed for AWS CLI to work
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   build-cli:
     runs-on: ubuntu-latest
@@ -88,6 +83,11 @@ jobs:
             kind-image: 'kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3'
           - kube-version: '1.32'
             kind-image: 'kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb'
+    # Needed for AWS to work (on UI failed)
+    permissions:
+      id-token: write
+      contents: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
