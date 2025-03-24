@@ -29,7 +29,7 @@
     "@types/react-dom": "19.0.4",
     "autoprefixer": "^10.4.21",
     "cypress": "^14.2.0",
-    "eslint": "9.22.0",
+    "eslint": "9.23.0",
     "eslint-config-next": "15.2.3",
     "postcss": "^8.5.3",
     "typescript": "5.8.2"
