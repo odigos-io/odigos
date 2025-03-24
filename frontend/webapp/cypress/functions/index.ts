@@ -73,18 +73,34 @@ interface UpdateEntityOptions {
 
 export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: UpdateEntityOptions, callback?: () => void) => {
   if (!!nodeContains) {
-    cy.contains(nodeId, nodeContains).should('exist').click({ force: true });
+    cy.contains(nodeId, nodeContains).should('exist').click();
   } else {
-    cy.get(nodeId).should('exist').click({ force: true });
+    cy.get(nodeId).should('exist').click();
   }
 
   cy.get(DATA_IDS.DRAWER).should('exist');
   cy.get(DATA_IDS.DRAWER_EDIT).click();
-  cy.get(fieldKey).clear().type(fieldValue);
-  cy.get(DATA_IDS.DRAWER_SAVE).click();
-  cy.get(DATA_IDS.DRAWER_CLOSE).click();
 
-  if (!!callback) callback();
+  // wait for the drawer to mount the newly rendered/animated elements, before we interact with the input field
+  cy.wait(1000).then(() => {
+    cy.get(fieldKey).should('exist').as('inp');
+    cy.get('@inp').clear();
+    cy.get('@inp').type(fieldValue);
+    cy.get('@inp').should('have.value', fieldValue);
+
+    cy.get(DATA_IDS.DRAWER_SAVE).click();
+    cy.get(DATA_IDS.DRAWER_CLOSE).click();
+
+    // Wait for closing animations to finish
+    cy.wait(1000).then(() => {
+      // press enter to close the secondary modal (if any)
+      cy.get('body').trigger('keydown', { keyCode: 13 });
+      cy.wait(300);
+      cy.get('body').trigger('keyup', { keyCode: 13 });
+
+      if (!!callback) callback();
+    });
+  });
 };
 
 interface DeleteEntityOptions {
