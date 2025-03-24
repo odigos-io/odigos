@@ -111,10 +111,6 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByC
 			patchedEnvVarValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
 			envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
 		}
-		// If EnvFromContainerRuntime does not include the relevant envVar (e.g., JAVA_OPTS), it should still be added with the Odigos value.
-		if len(envVars) == 0 {
-			envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: valueToInject})
-		}
 	}
 	return envVars
 }
