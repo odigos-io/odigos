@@ -164,6 +164,10 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/odigos-ci
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Check AWS identity (debug)
+        if: ${{ failure() && matrix.test-scenario == 'ui' }}
+        run: aws sts get-caller-identity
+
       - name: Collect and Upload UI screenshots
         if: ${{ failure() && matrix.test-scenario == 'ui' }}
         env:
