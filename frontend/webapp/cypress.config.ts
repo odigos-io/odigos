@@ -8,9 +8,6 @@ const config: Cypress.ConfigOptions = {
   trashAssetsBeforeRuns: false,
   screenshotOnRunFailure: true,
   video: true,
-  // TODO: enable compression if needed
-  // videoCompression: true,
-  // videoCompression: 32,
 
   e2e: {
     baseUrl: BASE_URL,
