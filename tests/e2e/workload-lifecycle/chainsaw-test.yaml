@@ -106,6 +106,10 @@ spec:
                   break
                 fi
               done
+      catch:
+        - script:
+            content: |
+              ../../common/simple_trace_db_query_runner.sh 01-wait-for-trace.yaml --verbose
 
     - name: '02 - Update workload manifest template spec'
       try:
@@ -161,6 +165,10 @@ spec:
                   break
                 fi
               done
+      catch:
+        - script:
+            content: |
+              ../../common/simple_trace_db_query_runner.sh 02-wait-for-trace.yaml --verbose
 
     - name: '03 - Create cluster info action'
       try:
@@ -220,3 +228,7 @@ spec:
                   break
                 fi
               done
+      catch:
+        - script:
+            content: |
+              ../../common/simple_trace_db_query_runner.sh 03-wait-for-trace.yaml --verbose
