@@ -83,11 +83,6 @@ jobs:
             kind-image: 'kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3'
           - kube-version: '1.32'
             kind-image: 'kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb'
-    # Needed for AWS to work (on UI failed)
-    permissions:
-      id-token: write
-      contents: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -147,7 +142,7 @@ jobs:
           ./cli/odigos diagnose
         continue-on-error: true
 
-      - name: Upload run details artifact
+      - name: Upload diagnose artifact
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
@@ -155,58 +150,10 @@ jobs:
           path: odigos_debug*.tar.gz
         continue-on-error: true
 
-      - name: Configure AWS credentials
+      - name: Upload UI screenshots artifact
         if: ${{ failure() && matrix.test-scenario == 'ui' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        env:
-          AWS_REGION: us-east-2
+        uses: actions/upload-artifact@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/odigos-ci
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Check AWS identity (debug)
-        if: ${{ failure() && matrix.test-scenario == 'ui' }}
-        run: aws sts get-caller-identity
-
-      - name: Collect and Upload UI screenshots
-        if: ${{ failure() && matrix.test-scenario == 'ui' }}
-        env:
-          SCREENSHOTS_DIR: ./frontend/webapp/cypress/screenshots
-          AWS_REGION: us-east-2
-          BUCKET_NAME: ui-e2e-dumps
-          SLACK_WEBHOOK_URL: ${{ secrets.UI_E2E_DUMPS_WEBHOOK_URL }}
-          BUILD_ID: ${{ github.run_id }}-${{ matrix.kube-version }}-${{ matrix.test-scenario }}
-        run: |
-          set -e
-
-          # Find all image files (recursively)
-          mapfile -t IMAGES < <(find "${SCREENSHOTS_DIR}" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \))
-
-          if [ ${#IMAGES[@]} -eq 0 ]; then
-            echo "No screenshots found."
-            exit 0
-          fi
-
-          echo "Uploading ${#IMAGES[@]} screenshots to S3..."
-
-          URLS=()
-          for IMG in "${IMAGES[@]}"; do
-            REL_PATH="${IMG#${SCREENSHOTS_DIR}/}"
-            S3_PATH="${BUILD_ID}/${REL_PATH}"
-            aws s3 cp "${IMG}" "s3://${BUCKET_NAME}/${S3_PATH}" --acl public-read
-            URLS+=("https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${S3_PATH}")
-          done
-
-          echo "Preparing Slack message..."
-          MESSAGE=":warning: *UI E2E failed* on Kubernetes version *${{ matrix.kube-version }}*\n\n"
-          MESSAGE+="*Build ID:*\n- ${BUILD_ID}\n\n"
-          MESSAGE+="*Screenshot links:*\n"
-          for URL in "${URLS[@]}"; do
-            MESSAGE+="- <$URL>\n"
-          done
-
-          echo -e "$MESSAGE"
-
-          echo "Sending Slack message..."
-          curl -X POST -H 'Content-type: application/json' --data "$(jq -nc --arg text "$MESSAGE" '{text: $text}')" "$SLACK_WEBHOOK_URL"
+          name: ui-screenshots-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
+          path: frontend/webapp/cypress/screenshots
         continue-on-error: true
