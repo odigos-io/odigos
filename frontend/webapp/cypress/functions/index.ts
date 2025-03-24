@@ -91,15 +91,7 @@ export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: Upd
     cy.get(DATA_IDS.DRAWER_SAVE).click();
     cy.get(DATA_IDS.DRAWER_CLOSE).click();
 
-    // Wait for closing animations to finish
-    cy.wait(1000).then(() => {
-      // press enter to close the secondary modal (if any)
-      cy.get('body').trigger('keydown', { keyCode: 13 });
-      cy.wait(300);
-      cy.get('body').trigger('keyup', { keyCode: 13 });
-
-      if (!!callback) callback();
-    });
+    if (!!callback) callback();
   });
 };
 
@@ -136,7 +128,7 @@ export const awaitToast = ({ withSSE, message }: AwaitToastOptions, callback?: (
   cy.wait(withSSE ? 2000 : 0).then(() => {
     cy.get(DATA_IDS.TOAST).contains(message).as('toast-msg');
     cy.get('@toast-msg').should('exist');
-    cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click({ force: true });
+    cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click();
 
     if (!!callback) callback();
   });
