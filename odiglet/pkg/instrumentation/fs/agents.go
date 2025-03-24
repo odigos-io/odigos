@@ -148,15 +148,21 @@ func calculateFileHash(filePath string) (string, error) {
 // affect the odiglet running process's apparent filesystem.
 func ApplyOpenShiftSELinuxSettings() error {
 	// Check if the semanage command exists when running on RHEL/CoreOS
+	log.Logger.Info("Applying selinux settings to host")
 	_, err := exec.LookPath(filepath.Join(chrootDir, semanagePath))
 	if err == nil {
 		// Run the semanage command to add the new directory to the container_ro_file_t context
 		// semanage writes SELinux config to host
 		syscall.Chroot(chrootDir)
 		cmd := exec.Command(semanagePath, "fcontext", "-a", "-t", "container_ro_file_t", "/var/odigos(/.*)?")
-		err = cmd.Run()
+		stdoutBytes, err := cmd.Output()
 		if err != nil {
-			log.Logger.Error(err, "Error running semanage command")
+			log.Logger.Error(err, "Error running semanage command", "stdout", string(stdoutBytes))
+			if strings.Contains(string(stdoutBytes), "already defined") {
+				// some versions of selinux return an error when trying to set fcontext where it already exists
+				// if that's the case, we don't need to return an error here
+				return nil
+			}
 			return err
 		}
 
