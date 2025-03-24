@@ -20,11 +20,11 @@ spec:
         - script:
             timeout: 1m
             content: |
-              kubectl wait --for=condition=ready pod -l app=frontend
-              kubectl wait --for=condition=ready pod -l app=coupon
-              kubectl wait --for=condition=ready pod -l app=inventory
-              kubectl wait --for=condition=ready pod -l app=pricing
-              kubectl wait --for=condition=ready pod -l app=membership
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 
@@ -35,7 +35,7 @@ spec:
         - script:
             timeout: 1m
             content: |
-              kubectl wait --for=condition=ready pod -l app=jaeger -n tracing
+              kubectl wait --for=condition=ready pod -l app=jaeger -n tracing --timeout=60s
         - assert:
             file: ../../common/assert/jaeger-installed.yaml
 
