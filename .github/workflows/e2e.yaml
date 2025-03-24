@@ -157,3 +157,11 @@ jobs:
           name: ui-screenshots-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
           path: frontend/webapp/cypress/screenshots
         continue-on-error: true
+
+      - name: Upload UI videos artifact
+        if: ${{ failure() && matrix.test-scenario == 'ui' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
+          path: frontend/webapp/cypress/videos
+        continue-on-error: true
