@@ -16,67 +16,50 @@ type HttpRouteLatencyRule struct {
 	FallbackSamplingRatio float64 `mapstructure:"fallback_sampling_ratio"`
 }
 
-func (tlr *HttpRouteLatencyRule) Validate() error {
+var _ SamplingDecision = (*HttpRouteLatencyRule)(nil)
+
+func (r *HttpRouteLatencyRule) Validate() error {
 	switch {
-	case tlr.Threshold <= 0:
+	case r.Threshold <= 0:
 		return errors.New("threshold must be a positive integer")
-	case tlr.ServiceName == "":
-		return errors.New("service cannot be empty")
-	case tlr.HttpRoute == "":
-		return errors.New("endpoint cannot be empty")
-	case !strings.HasPrefix(tlr.HttpRoute, "/"):
-		return errors.New("endpoint must start with '/'")
+	case r.ServiceName == "":
+		return errors.New("service_name cannot be empty")
+	case r.HttpRoute == "":
+		return errors.New("http_route cannot be empty")
+	case !strings.HasPrefix(r.HttpRoute, "/"):
+		return errors.New("http_route must start with '/'")
+	case r.FallbackSamplingRatio < 0 || r.FallbackSamplingRatio > 100:
+		return errors.New("fallback_sampling_ratio must be between 0 and 100")
 	}
 	return nil
 }
 
-func (tlr *HttpRouteLatencyRule) KeepTraceDecision(td ptrace.Traces) (filterMatch bool, conditionMatch bool) {
-	var (
-		serviceFound  = false
-		endpointFound = false
-	)
-
+func (r *HttpRouteLatencyRule) Evaluate(td ptrace.Traces) (matched bool, satisfied bool, fallbackRatio float64) {
 	resources := td.ResourceSpans()
+	var serviceFound, endpointFound bool
+	var minStart, maxEnd pcommon.Timestamp
 
-	// Check if the service matches
-	for r := 0; r < resources.Len(); r++ {
-		serviceAttr, _ := resources.At(r).Resource().Attributes().Get(string(semconv.ServiceNameKey))
-		if serviceAttr.AsString() == tlr.ServiceName {
-			serviceFound = true
+	for i := 0; i < resources.Len(); i++ {
+		resourceAttrs := resources.At(i).Resource().Attributes()
+		serviceAttr, found := resourceAttrs.Get(string(semconv.ServiceNameKey))
+		if !found || serviceAttr.AsString() != r.ServiceName {
+			continue
 		}
-	}
-	if !serviceFound {
-		return false, true
-	}
+		serviceFound = true
 
-	var minStart pcommon.Timestamp
-	var maxEnd pcommon.Timestamp
+		scopeSpans := resources.At(i).ScopeSpans()
+		for j := 0; j < scopeSpans.Len(); j++ {
+			spans := scopeSpans.At(j).Spans()
+			for k := 0; k < spans.Len(); k++ {
+				span := spans.At(k)
 
-	// Iterate over resources
-	for r := 0; r < resources.Len(); r++ {
-		scoreSpan := resources.At(r).ScopeSpans()
-
-		// Iterate over scopes
-		for j := 0; j < scoreSpan.Len(); j++ {
-			ils := scoreSpan.At(j)
-
-			// iterate over spans
-			for k := 0; k < ils.Spans().Len(); k++ {
-				span := ils.Spans().At(k)
-
-				endpoint, found := span.Attributes().Get("http.route")
-				if found {
-					serviceName, _ := resources.At(r).Resource().Attributes().Get(string(semconv.ServiceNameKey))
-					isEndpointFoundOnService := serviceName.AsString() == tlr.ServiceName
-
-					if tlr.matchEndpoint(endpoint.AsString(), tlr.HttpRoute) && isEndpointFoundOnService {
+				if endpointAttr, ok := span.Attributes().Get("http.route"); ok {
+					if r.matchEndpoint(endpointAttr.AsString(), r.HttpRoute) {
 						endpointFound = true
 					}
 				}
 
-				start := span.StartTimestamp()
-				end := span.EndTimestamp()
-
+				start, end := span.StartTimestamp(), span.EndTimestamp()
 				if minStart == 0 || start < minStart {
 					minStart = start
 				}
@@ -86,10 +69,20 @@ func (tlr *HttpRouteLatencyRule) KeepTraceDecision(td ptrace.Traces) (filterMatc
 			}
 		}
 	}
-	duration := maxEnd.AsTime().Sub(minStart.AsTime())
-	return endpointFound, duration.Milliseconds() > int64(tlr.Threshold)
+
+	if !serviceFound || !endpointFound {
+		return false, false, 0
+	}
+
+	duration := maxEnd.AsTime().Sub(minStart.AsTime()).Milliseconds()
+
+	if duration > int64(r.Threshold) {
+		return true, true, 0 // Always sample
+	}
+
+	return true, false, r.FallbackSamplingRatio // Probabilistic fallback
 }
 
-func (tlr *HttpRouteLatencyRule) matchEndpoint(rootSpanEndpoint string, samplerEndpoint string) bool {
-	return strings.HasPrefix(rootSpanEndpoint, samplerEndpoint)
+func (r *HttpRouteLatencyRule) matchEndpoint(spanEndpoint string, ruleEndpoint string) bool {
+	return strings.HasPrefix(spanEndpoint, ruleEndpoint)
 }
