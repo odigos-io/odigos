@@ -116,9 +116,6 @@ spec:
 
                 if [ $? -eq 0 ]; then
                   break
-                else
-                  ../../common/flush_traces.sh
-                  sleep 5
                 fi
               done
 
@@ -228,9 +225,6 @@ spec:
 
                 if [ $? -eq 0 ]; then
                   break
-                else
-                  ../../common/flush_traces.sh
-                  sleep 5
                 fi
               done
 
