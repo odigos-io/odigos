@@ -11,7 +11,7 @@ const config: Cypress.ConfigOptions = {
     viewportWidth: 1920,
     viewportHeight: 1080,
     retries: {
-      runMode: 1,
+      runMode: 0,
       openMode: 0,
     },
     setupNodeEvents(on, config) {
