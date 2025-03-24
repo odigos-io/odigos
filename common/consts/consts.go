@@ -57,10 +57,8 @@ const (
 	SkipWebhookIssuerCreationProperty = "skip-webhook-issuer-creation"
 	AllowConcurrentAgentsProperty     = "allow-concurrent-agents"
 	ImagePrefixProperty               = "image-prefix"
-	OdigletImageProperty              = "odiglet-image"
-	InstrumentorImageProperty         = "instrumentor-image"
-	AutoscalerImageProperty           = "autoscaler-image"
 	UiModeProperty                    = "ui-mode"
+	UiPaginationLimit                 = "ui-pagination-limit"
 	IgnoredNamespacesProperty         = "ignored-namespaces"
 	IgnoredContainersProperty         = "ignored-containers"
 	MountMethodProperty               = "mount-method"
@@ -78,9 +76,6 @@ var (
 	OtelTracesExporter          = "OTEL_TRACES_EXPORTER"
 	OtelExporterEndpointEnvName = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	// Python related ones
-	OtelPythonConfiguratorEnvName      = "OTEL_PYTHON_CONFIGURATOR"
-	OtelPythonOSSConfiguratorEnvValue  = "odigos-python-configurator"
-	OtelPythonEBPFConfiguratorEnvValue = "ebpf"
-	OpampServerHostEnvName             = "ODIGOS_OPAMP_SERVER_HOST"
-	OpAMPPort                          = 4320
+	OpampServerHostEnvName = "ODIGOS_OPAMP_SERVER_HOST"
+	OpAMPPort              = 4320
 )

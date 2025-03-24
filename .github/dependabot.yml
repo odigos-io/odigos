@@ -49,7 +49,7 @@ updates:
       day: sunday
       interval: weekly
 
-  - package-ecosystem: yarn
+  - package-ecosystem: npm
     directories:
       - /frontend/webapp
       - /docs

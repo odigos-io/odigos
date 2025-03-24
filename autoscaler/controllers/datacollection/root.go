@@ -18,7 +18,7 @@ const (
 	syncDaemonsetRetry = 3
 )
 
-func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, disableNameProcessor bool) error {
+func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
 
 	var sources odigosv1.InstrumentationConfigList
@@ -50,12 +50,12 @@ func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePul
 		return err
 	}
 
-	return syncDataCollection(&sources, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion, disableNameProcessor)
+	return syncDataCollection(&sources, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion)
 }
 
 func syncDataCollection(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
 	dataCollection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client,
-	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, disableNameProcessor bool) error {
+	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
@@ -65,7 +65,7 @@ func syncDataCollection(sources *odigosv1.InstrumentationConfigList, dests *odig
 		return err
 	}
 
-	err = SyncConfigMap(sources, dests, processors, dataCollection, ctx, c, scheme, disableNameProcessor)
+	err = SyncConfigMap(sources, dests, processors, dataCollection, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err

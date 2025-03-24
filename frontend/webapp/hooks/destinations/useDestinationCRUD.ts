@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { GET_DESTINATIONS } from '@/graphql';
+import { mapFetchedDestinations } from '@/utils';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import type { DestinationInput, FetchedDestination } from '@/@types';
+import { getSseTargetFromId } from '@odigos/ui-kit/functions';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import { useEntityStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
-import { type DestinationFormData, useEntityStore, useNotificationStore, usePendingStore } from '@odigos/ui-containers';
-import { CRUD, type Destination, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE } from '@odigos/ui-utils';
+import { Crud, EntityTypes, StatusType, type Destination, type DestinationFormData } from '@odigos/ui-kit/types';
 
 interface UseDestinationCrud {
   destinations: Destination[];
@@ -16,88 +18,90 @@ interface UseDestinationCrud {
   deleteDestination: (id: string) => void;
 }
 
-const mapFetched = (items: FetchedDestination[]): Destination[] => {
-  return items.map((item) => {
-    // Replace deprecated string values, with boolean values
-    const fields =
-      item.destinationType.type === 'clickhouse'
-        ? item.fields.replace('"CLICKHOUSE_CREATE_SCHEME":"Create"', '"CLICKHOUSE_CREATE_SCHEME":"true"').replace('"CLICKHOUSE_CREATE_SCHEME":"Skip"', '"CLICKHOUSE_CREATE_SCHEME":"false"')
-        : item.destinationType.type === 'qryn'
-        ? item.fields
-            .replace('"QRYN_ADD_EXPORTER_NAME":"Yes"', '"QRYN_ADD_EXPORTER_NAME":"true"')
-            .replace('"QRYN_ADD_EXPORTER_NAME":"No"', '"QRYN_ADD_EXPORTER_NAME":"false"')
-            .replace('"QRYN_RESOURCE_TO_TELEMETRY_CONVERSION":"Yes"', '"QRYN_RESOURCE_TO_TELEMETRY_CONVERSION":"true"')
-            .replace('"QRYN_RESOURCE_TO_TELEMETRY_CONVERSION":"No"', '"QRYN_RESOURCE_TO_TELEMETRY_CONVERSION":"false"')
-        : item.destinationType.type === 'qryn-oss'
-        ? item.fields
-            .replace('"QRYN_OSS_ADD_EXPORTER_NAME":"Yes"', '"QRYN_OSS_ADD_EXPORTER_NAME":"true"')
-            .replace('"QRYN_OSS_ADD_EXPORTER_NAME":"No"', '"QRYN_OSS_ADD_EXPORTER_NAME":"false"')
-            .replace('"QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION":"Yes"', '"QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION":"true"')
-            .replace('"QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION":"No"', '"QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION":"false"')
-        : item.fields;
-
-    return { ...item, fields };
-  });
-};
-
 export const useDestinationCRUD = (): UseDestinationCrud => {
-  const { data: config } = useConfig();
+  const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { destinationsLoading, setEntitiesLoading, destinations, addEntities, removeEntities } = useEntityStore();
 
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
-    addNotification({ type, title, message, crdType: ENTITY_TYPES.DESTINATION, target: id ? getSseTargetFromId(id, ENTITY_TYPES.DESTINATION) : undefined, hideFromHistory });
+  const notifyUser = (type: StatusType, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
+    addNotification({ type, title, message, crdType: EntityTypes.Destination, target: id ? getSseTargetFromId(id, EntityTypes.Destination) : undefined, hideFromHistory });
   };
 
-  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: FetchedDestination[] } }>(GET_DESTINATIONS, {
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }>(GET_DESTINATIONS, {
     fetchPolicy: 'cache-and-network',
   });
 
   const fetchDestinations = async () => {
-    setEntitiesLoading(ENTITY_TYPES.DESTINATION, true);
+    setEntitiesLoading(EntityTypes.Destination, true);
     const { error, data } = await fetchAll();
 
-    if (!!error) {
-      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
-    } else if (!!data?.computePlatform?.destinations) {
+    if (error) {
+      notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
+    } else if (data?.computePlatform?.destinations) {
       const { destinations: items } = data.computePlatform;
-      addEntities(ENTITY_TYPES.DESTINATION, mapFetched(items));
-      setEntitiesLoading(ENTITY_TYPES.DESTINATION, false);
+      addEntities(EntityTypes.Destination, mapFetchedDestinations(items));
+      setEntitiesLoading(EntityTypes.Destination, false);
     }
   };
 
-  const [mutateCreate, cState] = useMutation<{ createNewDestination: FetchedDestination }, { destination: DestinationInput }>(CREATE_DESTINATION, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
+  const [mutateCreate] = useMutation<{ createNewDestination: Destination }, { destination: DestinationFormData }>(CREATE_DESTINATION, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Create, error.cause?.message || error.message),
     onCompleted: (res) => {
       const destination = res.createNewDestination;
-      addEntities(ENTITY_TYPES.DESTINATION, mapFetched([destination]));
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${destination.destinationType.type}" destination`, destination.id);
+      addEntities(EntityTypes.Destination, mapFetchedDestinations([destination]));
+      notifyUser(StatusType.Success, Crud.Create, `Successfully created "${destination.destinationType.type}" destination`, destination.id);
     },
   });
 
-  const [mutateUpdate, uState] = useMutation<{ updateDestination: { id: string } }, { id: string; destination: DestinationInput }>(UPDATE_DESTINATION, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
+  const [mutateUpdate] = useMutation<{ updateDestination: { id: string } }, { id: string; destination: DestinationFormData }>(UPDATE_DESTINATION, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       setTimeout(() => {
         const id = req?.variables?.id as string;
         const destination = destinations.find((r) => r.id === id);
-        removePendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
-        notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully updated "${destination?.destinationType?.type || id}" destination`, id);
+        removePendingItems([{ entityType: EntityTypes.Destination, entityId: id }]);
+        notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${destination?.destinationType?.type || id}" destination`, id);
         // We wait for SSE
       }, 3000);
     },
   });
 
-  const [mutateDelete, dState] = useMutation<{ deleteDestination: boolean }, { id: string }>(DELETE_DESTINATION, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
+  const [mutateDelete] = useMutation<{ deleteDestination: boolean }, { id: string }>(DELETE_DESTINATION, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Delete, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id as string;
       const destination = destinations.find((r) => r.id === id);
-      removeEntities(ENTITY_TYPES.DESTINATION, [id]);
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${destination?.destinationType.type || id}" destination`, id);
+      removeEntities(EntityTypes.Destination, [id]);
+      notifyUser(StatusType.Success, Crud.Delete, `Successfully deleted "${destination?.destinationType.type || id}" destination`, id);
     },
   });
+
+  const createDestination: UseDestinationCrud['createDestination'] = (destination) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      mutateCreate({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+    }
+  };
+
+  const updateDestination: UseDestinationCrud['updateDestination'] = (id, destination) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      notifyUser(StatusType.Default, 'Pending', 'Updating destination...', undefined, true);
+      addPendingItems([{ entityType: EntityTypes.Destination, entityId: id }]);
+      mutateUpdate({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+    }
+  };
+
+  const deleteDestination: UseDestinationCrud['deleteDestination'] = (id) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      mutateDelete({ variables: { id } });
+    }
+  };
 
   useEffect(() => {
     if (!destinations.length && !destinationsLoading) fetchDestinations();
@@ -105,31 +109,10 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
 
   return {
     destinations,
-    destinationsLoading: destinationsLoading || cState.loading || uState.loading || dState.loading,
+    destinationsLoading,
     fetchDestinations,
-
-    createDestination: (destination) => {
-      if (config?.readonly) {
-        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
-      } else {
-        mutateCreate({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
-      }
-    },
-    updateDestination: (id, destination) => {
-      if (config?.readonly) {
-        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
-      } else {
-        notifyUser(NOTIFICATION_TYPE.DEFAULT, 'Pending', 'Updating destination...', undefined, true);
-        addPendingItems([{ entityType: ENTITY_TYPES.DESTINATION, entityId: id }]);
-        mutateUpdate({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
-      }
-    },
-    deleteDestination: (id) => {
-      if (config?.readonly) {
-        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
-      } else {
-        mutateDelete({ variables: { id } });
-      }
-    },
+    createDestination,
+    updateDestination,
+    deleteDestination,
   };
 };

@@ -24,6 +24,7 @@ type uiResourceManager struct {
 	config        *common.OdigosConfiguration
 	odigosVersion string
 	readonly      bool
+	managerOpts   resourcemanager.ManagerOpts
 }
 
 func (u *uiResourceManager) Name() string {
@@ -94,10 +95,26 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "ui-db-storage",
+									MountPath: "/data",
+								},
+							},
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            k8sconsts.UIServiceAccountName,
+					Volumes: []corev1.Volume{
+						{
+							Name: "ui-db-storage",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: resource.NewQuantity(50*1024*1024, resource.BinarySI), // 50 MiB in bytes
+								},
+							},
+						},
+					},
+					ServiceAccountName: k8sconsts.UIServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
@@ -385,28 +402,25 @@ func NewUIService(ns string) *corev1.Service {
 }
 
 func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
-	imageName := k8sconsts.UIImage
-	if u.config.OpenshiftEnabled {
-		imageName = k8sconsts.UIImageUBI9
-	}
 	resources := []kube.Object{
 		NewUIServiceAccount(u.ns),
 		NewUIRole(u.ns, u.readonly),
 		NewUIRoleBinding(u.ns),
 		NewUIClusterRole(u.readonly),
 		NewUIClusterRoleBinding(u.ns),
-		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, imageName),
+		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.managerOpts.ImageReferences.UIImage),
 		NewUIService(u.ns),
 	}
-	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources)
+	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources, u.managerOpts)
 }
 
-func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string) resourcemanager.ResourceManager {
+func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
 	return &uiResourceManager{
 		client:        client,
 		ns:            ns,
 		config:        config,
 		odigosVersion: odigosVersion,
 		readonly:      config.UiMode == common.ReadonlyUiMode,
+		managerOpts:   managerOpts,
 	}
 }

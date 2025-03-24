@@ -304,6 +304,15 @@ type InstrumentationInstanceAnalyze struct {
 	IdentifyingAttributes []*EntityProperty `json:"identifyingAttributes"`
 }
 
+type InstrumentationInstanceHealth struct {
+	Namespace        string          `json:"namespace"`
+	Name             string          `json:"name"`
+	Kind             K8sResourceKind `json:"kind"`
+	TotalInstances   int             `json:"totalInstances"`
+	HealthyInstances int             `json:"healthyInstances"`
+	Condition        *Condition      `json:"condition,omitempty"`
+}
+
 type InstrumentationLibraryGlobalID struct {
 	Name     string               `json:"name"`
 	SpanKind *SpanKind            `json:"spanKind,omitempty"`
@@ -317,6 +326,7 @@ type InstrumentationLibraryGlobalIDInput struct {
 }
 
 type InstrumentationRule struct {
+	Type                     InstrumentationRuleType           `json:"type"`
 	RuleID                   string                            `json:"ruleId"`
 	RuleName                 *string                           `json:"ruleName,omitempty"`
 	Notes                    *string                           `json:"notes,omitempty"`
@@ -347,9 +357,9 @@ type InstrumentationSourcesAnalyze struct {
 }
 
 type K8sActualNamespace struct {
-	Name             string             `json:"name"`
-	Selected         bool               `json:"selected"`
-	K8sActualSources []*K8sActualSource `json:"k8sActualSources"`
+	Name     string             `json:"name"`
+	Selected bool               `json:"selected"`
+	Sources  []*K8sActualSource `json:"sources"`
 }
 
 type K8sActualSource struct {
@@ -838,6 +848,49 @@ func (e *InstallationStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e InstallationStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InstrumentationRuleType string
+
+const (
+	InstrumentationRuleTypePayloadCollection InstrumentationRuleType = "PayloadCollection"
+	InstrumentationRuleTypeCodeAttributes    InstrumentationRuleType = "CodeAttributes"
+	InstrumentationRuleTypeUnknownType       InstrumentationRuleType = "UnknownType"
+)
+
+var AllInstrumentationRuleType = []InstrumentationRuleType{
+	InstrumentationRuleTypePayloadCollection,
+	InstrumentationRuleTypeCodeAttributes,
+	InstrumentationRuleTypeUnknownType,
+}
+
+func (e InstrumentationRuleType) IsValid() bool {
+	switch e {
+	case InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeUnknownType:
+		return true
+	}
+	return false
+}
+
+func (e InstrumentationRuleType) String() string {
+	return string(e)
+}
+
+func (e *InstrumentationRuleType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InstrumentationRuleType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InstrumentationRuleType", str)
+	}
+	return nil
+}
+
+func (e InstrumentationRuleType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

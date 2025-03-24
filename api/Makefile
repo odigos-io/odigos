@@ -61,6 +61,8 @@ docgen: genref
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	# remove the existing CRD files directory before recreating, so removed files will not be left over
+	@rm -rf config/crd/bases
 	$(CONTROLLER_GEN) crd:allowDangerousTypes=true webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate

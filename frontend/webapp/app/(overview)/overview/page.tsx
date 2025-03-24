@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { useMetrics, useSourceCRUD } from '@/hooks';
-import { DataFlow, MultiSourceControl } from '@odigos/ui-containers';
+import { OVERVIEW_HEIGHT_WITHOUT_DATA_FLOW } from '@/utils';
+import { DataFlow, MultiSourceControl } from '@odigos/ui-kit/containers';
 
 export default function Page() {
   const { metrics } = useMetrics();
@@ -10,7 +11,7 @@ export default function Page() {
 
   return (
     <>
-      <DataFlow heightToRemove='176px' metrics={metrics} />
+      <DataFlow heightToRemove={OVERVIEW_HEIGHT_WITHOUT_DATA_FLOW} metrics={metrics} />
       <MultiSourceControl totalSourceCount={sources.length} uninstrumentSources={(payload) => persistSources(payload, {})} />
     </>
   );

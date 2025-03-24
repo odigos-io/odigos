@@ -1,0 +1,96 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: helm-chart
+spec:
+  description: This tests adds network latency on the instrumentor pod in order to test the leader election mechanism (HPE-11)
+  skipDelete: true
+  steps:
+    - name: Install chaos-mesh
+      try:
+        - script:
+            timeout: 10m
+            content: |
+              bash ../../common/install_chaos_mesh.sh
+
+    - name: Install Odigos
+      try:
+        - script:
+            timeout: 5m
+            content: |
+              # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
+              P="../../../.."
+              helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+
+    - name: Verify Odigos Installation
+      try:
+        - script:
+            timeout: 7m
+            content: |
+              echo "Starting Odigos version check..."
+              export ACTUAL_VERSION=$(../../../../cli/odigos version --cluster)
+              echo "Actual Version: $ACTUAL_VERSION"
+
+              if [ "$ACTUAL_VERSION" != "$COMMIT_HASH" ]; then
+                echo "Odigos version is not the expected commit hash, got $ACTUAL_VERSION"
+                exit 1
+              fi
+
+              kubectl wait --for=condition=ready pods --all -n odigos-test --timeout=3m
+
+        - assert:
+            file: ../../../common/assert/odigos-installed.yaml
+
+      catch:
+        - script:
+            content: |
+              echo "Failure detected. Printing pods in the odigos-test namespace..."
+              kubectl get pods -n odigos-test -o wide
+
+    - name: Update deployment probes
+      try:
+        - script:
+            # The test adds latency to all of the requests in the pod, the purpose of this patch is to prevent kubernetes from assuming the service is in not healthy (The probes would fail with timeout otherwise)
+            timeout: 3m
+            content: |
+              kubectl patch deployment odigos-instrumentor -n odigos-test --type=json -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/readinessProbe/timeoutSeconds", "value":10}, {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/timeoutSeconds", "value":10}]'
+
+    - name: Wait for chaos-mesh to be ready
+      try:
+        - script:
+            timeout: 10m
+            content: |
+              kubectl wait --for=condition=ready pods --all -n chaos-mesh --timeout=10m
+
+    - name: Apply chaos experiment
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              NAMESPACE="odigos-test"
+              APP_SELECTOR="odigos-instrumentor"
+              POD_TEMPLATE_HASH=$(kubectl get pod -n "$NAMESPACE" -l app.kubernetes.io/name="$APP_SELECTOR" -o jsonpath='{.items[0].metadata.labels.pod-template-hash}')
+              LATENCY="2500ms"
+              JITTER="0ms"
+
+              yq eval "
+                .metadata.namespace = \"$NAMESPACE\" |
+                .spec.selector.labelSelectors.\"app.kubernetes.io/name\" = \"$APP_SELECTOR\" |
+                .spec.selector.labelSelectors.\"pod-template-hash\" = \"$POD_TEMPLATE_HASH\" |
+                .spec.delay.latency = \"$LATENCY\" |
+                .spec.delay.jitter = \"$JITTER\"
+              " ../../experiments/network-latency.yaml | kubectl apply -f -
+
+    - name: Allow the chaos experiment to take affect
+      try:
+        - script:
+            timeout: 6m
+            content: |
+              sleep 5m
+
+    - name: Assert Odigos still up
+      try:
+        - assert:
+            timeout: 5m
+            file: ../../../common/assert/odigos-installed.yaml

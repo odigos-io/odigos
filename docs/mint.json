@@ -222,6 +222,7 @@
             "backends/appdynamics",
             "backends/awscloudwatch",
             "backends/awss3",
+            "backends/awsxray",
             "backends/axiom",
             "backends/azureblob",
             "backends/betterstack",
