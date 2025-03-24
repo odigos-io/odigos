@@ -40,7 +40,7 @@ describe('Sources CRUD', () => {
 
         // Wait for sources to instrument
         cy.wait('@gql').then(() => {
-          awaitToast({ withSSE: true, message: TEXTS.NOTIF_SOURCES_CREATED(totalEntities) });
+          awaitToast({ message: TEXTS.NOTIF_SOURCES_CREATED(totalEntities) });
         });
       });
     });
@@ -66,7 +66,7 @@ describe('Sources CRUD', () => {
           () => {
             // Wait for the source to update
             cy.wait('@gql').then(() => {
-              awaitToast({ withSSE: false, message: TEXTS.NOTIF_UPDATED });
+              awaitToast({ message: TEXTS.NOTIF_UPDATED });
 
               // Since we're updating all sources, and the modified event batcher (in SSE) refreshes the sources...
               // We will force an extra 3 seconds-wait before we continue to the next source in the loop, this is to ensure we have an updated UI before we proceed to update the next source (otherwise Cypress will fail to find the elements).
@@ -107,7 +107,7 @@ describe('Sources CRUD', () => {
 
       // Wait for the sources to delete
       cy.wait('@gql').then(() => {
-        awaitToast({ withSSE: true, message: TEXTS.NOTIF_SOURCES_DELETED(totalEntities) });
+        awaitToast({ message: TEXTS.NOTIF_SOURCES_DELETED(totalEntities) });
       });
     });
   });
