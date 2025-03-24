@@ -7,7 +7,6 @@ These tests are installing multiple microservices, instrument with Odigos, gener
 
 - [Kubernetes In Docker (Kind)](https://kind.sigs.k8s.io/) - a tool for running local Kubernetes clusters using Docker container “nodes”.
 - [Chainsaw](https://kyverno.github.io/chainsaw/) - To orchestrate the different Kubernetes actions.
-- [Tempo](https://github.com/grafana/tempo) - Distributed tracing backend. Chosen due to its query language that allows for easy querying of traces.
 
 ## Running e2e locally
 
@@ -79,7 +78,7 @@ After writing and testing new scenario, you should also add it to the GitHub Act
 "simple-trace-db" is an in-memory database that stores spans and allow querying them via a simple API and common query language.
 It is used to execute JMESPath queries to assert the traces that odigos generates.
 
-### Connecting to Tempo
+### Connecting to simple-trace-db
 
 In order to run trace queries, you need to connect to simple-trace-db.
 The db is installed automatically in the e2e test, so if you ran a scenario you can connect to it.

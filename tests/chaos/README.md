@@ -8,7 +8,6 @@ The purpose of those tests is to tests the odigos platform with different fault 
 - [Kubernetes In Docker (Kind)](https://kind.sigs.k8s.io/) - a tool for running local Kubernetes clusters using Docker container “nodes”.
 - [Chainsaw](https://kyverno.github.io/chainsaw/) - To orchestrate the different Kubernetes actions.
 - [Chaos-mesh](https://github.com/chaos-mesh/chaos-mesh) - In order to simulate faults in the cluster.
-- [Tempo](https://github.com/grafana/tempo) - Distributed tracing backend. Chosen due to its query language that allows for easy querying of traces.
 
 ## Running chaos tests locally
 
@@ -59,7 +58,7 @@ chainsaw test tests/chaos/network-latency/leader-election
 
 Every scenario should include some/all of the following:
 
-- Install destination (usually Tempo)
+- Install destination (`simple-trace-db`)
 - Install test applications
 - Install Odigos
 - Select apps for instrumentation and configure destination
