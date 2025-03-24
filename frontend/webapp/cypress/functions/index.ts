@@ -81,12 +81,10 @@ export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: Upd
   cy.get(DATA_IDS.DRAWER).should('exist');
   cy.get(DATA_IDS.DRAWER_EDIT).click();
 
-  // wait for the drawer to mount the newly rendered/animated elements, before we interact with the input field
-  cy.wait(1000).then(() => {
-    cy.get(fieldKey).should('exist').as('inp');
-    cy.get('@inp').clear();
-    cy.get('@inp').type(fieldValue);
-    cy.get('@inp').should('have.value', fieldValue);
+  // wait for the drawer to mount the newly rendered elements, before we interact with the input
+  cy.wait(500).then(() => {
+    cy.get(fieldKey).click().focused().clear().type(fieldValue);
+    cy.get(fieldKey).should('have.value', fieldValue);
 
     cy.get(DATA_IDS.DRAWER_SAVE).click();
     cy.get(DATA_IDS.DRAWER_CLOSE).click();
