@@ -13,7 +13,7 @@ require (
 	github.com/odigos-io/odigos/destinations v0.0.0-20240223090638-df3328a088bc
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/stretchr/testify v1.10.0
-	github.com/vektah/gqlparser/v2 v2.5.16
+	github.com/vektah/gqlparser/v2 v2.5.23
 	go.opentelemetry.io/collector/component v1.27.0
 	go.opentelemetry.io/collector/component/componenttest v0.121.0
 	go.opentelemetry.io/collector/confmap v1.27.0
@@ -88,7 +88,7 @@ require (
 )
 
 require (
-	github.com/agnivade/levenshtein v1.1.1 // indirect
+	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/bytedance/sonic v1.12.6 // indirect
 	github.com/bytedance/sonic/loader v0.2.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
