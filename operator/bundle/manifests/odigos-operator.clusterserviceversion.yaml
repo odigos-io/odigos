@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:7cdda29f9cf4cd278479ad7c805405b8681855cf6ff03b210dc2657fd62c99d5
-    createdAt: "2025-03-25T17:54:39Z"
+    createdAt: "2025-03-25T17:55:51Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and eBPF.
     features.operators.openshift.io/disconnected: "false"
     features.operators.openshift.io/fips-compliant: "true"
@@ -533,28 +533,28 @@ spec:
     name: Odigos
     url: https://odigos.io
   relatedImages:
+    - image: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:7abf5b22ad6a6fdf293eedb457e7851639a39eae42d4e5d369e87ff3433eca29
+      name: frontend
+    - image: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:455e7a03e0bc5ec83799c39d2247362aacbe860e572698abf9f16f1b88b69fa0
+      name: instrumentor
+    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:7cdda29f9cf4cd278479ad7c805405b8681855cf6ff03b210dc2657fd62c99d5
+      name: odigos-certified-operator-ubi9-7cdda29f9cf4cd278479ad7c805405b8681855cf6ff03b210dc2657fd62c99d5-annotation
+    - image: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:859f812a8251dfb625a3d80767972e6c78d59fdb6f8a816a42668e96389ffca8
+      name: autoscaler
     - image: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:4037cb4634965a563c3377b2f0a69af26dfaa531e5a2b6d1a7ffc04fcb1c14e2
       name: collector
-    - image: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9@sha256:e50f104ce67213b094441cd022e8851860af619b7d972e668f7219c2ac7ec5c6
-      name: odiglet
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:25a5c23d1549b1226dd15b98f0d729bd0704f1dd022ff17e6ee9d232dbebd658
+      name: enterprise-odiglet
+    - image: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9@sha256:878cc3c1bddcaf909d4405e71c66bc5ab4344feaed3eb35feaac75471df23bfe
+      name: scheduler
     - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:7cdda29f9cf4cd278479ad7c805405b8681855cf6ff03b210dc2657fd62c99d5
       name: manager
     - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:0fccb68f3a2ba55e5ed121e2d2eed4800810e3dd922a9906ac7c27efb9b69b70
       name: enterprise_instrumentor
     - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:25a5c23d1549b1226dd15b98f0d729bd0704f1dd022ff17e6ee9d232dbebd658
       name: enterprise_odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:7cdda29f9cf4cd278479ad7c805405b8681855cf6ff03b210dc2657fd62c99d5
-      name: odigos-certified-operator-ubi9-7cdda29f9cf4cd278479ad7c805405b8681855cf6ff03b210dc2657fd62c99d5-annotation
-    - image: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:859f812a8251dfb625a3d80767972e6c78d59fdb6f8a816a42668e96389ffca8
-      name: autoscaler
-    - image: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:7abf5b22ad6a6fdf293eedb457e7851639a39eae42d4e5d369e87ff3433eca29
-      name: frontend
-    - image: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:455e7a03e0bc5ec83799c39d2247362aacbe860e572698abf9f16f1b88b69fa0
-      name: instrumentor
     - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:0fccb68f3a2ba55e5ed121e2d2eed4800810e3dd922a9906ac7c27efb9b69b70
       name: enterprise-instrumentor
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:25a5c23d1549b1226dd15b98f0d729bd0704f1dd022ff17e6ee9d232dbebd658
-      name: enterprise-odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9@sha256:878cc3c1bddcaf909d4405e71c66bc5ab4344feaed3eb35feaac75471df23bfe
-      name: scheduler
+    - image: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9@sha256:e50f104ce67213b094441cd022e8851860af619b7d972e668f7219c2ac7ec5c6
+      name: odiglet
   version: 1.0.164
