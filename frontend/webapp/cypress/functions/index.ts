@@ -73,14 +73,17 @@ interface UpdateEntityOptions {
 
 export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: UpdateEntityOptions, callback?: () => void) => {
   if (!!nodeContains) {
-    cy.contains(nodeId, nodeContains).should('exist').click({ force: true });
+    cy.contains(nodeId, nodeContains).should('exist').click();
   } else {
-    cy.get(nodeId).should('exist').click({ force: true });
+    cy.get(nodeId).should('exist').click();
   }
 
   cy.get(DATA_IDS.DRAWER).should('exist');
   cy.get(DATA_IDS.DRAWER_EDIT).click();
-  cy.get(fieldKey).clear().type(fieldValue);
+
+  cy.get(fieldKey).click().focused().clear().type(fieldValue);
+  cy.get(fieldKey).should('have.value', fieldValue);
+
   cy.get(DATA_IDS.DRAWER_SAVE).click();
   cy.get(DATA_IDS.DRAWER_CLOSE).click();
 
@@ -108,22 +111,15 @@ export const deleteEntity = ({ nodeId, nodeContains, warnModalTitle, warnModalNo
 };
 
 interface AwaitToastOptions {
-  withSSE: boolean;
   message: string;
 }
 
-export const awaitToast = ({ withSSE, message }: AwaitToastOptions, callback?: () => void) => {
-  // In case of SSE, we need around 5 seconds to allow the backend to batch a notification.
-  // We will force 2 seconds, and Cypress will add 4 more seconds, giving us 6 seconds total.
-  // We don't want to force too much time or we might miss a notification that was sent earlier than expected!
+export const awaitToast = ({ message }: AwaitToastOptions, callback?: () => void) => {
+  cy.get(DATA_IDS.TOAST).contains(message).as('toast-msg');
+  cy.get('@toast-msg').should('exist');
+  cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click({ force: true });
 
-  cy.wait(withSSE ? 2000 : 0).then(() => {
-    cy.get(DATA_IDS.TOAST).contains(message).as('toast-msg');
-    cy.get('@toast-msg').should('exist');
-    cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click({ force: true });
-
-    if (!!callback) callback();
-  });
+  if (!!callback) callback();
 };
 
 export const handleExceptions = () => {
