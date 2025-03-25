@@ -2,7 +2,7 @@ apiVersion: e2e.tests.odigos.io/v1
 kind: TraceTest
 description: |
   This test check the following resource attributes:
-  A. odigos.version attribute exists on all spans, since it's an upgrade, we can have version of both the old and new odigos deployments.
+  A. odigos.version attribute exists on all spans
   B. Kubernetes attributes are correctly set on all spans
 query: |
     length([?(
