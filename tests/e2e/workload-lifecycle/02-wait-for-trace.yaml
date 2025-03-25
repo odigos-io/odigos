@@ -15,6 +15,10 @@ query: |
   length([?span.serviceName == 'python-latest-version-reported' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
   length([?span.serviceName == 'python-alpine-reported' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
   length([?span.serviceName == 'python-not-supported-reported' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
-  length([?span.serviceName == 'python-min-version-reported' && span.spanAttributes."http.route" == 'insert-random/']) > `0`
+  length([?span.serviceName == 'python-min-version-reported' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
+  length([?span.serviceName == 'dotnet8-glibc-reported']) > `0` ||
+  length([?span.serviceName == 'dotnet8-musl-reported']) > `0` ||
+  length([?span.serviceName == 'dotnet6-glibc-reported']) > `0` ||
+  length([?span.serviceName == 'dotnet6-musl-reported']) > `0`
 expected:
   count: 13
