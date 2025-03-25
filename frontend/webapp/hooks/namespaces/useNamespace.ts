@@ -10,7 +10,7 @@ import { Crud, EntityTypes, Namespace, StatusType } from '@odigos/ui-kit/types';
 export const useNamespace = (namespaceName?: string) => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
-  const { namespacesLoading, setEntitiesLoading, namespaces, addEntities } = useEntityStore();
+  const { namespacesLoading, setEntitiesLoading, namespaces, setEntities } = useEntityStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, hideFromHistory });
@@ -50,7 +50,7 @@ export const useNamespace = (namespaceName?: string) => {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
     } else if (data?.computePlatform?.k8sActualNamespaces) {
       const { k8sActualNamespaces: items } = data.computePlatform;
-      addEntities(EntityTypes.Namespace, items);
+      setEntities(EntityTypes.Namespace, items);
       setEntitiesLoading(EntityTypes.Namespace, false);
     }
   };
