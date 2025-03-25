@@ -3,10 +3,10 @@ kind: ClusterServiceVersion
 metadata:
   annotations:
     alm-examples: '[{"apiVersion":"operator.odigos.io/v1alpha1", "kind":"Odigos",
-      "metadata":{"name":"odigos","namespace":"odigos-operator-system"}, "spec":{"version":"v1.0.162"}}]'
+      "metadata":{"name":"odigos","namespace":"odigos-operator-system"}, "spec":{"version":"v1.0.164"}}]'
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.0.162
+    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.0.164
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -128,4 +128,4 @@ spec:
   provider:
     name: Odigos
     url: https://odigos.io
-  version: 1.0.162
+  version: 1.0.164
