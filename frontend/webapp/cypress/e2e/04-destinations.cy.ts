@@ -48,6 +48,7 @@ describe('Destinations CRUD', () => {
           fieldValue: TEXTS.UPDATED_NAME,
         },
         () => {
+          awaitToast({ message: TEXTS.NOTIF_DESTINATION_UPDATING });
           // Wait for the destination to update
           cy.wait('@gql').then(() => {
             awaitToast({ message: TEXTS.NOTIF_DESTINATION_UPDATED(SELECTED_ENTITIES.DESTINATION.TYPE) });
