@@ -21,19 +21,6 @@ export const useNamespace = (namespaceName?: string) => {
     onError: (error) => addNotification({ type: StatusType.Error, title: error.name || Crud.Read, message: error.cause?.message || error.message }),
   });
 
-  const fetchNamespaces = async () => {
-    setEntitiesLoading(EntityTypes.Namespace, true);
-    const { error, data } = await fetchAll();
-
-    if (error) {
-      notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
-    } else if (data?.computePlatform?.k8sActualNamespaces) {
-      const { k8sActualNamespaces: items } = data.computePlatform;
-      addEntities(EntityTypes.Namespace, items);
-      setEntitiesLoading(EntityTypes.Namespace, false);
-    }
-  };
-
   // TODO: change query, to lazy query (needs to be handled in the UI-Kit first)
   const {
     refetch: fetchSingle,
@@ -54,6 +41,19 @@ export const useNamespace = (namespaceName?: string) => {
       addNotification({ type: StatusType.Error, title: error.name || Crud.Update, message: error.cause?.message || error.message });
     },
   });
+
+  const fetchNamespaces = async () => {
+    setEntitiesLoading(EntityTypes.Namespace, true);
+    const { error, data } = await fetchAll();
+
+    if (error) {
+      notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
+    } else if (data?.computePlatform?.k8sActualNamespaces) {
+      const { k8sActualNamespaces: items } = data.computePlatform;
+      addEntities(EntityTypes.Namespace, items);
+      setEntitiesLoading(EntityTypes.Namespace, false);
+    }
+  };
 
   const persistNamespace = async (payload: NamespaceInstrumentInput) => {
     if (isReadonly) {
