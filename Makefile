@@ -349,28 +349,6 @@ dev-tests-setup: dev-tests-kind-cluster cli-build build-images load-to-kind
 dev-tests-setup-no-build: TAG := e2e-test
 dev-tests-setup-no-build: dev-tests-kind-cluster load-to-kind
 
-# When you run an e2e test locally, and want a grafana instance to troubleshoot the results
-# run this target to start grafana, then run dev-tests-grafana-port-forward to access it.
-.PHONY: dev-tests-grafana
-dev-tests-grafana:
-	@echo "Starting Grafana for troubleshooting e2e tests"
-	helm install -n traces grafana grafana/grafana \
-	--set "env.GF_AUTH_ANONYMOUS_ENABLED=true" \
-	--set "env.GF_AUTH_ANONYMOUS_ORG_ROLE=Admin" \
-	--set "datasources.datasources\.yaml.apiVersion=1" \
-	--set "datasources.datasources\.yaml.datasources[0].name=Tempo" \
-	--set "datasources.datasources\.yaml.datasources[0].type=tempo" \
-	--set "datasources.datasources\.yaml.datasources[0].url=http://e2e-tests-tempo:3100" \
-	--set "datasources.datasources\.yaml.datasources[0].access=proxy" \
-	--set "datasources.datasources\.yaml.datasources[0].isDefault=true"
-
-# For e2e local tests, run this target to port forward the Grafana instance to your local browser
-.PHONY: dev-tests-grafana-port-forward
-dev-tests-grafana-port-forward:
-	@echo "Port forwarding Grafana for troubleshooting e2e tests"
-	@echo "Visit http://localhost:3080/explore to access Grafana"
-	kubectl port-forward -n traces svc/grafana 3080:80
-
 # Use this for debug to add a destination which only prints samples of telemetry items to the cluster gateway collector logs
 .PHONY: dev-debug-destination
 dev-debug-destination:
