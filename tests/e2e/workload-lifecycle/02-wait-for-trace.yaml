@@ -21,4 +21,4 @@ query: |
   length([?span.serviceName == 'dotnet6-glibc-reported']) > `0` ||
   length([?span.serviceName == 'dotnet6-musl-reported']) > `0`
 expected:
-  count: 13
+  count: 17
