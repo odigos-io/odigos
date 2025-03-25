@@ -4,24 +4,24 @@ import { useEffect } from 'react';
 import { ROUTES } from '@/utils';
 import { useConfig } from '@/hooks';
 import { useRouter } from 'next/navigation';
-import { CONFIG_INSTALLATION } from '@/@types';
-import { CenterThis, FadeLoader } from '@odigos/ui-components';
+import { ConfigInstallation } from '@/types';
+import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 
 export default function App() {
   const router = useRouter();
-  const { data } = useConfig();
+  const { config } = useConfig();
 
   useEffect(() => {
-    if (data) {
-      const { installation, readonly } = data;
+    if (config) {
+      const { installation, readonly } = config;
 
-      if (installation === CONFIG_INSTALLATION.NEW && !readonly) {
+      if (installation === ConfigInstallation.New && !readonly) {
         router.push(ROUTES.CHOOSE_SOURCES);
       } else {
         router.push(ROUTES.OVERVIEW);
       }
     }
-  }, [data]);
+  }, [config]);
 
   return (
     <CenterThis style={{ height: '100%' }}>

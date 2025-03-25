@@ -1,0 +1,71 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Nightly run at midnight
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-images:
+    uses: ./.github/workflows/build-dev-images.yml
+
+  chaos-tests:
+    runs-on: warp-ubuntu-latest-x64-8x-spot
+    needs: build-images
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Chaos Tests
+        uses: ./.github/actions/chaos-tests
+
+      - name: Report Test Outcome
+        if: always()
+        uses: ./.github/actions/nightly/report
+        with:
+          status: ${{ job.status }}
+          suite_name: chaos-tests
+          suite_parameters: ''
+          slack_webhook_url: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
+
+
+  cross-cloud-tests:
+    runs-on: warp-ubuntu-latest-x64-8x-spot
+    needs: build-images
+
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: [aks, eks]
+        test_scenario: [multi-apps, helm-chart]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Cross-Cloud Tests
+        uses: ./.github/actions/cross-cloud-tests
+        with:
+          provider: ${{ matrix.provider }}
+          test_scenario: ${{ matrix.test_scenario }}
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SHA: ${{ github.sha }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Report Test Outcome
+        if: always()
+        uses: ./.github/actions/nightly/report
+        with:
+          status: ${{ job.status }}
+          suite_name: cross-cloud-tests
+          suite_parameters: '{"provider": "${{ matrix.provider }}", "test_scenario": "${{ matrix.test_scenario }}"}'
+          slack_webhook_url: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}

@@ -4,11 +4,11 @@ This e2e extensively tests the use of Source objects for instrumentation, uninst
 
 It has the following phases:
 
-1. **Setup** - Install Odigos, Tempo, and the Demo app.
+1. **Setup** - Install Odigos, simple-trace-db, and the Demo app.
 
-2. **Workload instrumentation** - Create a Source for each individual workload, include a reported for each source. Add Tempo as a destination. Verify:
+2. **Workload instrumentation** - Create a Source for each individual workload, include a reported for each source. Add simple-trace-db as a destination. Verify:
     1. InstrumentationConfigs are created for each deployment
-    2. Tempo is ready to receive traces
+    2. Db is ready to receive traces
     3. The Odigos pipeline is ready
     4. Each deployment rolls out a new (instrumented) revision
     5. Generated traffic results in expected spans

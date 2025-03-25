@@ -6,7 +6,6 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor/internal/sampling"
-	"go.opentelemetry.io/collector/component"
 )
 
 type Config struct {
@@ -15,12 +14,12 @@ type Config struct {
 	EndpointRules []Rule `mapstructure:"endpoint_rules,omitempty"`
 }
 
-var _ component.Config = (*Config)(nil)
-
 func (cfg *Config) Validate() error {
-	for _, rule := range cfg.EndpointRules { // TODO, validate all rules [Global/Service]
-		if err := rule.Validate(); err != nil {
-			return err
+	for _, rules := range [][]Rule{cfg.EndpointRules, cfg.ServiceRules, cfg.GlobalRules} {
+		for _, rule := range rules {
+			if err := rule.Validate(); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -65,6 +64,5 @@ func (r *Rule) Validate() error {
 	default:
 		return fmt.Errorf("unknown rule type: %s", r.Type)
 	}
-
 	return nil
 }

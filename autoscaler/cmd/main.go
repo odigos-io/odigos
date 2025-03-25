@@ -203,12 +203,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// The name processor is used to transform device ids injected with the virtual device,
-	// to service names and k8s attributes.
-	// it is not needed for eBPF instrumentation or OpAMP implementations.
-	// at the time of writing (2024-10-22) only dotnet and java native agent are using the name processor.
-	_, disableNameProcessor := os.LookupEnv("DISABLE_NAME_PROCESSOR")
-
 	collectorImage := defaultCollectorImage
 	if collectorImageEnv, ok := os.LookupEnv("ODIGOS_COLLECTOR_IMAGE"); ok {
 		collectorImage = collectorImageEnv
@@ -243,31 +237,28 @@ func main() {
 	}
 
 	if err = (&controllers.ProcessorReconciler{
-		Client:               mgr.GetClient(),
-		Scheme:               mgr.GetScheme(),
-		ImagePullSecrets:     imagePullSecrets,
-		OdigosVersion:        odigosVersion,
-		DisableNameProcessor: disableNameProcessor,
+		Client:           mgr.GetClient(),
+		Scheme:           mgr.GetScheme(),
+		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Processor")
 		os.Exit(1)
 	}
 	if err = (&controllers.CollectorsGroupReconciler{
-		Client:               mgr.GetClient(),
-		Scheme:               mgr.GetScheme(),
-		ImagePullSecrets:     imagePullSecrets,
-		OdigosVersion:        odigosVersion,
-		DisableNameProcessor: disableNameProcessor,
+		Client:           mgr.GetClient(),
+		Scheme:           mgr.GetScheme(),
+		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
 		os.Exit(1)
 	}
 	if err = (&controllers.InstrumentationConfigReconciler{
-		Client:               mgr.GetClient(),
-		Scheme:               mgr.GetScheme(),
-		ImagePullSecrets:     imagePullSecrets,
-		OdigosVersion:        odigosVersion,
-		DisableNameProcessor: disableNameProcessor,
+		Client:           mgr.GetClient(),
+		Scheme:           mgr.GetScheme(),
+		ImagePullSecrets: imagePullSecrets,
+		OdigosVersion:    odigosVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "InstrumentationConfig")
 		os.Exit(1)
@@ -329,7 +320,7 @@ func main() {
 // based on https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/blob/19c4db6ea12211308fbd2cba12cc8665a5b7c890/detectors/gcp/gke.go#L34
 func isRunningOnGKE(ctx context.Context) bool {
 	c := googlecloudmetadata.NewClient(nil)
-	ctx, cancel := context.WithTimeout(ctx, 2 * time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
 	_, err := c.InstanceAttributeValueWithContext(ctx, "cluster-location")

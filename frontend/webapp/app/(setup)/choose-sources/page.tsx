@@ -3,8 +3,8 @@
 import React, { useRef, useState } from 'react';
 import { useNamespace } from '@/hooks';
 import { SetupHeader } from '@/components';
-import { ENTITY_TYPES } from '@odigos/ui-utils';
-import { SourceSelectionForm, type SourceSelectionFormRef } from '@odigos/ui-containers';
+import { EntityTypes } from '@odigos/ui-kit/types';
+import { SourceSelectionForm, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
 
 export default function Page() {
   const formRef = useRef<SourceSelectionFormRef>(null);
@@ -12,11 +12,11 @@ export default function Page() {
   const [selectedNamespace, setSelectedNamespace] = useState('');
   const onSelectNamespace = (ns: string) => setSelectedNamespace((prev) => (prev === ns ? '' : ns));
 
-  const { namespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
+  const { namespaces, namespace, loading: nsLoad } = useNamespace(selectedNamespace);
 
   return (
     <>
-      <SetupHeader entityType={ENTITY_TYPES.SOURCE} formRef={formRef} />
+      <SetupHeader entityType={EntityTypes.Source} formRef={formRef} />
       <SourceSelectionForm
         ref={formRef}
         componentType='FAST'

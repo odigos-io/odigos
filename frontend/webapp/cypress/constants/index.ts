@@ -46,10 +46,10 @@ export const DATA_IDS = {
   SELECT_DESTINATION: `[data-id=select-potential-destination-${SELECTED_ENTITIES.DESTINATION.TYPE}]`,
   SELECT_DESTINATION_AUTOFILL_FIELD: `[data-id=${SELECTED_ENTITIES.DESTINATION.AUTOFILL_FIELD}]`,
 
-  ADD_SOURCE: '[data-id=add-source]',
-  ADD_DESTINATION: '[data-id=add-destination]',
-  ADD_ACTION: '[data-id=add-action]',
-  ADD_INSTRUMENTATION_RULE: '[data-id=add-rule]',
+  ADD_SOURCE: '[data-id=add-Source]',
+  ADD_DESTINATION: '[data-id=add-Destination]',
+  ADD_ACTION: '[data-id=add-Action]',
+  ADD_INSTRUMENTATION_RULE: '[data-id=add-InstrumentationRule]',
 
   MODAL: '[data-id=modal]',
   MODAL_ADD_SOURCE: '[data-id=modal-Add-Source]',
@@ -72,11 +72,11 @@ export const DATA_IDS = {
   TOAST_ACTION: '[data-id=toast-action]',
 
   MULTI_SOURCE_CONTROL: '[data-id=multi-source-control]',
-  SOURCE_NODE_HEADER: '[data-id=source-header]',
-  SOURCE_NODE: (index: number) => `[data-id=source-${index}]`,
-  DESTINATION_NODE: (index: number) => `[data-id=destination-${index}]`,
-  ACTION_NODE: (index: number) => `[data-id=action-${index}]`,
-  INSTRUMENTATION_RULE_NODE: (index: number) => `[data-id=rule-${index}]`,
+  SOURCE_NODE_HEADER: '[data-id=Source-header]',
+  SOURCE_NODE: (index: number) => `[data-id=Source-${index}]`,
+  DESTINATION_NODE: (index: number) => `[data-id=Destination-${index}]`,
+  ACTION_NODE: (index: number) => `[data-id=Action-${index}]`,
+  INSTRUMENTATION_RULE_NODE: (index: number) => `[data-id=InstrumentationRule-${index}]`,
 
   TITLE: '[data-id=title]',
   SOURCE_TITLE: '[data-id=sourceName]',
@@ -90,7 +90,7 @@ export const BUTTONS = {
   BACK: 'BACK',
   NEXT: 'NEXT',
   DONE: 'DONE',
-  ADD_DESTINATION: 'ADD DESTINATION',
+  ADD_DESTINATION: 'ADD Destination',
   UNINSTRUMENT: 'Uninstrument',
 };
 
@@ -108,15 +108,19 @@ export const TEXTS = {
   NO_SOURCES_SELECTED: 'No sources selected. Please go back to select sources.',
 
   SOURCE_WARN_MODAL_TITLE: 'Uninstrument 5 sources',
-  SOURCE_WARN_MODAL_NOTE: "You're about to uninstrument the last source",
-  DESTINATION_WARN_MODAL_TITLE: `Delete destination (${CYPRESS_TEST})`,
-  DESTINATION_WARN_MODAL_NOTE: "You're about to delete the last destination",
-  ACTION_WARN_MODAL_TITLE: `Delete action (${CYPRESS_TEST})`,
-  INSTRUMENTATION_RULE_WARN_MODAL_TITLE: `Delete rule (${CYPRESS_TEST})`,
+  SOURCE_WARN_MODAL_NOTE: "You're about to uninstrument the last Source",
+  DESTINATION_WARN_MODAL_TITLE: `Delete Destination (${CYPRESS_TEST})`,
+  DESTINATION_WARN_MODAL_NOTE: "You're about to delete the last Destination",
+  ACTION_WARN_MODAL_TITLE: `Delete Action (${CYPRESS_TEST})`,
+  INSTRUMENTATION_RULE_WARN_MODAL_TITLE: `Delete InstrumentationRule (${CYPRESS_TEST})`,
 
   NOTIF_CREATED: 'Successfully created',
   NOTIF_UPDATED: 'Successfully updated',
   NOTIF_DELETED: 'Successfully deleted',
+
+  NOTIF_SOURCES_PERSISTING: 'Persisting sources...',
+  NOTIF_SOURCE_UPDATING: 'Updating source...',
+  NOTIF_DESTINATION_UPDATING: 'Updating destination...',
 
   NOTIF_SOURCES_CREATED: (amount: number) => `Successfully created ${amount} sources`,
   NOTIF_SOURCES_UPDATED: (name: string) => `Successfully updated "${name}" source`,

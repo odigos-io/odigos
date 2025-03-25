@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { GET_ACTIONS } from '@/graphql';
+import type { ActionInput, FetchedAction } from '@/types';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import type { ActionInput, ParsedActionSpec, FetchedAction } from '@/@types';
+import { getSseTargetFromId } from '@odigos/ui-kit/functions';
+import { mapActionsFormToGqlInput, mapFetchedActions } from '@/utils';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import { useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { type ActionFormData, useEntityStore, useNotificationStore } from '@odigos/ui-containers';
-import { type Action, ACTION_TYPE, CRUD, DISPLAY_TITLES, ENTITY_TYPES, FORM_ALERTS, getSseTargetFromId, NOTIFICATION_TYPE, safeJsonParse, SIGNAL_TYPE } from '@odigos/ui-utils';
+import { ActionType, Crud, EntityTypes, StatusType, type Action, type ActionFormData } from '@odigos/ui-kit/types';
 
 interface UseActionCrud {
   actions: Action[];
@@ -13,127 +16,16 @@ interface UseActionCrud {
   fetchActions: () => void;
   createAction: (action: ActionFormData) => void;
   updateAction: (id: string, action: ActionFormData) => void;
-  deleteAction: (id: string, actionType: ACTION_TYPE) => void;
+  deleteAction: (id: string, actionType: ActionType) => void;
 }
 
-const mapFetched = (items: FetchedAction[]): Action[] => {
-  return items.map((item) => {
-    const parsedSpec = typeof item.spec === 'string' ? safeJsonParse(item.spec, {} as ParsedActionSpec) : item.spec;
-
-    return {
-      ...item,
-      spec: {
-        actionName: parsedSpec.actionName,
-        notes: parsedSpec.notes,
-        disabled: parsedSpec.disabled,
-        signals: parsedSpec.signals.map((str) => str.toLowerCase() as SIGNAL_TYPE),
-        collectContainerAttributes: parsedSpec.collectContainerAttributes || false,
-        collectWorkloadId: parsedSpec.collectWorkloadUID || false,
-        collectClusterId: parsedSpec.collectClusterUID || false,
-        labelsAttributes: parsedSpec.labelsAttributes,
-        annotationsAttributes: parsedSpec.annotationsAttributes,
-        clusterAttributes: parsedSpec.clusterAttributes,
-        attributeNamesToDelete: parsedSpec.attributeNamesToDelete,
-        renames: parsedSpec.renames,
-        piiCategories: parsedSpec.piiCategories,
-        fallbackSamplingRatio: parsedSpec.fallback_sampling_ratio,
-        samplingPercentage: Number(parsedSpec.sampling_percentage),
-        endpointsFilters: parsedSpec.endpoints_filters?.map(({ service_name, http_route, minimum_latency_threshold, fallback_sampling_ratio }) => ({
-          serviceName: service_name,
-          httpRoute: http_route,
-          minimumLatencyThreshold: minimum_latency_threshold,
-          fallbackSamplingRatio: fallback_sampling_ratio,
-        })),
-      },
-    };
-  });
-};
-
-const mapFormToInput = (action: ActionFormData): ActionInput => {
-  const {
-    type,
-    name = '',
-    notes = '',
-    disabled = false,
-    signals,
-    collectContainerAttributes,
-    collectWorkloadId,
-    collectClusterId,
-    labelsAttributes,
-    annotationsAttributes,
-    clusterAttributes,
-    attributeNamesToDelete,
-    renames,
-    piiCategories,
-    fallbackSamplingRatio,
-    samplingPercentage,
-    endpointsFilters,
-  } = action;
-
-  const payload: ActionInput = {
-    type,
-    name,
-    notes,
-    disable: disabled,
-    signals: signals.map((signal) => signal.toUpperCase()),
-    details: '',
-  };
-
-  switch (type) {
-    case ACTION_TYPE.K8S_ATTRIBUTES:
-      payload['details'] = JSON.stringify({ collectContainerAttributes, collectWorkloadId, collectClusterId, labelsAttributes, annotationsAttributes });
-      break;
-
-    case ACTION_TYPE.ADD_CLUSTER_INFO:
-      payload['details'] = JSON.stringify({ clusterAttributes });
-      break;
-
-    case ACTION_TYPE.DELETE_ATTRIBUTES:
-      payload['details'] = JSON.stringify({ attributeNamesToDelete });
-      break;
-
-    case ACTION_TYPE.RENAME_ATTRIBUTES:
-      payload['details'] = JSON.stringify({ renames });
-      break;
-
-    case ACTION_TYPE.PII_MASKING:
-      payload['details'] = JSON.stringify({ piiCategories });
-      break;
-
-    case ACTION_TYPE.ERROR_SAMPLER:
-      payload['details'] = JSON.stringify({ fallback_sampling_ratio: fallbackSamplingRatio });
-      break;
-
-    case ACTION_TYPE.PROBABILISTIC_SAMPLER:
-      payload['details'] = JSON.stringify({ sampling_percentage: String(samplingPercentage) });
-      break;
-
-    case ACTION_TYPE.LATENCY_SAMPLER:
-      payload['details'] = JSON.stringify({
-        endpoints_filters:
-          endpointsFilters?.map(({ serviceName, httpRoute, minimumLatencyThreshold, fallbackSamplingRatio }) => ({
-            service_name: serviceName,
-            http_route: httpRoute,
-            minimum_latency_threshold: minimumLatencyThreshold,
-            fallback_sampling_ratio: fallbackSamplingRatio,
-          })) || [],
-      });
-      break;
-
-    default:
-      break;
-  }
-
-  return payload;
-};
-
 export const useActionCRUD = (): UseActionCrud => {
-  const { data: config } = useConfig();
+  const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
   const { actionsLoading, setEntitiesLoading, actions, addEntities, removeEntities } = useEntityStore();
 
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
-    addNotification({ type, title, message, crdType: ENTITY_TYPES.ACTION, target: id ? getSseTargetFromId(id, ENTITY_TYPES.ACTION) : undefined, hideFromHistory });
+  const notifyUser = (type: StatusType, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
+    addNotification({ type, title, message, crdType: EntityTypes.Action, target: id ? getSseTargetFromId(id, EntityTypes.Action) : undefined, hideFromHistory });
   };
 
   const [fetchAll] = useLazyQuery<{ computePlatform?: { actions?: FetchedAction[] } }>(GET_ACTIONS, {
@@ -141,48 +33,72 @@ export const useActionCRUD = (): UseActionCrud => {
   });
 
   const fetchActions = async () => {
-    setEntitiesLoading(ENTITY_TYPES.ACTION, true);
+    setEntitiesLoading(EntityTypes.Action, true);
     const { error, data } = await fetchAll();
 
-    if (!!error) {
-      notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.READ, error.cause?.message || error.message);
-    } else if (!!data?.computePlatform?.actions) {
+    if (error) {
+      notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
+    } else if (data?.computePlatform?.actions) {
       const { actions: items } = data.computePlatform;
 
-      addEntities(ENTITY_TYPES.ACTION, mapFetched(items));
-      setEntitiesLoading(ENTITY_TYPES.ACTION, false);
+      addEntities(EntityTypes.Action, mapFetchedActions(items));
+      setEntitiesLoading(EntityTypes.Action, false);
     }
   };
 
-  const [createAction, cState] = useMutation<{ createAction: { id: string; type: ACTION_TYPE } }, { action: ActionInput }>(CREATE_ACTION, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.CREATE, error.cause?.message || error.message),
+  const [mutateCreate] = useMutation<{ createAction: { id: string; type: ActionType } }, { action: ActionInput }>(CREATE_ACTION, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Create, error.cause?.message || error.message),
     onCompleted: (res) => {
       const id = res.createAction.id;
       const type = res.createAction.type;
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.CREATE, `Successfully created "${type}" action`, id);
+      notifyUser(StatusType.Success, Crud.Create, `Successfully created "${type}" action`, id);
       fetchActions();
     },
   });
 
-  const [updateAction, uState] = useMutation<{ updateAction: { id: string; type: ACTION_TYPE } }, { id: string; action: ActionInput }>(UPDATE_ACTION, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.UPDATE, error.cause?.message || error.message),
+  const [mutateUpdate] = useMutation<{ updateAction: { id: string; type: ActionType } }, { id: string; action: ActionInput }>(UPDATE_ACTION, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
     onCompleted: (res) => {
       const id = res.updateAction.id;
       const type = res.updateAction.type;
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.UPDATE, `Successfully updated "${type}" action`, id);
+      notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${type}" action`, id);
       fetchActions();
     },
   });
 
-  const [deleteAction, dState] = useMutation<{ deleteAction: boolean }, { id: string; actionType: ACTION_TYPE }>(DELETE_ACTION, {
-    onError: (error) => notifyUser(NOTIFICATION_TYPE.ERROR, error.name || CRUD.DELETE, error.cause?.message || error.message),
+  const [mutateDelete] = useMutation<{ deleteAction: boolean }, { id: string; actionType: ActionType }>(DELETE_ACTION, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Delete, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id as string;
       const type = req?.variables?.actionType;
-      removeEntities(ENTITY_TYPES.ACTION, [id]);
-      notifyUser(NOTIFICATION_TYPE.SUCCESS, CRUD.DELETE, `Successfully deleted "${type}" action`, id);
+      removeEntities(EntityTypes.Action, [id]);
+      notifyUser(StatusType.Success, Crud.Delete, `Successfully deleted "${type}" action`, id);
     },
   });
+
+  const createAction: UseActionCrud['createAction'] = (action) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      mutateCreate({ variables: { action: mapActionsFormToGqlInput({ ...action }) } });
+    }
+  };
+
+  const updateAction: UseActionCrud['updateAction'] = (id, action) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      mutateUpdate({ variables: { id, action: mapActionsFormToGqlInput({ ...action }) } });
+    }
+  };
+
+  const deleteAction: UseActionCrud['deleteAction'] = (id, actionType) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      mutateDelete({ variables: { id, actionType } });
+    }
+  };
 
   useEffect(() => {
     if (!actions.length && !actionsLoading) fetchActions();
@@ -190,29 +106,10 @@ export const useActionCRUD = (): UseActionCrud => {
 
   return {
     actions,
-    actionsLoading: actionsLoading || cState.loading || uState.loading || dState.loading,
+    actionsLoading,
     fetchActions,
-
-    createAction: (action) => {
-      if (config?.readonly) {
-        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
-      } else {
-        createAction({ variables: { action: mapFormToInput({ ...action }) } });
-      }
-    },
-    updateAction: (id, action) => {
-      if (config?.readonly) {
-        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
-      } else {
-        updateAction({ variables: { id, action: mapFormToInput({ ...action }) } });
-      }
-    },
-    deleteAction: (id, actionType) => {
-      if (config?.readonly) {
-        notifyUser(NOTIFICATION_TYPE.WARNING, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
-      } else {
-        deleteAction({ variables: { id, actionType } });
-      }
-    },
+    createAction,
+    updateAction,
+    deleteAction,
   };
 };
