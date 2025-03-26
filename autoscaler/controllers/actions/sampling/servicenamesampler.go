@@ -14,6 +14,7 @@ type ServiceNameSamplerHandler struct{}
 
 type ServiceNameConfig struct {
 	ServiceName           string  `json:"service_name"`
+	SamplingRatio         float64 `json:"sampling_ratio"`
 	FallbackSamplingRatio float64 `json:"fallback_sampling_ratio"`
 }
 
@@ -44,14 +45,15 @@ func (h *ServiceNameSamplerHandler) ValidateRuleConfig(config []Rule) error {
 
 func (h *ServiceNameSamplerHandler) GetRuleConfig(action metav1.Object) []Rule {
 	svcAction := action.(*actionv1.ServiceNameSampler)
-	rules := make([]Rule, 0, len(svcAction.Spec.Services))
+	rules := make([]Rule, 0, len(svcAction.Spec.ServicesNameFilters))
 
-	for _, service := range svcAction.Spec.Services {
+	for _, service := range svcAction.Spec.ServicesNameFilters {
 		rules = append(rules, Rule{
 			Name:     fmt.Sprintf("service-%s", service.ServiceName),
 			RuleType: ServiceNameRule,
 			Details: &ServiceNameConfig{
 				ServiceName:           service.ServiceName,
+				SamplingRatio:         service.SamplingRatio,
 				FallbackSamplingRatio: service.FallbackSamplingRatio,
 			},
 		})
@@ -61,16 +63,24 @@ func (h *ServiceNameSamplerHandler) GetRuleConfig(action metav1.Object) []Rule {
 
 func (h *ServiceNameSamplerHandler) GetActionReference(action metav1.Object) metav1.OwnerReference {
 	a := action.(*actionv1.ServiceNameSampler)
-	return metav1.OwnerReference{APIVersion: a.APIVersion, Kind: a.Kind, Name: a.Name, UID: a.UID}
+	return metav1.OwnerReference{
+		APIVersion: a.APIVersion,
+		Kind:       a.Kind,
+		Name:       a.Name,
+		UID:        a.UID,
+	}
 }
 
 func (h *ServiceNameSamplerHandler) GetActionScope(action metav1.Object) string {
-	return "global" // or "service" if you want it more scoped
+	return "service"
 }
 
 func (cfg *ServiceNameConfig) Validate() error {
 	if cfg.ServiceName == "" {
 		return errors.New("service_name cannot be empty")
+	}
+	if cfg.SamplingRatio < 0 || cfg.SamplingRatio > 100 {
+		return errors.New("sampling_ratio must be between 0 and 100")
 	}
 	if cfg.FallbackSamplingRatio < 0 || cfg.FallbackSamplingRatio > 100 {
 		return errors.New("fallback_sampling_ratio must be between 0 and 100")

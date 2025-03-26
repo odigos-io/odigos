@@ -202,7 +202,9 @@
               "pages": [
                 "pipeline/actions/sampling/errorsampler",
                 "pipeline/actions/sampling/latencysampler",
-                "pipeline/actions/sampling/probabilisticsampler"
+                "pipeline/actions/sampling/probabilisticsampler",
+                "pipeline/actions/sampling/servicenamesampler.mdx",
+                "pipeline/actions/sampling/spanattributesampler.mdx"
               ]
             },
             "pipeline/actions/crd",

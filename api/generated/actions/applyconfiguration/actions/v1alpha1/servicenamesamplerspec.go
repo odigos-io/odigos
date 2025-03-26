@@ -24,11 +24,11 @@ import (
 // ServiceNameSamplerSpecApplyConfiguration represents a declarative configuration of the ServiceNameSamplerSpec type for use
 // with apply.
 type ServiceNameSamplerSpecApplyConfiguration struct {
-	ActionName *string                               `json:"actionName,omitempty"`
-	Notes      *string                               `json:"notes,omitempty"`
-	Disabled   *bool                                 `json:"disabled,omitempty"`
-	Signals    []common.ObservabilitySignal          `json:"signals,omitempty"`
-	Services   []ServiceNameFilterApplyConfiguration `json:"services,omitempty"`
+	ActionName          *string                               `json:"actionName,omitempty"`
+	Notes               *string                               `json:"notes,omitempty"`
+	Disabled            *bool                                 `json:"disabled,omitempty"`
+	Signals             []common.ObservabilitySignal          `json:"signals,omitempty"`
+	ServicesNameFilters []ServiceNameFilterApplyConfiguration `json:"services_name_filters,omitempty"`
 }
 
 // ServiceNameSamplerSpecApplyConfiguration constructs a declarative configuration of the ServiceNameSamplerSpec type for use with
@@ -71,15 +71,15 @@ func (b *ServiceNameSamplerSpecApplyConfiguration) WithSignals(values ...common.
 	return b
 }
 
-// WithServices adds the given value to the Services field in the declarative configuration
+// WithServicesNameFilters adds the given value to the ServicesNameFilters field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Services field.
-func (b *ServiceNameSamplerSpecApplyConfiguration) WithServices(values ...*ServiceNameFilterApplyConfiguration) *ServiceNameSamplerSpecApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the ServicesNameFilters field.
+func (b *ServiceNameSamplerSpecApplyConfiguration) WithServicesNameFilters(values ...*ServiceNameFilterApplyConfiguration) *ServiceNameSamplerSpecApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithServices")
+			panic("nil value passed to WithServicesNameFilters")
 		}
-		b.Services = append(b.Services, *values[i])
+		b.ServicesNameFilters = append(b.ServicesNameFilters, *values[i])
 	}
 	return b
 }

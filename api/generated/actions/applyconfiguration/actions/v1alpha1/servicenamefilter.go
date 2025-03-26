@@ -21,6 +21,7 @@ package v1alpha1
 // with apply.
 type ServiceNameFilterApplyConfiguration struct {
 	ServiceName           *string  `json:"service_name,omitempty"`
+	SamplingRatio         *float64 `json:"sampling_ratio,omitempty"`
 	FallbackSamplingRatio *float64 `json:"fallback_sampling_ratio,omitempty"`
 }
 
@@ -35,6 +36,14 @@ func ServiceNameFilter() *ServiceNameFilterApplyConfiguration {
 // If called multiple times, the ServiceName field is set to the value of the last call.
 func (b *ServiceNameFilterApplyConfiguration) WithServiceName(value string) *ServiceNameFilterApplyConfiguration {
 	b.ServiceName = &value
+	return b
+}
+
+// WithSamplingRatio sets the SamplingRatio field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SamplingRatio field is set to the value of the last call.
+func (b *ServiceNameFilterApplyConfiguration) WithSamplingRatio(value float64) *ServiceNameFilterApplyConfiguration {
+	b.SamplingRatio = &value
 	return b
 }
 

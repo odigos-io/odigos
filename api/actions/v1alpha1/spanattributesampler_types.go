@@ -1,19 +1,3 @@
-/*
-Copyright 2022.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package v1alpha1
 
 import (
@@ -28,26 +12,77 @@ type SpanAttributeSamplerSpec struct {
 	Disabled   bool                         `json:"disabled,omitempty"`
 	Signals    []common.ObservabilitySignal `json:"signals"`
 
-	// Filters based on span attributes (e.g. env=prod, http.method, etc.)
+	// Filters based on span attributes and conditions
 	// +kubebuilder:validation:Required
-	AttributesFilters []SpanAttributeFilter `json:"attributes_filters"`
+	AttributeFilters []SpanAttributeFilter `json:"attributeFilters"`
 }
 
+// SpanAttributeFilter allows sampling traces based on span attributes and conditions.
 type SpanAttributeFilter struct {
+	// Specifies the service the filter applies to
+	// +kubebuilder:validation:Required
+	ServiceName string `json:"service_name"`
+
+	// Attribute key to evaluate
 	// +kubebuilder:validation:Required
 	AttributeKey string `json:"attribute_key"`
 
-	// Supported: exists, equals, not_equals
-	// +kubebuilder:validation:Enum=exists;equals;not_equals
+	// Condition to evaluate the attribute against
+	// Exactly one condition type must be provided
 	// +kubebuilder:validation:Required
-	Condition string `json:"condition"`
+	Condition AttributeCondition `json:"condition"`
 
-	// Optional: only required for equals and not_equals
-	ExpectedValue string `json:"expected_value,omitempty"`
-
+	// Fallback sampling ratio when the condition doesn't explicitly match
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=100
 	FallbackSamplingRatio float64 `json:"fallback_sampling_ratio"`
+}
+
+// AttributeCondition explicitly supports different attribute types.
+type AttributeCondition struct {
+	StringCondition  *StringAttributeCondition  `json:"string_condition,omitempty"`
+	NumberCondition  *NumberAttributeCondition  `json:"number_condition,omitempty"`
+	BooleanCondition *BooleanAttributeCondition `json:"boolean_condition,omitempty"`
+	JsonCondition    *JsonAttributeCondition    `json:"json_condition,omitempty"`
+}
+
+// StringAttributeCondition for standard string attributes.
+type StringAttributeCondition struct {
+	// +kubebuilder:validation:Enum=exists;equals;not_equals;contains;not_contains;regex
+	Operation string `json:"operation"`
+
+	// Required for all except 'exists'
+	ExpectedValue string `json:"expected_value,omitempty"`
+}
+
+// JsonAttributeCondition supports operations on JSON serialized as strings
+type JsonAttributeCondition struct {
+	// +kubebuilder:validation:Enum=exists;is_valid_json;is_invalid_json;equals;not_equals;contains_key;not_contains_key;jsonpath_exists
+	Operation string `json:"operation"`
+
+	// ExpectedValue required for equals, not_equals, contains_key, not_contains_key
+	ExpectedValue string `json:"expected_value,omitempty"`
+
+	// JsonPath required for jsonpath_exists operation
+	JsonPath string `json:"json_path,omitempty"`
+}
+
+// NumberAttributeCondition supports numeric types: int, long, float, double
+type NumberAttributeCondition struct {
+	// +kubebuilder:validation:Enum=exists;equals;not_equals;greater_than;less_than;greater_than_or_equal;less_than_or_equal
+	Operation string `json:"operation"`
+
+	// Required for all operations except 'exists'
+	ExpectedValue float64 `json:"expected_value,omitempty"`
+}
+
+// BooleanAttributeCondition for boolean attribute evaluation
+type BooleanAttributeCondition struct {
+	// +kubebuilder:validation:Enum=exists;equals
+	Operation string `json:"operation"`
+
+	// Required only for 'equals' operation
+	ExpectedValue bool `json:"expected_value,omitempty"`
 }
 
 type SpanAttributeSamplerStatus struct {

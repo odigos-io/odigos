@@ -12,14 +12,20 @@ type ServiceNameSamplerSpec struct {
 	Disabled   bool                         `json:"disabled,omitempty"`
 	Signals    []common.ObservabilitySignal `json:"signals"`
 
-	// List of services to sample based on presence in the trace
+	// List of ServicesNameFilters to sample based on presence in the trace
 	// +kubebuilder:validation:Required
-	Services []ServiceNameFilter `json:"services"`
+	ServicesNameFilters []ServiceNameFilter `json:"services_name_filters"`
 }
 
 type ServiceNameFilter struct {
 	// +kubebuilder:validation:Required
 	ServiceName string `json:"service_name"`
+
+	// Sampling ratio for specific service
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
+	// +kubebuilder:default=100
+	SamplingRatio float64 `json:"sampling_ratio"`
 
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=100

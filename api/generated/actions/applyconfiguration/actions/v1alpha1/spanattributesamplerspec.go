@@ -24,11 +24,11 @@ import (
 // SpanAttributeSamplerSpecApplyConfiguration represents a declarative configuration of the SpanAttributeSamplerSpec type for use
 // with apply.
 type SpanAttributeSamplerSpecApplyConfiguration struct {
-	ActionName        *string                                 `json:"actionName,omitempty"`
-	Notes             *string                                 `json:"notes,omitempty"`
-	Disabled          *bool                                   `json:"disabled,omitempty"`
-	Signals           []common.ObservabilitySignal            `json:"signals,omitempty"`
-	AttributesFilters []SpanAttributeFilterApplyConfiguration `json:"attributes_filters,omitempty"`
+	ActionName       *string                                 `json:"actionName,omitempty"`
+	Notes            *string                                 `json:"notes,omitempty"`
+	Disabled         *bool                                   `json:"disabled,omitempty"`
+	Signals          []common.ObservabilitySignal            `json:"signals,omitempty"`
+	AttributeFilters []SpanAttributeFilterApplyConfiguration `json:"attributeFilters,omitempty"`
 }
 
 // SpanAttributeSamplerSpecApplyConfiguration constructs a declarative configuration of the SpanAttributeSamplerSpec type for use with
@@ -71,15 +71,15 @@ func (b *SpanAttributeSamplerSpecApplyConfiguration) WithSignals(values ...commo
 	return b
 }
 
-// WithAttributesFilters adds the given value to the AttributesFilters field in the declarative configuration
+// WithAttributeFilters adds the given value to the AttributeFilters field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the AttributesFilters field.
-func (b *SpanAttributeSamplerSpecApplyConfiguration) WithAttributesFilters(values ...*SpanAttributeFilterApplyConfiguration) *SpanAttributeSamplerSpecApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the AttributeFilters field.
+func (b *SpanAttributeSamplerSpecApplyConfiguration) WithAttributeFilters(values ...*SpanAttributeFilterApplyConfiguration) *SpanAttributeSamplerSpecApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithAttributesFilters")
+			panic("nil value passed to WithAttributeFilters")
 		}
-		b.AttributesFilters = append(b.AttributesFilters, *values[i])
+		b.AttributeFilters = append(b.AttributeFilters, *values[i])
 	}
 	return b
 }

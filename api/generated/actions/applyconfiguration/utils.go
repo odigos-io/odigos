@@ -37,6 +37,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.AddClusterInfoSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AddClusterInfoStatus"):
 		return &actionsv1alpha1.AddClusterInfoStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("AttributeCondition"):
+		return &actionsv1alpha1.AttributeConditionApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("BooleanAttributeCondition"):
+		return &actionsv1alpha1.BooleanAttributeConditionApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DeleteAttribute"):
 		return &actionsv1alpha1.DeleteAttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DeleteAttributeSpec"):
@@ -51,6 +55,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.ErrorSamplerStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("HttpRouteFilter"):
 		return &actionsv1alpha1.HttpRouteFilterApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("JsonAttributeCondition"):
+		return &actionsv1alpha1.JsonAttributeConditionApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("K8sAnnotationAttribute"):
 		return &actionsv1alpha1.K8sAnnotationAttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("K8sAttributesResolver"):
@@ -67,6 +73,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.LatencySamplerSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("LatencySamplerStatus"):
 		return &actionsv1alpha1.LatencySamplerStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("NumberAttributeCondition"):
+		return &actionsv1alpha1.NumberAttributeConditionApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OtelAttributeWithValue"):
 		return &actionsv1alpha1.OtelAttributeWithValueApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("PiiMasking"):
@@ -103,6 +111,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.SpanAttributeSamplerSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SpanAttributeSamplerStatus"):
 		return &actionsv1alpha1.SpanAttributeSamplerStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("StringAttributeCondition"):
+		return &actionsv1alpha1.StringAttributeConditionApplyConfiguration{}
 
 	}
 	return nil

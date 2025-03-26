@@ -49,11 +49,18 @@ spec:
                 type: boolean
               notes:
                 type: string
-              services:
-                description: List of services to sample based on presence in the trace
+              services_name_filters:
+                description: List of ServicesNameFilters to sample based on presence
+                  in the trace
                 items:
                   properties:
                     fallback_sampling_ratio:
+                      maximum: 100
+                      minimum: 0
+                      type: number
+                    sampling_ratio:
+                      default: 100
+                      description: Sampling ratio for specific service
                       maximum: 100
                       minimum: 0
                       type: number
@@ -61,6 +68,7 @@ spec:
                       type: string
                   required:
                   - fallback_sampling_ratio
+                  - sampling_ratio
                   - service_name
                   type: object
                 type: array
@@ -73,7 +81,7 @@ spec:
                   type: string
                 type: array
             required:
-            - services
+            - services_name_filters
             - signals
             type: object
           status:
