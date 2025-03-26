@@ -45,31 +45,114 @@ spec:
             properties:
               actionName:
                 type: string
-              attributes_filters:
-                description: Filters based on span attributes (e.g. env=prod, http.method,
-                  etc.)
+              attributeFilters:
+                description: Filters based on span attributes and conditions
                 items:
+                  description: SpanAttributeFilter allows sampling traces based on
+                    span attributes and conditions.
                   properties:
                     attribute_key:
+                      description: Attribute key to evaluate
                       type: string
                     condition:
-                      description: 'Supported: exists, equals, not_equals'
-                      enum:
-                      - exists
-                      - equals
-                      - not_equals
-                      type: string
-                    expected_value:
-                      description: 'Optional: only required for equals and not_equals'
-                      type: string
+                      description: |-
+                        Condition to evaluate the attribute against
+                        Exactly one condition type must be provided
+                      properties:
+                        boolean_condition:
+                          description: BooleanAttributeCondition for boolean attribute
+                            evaluation
+                          properties:
+                            expected_value:
+                              description: Required only for 'equals' operation
+                              type: boolean
+                            operation:
+                              enum:
+                              - exists
+                              - equals
+                              type: string
+                          required:
+                          - operation
+                          type: object
+                        json_condition:
+                          description: JsonAttributeCondition supports operations
+                            on JSON serialized as strings
+                          properties:
+                            expected_value:
+                              description: ExpectedValue required for equals, not_equals,
+                                contains_key, not_contains_key
+                              type: string
+                            json_path:
+                              description: JsonPath required for jsonpath_exists operation
+                              type: string
+                            operation:
+                              enum:
+                              - exists
+                              - is_valid_json
+                              - is_invalid_json
+                              - equals
+                              - not_equals
+                              - contains_key
+                              - not_contains_key
+                              - jsonpath_exists
+                              type: string
+                          required:
+                          - operation
+                          type: object
+                        number_condition:
+                          description: 'NumberAttributeCondition supports numeric
+                            types: int, long, float, double'
+                          properties:
+                            expected_value:
+                              description: Required for all operations except 'exists'
+                              type: number
+                            operation:
+                              enum:
+                              - exists
+                              - equals
+                              - not_equals
+                              - greater_than
+                              - less_than
+                              - greater_than_or_equal
+                              - less_than_or_equal
+                              type: string
+                          required:
+                          - operation
+                          type: object
+                        string_condition:
+                          description: StringAttributeCondition for standard string
+                            attributes.
+                          properties:
+                            expected_value:
+                              description: Required for all except 'exists'
+                              type: string
+                            operation:
+                              enum:
+                              - exists
+                              - equals
+                              - not_equals
+                              - contains
+                              - not_contains
+                              - regex
+                              type: string
+                          required:
+                          - operation
+                          type: object
+                      type: object
                     fallback_sampling_ratio:
+                      description: Fallback sampling ratio when the condition doesn't
+                        explicitly match
                       maximum: 100
                       minimum: 0
                       type: number
+                    service_name:
+                      description: Specifies the service the filter applies to
+                      type: string
                   required:
                   - attribute_key
                   - condition
                   - fallback_sampling_ratio
+                  - service_name
                   type: object
                 type: array
               disabled:
@@ -85,7 +168,7 @@ spec:
                   type: string
                 type: array
             required:
-            - attributes_filters
+            - attributeFilters
             - signals
             type: object
           status:

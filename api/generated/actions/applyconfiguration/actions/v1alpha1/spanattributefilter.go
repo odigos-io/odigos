@@ -20,16 +20,24 @@ package v1alpha1
 // SpanAttributeFilterApplyConfiguration represents a declarative configuration of the SpanAttributeFilter type for use
 // with apply.
 type SpanAttributeFilterApplyConfiguration struct {
-	AttributeKey          *string  `json:"attribute_key,omitempty"`
-	Condition             *string  `json:"condition,omitempty"`
-	ExpectedValue         *string  `json:"expected_value,omitempty"`
-	FallbackSamplingRatio *float64 `json:"fallback_sampling_ratio,omitempty"`
+	ServiceName           *string                               `json:"service_name,omitempty"`
+	AttributeKey          *string                               `json:"attribute_key,omitempty"`
+	Condition             *AttributeConditionApplyConfiguration `json:"condition,omitempty"`
+	FallbackSamplingRatio *float64                              `json:"fallback_sampling_ratio,omitempty"`
 }
 
 // SpanAttributeFilterApplyConfiguration constructs a declarative configuration of the SpanAttributeFilter type for use with
 // apply.
 func SpanAttributeFilter() *SpanAttributeFilterApplyConfiguration {
 	return &SpanAttributeFilterApplyConfiguration{}
+}
+
+// WithServiceName sets the ServiceName field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ServiceName field is set to the value of the last call.
+func (b *SpanAttributeFilterApplyConfiguration) WithServiceName(value string) *SpanAttributeFilterApplyConfiguration {
+	b.ServiceName = &value
+	return b
 }
 
 // WithAttributeKey sets the AttributeKey field in the declarative configuration to the given value
@@ -43,16 +51,8 @@ func (b *SpanAttributeFilterApplyConfiguration) WithAttributeKey(value string) *
 // WithCondition sets the Condition field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Condition field is set to the value of the last call.
-func (b *SpanAttributeFilterApplyConfiguration) WithCondition(value string) *SpanAttributeFilterApplyConfiguration {
-	b.Condition = &value
-	return b
-}
-
-// WithExpectedValue sets the ExpectedValue field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ExpectedValue field is set to the value of the last call.
-func (b *SpanAttributeFilterApplyConfiguration) WithExpectedValue(value string) *SpanAttributeFilterApplyConfiguration {
-	b.ExpectedValue = &value
+func (b *SpanAttributeFilterApplyConfiguration) WithCondition(value *AttributeConditionApplyConfiguration) *SpanAttributeFilterApplyConfiguration {
+	b.Condition = value
 	return b
 }
 
