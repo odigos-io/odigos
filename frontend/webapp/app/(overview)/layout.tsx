@@ -4,8 +4,8 @@ import React, { useCallback, useMemo, type PropsWithChildren } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import styled from 'styled-components';
+import { useSSE, useTokenTracker } from '@/hooks';
 import { EntityTypes } from '@odigos/ui-kit/types';
-import { useNamespace, useSSE, useTokenTracker } from '@/hooks';
 import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
 import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
 import { DataFlowActionsMenu, NavIconIds, SideNav, ToastList } from '@odigos/ui-kit/containers';
@@ -71,7 +71,6 @@ function OverviewLayout({ children }: PropsWithChildren) {
 
   const router = useRouter();
   const pathname = usePathname();
-  const { namespaces } = useNamespace();
 
   const entityType = useMemo(() => getEntityType(pathname), [pathname]);
   const selectedId = useMemo(() => getSelectedId(pathname), [pathname]);
@@ -90,7 +89,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
         <OverviewHeader />
 
         <ContentWithActions>
-          <DataFlowActionsMenu namespaces={namespaces} addEntity={entityType} />
+          <DataFlowActionsMenu addEntity={entityType} />
           <ContentUnderActions>
             <SideNav defaultSelectedId={selectedId} onClickId={onClickId} />
             {children}
