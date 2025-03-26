@@ -111,4 +111,5 @@ type OdigosConfiguration struct {
 	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty"`
 	CentralBackendURL         string                         `json:"centralBackendURL,omitempty"`
 	MountMethod               *MountMethod                   `json:"mountMethod,omitempty"`
+	ClusterName               string                         `json:"clusterName,omitempty"`
 }

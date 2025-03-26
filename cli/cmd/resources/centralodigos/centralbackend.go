@@ -44,10 +44,8 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "central-backend",
-							// Image: containers.GetImageName(m.managerOpts.ImageReferences.ImagePrefix, "central-backend", k8sconsts.OdigosCloudProxyVersion),
-							Image:           "central-backend:dev",
-							ImagePullPolicy: corev1.PullNever,
+							Name:  "central-backend",
+							Image: "staging-registry.odigos.io/central-backend:dev",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "REDIS_ADDR",

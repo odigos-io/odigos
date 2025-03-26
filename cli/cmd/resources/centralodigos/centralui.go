@@ -44,10 +44,8 @@ func (m *centralUIResourceManager) InstallFromScratch(ctx context.Context) error
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "central-ui",
-							// Image: containers.GetImageName(m.managerOpts.ImageReferences.ImagePrefix, m.managerOpts.ImageReferences.UIImage, k8sconsts.OdigosCloudProxyVersion),
-							Image:           "central-ui:dev",
-							ImagePullPolicy: corev1.PullNever,
+							Name:  "central-ui",
+							Image: "staging-registry.odigos.io/central-ui:dev",
 						},
 					},
 				},

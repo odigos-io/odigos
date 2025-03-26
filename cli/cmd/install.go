@@ -142,9 +142,36 @@ It will install k8s components that will auto-instrument your applications with 
 		}
 
 		if installProxy {
-			fmt.Println("Installing proxy to connect to centralized backend ...")
-			resourceManagers := resources.CreateProxyManagers(client, clusterName, centralBackendURL)
-			err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating")
+
+			config, err := resources.GetCurrentConfig(ctx, client, ns)
+			if err != nil {
+				fmt.Errorf("unable to read the current Odigos configuration: %w", err)
+				os.Exit(1)
+			}
+
+			config.ConfigVersion += 1
+			config.CentralBackendURL = centralBackendURL
+			config.ClusterName = clusterName
+
+			managerOpts := resourcemanager.ManagerOpts{
+				ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+			}
+
+			resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, &odigosProToken, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
+			err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating Config")
+			if err != nil {
+				fmt.Errorf("failed to apply updated configuration: %w", err)
+				os.Exit(1)
+			}
+
+			err = resources.DeleteOldOdigosSystemObjects(ctx, client, ns, config)
+			if err != nil {
+				fmt.Println("Odigos config update failed - unable to cleanup old Odigos resources.")
+				os.Exit(1)
+			}
+
+			centralProxyResourceManagers := resources.CreateProxyManagers(client, managerOpts)
+			err = resources.ApplyResourceManagers(ctx, client, centralProxyResourceManagers, "Creating")
 			if err != nil {
 				fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos proxy: %s\n", err)
 				os.Exit(1)

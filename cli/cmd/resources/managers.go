@@ -54,6 +54,10 @@ func CreateCentralizedManagers(client *kube.Client, managerOpts resourcemanager.
 	}
 }
 
-func CreateProxyManagers(client *kube.Client, clusterName, backendURL string) []resourcemanager.ResourceManager {
-	return []resourcemanager.ResourceManager{}
+func CreateProxyManagers(client *kube.Client, managerOpts resourcemanager.ManagerOpts) []resourcemanager.ResourceManager {
+	ns := consts.DefaultOdigosNamespace
+
+	return []resourcemanager.ResourceManager{
+		centralodigos.NewCentralProxyResourceManager(client, ns, managerOpts),
+	}
 }
