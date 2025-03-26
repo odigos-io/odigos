@@ -17,7 +17,7 @@ export default function Page() {
   return (
     <>
       <SetupHeader entityType={EntityTypes.Source} formRef={formRef} />
-      <SourceSelectionForm ref={formRef} componentType='FAST' isModal={false} namespace={namespace} selectedNamespace={selectedNamespace} onSelectNamespace={onSelectNamespace} />
+      <SourceSelectionForm ref={formRef} isModal={false} namespace={namespace} selectedNamespace={selectedNamespace} onSelectNamespace={onSelectNamespace} />
     </>
   );
 }

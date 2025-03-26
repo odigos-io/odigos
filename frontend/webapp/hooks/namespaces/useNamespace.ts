@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useConfig } from '../config';
-import { useMutation, useQuery } from '@apollo/client';
 import type { NamespaceInstrumentInput } from '@/types';
+import { useLazyQuery, useMutation, useQuery } from '@apollo/client';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
 import { GET_NAMESPACE, GET_NAMESPACES, PERSIST_NAMESPACE } from '@/graphql';
@@ -16,14 +16,11 @@ export const useNamespace = (namespaceName?: string) => {
     addNotification({ type, title, message, hideFromHistory });
   };
 
-  // TODO: change query, to lazy query (needs to be handled in the UI-Kit first)
-  const { refetch: fetchAll } = useQuery<{ computePlatform?: { k8sActualNamespaces?: Namespace[] } }>(GET_NAMESPACES, {
-    onError: (error) => addNotification({ type: StatusType.Error, title: error.name || Crud.Read, message: error.cause?.message || error.message }),
-  });
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { k8sActualNamespaces?: Namespace[] } }>(GET_NAMESPACES);
 
   // TODO: change query, to lazy query (needs to be handled in the UI-Kit first)
   const {
-    refetch: fetchSingle,
+    refetch: fetchSingleNamespace,
     data: singleNamespace,
     loading: singleLoading,
   } = useQuery<{ computePlatform?: { k8sActualNamespace?: Namespace } }>(GET_NAMESPACE, {
@@ -68,7 +65,7 @@ export const useNamespace = (namespaceName?: string) => {
   }, []);
 
   useEffect(() => {
-    if (namespaceName && !singleLoading) fetchSingle({ namespaceName });
+    if (namespaceName && !singleLoading) fetchSingleNamespace({ namespaceName });
   }, [namespaceName]);
 
   return {
