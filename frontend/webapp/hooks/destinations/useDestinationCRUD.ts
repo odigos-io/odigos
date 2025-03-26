@@ -28,9 +28,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     addNotification({ type, title, message, crdType: EntityTypes.Destination, target: id ? getSseTargetFromId(id, EntityTypes.Destination) : undefined, hideFromHistory });
   };
 
-  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }>(GET_DESTINATIONS, {
-    fetchPolicy: 'cache-and-network',
-  });
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }>(GET_DESTINATIONS);
 
   const fetchDestinations = async () => {
     setEntitiesLoading(EntityTypes.Destination, true);
