@@ -109,7 +109,8 @@
           "icon": "golang",
           "pages": [
             "instrumentations/golang/ebpf",
-            "instrumentations/golang/enrichment"
+            "instrumentations/golang/enrichment",
+            "instrumentations/golang/offsets"
           ]
         },
         {

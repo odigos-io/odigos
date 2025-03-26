@@ -1,0 +1,45 @@
+name: Update Offsets Docs for Go
+
+on:
+  workflow_dispatch:
+
+  repository_dispatch:
+    types: [update_offsets_docs]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  update-offset-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - id: gcp-auth
+      name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        token_format: 'access_token'
+        workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+        service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+        access_token_lifetime: 1200s
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v2'
+      with:
+        project_id: 'odigos-cloud'
+
+    - name: 'Generate offset docs'
+      run: make offsets-docgen
+
+    - name: Create pull request
+      uses: peter-evans/create-pull-request@v7
+      with:
+        commit-message: Update generated offsets
+        branch: automated/generated-offsets-docs
+        delete-branch: true
+        title: '[auto] Update generated offsets docs'
+        body: 'This is an automated PR to update the supported Go libraries based on an update to the published offsets file.'
