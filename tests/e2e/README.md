@@ -93,7 +93,7 @@ kubectl port-forward svc/simple-trace-db 4318:4318 -n traces
 Then you can execute simple-trace-db queries via:
 
 ```bash
-curl -G -s http://localhost:4318/v1/traces --data-urlencode "jmespath=length([?span.serviceName == 'frontend']) > `0`"
+curl -G -s http://localhost:4318/v1/traces --data-urlencode "jmespath=length([?span.serviceName == 'frontend']) > \`0\`"
 ```
 
 Getting individual trace by trace id is not yet supported by simple-trace-db.
