@@ -28,9 +28,7 @@ export const useActionCRUD = (): UseActionCrud => {
     addNotification({ type, title, message, crdType: EntityTypes.Action, target: id ? getSseTargetFromId(id, EntityTypes.Action) : undefined, hideFromHistory });
   };
 
-  const [fetchAll] = useLazyQuery<{ computePlatform?: { actions?: FetchedAction[] } }>(GET_ACTIONS, {
-    fetchPolicy: 'cache-and-network',
-  });
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { actions?: FetchedAction[] } }>(GET_ACTIONS);
 
   const fetchActions = async () => {
     setEntitiesLoading(EntityTypes.Action, true);

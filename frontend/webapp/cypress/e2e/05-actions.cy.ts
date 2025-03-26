@@ -80,7 +80,7 @@ describe('Actions CRUD', () => {
 
         // Wait for action to create
         cy.wait('@gql').then(() => {
-          awaitToast({ withSSE: false, message: TEXTS.NOTIF_ACTION_CREATED(actionType) });
+          awaitToast({ message: TEXTS.NOTIF_ACTION_CREATED(actionType) });
         });
       });
     });
@@ -107,7 +107,7 @@ describe('Actions CRUD', () => {
           () => {
             // Wait for the action to update
             cy.wait('@gql').then(() => {
-              awaitToast({ withSSE: false, message: TEXTS.NOTIF_ACTION_UPDATED(actionType) });
+              awaitToast({ message: TEXTS.NOTIF_ACTION_UPDATED(actionType) });
             });
           },
         );
@@ -140,7 +140,7 @@ describe('Actions CRUD', () => {
           () => {
             // Wait for the action to delete
             cy.wait('@gql').then(() => {
-              awaitToast({ withSSE: false, message: TEXTS.NOTIF_ACTION_DELETED(actionType) });
+              awaitToast({ message: TEXTS.NOTIF_ACTION_DELETED(actionType) });
             });
           },
         );
