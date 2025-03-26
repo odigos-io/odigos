@@ -41,14 +41,10 @@ icon: 'signal-stream'
   - This field is required
 - **CHECKLY_API_KEY** `string` : API Key.
   - This field is required
-- **CHECKLY_WITH_FILTER** `boolean` : Filter Traces. If checked, only traces with the `checkly="true"` attribute will be exported to Checkly.
-  - This field is optional
 
-<Note>
-  By default, Odigos will export all traces to Checkly.
-
-  If you want to filter traces, you can toggle `CHECKLY_WITH_FILTER` to `true` and add the `checkly="true"` attribute to the traces you want to export to Checkly.
-</Note>
+<Warning>
+  Odigos will only filter and export traces to Checkly if their `trace_state` includes the tag `checkly="true"`, which is added by a Checkly SDK.
+</Warning>
 
 ### Adding Destination to Odigos
 
@@ -82,8 +78,6 @@ There are two primary methods for configuring destinations in Odigos:
     spec:
       data:
         CHECKLY_ENDOINT: <OTLP gRPC Endpoint>
-        # Note: The commented fields below are optional.
-        # CHECKLY_WITH_FILTER: <Filter Traces>
       destinationName: checkly
       secretRef:
         name: checkly-secret
