@@ -45,7 +45,7 @@ function process_yaml_file() {
   response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/v1/traces\?jmespath=$encoded_query)
 
   if [ "$verbose" == "true" ]; then
-    echo "==============Raw response from tempo===================="
+    echo "============== Raw response from trace db ===================="
     echo "$response" | jq .
     echo "========================================================="
   fi

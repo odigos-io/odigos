@@ -26,19 +26,12 @@ const OverviewModalsAndDrawers = () => {
   const { createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   const [selectedNamespace, setSelectedNamespace] = useState('');
-  const { namespaces, namespace, loading: nsLoad } = useNamespace(selectedNamespace);
+  const { namespace } = useNamespace(selectedNamespace);
 
   return (
     <>
       {/* modals */}
-      <SourceModal
-        namespaces={namespaces}
-        namespace={namespace}
-        namespacesLoading={nsLoad}
-        selectedNamespace={selectedNamespace}
-        setSelectedNamespace={setSelectedNamespace}
-        persistSources={persistSources}
-      />
+      <SourceModal namespace={namespace} selectedNamespace={selectedNamespace} setSelectedNamespace={setSelectedNamespace} persistSources={persistSources} />
       <DestinationModal
         isOnboarding={false}
         categories={categories}

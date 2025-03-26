@@ -26,9 +26,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     addNotification({ type, title, message, crdType: EntityTypes.InstrumentationRule, target: id ? getSseTargetFromId(id, EntityTypes.InstrumentationRule) : undefined, hideFromHistory });
   };
 
-  const [fetchAll] = useLazyQuery<{ computePlatform?: { instrumentationRules?: InstrumentationRule[] } }>(GET_INSTRUMENTATION_RULES, {
-    fetchPolicy: 'cache-and-network',
-  });
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { instrumentationRules?: InstrumentationRule[] } }>(GET_INSTRUMENTATION_RULES);
 
   const fetchInstrumentationRules = async () => {
     setEntitiesLoading(EntityTypes.InstrumentationRule, true);
