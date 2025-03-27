@@ -57,27 +57,26 @@ func (re *RuleEngine) ShouldSample(td ptrace.Traces) bool {
 		matched, satisfied, probability := evaluateLevel(td, rules)
 
 		if satisfied {
-			// If satisfied at this level, sample immediately using that probability
-			return rand.Float64() < probability
+
+			return (rand.Float64() * 100) < probability
 		} else if matched {
 			// Keep track of this fallback probability
 			foundFallback = true
 			fallbackRatio = probability
-			// Do NOT return yet; maybe a deeper level is fully satisfied
 		}
 	}
 
 	// If we reach here, we never found a "satisfied" rule
 	// If we had a fallback from a matched rule, use it
 	if foundFallback {
-		return rand.Float64() < fallbackRatio
+		return (rand.Float64() * 100) < fallbackRatio
 	}
 
 	// Otherwise, we return false to indicate "drop"
 	return false
 }
 
-// evaluateLevel processes all rules in the current level to find combined probabilities.
+// evaluateLevel processes all rules in the current level to find the max satisfied (Or matched) probability.
 // - sampleProbabilities accumulates for "satisfied" rules
 // - fallbackProbabilities accumulates for "matched but not satisfied" rules
 //
@@ -87,37 +86,24 @@ func (re *RuleEngine) ShouldSample(td ptrace.Traces) bool {
 //	satisfied: Were any rules satisfied at this level?
 //	probability: The combined sampling probability (union) for whichever category is relevant.
 func evaluateLevel(td ptrace.Traces, rules []sampling.SamplingDecision) (matched bool, satisfied bool, probability float64) {
-	var sampleProbabilities []float64
-	var fallbackProbabilities []float64
+	var sampleProbability float64
+	var fallbackProbability float64
 
 	for _, rule := range rules {
 		isMatched, isSatisfied, p := rule.Evaluate(td)
 		if isSatisfied {
-			sampleProbabilities = append(sampleProbabilities, p)
+			sampleProbability = max(sampleProbability, p)
 		} else if isMatched {
 			// matched but not satisfied
-			fallbackProbabilities = append(fallbackProbabilities, p)
+			fallbackProbability = max(fallbackProbability, p)
 		}
 	}
 
-	// If we have ANY satisfied rules, we combine them (union of independent probabilities)
-	if len(sampleProbabilities) > 0 {
-		return true, true, UnionOfIndependents(sampleProbabilities)
+	if sampleProbability != 0.0 {
+		return true, true, sampleProbability
+	} else if fallbackProbability != 0.0 {
+		return true, true, fallbackProbability
 	}
-
-	// If we have no satisfied but we do have matched, combine fallback probabilities
-	if len(fallbackProbabilities) > 0 {
-		return true, false, UnionOfIndependents(fallbackProbabilities)
-	}
-
 	// If no rules matched at all
 	return false, false, 0.0
-}
-
-func UnionOfIndependents(probs []float64) float64 {
-	product := 1.0
-	for _, p := range probs {
-		product *= (1.0 - p)
-	}
-	return 1.0 - product
 }
