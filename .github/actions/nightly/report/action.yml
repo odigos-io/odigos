@@ -43,6 +43,7 @@ runs:
           --arg suite_name  "${{ inputs.suite_name }}" \
           --arg suite_params "${{ inputs.suite_parameters }}" \
           --arg link        "$GITHUB_LINK" \
+          --arg emoji       "$EMOJI" \
           '{
             "blocks": [
               {
