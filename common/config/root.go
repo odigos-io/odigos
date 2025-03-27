@@ -66,6 +66,7 @@ var availableConfigers = []Configer{
 	&Signoz{},
 	&Splunk{},
 	&SumoLogic{},
+	&TelemetryHub{},
 	&Tempo{},
 	&Traceloop{},
 	&Uptrace{},
