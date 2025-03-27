@@ -10,7 +10,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type centralProxyResourceManager struct {
@@ -65,29 +64,8 @@ func (m *centralProxyResourceManager) InstallFromScratch(ctx context.Context) er
 		},
 	}
 
-	service := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Service",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.CentralProxy,
-			Namespace: m.ns,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector: map[string]string{"app.kubernetes.io/name": k8sconsts.CentralProxy},
-			Ports: []corev1.ServicePort{
-				{
-					Port:       8080,
-					TargetPort: intstr.FromInt(8080),
-				},
-			},
-			Type: corev1.ServiceTypeClusterIP,
-		},
-	}
-
 	return m.client.ApplyResources(ctx, 1, []kube.Object{NewCentralProxyServiceAccount(m.ns), NewCentralProxyRoleBinding(m.ns),
-		NewCentralProxyRole(m.ns), deployment, service}, m.managerOpts)
+		NewCentralProxyRole(m.ns), deployment}, m.managerOpts)
 }
 
 func NewCentralProxyServiceAccount(ns string) *corev1.ServiceAccount {
