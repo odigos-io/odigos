@@ -51,7 +51,7 @@ func (re *RuleEngine) ShouldSample(td ptrace.Traces) bool {
 			return decision
 		}
 	}
-	return true
+	return false
 }
 
 func evaluateLevel(td ptrace.Traces, rules []sampling.SamplingDecision) (matched bool, decision bool) {

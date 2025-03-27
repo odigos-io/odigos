@@ -34,7 +34,7 @@ func (r *HttpRouteLatencyRule) Validate() error {
 	return nil
 }
 
-func (r *HttpRouteLatencyRule) Evaluate(td ptrace.Traces) (matched bool, satisfied bool, fallbackRatio float64) {
+func (r *HttpRouteLatencyRule) Evaluate(td ptrace.Traces) (filterMatch bool, conditionMatch bool, fallbackRatio float64) {
 	resources := td.ResourceSpans()
 	var serviceFound, endpointFound bool
 	var minStart, maxEnd pcommon.Timestamp

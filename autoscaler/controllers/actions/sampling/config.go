@@ -16,6 +16,8 @@ type Rule struct {
 type RuleType string
 
 const (
-	LatencyRule RuleType = "http_latency"
-	ErrorRule   RuleType = "error"
+	LatencyRule       RuleType = "http_latency"
+	ErrorRule         RuleType = "error"
+	SpanAttributeRule RuleType = "span_attribute"
+	ServiceNameRule   RuleType = "service_name"
 )
