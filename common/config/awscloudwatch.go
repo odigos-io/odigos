@@ -37,14 +37,14 @@ func (m *AWSCloudWatch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 	var pipelineNames []string
 
 	logsExporterName := "awscloudwatchlogs/" + uniqueUri
-	logsExporterConfig, err := logsConfig(dest, currentConfig)
+	logsExporterConfig, err := logsConfig(dest)
 	if err != nil {
 		return nil, err
 	}
 	currentConfig.Exporters[logsExporterName] = logsExporterConfig
 
 	metricsExporterName := "awsemf/" + uniqueUri
-	metricsExporterConfig, err := metricsConfig(dest, currentConfig)
+	metricsExporterConfig, err := metricsConfig(dest)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (m *AWSCloudWatch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 }
 
 // Configures an exporter that shares fields between logs exporter and metrics exporter.
-func sharedConfig(dest ExporterConfigurer, currentConfig *Config) (GenericMap, error) {
+func sharedConfig(dest ExporterConfigurer) (GenericMap, error) {
 	config := dest.GetConfig()
 
 	// Required fields
@@ -132,9 +132,9 @@ func sharedConfig(dest ExporterConfigurer, currentConfig *Config) (GenericMap, e
 }
 
 // Configures the exporter for logs.
-func logsConfig(dest ExporterConfigurer, currentConfig *Config) (GenericMap, error) {
+func logsConfig(dest ExporterConfigurer) (GenericMap, error) {
 	config := dest.GetConfig()
-	exporterConfig, err := sharedConfig(dest, currentConfig)
+	exporterConfig, err := sharedConfig(dest)
 	if err != nil {
 		return nil, err
 	}
@@ -148,9 +148,9 @@ func logsConfig(dest ExporterConfigurer, currentConfig *Config) (GenericMap, err
 }
 
 // Configures the exporter for metrics.
-func metricsConfig(dest ExporterConfigurer, currentConfig *Config) (GenericMap, error) {
+func metricsConfig(dest ExporterConfigurer) (GenericMap, error) {
 	config := dest.GetConfig()
-	exporterConfig, err := sharedConfig(dest, currentConfig)
+	exporterConfig, err := sharedConfig(dest)
 	if err != nil {
 		return nil, err
 	}
