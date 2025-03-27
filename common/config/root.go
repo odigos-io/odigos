@@ -55,6 +55,7 @@ var availableConfigers = []Configer{
 	&Mock{},
 	&NewRelic{},
 	&Nop{},
+	&OpenObserve{},
 	&OpsVerse{},
 	&OTLPHttp{},
 	&Prometheus{},
