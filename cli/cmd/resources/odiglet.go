@@ -2,8 +2,8 @@ package resources
 
 import (
 	"context"
-
-	"k8s.io/apimachinery/pkg/api/resource"
+	"fmt"
+	"os"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
@@ -18,11 +18,16 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	k8sversion "k8s.io/apimachinery/pkg/util/version"
 )
+
+var offsetFileMountPath = "/offsets"
 
 func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
@@ -264,7 +269,7 @@ func NewResourceQuota(ns string) *corev1.ResourceQuota {
 	}
 }
 
-func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails) *appsv1.DaemonSet {
+func NewOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails) *appsv1.DaemonSet {
 
 	dynamicEnv := []corev1.EnvVar{}
 	if odigosTier == common.CloudOdigosTier {
@@ -299,7 +304,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 		rollingUpdate.MaxSurge = &maxSurge
 	}
 
-	return &appsv1.DaemonSet{
+	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
 			APIVersion: "apps/v1",
@@ -505,6 +510,84 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 			},
 		},
 	}
+
+	// Check for a custom offsets file, if present use it
+	// The reason for this is because a user can update their offsets asynchronously with the Odigos release
+	// For example:
+	// 1) User updates offsets to support Go 1.24
+	// 2) Odigos releases support for Go 1.24
+	// 3) User updates offsets to support Go 1.24.1
+	// 4) User updates Odigos (no default support for 1.24.1)
+	// This also means a user could be still using old offsets, and might want to revert that to pull in latest Odigos changes
+	// TODO: Detect superceded offsets automatically so user doesn't need to manually revert
+	_, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, consts.GoOffsetsConfigMap, metav1.GetOptions{})
+	if err == nil {
+		// Add offsets volume (if not already exist)
+		volumes := ds.Spec.Template.Spec.Volumes
+		if volumes == nil {
+			volumes = make([]v1.Volume, 0)
+		}
+		addVolume := true
+		for _, vol := range volumes {
+			if vol.Name == consts.GoOffsetsConfigMap {
+				addVolume = false
+				break
+			}
+		}
+		if addVolume {
+			volumes = append(volumes, v1.Volume{Name: consts.GoOffsetsConfigMap,
+				VolumeSource: v1.VolumeSource{
+					ConfigMap: &v1.ConfigMapVolumeSource{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: consts.GoOffsetsConfigMap,
+						},
+					},
+				},
+			})
+			ds.Spec.Template.Spec.Volumes = volumes
+		}
+
+		// Add offsets volume mounnt (if not already exist)
+		volumeMounts := ds.Spec.Template.Spec.Containers[0].VolumeMounts
+		if volumeMounts == nil {
+			volumeMounts = make([]v1.VolumeMount, 0)
+		}
+		addVolumeMount := true
+		for _, vm := range volumeMounts {
+			if vm.Name == consts.GoOffsetsConfigMap {
+				addVolumeMount = false
+				break
+			}
+		}
+		if addVolumeMount {
+			volumeMounts = append(volumeMounts, v1.VolumeMount{Name: consts.GoOffsetsConfigMap, MountPath: offsetFileMountPath})
+			ds.Spec.Template.Spec.Containers[0].VolumeMounts = volumeMounts
+		}
+
+		// Add offsets Env Var (if not already exist)
+		envVars := ds.Spec.Template.Spec.Containers[0].Env
+		if envVars == nil {
+			envVars = make([]v1.EnvVar, 0)
+		}
+		addEnvVar := true
+		for _, env := range envVars {
+			if env.Name == consts.GoOffsetsEnvVar {
+				addEnvVar = false
+				break
+			}
+		}
+		if addEnvVar {
+			envVars = append(envVars, v1.EnvVar{Name: consts.GoOffsetsEnvVar, Value: offsetFileMountPath + "/" + consts.GoOffsetsFileName})
+			ds.Spec.Template.Spec.Containers[0].Env = envVars
+		}
+	} else {
+		if !apierrors.IsNotFound(err) {
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to get Go offsets ConfigMap: %s", err))
+			os.Exit(1)
+		}
+	}
+
+	return ds
 }
 
 // used to inject the host volumes into odigos components for selinux update
@@ -588,7 +671,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
 	resources = append(resources,
-		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.OdigletImage, a.odigosTier, a.config.OpenshiftEnabled,
+		NewOdigletDaemonSet(ctx, a.client, a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.OdigletImage, a.odigosTier, a.config.OpenshiftEnabled,
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
 				K8SVersion: cmdcontext.K8SVersionFromContext(ctx),
