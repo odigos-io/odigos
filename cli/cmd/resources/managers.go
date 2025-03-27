@@ -1,10 +1,12 @@
 package resources
 
 import (
+	"github.com/odigos-io/odigos/cli/cmd/resources/centralodigos"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 )
 
@@ -40,4 +42,22 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 	}
 
 	return resourceManagers
+}
+
+func CreateCentralizedManagers(client *kube.Client, managerOpts resourcemanager.ManagerOpts) []resourcemanager.ResourceManager {
+	ns := consts.DefaultOdigosNamespace
+
+	return []resourcemanager.ResourceManager{
+		centralodigos.NewRedisResourceManager(client, ns, managerOpts),
+		centralodigos.NewCentralUIResourceManager(client, ns, managerOpts),
+		centralodigos.NewCentralBackendResourceManager(client, ns, managerOpts),
+	}
+}
+
+func CreateProxyManagers(client *kube.Client, managerOpts resourcemanager.ManagerOpts) []resourcemanager.ResourceManager {
+	ns := consts.DefaultOdigosNamespace
+
+	return []resourcemanager.ResourceManager{
+		centralodigos.NewCentralProxyResourceManager(client, ns, managerOpts),
+	}
 }
