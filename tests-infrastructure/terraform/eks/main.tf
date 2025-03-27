@@ -95,15 +95,6 @@ resource "aws_security_group" "eks_api_sg" {
   }
 }
 
-# Security group rule to allow internal communication between EKS nodes and services
-resource "aws_security_group_rule" "allow_internal_eks" {
-  type              = "ingress"
-  from_port         = 3100
-  to_port           = 3100
-  protocol          = "tcp"
-  cidr_blocks       = ["10.0.0.0/16"] # Allow internal communication
-  security_group_id = module.eks.node_security_group_id
-}
 
 # Allow Kubernetes API to communicate with private services
 resource "aws_security_group_rule" "allow_api_private" {
@@ -113,4 +104,16 @@ resource "aws_security_group_rule" "allow_api_private" {
   protocol          = "tcp"
   cidr_blocks       = ["10.0.0.0/16"]
   security_group_id = module.eks.cluster_security_group_id
+}
+
+
+# Allow port 4318 for internal communication to simple-trace-db service
+resource "aws_security_group_rule" "allow_4318_internal" {
+  type              = "ingress"
+  from_port         = 4318
+  to_port           = 4318
+  protocol          = "tcp"
+  cidr_blocks       = ["10.0.0.0/16"] # Your VPC CIDR
+  security_group_id = module.eks.node_security_group_id
+  description       = "Allow 4318 for e2e-tests-tempo"
 }

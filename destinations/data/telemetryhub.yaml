@@ -1,0 +1,28 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: telemetryhub
+  displayName: TelemetryHub
+  category: managed
+spec:
+  image: telemetryhub.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: TELEMETRY_HUB_API_KEY
+      displayName: API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+  note:
+    type: Check
+    content: |
+      We handle the endpoint internally, so you don't need to provide it.
+      - The endpoint is `https://otlp.telemetryhub.com:4317`
