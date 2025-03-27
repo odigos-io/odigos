@@ -47,7 +47,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 
 			for _, proc := range processes {
 				containerURL := kubeutils.GetPodExternalURL(pod.Status.PodIP, container.Ports)
-				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL)
+				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL, log.Logger)
 				if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
 					inspectProc = &proc
 					break
