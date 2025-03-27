@@ -3,6 +3,7 @@ package centralodigos
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,22 +30,22 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "central-backend",
+			Name:      k8sconsts.CentralBackend,
 			Namespace: m.ns,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": "central-backend"},
+				MatchLabels: map[string]string{"app": k8sconsts.CentralBackend},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "central-backend"},
+					Labels: map[string]string{"app": k8sconsts.CentralBackend},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "central-backend",
+							Name:  k8sconsts.CentralBackend,
 							Image: "staging-registry.odigos.io/central-backend:dev",
 							Env: []corev1.EnvVar{
 								{

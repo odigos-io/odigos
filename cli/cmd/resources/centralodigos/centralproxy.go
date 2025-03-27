@@ -32,26 +32,26 @@ func (m *centralProxyResourceManager) InstallFromScratch(ctx context.Context) er
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "central-proxy",
+			Name:      k8sconsts.CentralProxy,
 			Namespace: m.ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": "central-proxy",
+				"app.kubernetes.io/name": k8sconsts.CentralProxy,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": "central-proxy"},
+				MatchLabels: map[string]string{"app.kubernetes.io/name": k8sconsts.CentralProxy},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app.kubernetes.io/name": "central-proxy"},
+					Labels: map[string]string{"app.kubernetes.io/name": k8sconsts.CentralProxy},
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: k8sconsts.CentralProxyServiceAccountName,
+					ServiceAccountName: k8sconsts.CentralProxy,
 					Containers: []corev1.Container{
 						{
-							Name:  "central-proxy",
+							Name:  k8sconsts.CentralProxy,
 							Image: "staging-registry.odigos.io/central-proxy:dev",
 							Ports: []corev1.ContainerPort{
 								{
@@ -71,11 +71,11 @@ func (m *centralProxyResourceManager) InstallFromScratch(ctx context.Context) er
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "central-proxy",
+			Name:      k8sconsts.CentralProxy,
 			Namespace: m.ns,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector: map[string]string{"app.kubernetes.io/name": "central-proxy"},
+			Selector: map[string]string{"app.kubernetes.io/name": k8sconsts.CentralProxy},
 			Ports: []corev1.ServicePort{
 				{
 					Port:       8080,
@@ -97,7 +97,7 @@ func NewCentralProxyServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.CentralProxyServiceAccountName,
+			Name:      k8sconsts.CentralProxy,
 			Namespace: ns,
 		},
 	}
@@ -110,7 +110,7 @@ func NewCentralProxyRole(ns string) *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.CentralProxyRoleName,
+			Name:      k8sconsts.CentralProxy,
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -130,19 +130,19 @@ func NewCentralProxyRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.CentralProxyRoleBindingName,
+			Name:      k8sconsts.CentralProxy,
 			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      k8sconsts.CentralProxyServiceAccountName,
+				Name:      k8sconsts.CentralProxy,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "Role",
-			Name:     k8sconsts.CentralProxyRoleName,
+			Name:     k8sconsts.CentralProxy,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}

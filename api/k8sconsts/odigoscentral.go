@@ -1,7 +1,7 @@
 package k8sconsts
 
 const (
-	CentralProxyServiceAccountName = "central-proxy"
-	CentralProxyRoleName           = "central-proxy"
-	CentralProxyRoleBindingName    = "central-proxy"
+	CentralProxy   = "central-proxy"
+	CentralBackend = "central-backend"
+	CentralUI      = "central-ui"
 )
