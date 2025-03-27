@@ -24,10 +24,27 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
-<Warning>
-  Make sure that you have the necessary `AWS Credentials` and permissions set up.<br />
-  AWS credentials are retrieved from the [default credential chain](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-credentials).
-</Warning>
+import AwsCredentials from '/snippets/aws-credentials.mdx';
+
+<AwsCredentials />
+
+**Setting up the IAM policy**
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": {
+    "Effect": "Allow",
+    "Action": [
+      "xray:PutTraceSegments",
+      "xray:PutTelemetryRecords"
+    ],
+    "Resource": [
+      "*"
+    ]
+  }
+}
+```
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
