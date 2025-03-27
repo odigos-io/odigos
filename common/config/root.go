@@ -24,6 +24,7 @@ var availableConfigers = []Configer{
 	&AzureBlobStorage{},
 	&BetterStack{},
 	&Causely{},
+	&Checkly{},
 	&Chronosphere{},
 	&Clickhouse{},
 	&Coralogix{},
