@@ -227,6 +227,7 @@
             "backends/azureblob",
             "backends/betterstack",
             "backends/causely",
+            "backends/checkly",
             "backends/chronosphere",
             "backends/clickhouse",
             "backends/coralogix",
