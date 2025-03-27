@@ -42,7 +42,7 @@ describe('Instrumentation Rules CRUD', () => {
 
         // Wait for rule to create
         cy.wait('@gql').then(() => {
-          awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_CREATED(ruleType) });
+          awaitToast({ message: TEXTS.NOTIF_INSTRUMENTATION_RULE_CREATED(ruleType) });
         });
       });
     });
@@ -66,7 +66,7 @@ describe('Instrumentation Rules CRUD', () => {
           () => {
             // Wait for the rule to update
             cy.wait('@gql').then(() => {
-              awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_UPDATED(ruleType) });
+              awaitToast({ message: TEXTS.NOTIF_INSTRUMENTATION_RULE_UPDATED(ruleType) });
             });
           },
         );
@@ -95,7 +95,7 @@ describe('Instrumentation Rules CRUD', () => {
           () => {
             // Wait for the rule to delete
             cy.wait('@gql').then(() => {
-              awaitToast({ withSSE: false, message: TEXTS.NOTIF_INSTRUMENTATION_RULE_DELETED(ruleType) });
+              awaitToast({ message: TEXTS.NOTIF_INSTRUMENTATION_RULE_DELETED(ruleType) });
             });
           },
         );

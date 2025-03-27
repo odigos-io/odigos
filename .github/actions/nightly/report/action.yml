@@ -1,26 +1,26 @@
-name: "Nightly Slack Report"
-description: "Posts a Slack message reporting the outcome of a test suite."
+name: 'Nightly Slack Report'
+description: 'Posts a Slack message reporting the outcome of a test suite.'
 
 inputs:
   status:
-    description: "Job status (success, failure, etc.)."
+    description: 'Job status (success, failure, etc.).'
     required: true
 
   suite_name:
-    description: "Name of the test suite."
+    description: 'Name of the test suite.'
     required: true
 
   suite_parameters:
-    description: "Additional details (e.g. JSON or string describing the test scenario)."
+    description: 'Additional details (e.g. JSON or string describing the test scenario).'
     required: false
-    default: "{}"
+    default: '{}'
 
   slack_webhook_url:
-    description: "Slack Incoming Webhook URL."
+    description: 'Slack Incoming Webhook URL.'
     required: true
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Send Slack Notification
       shell: bash
@@ -28,8 +28,10 @@ runs:
         # Decide if status is SUCCESS or FAILURE.
         if [[ "${{ inputs.status }}" == "success" ]]; then
           STATUS_MSG="*SUCCESS*"
+          EMOJI="✅"
         else
           STATUS_MSG="*FAILURE*"
+          EMOJI="❌"
         fi
 
         # Build a link to this GitHub run (if env vars exist).
@@ -41,13 +43,14 @@ runs:
           --arg suite_name  "${{ inputs.suite_name }}" \
           --arg suite_params "${{ inputs.suite_parameters }}" \
           --arg link        "$GITHUB_LINK" \
+          --arg emoji       "$EMOJI" \
           '{
             "blocks": [
               {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "\($status_msg): \($suite_name) completed\n```\($suite_params)```"
+                  "text": "\($emoji) \($status_msg): \($suite_name) completed\n```\($suite_params)```"
                 }
               },
               {

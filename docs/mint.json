@@ -265,6 +265,7 @@
             "backends/signoz",
             "backends/splunk",
             "backends/sumologic",
+            "backends/telemetryhub",
             "backends/tempo",
             "backends/traceloop",
             "backends/uptrace"

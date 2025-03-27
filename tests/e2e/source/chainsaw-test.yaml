@@ -8,18 +8,8 @@ spec:
   steps:
     - name: '[1 - Setup] Prepare destination'
       try:
-        - script:
-            timeout: 5m
-            content: |
-              if helm status e2e-tests -n traces >/dev/null 2>&1; then
-                echo "e2e-tests helm already installed, probably from previous run. Skipping..."
-              else
-                helm repo add grafana https://grafana.github.io/helm-charts
-                helm repo update
-                helm install e2e-tests grafana/tempo -n traces --create-namespace \
-                -f ../../common/tempo_values.yaml \
-                --version 1.18.2
-              fi
+        - apply: 
+            file: ../../common/apply/simple-trace-db-deployment.yaml
     - name: '[1 - Setup] Install Odigos'
       try:
         - script:
@@ -32,11 +22,11 @@ spec:
               fi
         - assert:
             file: ../../common/assert/odigos-installed.yaml
-    - name: '[1 - Setup] Assert Tempo Is Up'
+    - name: '[1 - Setup]Assert Trace DB is up'
       try:
         - assert:
-            timeout: 5m
-            file: ../../common/assert/tempo-running.yaml
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
     - name: '[1 - Setup] Install Demo App'
       try:
         - script:
@@ -83,7 +73,7 @@ spec:
     - name: '[2 - Workload Instrumentation] Add Destination'
       try:
         - apply:
-            file: ../../common/apply/add-tempo-traces-destination.yaml
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
 
     - name: '[2 - Workload Instrumentation] Odigos pipeline ready'
       try:
@@ -121,14 +111,11 @@ spec:
                 kubectl delete -f ../../common/apply/generate-traffic-job.yaml
 
                 # Run the wait-for-trace script
-                echo "Running TraceQL test at $(date)"
-                ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
+                echo "Running Simple-trace-db query for full trace at $(date)"
+                ../../common/simple_trace_db_query_runner.sh queries/wait-for-trace.yaml
 
                 if [ $? -eq 0 ]; then
                   break
-                else
-                  ../../common/flush_traces.sh
-                  sleep 5
                 fi
               done
 
@@ -137,7 +124,7 @@ spec:
         - script:
             timeout: 3m
             content: |
-              ../../common/traceql_runner.sh tracesql/context-propagation.yaml
+              ../../common/simple_trace_db_query_runner.sh queries/context-propagation.yaml
       catch:
         - podLogs:
             name: odiglet
@@ -148,7 +135,7 @@ spec:
         - script:
             timeout: 3m
             content: |
-              ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh queries/resource-attributes.yaml
       catch:
         - podLogs:
             name: odiglet
@@ -159,7 +146,7 @@ spec:
         - script:
             timeout: 3m
             content: |
-              ../../common/traceql_runner.sh tracesql/span-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh queries/span-attributes.yaml
       catch:
         - podLogs:
             name: odiglet
@@ -233,14 +220,11 @@ spec:
                 kubectl delete -f ../../common/apply/generate-traffic-job.yaml
 
                 # Run the wait-for-trace script
-                echo "Running TraceQL test at $(date)"
-                ../../common/traceql_runner.sh tracesql/wait-for-trace-2.yaml
+                echo "Running Simple-trace-db query for full trace at $(date)"
+                ../../common/simple_trace_db_query_runner.sh queries/wait-for-trace-2.yaml
 
                 if [ $? -eq 0 ]; then
                   break
-                else
-                  ../../common/flush_traces.sh
-                  sleep 5
                 fi
               done
 
@@ -249,7 +233,7 @@ spec:
         - script:
             timeout: 3m
             content: |
-              ../../common/traceql_runner.sh tracesql/context-propagation-2.yaml
+              ../../common/simple_trace_db_query_runner.sh queries/context-propagation-2.yaml
       catch:
         - podLogs:
             name: odiglet
@@ -260,7 +244,7 @@ spec:
         - script:
             timeout: 3m
             content: |
-              ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh queries/resource-attributes.yaml
       catch:
         - podLogs:
             name: odiglet
@@ -271,7 +255,7 @@ spec:
         - script:
             timeout: 3m
             content: |
-              ../../common/traceql_runner.sh tracesql/span-attributes-2.yaml
+              ../../common/simple_trace_db_query_runner.sh queries/span-attributes-2.yaml
       catch:
         - podLogs:
             name: odiglet
