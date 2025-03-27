@@ -40,16 +40,9 @@ func (j *Checkly) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 	processorName := "filter/" + uniqueUri
 	cfg.Processors[processorName] = GenericMap{
 		"error_mode": "ignore",
-		"traces": []GenericMap{
-			{
-				"span": GenericMap{
-					"include": GenericMap{
-						"match_type": "expr",
-						"expressions": []string{
-							`trace_state["checkly"] == "true"`,
-						},
-					},
-				},
+		"traces": GenericMap{
+			"span": []string{
+				`trace_state["checkly"] == "true"`,
 			},
 		},
 	}
