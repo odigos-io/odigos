@@ -10,7 +10,7 @@ spec:
     traces:
       supported: false
     metrics:
-      supported: false
+      supported: true
     logs:
       supported: true
   fields:
@@ -189,6 +189,73 @@ spec:
         required: false
         tooltip: 'If set to true, only the log message will be exported to CloudWatch Logs. This needs to be set to true for EMF logs.'
       initialValue: false
+    - name: AWS_CLOUDWATCH_METRICS_NAMESPACE
+      displayName: Metrics Namespace
+      componentType: input
+      componentProps:
+        required: false
+        tooltip: 'Customized CloudWatch metrics namespace.'
+      initialValue: default
+    - name: AWS_CLOUDWATCH_METRICS_DIMENSION_ROLLUP
+      displayName: Metrics Dimension Rollup
+      componentType: dropdown
+      componentProps:
+        required: false
+        tooltip: 'The option for metrics dimension rollup.'
+        values:
+          - 'NoDimensionRollup'
+          - 'SingleDimensionRollupOnly'
+          - 'ZeroAndSingleDimensionRollup'
+      initialValue: 'ZeroAndSingleDimensionRollup'
+    - name: AWS_CLOUDWATCH_EMF_OUTPUT_DESTINATION
+      displayName: EMF Output Destination
+      componentType: dropdown
+      componentProps:
+        required: false
+        tooltip: 'An option to specify the EMFExporter output.'
+        values:
+          - 'cloudwatch'
+          - 'stdout'
+      initialValue: 'cloudwatch'
+    - name: AWS_CLOUDWATCH_TELEMETRY_CONVERSION
+      displayName: Resource to Telemetry Conversion
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: 'The option for converting resource attributes to telemetry attributes. If `true`, all the resource attributes will be converted to metric labels by default.'
+      initialValue: false
+    - name: AWS_CLOUDWATCH_METRICS_DETAILED
+      displayName: Detailed Metrics
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: "Retain detailed datapoint values in exported metrics (e.g instead of exporting a quantile as a statistical value, preserve the quantile's population)."
+      initialValue: false
+    - name: AWS_CLOUDWATCH_RETAIN_INITIAL_VALUE_OF_DELTA_METRIC
+      displayName: Retain Initial Value of Delta Metric
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: 'This option specifies how the first value of a metric is handled. AWS EMF expects metric values to only contain deltas to the previous value. In the default case the first received value is therefor not sent to AWS but only used as a baseline for follow up changes to this metric. This is fine for high throughput metrics with stable labels (e.g. requests{code=200}). In this case it does not matter if the first value of this metric is discarded. However when your metric describes infrequent events or events with high label cardinality, then the exporter in default configuration would still drop the first occurrence of this metric. With this configuration value set to true the first value of all metrics will instead be send to AWS.'
+      initialValue: false
+    - name: AWS_CLOUDWATCH_PARSE_JSON_ENCODED_ATTR_VALUES
+      displayName: Parse JSON Encode Attribute Values
+      componentType: multiInput
+      componentProps:
+        required: false
+        tooltip: 'List of attribute keys whose corresponding values are JSON-encoded strings and will be converted to JSON structures in emf logs. For example, the attribute string value `"{\"x\":5,\"y\":6}"` will be converted to a json object: `{"x": 5, "y": 6}`.'
+    - name: AWS_CLOUDWATCH_METRIC_DECLARATIONS
+      displayName: Metric Decelerations
+      componentType: multiInput
+      componentProps:
+        required: false
+        tooltip: 'List of rules for filtering exported metrics and their dimensions.'
+    - name: AWS_CLOUDWATCH_METRIC_DESCRIPTORS
+      displayName: Metric Descriptors
+      componentType: multiInput
+      componentProps:
+        required: false
+        tooltip: 'List of rules for inserting or updating metric descriptors.'
   note:
     type: Note
     content: |
