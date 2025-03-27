@@ -17,6 +17,12 @@ const (
 	OdigletOSSInstalledLabel        = "odigos.io/odiglet-oss-installed"
 	OdigletEnterpriseInstalledLabel = "odigos.io/odiglet-enterprise-installed"
 	OdigletInstalledLabelValue      = "true"
+
+	// ConfigMap used to store custom/updated Go instrumentation offsets
+	GoOffsetsConfigMap = "odigos-go-offsets"
+	GoOffsetsFileName  = "go_offset_results.json"
+	GoOffsetsEnvVar    = "OTEL_GO_OFFSETS_FILE"
+	OffsetFileMountPath = "/offsets"
 )
 
 var OdigletOSSInstalled = map[string]string{

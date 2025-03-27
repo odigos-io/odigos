@@ -48,6 +48,8 @@ const (
 	InstrumentationConfig   = "InstrumentationConfig"
 	InstrumentationInstance = "InstrumentationInstance"
 	Destination             = "Destination"
+
+	GoOffsetsPublicURL = "https://storage.googleapis.com/odigos-cloud/offset_results_min.json"
 )
 
 // Odigos config properties
