@@ -15,7 +15,7 @@ spec:
       supported: true
   fields:
     - name: OPEN_OBSERVE_ENDPOINT
-      displayName: OTLP gRPC Endpoint
+      displayName: OTLP HTTP Endpoint
       componentType: input
       componentProps:
         required: true
