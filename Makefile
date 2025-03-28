@@ -59,6 +59,13 @@ cli-docs:
 		mv $${file} $${file%.md}.mdx; \
 	done
 
+.PHONY: offsets-docs
+offsets-docs:
+	gcloud storage cp gs://odigos-cloud/offset_results.json scripts/offsets-docgen/offset_results.json
+	rm docs/instrumentations/golang/offsets.mdx
+	cd scripts/offsets-docgen && go run main.go > ../../docs/instrumentations/golang/offsets.mdx
+	rm scripts/offsets-docgen/offset_results.json
+
 build-image/%:
 	docker build -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	--build-arg SERVICE_NAME="$*" \
