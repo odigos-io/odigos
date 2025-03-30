@@ -26,6 +26,10 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 		resourceManagers = append(resourceManagers, odigospro.NewOdigosProResourceManager(client, odigosNs, config, odigosTier, proTierToken, managerOpts))
 	}
 
+	if managerOpts.IncludeProxy {
+		resourceManagers = append(resourceManagers, centralodigos.NewCentralProxyResourceManager(client, odigosNs, managerOpts))
+	}
+
 	// odigos core components are installed for all tiers.
 	resourceManagers = append(resourceManagers, []resourcemanager.ResourceManager{
 		NewOwnTelemetryResourceManager(client, odigosNs, config, odigosTier, odigosVersion, managerOpts),
@@ -51,13 +55,5 @@ func CreateCentralizedManagers(client *kube.Client, managerOpts resourcemanager.
 		centralodigos.NewRedisResourceManager(client, ns, managerOpts),
 		centralodigos.NewCentralUIResourceManager(client, ns, managerOpts),
 		centralodigos.NewCentralBackendResourceManager(client, ns, managerOpts),
-	}
-}
-
-func CreateProxyManagers(client *kube.Client, managerOpts resourcemanager.ManagerOpts) []resourcemanager.ResourceManager {
-	ns := consts.DefaultOdigosNamespace
-
-	return []resourcemanager.ResourceManager{
-		centralodigos.NewCentralProxyResourceManager(client, ns, managerOpts),
 	}
 }
