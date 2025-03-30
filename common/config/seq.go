@@ -35,9 +35,6 @@ func (j *Seq) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 		"headers": GenericMap{
 			"X-Seq-ApiKey": "${SEQ_API_KEY}",
 		},
-		"tls": GenericMap{
-			"insecure": true,
-		},
 	}
 
 	if isTracingEnabled(dest) {
