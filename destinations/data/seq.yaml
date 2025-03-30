@@ -19,7 +19,7 @@ spec:
       componentType: input
       componentProps:
         required: true
-        toolitp: The format is `host:port/path`; `host` is required and equals the cluster internal DNS record of the Seq instance; `port` is required and equals any of the exposed ports of the Seq instance; `path` is required and equals `/ingest/otlp`, do not include the rest of the path `/v1/*`.
+        tooltip: 'The format is `host:port`, `host` is required and equals the cluster internal DNS record of the Seq instance, `port` is required and equals any of the exposed ports of the Seq instance, do not add the rest of the path `/ingest/otlp/v1/*`.'
     - name: SEQ_API_KEY
       displayName: API Key
       componentType: input
@@ -27,4 +27,4 @@ spec:
       componentProps:
         type: password
         required: false
-        tooltip: The API key is generated in the Seq instance. The API key must have the `Ingest` permission.
+        tooltip: 'The API key is generated in the Seq instance. The API key must have the `Ingest` permission.'

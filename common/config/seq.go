@@ -31,7 +31,7 @@ func (j *Seq) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 
 	exporterName := "otlphttp/" + uniqueUri
 	currentConfig.Exporters[exporterName] = GenericMap{
-		"endpoint": endpoint,
+		"endpoint": endpoint + "/ingest/otlp",
 		"headers": GenericMap{
 			"X-Seq-ApiKey": "${SEQ_API_KEY}",
 		},
