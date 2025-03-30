@@ -8,7 +8,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
@@ -141,20 +140,6 @@ func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request
 
 func (c *ConnectionHandlers) OnConnectionClosed(ctx context.Context, connectionInfo *connection.ConnectionInfo) {
 	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
-}
-
-func (c *ConnectionHandlers) OnConnectionNoHeartbeat(ctx context.Context, connectionInfo *connection.ConnectionInfo) error {
-	healthy := false
-	message := fmt.Sprintf("OpAMP server did not receive heartbeat from the agent, last message time: %s", connectionInfo.LastMessageTime.Format("2006-01-02 15:04:05 MST"))
-	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
-	err := instrumentation_instance.UpdateInstrumentationInstanceStatus(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, connectionInfo.InstrumentedAppName, int(connectionInfo.Pid), c.scheme,
-		instrumentation_instance.WithHealthy(&healthy, string(common.AgentHealthStatusNoHeartbeat), &message),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to persist instrumentation instance health status on connection timedout: %w", err)
-	}
-
-	return nil
 }
 
 func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Context, message *protobufs.AgentToServer, connectionInfo *connection.ConnectionInfo) error {
