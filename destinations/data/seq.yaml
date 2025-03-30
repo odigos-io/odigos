@@ -1,0 +1,28 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: seq
+  displayName: Seq
+  category: self-hosted
+spec:
+  image: seq.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: true
+  fields:
+    - name: SEQ_ENDPOINT
+      displayName: OTLP gRPC Endpoint
+      componentType: input
+      componentProps:
+        required: true
+    - name: SEQ_API_KEY
+      displayName: API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
