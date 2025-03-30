@@ -24,6 +24,9 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
+- [Deploy Seq into Kubernetes using Docker](https://docs.datalust.co/docs/getting-started-with-docker)
+- [Deploy Seq into Kubernetes using Helm](https://docs.datalust.co/docs/using-helm)
+
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
     !! END CUSTOM EDIT !!
@@ -37,9 +40,9 @@ icon: 'signal-stream'
   ✅ Logs
 </Accordion>
 
-- **SEQ_ENDPOINT** `string` : OTLP gRPC Endpoint.
+- **SEQ_ENDPOINT** `string` : OTLP HTTP Endpoint.
   - This field is required
-- **SEQ_API_KEY** `string` : API Key.
+- **SEQ_API_KEY** `string` : API Key. The API key is generated in the Seq instance. The API key must have the `Ingest` permission.
   - This field is required
 
 ### Adding Destination to Odigos
@@ -73,7 +76,7 @@ There are two primary methods for configuring destinations in Odigos:
       namespace: odigos-system
     spec:
       data:
-        SEQ_ENDPOINT: <OTLP gRPC Endpoint>
+        SEQ_ENDPOINT: <OTLP HTTP Endpoint>
       destinationName: seq
       secretRef:
         name: seq-secret

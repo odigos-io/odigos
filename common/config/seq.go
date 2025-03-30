@@ -24,12 +24,19 @@ func (j *Seq) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 	if !exists {
 		return nil, errorMissingKey(SEQ_ENDPOINT)
 	}
+	endpoint, err := parseOtlpHttpEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
 
-	exporterName := "otlp/" + uniqueUri
+	exporterName := "otlphttp/" + uniqueUri
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
 			"X-Seq-ApiKey": "${SEQ_API_KEY}",
+		},
+		"tls": GenericMap{
+			"insecure": true,
 		},
 	}
 
