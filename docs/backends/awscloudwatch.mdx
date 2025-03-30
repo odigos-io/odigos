@@ -89,7 +89,7 @@ import AwsCredentials from '/snippets/aws-credentials.mdx';
 - **AWS_CLOUDWATCH_METRICS_NAMESPACE** `string` : Metrics Namespace. Customized CloudWatch metrics namespace.
   - This field is optional and defaults to `default`
 - **AWS_CLOUDWATCH_METRICS_DIMENSION_ROLLUP** `string` : Metrics Dimension Rollup. The option for metrics dimension rollup.
-  - This field is optional and defaults to `ZeroAndSingleDimensionRollup`
+  - This field is optional and defaults to `NoDimensionRollup`
 - **AWS_CLOUDWATCH_EMF_OUTPUT_DESTINATION** `string` : EMF Output Destination. An option to specify the EMFExporter output.
   - This field is optional and defaults to `cloudwatch`
 - **AWS_CLOUDWATCH_TELEMETRY_CONVERSION** `boolean` : Resource to Telemetry Conversion. The option for converting resource attributes to telemetry attributes. If `true`, all the resource attributes will be converted to metric labels by default.
@@ -99,10 +99,6 @@ import AwsCredentials from '/snippets/aws-credentials.mdx';
 - **AWS_CLOUDWATCH_RETAIN_INITIAL_VALUE_OF_DELTA_METRIC** `boolean` : Retain Initial Value of Delta Metric. This option specifies how the first value of a metric is handled. AWS EMF expects metric values to only contain deltas to the previous value. In the default case the first received value is therefor not sent to AWS but only used as a baseline for follow up changes to this metric. This is fine for high throughput metrics with stable labels (e.g. requests{code=200}). In this case it does not matter if the first value of this metric is discarded. However when your metric describes infrequent events or events with high label cardinality, then the exporter in default configuration would still drop the first occurrence of this metric. With this configuration value set to true the first value of all metrics will instead be send to AWS.
   - This field is optional and defaults to `False`
 - **AWS_CLOUDWATCH_PARSE_JSON_ENCODED_ATTR_VALUES** `string[]` : Parse JSON Encode Attribute Values. List of attribute keys whose corresponding values are JSON-encoded strings and will be converted to JSON structures in emf logs. For example, the attribute string value `"{\"x\":5,\"y\":6}"` will be converted to a json object: `{"x": 5, "y": 6}`.
-  - This field is optional
-- **AWS_CLOUDWATCH_METRIC_DECLARATIONS** `string[]` : Metric Decelerations. List of rules for filtering exported metrics and their dimensions.
-  - This field is optional
-- **AWS_CLOUDWATCH_METRIC_DESCRIPTORS** `string[]` : Metric Descriptors. List of rules for inserting or updating metric descriptors.
   - This field is optional
 
 <Note>
@@ -180,14 +176,12 @@ There are two primary methods for configuring destinations in Odigos:
         # AWS_CLOUDWATCH_TAGS: <Tags>
         # AWS_CLOUDWATCH_RAW_LOG: <Raw Log>
         # AWS_CLOUDWATCH_METRICS_NAMESPACE: <Metrics Namespace (default: default)>
-        # AWS_CLOUDWATCH_METRICS_DIMENSION_ROLLUP: <Metrics Dimension Rollup (default: ZeroAndSingleDimensionRollup) (options: [NoDimensionRollup, SingleDimensionRollupOnly, ZeroAndSingleDimensionRollup])>
+        # AWS_CLOUDWATCH_METRICS_DIMENSION_ROLLUP: <Metrics Dimension Rollup (default: NoDimensionRollup) (options: [NoDimensionRollup, SingleDimensionRollupOnly, ZeroAndSingleDimensionRollup])>
         # AWS_CLOUDWATCH_EMF_OUTPUT_DESTINATION: <EMF Output Destination (default: cloudwatch) (options: [cloudwatch, stdout])>
         # AWS_CLOUDWATCH_TELEMETRY_CONVERSION: <Resource to Telemetry Conversion>
         # AWS_CLOUDWATCH_METRICS_DETAILED: <Detailed Metrics>
         # AWS_CLOUDWATCH_RETAIN_INITIAL_VALUE_OF_DELTA_METRIC: <Retain Initial Value of Delta Metric>
         # AWS_CLOUDWATCH_PARSE_JSON_ENCODED_ATTR_VALUES: <Parse JSON Encode Attribute Values>
-        # AWS_CLOUDWATCH_METRIC_DECLARATIONS: <Metric Decelerations>
-        # AWS_CLOUDWATCH_METRIC_DESCRIPTORS: <Metric Descriptors>
       destinationName: cloudwatch
       signals:
       - METRICS

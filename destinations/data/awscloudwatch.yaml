@@ -206,7 +206,7 @@ spec:
           - 'NoDimensionRollup'
           - 'SingleDimensionRollupOnly'
           - 'ZeroAndSingleDimensionRollup'
-      initialValue: 'ZeroAndSingleDimensionRollup'
+      initialValue: 'NoDimensionRollup'
     - name: AWS_CLOUDWATCH_EMF_OUTPUT_DESTINATION
       displayName: EMF Output Destination
       componentType: dropdown
@@ -244,18 +244,23 @@ spec:
       componentProps:
         required: false
         tooltip: 'List of attribute keys whose corresponding values are JSON-encoded strings and will be converted to JSON structures in emf logs. For example, the attribute string value `"{\"x\":5,\"y\":6}"` will be converted to a json object: `{"x": 5, "y": 6}`.'
-    - name: AWS_CLOUDWATCH_METRIC_DECLARATIONS
-      displayName: Metric Decelerations
-      componentType: multiInput
-      componentProps:
-        required: false
-        tooltip: 'List of rules for filtering exported metrics and their dimensions.'
-    - name: AWS_CLOUDWATCH_METRIC_DESCRIPTORS
-      displayName: Metric Descriptors
-      componentType: multiInput
-      componentProps:
-        required: false
-        tooltip: 'List of rules for inserting or updating metric descriptors.'
+
+    # TODO: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/awsemfexporter/README.md#metric_declaration
+    # - name: AWS_CLOUDWATCH_METRIC_DECLARATIONS
+    #   displayName: Metric Decelerations
+    #   componentType: multiInput
+    #   componentProps:
+    #     required: false
+    #     tooltip: 'List of rules for filtering exported metrics and their dimensions.'
+
+    # TODO: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/awsemfexporter/README.md#metric_descriptor
+    # - name: AWS_CLOUDWATCH_METRIC_DESCRIPTORS
+    #   displayName: Metric Descriptors
+    #   componentType: multiInput
+    #   componentProps:
+    #     required: false
+    #     tooltip: 'List of rules for inserting or updating metric descriptors.'
+
   note:
     type: Note
     content: |
