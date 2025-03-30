@@ -25,14 +25,20 @@ func NewCentralUIResourceManager(client *kube.Client, ns string, managerOpts res
 func (m *centralUIResourceManager) Name() string { return k8sconsts.CentralUIAppName }
 
 func (m *centralUIResourceManager) InstallFromScratch(ctx context.Context) error {
-	deployment := &appsv1.Deployment{
+	return m.client.ApplyResources(ctx, 1, []kube.Object{
+		NewCentralUIDeployment(m.ns),
+	}, m.managerOpts)
+}
+
+func NewCentralUIDeployment(ns string) *appsv1.Deployment {
+	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.CentralUIDeploymentName,
-			Namespace: m.ns,
+			Namespace: ns,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
@@ -68,7 +74,6 @@ func (m *centralUIResourceManager) InstallFromScratch(ctx context.Context) error
 			},
 		},
 	}
-	return m.client.ApplyResources(ctx, 1, []kube.Object{deployment}, m.managerOpts)
 }
 
 func ptrint32(i int32) *int32 {

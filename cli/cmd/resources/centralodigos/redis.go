@@ -26,14 +26,23 @@ func NewRedisResourceManager(client *kube.Client, ns string, managerOpts resourc
 func (m *redisResourceManager) Name() string { return k8sconsts.RedisResourceManagerName }
 
 func (m *redisResourceManager) InstallFromScratch(ctx context.Context) error {
-	deployment := &appsv1.Deployment{
+	resources := []kube.Object{
+		NewRedisDeployment(m.ns),
+		NewRedisService(m.ns),
+	}
+
+	return m.client.ApplyResources(ctx, 1, resources, m.managerOpts)
+}
+
+func NewRedisDeployment(ns string) *appsv1.Deployment {
+	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.RedisDeploymentName,
-			Namespace: m.ns,
+			Namespace: ns,
 			Labels:    map[string]string{"app": k8sconsts.RedisAppName},
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -64,15 +73,17 @@ func (m *redisResourceManager) InstallFromScratch(ctx context.Context) error {
 			},
 		},
 	}
+}
 
-	service := &corev1.Service{
+func NewRedisService(ns string) *corev1.Service {
+	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.RedisServiceName,
-			Namespace: m.ns,
+			Namespace: ns,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{"app": k8sconsts.RedisAppName},
@@ -85,6 +96,4 @@ func (m *redisResourceManager) InstallFromScratch(ctx context.Context) error {
 			},
 		},
 	}
-
-	return m.client.ApplyResources(ctx, 1, []kube.Object{deployment, service}, m.managerOpts)
 }

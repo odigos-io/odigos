@@ -26,14 +26,25 @@ func NewCentralProxyResourceManager(client *kube.Client, ns string, managerOpts 
 func (m *centralProxyResourceManager) Name() string { return k8sconsts.CentralProxyAppName }
 
 func (m *centralProxyResourceManager) InstallFromScratch(ctx context.Context) error {
-	deployment := &appsv1.Deployment{
+	resources := []kube.Object{
+		NewCentralProxyServiceAccount(m.ns),
+		NewCentralProxyRoleBinding(m.ns),
+		NewCentralProxyRole(m.ns),
+		NewCentralProxyDeployment(m.ns),
+	}
+
+	return m.client.ApplyResources(ctx, 1, resources, m.managerOpts)
+}
+
+func NewCentralProxyDeployment(ns string) *appsv1.Deployment {
+	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.CentralProxyDeploymentName,
-			Namespace: m.ns,
+			Namespace: ns,
 			Labels: map[string]string{
 				k8sconsts.CentralProxyLabelAppNameKey: k8sconsts.CentralProxyLabelAppNameValue,
 			},
@@ -78,13 +89,6 @@ func (m *centralProxyResourceManager) InstallFromScratch(ctx context.Context) er
 			},
 		},
 	}
-
-	return m.client.ApplyResources(ctx, 1, []kube.Object{
-		NewCentralProxyServiceAccount(m.ns),
-		NewCentralProxyRoleBinding(m.ns),
-		NewCentralProxyRole(m.ns),
-		deployment,
-	}, m.managerOpts)
 }
 
 func NewCentralProxyServiceAccount(ns string) *corev1.ServiceAccount {

@@ -25,14 +25,20 @@ func NewCentralBackendResourceManager(client *kube.Client, ns string, managerOpt
 func (m *centralBackendResourceManager) Name() string { return k8sconsts.CentralBackendName }
 
 func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) error {
-	deployment := &appsv1.Deployment{
+	return m.client.ApplyResources(ctx, 1, []kube.Object{
+		NewCentralBackendDeployment(m.ns),
+	}, m.managerOpts)
+}
+
+func NewCentralBackendDeployment(ns string) *appsv1.Deployment {
+	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.CentralBackendName,
-			Namespace: m.ns,
+			Namespace: ns,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
@@ -70,5 +76,4 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 			},
 		},
 	}
-	return m.client.ApplyResources(ctx, 1, []kube.Object{deployment}, m.managerOpts)
 }
