@@ -40,7 +40,7 @@ icon: 'signal-stream'
   ✅ Logs
 </Accordion>
 
-- **SEQ_ENDPOINT** `string` : OTLP HTTP Endpoint. The format is `host:port`, `host` is required and equals the cluster internal DNS record of the Seq instance, `port` is required and equals any of the exposed ports of the Seq instance, do not add the rest of the path `/ingest/otlp/v1/*`.
+- **SEQ_ENDPOINT** `string` : OTLP HTTP Endpoint. The format is `host:port`, `host` is required and equals the cluster internal DNS record of the Seq instance, `port` is required and equals any of the exposed ports of the Seq instance (defaults to 5341), do not add the rest of the path `/ingest/otlp/v1/*`.
   - This field is required
 - **SEQ_API_KEY** `string` : API Key. The API key is generated in the Seq instance. The API key must have the `Ingest` permission.
   - This field is optional

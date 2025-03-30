@@ -28,10 +28,15 @@ func (j *Seq) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 	if err != nil {
 		return nil, err
 	}
+	if !urlHostContainsPort(endpoint) {
+		endpoint += ":5341/ingest/otlp"
+	} else {
+		endpoint += "/ingest/otlp"
+	}
 
 	exporterName := "otlphttp/" + uniqueUri
 	currentConfig.Exporters[exporterName] = GenericMap{
-		"endpoint": endpoint + "/ingest/otlp",
+		"endpoint": endpoint,
 		"headers": GenericMap{
 			"X-Seq-ApiKey": "${SEQ_API_KEY}",
 		},
