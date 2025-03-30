@@ -9,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -55,10 +56,20 @@ func (m *centralProxyResourceManager) InstallFromScratch(ctx context.Context) er
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.CentralProxyContainerName,
-							Image: "staging-registry.odigos.io/central-proxy:dev",
+							Image: k8sconsts.CentralProxyContainerImage,
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: k8sconsts.CentralProxyContainerPort,
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse(k8sconsts.CentralCPURequest),
+									corev1.ResourceMemory: resource.MustParse(k8sconsts.CentralMemoryRequest),
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse(k8sconsts.CentralCPULimit),
+									corev1.ResourceMemory: resource.MustParse(k8sconsts.CentralMemoryLimit),
 								},
 							},
 						},

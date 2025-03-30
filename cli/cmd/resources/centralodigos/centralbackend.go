@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -51,6 +52,16 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 								{
 									Name:  k8sconsts.CentralBackendRedisEnvName,
 									Value: k8sconsts.CentralBackendRedisAddr,
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse(k8sconsts.CentralCPURequest),
+									corev1.ResourceMemory: resource.MustParse(k8sconsts.CentralMemoryRequest),
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse(k8sconsts.CentralCPULimit),
+									corev1.ResourceMemory: resource.MustParse(k8sconsts.CentralMemoryLimit),
 								},
 							},
 						},

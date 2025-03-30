@@ -39,3 +39,11 @@ const (
 	CentralUIContainerName  = "central-ui"
 	CentralUIContainerImage = "staging-registry.odigos.io/central-ui:dev"
 )
+
+const (
+	// Resource settings for central components
+	CentralCPURequest    = "100m"
+	CentralCPULimit      = "500m"
+	CentralMemoryRequest = "64Mi"
+	CentralMemoryLimit   = "256Mi"
+)
