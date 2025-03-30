@@ -81,13 +81,17 @@ export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: Upd
   cy.get(DATA_IDS.DRAWER).should('exist');
   cy.get(DATA_IDS.DRAWER_EDIT).click();
 
-  cy.get(fieldKey).click().focused().clear().type(fieldValue);
-  cy.get(fieldKey).should('have.value', fieldValue);
+  cy.wait(500).then(() => {
+    cy.get(fieldKey).click().focused().clear().type(fieldValue);
+    cy.get(fieldKey).should('have.value', fieldValue);
 
-  cy.get(DATA_IDS.DRAWER_SAVE).click();
-  cy.get(DATA_IDS.DRAWER_CLOSE).click();
+    cy.wait(500).then(() => {
+      cy.get(DATA_IDS.DRAWER_SAVE).click();
+      cy.get(DATA_IDS.DRAWER_CLOSE).click();
 
-  if (!!callback) callback();
+      if (!!callback) callback();
+    });
+  });
 };
 
 interface DeleteEntityOptions {
