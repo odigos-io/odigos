@@ -45,7 +45,7 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 }
 
 func CreateCentralizedManagers(client *kube.Client, managerOpts resourcemanager.ManagerOpts) []resourcemanager.ResourceManager {
-	ns := consts.DefaultOdigosNamespace
+	ns := consts.DefaultOdigosCentralNamespace
 
 	return []resourcemanager.ResourceManager{
 		centralodigos.NewRedisResourceManager(client, ns, managerOpts),
