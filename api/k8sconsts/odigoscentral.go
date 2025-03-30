@@ -47,3 +47,17 @@ const (
 	CentralMemoryRequest = "64Mi"
 	CentralMemoryLimit   = "256Mi"
 )
+
+const (
+	// Redis constants
+	RedisResourceManagerName = "Redis"
+	RedisAppName             = "redis"
+	RedisDeploymentName      = "redis"
+	RedisServiceName         = "redis"
+	RedisContainerName       = "redis"
+	RedisContainerImage      = "redis:7.2.4"
+	RedisPort                = 6379
+	RedisPortName            = "redis"
+	RedisCommand             = "redis-server"
+	RedisCommandArgPortKey   = "--port"
+)

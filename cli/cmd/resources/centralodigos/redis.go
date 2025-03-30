@@ -2,7 +2,9 @@ package centralodigos
 
 import (
 	"context"
+	"strconv"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	appsv1 "k8s.io/api/apps/v1"
@@ -21,7 +23,7 @@ func NewRedisResourceManager(client *kube.Client, ns string, managerOpts resourc
 	return &redisResourceManager{client: client, ns: ns, managerOpts: managerOpts}
 }
 
-func (m *redisResourceManager) Name() string { return "Redis" }
+func (m *redisResourceManager) Name() string { return k8sconsts.RedisResourceManagerName }
 
 func (m *redisResourceManager) InstallFromScratch(ctx context.Context) error {
 	deployment := &appsv1.Deployment{
@@ -30,36 +32,30 @@ func (m *redisResourceManager) InstallFromScratch(ctx context.Context) error {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "redis",
+			Name:      k8sconsts.RedisDeploymentName,
 			Namespace: m.ns,
-			Labels:    map[string]string{"app": "redis"},
+			Labels:    map[string]string{"app": k8sconsts.RedisAppName},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": "redis"},
+				MatchLabels: map[string]string{"app": k8sconsts.RedisAppName},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "redis"},
+					Labels: map[string]string{"app": k8sconsts.RedisAppName},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "redis",
-							Image: "redis:latest",
-							Env: []corev1.EnvVar{
-								{
-									Name:  "REDIS_PORT",
-									Value: "6379",
-								},
-							},
-							Command: []string{"redis-server"},
-							Args:    []string{"--port", "$(REDIS_PORT)"},
+							Name:    k8sconsts.RedisContainerName,
+							Image:   k8sconsts.RedisContainerImage,
+							Command: []string{k8sconsts.RedisCommand},
+							Args:    []string{k8sconsts.RedisCommandArgPortKey, strconv.Itoa(k8sconsts.RedisPort)},
 							Ports: []corev1.ContainerPort{
 								{
-									ContainerPort: 6379,
-									Name:          "redis",
+									ContainerPort: k8sconsts.RedisPort,
+									Name:          k8sconsts.RedisPortName,
 								},
 							},
 						},
@@ -75,16 +71,16 @@ func (m *redisResourceManager) InstallFromScratch(ctx context.Context) error {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "redis",
+			Name:      k8sconsts.RedisServiceName,
 			Namespace: m.ns,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector: map[string]string{"app": "redis"},
+			Selector: map[string]string{"app": k8sconsts.RedisAppName},
 			Ports: []corev1.ServicePort{
 				{
-					Name:       "redis",
-					Port:       6379,
-					TargetPort: intstr.FromInt(6379),
+					Name:       k8sconsts.RedisPortName,
+					Port:       k8sconsts.RedisPort,
+					TargetPort: intstr.FromInt(k8sconsts.RedisPort),
 				},
 			},
 		},
