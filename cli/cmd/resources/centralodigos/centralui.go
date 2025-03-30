@@ -21,7 +21,7 @@ func NewCentralUIResourceManager(client *kube.Client, ns string, managerOpts res
 	return &centralUIResourceManager{client: client, ns: ns, managerOpts: managerOpts}
 }
 
-func (m *centralUIResourceManager) Name() string { return "CentralUI" }
+func (m *centralUIResourceManager) Name() string { return k8sconsts.CentralUIAppName }
 
 func (m *centralUIResourceManager) InstallFromScratch(ctx context.Context) error {
 	deployment := &appsv1.Deployment{
@@ -30,17 +30,21 @@ func (m *centralUIResourceManager) InstallFromScratch(ctx context.Context) error
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.CentralUI,
+			Name:      k8sconsts.CentralUIDeploymentName,
 			Namespace: m.ns,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": k8sconsts.CentralUI},
+				MatchLabels: map[string]string{
+					k8sconsts.CentralUILabelAppKey: k8sconsts.CentralUILabelAppValue,
+				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": k8sconsts.CentralUI},
+					Labels: map[string]string{
+						k8sconsts.CentralUILabelAppKey: k8sconsts.CentralUILabelAppValue,
+					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
