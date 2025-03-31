@@ -65,6 +65,7 @@ var availableConfigers = []Configer{
 	&QrynOSS{},
 	&Quickwit{},
 	&Sentry{},
+	&Seq{},
 	&Signoz{},
 	&Splunk{},
 	&SumoLogic{},
