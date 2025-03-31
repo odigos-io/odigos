@@ -1,0 +1,39 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: bonree
+  displayName: Bonree ONE
+  category: managed
+spec:
+  image: bonree.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: BONREE_ENDPOINT
+      displayName: OTLP HTTP Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: APM controller address, obtained from the probe deployment page.
+    - name: BONREE_ACCOUNT_ID
+      displayName: Account ID
+      componentType: input
+      secret: true
+      componentProps:
+        type: text
+        required: true
+        tooltip: Obtained from the probe deployment page.
+    - name: BONREE_ENVIRONMENT_ID
+      displayName: Environment ID
+      componentType: input
+      secret: true
+      componentProps:
+        type: text
+        required: false
+        tooltip: The default environment does not need to be configured.
