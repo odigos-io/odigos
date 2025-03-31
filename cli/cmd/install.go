@@ -71,10 +71,10 @@ It will install k8s components that will auto-instrument your applications with 
 			fmt.Printf("\033[31mERROR\033[0m Failed to check Odigos installation: %v\n", err)
 			os.Exit(1)
 		}
-		odigosTier := common.OnPremOdigosTier
+
 		shouldInstallProxy := clusterName != "" && centralBackendURL != ""
 
-		if installed && !shouldInstallProxy {
+		if installed {
 			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace\n")
 			os.Exit(1)
 		}
@@ -97,6 +97,7 @@ It will install k8s components that will auto-instrument your applications with 
 		}
 
 		var odigosProToken string
+		odigosTier := common.OnPremOdigosTier
 		if odigosCloudApiKeyFlag != "" {
 			odigosTier = common.CloudOdigosTier
 			odigosProToken = odigosCloudApiKeyFlag
@@ -168,7 +169,7 @@ odigos install --kubeconfig <path-to-kubeconfig>
 odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
 
 # Install centralized backend and UI (must run in the central cluster after installing Odigos)
-odigos install --install-centralized
+odigos install --centralized
 
 # Install Odigos and connect the cluster to forward data to the centralized backend
 odigos install --cluster-name my-cluster --central-backend-url https://central.odigos.local
@@ -191,7 +192,6 @@ func installOdigos(ctx context.Context, client *kube.Client, ns string, config *
 		ImageReferences: GetImageReferences(odigosTier, openshiftEnabled),
 		IncludeProxy:    includeProxy,
 	}
-
 	if isOdigosInstall {
 		if err := resources.DeleteOldOdigosSystemObjects(ctx, client, ns, config); err != nil {
 			return fmt.Errorf("cleanup old Odigos resources failed: %w", err)
