@@ -124,9 +124,18 @@ It will install k8s components that will auto-instrument your applications with 
 			os.Exit(1)
 		}
 
-		config := CreateOdigosConfig(odigosTier)
+		config, err := getOrCreateConfig(ctx, client, ns, installed, odigosTier)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to prepare config: %v\n", err)
+			os.Exit(1)
+		}
 
-		err = installOdigos(ctx, client, ns, &config, &odigosProToken, odigosTier, "Creating")
+		if shouldInstallProxy {
+			config.ClusterName = clusterName
+			config.CentralBackendURL = centralBackendURL
+		}
+
+		err = installOdigos(ctx, client, ns, config, &odigosProToken, odigosTier, "Creating", shouldInstallProxy, installed)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
 			os.Exit(1)
@@ -144,19 +153,6 @@ It will install k8s components that will auto-instrument your applications with 
 
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos installed.\n")
 
-		if shouldInstallProxy {
-			fmt.Println("Installing centralized proxy...")
-
-			config.ClusterName = clusterName
-			config.CentralBackendURL = centralBackendURL
-
-			if err := installProxy(ctx, client, ns, &config); err != nil {
-				fmt.Printf("\033[31mERROR\033[0m Failed to install Proxy: %s\n", err)
-				os.Exit(1)
-			}
-
-			fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Proxy installed.\n")
-		}
 	},
 	Example: `
 # Install Odigos open-source in your cluster.
@@ -174,8 +170,8 @@ odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFIL
 # Install centralized backend and UI (must run in the central cluster after installing Odigos)
 odigos install --install-centralized
 
-# Install proxy to forward data to centralized backend
-odigos install --install-proxy --cluster-name my-cluster --central-backend-url https://central.odigos.local
+# Install Odigos and connect the cluster to forward data to the centralized backend
+odigos install --cluster-name my-cluster --central-backend-url https://central.odigos.local
 `,
 }
 
@@ -190,40 +186,23 @@ func isOdigosInstalled(ctx context.Context, client *kube.Client, ns string) (boo
 	return cm != nil, nil
 }
 
-func installOdigos(ctx context.Context, client *kube.Client, ns string, config *common.OdigosConfiguration, token *string, odigosTier common.OdigosTier, label string) error {
+func installOdigos(ctx context.Context, client *kube.Client, ns string, config *common.OdigosConfiguration, token *string, odigosTier common.OdigosTier, label string, includeProxy bool, isOdigosInstall bool) error {
 	managerOpts := resourcemanager.ManagerOpts{
 		ImageReferences: GetImageReferences(odigosTier, openshiftEnabled),
-		IncludeProxy:    true,
+		IncludeProxy:    includeProxy,
+	}
+
+	if isOdigosInstall {
+		if err := resources.DeleteOldOdigosSystemObjects(ctx, client, ns, config); err != nil {
+			return fmt.Errorf("cleanup old Odigos resources failed: %w", err)
+		}
 	}
 
 	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, createNamespace)
 
 	resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, token, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 	return resources.ApplyResourceManagers(ctx, client, resourceManagers, label)
-}
 
-func installProxy(ctx context.Context, client *kube.Client, ns string, config *common.OdigosConfiguration) error {
-	config.ConfigVersion += 1
-	managerOpts := resourcemanager.ManagerOpts{
-		ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
-	}
-
-	if err := resources.DeleteOldOdigosSystemObjects(ctx, client, ns, config); err != nil {
-		return fmt.Errorf("cleanup old Odigos resources failed: %w", err)
-	}
-
-	resourceManagers := resources.CreateResourceManagers(
-		client,
-		ns,
-		common.OnPremOdigosTier,
-		&odigosOnPremToken,
-		config,
-		versionFlag,
-		installationmethod.K8sInstallationMethodOdigosCli,
-		managerOpts,
-	)
-
-	return resources.ApplyResourceManagers(ctx, client, resourceManagers, "Installing Proxy")
 }
 
 func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns string) error {
@@ -261,7 +240,6 @@ func getOrCreateConfig(ctx context.Context, client *kube.Client, ns string, inst
 	}
 
 	cfg := CreateOdigosConfig(odigosTier)
-	cfg.ConfigVersion = 1
 	return &cfg, nil
 }
 
@@ -430,8 +408,8 @@ func init() {
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
 	installCmd.Flags().BoolVar(&installCentralized, "centralized", false, "Install centralized Odigos UI and backend")
-	installCmd.Flags().StringVar(&clusterName, "cluster-name", "", "Name of this cluster (required with --install-proxy)")
-	installCmd.Flags().StringVar(&centralBackendURL, "central-backend-url", "", "URL of centralized Odigos backend (required with --install-proxy)")
+	installCmd.Flags().StringVar(&clusterName, "cluster-name", "", "name of the cluster to be used in the centralized backend")
+	installCmd.Flags().StringVar(&centralBackendURL, "central-backend-url", "", "use to connect this cluster to the centralized odigos cluster")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
