@@ -14,7 +14,7 @@ type ManagerOpts struct {
 	OwnerReferences []metav1.OwnerReference
 
 	// IncludeProxy indicates whether to include the central proxy in the installation.
-	IncludeProxy bool
+	IncludeCentralProxy bool
 }
 
 type ImageReferences struct {

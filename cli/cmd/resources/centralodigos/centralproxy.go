@@ -6,6 +6,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/common"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -16,11 +17,14 @@ import (
 type centralProxyResourceManager struct {
 	client      *kube.Client
 	ns          string
+	config      *common.OdigosConfiguration
 	managerOpts resourcemanager.ManagerOpts
 }
 
-func NewCentralProxyResourceManager(client *kube.Client, ns string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
-	return &centralProxyResourceManager{client: client, ns: ns, managerOpts: managerOpts}
+func NewCentralProxyResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
+	return &centralProxyResourceManager{client: client, ns: ns,
+		config:      config,
+		managerOpts: managerOpts}
 }
 
 func (m *centralProxyResourceManager) Name() string { return k8sconsts.CentralProxyAppName }
@@ -33,7 +37,7 @@ func (m *centralProxyResourceManager) InstallFromScratch(ctx context.Context) er
 		NewCentralProxyDeployment(m.ns),
 	}
 
-	return m.client.ApplyResources(ctx, 1, resources, m.managerOpts)
+	return m.client.ApplyResources(ctx, m.config.ConfigVersion, resources, m.managerOpts)
 }
 
 func NewCentralProxyDeployment(ns string) *appsv1.Deployment {

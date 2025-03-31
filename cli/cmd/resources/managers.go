@@ -26,8 +26,8 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 		resourceManagers = append(resourceManagers, odigospro.NewOdigosProResourceManager(client, odigosNs, config, odigosTier, proTierToken, managerOpts))
 	}
 
-	if managerOpts.IncludeProxy {
-		resourceManagers = append(resourceManagers, centralodigos.NewCentralProxyResourceManager(client, odigosNs, managerOpts))
+	if managerOpts.IncludeCentralProxy {
+		resourceManagers = append(resourceManagers, centralodigos.NewCentralProxyResourceManager(client, odigosNs, config, managerOpts))
 	}
 
 	// odigos core components are installed for all tiers.

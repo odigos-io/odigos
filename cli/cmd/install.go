@@ -97,7 +97,7 @@ It will install k8s components that will auto-instrument your applications with 
 		}
 
 		var odigosProToken string
-		odigosTier := common.OnPremOdigosTier
+		odigosTier := common.CommunityOdigosTier
 		if odigosCloudApiKeyFlag != "" {
 			odigosTier = common.CloudOdigosTier
 			odigosProToken = odigosCloudApiKeyFlag
@@ -168,7 +168,7 @@ odigos install --kubeconfig <path-to-kubeconfig>
 # Install Odigos onprem tier for enterprise users
 odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
 
-# Install centralized backend and UI (must run in the central cluster after installing Odigos)
+# Install Odigos centralized backend and UI 
 odigos install --centralized
 
 # Install Odigos and connect the cluster to forward data to the centralized backend
@@ -186,8 +186,8 @@ func isOdigosInstalled(ctx context.Context, client *kube.Client, ns string) (boo
 
 func installOdigos(ctx context.Context, client *kube.Client, ns string, config *common.OdigosConfiguration, token *string, odigosTier common.OdigosTier, label string, includeProxy bool, isOdigosInstall bool) error {
 	managerOpts := resourcemanager.ManagerOpts{
-		ImageReferences: GetImageReferences(odigosTier, openshiftEnabled),
-		IncludeProxy:    includeProxy,
+		ImageReferences:     GetImageReferences(odigosTier, openshiftEnabled),
+		IncludeCentralProxy: includeProxy,
 	}
 	if isOdigosInstall {
 		if err := resources.DeleteOldOdigosSystemObjects(ctx, client, ns, config); err != nil {

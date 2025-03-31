@@ -1,5 +1,11 @@
 package k8sconsts
 
+import (
+	"fmt"
+
+	"github.com/odigos-io/odigos/common/consts"
+)
+
 const (
 	CentralUI = "central-ui"
 )
@@ -11,7 +17,10 @@ const (
 
 	// Redis
 	CentralBackendRedisEnvName = "REDIS_ADDR"
-	CentralBackendRedisAddr    = "redis.odigos-system.svc.cluster.local:6379"
+)
+
+var (
+	CentralBackendRedisAddr = fmt.Sprintf("redis.%s.svc.cluster.local:6379", consts.DefaultOdigosCentralNamespace)
 )
 
 const (
@@ -24,7 +33,7 @@ const (
 	CentralProxyLabelAppNameKey    = "app.kubernetes.io/name"
 	CentralProxyLabelAppNameValue  = "central-proxy"
 	CentralProxyContainerName      = "central-proxy"
-	CentralProxyContainerImage     = "staging-registry.odigos.io/central-proxy:dev"
+	CentralProxyContainerImage     = "staging-registry.odigos.io/central-proxy:dev" //TODO: change to odigos registry
 	CentralProxyContainerPort      = 8080
 	CentralProxyRBACAPIGroup       = "rbac.authorization.k8s.io"
 	CentralProxyConfigMapResource  = "configmaps"
@@ -37,7 +46,7 @@ const (
 	CentralUILabelAppKey    = "app"
 	CentralUILabelAppValue  = "central-ui"
 	CentralUIContainerName  = "central-ui"
-	CentralUIContainerImage = "staging-registry.odigos.io/central-ui:dev"
+	CentralUIContainerImage = "staging-registry.odigos.io/central-ui:dev" //TODO: change to odigos registry
 )
 
 const (
