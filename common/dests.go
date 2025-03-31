@@ -56,6 +56,7 @@ const (
 	SumoLogicDestinationType              DestinationType = "sumologic"
 	TelemetryHubDestinationType           DestinationType = "telemetryhub"
 	TempoDestinationType                  DestinationType = "tempo"
+	TingyunDestinationType                DestinationType = "tingyun"
 	TraceloopDestinationType              DestinationType = "traceloop"
 	UptraceDestinationType                DestinationType = "uptrace"
 )
