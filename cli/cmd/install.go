@@ -125,7 +125,7 @@ It will install k8s components that will auto-instrument your applications with 
 			os.Exit(1)
 		}
 
-		config, err := getOrCreateConfig(ctx, client, ns, installed, odigosTier)
+		config := CreateOdigosConfig(odigosTier)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to prepare config: %v\n", err)
 			os.Exit(1)
@@ -136,7 +136,7 @@ It will install k8s components that will auto-instrument your applications with 
 			config.CentralBackendURL = centralBackendURL
 		}
 
-		err = installOdigos(ctx, client, ns, config, &odigosProToken, odigosTier, "Creating", shouldInstallProxy, installed)
+		err = installOdigos(ctx, client, ns, &config, &odigosProToken, odigosTier, "Creating", shouldInstallProxy, installed)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
 			os.Exit(1)
@@ -179,9 +179,6 @@ odigos install --cluster-name my-cluster --central-backend-url https://central.o
 func isOdigosInstalled(ctx context.Context, client *kube.Client, ns string) (bool, error) {
 	cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
 		return false, err
 	}
 	return cm != nil, nil
@@ -227,20 +224,6 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 
 	fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Centralized Odigos installed.\n")
 	return nil
-}
-
-func getOrCreateConfig(ctx context.Context, client *kube.Client, ns string, installed bool, odigosTier common.OdigosTier) (*common.OdigosConfiguration, error) {
-	if installed {
-		config, err := resources.GetCurrentConfig(ctx, client, ns)
-		if err != nil {
-			return nil, fmt.Errorf("unable to read current Odigos config: %w", err)
-		}
-		config.ConfigVersion += 1
-		return config, nil
-	}
-
-	cfg := CreateOdigosConfig(odigosTier)
-	return &cfg, nil
 }
 
 func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (bool, error) {
