@@ -265,6 +265,7 @@
             "backends/qryn",
             "backends/quickwit",
             "backends/sentry",
+            "backends/seq",
             "backends/signoz",
             "backends/splunk",
             "backends/sumologic",
