@@ -18,7 +18,7 @@ func (j *Bonree) DestType() common.DestinationType {
 
 func (j *Bonree) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, error) {
 	config := dest.GetConfig()
-	uniqueUri := "tingyun-" + dest.GetID()
+	uniqueUri := "bonree-" + dest.GetID()
 	var pipelineNames []string
 
 	endpoint, exists := config[BONREE_ENDPOINT]
