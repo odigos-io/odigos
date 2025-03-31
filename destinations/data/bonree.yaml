@@ -26,7 +26,7 @@ spec:
       componentType: input
       secret: true
       componentProps:
-        type: text
+        type: password
         required: true
         tooltip: Obtained from the probe deployment page.
     - name: BONREE_ENVIRONMENT_ID
@@ -34,6 +34,6 @@ spec:
       componentType: input
       secret: true
       componentProps:
-        type: text
+        type: password
         required: false
         tooltip: The default environment does not need to be configured.
