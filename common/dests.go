@@ -45,6 +45,7 @@ const (
 	NopDestinationType                    DestinationType = "nop"
 	OpenObserveDestinationType            DestinationType = "openobserve"
 	OpsVerseDestinationType               DestinationType = "opsverse"
+	OracleDestinationType                 DestinationType = "oracle"
 	OtlpHttpDestinationType               DestinationType = "otlphttp"
 	PrometheusDestinationType             DestinationType = "prometheus"
 	QrynDestinationType                   DestinationType = "qryn"

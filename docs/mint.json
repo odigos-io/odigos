@@ -258,6 +258,7 @@
             "backends/newrelic",
             "backends/openobserve",
             "backends/opsverse",
+            "backends/oracle",
             "backends/otlp",
             "backends/otlphttp",
             "backends/prometheus",

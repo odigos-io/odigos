@@ -1,0 +1,29 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: oracle
+  displayName: Oracle APM
+  category: managed
+spec:
+  image: oracle.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: ORACLE_ENDPOINT
+      displayName: OTLP HTTP Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+    - name: ORACLE_DATA_KEY
+      displayName: Data Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
