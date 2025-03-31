@@ -1,0 +1,119 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-docker-env
+  namespace: default
+  labels:
+    app: java-supported-docker-env
+spec:
+  selector:
+    matchLabels:
+      app: java-supported-docker-env
+  template:
+    metadata:
+      labels:
+        app: java-supported-docker-env
+    spec:
+      containers:
+        - name: java-supported-docker-env
+          image: public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-supported-docker-env
+  namespace: default
+spec:
+  selector:
+    app: java-supported-docker-env
+  ports:
+    - protocol: TCP
+      port: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-manifest-env
+  namespace: default
+  labels:
+    app: java-supported-manifest-env
+spec:
+  selector:
+    matchLabels:
+      app: java-supported-manifest-env
+  template:
+    metadata:
+      labels:
+        app: java-supported-manifest-env
+    spec:
+      containers:
+        - name: java-supported-manifest-env
+          image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: JAVA_OPTS
+              value: "-Dnot.work=true"
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-supported-manifest-env
+  namespace: default
+spec:
+  selector:
+    app: java-supported-manifest-env
+  ports:
+    - protocol: TCP
+      port: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-latest-version
+  namespace: default
+  labels:
+    app: java-latest-version
+spec:
+  selector:
+    matchLabels:
+      app: java-latest-version
+  template:
+    metadata:
+      labels:
+        app: java-latest-version
+    spec:
+      containers:
+        - name: java-latest-version
+          image: public.ecr.aws/odigos/java-latest-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-latest-version
+  namespace: default
+spec:
+  selector:
+    app: java-latest-version
+  ports:
+    - protocol: TCP
+      port: 3000
