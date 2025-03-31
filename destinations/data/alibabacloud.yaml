@@ -27,4 +27,4 @@ spec:
       secret: true
       componentProps:
         type: password
-        required: false
+        required: true
