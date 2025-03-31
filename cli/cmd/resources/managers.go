@@ -1,10 +1,12 @@
 package resources
 
 import (
+	"github.com/odigos-io/odigos/cli/cmd/resources/centralodigos"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 )
 
@@ -24,6 +26,10 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 		resourceManagers = append(resourceManagers, odigospro.NewOdigosProResourceManager(client, odigosNs, config, odigosTier, proTierToken, managerOpts))
 	}
 
+	if managerOpts.IncludeCentralProxy {
+		resourceManagers = append(resourceManagers, centralodigos.NewCentralProxyResourceManager(client, odigosNs, config, managerOpts))
+	}
+
 	// odigos core components are installed for all tiers.
 	resourceManagers = append(resourceManagers, []resourcemanager.ResourceManager{
 		NewOwnTelemetryResourceManager(client, odigosNs, config, odigosTier, odigosVersion, managerOpts),
@@ -40,4 +46,14 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 	}
 
 	return resourceManagers
+}
+
+func CreateCentralizedManagers(client *kube.Client, managerOpts resourcemanager.ManagerOpts) []resourcemanager.ResourceManager {
+	ns := consts.DefaultOdigosCentralNamespace
+
+	return []resourcemanager.ResourceManager{
+		centralodigos.NewRedisResourceManager(client, ns, managerOpts),
+		centralodigos.NewCentralUIResourceManager(client, ns, managerOpts),
+		centralodigos.NewCentralBackendResourceManager(client, ns, managerOpts),
+	}
 }
