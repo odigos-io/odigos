@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-logr/logr"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
@@ -97,7 +98,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		// This is to avoid unnecessary updates when the message is a heartbeat
 		if connectionInfo != nil && (agentToServer.AgentDescription != nil || agentToServer.Health != nil) {
 			select {
-			case updateChannel <- InstrumentationUpdateTask{ctx, &agentToServer, connectionInfo}:
+			case updateChannel <- InstrumentationUpdateTask{ctx, UpdateInstance, &agentToServer, connectionInfo}:
 			default:
 				logger.Error(nil, "Update channel is full, dropping task")
 			}
@@ -181,10 +182,12 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				// Clean up stale connections
 				deadConnections := connectionCache.CleanupStaleConnections()
 				for _, conn := range deadConnections {
-					err := handlers.OnConnectionNoHeartbeat(ctx, &conn)
-					if err != nil {
-						logger.Error(err, "Failed to process connection with no heartbeat")
+					select {
+					case updateChannel <- InstrumentationUpdateTask{ctx, DeleteInstance, &protobufs.AgentToServer{}, &conn}:
+					default:
+						logger.Error(nil, "Update channel is full, dropping task")
 					}
+
 				}
 			}
 		}
@@ -196,19 +199,38 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 
 type InstrumentationUpdateTask struct {
 	ctx            context.Context
+	taskType       InstrumentationTaskType
 	agentToServer  *protobufs.AgentToServer
 	connectionInfo *connection.ConnectionInfo
 }
+
+type InstrumentationTaskType int
+
+const (
+	UpdateInstance InstrumentationTaskType = iota
+	DeleteInstance
+)
 
 func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan InstrumentationUpdateTask, handlers *ConnectionHandlers, logger logr.Logger) {
 	logger.Info("Starting instrumentation instance update worker")
 
 	for task := range updateChannel {
-		err := handlers.UpdateInstrumentationInstanceStatus(task.ctx, task.agentToServer, task.connectionInfo)
-		if err != nil {
-			logger.Error(err, "Failed to update instrumentation instance")
+		switch task.taskType {
+		case UpdateInstance:
+			err := handlers.UpdateInstrumentationInstanceStatus(task.ctx, task.agentToServer, task.connectionInfo)
+			if err != nil {
+				logger.Error(err, "Failed to update instrumentation instance")
+			}
+		case DeleteInstance:
+			err := instrumentation_instance.DeleteInstrumentationInstance(ctx, task.connectionInfo.Pod, task.connectionInfo.ContainerName,
+				handlers.kubeclient, int(task.connectionInfo.Pid))
+			if err != nil {
+				logger.Error(err, "failed to delete instrumentation instance on connection timedout")
+			}
+		default:
+			logger.Error(nil, "Unknown task type received", "taskType", task.taskType)
+
 		}
 	}
-
 	logger.Info("Shutting down instrumentation update worker")
 }
