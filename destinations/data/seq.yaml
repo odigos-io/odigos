@@ -19,7 +19,7 @@ spec:
       componentType: input
       componentProps:
         required: true
-        tooltip: 'The format is `host:port`, `host` is required and equals the cluster internal DNS record of the Seq instance, `port` is required and equals any of the exposed ports of the Seq instance (defaults to 5341), do not add the rest of the path `/ingest/otlp/v1/*`.'
+        tooltip: 'The format is `http://host:port`, `host` is required and equals the cluster internal DNS record of the Seq instance, `port` is required and equals any of the exposed ports of the Seq instance (defaults to 5341), do not add the rest of the path `/ingest/otlp/v1/*`.'
     - name: SEQ_API_KEY
       displayName: API Key
       componentType: input
