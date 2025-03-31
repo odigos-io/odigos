@@ -47,12 +47,6 @@ const (
 	InstrumentationConfig   = "InstrumentationConfig"
 	InstrumentationInstance = "InstrumentationInstance"
 	Destination             = "Destination"
-
-	// ConfigMap used to store custom/updated Go instrumentation offsets
-	GoOffsetsPublicURL = "https://storage.googleapis.com/odigos-cloud/offset_results.json"
-	GoOffsetsConfigMap = "odigos-go-offsets"
-	GoOffsetsFileName  = "offset_results.json"
-	GoOffsetsEnvVar    = "OTEL_GO_OFFSETS_FILE"
 )
 
 // Odigos config properties

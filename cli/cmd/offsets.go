@@ -15,8 +15,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 )
 
@@ -28,7 +30,8 @@ var (
 var offsetsCmd = &cobra.Command{
 	Use:   "update-offsets",
 	Short: "Update Odiglet to use the latest available Go instrumentation offsets",
-	Long: `This command pulls the latest available Go struct and field offsets information from Odigos.
+	Long: `This command pulls the latest available Go struct and field offsets information from Odigos public server.
+Internet access is required to fetch latest offset manifests.
 It stores this data in a ConfigMap in the Odigos Namespace and updates the Odiglet DaemonSet to mount it.
 
 Use this command when instrumenting apps that depend on very new dependencies that aren't currently supported
@@ -49,7 +52,17 @@ odigos update-offsets --default
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 		ns := cmd.Flag("namespace").Value.String()
 
-		resp, err := http.Get(consts.GoOffsetsPublicURL)
+		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
+		if err != nil {
+			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
+			os.Exit(1)
+		}
+		if currentTier == common.CommunityOdigosTier {
+			fmt.Println("Custom Offsets support is only available in Odigos pro tier.")
+			os.Exit(1)
+		}
+
+		resp, err := http.Get(k8sconsts.GoOffsetsPublicURL)
 		if err != nil {
 			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Cannot get latest offsets: %s", err))
 			os.Exit(1)
@@ -78,7 +91,7 @@ odigos update-offsets --default
 			}
 
 			// Delete offsets configmap
-			err = client.Clientset.CoreV1().ConfigMaps(ns).Delete(ctx, consts.GoOffsetsConfigMap, metav1.DeleteOptions{})
+			err = client.Clientset.CoreV1().ConfigMaps(ns).Delete(ctx, k8sconsts.GoOffsetsConfigMap, metav1.DeleteOptions{})
 			if err != nil && !apierrors.IsNotFound(err) {
 				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to delete Go offsets ConfigMap: %s", err))
 				os.Exit(1)
@@ -87,7 +100,7 @@ odigos update-offsets --default
 			fmt.Println("Reverted to using default Go offsets data.")
 		} else {
 			// Create or update the offsets configmap (before we update the odiglet to refer to it)
-			cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, consts.GoOffsetsConfigMap, metav1.GetOptions{})
+			cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
 			if err != nil {
 				if !apierrors.IsNotFound(err) {
 					fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to get Go offsets ConfigMap: %s", err))
@@ -95,11 +108,11 @@ odigos update-offsets --default
 				}
 				cm = &v1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      consts.GoOffsetsConfigMap,
+						Name:      k8sconsts.GoOffsetsConfigMap,
 						Namespace: ns,
 					},
 					Data: map[string]string{
-						consts.GoOffsetsFileName: string(data),
+						k8sconsts.GoOffsetsFileName: string(data),
 					},
 				}
 
@@ -113,7 +126,7 @@ odigos update-offsets --default
 					cm.Data = make(map[string]string)
 				}
 
-				cm.Data[consts.GoOffsetsFileName] = string(data)
+				cm.Data[k8sconsts.GoOffsetsFileName] = string(data)
 				_, err = client.Clientset.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
 				if err != nil {
 					fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Go offsets ConfigMap: %s", err))
@@ -142,7 +155,7 @@ func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string,
 		// Remove offsets file env var (if present)
 		envVars := ds.Spec.Template.Spec.Containers[0].Env
 		for i, env := range envVars {
-			if env.Name == consts.GoOffsetsEnvVar {
+			if env.Name == k8sconsts.GoOffsetsEnvVar {
 				ds.Spec.Template.Spec.Containers[0].Env = append(envVars[:i], envVars[i+1:]...)
 				break
 			}
@@ -151,7 +164,7 @@ func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string,
 		// Remove offsets volumemount (if present)
 		volumeMounts := ds.Spec.Template.Spec.Containers[0].VolumeMounts
 		for i, vm := range volumeMounts {
-			if vm.Name == consts.GoOffsetsConfigMap {
+			if vm.Name == k8sconsts.GoOffsetsConfigMap {
 				ds.Spec.Template.Spec.Containers[0].VolumeMounts = append(volumeMounts[:i], volumeMounts[i+1:]...)
 				break
 			}
@@ -160,7 +173,7 @@ func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string,
 		// Remove offsets volume (if present)
 		volumes := ds.Spec.Template.Spec.Volumes
 		for i, vol := range volumes {
-			if vol.Name == consts.GoOffsetsConfigMap {
+			if vol.Name == k8sconsts.GoOffsetsConfigMap {
 				ds.Spec.Template.Spec.Volumes = append(volumes[:i], volumes[i+1:]...)
 				break
 			}
@@ -173,17 +186,17 @@ func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string,
 		}
 		addVolume := true
 		for _, vol := range volumes {
-			if vol.Name == consts.GoOffsetsConfigMap {
+			if vol.Name == k8sconsts.GoOffsetsConfigMap {
 				addVolume = false
 				break
 			}
 		}
 		if addVolume {
-			volumes = append(volumes, v1.Volume{Name: consts.GoOffsetsConfigMap,
+			volumes = append(volumes, v1.Volume{Name: k8sconsts.GoOffsetsConfigMap,
 				VolumeSource: v1.VolumeSource{
 					ConfigMap: &v1.ConfigMapVolumeSource{
 						LocalObjectReference: v1.LocalObjectReference{
-							Name: consts.GoOffsetsConfigMap,
+							Name: k8sconsts.GoOffsetsConfigMap,
 						},
 					},
 				},
@@ -198,13 +211,13 @@ func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string,
 		}
 		addVolumeMount := true
 		for _, vm := range volumeMounts {
-			if vm.Name == consts.GoOffsetsConfigMap {
+			if vm.Name == k8sconsts.GoOffsetsConfigMap {
 				addVolumeMount = false
 				break
 			}
 		}
 		if addVolumeMount {
-			volumeMounts = append(volumeMounts, v1.VolumeMount{Name: consts.GoOffsetsConfigMap, MountPath: offsetFileMountPath})
+			volumeMounts = append(volumeMounts, v1.VolumeMount{Name: k8sconsts.GoOffsetsConfigMap, MountPath: offsetFileMountPath})
 			ds.Spec.Template.Spec.Containers[0].VolumeMounts = volumeMounts
 		}
 
@@ -215,13 +228,13 @@ func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string,
 		}
 		addEnvVar := true
 		for _, env := range envVars {
-			if env.Name == consts.GoOffsetsEnvVar {
+			if env.Name == k8sconsts.GoOffsetsEnvVar {
 				addEnvVar = false
 				break
 			}
 		}
 		if addEnvVar {
-			envVars = append(envVars, v1.EnvVar{Name: consts.GoOffsetsEnvVar, Value: offsetFileMountPath + "/" + consts.GoOffsetsFileName})
+			envVars = append(envVars, v1.EnvVar{Name: k8sconsts.GoOffsetsEnvVar, Value: offsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName})
 			ds.Spec.Template.Spec.Containers[0].Env = envVars
 		}
 	}
@@ -231,5 +244,5 @@ func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string,
 func init() {
 	rootCmd.AddCommand(offsetsCmd)
 	offsetsCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", consts.DefaultOdigosNamespace, "target k8s namespace for Odigos installation")
-	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with Odigos")
+	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
 }

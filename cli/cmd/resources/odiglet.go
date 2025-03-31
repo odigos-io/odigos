@@ -375,11 +375,11 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							},
 						},
 						{
-							Name: consts.GoOffsetsConfigMap,
+							Name: k8sconsts.GoOffsetsConfigMap,
 							VolumeSource: v1.VolumeSource{
 								ConfigMap: &v1.ConfigMapVolumeSource{
 									LocalObjectReference: v1.LocalObjectReference{
-										Name: consts.GoOffsetsConfigMap,
+										Name: k8sconsts.GoOffsetsConfigMap,
 									},
 								},
 							},
@@ -416,8 +416,8 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									},
 								},
 								{
-									Name:  consts.GoOffsetsEnvVar,
-									Value: offsetFileMountPath + "/" + consts.GoOffsetsFileName,
+									Name:  k8sconsts.GoOffsetsEnvVar,
+									Value: offsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName,
 								},
 							},
 							Resources: corev1.ResourceRequirements{},
@@ -501,7 +501,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									MountPath: "/sys/kernel/debug",
 								},
 								{
-									Name:      consts.GoOffsetsConfigMap,
+									Name:      k8sconsts.GoOffsetsConfigMap,
 									MountPath: offsetFileMountPath,
 								},
 							}, odigosSeLinuxHostVolumeMounts...),
@@ -534,18 +534,18 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 // Otherwise, it returns a configmap with a blank file, which instructs Odiglet to use the default offsets.
 func NewOdigletGoOffsetsConfigMap(ctx context.Context, client *kube.Client, ns string) (*v1.ConfigMap, error) {
 	cm := &v1.ConfigMap{}
-	cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, consts.GoOffsetsConfigMap, metav1.GetOptions{})
+	cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return nil, err
 		}
 		cm = &v1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      consts.GoOffsetsConfigMap,
+				Name:      k8sconsts.GoOffsetsConfigMap,
 				Namespace: ns,
 			},
 			Data: map[string]string{
-				consts.GoOffsetsFileName: "",
+				k8sconsts.GoOffsetsFileName: "",
 			},
 		}
 	}
