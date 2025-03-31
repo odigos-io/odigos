@@ -35,6 +35,9 @@ func (j *AlibabaCloud) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]str
 		"headers": GenericMap{
 			"Authentication": "${ALIBABA_TOKEN}",
 		},
+		"tls": GenericMap{
+			"insecure": true,
+		},
 	}
 
 	if isTracingEnabled(dest) {

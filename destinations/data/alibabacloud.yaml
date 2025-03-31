@@ -20,7 +20,7 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: The format is `host:port`, host is required, port is required.
+        tooltip: The format is `host:port`, host is required, port is required. Do not add the prefix `http://`.
     - name: ALIBABA_TOKEN
       displayName: Token
       componentType: input
