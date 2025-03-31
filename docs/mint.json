@@ -219,6 +219,7 @@
           "group": "Supported Backends",
           "icon": "folder-tree",
           "pages": [
+            "backends/alibabacloud",
             "backends/appdynamics",
             "backends/awscloudwatch",
             "backends/awss3",
