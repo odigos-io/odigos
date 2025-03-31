@@ -247,7 +247,7 @@ spec:
 
     # TODO: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/awsemfexporter/README.md#metric_declaration
     # - name: AWS_CLOUDWATCH_METRIC_DECLARATIONS
-    #   displayName: Metric Decelerations
+    #   displayName: Metric Declarations
     #   componentType: multiInput
     #   componentProps:
     #     required: false
