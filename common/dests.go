@@ -43,6 +43,7 @@ const (
 	MockDestinationType                   DestinationType = "mock"
 	NewRelicDestinationType               DestinationType = "newrelic"
 	NopDestinationType                    DestinationType = "nop"
+	ObserveDestinationType                DestinationType = "observe"
 	OpenObserveDestinationType            DestinationType = "openobserve"
 	OpsVerseDestinationType               DestinationType = "opsverse"
 	OtlpHttpDestinationType               DestinationType = "otlphttp"
