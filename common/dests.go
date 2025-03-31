@@ -51,6 +51,7 @@ const (
 	QrynOSSDestinationType                DestinationType = "qryn-oss"
 	QuickwitDestinationType               DestinationType = "quickwit"
 	SentryDestinationType                 DestinationType = "sentry"
+	SeqDestinationType                    DestinationType = "seq"
 	SignozDestinationType                 DestinationType = "signoz"
 	SplunkDestinationType                 DestinationType = "splunk"
 	SumoLogicDestinationType              DestinationType = "sumologic"

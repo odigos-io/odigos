@@ -1,0 +1,30 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: seq
+  displayName: Seq
+  category: self-hosted
+spec:
+  image: seq.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: true
+  fields:
+    - name: SEQ_ENDPOINT
+      displayName: OTLP HTTP Endpoint
+      componentType: input
+      componentProps:
+        required: true
+        tooltip: 'The format is `http://host:port`, `host` is required and equals the cluster internal DNS record of the Seq instance, `port` is required and equals any of the exposed ports of the Seq instance (defaults to 5341), do not add the rest of the path `/ingest/otlp/v1/*`.'
+    - name: SEQ_API_KEY
+      displayName: API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: false
+        tooltip: 'The API key is generated in the Seq instance. The API key must have the `Ingest` permission.'
