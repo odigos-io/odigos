@@ -25,11 +25,11 @@ spec:
   containers:
     - image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
       name: java-supported-manifest-env
-      (env[?name=='JAVA_OPTS']):
+      (env[?name=='JAVA_TOOL_OPTIONS']):
       - value: "-Dnot.work=true -javaagent:/var/odigos/java/javaagent.jar"
     # JAVA_TOOL_OPTIONS is not set in the manifest of java-supported-manifest-env,
     # so we need to ensure it is also not set in the pod spec.
-      (env[?name=='JAVA_TOOL_OPTIONS']): []
+      (env[?name=='JAVA_OPTS']): []
 ---
 apiVersion: v1
 kind: Pod
