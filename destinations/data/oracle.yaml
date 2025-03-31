@@ -20,6 +20,7 @@ spec:
       componentProps:
         type: text
         required: true
+        tooltip: 'The endpoint of the Oracle APM OTLP HTTP endpoint. Do not include the paths `/20200101/opentelemetry/*/v1/*`.'
     - name: ORACLE_DATA_KEY
       displayName: Data Key
       componentType: input
@@ -27,3 +28,13 @@ spec:
       componentProps:
         type: password
         required: true
+    - name: ORACLE_DATA_KEY_TYPE
+      displayName: Data Key Type
+      componentType: dropdown
+      componentProps:
+        required: true
+        values:
+          - private
+          - public
+        tooltip: 'The type of the data key, relevant only for Traces. Metrics are always authenticated with a private data key.'
+      initialValue: private

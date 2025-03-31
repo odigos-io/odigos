@@ -1,12 +1,15 @@
 package config
 
 import (
+	"errors"
+
 	"github.com/odigos-io/odigos/common"
 )
 
 const (
-	ORACLE_ENDPOINT = "ORACLE_ENDPOINT"
-	ORACLE_DATA_KEY = "ORACLE_DATA_KEY"
+	ORACLE_ENDPOINT      = "ORACLE_ENDPOINT"
+	ORACLE_DATA_KEY      = "ORACLE_DATA_KEY"
+	ORACLE_DATA_KEY_TYPE = "ORACLE_DATA_KEY_TYPE"
 )
 
 type Oracle struct{}
@@ -28,6 +31,16 @@ func (j *Oracle) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 	if err != nil {
 		return nil, err
 	}
+
+	dataKeyType, exists := config[ORACLE_DATA_KEY_TYPE]
+	if !exists {
+		return nil, errorMissingKey(ORACLE_DATA_KEY_TYPE)
+	}
+	if dataKeyType != "private" && dataKeyType != "public" {
+		return nil, errors.New("invalid value for ORACLE_DATA_KEY_TYPE, must be one-of [private, public]")
+	}
+
+	endpoint += "/20200101/opentelemetry/" + dataKeyType
 
 	exporterName := "otlphttp/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
