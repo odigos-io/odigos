@@ -21,9 +21,8 @@ package v1alpha1
 // with apply.
 type JsonAttributeConditionApplyConfiguration struct {
 	Operation     *string `json:"operation,omitempty"`
-	ExpectedKey   *string `json:"expected_key,omitempty"`
-	ExpectedValue *string `json:"expected_value,omitempty"`
 	JsonPath      *string `json:"json_path,omitempty"`
+	ExpectedValue *string `json:"expected_value,omitempty"`
 }
 
 // JsonAttributeConditionApplyConfiguration constructs a declarative configuration of the JsonAttributeCondition type for use with
@@ -40,11 +39,11 @@ func (b *JsonAttributeConditionApplyConfiguration) WithOperation(value string) *
 	return b
 }
 
-// WithExpectedKey sets the ExpectedKey field in the declarative configuration to the given value
+// WithJsonPath sets the JsonPath field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ExpectedKey field is set to the value of the last call.
-func (b *JsonAttributeConditionApplyConfiguration) WithExpectedKey(value string) *JsonAttributeConditionApplyConfiguration {
-	b.ExpectedKey = &value
+// If called multiple times, the JsonPath field is set to the value of the last call.
+func (b *JsonAttributeConditionApplyConfiguration) WithJsonPath(value string) *JsonAttributeConditionApplyConfiguration {
+	b.JsonPath = &value
 	return b
 }
 
@@ -53,13 +52,5 @@ func (b *JsonAttributeConditionApplyConfiguration) WithExpectedKey(value string)
 // If called multiple times, the ExpectedValue field is set to the value of the last call.
 func (b *JsonAttributeConditionApplyConfiguration) WithExpectedValue(value string) *JsonAttributeConditionApplyConfiguration {
 	b.ExpectedValue = &value
-	return b
-}
-
-// WithJsonPath sets the JsonPath field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the JsonPath field is set to the value of the last call.
-func (b *JsonAttributeConditionApplyConfiguration) WithJsonPath(value string) *JsonAttributeConditionApplyConfiguration {
-	b.JsonPath = &value
 	return b
 }
