@@ -152,3 +152,7 @@ func NewCentralProxyRoleBinding(ns string) *rbacv1.RoleBinding {
 		},
 	}
 }
+
+func ptrint32(i int32) *int32 {
+	return &i
+}

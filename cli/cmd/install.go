@@ -48,9 +48,8 @@ var (
 	autoScalerImage   string
 	imagePrefix       string
 
-	installCentralized bool
-	clusterName        string
-	centralBackendURL  string
+	clusterName       string
+	centralBackendURL string
 )
 
 type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string) error
@@ -109,14 +108,6 @@ It will install k8s components that will auto-instrument your applications with 
 		} else if odigosOnPremToken != "" {
 			odigosTier = common.OnPremOdigosTier
 			odigosProToken = odigosOnPremToken
-		}
-
-		if installCentralized {
-			if err := installCentralBackendAndUI(ctx, client, ns); err != nil {
-				fmt.Printf("\033[31mERROR\033[0m %s\n", err)
-				os.Exit(1)
-			}
-			return
 		}
 
 		// validate user input profiles against available profiles
@@ -200,30 +191,6 @@ func installOdigos(ctx context.Context, client *kube.Client, ns string, config *
 	resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, token, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 	return resources.ApplyResourceManagers(ctx, client, resourceManagers, label)
 
-}
-
-func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns string) error {
-	fmt.Println("Installing centralized Odigos backend and UI ...")
-
-	managerOpts := resourcemanager.ManagerOpts{
-		ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
-	}
-
-	centralNamespace := consts.DefaultOdigosCentralNamespace
-	if ns != consts.DefaultOdigosNamespace {
-		centralNamespace = ns
-	}
-
-	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", centralNamespace),
-		client, centralNamespace, createNamespace)
-
-	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts)
-	if err := resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating"); err != nil {
-		return fmt.Errorf("failed to install centralized Odigos: %w", err)
-	}
-
-	fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Centralized Odigos installed.\n")
-	return nil
 }
 
 func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (bool, error) {
@@ -390,7 +357,7 @@ func init() {
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
-	installCmd.Flags().BoolVar(&installCentralized, "centralized", false, "Install centralized Odigos UI and backend")
+
 	installCmd.Flags().StringVar(&clusterName, "cluster-name", "", "name of the cluster to be used in the centralized backend")
 	installCmd.Flags().StringVar(&centralBackendURL, "central-backend-url", "", "use to connect this cluster to the centralized odigos cluster")
 
