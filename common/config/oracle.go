@@ -32,18 +32,8 @@ func (j *Oracle) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 		return nil, err
 	}
 
-	dataKeyType, exists := config[ORACLE_DATA_KEY_TYPE]
-	if !exists {
-		return nil, errorMissingKey(ORACLE_DATA_KEY_TYPE)
-	}
-	if dataKeyType != "private" && dataKeyType != "public" {
-		return nil, errors.New("invalid value for ORACLE_DATA_KEY_TYPE, must be one-of [private, public]")
-	}
-
-	endpoint += "/20200101/opentelemetry/" + dataKeyType
-
 	exporterName := "otlphttp/" + uniqueUri
-	cfg.Exporters[exporterName] = GenericMap{
+	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
 			"Authorization": "dataKey ${ORACLE_DATA_KEY}",
@@ -51,6 +41,17 @@ func (j *Oracle) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 	}
 
 	if isTracingEnabled(dest) {
+		dataKeyType, exists := config[ORACLE_DATA_KEY_TYPE]
+		if !exists {
+			return nil, errorMissingKey(ORACLE_DATA_KEY_TYPE)
+		}
+		if dataKeyType != "private" && dataKeyType != "public" {
+			return nil, errors.New("invalid value for ORACLE_DATA_KEY_TYPE, must be one-of [private, public]")
+		}
+
+		exporterConfig["endpoint"] = endpoint + "/20200101/opentelemetry/" + dataKeyType
+		cfg.Exporters[exporterName] = exporterConfig
+
 		pipeName := "traces/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -59,6 +60,9 @@ func (j *Oracle) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 	}
 
 	if isMetricsEnabled(dest) {
+		exporterConfig["endpoint"] = endpoint + "/20200101/opentelemetry"
+		cfg.Exporters[exporterName] = exporterConfig
+
 		pipeName := "metrics/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
