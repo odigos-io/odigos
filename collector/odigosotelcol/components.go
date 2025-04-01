@@ -10,6 +10,7 @@ import (
 	servicegraphconnector "github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector"
 	spanmetricsconnector "github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector"
 	awscloudwatchlogsexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter"
+	awsemfexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter"
 	awss3exporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter"
 	awsxrayexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter"
 	azuredataexplorerexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter"
@@ -147,6 +148,7 @@ func components() (otelcol.Factories, error) {
 		googlecloudstorageexporter.NewFactory(),
 		mockdestinationexporter.NewFactory(),
 		awscloudwatchlogsexporter.NewFactory(),
+		awsemfexporter.NewFactory(),
 		awss3exporter.NewFactory(),
 		awsxrayexporter.NewFactory(),
 		azuredataexplorerexporter.NewFactory(),
@@ -196,6 +198,7 @@ func components() (otelcol.Factories, error) {
 	factories.ExporterModules[googlecloudstorageexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter v0.121.0"
 	factories.ExporterModules[mockdestinationexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter v0.121.0"
 	factories.ExporterModules[awscloudwatchlogsexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.121.0"
+	factories.ExporterModules[awsemfexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.121.0"
 	factories.ExporterModules[awss3exporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.121.0"
 	factories.ExporterModules[awsxrayexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.121.0"
 	factories.ExporterModules[azuredataexplorerexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.121.0"
