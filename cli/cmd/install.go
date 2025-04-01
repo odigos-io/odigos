@@ -167,6 +167,9 @@ odigos install --cluster-name my-cluster --central-backend-url https://central.o
 func isOdigosInstalled(ctx context.Context, client *kube.Client, ns string) (bool, error) {
 	cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
 		return false, err
 	}
 	return cm != nil, nil
