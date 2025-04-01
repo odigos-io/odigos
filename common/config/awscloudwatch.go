@@ -17,13 +17,8 @@ const (
 	AWS_CLOUDWATCH_RAW_LOG                              = "AWS_CLOUDWATCH_RAW_LOG"
 	AWS_CLOUDWATCH_METRICS_NAMESPACE                    = "AWS_CLOUDWATCH_METRICS_NAMESPACE"
 	AWS_CLOUDWATCH_METRICS_DIMENSION_ROLLUP             = "AWS_CLOUDWATCH_METRICS_DIMENSION_ROLLUP"
-	AWS_CLOUDWATCH_EMF_OUTPUT_DESTINATION               = "AWS_CLOUDWATCH_EMF_OUTPUT_DESTINATION"
-	AWS_CLOUDWATCH_TELEMETRY_CONVERSION                 = "AWS_CLOUDWATCH_TELEMETRY_CONVERSION"
 	AWS_CLOUDWATCH_METRICS_DETAILED                     = "AWS_CLOUDWATCH_METRICS_DETAILED"
 	AWS_CLOUDWATCH_RETAIN_INITIAL_VALUE_OF_DELTA_METRIC = "AWS_CLOUDWATCH_RETAIN_INITIAL_VALUE_OF_DELTA_METRIC"
-	AWS_CLOUDWATCH_PARSE_JSON_ENCODED_ATTR_VALUES       = "AWS_CLOUDWATCH_PARSE_JSON_ENCODED_ATTR_VALUES"
-	AWS_CLOUDWATCH_METRIC_DECLARATIONS                  = "AWS_CLOUDWATCH_METRIC_DECLARATIONS"
-	AWS_CLOUDWATCH_METRIC_DESCRIPTORS                   = "AWS_CLOUDWATCH_METRIC_DESCRIPTORS"
 )
 
 type AWSCloudWatch struct{}
@@ -155,6 +150,9 @@ func metricsConfig(dest ExporterConfigurer) (GenericMap, error) {
 		return nil, err
 	}
 
+	exporterConfig["output_destination"] = "cloudwatch" // other option is "stdout" which logs to stdout of gateway-collector
+	exporterConfig["resource_to_telemetry_conversion"] = GenericMap{"enabled": true}
+
 	namespace, exists := config[AWS_CLOUDWATCH_METRICS_NAMESPACE]
 	if exists {
 		exporterConfig["namespace"] = namespace
@@ -163,18 +161,6 @@ func metricsConfig(dest ExporterConfigurer) (GenericMap, error) {
 	dimensionRollupOption, exists := config[AWS_CLOUDWATCH_METRICS_DIMENSION_ROLLUP]
 	if exists {
 		exporterConfig["dimension_rollup_option"] = dimensionRollupOption
-	}
-
-	outputDestination, exists := config[AWS_CLOUDWATCH_EMF_OUTPUT_DESTINATION]
-	if exists {
-		exporterConfig["output_destination"] = outputDestination
-	}
-
-	telemetryConversion, exists := config[AWS_CLOUDWATCH_TELEMETRY_CONVERSION]
-	if exists {
-		exporterConfig["resource_to_telemetry_conversion"] = GenericMap{
-			"enabled": parseBool(telemetryConversion),
-		}
 	}
 
 	metricsDetailed, exists := config[AWS_CLOUDWATCH_METRICS_DETAILED]
@@ -186,23 +172,6 @@ func metricsConfig(dest ExporterConfigurer) (GenericMap, error) {
 	if exists {
 		exporterConfig["retain_initial_value_of_delta_metric"] = parseBool(retainValueOfDelta)
 	}
-
-	parseJsonAttrValues, exists := config[AWS_CLOUDWATCH_PARSE_JSON_ENCODED_ATTR_VALUES]
-	if exists {
-		exporterConfig["parse_json_encoded_attr_values"] = parseJsonAttrValues
-	}
-
-	// TODO: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/awsemfexporter/README.md#metric_declaration
-	// metricDeclerations, exists := config[AWS_CLOUDWATCH_METRIC_DECLARATIONS]
-	// if exists {
-	// 	exporterConfig["metric_declarations"] = metricDeclerations
-	// }
-
-	// TODO: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/awsemfexporter/README.md#metric_descriptor
-	// metricDescriptors, exists := config[AWS_CLOUDWATCH_METRIC_DESCRIPTORS]
-	// if exists {
-	// 	exporterConfig["metric_descriptors"] = metricDescriptors
-	// }
 
 	return exporterConfig, nil
 }
