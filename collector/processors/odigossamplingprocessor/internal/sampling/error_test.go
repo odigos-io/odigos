@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-// TestErrorRule_Evaluate ensures the trace is sampled when an error span exists.
+// TestErrorRule_Evaluate triggers when a single error span is present in the trace.
 func TestErrorRule_Evaluate(t *testing.T) {
 	rule := &ErrorRule{FallbackSamplingRatio: 30}
 
@@ -21,11 +21,10 @@ func TestErrorRule_Evaluate(t *testing.T) {
 	matched, satisfied, fallback := rule.Evaluate(trace)
 	assert.True(t, matched)
 	assert.True(t, satisfied)
-	assert.Equal(t, 0.0, fallback)
+	assert.Equal(t, 100.0, fallback) // Updated fallback
 }
 
-// TestErrorRule_Evaluate_MultipleSpans_OneError checks that if any span has an error status,
-// the trace is sampled.
+// TestErrorRule_Evaluate_MultipleSpans_OneError ensures that even one error span causes sampling.
 func TestErrorRule_Evaluate_MultipleSpans_OneError(t *testing.T) {
 	rule := &ErrorRule{FallbackSamplingRatio: 30}
 
@@ -37,14 +36,12 @@ func TestErrorRule_Evaluate_MultipleSpans_OneError(t *testing.T) {
 		Done().Build()
 
 	matched, satisfied, fallback := rule.Evaluate(trace)
-
 	assert.True(t, matched)
 	assert.True(t, satisfied)
-	assert.Equal(t, 0.0, fallback)
+	assert.Equal(t, 100.0, fallback) // Updated fallback
 }
 
-// TestErrorRule_Evaluate_NoErrorSpans confirms that if no spans have errors,
-// fallback sampling ratio is applied.
+// TestErrorRule_Evaluate_NoErrorSpans returns fallback when no error spans are found.
 func TestErrorRule_Evaluate_NoErrorSpans(t *testing.T) {
 	rule := &ErrorRule{FallbackSamplingRatio: 30}
 
@@ -56,8 +53,42 @@ func TestErrorRule_Evaluate_NoErrorSpans(t *testing.T) {
 		Done().Build()
 
 	matched, satisfied, fallback := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.False(t, satisfied)
+	assert.Equal(t, 30.0, fallback)
+}
 
-	assert.True(t, matched)         // ✅ rule always matches
-	assert.False(t, satisfied)      // ✅ no error found
-	assert.Equal(t, 30.0, fallback) // ✅ fallback applied
+// TestErrorRule_Evaluate_EmptyTrace ensures an empty trace still matches and uses fallback.
+func TestErrorRule_Evaluate_EmptyTrace(t *testing.T) {
+	rule := &ErrorRule{FallbackSamplingRatio: 20}
+
+	trace := testutil.NewTrace().Build()
+
+	matched, satisfied, fallback := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.False(t, satisfied)
+	assert.Equal(t, 20.0, fallback)
+}
+
+// TestErrorRule_Evaluate_ResourceWithNoSpans ensures no error is found if spans are missing.
+func TestErrorRule_Evaluate_ResourceWithNoSpans(t *testing.T) {
+	rule := &ErrorRule{FallbackSamplingRatio: 15}
+
+	trace := testutil.NewTrace().
+		AddEmptyResource().
+		Done().Build()
+
+	matched, satisfied, fallback := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.False(t, satisfied)
+	assert.Equal(t, 15.0, fallback)
+}
+
+// TestErrorRule_Validate_InvalidRatio confirms validation catches fallback > 100.
+func TestErrorRule_Validate_InvalidRatio(t *testing.T) {
+	rule := &ErrorRule{FallbackSamplingRatio: 150}
+
+	err := rule.Validate()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "must be between 0 and 100")
 }

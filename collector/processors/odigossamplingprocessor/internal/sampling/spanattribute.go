@@ -26,6 +26,7 @@ type SpanAttributeRule struct {
 	ConditionType         AttributeConditionType `mapstructure:"condition_type"`
 	Operation             string                 `mapstructure:"operation"`
 	ExpectedValue         string                 `mapstructure:"expected_value,omitempty"`
+	ExpectedKey           string                 `mapstructure:"expected_key,omitempty"` // New field
 	JsonPath              string                 `mapstructure:"json_path,omitempty"`
 	FallbackSamplingRatio float64                `mapstructure:"fallback_sampling_ratio"`
 }
@@ -65,15 +66,30 @@ func (s *SpanAttributeRule) Validate() error {
 			return errors.New("expected_value required for boolean equals operation")
 		}
 	case TypeJSON:
-		validOps := map[string]bool{"exists": true, "is_valid_json": true, "is_invalid_json": true, "contains_key": true, "jsonpath_exists": true}
+		validOps := map[string]bool{
+			"exists": true, "is_valid_json": true, "is_invalid_json": true,
+			"contains_key": true, "not_contains_key": true, "jsonpath_exists": true,
+			"key_equals": true, "key_not_equals": true,
+		}
 		if !validOps[s.Operation] {
 			return errors.New("invalid json operation")
 		}
-		if (s.Operation == "contains_key") && s.ExpectedValue == "" {
-			return errors.New("expected_value required for json contains_key")
-		}
-		if s.Operation == "jsonpath_exists" && s.JsonPath == "" {
-			return errors.New("json_path required for jsonpath_exists")
+		switch s.Operation {
+		case "contains_key", "not_contains_key":
+			if s.ExpectedKey == "" {
+				return errors.New("expected_key required for json key containment")
+			}
+		case "key_equals", "key_not_equals":
+			if s.ExpectedKey == "" {
+				return errors.New("expected_key required for json key comparison")
+			}
+			if s.ExpectedValue == "" {
+				return errors.New("expected_value required for json key comparison")
+			}
+		case "jsonpath_exists":
+			if s.JsonPath == "" {
+				return errors.New("json_path required for jsonpath_exists")
+			}
 		}
 	default:
 		return errors.New("unsupported condition type")
@@ -99,15 +115,18 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 				}
 
 				filterMatch = true
+
 				switch s.ConditionType {
+
 				case TypeString:
+					if s.Operation == "exists" {
+						return true, true, s.FallbackSamplingRatio
+					}
 					if attr.Type() != pcommon.ValueTypeStr {
 						continue
 					}
 					val := attr.AsString()
 					switch s.Operation {
-					case "exists":
-						return true, true, s.FallbackSamplingRatio
 					case "equals":
 						if val == s.ExpectedValue {
 							return true, true, s.FallbackSamplingRatio
@@ -125,7 +144,11 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 							return true, true, s.FallbackSamplingRatio
 						}
 					}
+
 				case TypeNumber:
+					if s.Operation == "exists" {
+						return true, true, s.FallbackSamplingRatio
+					}
 					numVal, err := strconv.ParseFloat(s.ExpectedValue, 64)
 					if err != nil {
 						continue
@@ -142,8 +165,6 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 					}
 
 					switch s.Operation {
-					case "exists":
-						return true, true, s.FallbackSamplingRatio
 					case "equals":
 						if attrNum == numVal {
 							return true, true, s.FallbackSamplingRatio
@@ -161,21 +182,24 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 							return true, true, s.FallbackSamplingRatio
 						}
 					}
+
 				case TypeBoolean:
+					if s.Operation == "exists" {
+						return true, true, s.FallbackSamplingRatio
+					}
 					expectedBool, err := strconv.ParseBool(s.ExpectedValue)
 					if err != nil || attr.Type() != pcommon.ValueTypeBool {
 						continue
 					}
 					attrBool := attr.Bool()
-					switch s.Operation {
-					case "exists":
+					if s.Operation == "equals" && attrBool == expectedBool {
 						return true, true, s.FallbackSamplingRatio
-					case "equals":
-						if attrBool == expectedBool {
-							return true, true, s.FallbackSamplingRatio
-						}
 					}
+
 				case TypeJSON:
+					if s.Operation == "exists" {
+						return true, true, s.FallbackSamplingRatio
+					}
 					if attr.Type() != pcommon.ValueTypeStr {
 						continue
 					}
@@ -183,8 +207,6 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 					err := json.Unmarshal([]byte(attr.AsString()), &jsonVal)
 
 					switch s.Operation {
-					case "exists":
-						return true, true, s.FallbackSamplingRatio
 					case "is_valid_json":
 						if err == nil {
 							return true, true, s.FallbackSamplingRatio
@@ -193,10 +215,32 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 						if err != nil {
 							return true, true, s.FallbackSamplingRatio
 						}
-					case "contains_key":
+					case "contains_key", "not_contains_key":
 						if err == nil {
-							if m, ok := jsonVal.(map[string]interface{}); ok {
-								if _, found := m[s.ExpectedValue]; found {
+							if _, found := resolveJSONKeyPath(jsonVal, s.ExpectedKey); (found && s.Operation == "contains_key") || (!found && s.Operation == "not_contains_key") {
+								return true, true, s.FallbackSamplingRatio
+							}
+						}
+					case "key_equals", "key_not_equals":
+						if err == nil {
+							if val, found := resolveJSONKeyPath(jsonVal, s.ExpectedKey); found {
+								valStr := ""
+								switch v := val.(type) {
+								case string:
+									valStr = v
+								case float64:
+									valStr = strconv.FormatFloat(v, 'f', -1, 64)
+								case bool:
+									valStr = strconv.FormatBool(v)
+								case nil:
+									valStr = "null"
+								default:
+									b, _ := json.Marshal(v)
+									valStr = string(b)
+								}
+
+								if (s.Operation == "key_equals" && valStr == s.ExpectedValue) ||
+									(s.Operation == "key_not_equals" && valStr != s.ExpectedValue) {
 									return true, true, s.FallbackSamplingRatio
 								}
 							}
@@ -213,4 +257,21 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 		}
 	}
 	return false, false, s.FallbackSamplingRatio
+}
+
+func resolveJSONKeyPath(jsonObj interface{}, keyPath string) (interface{}, bool) {
+	parts := strings.Split(keyPath, ".")
+	current := jsonObj
+	for _, key := range parts {
+		obj, ok := current.(map[string]interface{})
+		if !ok {
+			return nil, false
+		}
+		next, exists := obj[key]
+		if !exists {
+			return nil, false
+		}
+		current = next
+	}
+	return current, true
 }
