@@ -3,6 +3,7 @@ package common
 type DestinationType string
 
 const (
+	AlibabaCloudDestinationType           DestinationType = "alibabacloud"
 	AppDynamicsDestinationType            DestinationType = "appdynamics"
 	AWSCloudWatchDestinationType          DestinationType = "cloudwatch"
 	AWSS3DestinationType                  DestinationType = "s3"

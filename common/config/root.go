@@ -16,6 +16,7 @@ const (
 )
 
 var availableConfigers = []Configer{
+	&AlibabaCloud{},
 	&AppDynamics{},
 	&AWSCloudWatch{},
 	&AWSS3{},
