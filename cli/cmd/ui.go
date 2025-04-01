@@ -27,9 +27,7 @@ import (
 )
 
 const (
-	defaultPort         = 3000
-	centralBackendPort  = "8081"
-	defaultLocalAddress = "localhost"
+	defaultPort = 3000
 )
 
 // uiCmd represents the ui command
@@ -55,31 +53,13 @@ var uiCmd = &cobra.Command{
 		localPort := cmd.Flag("port").Value.String()
 		localAddress := cmd.Flag("address").Value.String()
 
-		centralized, _ := cmd.Flags().GetBool("centralized")
-		var uiPod *corev1.Pod
-		if centralized {
-			uiPod, err = findUIPodByLabel(client, ctx, ns, "app", "central-ui")
-			go func() {
-				backendPod, err := findUIPodByLabel(client, ctx, ns, "app", "central-backend")
-				if err != nil {
-					fmt.Printf("\033[31mERROR\033[0m Cannot find central-backend pod: %s\n", err)
-					return
-				}
-				err = portForwardPod(ctx, client, backendPod, centralBackendPort, centralBackendPort, defaultLocalAddress, false)
-				if err != nil {
-					fmt.Printf("\033[31mERROR\033[0m Port-forwarding central backend failed: %s\n", err)
-				}
-			}()
-		} else {
-			uiPod, err = findUIPodByLabel(client, ctx, ns, "app", k8sconsts.UIAppLabelValue)
-		}
-
+		uiPod, err := findOdigosUIPod(client, ctx, ns)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find odigos-ui pod: %s\n", err)
 			os.Exit(1)
 		}
 
-		if err := portForwardPod(ctx, client, uiPod, localPort, "", localAddress, true); err != nil {
+		if err := portForwardWithContext(ctx, uiPod, client, localPort, localAddress); err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot start port-forward: %s\n", err)
 			os.Exit(1)
 		}
@@ -96,43 +76,37 @@ odigos ui --kubeconfig <path-to-kubeconfig>
 `,
 }
 
-func portForwardPod(
-	ctx context.Context,
-	client *kube.Client,
-	pod *corev1.Pod,
-	localPort string,
-	remotePort string,
-	localAddress string,
-	printInfo bool,
-) error {
+func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube.Client, localPort string, localAddress string) error {
 	stopChannel := make(chan struct{}, 1)
 	readyChannel := make(chan struct{})
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 	defer signal.Stop(signals)
 
+	returnCtx, returnCtxCancel := context.WithCancel(ctx)
+	defer returnCtxCancel()
+
 	go func() {
+		// If closed either by client (Ctrl+C) or server - stop port-forward
 		select {
 		case <-signals:
-		case <-ctx.Done():
+		case <-returnCtx.Done():
 		}
 		close(stopChannel)
 	}()
 
-	if printInfo {
-		fmt.Printf("Odigos UI is available at: http://%s:%s\n\n", localAddress, localPort)
-		fmt.Printf("Port-forwarding from %s/%s\n", pod.Namespace, pod.Name)
-		fmt.Printf("Press Ctrl+C to stop\n")
-	}
+	fmt.Printf("Odigos UI is available at: http://%s:%s\n\n", localAddress, localPort)
+	fmt.Printf("Port-forwarding from %s/%s\n", uiPod.Namespace, uiPod.Name)
+	fmt.Printf("Press Ctrl+C to stop\n")
 
 	req := client.CoreV1().RESTClient().
 		Post().
 		Resource("pods").
-		Namespace(pod.Namespace).
-		Name(pod.Name).
+		Namespace(uiPod.Namespace).
+		Name(uiPod.Name).
 		SubResource("portforward")
 
-	return forwardPorts("POST", req.URL(), client.Config, stopChannel, readyChannel, localPort, remotePort, localAddress)
+	return forwardPorts("POST", req.URL(), client.Config, stopChannel, readyChannel, localPort, localAddress)
 }
 
 func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dialer, error) {
@@ -152,44 +126,26 @@ func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dia
 	return dialer, nil
 }
 
-func forwardPorts(
-	method string,
-	url *url.URL,
-	cfg *rest.Config,
-	stopCh chan struct{},
-	readyCh chan struct{},
-	localPort string,
-	remotePort string,
-	localAddress string,
-) error {
+func forwardPorts(method string, url *url.URL, cfg *rest.Config, stopCh chan struct{}, readyCh chan struct{}, localPort string, localAddress string) error {
 	dialer, err := createDialer(method, url, cfg)
 	if err != nil {
 		return err
 	}
 
-	if remotePort == "" {
-		remotePort = fmt.Sprintf("%d", defaultPort)
-	}
-
-	port := fmt.Sprintf("%s:%s", localPort, remotePort)
-	fw, err := portforward.NewOnAddresses(
-		dialer,
+	port := fmt.Sprintf("%s:%d", localPort, defaultPort)
+	fw, err := portforward.NewOnAddresses(dialer,
 		[]string{localAddress},
-		[]string{port},
-		stopCh,
-		readyCh,
-		nil,
-		os.Stderr,
-	)
+		[]string{port}, stopCh, readyCh, nil, os.Stderr)
+
 	if err != nil {
 		return err
 	}
 	return fw.ForwardPorts()
 }
 
-func findUIPodByLabel(client *kube.Client, ctx context.Context, ns string, key string, value string) (*corev1.Pod, error) {
+func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*corev1.Pod, error) {
 	pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", key, value),
+		LabelSelector: fmt.Sprintf("app=%s", k8sconsts.UIAppLabelValue),
 	})
 
 	if err != nil {
@@ -202,14 +158,13 @@ func findUIPodByLabel(client *kube.Client, ctx context.Context, ns string, key s
 
 	pod := &pods.Items[0]
 	if pod.Status.Phase != corev1.PodRunning {
-		return nil, fmt.Errorf("%s pod is not running", value)
+		return nil, fmt.Errorf("odigos-ui pod is not running")
 	}
 
-	return pod, nil
+	return &pods.Items[0], nil
 }
 func init() {
 	rootCmd.AddCommand(uiCmd)
 	uiCmd.Flags().Int("port", defaultPort, "Port to listen on")
 	uiCmd.Flags().String("address", "localhost", "Address to serve the UI on")
-	uiCmd.Flags().Bool("centralized", false, "Use centralized Odigos UI (for centralized mode)")
 }
