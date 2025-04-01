@@ -29,6 +29,7 @@ func (j *Greptime) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string,
 	if err != nil {
 		return nil, err
 	}
+	endpoint += "/v1/otlp"
 
 	dbName, exists := config[GREPTIME_DB_NAME]
 	if !exists {
