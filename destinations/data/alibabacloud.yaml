@@ -1,0 +1,30 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: alibabacloud
+  displayName: Alibaba Cloud
+  category: managed
+spec:
+  image: alibabacloud.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  fields:
+    - name: ALIBABA_ENDPOINT
+      displayName: OTLP gRPC Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: The format is `host:port`, host is required, port is required. Do not add the prefix `http://`.
+    - name: ALIBABA_TOKEN
+      displayName: Token
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
