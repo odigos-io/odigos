@@ -41,6 +41,7 @@ var availableConfigers = []Configer{
 	&GrafanaCloudLoki{},
 	&GrafanaCloudPrometheus{},
 	&GrafanaCloudTempo{},
+	&Greptime{},
 	&Groundcover{},
 	&Honeycomb{},
 	&HyperDX{},
