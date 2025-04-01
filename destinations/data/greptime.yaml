@@ -21,7 +21,7 @@ spec:
         type: text
         required: true
         placeholder: https://<unique_id>.<aws_region>.aws.greptime.cloud
-        tooltip: Can be obtained from the GreptimeDB console -> Connect -> OpenTelemtry. Do not include the path `/v1/otlp/v1/metrics`!
+        tooltip: Do not include the path `/v1/otlp/v1/metrics`.
     - name: GREPTIME_DB_NAME
       displayName: Database Name
       componentType: input
@@ -36,4 +36,4 @@ spec:
         type: password
         required: true
         placeholder: xxxxx:xxxxx
-        tooltip: The format is `username:password`. Can be obtained from the GreptimeDB console -> Connect -> OpenTelemtry. Do not convert it to Base64!
+        tooltip: The format is `username:password`.

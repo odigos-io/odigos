@@ -37,12 +37,12 @@ icon: 'signal-stream'
   ❌ Logs
 </Accordion>
 
-- **GREPTIME_ENDPOINT** `string` : OTLP HTTP Endpoint. Can be obtained from the GreptimeDB console -> Connect -> OpenTelemtry. Do not include the path `/v1/otlp/v1/metrics`!
+- **GREPTIME_ENDPOINT** `string` : OTLP HTTP Endpoint. Do not include the path `/v1/otlp/v1/metrics`.
   - This field is required
   - Example: `https://<unique_id>.<aws_region>.aws.greptime.cloud`
 - **GREPTIME_DB_NAME** `string` : Database Name.
   - This field is required
-- **GREPTIME_BASIC_TOKEN** `string` : Basic Auth Token. The format is `username:password`. Can be obtained from the GreptimeDB console -> Connect -> OpenTelemtry. Do not convert it to Base64!
+- **GREPTIME_BASIC_TOKEN** `string` : Basic Auth Token. The format is `username:password`.
   - This field is required
   - Example: `xxxxx:xxxxx`
 
