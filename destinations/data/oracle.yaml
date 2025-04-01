@@ -2,7 +2,7 @@ apiVersion: internal.odigos.io/v1beta1
 kind: Destination
 metadata:
   type: oracle
-  displayName: Oracle APM
+  displayName: Oracle Cloud
   category: managed
 spec:
   image: oracle.svg
