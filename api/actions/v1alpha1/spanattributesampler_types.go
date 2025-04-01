@@ -115,35 +115,42 @@ type StringAttributeCondition struct {
 	ExpectedValue string `json:"expected_value,omitempty"`
 }
 
-// JsonAttributeCondition supports operations on JSON serialized as strings.
-// It enables filtering spans based on structure and content of JSON-encoded attribute values.
+// JsonAttributeCondition defines conditions for evaluating JSON-encoded span attributes.
+// It supports structural and value-based filtering using key lookups and JSONPath expressions.
 //
 // Supported operations:
-//   - "exists": Checks that the JSON string is present and non-empty.
-//   - "is_valid_json": Validates that the string parses as valid JSON.
-//   - "is_invalid_json": Checks that the string cannot be parsed as valid JSON.
-//   - "equals": Compares the full JSON string to ExpectedValue.
-//   - "not_equals": Compares the full JSON string to ExpectedValue (negated).
-//   - "contains_key": Asserts that ExpectedKey exists in the JSON object.
-//   - "not_contains_key": Asserts that ExpectedKey does NOT exist in the JSON object.
-//   - "jsonpath_exists": Asserts that the given JsonPath expression returns a non-empty result.
-//   - "key_equals": Checks that ExpectedKey exists and its value equals ExpectedValue.
-//   - "key_not_equals": Checks that ExpectedKey exists and its value does NOT equal ExpectedValue.
+//   - "exists": Checks that the attribute is a non-empty string.
+//   - "is_valid_json": Ensures the string parses as valid JSON.
+//   - "is_invalid_json": Ensures the string is not valid JSON.
+//   - "equals": Compares the full JSON string to expected_value.
+//   - "not_equals": Verifies the full JSON string is not equal to expected_value.
+//   - "jsonpath_exists": Asserts that the specified json_path resolves to a non-empty result.
+//   - "key_equals": Compares the value at json_path to expected_value.
+//   - "key_not_equals": Verifies the value at json_path is not equal to expected_value.
 type JsonAttributeCondition struct {
-	// Operation defines the type of check to perform on the JSON string.
+	// Operation defines the evaluation logic applied to the JSON value.
 	//
-	// +kubebuilder:validation:Enum=exists;is_valid_json;is_invalid_json;equals;not_equals;contains_key;not_contains_key;jsonpath_exists;key_equals;key_not_equals
-	Operation string `json:"operation"`
-
-	// ExpectedKey is required for:
-	//   - contains_key
-	//   - not_contains_key
+	// Supported values:
+	//   - exists
+	//   - is_valid_json
+	//   - is_invalid_json
+	//   - equals
+	//   - not_equals
+	//   - jsonpath_exists
 	//   - key_equals
 	//   - key_not_equals
 	//
-	// It represents a dot-separated path to a nested key inside the JSON object,
-	// e.g. "a.b.c" refers to obj["a"]["b"]["c"].
-	ExpectedKey string `json:"expected_key,omitempty"`
+	// +kubebuilder:validation:Enum=exists;is_valid_json;is_invalid_json;equals;not_equals;jsonpath_exists;key_equals;key_not_equals
+	Operation string `json:"operation"`
+
+	// JsonPath is required for:
+	//   - jsonpath_exists
+	//   - key_equals
+	//   - key_not_equals
+	//
+	// It is a JSONPath expression used to navigate the JSON structure.
+	// Example: $.user.role or $.events[0].code
+	JsonPath string `json:"json_path,omitempty"`
 
 	// ExpectedValue is required for:
 	//   - equals
@@ -151,13 +158,8 @@ type JsonAttributeCondition struct {
 	//   - key_equals
 	//   - key_not_equals
 	//
-	// Its meaning depends on the operation.
-	// For key_equals/key_not_equals, it is compared against the value at ExpectedKey.
+	// The value to compare against during evaluation.
 	ExpectedValue string `json:"expected_value,omitempty"`
-
-	// JsonPath is required for the "jsonpath_exists" operation. It should be a
-	// valid JSONPath expression, e.g. "$.store.book[0].title".
-	JsonPath string `json:"json_path,omitempty"`
 }
 
 // NumberAttributeCondition applies to attributes that are numeric (int, float, etc.).

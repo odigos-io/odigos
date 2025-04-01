@@ -99,17 +99,6 @@ spec:
                           description: JsonCondition applies to attributes that are
                             JSON-encoded strings.
                           properties:
-                            expected_key:
-                              description: |-
-                                ExpectedKey is required for:
-                                  - contains_key
-                                  - not_contains_key
-                                  - key_equals
-                                  - key_not_equals
-
-                                It represents a dot-separated path to a nested key inside the JSON object,
-                                e.g. "a.b.c" refers to obj["a"]["b"]["c"].
-                              type: string
                             expected_value:
                               description: |-
                                 ExpectedValue is required for:
@@ -118,25 +107,37 @@ spec:
                                   - key_equals
                                   - key_not_equals
 
-                                Its meaning depends on the operation.
-                                For key_equals/key_not_equals, it is compared against the value at ExpectedKey.
+                                The value to compare against during evaluation.
                               type: string
                             json_path:
                               description: |-
-                                JsonPath is required for the "jsonpath_exists" operation. It should be a
-                                valid JSONPath expression, e.g. "$.store.book[0].title".
+                                JsonPath is required for:
+                                  - jsonpath_exists
+                                  - key_equals
+                                  - key_not_equals
+
+                                It is a JSONPath expression used to navigate the JSON structure.
+                                Example: $.user.role or $.events[0].code
                               type: string
                             operation:
-                              description: Operation defines the type of check to
-                                perform on the JSON string.
+                              description: |-
+                                Operation defines the evaluation logic applied to the JSON value.
+
+                                Supported values:
+                                  - exists
+                                  - is_valid_json
+                                  - is_invalid_json
+                                  - equals
+                                  - not_equals
+                                  - jsonpath_exists
+                                  - key_equals
+                                  - key_not_equals
                               enum:
                               - exists
                               - is_valid_json
                               - is_invalid_json
                               - equals
                               - not_equals
-                              - contains_key
-                              - not_contains_key
                               - jsonpath_exists
                               - key_equals
                               - key_not_equals
