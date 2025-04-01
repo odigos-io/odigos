@@ -1,0 +1,39 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: greptime
+  displayName: GreptimeDB
+  category: managed
+spec:
+  image: greptime.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: GREPTIME_ENDPOINT
+      displayName: OTLP HTTP Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: https://<unique_id>.<aws_region>.aws.greptime.cloud
+        tooltip: Can be obtained from the GreptimeDB console -> Connect -> OpenTelemtry. Do not include the path `/v1/otlp/v1/metrics`!
+    - name: GREPTIME_DB_NAME
+      displayName:
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+    - name: GREPTIME_BASIC_TOKEN
+      displayName: Basic Auth Token
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+        placeholder: xxxxx:xxxxx
+        tooltip: The format is `username:password`. Can be obtained from the GreptimeDB console -> Connect -> OpenTelemtry. Do not convert it to Base64!
