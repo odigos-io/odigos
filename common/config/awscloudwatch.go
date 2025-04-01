@@ -50,14 +50,19 @@ func (m *AWSCloudWatch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{logsExporterName},
 		}
+
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
+		spanMetricNames := applySpanMetricsConnector(currentConfig, uniqueUri)
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
+			Receivers: []string{spanMetricNames.SpanMetricsConnector},
 			Exporters: []string{metricsExporterName},
 		}
+
+		pipelineNames = append(pipelineNames, spanMetricNames.TracesPipeline)
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
