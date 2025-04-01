@@ -31,7 +31,7 @@ func (s *ServiceNameRule) Validate() error {
 func (s *ServiceNameRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMatch bool, fallbackRatio float64) {
 	rs := td.ResourceSpans()
 
-	for i := 0; i < rs.Len(); i++ {
+	for i := range rs.Len() {
 		resourceAttrs := rs.At(i).Resource().Attributes()
 		serviceAttr, ok := resourceAttrs.Get(string(semconv.ServiceNameKey))
 		if !ok || serviceAttr.Str() != s.ServiceName {
