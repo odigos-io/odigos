@@ -50,7 +50,6 @@ func (m *AWSCloudWatch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{logsExporterName},
 		}
-
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
@@ -61,9 +60,7 @@ func (m *AWSCloudWatch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 			Receivers: []string{spanMetricNames.SpanMetricsConnector},
 			Exporters: []string{metricsExporterName},
 		}
-
-		pipelineNames = append(pipelineNames, spanMetricNames.TracesPipeline)
-		pipelineNames = append(pipelineNames, pipeName)
+		pipelineNames = append(pipelineNames, pipeName, spanMetricNames.TracesPipeline)
 	}
 
 	return pipelineNames, nil
