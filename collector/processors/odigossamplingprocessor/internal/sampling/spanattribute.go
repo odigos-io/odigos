@@ -26,7 +26,7 @@ type SpanAttributeRule struct {
 	ConditionType         AttributeConditionType `mapstructure:"condition_type"`
 	Operation             string                 `mapstructure:"operation"`
 	ExpectedValue         string                 `mapstructure:"expected_value,omitempty"`
-	ExpectedKey           string                 `mapstructure:"expected_key,omitempty"` // New field
+	ExpectedKey           string                 `mapstructure:"expected_key,omitempty"`
 	JsonPath              string                 `mapstructure:"json_path,omitempty"`
 	FallbackSamplingRatio float64                `mapstructure:"fallback_sampling_ratio"`
 }

@@ -22,6 +22,9 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
+        description: |-
+          ServiceNameSampler is the Schema for the servicenamesamplers API.
+          It enables trace sampling based on whether specific services appear within a trace.
         properties:
           apiVersion:
             description: |-
@@ -41,30 +44,55 @@ spec:
           metadata:
             type: object
           spec:
-            description: ServiceNameSamplerSpec defines the desired state of ServiceNameSampler
+            description: |-
+              ServiceNameSamplerSpec defines the desired configuration for a ServiceNameSampler.
+              This sampler enables sampling based on the presence of specific service names within a trace.
             properties:
               actionName:
+                description: |-
+                  ActionName is an optional label to identify this sampling policy.
+                  It can be used for display purposes or integration with other tools.
                 type: string
               disabled:
+                description: |-
+                  Disabled indicates whether this sampler should be active.
+                  If true, the sampler will not be applied.
                 type: boolean
               notes:
+                description: Notes allows attaching additional free-form documentation
+                  or context to this sampler.
                 type: string
               services_name_filters:
-                description: List of ServicesNameFilters to sample based on presence
-                  in the trace
+                description: |-
+                  ServicesNameFilters defines rules for sampling traces based on the presence
+                  of specific service names. If a trace contains a span from one of the listed
+                  services, the associated sampling ratio is applied.
                 items:
+                  description: ServiceNameFilter defines a single rule that maps a
+                    service name to a sampling decision.
                   properties:
                     fallback_sampling_ratio:
+                      description: |-
+                        FallbackSamplingRatio is the percentage (0–100) of traces to sample
+                        if the specified service is not present in the trace.
                       maximum: 100
                       minimum: 0
                       type: number
                     sampling_ratio:
                       default: 100
-                      description: Sampling ratio for specific service
+                      description: |-
+                        SamplingRatio determines the percentage (0–100) of traces to sample
+                        when the specified service is present in the trace.
+
+                        For example, a value of 100 means all such traces will be kept,
+                        while a value of 0 means all will be dropped.
                       maximum: 100
                       minimum: 0
                       type: number
                     service_name:
+                      description: |-
+                        ServiceName specifies the name of the service to look for within a trace.
+                        If any span in the trace comes from this service, the rule will apply.
                       type: string
                   required:
                   - fallback_sampling_ratio
@@ -73,6 +101,9 @@ spec:
                   type: object
                 type: array
               signals:
+                description: |-
+                  Signals specifies which types of telemetry data this sampler applies to.
+                  Common values include "traces", "metrics", or "logs".
                 items:
                   enum:
                   - LOGS
@@ -85,8 +116,14 @@ spec:
             - signals
             type: object
           status:
+            description: |-
+              ServiceNameSamplerStatus represents the runtime status of a ServiceNameSampler,
+              including observed conditions such as validation errors or processing state.
             properties:
               conditions:
+                description: |-
+                  Conditions is a list of status conditions for this sampler,
+                  following the standard Kubernetes conventions.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.

@@ -28,7 +28,7 @@ type SpanAttributeSamplerSpecApplyConfiguration struct {
 	Notes            *string                                 `json:"notes,omitempty"`
 	Disabled         *bool                                   `json:"disabled,omitempty"`
 	Signals          []common.ObservabilitySignal            `json:"signals,omitempty"`
-	AttributeFilters []SpanAttributeFilterApplyConfiguration `json:"attributeFilters,omitempty"`
+	AttributeFilters []SpanAttributeFilterApplyConfiguration `json:"attribute_filters,omitempty"`
 }
 
 // SpanAttributeSamplerSpecApplyConfiguration constructs a declarative configuration of the SpanAttributeSamplerSpec type for use with
