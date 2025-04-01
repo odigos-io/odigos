@@ -139,86 +139,76 @@ odigos update-offsets --default
 			os.Exit(1)
 		}
 
-		resp, err := http.Get(k8sconsts.GoOffsetsPublicURL)
-		if err != nil {
-			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Cannot get latest offsets: %s", err))
-			os.Exit(1)
-		}
-		defer resp.Body.Close()
+		data := getLatestOffsets(useDefault)
 
-		if resp.StatusCode != http.StatusOK {
-			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Cannot get latest offsets: %d", resp.StatusCode))
-			os.Exit(1)
-		}
-
-		data, err := io.ReadAll(resp.Body)
+		cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
 		if err != nil {
-			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to read response body: %s", err))
-			os.Exit(1)
+			if !apierrors.IsNotFound(err) {
+				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to get Go offsets ConfigMap: %s", err))
+				os.Exit(1)
+			}
+			cm = &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      k8sconsts.GoOffsetsConfigMap,
+					Namespace: ns,
+				},
+				Data: map[string]string{
+					k8sconsts.GoOffsetsFileName: string(data),
+				},
+			}
+
+			cm, err = client.Clientset.CoreV1().ConfigMaps(ns).Create(ctx, cm, metav1.CreateOptions{})
+			if err != nil {
+				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to create Go offsets ConfigMap: %s", err))
+				os.Exit(1)
+			}
+		} else {
+			if cm.Data == nil {
+				cm.Data = make(map[string]string)
+			}
+
+			cm.Data[k8sconsts.GoOffsetsFileName] = string(data)
+			_, err = client.Clientset.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
+			if err != nil {
+				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Go offsets ConfigMap: %s", err))
+				os.Exit(1)
+			}
 		}
 
 		ds := updateOdigletDaemonSet(ctx, client, ns, useDefault)
-
-		if useDefault {
-			// Update odiglet to remove references to configmap (before we delete the configmap)
-			_, err = client.Clientset.AppsV1().DaemonSets(ns).Update(ctx, ds, metav1.UpdateOptions{})
-			if err != nil {
-				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Odiglet DaemonSet: %s", err))
-				os.Exit(1)
-			}
-
-			// Delete offsets configmap
-			err = client.Clientset.CoreV1().ConfigMaps(ns).Delete(ctx, k8sconsts.GoOffsetsConfigMap, metav1.DeleteOptions{})
-			if err != nil && !apierrors.IsNotFound(err) {
-				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to delete Go offsets ConfigMap: %s", err))
-				os.Exit(1)
-			}
-
-			fmt.Println("Reverted to using default Go offsets data.")
-		} else {
-			// Create or update the offsets configmap (before we update the odiglet to refer to it)
-			cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
-			if err != nil {
-				if !apierrors.IsNotFound(err) {
-					fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to get Go offsets ConfigMap: %s", err))
-					os.Exit(1)
-				}
-				cm = &v1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      k8sconsts.GoOffsetsConfigMap,
-						Namespace: ns,
-					},
-					Data: map[string]string{
-						k8sconsts.GoOffsetsFileName: string(data),
-					},
-				}
-
-				cm, err = client.Clientset.CoreV1().ConfigMaps(ns).Create(ctx, cm, metav1.CreateOptions{})
-				if err != nil {
-					fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to create Go offsets ConfigMap: %s", err))
-					os.Exit(1)
-				}
-			} else {
-				if cm.Data == nil {
-					cm.Data = make(map[string]string)
-				}
-
-				cm.Data[k8sconsts.GoOffsetsFileName] = string(data)
-				_, err = client.Clientset.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
-				if err != nil {
-					fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Go offsets ConfigMap: %s", err))
-					os.Exit(1)
-				}
-			}
-
-			_, err = client.Clientset.AppsV1().DaemonSets(ns).Update(ctx, ds, metav1.UpdateOptions{})
-			if err != nil {
-				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Odiglet DaemonSet: %s", err))
-				os.Exit(1)
-			}
-			fmt.Println("Updated Go offsets to latest.")
+		_, err = client.Clientset.AppsV1().DaemonSets(ns).Update(ctx, ds, metav1.UpdateOptions{})
+		if err != nil {
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Odiglet DaemonSet: %s", err))
+			os.Exit(1)
 		}
+
+		fmt.Println("Updated Go Offsets.")
 	},
+}
+
+func getLatestOffsets(revert bool) []byte {
+	if revert {
+		return []byte{}
+	}
+
+	resp, err := http.Get(k8sconsts.GoOffsetsPublicURL)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Cannot get latest offsets: %s", err))
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Cannot get latest offsets: %d", resp.StatusCode))
+		os.Exit(1)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to read response body: %s", err))
+		os.Exit(1)
+	}
+	return data
 }
 
 func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string, revert bool) *appsv1.DaemonSet {
@@ -228,92 +218,63 @@ func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string,
 		os.Exit(1)
 	}
 
-	if revert {
-		// Remove offsets file env var (if present)
-		envVars := ds.Spec.Template.Spec.Containers[0].Env
-		for i, env := range envVars {
-			if env.Name == k8sconsts.GoOffsetsEnvVar {
-				ds.Spec.Template.Spec.Containers[0].Env = append(envVars[:i], envVars[i+1:]...)
-				break
-			}
+	// Add offsets volume (if not already exist)
+	volumes := ds.Spec.Template.Spec.Volumes
+	if volumes == nil {
+		volumes = make([]v1.Volume, 0)
+	}
+	addVolume := true
+	for _, vol := range volumes {
+		if vol.Name == k8sconsts.GoOffsetsConfigMap {
+			addVolume = false
+			break
 		}
-
-		// Remove offsets volumemount (if present)
-		volumeMounts := ds.Spec.Template.Spec.Containers[0].VolumeMounts
-		for i, vm := range volumeMounts {
-			if vm.Name == k8sconsts.GoOffsetsConfigMap {
-				ds.Spec.Template.Spec.Containers[0].VolumeMounts = append(volumeMounts[:i], volumeMounts[i+1:]...)
-				break
-			}
-		}
-
-		// Remove offsets volume (if present)
-		volumes := ds.Spec.Template.Spec.Volumes
-		for i, vol := range volumes {
-			if vol.Name == k8sconsts.GoOffsetsConfigMap {
-				ds.Spec.Template.Spec.Volumes = append(volumes[:i], volumes[i+1:]...)
-				break
-			}
-		}
-	} else {
-		// Add offsets volume (if not already exist)
-		volumes := ds.Spec.Template.Spec.Volumes
-		if volumes == nil {
-			volumes = make([]v1.Volume, 0)
-		}
-		addVolume := true
-		for _, vol := range volumes {
-			if vol.Name == k8sconsts.GoOffsetsConfigMap {
-				addVolume = false
-				break
-			}
-		}
-		if addVolume {
-			volumes = append(volumes, v1.Volume{Name: k8sconsts.GoOffsetsConfigMap,
-				VolumeSource: v1.VolumeSource{
-					ConfigMap: &v1.ConfigMapVolumeSource{
-						LocalObjectReference: v1.LocalObjectReference{
-							Name: k8sconsts.GoOffsetsConfigMap,
-						},
+	}
+	if addVolume {
+		volumes = append(volumes, v1.Volume{Name: k8sconsts.GoOffsetsConfigMap,
+			VolumeSource: v1.VolumeSource{
+				ConfigMap: &v1.ConfigMapVolumeSource{
+					LocalObjectReference: v1.LocalObjectReference{
+						Name: k8sconsts.GoOffsetsConfigMap,
 					},
 				},
-			})
-			ds.Spec.Template.Spec.Volumes = volumes
-		}
+			},
+		})
+		ds.Spec.Template.Spec.Volumes = volumes
+	}
 
-		// Add offsets volume mounnt (if not already exist)
-		volumeMounts := ds.Spec.Template.Spec.Containers[0].VolumeMounts
-		if volumeMounts == nil {
-			volumeMounts = make([]v1.VolumeMount, 0)
+	// Add offsets volume mounnt (if not already exist)
+	volumeMounts := ds.Spec.Template.Spec.Containers[0].VolumeMounts
+	if volumeMounts == nil {
+		volumeMounts = make([]v1.VolumeMount, 0)
+	}
+	addVolumeMount := true
+	for _, vm := range volumeMounts {
+		if vm.Name == k8sconsts.GoOffsetsConfigMap {
+			addVolumeMount = false
+			break
 		}
-		addVolumeMount := true
-		for _, vm := range volumeMounts {
-			if vm.Name == k8sconsts.GoOffsetsConfigMap {
-				addVolumeMount = false
-				break
-			}
-		}
-		if addVolumeMount {
-			volumeMounts = append(volumeMounts, v1.VolumeMount{Name: k8sconsts.GoOffsetsConfigMap, MountPath: offsetFileMountPath})
-			ds.Spec.Template.Spec.Containers[0].VolumeMounts = volumeMounts
-		}
+	}
+	if addVolumeMount {
+		volumeMounts = append(volumeMounts, v1.VolumeMount{Name: k8sconsts.GoOffsetsConfigMap, MountPath: offsetFileMountPath})
+		ds.Spec.Template.Spec.Containers[0].VolumeMounts = volumeMounts
+	}
 
-		// Add offsets Env Var (if not already exist)
-		envVars := ds.Spec.Template.Spec.Containers[0].Env
-		if envVars == nil {
-			envVars = make([]v1.EnvVar, 0)
+	// Add offsets Env Var (if not already exist)
+	envVars := ds.Spec.Template.Spec.Containers[0].Env
+	if envVars == nil {
+		envVars = make([]v1.EnvVar, 0)
+	}
+	addEnvVar := true
+	for _, env := range envVars {
+		if env.Name == k8sconsts.GoOffsetsEnvVar {
+			addEnvVar = false
+			break
 		}
-		addEnvVar := true
-		for _, env := range envVars {
-			if env.Name == k8sconsts.GoOffsetsEnvVar {
-				addEnvVar = false
-				break
-			}
-		}
-		if addEnvVar {
-			envVars = append(envVars, v1.EnvVar{Name: k8sconsts.GoOffsetsEnvVar, Value: offsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName})
-			ds.Spec.Template.Spec.Containers[0].Env = envVars
-		}
+	}
+	if addEnvVar {
+		envVars = append(envVars, v1.EnvVar{Name: k8sconsts.GoOffsetsEnvVar, Value: offsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName})
+		ds.Spec.Template.Spec.Containers[0].Env = envVars
 	}
 	return ds
 }
