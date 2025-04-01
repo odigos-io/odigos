@@ -3,7 +3,7 @@ kind: Destination
 metadata:
   type: seq
   displayName: Seq
-  category: self-hosted
+  category: self hosted
 spec:
   image: seq.svg
   signals:
