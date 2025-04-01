@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestServiceName_MatchingService_Sampled ensures that a matching service is sampled according to SamplingRatio (100%).
+// TestServiceName_MatchingService_Sampled ensures that a matching service is marked as satisfied.
 func TestServiceName_MatchingService_Sampled(t *testing.T) {
 	s := ServiceNameRule{
 		ServiceName:           "checkout-service",
-		SamplingRatio:         100.0, // Always sampled
+		SamplingRatio:         100.0,
 		FallbackSamplingRatio: 10.0,
 	}
 
@@ -25,14 +25,14 @@ func TestServiceName_MatchingService_Sampled(t *testing.T) {
 
 	assert.True(t, filterMatch)
 	assert.True(t, conditionMatch)
-	assert.Equal(t, 10.0, fallback)
+	assert.Equal(t, 100.0, fallback)
 }
 
-// TestServiceName_MatchingService_NotSampled ensures that a matching service is correctly not sampled according to SamplingRatio (0%).
+// TestServiceName_MatchingService_NotSampled ensures that a matching service is reported as satisfied even with 0% ratio.
 func TestServiceName_MatchingService_NotSampled(t *testing.T) {
 	s := ServiceNameRule{
 		ServiceName:           "checkout-service",
-		SamplingRatio:         0.0, // Never sampled
+		SamplingRatio:         0.0,
 		FallbackSamplingRatio: 10.0,
 	}
 
@@ -45,7 +45,7 @@ func TestServiceName_MatchingService_NotSampled(t *testing.T) {
 	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
 
 	assert.True(t, filterMatch)
-	assert.False(t, conditionMatch)
+	assert.True(t, conditionMatch) // satisfied == true since rule matched
 	assert.Equal(t, 0.0, fallback)
 }
 
@@ -70,7 +70,8 @@ func TestServiceName_NoMatchingService(t *testing.T) {
 	assert.Equal(t, 5.0, fallback)
 }
 
-// TestServiceName_MultipleResources_OneMatches confirms correct evaluation when at least one resource matches the service name (with 100% sampling).
+// TestServiceName_MultipleResources_OneMatches confirms that when one of multiple resource spans
+// matches the target service name, the rule is marked as matched and satisfied, and returns its SamplingRatio.
 func TestServiceName_MultipleResources_OneMatches(t *testing.T) {
 	s := ServiceNameRule{
 		ServiceName:           "auth-service",
@@ -91,7 +92,7 @@ func TestServiceName_MultipleResources_OneMatches(t *testing.T) {
 
 	assert.True(t, filterMatch)
 	assert.True(t, conditionMatch)
-	assert.Equal(t, 15.0, fallback)
+	assert.Equal(t, 100.0, fallback)
 }
 
 // TestServiceName_EmptyTrace ensures an empty trace is handled gracefully with fallback ratio.
@@ -156,30 +157,4 @@ func TestServiceName_InvalidFallbackSamplingRatio(t *testing.T) {
 	err := s.Validate()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fallback sampling ratio must be between 0 and 100")
-}
-
-// TestServiceName_RandomSampling ensures statistical correctness over multiple evaluations.
-func TestServiceName_RandomSampling(t *testing.T) {
-	s := ServiceNameRule{
-		ServiceName:           "checkout-service",
-		SamplingRatio:         50.0, // 50% sampling
-		FallbackSamplingRatio: 10.0,
-	}
-
-	sampledCount := 0
-	const iterations = 1000
-	for i := 0; i < iterations; i++ {
-		trace := testutil.NewTrace().
-			AddResource("checkout-service").
-			AddSpan("checkout").
-			Done().
-			Build()
-
-		_, conditionMatch, _ := s.Evaluate(trace)
-		if conditionMatch {
-			sampledCount++
-		}
-	}
-
-	assert.InDelta(t, 500, sampledCount, 50, "Sampling should approximate 50% within ±5% tolerance")
 }

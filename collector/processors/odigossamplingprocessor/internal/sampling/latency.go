@@ -18,6 +18,7 @@ type HttpRouteLatencyRule struct {
 
 var _ SamplingDecision = (*HttpRouteLatencyRule)(nil)
 
+// Validate ensures the rule is well-formed and ready to evaluate.
 func (r *HttpRouteLatencyRule) Validate() error {
 	switch {
 	case r.Threshold <= 0:
@@ -34,6 +35,9 @@ func (r *HttpRouteLatencyRule) Validate() error {
 	return nil
 }
 
+// Evaluate checks if the trace contains spans for the target service and HTTP route,
+// and whether the trace latency exceeds the threshold. Sampling ratios are returned
+// for the RuleEngine to apply.
 func (r *HttpRouteLatencyRule) Evaluate(td ptrace.Traces) (filterMatch bool, conditionMatch bool, fallbackRatio float64) {
 	resources := td.ResourceSpans()
 	var serviceFound, endpointFound bool
@@ -71,18 +75,25 @@ func (r *HttpRouteLatencyRule) Evaluate(td ptrace.Traces) (filterMatch bool, con
 	}
 
 	if !serviceFound || !endpointFound {
+		// No match → rule doesn't apply
 		return false, false, 0
 	}
 
+	// Compute total trace latency
 	duration := maxEnd.AsTime().Sub(minStart.AsTime()).Milliseconds()
 
-	if duration > int64(r.Threshold) {
-		return true, true, 0 // Always sample
+	filterMatch = true
+
+	if duration >= int64(r.Threshold) {
+		// Latency condition satisfied → sample fully
+		return true, true, 100.0
 	}
 
-	return true, false, r.FallbackSamplingRatio // Probabilistic fallback
+	// Matched, but not satisfied → fallback applies
+	return true, false, r.FallbackSamplingRatio
 }
 
 func (r *HttpRouteLatencyRule) matchEndpoint(spanEndpoint string, ruleEndpoint string) bool {
+	// Match on prefix to allow hierarchical route matching
 	return strings.HasPrefix(spanEndpoint, ruleEndpoint)
 }

@@ -2,7 +2,6 @@ package sampling
 
 import (
 	"errors"
-	"math/rand"
 
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
@@ -29,21 +28,22 @@ func (s *ServiceNameRule) Validate() error {
 	return nil
 }
 
-func (s *ServiceNameRule) Evaluate(td ptrace.Traces) (filterMatch bool, conditionMatch bool, fallbackRatio float64) {
+func (s *ServiceNameRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMatch bool, fallbackRatio float64) {
 	rs := td.ResourceSpans()
+
 	for i := 0; i < rs.Len(); i++ {
-		attrs := rs.At(i).Resource().Attributes()
-		if val, ok := attrs.Get(string(semconv.ServiceNameKey)); ok && val.Str() == s.ServiceName {
-			filterMatch = true
-			if rand.Float64()*100 < s.SamplingRatio {
-				// Trace matched and passes the sampling ratio
-				return true, true, s.FallbackSamplingRatio
-			} else {
-				// Trace matched service, but didn't pass the sampling ratio
-				// Set fallback sampling ratio to 0 to ensure the trace won't be sampled at the last exhausted filter
-				return true, false, 0
-			}
+		resourceAttrs := rs.At(i).Resource().Attributes()
+		serviceAttr, ok := resourceAttrs.Get(string(semconv.ServiceNameKey))
+		if !ok || serviceAttr.Str() != s.ServiceName {
+			continue
 		}
+
+		// Matched a span from the target service
+		filterMatch = true
+		conditionMatch = true // Report that this rule is satisfied
+		return filterMatch, conditionMatch, s.SamplingRatio
 	}
+
+	// No match → report fallback sampling ratio
 	return false, false, s.FallbackSamplingRatio
 }
