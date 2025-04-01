@@ -2,7 +2,6 @@ package destinations
 
 import (
 	"embed"
-	"log"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -56,7 +55,6 @@ func load(fs embed.FS) error {
 		var dest Destination
 		err = yaml.Unmarshal(bytesData, &dest)
 		if err != nil {
-			log.Fatalf("Error yaml.Unmarshal: %s, %v, %v, %v", err, file.Name(), dest, bytesData)
 			return err
 		}
 
