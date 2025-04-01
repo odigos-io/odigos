@@ -22,6 +22,10 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
+        description: |-
+          SpanAttributeSampler is the Schema for the spanattributesamplers API.
+          It holds the specification for sampling spans based on attribute conditions,
+          as well as the sampler's current status.
         properties:
           apiVersion:
             description: |-
@@ -44,29 +48,46 @@ spec:
             description: SpanAttributeSamplerSpec defines the desired state of SpanAttributeSampler
             properties:
               actionName:
+                description: |-
+                  ActionName is the name of the sampling action. This may be used to
+                  describe the purpose or intent of this sampler, for documentation
+                  or reference within other tools or systems.
                 type: string
-              attributeFilters:
-                description: Filters based on span attributes and conditions
+              attribute_filters:
+                description: |-
+                  AttributeFilters defines a list of criteria to decide how spans should be
+                  sampled based on their attributes. At least one filter is required.
                 items:
                   description: SpanAttributeFilter allows sampling traces based on
-                    span attributes and conditions.
+                    specific span attributes and conditions.
                   properties:
                     attribute_key:
-                      description: Attribute key to evaluate
+                      description: AttributeKey indicates which attribute on the span
+                        to evaluate.
                       type: string
                     condition:
                       description: |-
-                        Condition to evaluate the attribute against
-                        Exactly one condition type must be provided
+                        Condition is the rule or expression that will be used to evaluate
+                        the attribute's value. Exactly one of the condition types must be set:
+                          - StringCondition
+                          - NumberCondition
+                          - BooleanCondition
+                          - JsonCondition
                       properties:
                         boolean_condition:
-                          description: BooleanAttributeCondition for boolean attribute
-                            evaluation
+                          description: BooleanCondition applies to boolean attributes.
                           properties:
                             expected_value:
-                              description: Required only for 'equals' operation
+                              description: ExpectedValue is only used if Operation
+                                == "equals".
                               type: boolean
                             operation:
+                              description: |-
+                                Operation can be:
+                                  - "exists": Checks that the boolean attribute is present.
+                                  - "equals": Checks if the attribute exactly matches ExpectedValue.
+
+                                ExpectedValue is required only for the "equals" operation.
                               enum:
                               - exists
                               - equals
@@ -75,17 +96,39 @@ spec:
                           - operation
                           type: object
                         json_condition:
-                          description: JsonAttributeCondition supports operations
-                            on JSON serialized as strings
+                          description: JsonCondition applies to attributes that are
+                            JSON-encoded strings.
                           properties:
+                            expected_key:
+                              description: |-
+                                ExpectedKey is required for:
+                                  - contains_key
+                                  - not_contains_key
+                                  - key_equals
+                                  - key_not_equals
+
+                                It represents a dot-separated path to a nested key inside the JSON object,
+                                e.g. "a.b.c" refers to obj["a"]["b"]["c"].
+                              type: string
                             expected_value:
-                              description: ExpectedValue required for equals, not_equals,
-                                contains_key, not_contains_key
+                              description: |-
+                                ExpectedValue is required for:
+                                  - equals
+                                  - not_equals
+                                  - key_equals
+                                  - key_not_equals
+
+                                Its meaning depends on the operation.
+                                For key_equals/key_not_equals, it is compared against the value at ExpectedKey.
                               type: string
                             json_path:
-                              description: JsonPath required for jsonpath_exists operation
+                              description: |-
+                                JsonPath is required for the "jsonpath_exists" operation. It should be a
+                                valid JSONPath expression, e.g. "$.store.book[0].title".
                               type: string
                             operation:
+                              description: Operation defines the type of check to
+                                perform on the JSON string.
                               enum:
                               - exists
                               - is_valid_json
@@ -95,18 +138,35 @@ spec:
                               - contains_key
                               - not_contains_key
                               - jsonpath_exists
+                              - key_equals
+                              - key_not_equals
                               type: string
                           required:
                           - operation
                           type: object
                         number_condition:
-                          description: 'NumberAttributeCondition supports numeric
-                            types: int, long, float, double'
+                          description: NumberCondition applies to numeric attributes
+                            (int, long, float, double).
                           properties:
                             expected_value:
-                              description: Required for all operations except 'exists'
+                              description: ExpectedValue is required for all operations
+                                except "exists".
                               type: number
                             operation:
+                              description: |-
+                                Operation determines the numeric comparison to perform.
+
+                                Valid operations:
+
+                                  - "exists": Checks that the numeric attribute is present (non-null).
+                                  - "equals": Checks if the attribute equals ExpectedValue.
+                                  - "not_equals": Checks if the attribute does not equal ExpectedValue.
+                                  - "greater_than": Checks if attribute > ExpectedValue.
+                                  - "less_than": Checks if attribute < ExpectedValue.
+                                  - "greater_than_or_equal": Checks if attribute >= ExpectedValue.
+                                  - "less_than_or_equal": Checks if attribute <= ExpectedValue.
+
+                                For operations other than "exists", ExpectedValue must be specified.
                               enum:
                               - exists
                               - equals
@@ -120,13 +180,29 @@ spec:
                           - operation
                           type: object
                         string_condition:
-                          description: StringAttributeCondition for standard string
-                            attributes.
+                          description: StringCondition applies to string-type attributes.
                           properties:
                             expected_value:
-                              description: Required for all except 'exists'
+                              description: |-
+                                ExpectedValue is required for all operations except "exists". Its usage
+                                depends on the chosen Operation, e.g. it may represent an exact string
+                                to match, a substring, or a regular expression.
                               type: string
                             operation:
+                              description: |-
+                                Operation determines what comparison or check should be performed.
+
+                                The valid operations are:
+
+                                  - "exists": Checks that the attribute is present (and not an empty string).
+                                  - "equals": String equality comparison with ExpectedValue.
+                                  - "not_equals": String inequality comparison with ExpectedValue.
+                                  - "contains": Checks if the attribute contains ExpectedValue as a substring.
+                                  - "not_contains": Checks if the attribute does not contain ExpectedValue.
+                                  - "regex": Interprets ExpectedValue as a regular expression (RE2 syntax)
+                                      and checks for a match within the attribute.
+
+                                For operations other than "exists", ExpectedValue must be provided.
                               enum:
                               - exists
                               - equals
@@ -140,13 +216,17 @@ spec:
                           type: object
                       type: object
                     fallback_sampling_ratio:
-                      description: Fallback sampling ratio when the condition doesn't
-                        explicitly match
+                      description: |-
+                        FallbackSamplingRatio is the percentage (0–100) of spans to sample
+                        when the condition does not explicitly match. For example, if set to 50,
+                        then half of non-matching spans would be sampled.
                       maximum: 100
                       minimum: 0
                       type: number
                     service_name:
-                      description: Specifies the service the filter applies to
+                      description: |-
+                        ServiceName specifies which service this filter applies to. Only spans
+                        originating from the given service will be evaluated against this filter.
                       type: string
                   required:
                   - attribute_key
@@ -156,10 +236,19 @@ spec:
                   type: object
                 type: array
               disabled:
+                description: |-
+                  Disabled, if set to true, indicates that this sampler should not be
+                  applied at runtime.
                 type: boolean
               notes:
+                description: |-
+                  Notes provides additional, free-form information about this sampler,
+                  such as a reference to a ticket, a link, or usage guidelines.
                 type: string
               signals:
+                description: |-
+                  Signals indicates which ObservabilitySignal types this sampler applies to.
+                  For instance, this could include traces, metrics, logs, etc.
                 items:
                   enum:
                   - LOGS
@@ -168,12 +257,16 @@ spec:
                   type: string
                 type: array
             required:
-            - attributeFilters
+            - attribute_filters
             - signals
             type: object
           status:
+            description: SpanAttributeSamplerStatus represents the current status
+              of a SpanAttributeSampler.
             properties:
               conditions:
+                description: Conditions is a list of the latest available observations
+                  of this sampler's state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.

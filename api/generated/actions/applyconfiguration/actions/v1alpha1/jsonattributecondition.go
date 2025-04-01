@@ -21,6 +21,7 @@ package v1alpha1
 // with apply.
 type JsonAttributeConditionApplyConfiguration struct {
 	Operation     *string `json:"operation,omitempty"`
+	ExpectedKey   *string `json:"expected_key,omitempty"`
 	ExpectedValue *string `json:"expected_value,omitempty"`
 	JsonPath      *string `json:"json_path,omitempty"`
 }
@@ -36,6 +37,14 @@ func JsonAttributeCondition() *JsonAttributeConditionApplyConfiguration {
 // If called multiple times, the Operation field is set to the value of the last call.
 func (b *JsonAttributeConditionApplyConfiguration) WithOperation(value string) *JsonAttributeConditionApplyConfiguration {
 	b.Operation = &value
+	return b
+}
+
+// WithExpectedKey sets the ExpectedKey field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ExpectedKey field is set to the value of the last call.
+func (b *JsonAttributeConditionApplyConfiguration) WithExpectedKey(value string) *JsonAttributeConditionApplyConfiguration {
+	b.ExpectedKey = &value
 	return b
 }
 
