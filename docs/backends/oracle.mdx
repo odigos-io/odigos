@@ -37,11 +37,11 @@ icon: 'signal-stream'
   ❌ Logs
 </Accordion>
 
-- **ORACLE_ENDPOINT** `string` : OTLP HTTP Endpoint. The endpoint of the Oracle APM OTLP HTTP endpoint. Do not include the paths `/20200101/opentelemetry/*/v1/*`.
+- **ORACLE_ENDPOINT** `string` : OTLP HTTP Endpoint. The data upload endpoint of the Oracle APM domain.
   - This field is required
 - **ORACLE_DATA_KEY** `string` : Data Key.
   - This field is required
-- **ORACLE_DATA_KEY_TYPE** `string` : Data Key Type. The type of the data key, relevant only for Traces. Metrics are always authenticated with a private data key.
+- **ORACLE_DATA_KEY_TYPE** `string` : Data Key Type. The type of the data key, relevant for Traces. Metrics are always authenticated with a private data key.
   - This field is required and defaults to `private`
 
 ### Adding Destination to Odigos
