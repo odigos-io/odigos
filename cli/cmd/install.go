@@ -71,7 +71,7 @@ It will install k8s components that will auto-instrument your applications with 
 			os.Exit(1)
 		}
 
-		shouldInstallProxy := clusterName != "" && centralBackendURL != ""
+		shouldInstallCentralProxy := clusterName != "" && centralBackendURL != ""
 
 		if installed {
 			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace\n")
@@ -122,12 +122,12 @@ It will install k8s components that will auto-instrument your applications with 
 			os.Exit(1)
 		}
 
-		if shouldInstallProxy {
+		if shouldInstallCentralProxy {
 			config.ClusterName = clusterName
 			config.CentralBackendURL = centralBackendURL
 		}
 
-		err = installOdigos(ctx, client, ns, &config, &odigosProToken, odigosTier, "Creating", shouldInstallProxy, installed)
+		err = installOdigos(ctx, client, ns, &config, &odigosProToken, odigosTier, "Creating", shouldInstallCentralProxy)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
 			os.Exit(1)
@@ -175,15 +175,10 @@ func isOdigosInstalled(ctx context.Context, client *kube.Client, ns string) (boo
 	return cm != nil, nil
 }
 
-func installOdigos(ctx context.Context, client *kube.Client, ns string, config *common.OdigosConfiguration, token *string, odigosTier common.OdigosTier, label string, includeProxy bool, isOdigosInstall bool) error {
+func installOdigos(ctx context.Context, client *kube.Client, ns string, config *common.OdigosConfiguration, token *string, odigosTier common.OdigosTier, label string, includeProxy bool) error {
 	managerOpts := resourcemanager.ManagerOpts{
 		ImageReferences:     GetImageReferences(odigosTier, openshiftEnabled),
 		IncludeCentralProxy: includeProxy,
-	}
-	if isOdigosInstall {
-		if err := resources.DeleteOldOdigosSystemObjects(ctx, client, ns, config); err != nil {
-			return fmt.Errorf("cleanup old Odigos resources failed: %w", err)
-		}
 	}
 
 	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, createNamespace)
