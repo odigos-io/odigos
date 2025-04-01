@@ -425,7 +425,7 @@ build-tag-push-eks-image/%:
 	--build-arg RELEASE=$(TAG) \
 	--build-arg SUMMARY="$(SUMMARY)" \
 	--build-arg DESCRIPTION="$(DESCRIPTION)"
-	docker tag registry.odigos.io/odigos-$*$(IMG_SUFFIX):$(TAG) $(IMG_PREFIX)/odigos-$*$(IMG_SUFFIX):$(TAG)
+	docker tag $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(IMG_PREFIX)/odigos-$*$(IMG_SUFFIX):$(TAG)
 	docker push $(IMG_PREFIX)/odigos-$*$(IMG_SUFFIX):$(TAG)
 
 .PHONY: deploy-to-eks

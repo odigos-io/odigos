@@ -67,20 +67,6 @@ spec:
       componentProps:
         required: false
         tooltip: 'Upload segments to AWS X-Ray through a proxy.'
-    - name: AWS_XRAY_DISABLE_SSL
-      displayName: Disable SSL Verification
-      componentType: checkbox
-      initialValue: false
-      componentProps:
-        required: false
-        tooltip: 'Enable or disable TLS certificate verification.'
-    - name: AWS_XRAY_LOCAL_MODE
-      displayName: Local Mode
-      componentType: checkbox
-      initialValue: false
-      componentProps:
-        required: false
-        tooltip: 'Local mode to skip EC2 instance metadata check.'
     - name: AWS_XRAY_RESOURCE_ARN
       displayName: Resource ARN
       componentType: input
@@ -99,25 +85,26 @@ spec:
       componentProps:
         required: false
         tooltip: 'Shared identitier used when assuming an IAM role in an external AWS account.'
-    - name: AWS_XRAY_INDEX_ALL_ATTRIBUTES
-      displayName: Index All Attributes
-      componentType: checkbox
-      initialValue: false
-      componentProps:
-        required: false
-        tooltip: 'Enable or disable conversion of all OpenTelemetry attributes to X-Ray annotations.'
-    - name: AWS_XRAY_INDEXED_ATTRIBUTES
-      displayName: Indexed Attributes
-      componentType: multiInput
-      componentProps:
-        required: false
-        tooltip: 'List of attribute names to be converted to X-Ray annotations.'
     - name: AWS_XRAY_LOG_GROUPS
       displayName: Log Groups
       componentType: multiInput
       componentProps:
         required: false
         tooltip: 'List of log group names for CloudWatch.'
+    - name: AWS_XRAY_DISABLE_SSL
+      displayName: Disable SSL Verification
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Enable or disable TLS certificate verification.'
+    - name: AWS_XRAY_LOCAL_MODE
+      displayName: Local Mode
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Local mode to skip EC2 instance metadata check.'
     - name: AWS_XRAY_TELEMETRY_ENABLED
       displayName: Telemetry - Enabled
       componentType: checkbox
@@ -156,6 +143,19 @@ spec:
       componentProps:
         required: false
         tooltip: 'List of X-Ray component IDs contributing to the telemetry (ex. for multiple X-Ray receivers: awsxray/1, awsxray/2)'
+    - name: AWS_XRAY_INDEX_ALL_ATTRIBUTES
+      displayName: Index All Attributes
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Enable or disable conversion of all OpenTelemetry attributes to X-Ray annotations.'
+    - name: AWS_XRAY_INDEXED_ATTRIBUTES
+      displayName: Indexed Attributes
+      componentType: multiInput
+      componentProps:
+        required: false
+        tooltip: 'List of attribute names to be converted to X-Ray annotations.'
   note:
     type: Note
     content: |

@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-latest-version
+  namespace: default
+spec:
+  containers:
+    - image: public.ecr.aws/odigos/java-latest-version:v0.0.1
+      name: java-latest-version
+      # nor JAVA_OPTS or JAVA_TOOL_OPTIONS are set in the manifest or Dockerfile of java-latest-version,
+      # In this case we need to ensure that they are both exists in the pod spec.
+      (env[?name=='JAVA_OPTS']):
+       - value: "-javaagent:/var/odigos/java/javaagent.jar"
+      (env[?name=='JAVA_TOOL_OPTIONS']):
+       - value: "-javaagent:/var/odigos/java/javaagent.jar"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-supported-manifest-env
+  namespace: default
+spec:
+  containers:
+    - image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
+      name: java-supported-manifest-env
+      (env[?name=='JAVA_TOOL_OPTIONS']):
+      - value: "-Dnot.work=true -javaagent:/var/odigos/java/javaagent.jar"
+    # JAVA_TOOL_OPTIONS is not set in the manifest of java-supported-manifest-env,
+    # so we need to ensure it is also not set in the pod spec.
+      (env[?name=='JAVA_OPTS']): []
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-supported-docker-env
+  namespace: default
+spec:
+  containers:
+    - image: public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
+      name: java-supported-docker-env
+      (env[?name=='JAVA_OPTS']):
+      - value: -Dthis.does.not.exist=true -javaagent:/var/odigos/java/javaagent.jar
+    # JAVA_TOOL_OPTIONS is not set in the Dockerfile of java-supported-docker-env,
+    # so we need to ensure it is also not set in the pod spec.
+      (env[?name=='JAVA_TOOL_OPTIONS']): []
