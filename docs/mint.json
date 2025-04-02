@@ -219,6 +219,7 @@
           "group": "Supported Backends",
           "icon": "folder-tree",
           "pages": [
+            "backends/alibabacloud",
             "backends/appdynamics",
             "backends/awscloudwatch",
             "backends/awss3",
@@ -257,6 +258,7 @@
             "backends/lumigo",
             "backends/middleware",
             "backends/newrelic",
+            "backends/observe",
             "backends/openobserve",
             "backends/opsverse",
             "backends/otlp",
@@ -265,11 +267,13 @@
             "backends/qryn",
             "backends/quickwit",
             "backends/sentry",
+            "backends/seq",
             "backends/signoz",
             "backends/splunk",
             "backends/sumologic",
             "backends/telemetryhub",
             "backends/tempo",
+            "backends/tingyun",
             "backends/traceloop",
             "backends/uptrace"
           ]

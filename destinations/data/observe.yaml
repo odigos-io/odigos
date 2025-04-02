@@ -1,0 +1,36 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: observe
+  displayName: Observe
+  category: managed
+spec:
+  image: observe.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: OBSERVE_CUSTOMER_ID
+      displayName: Customer ID
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: The Customer ID is the first part of your Observe URL. For example, if your Observe URL is `https://<customer_id>.observe.com`, then the Customer ID is `<customer_id>`.
+    - name: OBSERVE_TOKEN
+      displayName: Token
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+        tooltip: You can create a token in your Observe dashboard, under "Datastreams".
+  note:
+    type: Check
+    content: |
+      We handle the endpoint internally, so you don't need to provide it.
+      - The endpoint is `https://${OBSERVE_CUSTOMER_ID}.collect.observeinc.com/v2/otel`

@@ -16,6 +16,7 @@ const (
 )
 
 var availableConfigers = []Configer{
+	&AlibabaCloud{},
 	&AppDynamics{},
 	&AWSCloudWatch{},
 	&AWSS3{},
@@ -57,6 +58,7 @@ var availableConfigers = []Configer{
 	&Mock{},
 	&NewRelic{},
 	&Nop{},
+	&Observe{},
 	&OpenObserve{},
 	&OpsVerse{},
 	&OTLPHttp{},
@@ -65,11 +67,13 @@ var availableConfigers = []Configer{
 	&QrynOSS{},
 	&Quickwit{},
 	&Sentry{},
+	&Seq{},
 	&Signoz{},
 	&Splunk{},
 	&SumoLogic{},
 	&TelemetryHub{},
 	&Tempo{},
+	&Tingyun{},
 	&Traceloop{},
 	&Uptrace{},
 }
