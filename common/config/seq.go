@@ -28,6 +28,10 @@ func (j *Seq) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 	if err != nil {
 		return nil, err
 	}
+	err = urlHostContainsPath(endpoint)
+	if err != nil {
+		return nil, err
+	}
 	if !urlHostContainsPort(endpoint) {
 		endpoint += ":5341/ingest/otlp"
 	} else {

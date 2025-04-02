@@ -1,8 +1,6 @@
 package config
 
 import (
-	"errors"
-
 	"github.com/odigos-io/odigos/common"
 )
 
@@ -32,8 +30,9 @@ func (j *Greptime) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string,
 	if err != nil {
 		return nil, err
 	}
-	if urlHostContainsPath(endpoint) {
-		return nil, errors.New("endpoint should not contain path")
+	err = urlHostContainsPath(endpoint)
+	if err != nil {
+		return nil, err
 	}
 	endpoint += "/v1/otlp"
 

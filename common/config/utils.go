@@ -94,7 +94,7 @@ func urlHostContainsPort(host string) bool {
 	}
 }
 
-func urlHostContainsPath(host string) bool {
+func urlHostContainsPath(host string) error {
 	// Remove scheme if present
 	parts := strings.SplitN(host, "://", 2)
 	if len(parts) == 2 {
@@ -104,11 +104,16 @@ func urlHostContainsPath(host string) bool {
 	// Prepend a dummy scheme to allow parsing
 	parsedURL, err := url.Parse("dummy://" + host)
 	if err != nil {
-		return false
+		return fmt.Errorf("failed to parse endpoint %q", err)
 	}
 
 	// A path exists if it's not empty and not just "/"
-	return parsedURL.Path != "" && parsedURL.Path != "/"
+	containsPath := parsedURL.Path != "" && parsedURL.Path != "/"
+	if containsPath {
+		return fmt.Errorf("endpoint should not contain path")
+	}
+
+	return nil
 }
 
 func getBooleanConfig(currentValue string, deprecatedValue string) bool {

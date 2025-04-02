@@ -28,6 +28,10 @@ func (j *Checkly) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 	if err != nil {
 		return nil, err
 	}
+	err = urlHostContainsPath(endpoint)
+	if err != nil {
+		return nil, err
+	}
 
 	exporterName := "otlp/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
