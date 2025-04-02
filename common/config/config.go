@@ -14,7 +14,6 @@ type ExporterConfigurer interface {
 	// expected to be unique across all instances of exporters used in collector config, [a-zA-Z0-9-_]+
 	GetID() string
 	GetConfig() map[string]string
-	GetSecretName() string
 }
 
 type ProcessorConfigurer interface {

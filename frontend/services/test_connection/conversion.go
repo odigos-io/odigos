@@ -45,12 +45,6 @@ func (dc *DestinationConfigurer) GetConfig() map[string]string {
 	return configMap
 }
 
-func (dc *DestinationConfigurer) GetSecretName() string {
-	// TODO: Implement logic to retrieve the secret name if it exists
-	// NOTE: Not used by Frontend right now, this is to satisfy Go Types
-	return ""
-}
-
 func ConvertDestinationToConfigurer(destination model.DestinationInput) (config.ExporterConfigurer, error) {
 
 	if destination.Type == "" {
