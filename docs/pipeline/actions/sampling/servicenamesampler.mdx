@@ -1,6 +1,6 @@
 ---
 title: "Service Name Sampler"
-description: "This action is an [Endpoint Action](/pipeline/actions/introduction#scope-categories) that samples traces based on the presence of specified services within a trace."
+description: "This action is a [Service Action](/pipeline/actions/introduction#scope-categories) that samples traces based on the presence of specified services within a trace."
 sidebarTitle: "Service Name Sampler"
 icon: "tag"
 ---
@@ -13,62 +13,77 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
 ## Considerations
 
 <Warning>
-  Before enabling **service name sampler**, please note the following:
-  - Supports only traces.
-  - All spans in a trace will be either entirely dropped or entirely sampled.
-  - Adding this action causes a 30-second delay in sending the data.
-  - Traces with durations exceeding 30 seconds might not be sampled correctly.
+  Before enabling the **Service Name Sampler**, please consider the following:
+
+  - Only supports **traces**.
+  - Sampling is trace-wide: either all spans in a trace are kept, or all are dropped.
+  - The sampler introduces a delay of up to 30 seconds before traces are exported.
+  - Traces with durations longer than 30 seconds might not be sampled correctly.
 </Warning>
 
 ## Use Cases
 
-**Focused Monitoring**
+**Targeted Trace Collection**
 
-- Collect traces only if specific critical services appear in a trace. This helps in pinpointing issues related to particular microservices.
+- Collect only traces involving specific microservices, such as `auth-service`, for debugging or focused observability.
 
-**Cost Control**
+**Cost Reduction**
 
-- Reducing the number of collected traces based on essential services optimizes storage and analysis costs.
+- Significantly reduce collected trace volume by focusing on services that matter most.
 
 ## Configuration Options
 
 <AccordionGroup>
   <Accordion title="actionName">
-    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
-    - This field is *optional*
+    **actionName** `string`: A human-readable name for the action.
+    - *Optional*
     - <AssumeNoMeaning />
   </Accordion>
+
   <Accordion title="notes">
-    **notes** `string` : Allows you to attach notes regarding the action for convenience.
-    - This field is *optional*
+    **notes** `string`: Free-form notes to describe the purpose or intent of this sampler.
+    - *Optional*
     - <AssumeNoMeaning />
   </Accordion>
+
   <Accordion title="disabled">
-    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
-    - This field is *optional*, defaults to `false`
+    **disabled** `boolean`: Temporarily disables this sampler without deleting its configuration.
+    - *Optional*, defaults to `false`
   </Accordion>
+
   <Accordion title="signals *">
-    **signals** `string[]` : An array with the signals that the processor will act on.
-    - This field is *required*
-    - Supported values: `TRACES`
+    **signals** `string[]`: The signal types this sampler applies to.
+    - *Required*
+    - Only `TRACES` is supported.
   </Accordion>
-  <Accordion title="service_names *">
-    **service_names** `string[]` : An array of service names. Only traces containing at least one listed service will be retained.
+
+  <Accordion title="services_name_filters *">
+  **services_name_filters** `object[]` : An array of objects representing the filters for the services.
     - This field is *required*
-  </Accordion>
-  <Accordion title="fallback_sampling_ratio *">
-    **fallback_sampling_ratio** `number` : Percentage of traces that do NOT match the listed services but will still be retained. Setting this to 10 ensures that 10% of traces not matching your listed services are retained for reference.
-    - This field is *required*
+    <AccordionGroup>
+      <Accordion title="service_name">
+        **service_name** `string` : Specifies the service name to search within the trace (Across all available spans).
+      </Accordion>
+
+      <Accordion title="sampling_ratio">
+        **sampling_ratio** `float` : Specifies the sample rate for all traces that contains `service_name`.
+      </Accordion>
+
+      <Accordion title="fallback_sampling_ratio *">
+        **fallback_sampling_ratio** `float` : Specifies the percentage of traces that don't meet the service name filter and that you still like to retain.
+        - This field is *required*
+      </Accordion>
+    </AccordionGroup>
   </Accordion>
 </AccordionGroup>
 
 <Info>
-  This sampler retains any trace containing one or more of the specified service names. Traces without these services are discarded, except for the portion specified by the fallback ratio.
+  A trace is sampled if it contains **at least one span** from a service listed in `services_name_filters` and passes the `sampling_ratio` check. Traces without any listed services may still be sampled based on the corresponding `fallback_sampling_ratio`.
 </Info>
 
 ## Basic Example
 
-The following example demonstrates how to retain all traces containing either the `payment-service` or `auth-service`. Additionally, it retains 15% of traces that do not contain these services.
+This example samples **100%** of traces that contain `coupon-service` and **0%** of all other traces:
 
 <Steps>
   <Step>
@@ -78,23 +93,52 @@ The following example demonstrates how to retain all traces containing either th
     apiVersion: actions.odigos.io/v1alpha1
     kind: ServiceNameSampler
     metadata:
-      name: example-servicenamesampler
+      name: coupon-service-sampler
       namespace: odigos-system
     spec:
-      actionName: "example-servicenamesampler-action"
-      service_names:
-      - "payment-service"
-      - "auth-service"
-      fallback_sampling_ratio: 15
+      actionName: "coupon-sampler"
       signals:
-      - TRACES
+        - TRACES
+      services_name_filters:
+        - service_name: coupon-service
+          sampling_ratio: 100
+          fallback_sampling_ratio: 0
     ```
   </Step>
   <Step>
-    Apply the action to the cluster:
+    Apply the sampler:
 
     ```bash
     kubectl apply -f service-name-sampler.yaml
     ```
   </Step>
 </Steps>
+
+## Advanced Example
+
+This example collects:
+- 100% of traces with `payment-service`
+- 50% of traces with `auth-service`
+- 10% of traces that include **neither** of the above
+
+```yaml advanced-service-name-sampler.yaml
+apiVersion: actions.odigos.io/v1alpha1
+kind: ServiceNameSampler
+metadata:
+  name: multi-service-sampler
+  namespace: odigos-system
+spec:
+  actionName: "multi-service-focus"
+  signals:
+    - TRACES
+  services_name_filters:
+    - service_name: payment-service
+      sampling_ratio: 100
+      fallback_sampling_ratio: 10
+    - service_name: auth-service
+      sampling_ratio: 50
+      fallback_sampling_ratio: 10
+```
+
+This setup ensures you always keep critical traces and still retain a sample of the rest for broader context.
+
