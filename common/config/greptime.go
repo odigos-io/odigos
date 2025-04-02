@@ -30,7 +30,7 @@ func (j *Greptime) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string,
 	if err != nil {
 		return nil, err
 	}
-	err = urlHostContainsPath(endpoint)
+	err = urlHostShouldNotContainPath(endpoint)
 	if err != nil {
 		return nil, err
 	}

@@ -94,7 +94,7 @@ func urlHostContainsPort(host string) bool {
 	}
 }
 
-func urlHostContainsPath(host string) error {
+func urlHostShouldNotContainPath(host string) error {
 	// Remove scheme if present
 	parts := strings.SplitN(host, "://", 2)
 	if len(parts) == 2 {
