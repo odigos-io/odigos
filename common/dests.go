@@ -11,6 +11,7 @@ const (
 	AxiomDestinationType                  DestinationType = "axiom"
 	AzureBlobDestinationType              DestinationType = "azureblob"
 	BetterStackDestinationType            DestinationType = "betterstack"
+	BonreeDestinationType                 DestinationType = "bonree"
 	CauselyDestinationType                DestinationType = "causely"
 	ChecklyDestinationType                DestinationType = "checkly"
 	ChronosphereDestinationType           DestinationType = "chronosphere"

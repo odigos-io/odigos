@@ -227,6 +227,7 @@
             "backends/axiom",
             "backends/azureblob",
             "backends/betterstack",
+            "backends/bonree",
             "backends/causely",
             "backends/checkly",
             "backends/chronosphere",

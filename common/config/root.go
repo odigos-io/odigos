@@ -24,6 +24,7 @@ var availableConfigers = []Configer{
 	&Axiom{},
 	&AzureBlobStorage{},
 	&BetterStack{},
+	&Bonree{},
 	&Causely{},
 	&Checkly{},
 	&Chronosphere{},
