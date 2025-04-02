@@ -257,6 +257,7 @@
             "backends/lumigo",
             "backends/middleware",
             "backends/newrelic",
+            "backends/observe",
             "backends/openobserve",
             "backends/opsverse",
             "backends/otlp",
