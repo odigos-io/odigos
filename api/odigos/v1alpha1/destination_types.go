@@ -86,3 +86,6 @@ func (dest Destination) GetConfig() map[string]string {
 func (dest Destination) GetSignals() []common.ObservabilitySignal {
 	return dest.Spec.Signals
 }
+func (dest Destination) GetSecretName() string {
+	return dest.Spec.SecretRef.Name
+}
