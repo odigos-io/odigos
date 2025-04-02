@@ -48,6 +48,7 @@ const (
 	ObserveDestinationType                DestinationType = "observe"
 	OpenObserveDestinationType            DestinationType = "openobserve"
 	OpsVerseDestinationType               DestinationType = "opsverse"
+	OracleDestinationType                 DestinationType = "oracle"
 	OtlpHttpDestinationType               DestinationType = "otlphttp"
 	PrometheusDestinationType             DestinationType = "prometheus"
 	QrynDestinationType                   DestinationType = "qryn"

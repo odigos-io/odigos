@@ -61,6 +61,7 @@ var availableConfigers = []Configer{
 	&Observe{},
 	&OpenObserve{},
 	&OpsVerse{},
+	&Oracle{},
 	&OTLPHttp{},
 	&Prometheus{},
 	&Qryn{},
