@@ -3,6 +3,7 @@ package common
 type DestinationType string
 
 const (
+	AlibabaCloudDestinationType           DestinationType = "alibabacloud"
 	AppDynamicsDestinationType            DestinationType = "appdynamics"
 	AWSCloudWatchDestinationType          DestinationType = "cloudwatch"
 	AWSS3DestinationType                  DestinationType = "s3"
@@ -52,6 +53,7 @@ const (
 	QrynOSSDestinationType                DestinationType = "qryn-oss"
 	QuickwitDestinationType               DestinationType = "quickwit"
 	SentryDestinationType                 DestinationType = "sentry"
+	SeqDestinationType                    DestinationType = "seq"
 	SignozDestinationType                 DestinationType = "signoz"
 	SplunkDestinationType                 DestinationType = "splunk"
 	SumoLogicDestinationType              DestinationType = "sumologic"

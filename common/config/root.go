@@ -16,6 +16,7 @@ const (
 )
 
 var availableConfigers = []Configer{
+	&AlibabaCloud{},
 	&AppDynamics{},
 	&AWSCloudWatch{},
 	&AWSS3{},
@@ -65,6 +66,7 @@ var availableConfigers = []Configer{
 	&QrynOSS{},
 	&Quickwit{},
 	&Sentry{},
+	&Seq{},
 	&Signoz{},
 	&Splunk{},
 	&SumoLogic{},
