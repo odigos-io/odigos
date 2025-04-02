@@ -1,6 +1,6 @@
 ---
 title: "Span Attribute Sampler"
-description: "A service-scoped action that samples traces based on the presence, value, or structure of specific span attributes—including support for JSON evaluation."
+description: "This action is a [Service Action](/pipeline/actions/introduction#scope-categories) that samples traces based on the presence or value of specific attributes within a trace."
 sidebarTitle: "Span Attribute Sampler"
 icon: "tag"
 ---
@@ -13,10 +13,13 @@ import AssumeNoMeaning from "/snippets/assume-no-meaning.mdx";
 ## Considerations
 
 <Warning>
-  Before enabling **latency sampler**, please note the following: - Supports
-  only traces. - Multiple `endpoint_filters` can be configured within the same
-  action. - Adding this action causes a 30-second delay in sending the data. -
-  Traces with durations exceeding 30 seconds might not be sampled correctly.
+  Before enabling the **Service Name Sampler**, please consider the following:
+
+  - Only supports **traces**.
+  - Sampling is trace-wide: either all spans in a trace are kept, or all are dropped.
+  - The sampler introduces a delay of up to 30 seconds before traces are exported.
+  - Traces with durations longer than 30 seconds might not be sampled correctly.
+  - Using the `json_condition` will cause a higher resource utilization!
 </Warning>
 
 ## Overview
@@ -55,11 +58,17 @@ Track performance or usage of specific endpoints by matching against HTTP target
 
 [See example →](#match-http-target-endpoint)
 
-### Cost Control via Precision Sampling
+### Production Environment Sampling
 
-Apply a fallback sampling ratio for non-matching traces to reduce data volume while still capturing a representative subset.
+Collect traces only from the production environment.
 
-[See example →](#match-error-in-checkout-service)
+[See example →](#sample-prod-traces)
+
+### Latest Version Monitoring
+
+Sample only traces from the latest relesed version, while still capturing a representative subset of older versions.
+
+[See example →](#regex-condition-no-match)
 
 ## Configuration Options
 
@@ -186,9 +195,6 @@ Apply a fallback sampling ratio for non-matching traces to reduce data volume wh
   </Accordion>
 </AccordionGroup>
 
-
-
-
   <Info>
     If **any span from the specified service** satisfies the attribute
     condition, the trace is sampled. If no match is found, the trace is sampled
@@ -199,7 +205,7 @@ Apply a fallback sampling ratio for non-matching traces to reduce data volume wh
 
 Below are several YAML examples that demonstrate different use cases.
 
-### 1. Match: Error in Checkout Service
+### Match Error in Checkout Service
 
 Sample traces where the `error` attribute (a boolean) equals `true` for the `checkout-service`.
 
@@ -222,7 +228,7 @@ spec:
       fallback_sampling_ratio: 10
 ```
 
-### 2. JSON Nested Attribute Match
+### JSON Nested Attribute Match
 
 For JSON evaluation, the JSON attribute is provided as a string. In this example the rule checks that the JSONPath expression returns a value and that the nested key equals the expected value.
 
@@ -246,7 +252,7 @@ spec:
       fallback_sampling_ratio: 5
 ```
 
-### 3. Match HTTP Target Endpoint
+### Match HTTP Target Endpoint
 
 Sample traces where the HTTP target endpoint (a string) contains /api/products.
 
@@ -269,7 +275,7 @@ spec:
       fallback_sampling_ratio: 5
 ```
 
-### 4. Sample Staging Traces
+### Sample Prod Traces
 
 For example, sample all traces from the staging environment by matching on the env attribute.
 
@@ -288,11 +294,11 @@ spec:
       condition:
         string_condition:
           operation: equals
-          expected_value: staging
+          expected_value: prod
       fallback_sampling_ratio: 1
 ```
 
-### 5. Regex Condition (No Match)
+### Regex Condition (No Match)
 
 The following example shows a regex condition for a version string. If the version does not match the expected pattern, the rule does not match the span. In this case, if the attribute exists but fails the regex test, the trace will not be sampled by this rule (and the fallback ratio applies).
 
@@ -311,13 +317,13 @@ spec:
       condition:
         string_condition:
           operation: regex
-          expected_value: "^v[0-9]+\\.[0-9]+$"
+          expected_value: "^v1\.2\.\d+$"
       fallback_sampling_ratio: 12
 ```
 
 ### Final Notes
 	- Multiple Filters: You can define multiple attribute filters across different services and attribute types. These filters are OR-combined; if any filter matches, the trace is sampled.
-	- Fallback Sampling: When no span satisfies the condition, the trace is sampled based on the fallback_sampling_ratio. This allows you to collect a percentage of non-matching traces for broad observability without overwhelming storage costs.
-	- JSON Evaluation: For JSON conditions, the sampler always uses the provided json_path to navigate the JSON structure. Ensure that the attribute value is a JSON-encoded string.
+	- Fallback Sampling: When no span satisfies the condition, the trace is sampled based on the `fallback_sampling_ratio`. This allows you to collect a percentage of non-matching traces for broad observability without overwhelming storage costs.
+	- JSON Evaluation: For JSON conditions, the sampler always uses the provided [json_path](https://goessner.net/articles/JsonPath/) to navigate the JSON structure. Ensure that the attribute value is a JSON-encoded string.
 
 By following these guidelines and examples, you can configure the Span Attribute Sampler for production environments with clarity and precision.
