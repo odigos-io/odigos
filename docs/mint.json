@@ -272,6 +272,7 @@
             "backends/sumologic",
             "backends/telemetryhub",
             "backends/tempo",
+            "backends/tingyun",
             "backends/traceloop",
             "backends/uptrace"
           ]

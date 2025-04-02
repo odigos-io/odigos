@@ -72,6 +72,7 @@ var availableConfigers = []Configer{
 	&SumoLogic{},
 	&TelemetryHub{},
 	&Tempo{},
+	&Tingyun{},
 	&Traceloop{},
 	&Uptrace{},
 }
