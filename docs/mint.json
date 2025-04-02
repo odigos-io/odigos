@@ -227,6 +227,7 @@
             "backends/axiom",
             "backends/azureblob",
             "backends/betterstack",
+            "backends/bonree",
             "backends/causely",
             "backends/checkly",
             "backends/chronosphere",
@@ -257,8 +258,10 @@
             "backends/lumigo",
             "backends/middleware",
             "backends/newrelic",
+            "backends/observe",
             "backends/openobserve",
             "backends/opsverse",
+            "backends/oracle",
             "backends/otlp",
             "backends/otlphttp",
             "backends/prometheus",
@@ -271,6 +274,7 @@
             "backends/sumologic",
             "backends/telemetryhub",
             "backends/tempo",
+            "backends/tingyun",
             "backends/traceloop",
             "backends/uptrace"
           ]
