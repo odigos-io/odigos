@@ -1,20 +1,11 @@
 package config
 
 import (
-	"context"
-	"encoding/base64"
 	"fmt"
 	"net"
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 func parseOtlpGrpcUrl(rawURL string, encrypted bool) (grpcUrl string, err error) {
@@ -103,6 +94,23 @@ func urlHostContainsPort(host string) bool {
 	}
 }
 
+func urlHostContainsPath(host string) bool {
+	// Remove scheme if present
+	parts := strings.SplitN(host, "://", 2)
+	if len(parts) == 2 {
+		host = parts[1]
+	}
+
+	// Prepend a dummy scheme to allow parsing
+	parsedURL, err := url.Parse("dummy://" + host)
+	if err != nil {
+		return false
+	}
+
+	// A path exists if it's not empty and not just "/"
+	return parsedURL.Path != "" && parsedURL.Path != "/"
+}
+
 func getBooleanConfig(currentValue string, deprecatedValue string) bool {
 	lowerCaseValue := strings.ToLower(currentValue)
 	return lowerCaseValue == "true" || lowerCaseValue == deprecatedValue
@@ -126,39 +134,6 @@ func parseInt(value string) int {
 
 func errorMissingKey(key string) error {
 	return fmt.Errorf("key (\"%q\") not specified, destination will not be configured", key)
-}
-
-func encodeBase64(data string) string {
-	return base64.StdEncoding.EncodeToString([]byte(data))
-}
-
-func decodeBase64(encoded string) (string, error) {
-	data, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
-}
-
-func getSecret(secretName string) (*corev1.Secret, error) {
-	ns := env.GetCurrentNamespace()
-
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		return &corev1.Secret{}, fmt.Errorf("failed to load in-cluster config: %w", err)
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return &corev1.Secret{}, fmt.Errorf("failed to create kubernetes client: %w", err)
-	}
-
-	secret, err := clientset.CoreV1().Secrets(ns).Get(context.Background(), secretName, metav1.GetOptions{})
-	if err != nil {
-		return &corev1.Secret{}, fmt.Errorf("failed to get secret %s/%s: %w", ns, secretName, err)
-	}
-
-	return secret, nil
 }
 
 type SpanMetricNames struct {

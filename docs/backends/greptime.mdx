@@ -42,9 +42,10 @@ icon: 'signal-stream'
   - Example: `https://<unique_id>.<aws_region>.aws.greptime.cloud`
 - **GREPTIME_DB_NAME** `string` : Database Name.
   - This field is required
-- **GREPTIME_BASIC_TOKEN** `string` : Basic Auth Token. The format is `username:password`.
+- **GREPTIME_BASIC_USERNAME** `string` : Basic Auth Username. The left part (from ":") of the Basic Auth Token.
   - This field is required
-  - Example: `xxxxx:xxxxx`
+- **GREPTIME_BASIC_PASSWORD** `string` : Basic Auth Password. The right part (from ":") of the Basic Auth Token.
+  - This field is required
 
 ### Adding Destination to Odigos
 
@@ -77,6 +78,7 @@ There are two primary methods for configuring destinations in Odigos:
       namespace: odigos-system
     spec:
       data:
+        GREPTIME_BASIC_USERNAME: <Basic Auth Username>
         GREPTIME_DB_NAME: <Database Name>
         GREPTIME_ENDPOINT: <OTLP HTTP Endpoint>
       destinationName: greptime
@@ -90,7 +92,7 @@ There are two primary methods for configuring destinations in Odigos:
 
     apiVersion: v1
     data:
-      GREPTIME_BASIC_TOKEN: <Base64 Basic Auth Token>
+      GREPTIME_BASIC_PASSWORD: <Base64 Basic Auth Password>
     kind: Secret
     metadata:
       name: greptime-secret

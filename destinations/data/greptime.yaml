@@ -28,12 +28,18 @@ spec:
       componentProps:
         type: text
         required: true
-    - name: GREPTIME_BASIC_TOKEN
-      displayName: Basic Auth Token
+    - name: GREPTIME_BASIC_USERNAME
+      displayName: Basic Auth Username
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: The left part (from ":") of the Basic Auth Token.
+    - name: GREPTIME_BASIC_PASSWORD
+      displayName: Basic Auth Password
       componentType: input
       secret: true
       componentProps:
         type: password
         required: true
-        placeholder: xxxxx:xxxxx
-        tooltip: The format is `username:password`.
+        tooltip: The right part (from ":") of the Basic Auth Token.

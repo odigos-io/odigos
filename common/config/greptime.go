@@ -1,18 +1,16 @@
 package config
 
 import (
-	"fmt"
-	"strings"
+	"errors"
 
 	"github.com/odigos-io/odigos/common"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
-	GREPTIME_ENDPOINT    = "GREPTIME_ENDPOINT"
-	GREPTIME_DB_NAME     = "GREPTIME_DB_NAME"
-	GREPTIME_BASIC_TOKEN = "GREPTIME_BASIC_TOKEN"
+	GREPTIME_ENDPOINT       = "GREPTIME_ENDPOINT"
+	GREPTIME_DB_NAME        = "GREPTIME_DB_NAME"
+	GREPTIME_BASIC_USERNAME = "GREPTIME_BASIC_USERNAME"
+	GREPTIME_BASIC_PASSWORD = "GREPTIME_BASIC_PASSWORD"
 )
 
 type Greptime struct{}
@@ -34,6 +32,9 @@ func (j *Greptime) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string,
 	if err != nil {
 		return nil, err
 	}
+	if urlHostContainsPath(endpoint) {
+		return nil, errors.New("endpoint should not contain path")
+	}
 	endpoint += "/v1/otlp"
 
 	dbName, exists := config[GREPTIME_DB_NAME]
@@ -41,24 +42,32 @@ func (j *Greptime) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string,
 		return nil, errorMissingKey(GREPTIME_DB_NAME)
 	}
 
-	secret, err := getSecret(dest.GetSecretName())
-	if err != nil {
-		return nil, err
+	basicUsername, exists := config[GREPTIME_BASIC_USERNAME]
+	if !exists {
+		return nil, errorMissingKey(GREPTIME_BASIC_USERNAME)
 	}
-	err = verifyGreptimeToken(secret)
-	if err != nil {
-		return nil, err
+
+	authExtensionName := "basicauth/" + uniqueUri
+	cfg.Extensions[authExtensionName] = GenericMap{
+		"client_auth": GenericMap{
+			"username": basicUsername,
+			"password": "${GREPTIME_BASIC_PASSWORD}",
+		},
 	}
-	token := encodeBase64(string(secret.Data[GREPTIME_BASIC_TOKEN]))
 
 	exporterName := "otlphttp/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
+		"auth": GenericMap{
+			"authenticator": authExtensionName,
+		},
 		"headers": GenericMap{
 			"X-Greptime-DB-Name": dbName,
-			"Authorization":      "Basic " + token,
+			// "Authorization":      "Basic ",
 		},
 	}
+
+	cfg.Service.Extensions = append(cfg.Service.Extensions, authExtensionName)
 
 	if isMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
@@ -69,19 +78,4 @@ func (j *Greptime) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string,
 	}
 
 	return pipelineNames, nil
-}
-
-func verifyGreptimeToken(secret *corev1.Secret) error {
-	data, exists := secret.Data[GREPTIME_BASIC_TOKEN]
-	if !exists {
-		return fmt.Errorf("secret does not contain key GREPTIME_BASIC_TOKEN")
-	}
-
-	rawToken := string(data)
-	parts := strings.SplitN(rawToken, ":", 2)
-	if len(parts) != 2 {
-		return fmt.Errorf("GREPTIME_BASIC_TOKEN in secret must be in 'username:password' format")
-	}
-
-	return nil
 }
