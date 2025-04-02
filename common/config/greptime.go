@@ -62,7 +62,6 @@ func (j *Greptime) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string,
 		},
 		"headers": GenericMap{
 			"X-Greptime-DB-Name": dbName,
-			// "Authorization":      "Basic ",
 		},
 	}
 
