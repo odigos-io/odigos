@@ -24,6 +24,7 @@ var availableConfigers = []Configer{
 	&Axiom{},
 	&AzureBlobStorage{},
 	&BetterStack{},
+	&Bonree{},
 	&Causely{},
 	&Checkly{},
 	&Chronosphere{},
@@ -57,6 +58,7 @@ var availableConfigers = []Configer{
 	&Mock{},
 	&NewRelic{},
 	&Nop{},
+	&Observe{},
 	&OpenObserve{},
 	&OpsVerse{},
 	&Oracle{},
@@ -72,6 +74,7 @@ var availableConfigers = []Configer{
 	&SumoLogic{},
 	&TelemetryHub{},
 	&Tempo{},
+	&Tingyun{},
 	&Traceloop{},
 	&Uptrace{},
 }
