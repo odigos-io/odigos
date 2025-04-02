@@ -24,10 +24,27 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
-<Warning>
-  Make sure that you have the necessary `AWS Credentials` and permissions set up.<br />
-  AWS credentials are retrieved from the [default credential chain](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-credentials).
-</Warning>
+import AwsCredentials from '/snippets/aws-credentials.mdx';
+
+<AwsCredentials />
+
+**Setting up the IAM policy**
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": {
+    "Effect": "Allow",
+    "Action": [
+      "xray:PutTraceSegments",
+      "xray:PutTelemetryRecords"
+    ],
+    "Resource": [
+      "*"
+    ]
+  }
+}
+```
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
@@ -48,22 +65,18 @@ icon: 'signal-stream'
   - This field is optional
 - **AWS_XRAY_PROXY_ADDRESS** `string` : Proxy Address. Upload segments to AWS X-Ray through a proxy.
   - This field is optional
-- **AWS_XRAY_DISABLE_SSL** `boolean` : Disable SSL Verification. Enable or disable TLS certificate verification.
-  - This field is optional and defaults to `False`
-- **AWS_XRAY_LOCAL_MODE** `boolean` : Local Mode. Local mode to skip EC2 instance metadata check.
-  - This field is optional and defaults to `False`
 - **AWS_XRAY_RESOURCE_ARN** `string` : Resource ARN. Amazon Resource Name (ARN) of the AWS resource running the collector.
   - This field is optional
 - **AWS_XRAY_ROLE_ARN** `string` : Role ARN. IAM role to upload segments to a different account.
   - This field is optional
 - **AWS_XRAY_EXTERNAL_ID** `string` : External ID. Shared identitier used when assuming an IAM role in an external AWS account.
   - This field is optional
-- **AWS_XRAY_INDEX_ALL_ATTRIBUTES** `boolean` : Index All Attributes. Enable or disable conversion of all OpenTelemetry attributes to X-Ray annotations.
-  - This field is optional and defaults to `False`
-- **AWS_XRAY_INDEXED_ATTRIBUTES** `string[]` : Indexed Attributes. List of attribute names to be converted to X-Ray annotations.
-  - This field is optional
 - **AWS_XRAY_LOG_GROUPS** `string[]` : Log Groups. List of log group names for CloudWatch.
   - This field is optional
+- **AWS_XRAY_DISABLE_SSL** `boolean` : Disable SSL Verification. Enable or disable TLS certificate verification.
+  - This field is optional and defaults to `False`
+- **AWS_XRAY_LOCAL_MODE** `boolean` : Local Mode. Local mode to skip EC2 instance metadata check.
+  - This field is optional and defaults to `False`
 - **AWS_XRAY_TELEMETRY_ENABLED** `boolean` : Telemetry - Enabled. Whether telemetry collection is enabled at all.
   - This field is optional and defaults to `False`
 - **AWS_XRAY_TELEMETRY_INCLUDE_METADATA** `boolean` : Telemetry - Include Metadata. Whether to include metadata in the telemetry (InstanceID, Hostname, ResourceARN)
@@ -75,6 +88,10 @@ icon: 'signal-stream'
 - **AWS_XRAY_TELEMETRY_RESOURCE_ARN** `string` : Telemetry - Resource ARN. Sets the Amazon Resource Name (ARN) included in the telemetry.
   - This field is optional
 - **AWS_XRAY_TELEMETRY_CONTRIBUTORS** `string[]` : Telemetry - Contributors. List of X-Ray component IDs contributing to the telemetry (ex. for multiple X-Ray receivers: awsxray/1, awsxray/2)
+  - This field is optional
+- **AWS_XRAY_INDEX_ALL_ATTRIBUTES** `boolean` : Index All Attributes. Enable or disable conversion of all OpenTelemetry attributes to X-Ray annotations.
+  - This field is optional and defaults to `False`
+- **AWS_XRAY_INDEXED_ATTRIBUTES** `string[]` : Indexed Attributes. List of attribute names to be converted to X-Ray annotations.
   - This field is optional
 
 <Note>

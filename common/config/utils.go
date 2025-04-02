@@ -118,3 +118,74 @@ func parseInt(value string) int {
 func errorMissingKey(key string) error {
 	return fmt.Errorf("key (\"%q\") not specified, destination will not be configured", key)
 }
+
+type SpanMetricNames struct {
+	SpanMetricsConnector string
+	TracesPipeline       string
+}
+
+// This function configures a connector that converts trace-spans to metrics.
+// This is meant for destination that accept metrics but not traces!
+func applySpanMetricsConnector(currentConfig *Config, uniqueUri string) SpanMetricNames {
+	spanMetricsConnectorName := "spanmetrics/" + uniqueUri
+	tracesPipelineName := "traces/spanmetrics-" + uniqueUri
+
+	// Send SpanMetrics to prometheus
+	// configure a connector which will convert spans to metrics, this should ideally be configurable,
+	// and available for all metrics destinations
+	// TODO: this should be an action ("SpanMetrics connector")?
+	currentConfig.Connectors[spanMetricsConnectorName] = GenericMap{
+		"histogram": GenericMap{
+			"explicit": GenericMap{
+				"buckets": []string{"100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"},
+			},
+		},
+		// Taking into account changes in the semantic conventions, to support a range of instrumentation libraries
+		"dimensions": []GenericMap{
+			{
+				"name": "http.method",
+			},
+			{
+				"name": "http.request.method",
+			},
+			{
+				"name": "http.status_code",
+			},
+			{
+				"name": "http.response.status_code",
+			},
+			{
+				"name": "http.route",
+			},
+		},
+		"exemplars": GenericMap{
+			"enabled": true,
+		},
+		"exclude_dimensions":              []string{"status.code"},
+		"dimensions_cache_size":           1000,
+		"aggregation_temporality":         "AGGREGATION_TEMPORALITY_CUMULATIVE",
+		"metrics_flush_interval":          "15s",
+		"metrics_expiration":              "5m",
+		"resource_metrics_key_attributes": []string{"service.name", "telemetry.sdk.language", "telemetry.sdk.name"},
+		"events": GenericMap{
+			"enabled": true,
+			"dimensions": []GenericMap{
+				{
+					"name": "exception.type",
+				},
+				{
+					"name": "exception.message",
+				},
+			},
+		},
+	}
+
+	currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
+		Exporters: []string{spanMetricsConnectorName},
+	}
+
+	return SpanMetricNames{
+		SpanMetricsConnector: spanMetricsConnectorName,
+		TracesPipeline:       tracesPipelineName,
+	}
+}
