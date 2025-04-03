@@ -34,6 +34,8 @@ var defaultRuntimeEndpoints = []string{
 	"unix:///run/containerd/containerd.sock",
 	"unix:///run/crio/crio.sock",
 	"unix:///var/run/cri-dockerd.sock",
+	"unix:///run/k3s/containerd/containerd.sock",
+	"unix:///var/lib/rancher/rke2/agent/containerd/containerd.sock",
 }
 
 func detectRuntimeSocket() string {

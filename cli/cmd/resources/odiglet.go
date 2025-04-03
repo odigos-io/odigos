@@ -349,6 +349,14 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							},
 						},
 						{
+							Name: "rancher",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/var/lib/rancher",
+								},
+							},
+						},
+						{
 							Name: "device-plugins-dir",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
@@ -470,6 +478,10 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								{
 									Name:      "run-dir",
 									MountPath: "/run",
+								},
+								{
+									Name:      "rancher",
+									MountPath: "/var/lib/rancher",
 								},
 								{
 									Name:      "device-plugins-dir",

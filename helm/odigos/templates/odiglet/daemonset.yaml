@@ -104,6 +104,8 @@ spec:
           volumeMounts:
             - name: run-dir
               mountPath: /run
+            - name: rancher
+              mountPath: /var/lib/rancher
             {{- if .Values.openshift.enabled }}
             - name: host
               mountPath: /host
@@ -128,6 +130,9 @@ spec:
         - name: run-dir
           hostPath:
             path: /run
+        - name: rancher
+          hostPath:
+            path: /var/lib/rancher           
         {{- if .Values.openshift.enabled }}
         - name: host
           hostPath:
