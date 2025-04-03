@@ -76,9 +76,12 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 
 	odigosValueForOtelSdk := possibleValues[otelsdk]
 
+	// In case of env configured as ValueFrom [env[name].valueFrom.configMapKeyRef.key]
+	// We are changing the user MY_ENV to ORIGINAL_{MY_ENV}
+	// and setting MY_ENV to be ORIGINAL_MY_ENV value + Odigos additions
 	if isValueFromConfigmap(manifestEnvVar) {
 		handleValueFromEnvVar(container, manifestEnvVar, envVarName, odigosValueForOtelSdk)
-		return true
+		return true // Handled, no need for further processing
 	}
 
 	if strings.Contains(manifestEnvVar.Value, "/var/odigos/") {
