@@ -35,6 +35,8 @@ type ActionsV1alpha1Interface interface {
 	PiiMaskingsGetter
 	ProbabilisticSamplersGetter
 	RenameAttributesGetter
+	ServiceNameSamplersGetter
+	SpanAttributeSamplersGetter
 }
 
 // ActionsV1alpha1Client is used to interact with features provided by the actions group.
@@ -72,6 +74,14 @@ func (c *ActionsV1alpha1Client) ProbabilisticSamplers(namespace string) Probabil
 
 func (c *ActionsV1alpha1Client) RenameAttributes(namespace string) RenameAttributeInterface {
 	return newRenameAttributes(c, namespace)
+}
+
+func (c *ActionsV1alpha1Client) ServiceNameSamplers(namespace string) ServiceNameSamplerInterface {
+	return newServiceNameSamplers(c, namespace)
+}
+
+func (c *ActionsV1alpha1Client) SpanAttributeSamplers(namespace string) SpanAttributeSamplerInterface {
+	return newSpanAttributeSamplers(c, namespace)
 }
 
 // NewForConfig creates a new ActionsV1alpha1Client for the given config.

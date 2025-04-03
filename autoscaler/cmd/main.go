@@ -180,6 +180,12 @@ func main() {
 				&apiactions.LatencySampler{}: {
 					Field: nsSelector,
 				},
+				&apiactions.SpanAttributeSampler{}: {
+					Field: nsSelector,
+				},
+				&apiactions.ServiceNameSampler{}: {
+					Field: nsSelector,
+				},
 				&apiactions.PiiMasking{}: {
 					Field: nsSelector,
 				},
