@@ -33,6 +33,7 @@ func (j *VictoriaMetrics) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]
 	cfg.Extensions[authExtensionName] = GenericMap{
 		"token": "${VICTORIA_METRICS_TOKEN}",
 	}
+	cfg.Service.Extensions = append(cfg.Service.Extensions, authExtensionName)
 
 	exporterName := "otlphttp/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
@@ -42,18 +43,8 @@ func (j *VictoriaMetrics) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]
 		},
 	}
 
-	cfg.Service.Extensions = append(cfg.Service.Extensions, authExtensionName)
-
 	if isMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
-		cfg.Service.Pipelines[pipeName] = Pipeline{
-			Exporters: []string{exporterName},
-		}
-		pipelineNames = append(pipelineNames, pipeName)
-	}
-
-	if isLoggingEnabled(dest) {
-		pipeName := "logs/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
