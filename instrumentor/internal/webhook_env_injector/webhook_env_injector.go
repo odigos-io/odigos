@@ -239,15 +239,15 @@ func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger,
 	)
 }
 func isValueFromConfigmap(envVar *corev1.EnvVar) bool {
-	return envVar.ValueFrom.ConfigMapKeyRef != nil
+	return envVar.ValueFrom != nil
 }
 func handleValueFromEnvVar(container *corev1.Container, envVar *corev1.EnvVar, originalName, odigosValue string) {
 	originalNewKey := "ORIGINAL_" + envVar.Name
-	envVar.Name = originalNewKey
 
 	combinedValue := envOverwrite.AppendOdigosAdditionsToEnvVar(originalName, fmt.Sprintf("$(%s)", originalNewKey), odigosValue)
 	if combinedValue != nil {
 		newEnv := corev1.EnvVar{Name: originalName, Value: *combinedValue}
 		container.Env = append(container.Env, newEnv)
+		envVar.Name = originalNewKey
 	}
 }
