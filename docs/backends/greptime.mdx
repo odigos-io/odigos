@@ -1,13 +1,13 @@
 ---
-title: 'Checkly'
-description: 'Configuring the Checkly backend (Managed)'
-sidebarTitle: 'Checkly'
+title: 'GreptimeDB'
+description: 'Configuring the GreptimeDB backend (Managed)'
+sidebarTitle: 'GreptimeDB'
 icon: 'signal-stream'
 ---
 
 ### Getting Started
 
-<img src="https://d15jtxgb40qetw.cloudfront.net/checkly.svg" alt="checkly" className="not-prose h-20" />
+<img src="https://d15jtxgb40qetw.cloudfront.net/greptime.svg" alt="greptime" className="not-prose h-20" />
 
 {/*
     Add custom content here (under this comment)...
@@ -32,19 +32,20 @@ icon: 'signal-stream'
 ### Configuring Destination Fields
 
 <Accordion title="Supported Signals:">
-  ✅ Traces
-  ❌ Metrics
+  ❌ Traces
+  ✅ Metrics
   ❌ Logs
 </Accordion>
 
-- **CHECKLY_ENDOINT** `string` : OTLP gRPC Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`.
+- **GREPTIME_ENDPOINT** `string` : OTLP HTTP Endpoint.
   - This field is required
-- **CHECKLY_API_KEY** `string` : API Key.
+  - Example: `https://<unique_id>.<aws_region>.aws.greptime.cloud`
+- **GREPTIME_DB_NAME** `string` : Database Name.
   - This field is required
-
-<Warning>
-  Odigos will only filter and export traces to Checkly if their `trace_state` includes the tag `checkly="true"`, which is added by a Checkly SDK.
-</Warning>
+- **GREPTIME_BASIC_USERNAME** `string` : Basic Auth Username. The left part (from ":") of the Basic Auth Token.
+  - This field is required
+- **GREPTIME_BASIC_PASSWORD** `string` : Basic Auth Password. The right part (from ":") of the Basic Auth Token.
+  - This field is required
 
 ### Adding Destination to Odigos
 
@@ -60,7 +61,7 @@ There are two primary methods for configuring destinations in Odigos:
     ```
   </Step>
   <Step>
-    Click on `Add Destination`, select `Checkly` and follow the on-screen instructions
+    Click on `Add Destination`, select `GreptimeDB` and follow the on-screen instructions
   </Step>
 </Steps>
 
@@ -68,31 +69,33 @@ There are two primary methods for configuring destinations in Odigos:
 
 <Steps>
   <Step>
-    Save the YAML below to a file (e.g. `checkly.yaml`)
+    Save the YAML below to a file (e.g. `greptime.yaml`)
     ```yaml
     apiVersion: odigos.io/v1alpha1
     kind: Destination
     metadata:
-      name: checkly-example
+      name: greptime-example
       namespace: odigos-system
     spec:
       data:
-        CHECKLY_ENDOINT: <OTLP gRPC Endpoint>
-      destinationName: checkly
+        GREPTIME_BASIC_USERNAME: <Basic Auth Username>
+        GREPTIME_DB_NAME: <Database Name>
+        GREPTIME_ENDPOINT: <OTLP HTTP Endpoint>
+      destinationName: greptime
       secretRef:
-        name: checkly-secret
+        name: greptime-secret
       signals:
-      - TRACES
-      type: checkly
+      - METRICS
+      type: greptime
 
     ---
 
     apiVersion: v1
     data:
-      CHECKLY_API_KEY: <Base64 API Key>
+      GREPTIME_BASIC_PASSWORD: <Base64 Basic Auth Password>
     kind: Secret
     metadata:
-      name: checkly-secret
+      name: greptime-secret
       namespace: odigos-system
     type: Opaque
     ```
@@ -100,7 +103,7 @@ There are two primary methods for configuring destinations in Odigos:
   <Step>
     Apply the YAML using `kubectl`
     ```bash
-    kubectl apply -f checkly.yaml
+    kubectl apply -f greptime.yaml
     ```
   </Step>
 </Steps>

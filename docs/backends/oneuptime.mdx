@@ -1,13 +1,13 @@
 ---
-title: 'Checkly'
-description: 'Configuring the Checkly backend (Managed)'
-sidebarTitle: 'Checkly'
+title: 'OneUptime'
+description: 'Configuring the OneUptime backend (Managed)'
+sidebarTitle: 'OneUptime'
 icon: 'signal-stream'
 ---
 
 ### Getting Started
 
-<img src="https://d15jtxgb40qetw.cloudfront.net/checkly.svg" alt="checkly" className="not-prose h-20" />
+<img src="https://d15jtxgb40qetw.cloudfront.net/oneuptime.svg" alt="oneuptime" className="not-prose h-20" />
 
 {/*
     Add custom content here (under this comment)...
@@ -33,18 +33,17 @@ icon: 'signal-stream'
 
 <Accordion title="Supported Signals:">
   ✅ Traces
-  ❌ Metrics
-  ❌ Logs
+  ✅ Metrics
+  ✅ Logs
 </Accordion>
 
-- **CHECKLY_ENDOINT** `string` : OTLP gRPC Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`.
-  - This field is required
-- **CHECKLY_API_KEY** `string` : API Key.
+- **ONEUPTIME_INGESTION_KEY** `string` : Telemetry Ingestion Key. The Telemetry Ingestion Key is used to authenticate your data. You can find it in the OneUptime dashboard under Project Settings > Ingestion Keys.
   - This field is required
 
-<Warning>
-  Odigos will only filter and export traces to Checkly if their `trace_state` includes the tag `checkly="true"`, which is added by a Checkly SDK.
-</Warning>
+<Check>
+  We handle the endpoint internally, so you don't need to provide it.
+  - The endpoint is `https://oneuptime.com/otlp`
+</Check>
 
 ### Adding Destination to Odigos
 
@@ -60,7 +59,7 @@ There are two primary methods for configuring destinations in Odigos:
     ```
   </Step>
   <Step>
-    Click on `Add Destination`, select `Checkly` and follow the on-screen instructions
+    Click on `Add Destination`, select `OneUptime` and follow the on-screen instructions
   </Step>
 </Steps>
 
@@ -68,31 +67,32 @@ There are two primary methods for configuring destinations in Odigos:
 
 <Steps>
   <Step>
-    Save the YAML below to a file (e.g. `checkly.yaml`)
+    Save the YAML below to a file (e.g. `oneuptime.yaml`)
     ```yaml
     apiVersion: odigos.io/v1alpha1
     kind: Destination
     metadata:
-      name: checkly-example
+      name: oneuptime-example
       namespace: odigos-system
     spec:
-      data:
-        CHECKLY_ENDOINT: <OTLP gRPC Endpoint>
-      destinationName: checkly
+      data: {}
+      destinationName: oneuptime
       secretRef:
-        name: checkly-secret
+        name: oneuptime-secret
       signals:
       - TRACES
-      type: checkly
+      - METRICS
+      - LOGS
+      type: oneuptime
 
     ---
 
     apiVersion: v1
     data:
-      CHECKLY_API_KEY: <Base64 API Key>
+      ONEUPTIME_INGESTION_KEY: <Base64 Telemetry Ingestion Key>
     kind: Secret
     metadata:
-      name: checkly-secret
+      name: oneuptime-secret
       namespace: odigos-system
     type: Opaque
     ```
@@ -100,7 +100,7 @@ There are two primary methods for configuring destinations in Odigos:
   <Step>
     Apply the YAML using `kubectl`
     ```bash
-    kubectl apply -f checkly.yaml
+    kubectl apply -f oneuptime.yaml
     ```
   </Step>
 </Steps>

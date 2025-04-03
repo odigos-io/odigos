@@ -85,6 +85,33 @@ func parseOtlpGrpcUrl(rawURL string, encrypted bool) (grpcUrl string, err error)
 	return fmt.Sprintf("%s:%s", host, port), nil
 }
 
+func parseOtlpHttpEndpoint(rawUrl string, defaultPort string, requiredPath string) (string, error) {
+	noWhiteSpaces := strings.TrimSpace(rawUrl)
+	parsedUrl, err := url.Parse(noWhiteSpaces)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse otlp http endpoint: %w", err)
+	}
+	if parsedUrl.Scheme != "http" && parsedUrl.Scheme != "https" {
+		return "", fmt.Errorf("invalid otlp http endpoint scheme: %s", parsedUrl.Scheme)
+	}
+
+	// A defailt port exists, and the parsed URL does not have a port
+	if defaultPort != "" && parsedUrl.Port() == "" {
+		// Append the default port
+		parsedUrl.Host = net.JoinHostPort(parsedUrl.Hostname(), defaultPort)
+	}
+
+	if parsedUrl.Path == "" {
+		// Path is empty, append the required path
+		parsedUrl.Path = requiredPath
+	} else if parsedUrl.Path != requiredPath {
+		// Path already exists, and is not equal to the required path
+		return "", fmt.Errorf("invalid otlp http endpoint path: %s", parsedUrl.Path)
+	}
+
+	return parsedUrl.String(), nil
+}
+
 func urlHostContainsPort(host string) bool {
 	lastIndex := strings.LastIndex(host, "]")
 	if lastIndex != -1 { // ipv6
