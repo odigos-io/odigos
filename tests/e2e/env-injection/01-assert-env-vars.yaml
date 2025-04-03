@@ -57,10 +57,9 @@ spec:
   containers:
     - image: registry.odigos.io/odigos-demo-inventory:v0.1.14
       name: inventory
+      # We are checking that in case valueFrom exists we're appending Odigos additions to the ORIGINAL_{envar}
       (env[?name=='PYTHONPATH']):
       - value: $(ORIGINAL_PYTHONPATH):/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
-    # JAVA_TOOL_OPTIONS is not set in the Dockerfile of java-supported-docker-env,
-    # so we need to ensure it is also not set in the pod spec.
       (env[?name=='ORIGINAL_PYTHONPATH']):
       - valueFrom:
         configMapKeyRef:
@@ -77,10 +76,9 @@ spec:
   containers:
     - image: registry.odigos.io/odigos-demo-frontend:v0.1.14
       name: frontend
+      # We are checking that in case valueFrom exists we're appending Odigos additions to the ORIGINAL_{envar}
       (env[?name=='JAVA_TOOL_OPTIONS']):
       - value: $(ORIGINAL_JAVA_TOOL_OPTIONS) -javaagent:/var/odigos/java/javaagent.jar
-    # JAVA_TOOL_OPTIONS is not set in the Dockerfile of java-supported-docker-env,
-    # so we need to ensure it is also not set in the pod spec.
       (env[?name=='ORIGINAL_JAVA_TOOL_OPTIONS']):
       - valueFrom:
         configMapKeyRef:
