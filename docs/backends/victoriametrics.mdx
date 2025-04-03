@@ -31,7 +31,8 @@ Go to the **[🔗 Cloud Console](https://console.victoriametrics.cloud) > Sign U
 Go to **⚙️ > Deployments** and click **Start using VictoriaMetrics Cloud**
 
 **Obtaining API Key**<br />
-Go to **⚙️ > API Keys** and click **Create API Key**
+Go to **⚙️ > Deployments** and click **Overview**
+Then click **Access Tokens** and copy one of the keys
 
 **Obtaining Endpoint**<br />
 Go to **⚙️ > Integrations** and click **OpenTelemetry > Operator**<br />
@@ -52,7 +53,7 @@ Scroll to **Kubernetes commandline command** and copy the **endpoint**
 
 - **VICTORIA_METRICS_ENDPOINT** `string` : OTLP HTTP Endpoint.
   - This field is required
-- **VICTORIA_METRICS_API_KEY** `string` : API Key.
+- **VICTORIA_METRICS_TOKEN** `string` : Access Token.
   - This field is required
 
 ### Adding Destination to Odigos
@@ -98,7 +99,7 @@ There are two primary methods for configuring destinations in Odigos:
 
     apiVersion: v1
     data:
-      VICTORIA_METRICS_API_KEY: <Base64 API Key>
+      VICTORIA_METRICS_TOKEN: <Base64 Access Token>
     kind: Secret
     metadata:
       name: victoriametrics-secret

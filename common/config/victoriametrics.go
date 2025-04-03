@@ -6,7 +6,7 @@ import (
 
 const (
 	VICTORIA_METRICS_ENDPOINT = "VICTORIA_METRICS_ENDPOINT"
-	VICTORIA_METRICS_API_KEY  = "VICTORIA_METRICS_API_KEY"
+	VICTORIA_METRICS_TOKEN    = "VICTORIA_METRICS_TOKEN"
 )
 
 type VictoriaMetrics struct{}
@@ -33,7 +33,7 @@ func (j *VictoriaMetrics) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]
 	cfg.Extensions[authExtensionName] = GenericMap{
 		"header": "Authorization",
 		"scheme": "Bearer",
-		"token":  "${VICTORIA_METRICS_API_KEY}",
+		"token":  "${VICTORIA_METRICS_TOKEN}",
 	}
 
 	exporterName := "otlphttp/" + uniqueUri

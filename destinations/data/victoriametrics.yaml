@@ -20,8 +20,8 @@ spec:
       componentProps:
         type: text
         required: true
-    - name: VICTORIA_METRICS_API_KEY
-      displayName: API Key
+    - name: VICTORIA_METRICS_TOKEN
+      displayName: Access Token
       componentType: input
       secret: true
       componentProps:
