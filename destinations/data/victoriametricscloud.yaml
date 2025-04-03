@@ -5,7 +5,7 @@ metadata:
   displayName: VictoriaMetrics Cloud
   category: managed
 spec:
-  image: victoriametricscloud.svg
+  image: victoriametrics.svg
   signals:
     traces:
       supported: false
