@@ -7,7 +7,7 @@ icon: 'signal-stream'
 
 ### Getting Started
 
-<img src="https://d15jtxgb40qetw.cloudfront.net/victoriametrics.svg" alt="victoriametrics" className="not-prose h-20" />
+<img src="https://d15jtxgb40qetw.cloudfront.net/victoriametricscloud.svg" alt="victoriametricscloud" className="not-prose h-20" />
 
 {/*
     Add custom content here (under this comment)...
@@ -78,22 +78,22 @@ There are two primary methods for configuring destinations in Odigos:
 
 <Steps>
   <Step>
-    Save the YAML below to a file (e.g. `victoriametrics.yaml`)
+    Save the YAML below to a file (e.g. `victoriametricscloud.yaml`)
     ```yaml
     apiVersion: odigos.io/v1alpha1
     kind: Destination
     metadata:
-      name: victoriametrics-example
+      name: victoriametricscloud-example
       namespace: odigos-system
     spec:
       data:
         VICTORIA_METRICS_ENDPOINT: <OTLP HTTP Endpoint>
-      destinationName: victoriametrics
+      destinationName: victoriametricscloud
       secretRef:
-        name: victoriametrics-secret
+        name: victoriametricscloud-secret
       signals:
       - METRICS
-      type: victoriametrics
+      type: victoriametricscloud
 
     ---
 
@@ -102,7 +102,7 @@ There are two primary methods for configuring destinations in Odigos:
       VICTORIA_METRICS_TOKEN: <Base64 Access Token>
     kind: Secret
     metadata:
-      name: victoriametrics-secret
+      name: victoriametricscloud-secret
       namespace: odigos-system
     type: Opaque
     ```
@@ -110,7 +110,7 @@ There are two primary methods for configuring destinations in Odigos:
   <Step>
     Apply the YAML using `kubectl`
     ```bash
-    kubectl apply -f victoriametrics.yaml
+    kubectl apply -f victoriametricscloud.yaml
     ```
   </Step>
 </Steps>

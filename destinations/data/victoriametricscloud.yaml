@@ -1,11 +1,11 @@
 apiVersion: internal.odigos.io/v1beta1
 kind: Destination
 metadata:
-  type: victoriametrics
+  type: victoriametricscloud
   displayName: VictoriaMetrics Cloud
   category: managed
 spec:
-  image: victoriametrics.svg
+  image: victoriametricscloud.svg
   signals:
     traces:
       supported: false

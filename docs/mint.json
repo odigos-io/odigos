@@ -279,7 +279,7 @@
             "backends/tingyun",
             "backends/traceloop",
             "backends/uptrace",
-            "backends/victoriametrics"
+            "backends/victoriametricscloud"
           ]
         }
       ]
