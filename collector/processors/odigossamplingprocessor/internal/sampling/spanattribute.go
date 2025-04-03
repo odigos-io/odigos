@@ -98,7 +98,7 @@ func (s *SpanAttributeRule) Validate() error {
 			return errors.New("invalid json operation")
 		}
 		// For all JSON operations, a jsonPath is required.
-		if s.JsonPath == "" {
+		if (s.Operation != "exists" && s.Operation != "is_valid_json" && s.Operation != "is_invalid_json") && s.JsonPath == "" {
 			return errors.New("json_path required for json operations")
 		}
 		if (s.Operation == "key_equals" || s.Operation == "key_not_equals") && s.ExpectedValue == "" {
