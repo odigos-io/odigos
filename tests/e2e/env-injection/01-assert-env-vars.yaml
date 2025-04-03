@@ -62,9 +62,9 @@ spec:
       - value: $(ORIGINAL_PYTHONPATH):/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
       (env[?name=='ORIGINAL_PYTHONPATH']):
       - valueFrom:
-        configMapKeyRef:
-          key: PYTHONPATH
-          name: env-configmap
+          configMapKeyRef:
+            key: PYTHONPATH
+            name: env-configmap
 ---
 apiVersion: v1
 kind: Pod
@@ -81,6 +81,6 @@ spec:
       - value: $(ORIGINAL_JAVA_TOOL_OPTIONS) -javaagent:/var/odigos/java/javaagent.jar
       (env[?name=='ORIGINAL_JAVA_TOOL_OPTIONS']):
       - valueFrom:
-        configMapKeyRef:
-          key: JAVA_TOOL_OPTIONS
-          name: env-configmap
+          configMapKeyRef:
+            key: JAVA_TOOL_OPTIONS
+            name: env-configmap
