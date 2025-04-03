@@ -12,7 +12,7 @@ spec:
     metrics:
       supported: true
     logs:
-      supported: true
+      supported: false
   fields:
     - name: VICTORIA_METRICS_ENDPOINT
       displayName: OTLP HTTP Endpoint

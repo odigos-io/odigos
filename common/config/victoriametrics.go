@@ -31,7 +31,9 @@ func (j *VictoriaMetrics) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]
 
 	authExtensionName := "bearertokenauth/" + uniqueUri
 	cfg.Extensions[authExtensionName] = GenericMap{
-		"token": "${VICTORIA_METRICS_API_KEY}",
+		"header": "Authorization",
+		"scheme": "Bearer",
+		"token":  "${VICTORIA_METRICS_API_KEY}",
 	}
 
 	exporterName := "otlphttp/" + uniqueUri

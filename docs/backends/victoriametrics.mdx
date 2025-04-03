@@ -47,7 +47,7 @@ Scroll to **Kubernetes commandline command** and copy the **endpoint**
 <Accordion title="Supported Signals:">
   ❌ Traces
   ✅ Metrics
-  ✅ Logs
+  ❌ Logs
 </Accordion>
 
 - **VICTORIA_METRICS_ENDPOINT** `string` : OTLP HTTP Endpoint.
@@ -92,7 +92,6 @@ There are two primary methods for configuring destinations in Odigos:
         name: victoriametrics-secret
       signals:
       - METRICS
-      - LOGS
       type: victoriametrics
 
     ---
