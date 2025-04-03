@@ -53,6 +53,10 @@ jobs:
       - name: Verify Components Image Ready
         run: |
           declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor")
+          for repo in "${REPOS[@]}"; do
+            REPOS+=("${repo}-ubi9")
+          done
+
           TAG_TO_CHECK=${{ env.TAG }}
 
           for REPO in "${REPOS[@]}"; do
