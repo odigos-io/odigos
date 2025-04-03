@@ -1,0 +1,40 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: oracle
+  displayName: Oracle Cloud
+  category: managed
+spec:
+  image: oracle.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: ORACLE_ENDPOINT
+      displayName: OTLP HTTP Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: 'The data upload endpoint of the Oracle APM domain.'
+    - name: ORACLE_DATA_KEY
+      displayName: Data Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+    - name: ORACLE_DATA_KEY_TYPE
+      displayName: Data Key Type
+      componentType: dropdown
+      componentProps:
+        required: true
+        values:
+          - private
+          - public
+        tooltip: 'The type of the data key, relevant for Traces. Metrics are always authenticated with a private data key.'
+      initialValue: private
