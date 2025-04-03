@@ -1,6 +1,9 @@
 package config
 
-import "testing"
+import (
+	"net/url"
+	"testing"
+)
 
 func TestParseOtlpHttpEndpoint(t *testing.T) {
 	type args struct {
@@ -119,7 +122,13 @@ func TestParseOtlpHttpEndpoint(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseOtlpHttpEndpoint(tt.args.rawURL, "", "")
+			parsedUrl, err := url.Parse(tt.args.rawURL)
+			if err != nil {
+				t.Errorf("url.Parse() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			got, err := parseOtlpHttpEndpoint(parsedUrl.String(), parsedUrl.Port(), parsedUrl.Path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseOtlpHttpEndpoint() error = %v, wantErr %v", err, tt.wantErr)
 				return
