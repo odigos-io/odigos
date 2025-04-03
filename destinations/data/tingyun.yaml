@@ -1,0 +1,29 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: tingyun
+  displayName: Tingyun 基调听云
+  category: managed
+spec:
+  image: tingyun.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: TINGYUN_ENDPOINT
+      displayName: OTLP HTTP Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+    - name: TINGYUN_LICENSE_KEY
+      displayName: License Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true

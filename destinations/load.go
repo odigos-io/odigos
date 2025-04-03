@@ -2,6 +2,7 @@ package destinations
 
 import (
 	"embed"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -38,6 +39,13 @@ func load(fs embed.FS) error {
 	}
 
 	for _, file := range files {
+		fileName := file.Name()
+
+		// check if fileName ends with .yaml or .yml
+		if !(strings.HasSuffix(fileName, ".yaml") || strings.HasSuffix(fileName, ".yml")) {
+			continue
+		}
+
 		// load each file
 		bytesData, err := fs.ReadFile("data/" + file.Name())
 		if err != nil {
