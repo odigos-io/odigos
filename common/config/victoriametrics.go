@@ -43,9 +43,13 @@ func (j *VictoriaMetrics) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]
 		},
 	}
 
+	spanMetricNames := applySpanMetricsConnector(cfg, uniqueUri)
+	pipelineNames = append(pipelineNames, spanMetricNames.TracesPipeline)
+
 	if isMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
+			Receivers: []string{spanMetricNames.SpanMetricsConnector},
 			Exporters: []string{exporterName},
 		}
 		pipelineNames = append(pipelineNames, pipeName)
