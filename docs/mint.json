@@ -260,6 +260,7 @@
             "backends/middleware",
             "backends/newrelic",
             "backends/observe",
+            "backends/oneuptime",
             "backends/openobserve",
             "backends/opsverse",
             "backends/oracle",
