@@ -2,6 +2,7 @@ package webhookenvinjector
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -74,6 +75,12 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 	}
 
 	odigosValueForOtelSdk := possibleValues[otelsdk]
+
+	if isValueFromConfigmap(manifestEnvVar) {
+		handleValueFromEnvVar(container, manifestEnvVar, envVarName, odigosValueForOtelSdk)
+		return true
+	}
+
 	if strings.Contains(manifestEnvVar.Value, "/var/odigos/") {
 		logger.Info("env var exists in the manifest and already includes odigos values, skipping injection into manifest", "envVarName", envVarName,
 			"container", container.Name)
@@ -227,4 +234,17 @@ func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger,
 		corev1.EnvVar{Name: commonconsts.OtelMetricsExporter, Value: metricsExporter},
 		corev1.EnvVar{Name: commonconsts.OtelTracesExporter, Value: tracesExporter},
 	)
+}
+func isValueFromConfigmap(envVar *corev1.EnvVar) bool {
+	return envVar.ValueFrom.ConfigMapKeyRef != nil
+}
+func handleValueFromEnvVar(container *corev1.Container, envVar *corev1.EnvVar, originalName, odigosValue string) {
+	originalNewKey := "ORIGINAL_" + envVar.Name
+	envVar.Name = originalNewKey
+
+	combinedValue := envOverwrite.AppendOdigosAdditionsToEnvVar(originalName, fmt.Sprintf("$(%s)", originalNewKey), odigosValue)
+	if combinedValue != nil {
+		newEnv := corev1.EnvVar{Name: originalName, Value: *combinedValue}
+		container.Env = append(container.Env, newEnv)
+	}
 }
