@@ -303,8 +303,8 @@ func analyzeClusterCollector(resources *OdigosResources) ClusterCollectorAnalyze
 }
 
 func analyzeNodeCollector(resources *OdigosResources) NodeCollectorAnalyze {
-	hasClusterCollector := resources.ClusterCollector.CollectorsGroup != nil
-	isClusterCollectorReady := hasClusterCollector && resources.ClusterCollector.CollectorsGroup.Status.Ready
+	hasClusterCollector := resources.NodeCollector.CollectorsGroup != nil
+	isClusterCollectorReady := hasClusterCollector && resources.NodeCollector.CollectorsGroup.Status.Ready
 	hasInstrumentedSources := len(resources.InstrumentationConfigs.Items) > 0
 	isEnabled := hasClusterCollector && isClusterCollectorReady && hasInstrumentedSources
 
@@ -314,7 +314,7 @@ func analyzeNodeCollector(resources *OdigosResources) NodeCollectorAnalyze {
 		Explain: "should odigos deploy node collector daemonset in the cluster",
 	}
 
-	hasCg := resources.ClusterCollector.CollectorsGroup != nil
+	hasCg := resources.NodeCollector.CollectorsGroup != nil
 	cg := properties.EntityProperty{
 		Name:    "Collector Group",
 		Value:   properties.GetTextCreated(hasCg),
@@ -322,8 +322,8 @@ func analyzeNodeCollector(resources *OdigosResources) NodeCollectorAnalyze {
 		Explain: "is the k8s collectors group object for node collector exists in the cluster",
 	}
 
-	deployed, deployedError := analyzeDeployed(resources.ClusterCollector.CollectorsGroup)
-	ready := analyzeCollectorReady(resources.ClusterCollector.CollectorsGroup)
+	deployed, deployedError := analyzeDeployed(resources.NodeCollector.CollectorsGroup)
+	ready := analyzeCollectorReady(resources.NodeCollector.CollectorsGroup)
 	ds := analyzeDaemonSet(resources.NodeCollector.DaemonSet, isEnabled)
 	// TODO: implement our oun pod lister to figure out how many are updated and ready which isn't available in the daemonset status
 	desiredNodes, currentNodes, updatedNodes, availableNodes := analyzeDsReplicas(resources.NodeCollector.DaemonSet)
