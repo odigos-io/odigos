@@ -26,7 +26,6 @@ import (
 )
 
 var (
-	offsetFileMountPath = "/offsets"
 	useDefault          bool
 	updateRemoteFlag    bool
 )
@@ -119,10 +118,10 @@ require an update to Odigos. See docs for more info: https://docs.odigos.io/inst
 `,
 	Example: `
 # Pull the latest offsets and restart Odiglet
-odigos update-offsets
+odigos pro update-offsets
 
 # Revert to using the default offsets data shipped with Odigos
-odigos update-offsets --default
+odigos pro update-offsets --default
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
@@ -131,7 +130,7 @@ odigos update-offsets --default
 
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
-			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
+			fmt.Println("Odigos pro update-offsets failed - unable to read the current Odigos tier.")
 			os.Exit(1)
 		}
 		if currentTier == common.CommunityOdigosTier {
@@ -139,7 +138,11 @@ odigos update-offsets --default
 			os.Exit(1)
 		}
 
-		data := getLatestOffsets(useDefault)
+		data, err := getLatestOffsets(useDefault)
+		if err != nil {
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m %+s", err))
+			os.Exit(1)
+		}
 
 		cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
 		if err != nil {
@@ -186,29 +189,26 @@ odigos update-offsets --default
 	},
 }
 
-func getLatestOffsets(revert bool) []byte {
+func getLatestOffsets(revert bool) ([]byte, error) {
 	if revert {
-		return []byte{}
+		return []byte{}, nil
 	}
 
-	resp, err := http.Get(k8sconsts.GoOffsetsPublicURL)
+	resp, err := http.Get(consts.GoOffsetsPublicURL)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Cannot get latest offsets: %s", err))
-		os.Exit(1)
+		return nil, fmt.Errorf("cannot get latest offsets: %s", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Cannot get latest offsets: %d", resp.StatusCode))
-		os.Exit(1)
+		return nil, fmt.Errorf("cannot get latest offsets: %d", resp.StatusCode)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to read response body: %s", err))
-		os.Exit(1)
+		return nil, fmt.Errorf("unable to read response body: %s", err)
 	}
-	return data
+	return data, nil
 }
 
 func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string, revert bool) *appsv1.DaemonSet {
@@ -256,7 +256,7 @@ func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string,
 		}
 	}
 	if addVolumeMount {
-		volumeMounts = append(volumeMounts, v1.VolumeMount{Name: k8sconsts.GoOffsetsConfigMap, MountPath: offsetFileMountPath})
+		volumeMounts = append(volumeMounts, v1.VolumeMount{Name: k8sconsts.GoOffsetsConfigMap, MountPath: k8sconsts.OffsetFileMountPath})
 		ds.Spec.Template.Spec.Containers[0].VolumeMounts = volumeMounts
 	}
 
@@ -273,7 +273,7 @@ func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string,
 		}
 	}
 	if addEnvVar {
-		envVars = append(envVars, v1.EnvVar{Name: k8sconsts.GoOffsetsEnvVar, Value: offsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName})
+		envVars = append(envVars, v1.EnvVar{Name: k8sconsts.GoOffsetsEnvVar, Value: k8sconsts.OffsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName})
 		ds.Spec.Template.Spec.Containers[0].Env = envVars
 	}
 	return ds

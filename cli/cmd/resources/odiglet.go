@@ -25,8 +25,6 @@ import (
 	k8sversion "k8s.io/apimachinery/pkg/util/version"
 )
 
-var offsetFileMountPath = "/offsets"
-
 func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -417,7 +415,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								},
 								{
 									Name:  k8sconsts.GoOffsetsEnvVar,
-									Value: offsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName,
+									Value: k8sconsts.OffsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName,
 								},
 							},
 							Resources: corev1.ResourceRequirements{},
@@ -502,7 +500,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								},
 								{
 									Name:      k8sconsts.GoOffsetsConfigMap,
-									MountPath: offsetFileMountPath,
+									MountPath: k8sconsts.OffsetFileMountPath,
 								},
 							}, odigosSeLinuxHostVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",

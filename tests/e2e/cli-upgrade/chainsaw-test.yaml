@@ -112,7 +112,7 @@ spec:
     - name: Use custom Go offsets file to make sure it works with upgrade
       try:
         - script:
-            content: ../../../cli/odigos update-offsets --namespace odigos-test
+            content: ../../../cli/odigos pro update-offsets --namespace odigos-test
         - assert:
             file: assert-custom-offsets.yaml
 
@@ -200,7 +200,6 @@ spec:
     - name: Revert custom Go offsets
       try:
         - script:
-            content: ../../../cli/odigos update-offsets --default --namespace odigos-test
+            content: ../../../cli/odigos pro update-offsets --default --namespace odigos-test
         - assert:
             file: assert-odigos-upgraded.yaml
-            timeout: 3m
