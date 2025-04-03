@@ -26,7 +26,7 @@ func (j *Greptime) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string,
 	if !exists {
 		return nil, errorMissingKey(GREPTIME_ENDPOINT)
 	}
-	endpoint, err := parseOtlpHttpEndpoint(endpoint, "/v1/otlp")
+	endpoint, err := parseOtlpHttpEndpoint(endpoint, "", "/v1/otlp")
 	if err != nil {
 		return nil, err
 	}

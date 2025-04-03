@@ -25,7 +25,7 @@ func (j *Bonree) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 	if !exists {
 		return nil, errorMissingKey(BONREE_ENDPOINT)
 	}
-	endpoint, err := parseOtlpHttpEndpoint(endpoint, "")
+	endpoint, err := parseOtlpHttpEndpoint(endpoint, "", "")
 	if err != nil {
 		return nil, err
 	}

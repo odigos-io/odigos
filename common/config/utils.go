@@ -85,36 +85,39 @@ func parseOtlpGrpcUrl(rawURL string, encrypted bool) (grpcUrl string, err error)
 	return fmt.Sprintf("%s:%s", host, port), nil
 }
 
-func parseOtlpHttpEndpoint(rawUrl string, requiredPath string) (string, error) {
+func parseOtlpHttpEndpoint(rawUrl string, requiredPort string, requiredPath string) (string, error) {
 	noWhiteSpaces := strings.TrimSpace(rawUrl)
 	parsedUrl, err := url.Parse(noWhiteSpaces)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse otlp http endpoint: %w", err)
 	}
-
 	if parsedUrl.Scheme != "http" && parsedUrl.Scheme != "https" {
 		return "", fmt.Errorf("invalid otlp http endpoint scheme: %s", parsedUrl.Scheme)
 	}
 
-	// A path is required
-	if requiredPath != "" {
-		err = urlHostShouldNotContainPath(noWhiteSpaces)
-
-		if err != nil {
-			if parsedUrl.Path == requiredPath {
-				// Path exists, and is equal to the required path
-				return noWhiteSpaces, nil
-			} else {
-				// Path exists, but is not equal to the required path
-				return "", fmt.Errorf("invalid otlp http endpoint path: %s", parsedUrl.Path)
-			}
-		} else {
-			// If the path is empty, append the required path
-			return noWhiteSpaces + requiredPath, nil
+	// A port is required
+	if requiredPort != "" {
+		if !urlHostContainsPort(parsedUrl.String()) {
+			// Port is empty, append the required port
+			parsedUrl.Host = net.JoinHostPort(parsedUrl.Hostname(), requiredPort)
+		} else if parsedUrl.Port() != requiredPort {
+			// Port already exists, and is not equal to the required port
+			return "", fmt.Errorf("invalid otlp http endpoint port: %s", parsedUrl.Port())
 		}
 	}
 
-	return noWhiteSpaces, nil
+	// A path is required
+	if requiredPath != "" {
+		if parsedUrl.Path == "" {
+			// Path is empty, append the required path
+			parsedUrl.Path = requiredPath
+		} else if parsedUrl.Path != requiredPath {
+			// Path already exists, and is not equal to the required path
+			return "", fmt.Errorf("invalid otlp http endpoint path: %s", parsedUrl.Path)
+		}
+	}
+
+	return parsedUrl.String(), nil
 }
 
 func urlHostContainsPort(host string) bool {
@@ -124,28 +127,6 @@ func urlHostContainsPort(host string) bool {
 	} else { // dns host or ipv4
 		return strings.Contains(host, ":")
 	}
-}
-
-func urlHostShouldNotContainPath(host string) error {
-	// Remove scheme if present
-	parts := strings.SplitN(host, "://", 2)
-	if len(parts) == 2 {
-		host = parts[1]
-	}
-
-	// Prepend a dummy scheme to allow parsing
-	parsedURL, err := url.Parse("dummy://" + host)
-	if err != nil {
-		return fmt.Errorf("failed to parse endpoint %q", err)
-	}
-
-	// A path exists if it's not empty and not just "/"
-	containsPath := parsedURL.Path != "" && parsedURL.Path != "/"
-	if containsPath {
-		return fmt.Errorf("endpoint should not contain path")
-	}
-
-	return nil
 }
 
 func getBooleanConfig(currentValue string, deprecatedValue string) bool {

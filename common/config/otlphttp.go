@@ -25,7 +25,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		return nil, errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
 	}
 
-	parsedUrl, err := parseOtlpHttpEndpoint(url, "")
+	parsedUrl, err := parseOtlpHttpEndpoint(url, "", "")
 	if err != nil {
 		return nil, errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
 	}
