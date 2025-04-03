@@ -24,7 +24,7 @@ func (j *Seq) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 	if !exists {
 		return nil, errorMissingKey(SEQ_ENDPOINT)
 	}
-	endpoint, err := parseOtlpHttpEndpoint(endpoint)
+	endpoint, err := parseOtlpHttpEndpoint(endpoint, "")
 	if err != nil {
 		return nil, err
 	}

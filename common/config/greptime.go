@@ -26,15 +26,10 @@ func (j *Greptime) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string,
 	if !exists {
 		return nil, errorMissingKey(GREPTIME_ENDPOINT)
 	}
-	endpoint, err := parseOtlpHttpEndpoint(endpoint)
+	endpoint, err := parseOtlpHttpEndpoint(endpoint, "/v1/otlp")
 	if err != nil {
 		return nil, err
 	}
-	err = urlHostShouldNotContainPath(endpoint)
-	if err != nil {
-		return nil, err
-	}
-	endpoint += "/v1/otlp"
 
 	dbName, exists := config[GREPTIME_DB_NAME]
 	if !exists {

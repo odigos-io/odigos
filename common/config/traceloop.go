@@ -29,7 +29,7 @@ func (j *Traceloop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		return nil, ErrorTraceloopEndpointMissing
 	}
 
-	endpoint, err := parseOtlpHttpEndpoint(url)
+	endpoint, err := parseOtlpHttpEndpoint(url, "")
 	if err != nil {
 		return nil, err
 	}

@@ -28,8 +28,7 @@ func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 	if !exists {
 		return nil, ErrorLumigoEndpointMissing
 	}
-
-	endpoint, err := parseOtlpHttpEndpoint(url)
+	endpoint, err := parseOtlpHttpEndpoint(url, "")
 	if err != nil {
 		return nil, err
 	}
