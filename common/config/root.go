@@ -79,6 +79,7 @@ var availableConfigers = []Configer{
 	&Tingyun{},
 	&Traceloop{},
 	&Uptrace{},
+	&VictoriaMetrics{},
 }
 
 type Configer interface {

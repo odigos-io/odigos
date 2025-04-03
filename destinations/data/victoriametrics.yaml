@@ -1,0 +1,29 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: victoriametrics
+  displayName: VictoriaMetrics Cloud
+  category: managed
+spec:
+  image: victoriametrics.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: VICTORIA_METRICS_ENDPOINT
+      displayName: OTLP HTTP Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+    - name: VICTORIA_METRICS_API_KEY
+      displayName: API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
