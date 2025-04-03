@@ -244,6 +244,7 @@
             "backends/grafanacloudloki",
             "backends/grafanacloudprometheus",
             "backends/grafanacloudtempo",
+            "backends/greptime",
             "backends/groundcover",
             "backends/honeycomb",
             "backends/hyperdx",
