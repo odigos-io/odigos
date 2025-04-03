@@ -85,7 +85,7 @@ func parseOtlpGrpcUrl(rawURL string, encrypted bool) (grpcUrl string, err error)
 	return fmt.Sprintf("%s:%s", host, port), nil
 }
 
-func parseOtlpHttpEndpoint(rawUrl string, requiredPort string, requiredPath string) (string, error) {
+func parseOtlpHttpEndpoint(rawUrl string, defaultPort string, requiredPath string) (string, error) {
 	noWhiteSpaces := strings.TrimSpace(rawUrl)
 	parsedUrl, err := url.Parse(noWhiteSpaces)
 	if err != nil {
@@ -95,26 +95,18 @@ func parseOtlpHttpEndpoint(rawUrl string, requiredPort string, requiredPath stri
 		return "", fmt.Errorf("invalid otlp http endpoint scheme: %s", parsedUrl.Scheme)
 	}
 
-	// A port is required
-	if requiredPort != "" {
-		if !urlHostContainsPort(parsedUrl.String()) {
-			// Port is empty, append the required port
-			parsedUrl.Host = net.JoinHostPort(parsedUrl.Hostname(), requiredPort)
-		} else if parsedUrl.Port() != requiredPort {
-			// Port already exists, and is not equal to the required port
-			return "", fmt.Errorf("invalid otlp http endpoint port: %s", parsedUrl.Port())
-		}
+	// A defailt port exists, and the parsed URL does not have a port
+	if defaultPort != "" && parsedUrl.Port() == "" {
+		// Append the default port
+		parsedUrl.Host = net.JoinHostPort(parsedUrl.Hostname(), defaultPort)
 	}
 
-	// A path is required
-	if requiredPath != "" {
-		if parsedUrl.Path == "" {
-			// Path is empty, append the required path
-			parsedUrl.Path = requiredPath
-		} else if parsedUrl.Path != requiredPath {
-			// Path already exists, and is not equal to the required path
-			return "", fmt.Errorf("invalid otlp http endpoint path: %s", parsedUrl.Path)
-		}
+	if parsedUrl.Path == "" {
+		// Path is empty, append the required path
+		parsedUrl.Path = requiredPath
+	} else if parsedUrl.Path != requiredPath {
+		// Path already exists, and is not equal to the required path
+		return "", fmt.Errorf("invalid otlp http endpoint path: %s", parsedUrl.Path)
 	}
 
 	return parsedUrl.String(), nil
