@@ -1,9 +1,7 @@
 # This is an example .goreleaser.yml file with some sensible defaults.
 # Make sure to check the documentation at https://goreleaser.com
+version: 2
 project_name: odigos
-before:
-  hooks:
-    - sh -c 'cd frontend/webapp && yarn install && yarn build'
 builds:
   - env:
       - CGO_ENABLED=0
@@ -32,7 +30,7 @@ archives:
 checksum:
   name_template: "checksums.txt"
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:
