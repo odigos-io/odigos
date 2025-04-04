@@ -3,8 +3,6 @@ package resources
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
@@ -18,7 +16,10 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	k8sversion "k8s.io/apimachinery/pkg/util/version"
@@ -265,7 +266,6 @@ func NewResourceQuota(ns string) *corev1.ResourceQuota {
 }
 
 func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails) *appsv1.DaemonSet {
-
 	dynamicEnv := []corev1.EnvVar{}
 	if odigosTier == common.CloudOdigosTier {
 		dynamicEnv = append(dynamicEnv, odigospro.CloudTokenAsEnvVar())
@@ -299,7 +299,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 		rollingUpdate.MaxSurge = &maxSurge
 	}
 
-	return &appsv1.DaemonSet{
+	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
 			APIVersion: "apps/v1",
@@ -372,6 +372,16 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								},
 							},
 						},
+						{
+							Name: k8sconsts.GoOffsetsConfigMap,
+							VolumeSource: v1.VolumeSource{
+								ConfigMap: &v1.ConfigMapVolumeSource{
+									LocalObjectReference: v1.LocalObjectReference{
+										Name: k8sconsts.GoOffsetsConfigMap,
+									},
+								},
+							},
+						},
 					}, odigosSeLinuxHostVolumes...),
 					InitContainers: []corev1.Container{
 						{
@@ -402,6 +412,10 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
 										},
 									},
+								},
+								{
+									Name:  k8sconsts.GoOffsetsEnvVar,
+									Value: k8sconsts.OffsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName,
 								},
 							},
 							Resources: corev1.ResourceRequirements{},
@@ -484,6 +498,10 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									Name:      "kernel-debug",
 									MountPath: "/sys/kernel/debug",
 								},
+								{
+									Name:      k8sconsts.GoOffsetsConfigMap,
+									MountPath: k8sconsts.OffsetFileMountPath,
+								},
 							}, odigosSeLinuxHostVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
 							SecurityContext: &corev1.SecurityContext{
@@ -505,6 +523,35 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 			},
 		},
 	}
+
+	return ds
+}
+
+// NewOdigletGoOffsetsConfigMap returns the custom Go Offsets ConfigMap mounted by Odiglet.
+// If one already exists, it will return that object (to support upgrades while preserving existing file).
+// Otherwise, it returns a configmap with a blank file, which instructs Odiglet to use the default offsets.
+func NewOdigletGoOffsetsConfigMap(ctx context.Context, client *kube.Client, ns string) (*v1.ConfigMap, error) {
+	cm := &v1.ConfigMap{}
+	cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return nil, err
+		}
+		cm = &v1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ConfigMap",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      k8sconsts.GoOffsetsConfigMap,
+				Namespace: ns,
+			},
+			Data: map[string]string{
+				k8sconsts.GoOffsetsFileName: "",
+			},
+		}
+	}
+	return cm, nil
 }
 
 // used to inject the host volumes into odigos components for selinux update
@@ -565,12 +612,17 @@ func NewOdigletResourceManager(client *kube.Client, ns string, config *common.Od
 func (a *odigletResourceManager) Name() string { return "Odiglet" }
 
 func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
+	goOffsetConfigMap, err := NewOdigletGoOffsetsConfigMap(ctx, a.client, a.ns)
+	if err != nil {
+		return err
+	}
 	resources := []kube.Object{
 		NewOdigletServiceAccount(a.ns),
 		NewOdigletRole(a.ns),
 		NewOdigletRoleBinding(a.ns),
 		NewOdigletClusterRole(a.config.Psp, a.config.OpenshiftEnabled),
 		NewOdigletClusterRoleBinding(a.ns),
+		goOffsetConfigMap,
 	}
 
 	clusterKind := cmdcontext.ClusterKindFromContext(ctx)
