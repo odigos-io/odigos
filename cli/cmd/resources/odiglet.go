@@ -538,6 +538,10 @@ func NewOdigletGoOffsetsConfigMap(ctx context.Context, client *kube.Client, ns s
 			return nil, err
 		}
 		cm = &v1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ConfigMap",
+				APIVersion: "v1",
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sconsts.GoOffsetsConfigMap,
 				Namespace: ns,
