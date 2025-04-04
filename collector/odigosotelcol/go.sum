@@ -1186,6 +1186,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporte
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.121.0/go.mod h1:4YIpOhdh4G9r+QxSZemUc/6JnpUjR4pZLLL/WuSStdE=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.121.0 h1:wYIiwI8UU+N2aJai3WRM9F8maq1zm3/hVZj4Z+AiSBA=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.121.0/go.mod h1:wIyVZiPC/Zd14GGTZR+IXHWlZsS+QdqPULye6MqFu+I=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.121.0 h1:WJsYRxjhlwSYsT0Qi+UYZWlWGoVtbXoItCiCs1erViI=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.121.0/go.mod h1:LDyZETAko2NX9TMGaM5y+WN3B8btZHAPVA5temmvZ84=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.121.0 h1:h6wXea0uEsCcHq/cJ0C7Le3j6n9Lnu3oLTUGMo2aWIs=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.121.0/go.mod h1:hell2tmZ2EefEefmxrI/c3DcuCpzrutEarVI17VX9ZI=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.121.0 h1:glv30htO+iy3ic1nYQdxrvxojzC0NlvRD2dTEkQ4nO4=
