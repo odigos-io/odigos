@@ -11,6 +11,20 @@ on:
         required: true
 
 jobs:
+  verify-offsets-merged:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ['enterprise-go-instrumentation']
+    steps:
+      - name: Verify no open offsets PRs
+        run: |
+          curl -s -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+          "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100" | \
+          jq '[.[] | select(.labels | any(.name == "offsets"))]' | \
+          jq 'if length > 0 then error("❌ Error: Open PRs with label \"offsets\" found!") else empty end'
+
   print-tag:
     runs-on: ubuntu-latest
     steps:
