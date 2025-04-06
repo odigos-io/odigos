@@ -3,6 +3,7 @@ export * from './namespaces';
 export * from './config';
 export * from './describe';
 export * from './destinations';
+export * from './groups';
 export * from './instrumentation-rules';
 export * from './metrics';
 export * from './namespaces';

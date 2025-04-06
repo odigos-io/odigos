@@ -53,9 +53,9 @@ export const GET_POTENTIAL_DESTINATIONS = gql`
 `;
 
 export const GET_DESTINATIONS = gql`
-  query GetDestinations {
+  query GetDestinations($groupName: String!) {
     computePlatform {
-      destinations {
+      destinations(groupName: $groupName) {
         id
         name
         fields

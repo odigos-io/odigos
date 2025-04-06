@@ -14,6 +14,8 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"slices"
+
 	"sigs.k8s.io/yaml"
 )
 
@@ -90,4 +92,8 @@ func CheckWorkloadKind(kind WorkloadKind) error {
 	default:
 		return errors.New("unsupported workload kind: " + string(kind))
 	}
+}
+
+func ArrayContains(arr []string, str string) bool {
+	return slices.Contains(arr, str)
 }
