@@ -10,6 +10,7 @@ export default function Page() {
   const { groupNames } = useGroupsCRUD();
   const { sources, persistSources } = useSourceCRUD();
 
+  // TODO: pass this to DataFlow as prop
   console.log('groupNames', groupNames);
 
   return (
