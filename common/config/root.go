@@ -42,6 +42,7 @@ var availableConfigers = []Configer{
 	&GrafanaCloudLoki{},
 	&GrafanaCloudPrometheus{},
 	&GrafanaCloudTempo{},
+	&Greptime{},
 	&Groundcover{},
 	&Honeycomb{},
 	&HyperDX{},
@@ -59,6 +60,7 @@ var availableConfigers = []Configer{
 	&NewRelic{},
 	&Nop{},
 	&Observe{},
+	&OneUptime{},
 	&OpenObserve{},
 	&OpsVerse{},
 	&Oracle{},
@@ -77,6 +79,7 @@ var availableConfigers = []Configer{
 	&Tingyun{},
 	&Traceloop{},
 	&Uptrace{},
+	&VictoriaMetricsCloud{},
 }
 
 type Configer interface {

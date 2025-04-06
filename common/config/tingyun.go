@@ -24,7 +24,7 @@ func (j *Tingyun) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 	if !exists {
 		return nil, errorMissingKey(TINGYUN_ENDPOINT)
 	}
-	endpoint, err := parseOtlpHttpEndpoint(endpoint)
+	endpoint, err := parseOtlpHttpEndpoint(endpoint, "", "")
 	if err != nil {
 		return nil, err
 	}
