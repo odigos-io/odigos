@@ -12,7 +12,7 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@apollo/client": "^3.13.5",
+    "@apollo/client": "^3.13.6",
     "@apollo/experimental-nextjs-app-support": "^0.11.11",
     "@odigos/ui-kit": "^0.0.20",
     "graphql": "^16.10.0",
