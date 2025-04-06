@@ -104,8 +104,10 @@ spec:
           volumeMounts:
             - name: run-dir
               mountPath: /run
-            - name: rancher
-              mountPath: /var/lib/rancher
+            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}              
+            - name: custom-container-runtime-socket
+              mountPath: mountPath: {{ .Values.odiglet.customContainerRuntimeSocketPath }}
+            {{- end }}
             {{- if .Values.openshift.enabled }}
             - name: host
               mountPath: /host
@@ -130,9 +132,11 @@ spec:
         - name: run-dir
           hostPath:
             path: /run
-        - name: rancher
+        {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
+        - name: custom-container-runtime-socket
           hostPath:
-            path: /var/lib/rancher           
+            path: {{ .Values.odiglet.customContainerRuntimeSocketPath }}
+        {{- end }}
         {{- if .Values.openshift.enabled }}
         - name: host
           hostPath:
