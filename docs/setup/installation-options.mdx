@@ -39,6 +39,23 @@ List all containers to be ignored with **helm chart**:
 helm install odigos odigos/odigos --set ignoreContainer=<container1>,<container2>
 ```
 
+## Custom Container Runtime Socket Path
+Odigos uses the container runtime socket to identify customer application environment variables, distinguishing between those injected by the runtime and those defined in Kubernetes manifests.
+
+To perform this analysis, Odiglet requires access to the container runtime’s Unix socket (e.g., `containerd.sock`). However, in certain environments—such as Rancher—the socket may not be located in a default path.
+
+To address this, Odigos provides a configuration option to mount a custom container runtime socket path into the Odiglet. This path can be specified either during installation or afterwards.
+### Usage
+1. During installation:
+```shell
+odigos install --container-runtime-socket-path <unix socket path>
+```
+2. Post installation using [config set command](/cli/odigos_config):
+```shell
+odigos config set custom-container-runtime-socket-path <unix socket path>
+```
+
+
 ## OpenShift Installation
 
 Installing on OpenShift requires additional settings that can be

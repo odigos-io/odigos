@@ -264,7 +264,8 @@ func NewResourceQuota(ns string) *corev1.ResourceQuota {
 	}
 }
 
-func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails) *appsv1.DaemonSet {
+func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string,
+	odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails, customContainerRuntimeSocketPath string) *appsv1.DaemonSet {
 
 	dynamicEnv := []corev1.EnvVar{}
 	if odigosTier == common.CloudOdigosTier {
@@ -279,6 +280,16 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 		odigosSeLinuxHostVolumes = append(odigosSeLinuxHostVolumes, selinuxHostVolumes()...)
 		odigosSeLinuxHostVolumeMounts = append(odigosSeLinuxHostVolumeMounts, selinuxHostVolumeMounts()...)
 	}
+
+	customContainerRuntimeSocketVolumes := []corev1.Volume{}
+	customContainerRunetimeSocketVolumeMounts := []corev1.VolumeMount{}
+	if customContainerRuntimeSocketPath != "" {
+		customContainerRuntimeSocketVolumes = setCustomContainerRuntimeSocketVolume(customContainerRuntimeSocketPath)
+		customContainerRunetimeSocketVolumeMounts = setCustomContainerRuntimeSocketVolumeMount(customContainerRuntimeSocketPath)
+	}
+
+	additionalVolumes := append(customContainerRuntimeSocketVolumes, odigosSeLinuxHostVolumes...)
+	additionalVolumeMounts := append(customContainerRunetimeSocketVolumeMounts, odigosSeLinuxHostVolumeMounts...)
 
 	// 50% of the nodes can be unavailable during the update.
 	// if we do not set it, the default value is 1.
@@ -349,14 +360,6 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							},
 						},
 						{
-							Name: "rancher",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/lib/rancher",
-								},
-							},
-						},
-						{
 							Name: "device-plugins-dir",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
@@ -380,7 +383,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								},
 							},
 						},
-					}, odigosSeLinuxHostVolumes...),
+					}, additionalVolumes...),
 					InitContainers: []corev1.Container{
 						{
 							Name:  "init",
@@ -480,10 +483,6 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									MountPath: "/run",
 								},
 								{
-									Name:      "rancher",
-									MountPath: "/var/lib/rancher",
-								},
-								{
 									Name:      "device-plugins-dir",
 									MountPath: "/var/lib/kubelet/device-plugins",
 								},
@@ -496,7 +495,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									Name:      "kernel-debug",
 									MountPath: "/sys/kernel/debug",
 								},
-							}, odigosSeLinuxHostVolumeMounts...),
+							}, additionalVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: ptrbool(true),
@@ -557,6 +556,29 @@ func selinuxHostVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
+// used to inject the host volumes into odigos components for custom container runtime socket path
+func setCustomContainerRuntimeSocketVolume(customContainerRuntimeSocketPath string) []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: "custom-container-runtime-socket",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: customContainerRuntimeSocketPath,
+				},
+			},
+		},
+	}
+}
+
+func setCustomContainerRuntimeSocketVolumeMount(customContainerRuntimeSocketPath string) []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      "custom-container-runtime-socket",
+			MountPath: customContainerRuntimeSocketPath,
+		},
+	}
+}
+
 func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropagationMode {
 	return &p
 }
@@ -604,7 +626,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
 				K8SVersion: cmdcontext.K8SVersionFromContext(ctx),
-			}))
+			}, a.config.CustomContainerRuntimeSocketPath))
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }
