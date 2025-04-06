@@ -13,10 +13,10 @@ interface UseGroupsCrud {
 export const useGroupsCRUD = (): UseGroupsCrud => {
   const { addNotification } = useNotificationStore();
 
-  const [query, { loading, data }] = useLazyQuery<{ groupNames?: string[] }>(GET_GROUP_NAMES);
+  const [fetchGroupNamesQuery, { loading, data, called }] = useLazyQuery<{ groupNames?: string[] }>(GET_GROUP_NAMES);
 
   const fetchGroupNames = async () => {
-    const { error } = await query();
+    const { error } = await fetchGroupNamesQuery();
 
     if (error) {
       addNotification({
@@ -28,7 +28,7 @@ export const useGroupsCRUD = (): UseGroupsCrud => {
   };
 
   useEffect(() => {
-    if (!data?.groupNames?.length && !loading) fetchGroupNames();
+    if (!called) fetchGroupNames();
   }, []);
 
   return {
