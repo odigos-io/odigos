@@ -17,7 +17,7 @@ func (j *VictoriaMetricsCloud) DestType() common.DestinationType {
 
 func (j *VictoriaMetricsCloud) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, error) {
 	config := dest.GetConfig()
-	uniqueUri := "victoriametrics-" + dest.GetID()
+	uniqueUri := "victoriametricscloud-" + dest.GetID()
 	var pipelineNames []string
 
 	endpoint, exists := config[VICTORIA_METRICS_CLOUD_ENDPOINT]
