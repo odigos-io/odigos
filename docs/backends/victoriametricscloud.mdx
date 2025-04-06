@@ -51,9 +51,9 @@ Scroll to **Kubernetes commandline command** and copy the **endpoint**
   ❌ Logs
 </Accordion>
 
-- **VICTORIA_METRICS_ENDPOINT** `string` : OTLP HTTP Endpoint.
+- **VICTORIA_METRICS_CLOUD_ENDPOINT** `string` : OTLP HTTP Endpoint.
   - This field is required
-- **VICTORIA_METRICS_TOKEN** `string` : Access Token.
+- **VICTORIA_METRICS_CLOUD_TOKEN** `string` : Access Token.
   - This field is required
 
 ### Adding Destination to Odigos
@@ -87,7 +87,7 @@ There are two primary methods for configuring destinations in Odigos:
       namespace: odigos-system
     spec:
       data:
-        VICTORIA_METRICS_ENDPOINT: <OTLP HTTP Endpoint>
+        VICTORIA_METRICS_CLOUD_ENDPOINT: <OTLP HTTP Endpoint>
       destinationName: victoriametricscloud
       secretRef:
         name: victoriametricscloud-secret
@@ -99,7 +99,7 @@ There are two primary methods for configuring destinations in Odigos:
 
     apiVersion: v1
     data:
-      VICTORIA_METRICS_TOKEN: <Base64 Access Token>
+      VICTORIA_METRICS_CLOUD_TOKEN: <Base64 Access Token>
     kind: Secret
     metadata:
       name: victoriametricscloud-secret

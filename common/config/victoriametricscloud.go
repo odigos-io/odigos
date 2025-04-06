@@ -5,24 +5,24 @@ import (
 )
 
 const (
-	VICTORIA_METRICS_ENDPOINT = "VICTORIA_METRICS_ENDPOINT"
-	VICTORIA_METRICS_TOKEN    = "VICTORIA_METRICS_TOKEN"
+	VICTORIA_METRICS_CLOUD_ENDPOINT = "VICTORIA_METRICS_CLOUD_ENDPOINT"
+	VICTORIA_METRICS_CLOUD_TOKEN    = "VICTORIA_METRICS_CLOUD_TOKEN"
 )
 
-type VictoriaMetrics struct{}
+type VictoriaMetricsCloud struct{}
 
-func (j *VictoriaMetrics) DestType() common.DestinationType {
-	return common.VictoriaMetricsDestinationType
+func (j *VictoriaMetricsCloud) DestType() common.DestinationType {
+	return common.VictoriaMetricsCloudDestinationType
 }
 
-func (j *VictoriaMetrics) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, error) {
+func (j *VictoriaMetricsCloud) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, error) {
 	config := dest.GetConfig()
 	uniqueUri := "victoriametrics-" + dest.GetID()
 	var pipelineNames []string
 
-	endpoint, exists := config[VICTORIA_METRICS_ENDPOINT]
+	endpoint, exists := config[VICTORIA_METRICS_CLOUD_ENDPOINT]
 	if !exists {
-		return nil, errorMissingKey(VICTORIA_METRICS_ENDPOINT)
+		return nil, errorMissingKey(VICTORIA_METRICS_CLOUD_ENDPOINT)
 	}
 	endpoint, err := parseOtlpHttpEndpoint(endpoint, "", "/opentelemetry")
 	if err != nil {
@@ -31,7 +31,7 @@ func (j *VictoriaMetrics) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]
 
 	authExtensionName := "bearertokenauth/" + uniqueUri
 	cfg.Extensions[authExtensionName] = GenericMap{
-		"token": "${VICTORIA_METRICS_TOKEN}",
+		"token": "${VICTORIA_METRICS_CLOUD_TOKEN}",
 	}
 	cfg.Service.Extensions = append(cfg.Service.Extensions, authExtensionName)
 

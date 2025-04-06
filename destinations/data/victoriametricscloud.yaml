@@ -14,13 +14,13 @@ spec:
     logs:
       supported: false
   fields:
-    - name: VICTORIA_METRICS_ENDPOINT
+    - name: VICTORIA_METRICS_CLOUD_ENDPOINT
       displayName: OTLP HTTP Endpoint
       componentType: input
       componentProps:
         type: text
         required: true
-    - name: VICTORIA_METRICS_TOKEN
+    - name: VICTORIA_METRICS_CLOUD_TOKEN
       displayName: Access Token
       componentType: input
       secret: true
