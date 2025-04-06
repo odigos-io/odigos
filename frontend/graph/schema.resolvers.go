@@ -1020,17 +1020,38 @@ func (r *queryResolver) InstrumentationInstancesHealth(ctx context.Context) ([]*
 func (r *queryResolver) GroupNames(ctx context.Context) ([]string, error) {
 	ns := env.GetCurrentNamespace()
 
-	dests, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
+	destinations, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	var groupNames []string
-
 	// Collect group names without duplicates
 	seen := make(map[string]bool)
-	for _, dest := range dests.Items {
+
+	for _, dest := range destinations.Items {
 		for _, group := range dest.Spec.SourceSelector.Groups {
+			if _, exists := seen[group]; !exists {
+				seen[group] = true
+				groupNames = append(groupNames, group)
+			}
+		}
+	}
+
+	for _, src := range sources.Items {
+		var groups []string
+		for key := range src.Labels {
+			if strings.Contains(key, k8sconsts.SourceGroupLabelPrefix) {
+				groups = append(groups, strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix))
+			}
+		}
+
+		for _, group := range groups {
 			if _, exists := seen[group]; !exists {
 				seen[group] = true
 				groupNames = append(groupNames, group)
