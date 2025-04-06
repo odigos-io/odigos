@@ -29,15 +29,19 @@ This option is useful for excluding specific sidecar containers from being instr
 
 Default values: `istio-proxy`
 
-Add additional containers to ignore with **cli**:
-```shell
-odigos install --ignore-container <container1> --ignore-container <container2>
-```
+<Tabs>
+  <Tab title="Odigos CLI">
+     ```shell
+     odigos install --ignore-container <container1> --ignore-container <container2>
+     ```
+  </Tab>
+  <Tab title="Helm Chart">
+     ```shell
+     helm install odigos odigos/odigos --set ignoreContainer=<container1>,<container2>
+     ```
+  </Tab>  
+</Tabs>
 
-List all containers to be ignored with **helm chart**:
-```shell
-helm install odigos odigos/odigos --set ignoreContainer=<container1>,<container2>
-```
 
 ## Custom Container Runtime Socket Path
 Odigos uses the container runtime socket to identify customer application environment variables, distinguishing between those injected by the runtime and those defined in Kubernetes manifests.
@@ -60,7 +64,7 @@ To address this, Odigos provides a configuration option to mount a custom contai
   <Tab title="Helm Chart">
      1. During installation:
      ```shell
-     helm install odigos odigos/odigos --set odiglet.customContainerRuntimeSocketPath=/var/lib/rancher/
+     helm install odigos odigos/odigos --set odiglet.customContainerRuntimeSocketPath=/var/lib/rancher
      ```
   </Tab>  
 </Tabs>
