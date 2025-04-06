@@ -34,7 +34,7 @@ var configCmd = &cobra.Command{
 	- "ignored-namespaces": List of namespaces to be ignored.
 	- "ignored-containers": List of containers to be ignored.
 	- "mount-method": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
-	- "container-runtime-socket-path": Path to the custom container runtime socket (e.g /var/lib/rancher).
+	- "container-runtime-socket-path": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
 	`,
 }
 

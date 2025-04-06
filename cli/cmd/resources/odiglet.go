@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"path/filepath"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -286,6 +287,10 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 	if customContainerRuntimeSocketPath != "" {
 		customContainerRuntimeSocketVolumes = setCustomContainerRuntimeSocketVolume(customContainerRuntimeSocketPath)
 		customContainerRunetimeSocketVolumeMounts = setCustomContainerRuntimeSocketVolumeMount(customContainerRuntimeSocketPath)
+		dynamicEnv = append(dynamicEnv,
+			corev1.EnvVar{
+				Name:  k8sconsts.CustomContainerRuntimeSocketEnvVar,
+				Value: customContainerRuntimeSocketPath})
 	}
 
 	additionalVolumes := append(customContainerRuntimeSocketVolumes, odigosSeLinuxHostVolumes...)
@@ -563,7 +568,7 @@ func setCustomContainerRuntimeSocketVolume(customContainerRuntimeSocketPath stri
 			Name: "custom-container-runtime-socket",
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: customContainerRuntimeSocketPath,
+					Path: filepath.Dir(customContainerRuntimeSocketPath),
 				},
 			},
 		},
@@ -574,7 +579,7 @@ func setCustomContainerRuntimeSocketVolumeMount(customContainerRuntimeSocketPath
 	return []corev1.VolumeMount{
 		{
 			Name:      "custom-container-runtime-socket",
-			MountPath: customContainerRuntimeSocketPath,
+			MountPath: filepath.Dir(customContainerRuntimeSocketPath),
 		},
 	}
 }
