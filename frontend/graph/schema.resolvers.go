@@ -23,6 +23,9 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+
+	"golang.org/x/sync/errgroup"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -115,9 +118,9 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 }
 
 // Sources is the resolver for the sources field.
-func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error) {
+func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string, groupName string) (*model.PaginatedSources, error) {
 	limit, _ := services.GetPageLimit(ctx)
-	list, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
+	icList, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
 		Limit:    int64(limit),
 		Continue: nextPage,
 	})
@@ -125,7 +128,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 	if err != nil {
 		if strings.Contains(err.Error(), "The provided continue parameter is too old") {
 			// Retry without the continue token
-			list, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
+			icList, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
 				Limit: int64(limit),
 			})
 
@@ -137,19 +140,44 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 		}
 	}
 
+	// Get Source objects to compare with groupName
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(len(icList.Items))
+
+	// Keep order based on idx
+	srcList := make([]*v1alpha1.Source, len(icList.Items))
+	for idx, ic := range icList.Items {
+		g.Go(func() error {
+			src, err := services.GetSourceCRD(ctx, ic.Namespace, ic.OwnerReferences[0].Name, services.WorkloadKind(ic.OwnerReferences[0].Kind))
+			if err != nil {
+				return err
+			}
+
+			srcList[idx] = src
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
 	var actualSources []*model.K8sActualSource
-	for _, ic := range list.Items {
-		actualSources = append(actualSources, instrumentationConfigToActualSource(ic))
+	for idx, ic := range icList.Items {
+		// If matches groupName, return the source
+		if groupName == "" || srcList[idx].Labels[k8sconsts.SourceGroupLabelPrefix+groupName] == "true" {
+			actualSources = append(actualSources, instrumentationConfigToActualSource(ic))
+		}
 	}
 
 	return &model.PaginatedSources{
-		NextPage: list.GetContinue(),
+		NextPage: icList.GetContinue(),
 		Items:    actualSources,
 	}, nil
 }
 
 // Source is the resolver for the source field.
-func (r *computePlatformResolver) Source(ctx context.Context, obj *model.ComputePlatform, sourceID model.K8sSourceID) (*model.K8sActualSource, error) {
+func (r *computePlatformResolver) Source(ctx context.Context, obj *model.ComputePlatform, sourceID model.K8sSourceID, groupName string) (*model.K8sActualSource, error) {
 	ns := sourceID.Namespace
 	kind := sourceID.Kind
 	name := sourceID.Name
@@ -162,17 +190,27 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 		return nil, fmt.Errorf("InstrumentationConfig not found for %s/%s in namespace %s", kind, name, ns)
 	}
 
-	src := instrumentationConfigToActualSource(*ic)
-	condition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
-	if condition.Status != "" {
-		src.Conditions = append(src.Conditions, &condition)
+	// Get Source object to compare with groupName
+	src, err := services.GetSourceCRD(ctx, ns, name, services.WorkloadKind(kind))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
 
-	return src, nil
+	// If matches groupName, return the source
+	if groupName == "" || src.Labels[k8sconsts.SourceGroupLabelPrefix+groupName] == "true" {
+		payload := instrumentationConfigToActualSource(*ic)
+		condition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
+		if condition.Status != "" {
+			payload.Conditions = append(payload.Conditions, &condition)
+		}
+
+		return payload, nil
+	}
+	return nil, fmt.Errorf("Source found but not included in group %s", groupName)
 }
 
 // Destinations is the resolver for the destinations field.
-func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.ComputePlatform) ([]*model.Destination, error) {
+func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.ComputePlatform, groupName string) ([]*model.Destination, error) {
 	ns := env.GetCurrentNamespace()
 
 	dests, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
@@ -182,14 +220,17 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 
 	var destinations []*model.Destination
 	for _, dest := range dests.Items {
-		secretFields, err := services.GetDestinationSecretFields(ctx, ns, &dest)
-		if err != nil {
-			return nil, err
-		}
+		// If matches groupName, return the destination
+		if groupName == "" || services.ArrayContains(dest.Spec.SourceSelector.Groups, groupName) {
+			secretFields, err := services.GetDestinationSecretFields(ctx, ns, &dest)
+			if err != nil {
+				return nil, err
+			}
 
-		// Convert the k8s destination format to the expected endpoint format
-		endpointDest := services.K8sDestinationToEndpointFormat(dest, secretFields)
-		destinations = append(destinations, &endpointDest)
+			// Convert the k8s destination format to the expected endpoint format
+			endpointDest := services.K8sDestinationToEndpointFormat(dest, secretFields)
+			destinations = append(destinations, &endpointDest)
+		}
 	}
 
 	return destinations, nil

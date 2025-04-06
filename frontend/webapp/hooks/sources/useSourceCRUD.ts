@@ -32,8 +32,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
     addNotification({ type, title, message, crdType: EntityTypes.Source, target: id ? getSseTargetFromId(id, EntityTypes.Source) : undefined, hideFromHistory });
   };
 
-  const [queryByPage] = useLazyQuery<{ computePlatform: { sources: PaginatedData<Source> } }>(GET_SOURCES);
-  const [queryById] = useLazyQuery<{ computePlatform: { source: Source } }, { sourceId: WorkloadId }>(GET_SOURCE);
+  const [queryByPage] = useLazyQuery<{ computePlatform: { sources: PaginatedData<Source> } }, { nextPage: string; groupName: string }>(GET_SOURCES);
+  const [queryById] = useLazyQuery<{ computePlatform: { source: Source } }, { sourceId: WorkloadId; groupName: string }>(GET_SOURCE);
   const [queryInstances] = useLazyQuery<{ instrumentationInstancesHealth: InstrumentationInstancesHealth[] }>(GET_INSTANCES);
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCE, {
@@ -85,7 +85,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (!shouldFetchSource(!!page)) return;
     setEntitiesLoading(EntityTypes.Source, true);
 
-    const { error, data } = await queryByPage({ variables: { nextPage: page } });
+    // TODO: actual group name from current selection
+    const { error, data } = await queryByPage({ variables: { nextPage: page, groupName: '' } });
 
     if (error) {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
@@ -108,7 +109,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
     if (!shouldFetchSource(bypassPaginationLoader)) return;
 
-    const { error, data } = await queryById({ variables: { sourceId: id } });
+    // TODO: actual group name from current selection
+    const { error, data } = await queryById({ variables: { sourceId: id, groupName: '' } });
 
     if (error) {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);

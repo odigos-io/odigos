@@ -97,12 +97,12 @@ type ComplexityRoot struct {
 		APITokens            func(childComplexity int) int
 		Actions              func(childComplexity int) int
 		ComputePlatformType  func(childComplexity int) int
-		Destinations         func(childComplexity int) int
+		Destinations         func(childComplexity int, groupName string) int
 		InstrumentationRules func(childComplexity int) int
 		K8sActualNamespace   func(childComplexity int, name string) int
 		K8sActualNamespaces  func(childComplexity int) int
-		Source               func(childComplexity int, sourceID model.K8sSourceID) int
-		Sources              func(childComplexity int, nextPage string) int
+		Source               func(childComplexity int, sourceID model.K8sSourceID, groupName string) int
+		Sources              func(childComplexity int, nextPage string, groupName string) int
 	}
 
 	Condition struct {
@@ -530,9 +530,9 @@ type ComputePlatformResolver interface {
 	APITokens(ctx context.Context, obj *model.ComputePlatform) ([]*model.APIToken, error)
 	K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error)
 	K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error)
-	Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error)
-	Source(ctx context.Context, obj *model.ComputePlatform, sourceID model.K8sSourceID) (*model.K8sActualSource, error)
-	Destinations(ctx context.Context, obj *model.ComputePlatform) ([]*model.Destination, error)
+	Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string, groupName string) (*model.PaginatedSources, error)
+	Source(ctx context.Context, obj *model.ComputePlatform, sourceID model.K8sSourceID, groupName string) (*model.K8sActualSource, error)
+	Destinations(ctx context.Context, obj *model.ComputePlatform, groupName string) ([]*model.Destination, error)
 	Actions(ctx context.Context, obj *model.ComputePlatform) ([]*model.PipelineAction, error)
 	InstrumentationRules(ctx context.Context, obj *model.ComputePlatform) ([]*model.InstrumentationRule, error)
 }
@@ -815,7 +815,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.ComputePlatform.Destinations(childComplexity), true
+		args, err := ec.field_ComputePlatform_destinations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ComputePlatform.Destinations(childComplexity, args["groupName"].(string)), true
 
 	case "ComputePlatform.instrumentationRules":
 		if e.complexity.ComputePlatform.InstrumentationRules == nil {
@@ -853,7 +858,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.ComputePlatform.Source(childComplexity, args["sourceId"].(model.K8sSourceID)), true
+		return e.complexity.ComputePlatform.Source(childComplexity, args["sourceId"].(model.K8sSourceID), args["groupName"].(string)), true
 
 	case "ComputePlatform.sources":
 		if e.complexity.ComputePlatform.Sources == nil {
@@ -865,7 +870,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.ComputePlatform.Sources(childComplexity, args["nextPage"].(string)), true
+		return e.complexity.ComputePlatform.Sources(childComplexity, args["nextPage"].(string), args["groupName"].(string)), true
 
 	case "Condition.lastTransitionTime":
 		if e.complexity.Condition.LastTransitionTime == nil {
@@ -2912,6 +2917,34 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_ComputePlatform_destinations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_ComputePlatform_destinations_argsGroupName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["groupName"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_ComputePlatform_destinations_argsGroupName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["groupName"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("groupName"))
+	if tmp, ok := rawArgs["groupName"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_ComputePlatform_k8sActualNamespace_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2948,6 +2981,11 @@ func (ec *executionContext) field_ComputePlatform_source_args(ctx context.Contex
 		return nil, err
 	}
 	args["sourceId"] = arg0
+	arg1, err := ec.field_ComputePlatform_source_argsGroupName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["groupName"] = arg1
 	return args, nil
 }
 func (ec *executionContext) field_ComputePlatform_source_argsSourceID(
@@ -2968,6 +3006,24 @@ func (ec *executionContext) field_ComputePlatform_source_argsSourceID(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_ComputePlatform_source_argsGroupName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["groupName"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("groupName"))
+	if tmp, ok := rawArgs["groupName"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_ComputePlatform_sources_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2976,6 +3032,11 @@ func (ec *executionContext) field_ComputePlatform_sources_args(ctx context.Conte
 		return nil, err
 	}
 	args["nextPage"] = arg0
+	arg1, err := ec.field_ComputePlatform_sources_argsGroupName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["groupName"] = arg1
 	return args, nil
 }
 func (ec *executionContext) field_ComputePlatform_sources_argsNextPage(
@@ -2989,6 +3050,24 @@ func (ec *executionContext) field_ComputePlatform_sources_argsNextPage(
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("nextPage"))
 	if tmp, ok := rawArgs["nextPage"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_ComputePlatform_sources_argsGroupName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["groupName"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("groupName"))
+	if tmp, ok := rawArgs["groupName"]; ok {
 		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
@@ -5306,7 +5385,7 @@ func (ec *executionContext) _ComputePlatform_sources(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ComputePlatform().Sources(rctx, obj, fc.Args["nextPage"].(string))
+		return ec.resolvers.ComputePlatform().Sources(rctx, obj, fc.Args["nextPage"].(string), fc.Args["groupName"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5367,7 +5446,7 @@ func (ec *executionContext) _ComputePlatform_source(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ComputePlatform().Source(rctx, obj, fc.Args["sourceId"].(model.K8sSourceID))
+		return ec.resolvers.ComputePlatform().Source(rctx, obj, fc.Args["sourceId"].(model.K8sSourceID), fc.Args["groupName"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5440,7 +5519,7 @@ func (ec *executionContext) _ComputePlatform_destinations(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ComputePlatform().Destinations(rctx, obj)
+		return ec.resolvers.ComputePlatform().Destinations(rctx, obj, fc.Args["groupName"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5457,7 +5536,7 @@ func (ec *executionContext) _ComputePlatform_destinations(ctx context.Context, f
 	return ec.marshalNDestination2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDestinationᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ComputePlatform_destinations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ComputePlatform_destinations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ComputePlatform",
 		Field:      field,
@@ -5482,6 +5561,17 @@ func (ec *executionContext) fieldContext_ComputePlatform_destinations(_ context.
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Destination", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_ComputePlatform_destinations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }

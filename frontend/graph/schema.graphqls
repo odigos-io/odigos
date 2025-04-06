@@ -239,9 +239,9 @@ type ComputePlatform {
   apiTokens: [ApiToken]!
   k8sActualNamespaces: [K8sActualNamespace]!
   k8sActualNamespace(name: String!): K8sActualNamespace
-  sources(nextPage: String!): PaginatedSources!
-  source(sourceId: K8sSourceId!): K8sActualSource!
-  destinations: [Destination!]!
+  sources(nextPage: String!, groupName: String!): PaginatedSources!
+  source(sourceId: K8sSourceId!, groupName: String!): K8sActualSource!
+  destinations(groupName: String!): [Destination!]!
   actions: [PipelineAction!]!
   instrumentationRules: [InstrumentationRule!]!
 }

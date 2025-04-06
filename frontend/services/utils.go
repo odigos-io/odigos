@@ -91,3 +91,13 @@ func CheckWorkloadKind(kind WorkloadKind) error {
 		return errors.New("unsupported workload kind: " + string(kind))
 	}
 }
+
+func ArrayContains(arr []string, str string) bool {
+	for _, val := range arr {
+		if val == str {
+			return true
+		}
+	}
+
+	return false
+}

@@ -28,11 +28,12 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     addNotification({ type, title, message, crdType: EntityTypes.Destination, target: id ? getSseTargetFromId(id, EntityTypes.Destination) : undefined, hideFromHistory });
   };
 
-  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }>(GET_DESTINATIONS);
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }, { groupName: string }>(GET_DESTINATIONS);
 
   const fetchDestinations = async () => {
     setEntitiesLoading(EntityTypes.Destination, true);
-    const { error, data } = await fetchAll();
+    // TODO: actual group name from current selection
+    const { error, data } = await fetchAll({ variables: { groupName: '' } });
 
     if (error) {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);

@@ -1,9 +1,9 @@
 import { gql } from '@apollo/client';
 
 export const GET_SOURCES = gql`
-  query GetSources($nextPage: String!) {
+  query GetSources($nextPage: String!, $groupName: String!) {
     computePlatform {
-      sources(nextPage: $nextPage) {
+      sources(nextPage: $nextPage, groupName: $groupName) {
         nextPage
         items {
           namespace
@@ -33,9 +33,9 @@ export const GET_SOURCES = gql`
 `;
 
 export const GET_SOURCE = gql`
-  query GetSource($sourceId: K8sSourceId!) {
+  query GetSource($sourceId: K8sSourceId!, $groupName: String!) {
     computePlatform {
-      source(sourceId: $sourceId) {
+      source(sourceId: $sourceId, groupName: $groupName) {
         namespace
         name
         kind
