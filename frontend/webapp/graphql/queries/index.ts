@@ -2,6 +2,7 @@ export * from './actions';
 export * from './config';
 export * from './describe';
 export * from './destination';
+export * from './groups';
 export * from './instrumentation-rules';
 export * from './metrics';
 export * from './namespaces';
