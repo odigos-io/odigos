@@ -640,6 +640,7 @@ type Query {
   describeOdigos: OdigosAnalyze!
   describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
   instrumentationInstancesHealth: [InstrumentationInstanceHealth!]!
+  groupNames: [String!]!
 }
 
 type Mutation {
