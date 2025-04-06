@@ -66,4 +66,5 @@ const (
 	TingyunDestinationType                DestinationType = "tingyun"
 	TraceloopDestinationType              DestinationType = "traceloop"
 	UptraceDestinationType                DestinationType = "uptrace"
+	VictoriaMetricsCloudDestinationType   DestinationType = "victoriametricscloud"
 )
