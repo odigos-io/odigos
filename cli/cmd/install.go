@@ -318,7 +318,7 @@ func init() {
 	installCmd.Flags().StringVar(&imagePrefix, consts.ImagePrefixProperty, "registry.odigos.io", "prefix for all container images.")
 	installCmd.Flags().BoolVar(&psp, consts.PspProperty, false, "enable pod security policy")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", k8sconsts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
-	installCmd.Flags().StringVar(&customContainerRuntimeSocketPath, "container-runtime-socket-path", "", "custom configuration of a path to the container runtime socket path (e.g. /var/lib/rancher)")
+	installCmd.Flags().StringVar(&customContainerRuntimeSocketPath, "container-runtime-socket-path", "", "custom configuration of a path to the container runtime socket path (e.g. /var/lib/rancher/rke2/agent/containerd/containerd.sock)")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")

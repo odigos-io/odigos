@@ -38,7 +38,7 @@ odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFIL
 ```
   -k, --api-key string                         api key for odigos cloud
       --central-backend-url string             URL for centralized Odigos backend
-      --container-runtime-socket-path string   custom configuration of a path to the container runtime socket path (e.g. /var/lib/rancher)
+      --container-runtime-socket-path string   custom configuration of a path to the container runtime socket path (e.g. /var/lib/rancher/rke2/agent/containerd/containerd.sock)
   -h, --help                                   help for install
       --ignore-container strings               container names to exclude from instrumentation (useful for sidecar container) (default [istio-proxy,vault-agent,filebeat,linkerd-proxy,fluentd,akeyless-init])
       --ignore-namespace strings               namespaces not to show in odigos ui (default [kube-system,local-path-storage,istio-system,linkerd,kube-node-lease])
