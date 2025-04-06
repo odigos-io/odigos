@@ -746,7 +746,7 @@ func (e ComputePlatformType) String() string {
 	return string(e)
 }
 
-func (e *ComputePlatformType) UnmarshalGQL(v interface{}) error {
+func (e *ComputePlatformType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -791,7 +791,7 @@ func (e ConditionStatus) String() string {
 	return string(e)
 }
 
-func (e *ConditionStatus) UnmarshalGQL(v interface{}) error {
+func (e *ConditionStatus) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -834,7 +834,7 @@ func (e InstallationStatus) String() string {
 	return string(e)
 }
 
-func (e *InstallationStatus) UnmarshalGQL(v interface{}) error {
+func (e *InstallationStatus) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -877,7 +877,7 @@ func (e InstrumentationRuleType) String() string {
 	return string(e)
 }
 
-func (e *InstrumentationRuleType) UnmarshalGQL(v interface{}) error {
+func (e *InstrumentationRuleType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -920,7 +920,7 @@ func (e K8sResourceKind) String() string {
 	return string(e)
 }
 
-func (e *K8sResourceKind) UnmarshalGQL(v interface{}) error {
+func (e *K8sResourceKind) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -969,7 +969,7 @@ func (e ProgrammingLanguage) String() string {
 	return string(e)
 }
 
-func (e *ProgrammingLanguage) UnmarshalGQL(v interface{}) error {
+func (e *ProgrammingLanguage) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -1012,7 +1012,7 @@ func (e SignalType) String() string {
 	return string(e)
 }
 
-func (e *SignalType) UnmarshalGQL(v interface{}) error {
+func (e *SignalType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -1059,7 +1059,7 @@ func (e SpanKind) String() string {
 	return string(e)
 }
 
-func (e *SpanKind) UnmarshalGQL(v interface{}) error {
+func (e *SpanKind) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -1102,7 +1102,7 @@ func (e Tier) String() string {
 	return string(e)
 }
 
-func (e *Tier) UnmarshalGQL(v interface{}) error {
+func (e *Tier) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
