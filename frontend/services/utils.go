@@ -14,6 +14,8 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"slices"
+
 	"sigs.k8s.io/yaml"
 )
 
@@ -93,11 +95,5 @@ func CheckWorkloadKind(kind WorkloadKind) error {
 }
 
 func ArrayContains(arr []string, str string) bool {
-	for _, val := range arr {
-		if val == str {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(arr, str)
 }
