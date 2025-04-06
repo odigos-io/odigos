@@ -64,7 +64,7 @@ To address this, Odigos provides a configuration option to mount a custom contai
   <Tab title="Helm Chart">
      1. During installation:
      ```shell
-     helm install odigos odigos/odigos --set odiglet.customContainerRuntimeSocketPath=/var/lib/rancher
+     helm install odigos odigos/odigos --set odiglet.customContainerRuntimeSocketPath=<unix socket path>
      ```
   </Tab>  
 </Tabs>
