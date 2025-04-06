@@ -1,0 +1,29 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: oneuptime
+  displayName: OneUptime
+  category: managed
+spec:
+  image: oneuptime.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: ONEUPTIME_INGESTION_KEY
+      displayName: Telemetry Ingestion Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+        tooltip: The Telemetry Ingestion Key is used to authenticate your data. You can find it in the OneUptime dashboard under Project Settings > Ingestion Keys.
+  note:
+    type: Check
+    content: |
+      We handle the endpoint internally, so you don't need to provide it.
+      - The endpoint is `https://oneuptime.com/otlp`
