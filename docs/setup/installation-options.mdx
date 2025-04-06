@@ -46,14 +46,24 @@ To perform this analysis, Odiglet requires access to the container runtime’s U
 
 To address this, Odigos provides a configuration option to mount a custom container runtime socket path into the Odiglet. This path can be specified either during installation or afterwards.
 ### Usage
-1. During installation:
-```shell
-odigos install --container-runtime-socket-path <unix socket path>
-```
-2. Post installation using [config set command](/cli/odigos_config):
-```shell
-odigos config set custom-container-runtime-socket-path <unix socket path>
-```
+<Tabs>
+  <Tab title="Odigos CLI">
+     1. During installation:
+     ```shell
+     odigos install --container-runtime-socket-path <unix socket path>
+     ```
+     2. Post installation using [config set command](/cli/odigos_config):
+     ```shell
+     odigos config set custom-container-runtime-socket-path <unix socket path>
+     ```
+  </Tab>
+  <Tab title="Helm Chart">
+     1. During installation:
+     ```shell
+     helm install odigos odigos/odigos --set odiglet.customContainerRuntimeSocketPath=/var/lib/rancher/
+     ```
+  </Tab>  
+</Tabs>
 
 
 ## OpenShift Installation

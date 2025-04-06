@@ -106,7 +106,7 @@ spec:
               mountPath: /run
             {{- if .Values.odiglet.customContainerRuntimeSocketPath }}              
             - name: custom-container-runtime-socket
-              mountPath: mountPath: {{ .Values.odiglet.customContainerRuntimeSocketPath }}
+              mountPath: {{ .Values.odiglet.customContainerRuntimeSocketPath }}
             {{- end }}
             {{- if .Values.openshift.enabled }}
             - name: host
