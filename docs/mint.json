@@ -278,7 +278,8 @@
             "backends/tempo",
             "backends/tingyun",
             "backends/traceloop",
-            "backends/uptrace"
+            "backends/uptrace",
+            "backends/victoriametricscloud"
           ]
         }
       ]
