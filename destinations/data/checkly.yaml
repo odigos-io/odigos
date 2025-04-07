@@ -19,7 +19,7 @@ spec:
       componentType: input
       componentProps:
         required: true
-        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`. Do not include the path `/v1/traces`.
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`.
     - name: CHECKLY_API_KEY
       displayName: API Key
       componentType: input

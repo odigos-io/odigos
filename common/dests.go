@@ -29,6 +29,7 @@ const (
 	GrafanaCloudLokiDestinationType       DestinationType = "grafanacloudloki"
 	GrafanaCloudPrometheusDestinationType DestinationType = "grafanacloudprometheus"
 	GrafanaCloudTempoDestinationType      DestinationType = "grafanacloudtempo"
+	GreptimeDestinationType               DestinationType = "greptime"
 	GroundcoverDestinationType            DestinationType = "groundcover"
 	HoneycombDestinationType              DestinationType = "honeycomb"
 	HyperDxDestinationType                DestinationType = "hyperdx"
@@ -46,6 +47,7 @@ const (
 	NewRelicDestinationType               DestinationType = "newrelic"
 	NopDestinationType                    DestinationType = "nop"
 	ObserveDestinationType                DestinationType = "observe"
+	OneUptimeDestinationType              DestinationType = "oneuptime"
 	OpenObserveDestinationType            DestinationType = "openobserve"
 	OpsVerseDestinationType               DestinationType = "opsverse"
 	OracleDestinationType                 DestinationType = "oracle"
@@ -64,4 +66,5 @@ const (
 	TingyunDestinationType                DestinationType = "tingyun"
 	TraceloopDestinationType              DestinationType = "traceloop"
 	UptraceDestinationType                DestinationType = "uptrace"
+	VictoriaMetricsCloudDestinationType   DestinationType = "victoriametricscloud"
 )

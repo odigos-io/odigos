@@ -3,8 +3,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"net/url"
-	"strings"
 
 	"github.com/odigos-io/odigos/common"
 )
@@ -27,7 +25,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		return nil, errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
 	}
 
-	parsedUrl, err := parseOtlpHttpEndpoint(url)
+	parsedUrl, err := parseOtlpHttpEndpoint(url, "", "")
 	if err != nil {
 		return nil, errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
 	}
@@ -76,20 +74,6 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	return pipelineNames, nil
-}
-
-func parseOtlpHttpEndpoint(rawUrl string) (string, error) {
-	noWhiteSpaces := strings.TrimSpace(rawUrl)
-	parsedUrl, err := url.Parse(noWhiteSpaces)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse otlp http endpoint: %w", err)
-	}
-
-	if parsedUrl.Scheme != "http" && parsedUrl.Scheme != "https" {
-		return "", fmt.Errorf("invalid otlp http endpoint scheme: %s", parsedUrl.Scheme)
-	}
-
-	return noWhiteSpaces, nil
 }
 
 func applyBasicAuth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap) {
