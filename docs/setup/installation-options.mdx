@@ -44,7 +44,7 @@ Default values: `istio-proxy`
 
 
 ## Custom Container Runtime Socket Path
-Odigos uses the container runtime socket to identify customer application environment variables, distinguishing between those injected by the runtime and those defined in Kubernetes manifests.
+Odigos uses the container runtime socket to query for application environment variables info, and distinguish between those injected by the runtime (via Dockerfile for example) and those defined in Kubernetes manifests.
 
 To perform this analysis, Odiglet requires access to the container runtime’s Unix socket (e.g., `containerd.sock`). However, in certain environments—such as Rancher—the socket may not be located in a default path.
 

@@ -40,7 +40,7 @@ var defaultRuntimeEndpoints = []string{
 func detectRuntimeSocket() string {
 	// CONTAINER_RUNTIME_SOCK environment variable is set when the user specifies
 	// a custom container runtime socket path in the Odigos configuration
-	if envSocket := os.Getenv("CONTAINER_RUNTIME_SOCK"); envSocket != "" {
+	if envSocket := os.Getenv(k8sconsts.CustomContainerRuntimeSocketEnvVar); envSocket != "" {
 		return fmt.Sprintf("unix://%s", envSocket)
 	}
 
