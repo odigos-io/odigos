@@ -72,6 +72,7 @@ spec:
                     service name to a sampling decision.
                   properties:
                     fallback_sampling_ratio:
+                      default: 100
                       description: |-
                         FallbackSamplingRatio is the percentage (0–100) of traces to sample
                         if the specified service is not present in the trace.

@@ -69,8 +69,10 @@ type SpanAttributeFilter struct {
 	// FallbackSamplingRatio is the percentage (0–100) of spans to sample
 	// when the condition does not explicitly match. For example, if set to 50,
 	// then half of non-matching spans would be sampled.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=100
+	// +kubebuilder:default=100
 	FallbackSamplingRatio float64 `json:"fallback_sampling_ratio"`
 }
 

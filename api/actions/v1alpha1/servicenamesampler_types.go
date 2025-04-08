@@ -65,8 +65,10 @@ type ServiceNameFilter struct {
 
 	// FallbackSamplingRatio is the percentage (0–100) of traces to sample
 	// if the specified service is not present in the trace.
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=100
+	// +kubebuilder:default=100
 	FallbackSamplingRatio float64 `json:"fallback_sampling_ratio"`
 }
 

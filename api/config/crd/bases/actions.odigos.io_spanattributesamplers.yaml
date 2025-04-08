@@ -217,6 +217,7 @@ spec:
                           type: object
                       type: object
                     fallback_sampling_ratio:
+                      default: 100
                       description: |-
                         FallbackSamplingRatio is the percentage (0–100) of spans to sample
                         when the condition does not explicitly match. For example, if set to 50,
