@@ -18,6 +18,9 @@ ignoredNamespaces:
 # you can add additional container names to ignore by adding them to the list
 ignoredContainers:
 
+# Name of the cluster, will be used to identify this cluster in the centralized backend
+clusterName: ''
+
 collectorGateway:
   # the memory request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
@@ -162,8 +165,6 @@ odiglet:
 
 centralProxy:
   enabled: false
-  # Name of the cluster, will be used to identify this cluster in the centralized backend
-  clusterName: ''
   # Central backend URL where this proxy will forward data
   centralBackendURL: ''
 

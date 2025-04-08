@@ -335,7 +335,7 @@ helm-install-central-proxy:
 		--namespace odigos-system \
 		--set image.tag=$(ODIGOS_CLI_VERSION) \
 		--set centralProxy.enabled=true \
-		--set centralProxy.clusterName=$(CLUSTER_NAME) \
+		--set clusterName=$(CLUSTER_NAME) \
 		--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL)
 	kubectl label namespace odigos-system odigos.io/system-object="true"
 
