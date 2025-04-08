@@ -326,6 +326,17 @@ helm-install:
 	helm upgrade --install odigos  ./helm/odigos --create-namespace --namespace odigos-system --set image.tag=$(ODIGOS_CLI_VERSION)
 	kubectl label namespace odigos-system odigos.io/system-object="true"
 
+helm-install-central-proxy:
+	@echo "Installing odigos using helm"
+	helm upgrade --install odigos ./helm/odigos \
+		--create-namespace \
+		--namespace odigos-system \
+		--set image.tag=$(ODIGOS_CLI_VERSION) \
+		--set centralProxy.enabled=true \
+		--set centralProxy.clusterName=my-cluster \
+		--set centralProxy.centralBackendURL=https://central.odigos.local
+	kubectl label namespace odigos-system odigos.io/system-object="true"
+
 .PHONY: api-all
 api-all:
 	make -C api all

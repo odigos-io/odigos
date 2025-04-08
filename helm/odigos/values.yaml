@@ -160,6 +160,28 @@ odiglet:
     - operator: Exists
   affinity: {}
 
+centralProxy:
+  enabled: false
+  # Name of the cluster, will be used to identify this cluster in the centralized backend
+  clusterName: ''
+  # Central backend URL where this proxy will forward data
+  centralBackendURL: ''
+
+  image: staging-registry.odigos.io/central-proxy:dev
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: {}
+
 cli:
   image:
     repository: registry.odigos.io/odigos-cli
