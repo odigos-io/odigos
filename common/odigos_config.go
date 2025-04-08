@@ -95,20 +95,21 @@ type CollectorGatewayConfiguration struct {
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
-	ConfigVersion             int                            `json:"configVersion"`
-	TelemetryEnabled          bool                           `json:"telemetryEnabled,omitempty"`
-	OpenshiftEnabled          bool                           `json:"openshiftEnabled,omitempty"`
-	IgnoredNamespaces         []string                       `json:"ignoredNamespaces,omitempty"`
-	IgnoredContainers         []string                       `json:"ignoredContainers,omitempty"`
-	Psp                       bool                           `json:"psp,omitempty"`
-	ImagePrefix               string                         `json:"imagePrefix,omitempty"`
-	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty"`
-	CollectorGateway          *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
-	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
-	Profiles                  []ProfileName                  `json:"profiles,omitempty"`
-	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty"`
-	UiMode                    UiMode                         `json:"uiMode,omitempty"`
-	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty"`
-	CentralBackendURL         string                         `json:"centralBackendURL,omitempty"`
-	MountMethod               *MountMethod                   `json:"mountMethod,omitempty"`
+	ConfigVersion                    int                            `json:"configVersion"`
+	TelemetryEnabled                 bool                           `json:"telemetryEnabled,omitempty"`
+	OpenshiftEnabled                 bool                           `json:"openshiftEnabled,omitempty"`
+	IgnoredNamespaces                []string                       `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers                []string                       `json:"ignoredContainers,omitempty"`
+	Psp                              bool                           `json:"psp,omitempty"`
+	ImagePrefix                      string                         `json:"imagePrefix,omitempty"`
+	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
+	SkipWebhookIssuerCreation        bool                           `json:"skipWebhookIssuerCreation,omitempty"`
+	CollectorGateway                 *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
+	CollectorNode                    *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
+	Profiles                         []ProfileName                  `json:"profiles,omitempty"`
+	AllowConcurrentAgents            *bool                          `json:"allowConcurrentAgents,omitempty"`
+	UiMode                           UiMode                         `json:"uiMode,omitempty"`
+	UiPaginationLimit                int                            `json:"uiPaginationLimit,omitempty"`
+	CentralBackendURL                string                         `json:"centralBackendURL,omitempty"`
+	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
 }

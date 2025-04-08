@@ -74,6 +74,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}       
+            - name: CONTAINER_RUNTIME_SOCK
+              value: {{ .Values.odiglet.customContainerRuntimeSocketPath }}
+            {{- end }}                  
             - name: NODE_IP
               valueFrom:
                 fieldRef:
@@ -104,6 +108,10 @@ spec:
           volumeMounts:
             - name: run-dir
               mountPath: /run
+            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}              
+            - name: custom-container-runtime-socket
+              mountPath: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
+            {{- end }}
             {{- if .Values.openshift.enabled }}
             - name: host
               mountPath: /host
@@ -128,6 +136,11 @@ spec:
         - name: run-dir
           hostPath:
             path: /run
+        {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
+        - name: custom-container-runtime-socket
+          hostPath:
+            path: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
+        {{- end }}
         {{- if .Values.openshift.enabled }}
         - name: host
           hostPath:
