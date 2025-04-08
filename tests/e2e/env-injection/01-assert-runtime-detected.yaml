@@ -42,3 +42,23 @@ status:
       (!envVars): true
       (!envFromContainerRuntime): true
       language: java
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-inventory
+status:
+  runtimeDetailsByContainer:
+    - containerName: inventory
+      language: python
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-frontend
+status:
+  runtimeDetailsByContainer:
+    - containerName: frontend
+      language: java
