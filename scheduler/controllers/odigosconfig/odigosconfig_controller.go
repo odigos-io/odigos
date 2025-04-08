@@ -3,6 +3,7 @@ package odigosconfig
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -141,11 +142,13 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 		},
 	}
 
+	log.Printf("Effective config: %s", string(effectiveConfigYamlText))
+
 	objApplyBytes, err := yaml.Marshal(effectiveConfigMap)
 	if err != nil {
 		return err
 	}
-
+	// how to make sure the vakue from chart isapply into the configmap?
 	err = r.Client.Patch(ctx, &effectiveConfigMap, client.RawPatch(types.ApplyYAMLPatchType, objApplyBytes), client.ForceOwnership, client.FieldOwner("scheduler-odigosconfig"))
 	if err != nil {
 		return err

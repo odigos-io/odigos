@@ -92,23 +92,33 @@ type CollectorGatewayConfiguration struct {
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 }
+type AdditionalInstrumentationEnvs struct {
+	Languages map[string]LanguageConfig `json:"languages,omitempty"`
+}
+
+// Struct to represent configuration for each language
+type LanguageConfig struct {
+	Enabled bool              `json:"enabled"`
+	Env     map[string]string `json:"env,omitempty"`
+}
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
-	ConfigVersion             int                            `json:"configVersion"`
-	TelemetryEnabled          bool                           `json:"telemetryEnabled,omitempty"`
-	OpenshiftEnabled          bool                           `json:"openshiftEnabled,omitempty"`
-	IgnoredNamespaces         []string                       `json:"ignoredNamespaces,omitempty"`
-	IgnoredContainers         []string                       `json:"ignoredContainers,omitempty"`
-	Psp                       bool                           `json:"psp,omitempty"`
-	ImagePrefix               string                         `json:"imagePrefix,omitempty"`
-	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty"`
-	CollectorGateway          *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
-	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
-	Profiles                  []ProfileName                  `json:"profiles,omitempty"`
-	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty"`
-	UiMode                    UiMode                         `json:"uiMode,omitempty"`
-	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty"`
-	CentralBackendURL         string                         `json:"centralBackendURL,omitempty"`
-	MountMethod               *MountMethod                   `json:"mountMethod,omitempty"`
+	ConfigVersion                 int                            `json:"configVersion"`
+	TelemetryEnabled              bool                           `json:"telemetryEnabled,omitempty"`
+	OpenshiftEnabled              bool                           `json:"openshiftEnabled,omitempty"`
+	IgnoredNamespaces             []string                       `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers             []string                       `json:"ignoredContainers,omitempty"`
+	Psp                           bool                           `json:"psp,omitempty"`
+	ImagePrefix                   string                         `json:"imagePrefix,omitempty"`
+	SkipWebhookIssuerCreation     bool                           `json:"skipWebhookIssuerCreation,omitempty"`
+	CollectorGateway              *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
+	CollectorNode                 *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
+	Profiles                      []ProfileName                  `json:"profiles,omitempty"`
+	AllowConcurrentAgents         *bool                          `json:"allowConcurrentAgents,omitempty"`
+	UiMode                        UiMode                         `json:"uiMode,omitempty"`
+	UiPaginationLimit             int                            `json:"uiPaginationLimit,omitempty"`
+	CentralBackendURL             string                         `json:"centralBackendURL,omitempty"`
+	MountMethod                   *MountMethod                   `json:"mountMethod,omitempty"`
+	AdditionalInstrumentationEnvs *AdditionalInstrumentationEnvs `json:"additionalInstrumentationEnvs,omitempty"`
 }

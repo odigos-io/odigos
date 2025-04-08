@@ -18,6 +18,27 @@ ignoredNamespaces:
 # you can add additional container names to ignore by adding them to the list
 ignoredContainers:
 
+# Instrumentation settings for language-specific configurations
+additionalInstrumentationEnvs:
+  languages:
+    java:
+      enabled: true
+      env:
+        OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED: "true"
+        OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
+    python:
+      enabled: false
+      env: {}
+    nodejs:
+      enabled: false
+      env: {}
+    go:
+      enabled: false
+      env: {}
+    dotnet: 
+      enabled: false
+      env: {}
+
 collectorGateway:
   # the memory request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request

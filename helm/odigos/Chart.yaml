@@ -3,9 +3,9 @@ name: odigos
 description: Instant Distributed Tracing
 type: application
 # 0.0.0 will be replaced by the git tag version on release
-version: "0.0.0"
+version: 1.0.1-alpha.1
 # docker image and git tags prefix the version with "v"
-appVersion: "v0.0.0"
+appVersion: "v1.0.166"
 icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
 # minimum kubernetes version required, this value must be in sync with the CLI install value
 # we must include '-0' to allow versions such as v1.23.17-eks-ce1d5eb
