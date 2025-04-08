@@ -71,11 +71,15 @@ It will install k8s components that will auto-instrument your applications with 
 			os.Exit(1)
 		}
 
-		shouldInstallCentralProxy := clusterName != "" && centralBackendURL != ""
-
 		if installed {
 			fmt.Printf("\033[31mERROR\033[0m Odigos is already installed in namespace\n")
 			os.Exit(1)
+		}
+
+		if clusterName == "" && centralBackendURL != "" {
+			fmt.Printf("\033[33mWARNING\033[0m You provided a central backend URL but no cluster name.\n")
+			fmt.Println("Odigos will be installed, but this cluster will NOT be connected to the centralized Odigos backend.")
+			fmt.Println("To connect it later, run: \033[36modigos config set --cluster-name <your-cluster-name> \033[0m")
 		}
 
 		// Check if the cluster meets the minimum requirements
@@ -117,17 +121,8 @@ It will install k8s components that will auto-instrument your applications with 
 		}
 
 		config := CreateOdigosConfig(odigosTier)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Failed to prepare config: %v\n", err)
-			os.Exit(1)
-		}
 
-		if shouldInstallCentralProxy {
-			config.ClusterName = clusterName
-			config.CentralBackendURL = centralBackendURL
-		}
-
-		err = installOdigos(ctx, client, ns, &config, &odigosProToken, odigosTier, "Creating", shouldInstallCentralProxy)
+		err = installOdigos(ctx, client, ns, &config, &odigosProToken, odigosTier, "Creating")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to install Odigos: %s\n", err)
 			os.Exit(1)
@@ -175,10 +170,11 @@ func isOdigosInstalled(ctx context.Context, client *kube.Client, ns string) (boo
 	return cm != nil, nil
 }
 
-func installOdigos(ctx context.Context, client *kube.Client, ns string, config *common.OdigosConfiguration, token *string, odigosTier common.OdigosTier, label string, includeProxy bool) error {
+func installOdigos(ctx context.Context, client *kube.Client, ns string, config *common.OdigosConfiguration, token *string, odigosTier common.OdigosTier, label string) error {
+	fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
+
 	managerOpts := resourcemanager.ManagerOpts{
-		ImageReferences:     GetImageReferences(odigosTier, openshiftEnabled),
-		IncludeCentralProxy: includeProxy,
+		ImageReferences: GetImageReferences(odigosTier, openshiftEnabled),
 	}
 
 	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, createNamespace)
@@ -312,9 +308,8 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		instrumentorImage = k8sconsts.InstrumentorImageUBI9
 		autoScalerImage = k8sconsts.AutoScalerImageUBI9
 	}
-
-	return common.OdigosConfiguration{
-		ConfigVersion:             1, // config version starts at 1 and incremented on every config change
+	config := common.OdigosConfiguration{
+		ConfigVersion:             1,
 		TelemetryEnabled:          telemetryEnabled,
 		OpenshiftEnabled:          openshiftEnabled,
 		IgnoredNamespaces:         userInputIgnoredNamespaces,
@@ -325,6 +320,13 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		Profiles:                  selectedProfiles,
 		UiMode:                    common.UiMode(uiMode),
 	}
+
+	if clusterName != "" && centralBackendURL != "" {
+		config.ClusterName = clusterName
+		config.CentralBackendURL = centralBackendURL
+	}
+
+	return config
 }
 
 func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, ns string, create ResourceCreationFunc) {

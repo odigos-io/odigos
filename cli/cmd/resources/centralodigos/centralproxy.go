@@ -50,20 +50,20 @@ func NewCentralProxyDeployment(ns string) *appsv1.Deployment {
 			Name:      k8sconsts.CentralProxyDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				k8sconsts.CentralProxyLabelAppNameKey: k8sconsts.CentralProxyLabelAppNameValue,
+				"app.kubernetes.io/name": k8sconsts.CentralProxyLabelAppNameValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					k8sconsts.CentralProxyLabelAppNameKey: k8sconsts.CentralProxyLabelAppNameValue,
+					"app.kubernetes.io/name": k8sconsts.CentralProxyLabelAppNameValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						k8sconsts.CentralProxyLabelAppNameKey: k8sconsts.CentralProxyLabelAppNameValue,
+						"app.kubernetes.io/name": k8sconsts.CentralProxyLabelAppNameValue,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -112,7 +112,7 @@ func NewCentralProxyRole(ns string) *rbacv1.Role {
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Role",
-			APIVersion: k8sconsts.CentralProxyRBACAPIGroup + "/v1",
+			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.CentralProxyRoleName,
@@ -132,7 +132,7 @@ func NewCentralProxyRoleBinding(ns string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "RoleBinding",
-			APIVersion: k8sconsts.CentralProxyRBACAPIGroup + "/v1",
+			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.CentralProxyRoleBindingName,
@@ -148,7 +148,7 @@ func NewCentralProxyRoleBinding(ns string) *rbacv1.RoleBinding {
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "Role",
 			Name:     k8sconsts.CentralProxyRoleName,
-			APIGroup: k8sconsts.CentralProxyRBACAPIGroup,
+			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
 }
