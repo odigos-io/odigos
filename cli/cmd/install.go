@@ -29,20 +29,21 @@ import (
 )
 
 var (
-	odigosCloudApiKeyFlag      string
-	odigosOnPremToken          string
-	namespaceFlag              string
-	versionFlag                string
-	skipWait                   bool
-	telemetryEnabled           bool
-	openshiftEnabled           bool
-	skipWebhookIssuerCreation  bool
-	psp                        bool
-	userInputIgnoredNamespaces []string
-	userInputIgnoredContainers []string
-	userInputInstallProfiles   []string
-	uiMode                     string
-	centralBackendURL          string
+	odigosCloudApiKeyFlag            string
+	odigosOnPremToken                string
+	namespaceFlag                    string
+	versionFlag                      string
+	skipWait                         bool
+	telemetryEnabled                 bool
+	openshiftEnabled                 bool
+	skipWebhookIssuerCreation        bool
+	psp                              bool
+	userInputIgnoredNamespaces       []string
+	userInputIgnoredContainers       []string
+	userInputInstallProfiles         []string
+	uiMode                           string
+	centralBackendURL                string
+	customContainerRuntimeSocketPath string
 
 	instrumentorImage string
 	odigletImage      string
@@ -280,17 +281,18 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 	}
 
 	return common.OdigosConfiguration{
-		ConfigVersion:             1, // config version starts at 1 and incremented on every config change
-		TelemetryEnabled:          telemetryEnabled,
-		OpenshiftEnabled:          openshiftEnabled,
-		IgnoredNamespaces:         userInputIgnoredNamespaces,
-		IgnoredContainers:         userInputIgnoredContainers,
-		SkipWebhookIssuerCreation: skipWebhookIssuerCreation,
-		Psp:                       psp,
-		ImagePrefix:               imagePrefix,
-		Profiles:                  selectedProfiles,
-		UiMode:                    common.UiMode(uiMode),
-		CentralBackendURL:         centralBackendURL,
+		ConfigVersion:                    1, // config version starts at 1 and incremented on every config change
+		TelemetryEnabled:                 telemetryEnabled,
+		OpenshiftEnabled:                 openshiftEnabled,
+		IgnoredNamespaces:                userInputIgnoredNamespaces,
+		IgnoredContainers:                userInputIgnoredContainers,
+		CustomContainerRuntimeSocketPath: customContainerRuntimeSocketPath,
+		SkipWebhookIssuerCreation:        skipWebhookIssuerCreation,
+		Psp:                              psp,
+		ImagePrefix:                      imagePrefix,
+		Profiles:                         selectedProfiles,
+		UiMode:                           common.UiMode(uiMode),
+		CentralBackendURL:                centralBackendURL,
 	}
 }
 
@@ -316,6 +318,7 @@ func init() {
 	installCmd.Flags().StringVar(&imagePrefix, consts.ImagePrefixProperty, "registry.odigos.io", "prefix for all container images.")
 	installCmd.Flags().BoolVar(&psp, consts.PspProperty, false, "enable pod security policy")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", k8sconsts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
+	installCmd.Flags().StringVar(&customContainerRuntimeSocketPath, "container-runtime-socket-path", "", "custom configuration of a path to the container runtime socket path (e.g. /var/lib/rancher/rke2/agent/containerd/containerd.sock)")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
