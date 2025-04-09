@@ -316,7 +316,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		cfg.Receivers["filelog"] = config.GenericMap{
 			"include":           includes,
 			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},
-			"start_at":          "beginning",
+			"start_at":          "end",
 			"include_file_path": true,
 			"include_file_name": false,
 			"operators": []config.GenericMap{
