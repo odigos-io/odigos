@@ -1110,6 +1110,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsc
 github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.121.0/go.mod h1:y6UqtUREKcyDzLPQC5wSPbOlZR2HLUrNp/2ITZalVKA=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.121.0 h1:U+J7zYye0s7m6RBNkJhNxiGc1lZz4pUGrTcNNKcyTCk=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.121.0/go.mod h1:RvEoeh3h62sY9Cyv/JYl7pZpVPHm6KXLSqERRcN88aI=
+github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.121.0 h1:G89xbiQvbKj4Mz1y+WUC1uyEeN5IO1P/nLQKVTy9InE=
+github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.121.0/go.mod h1:twspQAPCzDmNdlsKSxQR/unx8MRSsdI0nH49RvQDG/I=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.121.0 h1:q1q03PtVaqJsTDJJjM6IzBYmIO78jGINd1hvjWbbYD4=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.121.0/go.mod h1:aSohJe/JRPkCXo6E8iKxAPcBjGagc0vugZervXWYRTQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.121.0 h1:gsJ5yZspvZ4SvNpJPmleNtzAQc4+4YjvdO/7381nxnE=
@@ -1184,6 +1186,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporte
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.121.0/go.mod h1:4YIpOhdh4G9r+QxSZemUc/6JnpUjR4pZLLL/WuSStdE=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.121.0 h1:wYIiwI8UU+N2aJai3WRM9F8maq1zm3/hVZj4Z+AiSBA=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.121.0/go.mod h1:wIyVZiPC/Zd14GGTZR+IXHWlZsS+QdqPULye6MqFu+I=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.121.0 h1:WJsYRxjhlwSYsT0Qi+UYZWlWGoVtbXoItCiCs1erViI=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.121.0/go.mod h1:LDyZETAko2NX9TMGaM5y+WN3B8btZHAPVA5temmvZ84=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.121.0 h1:h6wXea0uEsCcHq/cJ0C7Le3j6n9Lnu3oLTUGMo2aWIs=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.121.0/go.mod h1:hell2tmZ2EefEefmxrI/c3DcuCpzrutEarVI17VX9ZI=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.121.0 h1:glv30htO+iy3ic1nYQdxrvxojzC0NlvRD2dTEkQ4nO4=
@@ -1202,6 +1206,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/cwlogs v0
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/cwlogs v0.121.0/go.mod h1:pnMTF/gcNfcxF6GMZBnGYUzI8hDRQn+IlwsM/pKbwh0=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/ecsutil v0.121.0 h1:Ur0PZOEhv0xIR7hhBL2q92j7GpuIPCaI5K3vNtP0pmg=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/ecsutil v0.121.0/go.mod h1:x0ByXigsGUeDg6jJAfQJcKdngWHb9SXjSWcJ6rt4XFE=
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/metrics v0.121.0 h1:mMepaY0Fpj4LIYyv/iJPN0ifzl8p3CSeTBnUebwwaYY=
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/metrics v0.121.0/go.mod h1:4jTWHkqwFkowr3L70vMwbP131gSdYwzG4F1ka/FyhLc=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/xray v0.121.0 h1:P795NK8gZb9/JB4kviPO8azr1V+5XNi6rEGBOkz1auk=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/xray v0.121.0/go.mod h1:sqqmtdFO5u3TDk73QkDZSdTxTLdQFNQtLtK/W95eOmg=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.121.0 h1:Q27uarV8CEGLKfG4OJQGFkOKZ49/SDEqTr6BbMOoKmA=

@@ -13,6 +13,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.121.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.121.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.121.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.121.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.121.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.121.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.121.0
@@ -50,6 +51,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/tencentcloudlogserviceexporter v0.121.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.121.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.121.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.121.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.121.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.121.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter v0.121.0
@@ -436,6 +438,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/awsutil v0.121.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/cwlogs v0.121.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/ecsutil v0.121.0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/metrics v0.121.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/xray v0.121.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.121.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.121.0 // indirect

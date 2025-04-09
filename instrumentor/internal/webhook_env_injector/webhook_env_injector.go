@@ -2,6 +2,7 @@ package webhookenvinjector
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -29,15 +30,30 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 		return
 	}
 
+	// Odigos appends necessary environment variables to enable its agent.
+	// It handles this in the following ways:
+	// 1. Appends Odigos-specific values to environment variables already defined by the user in the manifest.
+	// 2. Appends Odigos-specific values to environment variables already defined by the user at runtime.
+	// 3. Sets environment variables with Odigos defaults when they are not defined in either the manifest or the runtime.
+
+	isOdigosAgentEnvAppended := false
 	for _, envVarName := range envVarsPerLanguage {
+		// 1.
 		if handleManifestEnvVar(container, envVarName, otelsdk, logger) {
+			isOdigosAgentEnvAppended = true
 			continue
 		}
 
-		err := injectEnvVarsFromRuntime(logger, container, envVarName, otelsdk, runtimeDetails)
-		if err != nil {
-			logger.Error(err, "failed to inject environment variables for container", "container", container.Name)
+		// 2.
+		if injectEnvVarsFromRuntime(logger, container, envVarName, otelsdk, runtimeDetails) {
+			isOdigosAgentEnvAppended = true
+			continue
 		}
+	}
+
+	// 3.
+	if !isOdigosAgentEnvAppended {
+		applyOdigosEnvDefaults(container, envVarsPerLanguage, otelsdk)
 	}
 }
 
@@ -59,6 +75,15 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 	}
 
 	odigosValueForOtelSdk := possibleValues[otelsdk]
+
+	// In case of env configured as ValueFrom [env[name].valueFrom.configMapKeyRef.key]
+	// We are changing the user MY_ENV to ORIGINAL_{MY_ENV}
+	// and setting MY_ENV to be ORIGINAL_MY_ENV value + Odigos additions
+	if isValueFromConfigmap(manifestEnvVar) {
+		handleValueFromEnvVar(container, manifestEnvVar, envVarName, odigosValueForOtelSdk)
+		return true // Handled, no need for further processing
+	}
+
 	if strings.Contains(manifestEnvVar.Value, "/var/odigos/") {
 		logger.Info("env var exists in the manifest and already includes odigos values, skipping injection into manifest", "envVarName", envVarName,
 			"container", container.Name)
@@ -74,16 +99,19 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 }
 
 func injectEnvVarsFromRuntime(logger logr.Logger, container *corev1.Container, envVarName string,
-	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer) error {
+	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer) bool {
 	logger.Info("Inject Odigos values based on runtime details", "envVarName", envVarName, "container", container.Name)
 
 	if !shouldInject(runtimeDetails, logger, container.Name) {
-		return nil
+		return false
 	}
 
 	envVarsToInject := processEnvVarsFromRuntimeDetails(runtimeDetails, envVarName, otelsdk)
-	container.Env = append(container.Env, envVarsToInject...)
-	return nil
+	if len(envVarsToInject) > 0 {
+		container.Env = append(container.Env, envVarsToInject...)
+		return true
+	}
+	return false
 }
 
 func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContainer, envVarName string, otelsdk common.OtelSdk) []corev1.EnvVar {
@@ -97,26 +125,37 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByC
 	if !ok { // No odigos value for this SDK
 		return envVars
 	}
+	for _, envVar := range runtimeDetails.EnvFromContainerRuntime {
 
-	if runtimeDetails.EnvFromContainerRuntime == nil {
-		envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: valueToInject})
-	} else {
-		for _, envVar := range runtimeDetails.EnvFromContainerRuntime {
-
-			// Get the relevant envVar that we're iterating over
-			if envVar.Name != envVarName {
-				continue
-			}
-
-			patchedEnvVarValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
-			envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
+		// Get the relevant envVar that we're iterating over
+		if envVar.Name != envVarName {
+			continue
 		}
-		// If EnvFromContainerRuntime does not include the relevant envVar (e.g., JAVA_OPTS), it should still be added with the Odigos value.
-		if len(envVars) == 0 {
-			envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: valueToInject})
-		}
+
+		patchedEnvVarValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
+		envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
 	}
+
 	return envVars
+}
+
+func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []string, otelsdk common.OtelSdk) {
+	for _, envVarName := range envVarsPerLanguage {
+		odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
+		if odigosValueForOtelSdk == nil { // No Odigos values for this env var
+			continue
+		}
+
+		valueToInject, ok := odigosValueForOtelSdk[otelsdk]
+		if !ok { // No Odigos value for this SDK
+			continue
+		}
+
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  envVarName,
+			Value: valueToInject,
+		})
+	}
 }
 
 func shouldInject(runtimeDetails *odigosv1.RuntimeDetailsByContainer, logger logr.Logger, containerName string) bool {
@@ -198,4 +237,17 @@ func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger,
 		corev1.EnvVar{Name: commonconsts.OtelMetricsExporter, Value: metricsExporter},
 		corev1.EnvVar{Name: commonconsts.OtelTracesExporter, Value: tracesExporter},
 	)
+}
+func isValueFromConfigmap(envVar *corev1.EnvVar) bool {
+	return envVar.ValueFrom != nil
+}
+func handleValueFromEnvVar(container *corev1.Container, envVar *corev1.EnvVar, originalName, odigosValue string) {
+	originalNewKey := "ORIGINAL_" + envVar.Name
+
+	combinedValue := envOverwrite.AppendOdigosAdditionsToEnvVar(originalName, fmt.Sprintf("$(%s)", originalNewKey), odigosValue)
+	if combinedValue != nil {
+		envVar.Name = originalNewKey
+		newEnv := corev1.EnvVar{Name: originalName, Value: *combinedValue}
+		container.Env = append(container.Env, newEnv)
+	}
 }

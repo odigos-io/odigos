@@ -16,6 +16,7 @@ const (
 )
 
 var availableConfigers = []Configer{
+	&AlibabaCloud{},
 	&AppDynamics{},
 	&AWSCloudWatch{},
 	&AWSS3{},
@@ -23,7 +24,9 @@ var availableConfigers = []Configer{
 	&Axiom{},
 	&AzureBlobStorage{},
 	&BetterStack{},
+	&Bonree{},
 	&Causely{},
+	&Checkly{},
 	&Chronosphere{},
 	&Clickhouse{},
 	&Coralogix{},
@@ -39,6 +42,7 @@ var availableConfigers = []Configer{
 	&GrafanaCloudLoki{},
 	&GrafanaCloudPrometheus{},
 	&GrafanaCloudTempo{},
+	&Greptime{},
 	&Groundcover{},
 	&Honeycomb{},
 	&HyperDX{},
@@ -55,20 +59,27 @@ var availableConfigers = []Configer{
 	&Mock{},
 	&NewRelic{},
 	&Nop{},
+	&Observe{},
+	&OneUptime{},
+	&OpenObserve{},
 	&OpsVerse{},
+	&Oracle{},
 	&OTLPHttp{},
 	&Prometheus{},
 	&Qryn{},
 	&QrynOSS{},
 	&Quickwit{},
 	&Sentry{},
+	&Seq{},
 	&Signoz{},
 	&Splunk{},
 	&SumoLogic{},
 	&TelemetryHub{},
 	&Tempo{},
+	&Tingyun{},
 	&Traceloop{},
 	&Uptrace{},
+	&VictoriaMetricsCloud{},
 }
 
 type Configer interface {

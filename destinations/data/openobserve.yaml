@@ -1,0 +1,36 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: openobserve
+  displayName: OpenObserve
+  category: managed
+spec:
+  image: openobserve.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: true
+  fields:
+    - name: OPEN_OBSERVE_ENDPOINT
+      displayName: OTLP HTTP Endpoint
+      componentType: input
+      componentProps:
+        required: true
+        placeholder: https://api.openobserve.ai/api/<organization_id>
+    - name: OPEN_OBSERVE_API_KEY
+      displayName: API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+        tooltip: Do not include the `Basic` prefix.
+    - name: OPEN_OBSERVE_STREAM_NAME
+      displayName: Stream Name
+      componentType: input
+      componentProps:
+        required: true
+      initialValue: default
