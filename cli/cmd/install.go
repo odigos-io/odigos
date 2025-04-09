@@ -42,7 +42,6 @@ var (
 	userInputIgnoredContainers       []string
 	userInputInstallProfiles         []string
 	uiMode                           string
-	centralBackendURL                string
 	customContainerRuntimeSocketPath string
 	instrumentorImage                string
 	odigletImage                     string
