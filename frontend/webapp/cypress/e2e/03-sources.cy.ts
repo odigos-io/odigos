@@ -65,8 +65,7 @@ describe('Sources CRUD', () => {
             fieldValue: TEXTS.UPDATED_NAME,
           },
           () => {
-            // TODO: uncomment when the UI-Kit fixes "duplicate toast check"
-            // awaitToast({ message: TEXTS.NOTIF_SOURCE_UPDATING });
+            awaitToast({ message: TEXTS.NOTIF_SOURCE_UPDATING });
             // Wait for the source to update
             cy.wait('@gql').then(() => {
               awaitToast({ message: TEXTS.NOTIF_UPDATED });
