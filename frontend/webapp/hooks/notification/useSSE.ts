@@ -59,12 +59,12 @@ export const useSSE = () => {
         } else if (isSource) {
           switch (notification.title) {
             case EVENT_TYPES.MODIFIED:
-              if (notification.target) {
+              if (notification.target && !isAwaitingInstrumentation) {
                 const id = getIdFromSseTarget(notification.target, EntityTypes.Source);
 
                 // This timeout is to ensure that the object isn't in paginating state when we start fetching the data,
                 // otherwise paginated fetch will replace the modified data with the paginated data
-                setTimeout(() => fetchSourceById(id as WorkloadId), 3000);
+                setTimeout(() => fetchSourceById(id as WorkloadId), 1000);
               }
               break;
 
