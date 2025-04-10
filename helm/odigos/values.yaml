@@ -19,25 +19,23 @@ ignoredNamespaces:
 ignoredContainers:
 
 # Instrumentation settings for language-specific configurations
-additionalInstrumentationEnvs:
-  languages:
-    java:
-      enabled: true
-      env:
-        OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED: "true"
-        OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
-    python:
-      enabled: false
-      env: {}
-    nodejs:
-      enabled: false
-      env: {}
-    go:
-      enabled: false
-      env: {}
-    dotnet: 
-      enabled: false
-      env: {}
+# additionalInstrumentationEnvs:
+#   languages:
+#     java:
+#       enabled: true
+#       env: {}
+#     python:
+#       enabled: false
+#       env: {}
+#     nodejs:
+#       enabled: false
+#       env: {}
+#     go:
+#       enabled: false
+#       env: {}
+#     dotnet: 
+#       enabled: false
+#       env: {}
 
 collectorGateway:
   # the memory request for the cluster gateway collector deployment.
