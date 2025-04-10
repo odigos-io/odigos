@@ -311,7 +311,7 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 	}
 
 	return common.OdigosConfiguration{
-		ConfigVersion:                    1,
+		ConfigVersion:                    1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:                 telemetryEnabled,
 		OpenshiftEnabled:                 openshiftEnabled,
 		IgnoredNamespaces:                userInputIgnoredNamespaces,

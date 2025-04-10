@@ -12,9 +12,6 @@ type ManagerOpts struct {
 	ImageReferences ImageReferences
 	// OwnerReferences is a slice of metav1.OwnerReferences to be applied to each installed resource.
 	OwnerReferences []metav1.OwnerReference
-
-	// IncludeProxy indicates whether to include the central proxy in the installation.
-	IncludeCentralProxy bool
 }
 
 type ImageReferences struct {
