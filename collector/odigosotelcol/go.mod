@@ -462,7 +462,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/experimentalmetricmetadata v0.121.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/kafka/topic v0.121.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.121.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.121.0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.123.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.121.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling v0.121.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.121.0 // indirect
@@ -580,8 +580,8 @@ require (
 	go.opentelemetry.io/collector/internal/memorylimiter v0.121.0 // indirect
 	go.opentelemetry.io/collector/internal/sharedcomponent v0.121.0 // indirect
 	go.opentelemetry.io/collector/internal/telemetry v0.121.0 // indirect
-	go.opentelemetry.io/collector/pdata v1.27.0 // indirect
-	go.opentelemetry.io/collector/pdata/pprofile v0.121.0 // indirect
+	go.opentelemetry.io/collector/pdata v1.29.0 // indirect
+	go.opentelemetry.io/collector/pdata/pprofile v0.123.0 // indirect
 	go.opentelemetry.io/collector/pdata/testdata v0.121.0 // indirect
 	go.opentelemetry.io/collector/pipeline v0.123.0 // indirect
 	go.opentelemetry.io/collector/pipeline/xpipeline v0.121.0 // indirect
