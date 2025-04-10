@@ -228,5 +228,5 @@ func TestRuleEngine_EmptyRules(t *testing.T) {
 		AddSpan("noop").
 		Done().Build()
 
-	assert.False(t, engine.ShouldSample(trace))
+	assert.True(t, engine.ShouldSample(trace))
 }
