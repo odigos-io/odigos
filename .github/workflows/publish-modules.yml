@@ -193,6 +193,7 @@ jobs:
             VERSION=${{ env.ODIGOS_TAG }}
             SUMMARY=${{ matrix.summary }}
             DESCRIPTION=${{ matrix.description }}
+            LD_FLAGS=-s -w
           platforms: linux/amd64,linux/arm64
           file: >-
             ${{ matrix.service == 'odiglet' && format('odiglet/{0}', matrix.dockerfile) ||

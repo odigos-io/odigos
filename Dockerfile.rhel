@@ -19,11 +19,12 @@ RUN --mount=type=cache,target=/go/pkg \
 COPY $SERVICE_NAME/ .
 # Build for target architecture
 ARG TARGETARCH
+ARG LD_FLAGS
 RUN go mod tidy
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     CGO_ENABLED=0 GOARCH=$TARGETARCH \
-    go build -a -o /workspace/build/$SERVICE_NAME cmd/main.go
+    go build -ldflags="${LD_FLAGS}" -a -o /workspace/build/$SERVICE_NAME cmd/main.go
 RUN make licenses
 
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest
