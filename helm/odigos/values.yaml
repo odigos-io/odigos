@@ -22,7 +22,7 @@ ignoredContainers:
 # additionalInstrumentationEnvs:
 #   languages:
 #     java:
-#       enabled: true
+#       enabled: false
 #       env: {}
 #     python:
 #       enabled: false
