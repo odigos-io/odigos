@@ -290,8 +290,6 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		}
 	}
 
-	commonProcessors := getCommonProcessors()
-
 	if collectLogs {
 		includes := make([]string, 0)
 		for _, element := range sources.Items {
@@ -318,7 +316,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		cfg.Receivers["filelog"] = config.GenericMap{
 			"include":           includes,
 			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},
-			"start_at":          "beginning",
+			"start_at":          "end",
 			"include_file_path": true,
 			"include_file_name": false,
 			"operators": []config.GenericMap{
@@ -327,11 +325,22 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 					"type": "container",
 				},
 			},
+			"retry_on_failure": config.GenericMap{
+				// From documentation:
+				// When true, the receiver will pause reading a file and attempt to resend the current batch of logs
+				//  if it encounters an error from downstream components.
+				//
+				// filelog might get overwhelmed when it just starts and there are already a lot of logs to process in the node.
+				// when downstream components (cluster collector and receiving destination) are under too much pressure,
+				// they will reject the data, slowing down the filelog receiver and allowing it to retry the data and adjust to
+				// downstream pressure.
+				"enabled": true,
+			},
 		}
 
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
-			Processors: append(commonProcessors, logsProcessors...),
+			Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -339,7 +348,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
 			Receivers:  []string{"otlp"},
-			Processors: append(commonProcessors, tracesProcessors...),
+			Processors: append(getAgentPipelineCommonProcessors(), tracesProcessors...),
 			Exporters:  tracesPipelineExporter,
 		}
 	}
@@ -391,7 +400,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 
 		cfg.Service.Pipelines["metrics"] = config.Pipeline{
 			Receivers:  []string{"otlp", "kubeletstats", "hostmetrics"},
-			Processors: append(commonProcessors, metricsProcessors...),
+			Processors: append(getAgentPipelineCommonProcessors(), metricsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
 	}
@@ -452,12 +461,30 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 	return signals, nil
 }
 
-func getCommonProcessors() []string {
-	// memory limiter is placed right after batch processor an not the first processor in pipeline
-	// this is so that instrumented application always succeeds in sending data to the collector
-	// (on it being added to a batch) and checking the memory limit later after the batch
-	// where memory rejection would drop the data instead of backpressuring the application.
+func getAgentPipelineCommonProcessors() []string {
+	// for agents, we never want to upstream backpressure, as we don't want memory to build up
+	// in the sending application.
+	// this is why batch processor is first to always accept data and then memory limiter
+	// is used to drop the data if the collector is overloaded in memory.
 	// Read more about it here: https://github.com/open-telemetry/opentelemetry-collector/issues/11726
 	// Also related: https://github.com/open-telemetry/opentelemetry-collector/issues/9591
-	return []string{"batch", "memory_limiter", "resource", "resourcedetection", "odigostrafficmetrics"}
+	return append(
+		[]string{"batch", "memory_limiter"},
+		getCommonProcessors()...,
+	)
+}
+
+func getFileLogPipelineProcessors() []string {
+	// filelog pipeline processors
+	// memory_limiter is first processor, it will reject data if the collectors memory is full.
+	// no need to batch, as the stanza receiver already batches the data, and so is the gateway.
+	// batch processor will also mask and hide any back-pressure from receivers which we want propagated to the source.
+	return append(
+		[]string{"memory_limiter"},
+		getCommonProcessors()...,
+	)
+}
+
+func getCommonProcessors() []string {
+	return []string{"resource", "resourcedetection", "odigostrafficmetrics"}
 }
