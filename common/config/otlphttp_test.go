@@ -57,7 +57,7 @@ func TestParseOtlpHttpEndpoint(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "path not allowed",
+			name: "path mismatch not allowed",
 			args: args{
 				rawURL: "http://localhost:4318/some-path",
 				port:   "4318",
@@ -65,6 +65,16 @@ func TestParseOtlpHttpEndpoint(t *testing.T) {
 			},
 			want:    "",
 			wantErr: true,
+		},
+		{
+			name: "path in URL allowed",
+			args: args{
+				rawURL: "http://localhost:4318/some-path",
+				port:   "4318",
+				path:   "",
+			},
+			want:    "http://localhost:4318/some-path",
+			wantErr: false,
 		},
 		{
 			name: "ipv4",

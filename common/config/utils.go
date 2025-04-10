@@ -104,7 +104,7 @@ func parseOtlpHttpEndpoint(rawUrl string, defaultPort string, requiredPath strin
 	if parsedUrl.Path == "" {
 		// Path is empty, append the required path
 		parsedUrl.Path = requiredPath
-	} else if parsedUrl.Path != requiredPath {
+	} else if requiredPath != "" && parsedUrl.Path != requiredPath {
 		// Path already exists, and is not equal to the required path
 		return "", fmt.Errorf("invalid otlp http endpoint path: %s", parsedUrl.Path)
 	}
