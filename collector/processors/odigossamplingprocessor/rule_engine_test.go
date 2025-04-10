@@ -6,13 +6,13 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor/internal/sampling"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor/internal/sampling/testutil"
-
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-// TestRuleEngine_ShouldSample verifies that the rule engine samples a trace
-// when an endpoint latency rule is satisfied.
-func TestRuleEngine_ShouldSample(t *testing.T) {
+// TestRuleEngine_LatencyRuleSatisfied verifies that the rule engine samples
+// a trace when an endpoint latency rule is satisfied.
+func TestRuleEngine_LatencyRuleSatisfied(t *testing.T) {
 	cfg := &Config{
 		EndpointRules: []Rule{
 			{
@@ -23,15 +23,6 @@ func TestRuleEngine_ShouldSample(t *testing.T) {
 					ServiceName:           "auth-service",
 					Threshold:             100,
 					FallbackSamplingRatio: 0,
-				},
-			},
-		},
-		GlobalRules: []Rule{
-			{
-				Name: "ErrorRule",
-				Type: "error",
-				RuleDetails: &sampling.ErrorRule{
-					FallbackSamplingRatio: 100,
 				},
 			},
 		},
@@ -47,9 +38,8 @@ func TestRuleEngine_ShouldSample(t *testing.T) {
 	assert.True(t, engine.ShouldSample(trace))
 }
 
-// TestRuleEngine_GlobalFallbackOnly ensures that if no trace satisfies the global rule
-// but the fallback sampling ratio is 100%, the trace is still sampled.
-func TestRuleEngine_GlobalFallbackOnly(t *testing.T) {
+// TestRuleEngine_ErrorRuleFallbackOnly ensures fallback is used if no error spans are present
+func TestRuleEngine_ErrorRuleFallbackOnly(t *testing.T) {
 	cfg := &Config{
 		GlobalRules: []Rule{
 			{
@@ -69,21 +59,19 @@ func TestRuleEngine_GlobalFallbackOnly(t *testing.T) {
 		AddSpan("do something").
 		Done().Build()
 
-	// No errors, but fallback is 100 → should be sampled
 	assert.True(t, engine.ShouldSample(trace))
 }
 
-// TestRuleEngine_EndpointWinsOverGlobal confirms that endpoint-level rules take precedence
-// over global rules when both match the trace.
-func TestRuleEngine_EndpointWinsOverGlobal(t *testing.T) {
+// TestRuleEngine_EndpointOverridesGlobal confirms endpoint-level rules override global fallback
+func TestRuleEngine_EndpointOverridesGlobal(t *testing.T) {
 	cfg := &Config{
 		EndpointRules: []Rule{
 			{
-				Name: "LatencyRule",
+				Name: "Latency",
 				Type: "http_latency",
 				RuleDetails: &sampling.HttpRouteLatencyRule{
-					HttpRoute:             "/admin",
-					ServiceName:           "admin-service",
+					HttpRoute:             "/x",
+					ServiceName:           "svc",
 					Threshold:             50,
 					FallbackSamplingRatio: 0,
 				},
@@ -91,7 +79,7 @@ func TestRuleEngine_EndpointWinsOverGlobal(t *testing.T) {
 		},
 		GlobalRules: []Rule{
 			{
-				Name: "ErrorRule",
+				Name: "Errors",
 				Type: "error",
 				RuleDetails: &sampling.ErrorRule{
 					FallbackSamplingRatio: 100,
@@ -103,21 +91,19 @@ func TestRuleEngine_EndpointWinsOverGlobal(t *testing.T) {
 	engine := NewRuleEngine(cfg, nil)
 
 	trace := testutil.NewTrace().
-		AddResource("admin-service").
-		AddSpan("GET /admin", testutil.WithAttribute("http.route", "/admin"), testutil.WithLatency(75*time.Millisecond)).
+		AddResource("svc").
+		AddSpan("GET /x", testutil.WithAttribute("http.route", "/x"), testutil.WithLatency(60*time.Millisecond)).
 		Done().Build()
 
-	// Endpoint rule satisfied → should sample
-	assert.True(t, engine.ShouldSample(trace))
+	assert.True(t, engine.ShouldSample(trace)) // Endpoint rule satisfied
 }
 
-// TestRuleEngine_NoMatchingRules checks that a trace is not sampled when no rule matches
-// and fallback ratios are zero.
+// TestRuleEngine_NoMatchingRules ensures nothing is sampled if no rules match and fallback is 0
 func TestRuleEngine_NoMatchingRules(t *testing.T) {
 	cfg := &Config{
 		GlobalRules: []Rule{
 			{
-				Name: "ErrorRule",
+				Name: "ErrorOnly",
 				Type: "error",
 				RuleDetails: &sampling.ErrorRule{
 					FallbackSamplingRatio: 0,
@@ -129,17 +115,15 @@ func TestRuleEngine_NoMatchingRules(t *testing.T) {
 	engine := NewRuleEngine(cfg, nil)
 
 	trace := testutil.NewTrace().
-		AddResource("other").
-		AddSpan("something").
+		AddResource("service").
+		AddSpan("ok op").
 		Done().Build()
 
-	// No error spans and fallback is 0 → should not sample
 	assert.False(t, engine.ShouldSample(trace))
 }
 
-// TestRuleEngine_FallbackSamplingApplied ensures that fallback sampling is applied
-// when the rule matches but the condition is not satisfied.
-func TestRuleEngine_FallbackSamplingApplied(t *testing.T) {
+// TestRuleEngine_MixedSatisfiedAndFallback confirms fallback is used if matched but not satisfied
+func TestRuleEngine_MixedSatisfiedAndFallback(t *testing.T) {
 	cfg := &Config{
 		GlobalRules: []Rule{
 			{
@@ -155,17 +139,14 @@ func TestRuleEngine_FallbackSamplingApplied(t *testing.T) {
 	engine := NewRuleEngine(cfg, nil)
 
 	trace := testutil.NewTrace().
-		AddResource("my-service").
-		AddSpan("GET /", testutil.WithLatency(10*time.Millisecond)).
+		AddResource("no-errors").
+		AddSpan("ok span").
 		Done().Build()
 
-	// Should always sample due to fallback = 100
-	sampled := engine.ShouldSample(trace)
-	assert.True(t, sampled)
+	assert.True(t, engine.ShouldSample(trace)) // fallback 100%
 }
 
-// TestRuleEngine_MultipleEndpointRules_OneSatisfied ensures that among multiple endpoint rules,
-// if one of them is satisfied, the trace is sampled.
+// TestRuleEngine_MultipleEndpointRules_OneSatisfied confirms sampling if one rule is satisfied
 func TestRuleEngine_MultipleEndpointRules_OneSatisfied(t *testing.T) {
 	cfg := &Config{
 		EndpointRules: []Rule{
@@ -173,9 +154,9 @@ func TestRuleEngine_MultipleEndpointRules_OneSatisfied(t *testing.T) {
 				Name: "Rule1",
 				Type: "http_latency",
 				RuleDetails: &sampling.HttpRouteLatencyRule{
-					HttpRoute:             "/x",
+					HttpRoute:             "/miss",
 					ServiceName:           "svc-a",
-					Threshold:             100,
+					Threshold:             200,
 					FallbackSamplingRatio: 0,
 				},
 			},
@@ -197,6 +178,54 @@ func TestRuleEngine_MultipleEndpointRules_OneSatisfied(t *testing.T) {
 	trace := testutil.NewTrace().
 		AddResource("svc-a").
 		AddSpan("GET /api", testutil.WithAttribute("http.route", "/api"), testutil.WithLatency(50*time.Millisecond)).
+		Done().Build()
+
+	assert.True(t, engine.ShouldSample(trace)) // Rule2 satisfied
+}
+
+// TestRuleEngine_PreferHigherLevelSatisfied ensures global satisfied wins over service fallback
+func TestRuleEngine_PreferHigherLevelSatisfied(t *testing.T) {
+	cfg := &Config{
+		ServiceRules: []Rule{
+			{
+				Name: "ServiceFallback",
+				Type: "error",
+				RuleDetails: &sampling.ErrorRule{
+					FallbackSamplingRatio: 100,
+				},
+			},
+		},
+		GlobalRules: []Rule{
+			{
+				Name: "GlobalError",
+				Type: "error",
+				RuleDetails: &sampling.ErrorRule{
+					FallbackSamplingRatio: 0,
+				},
+			},
+		},
+	}
+
+	engine := NewRuleEngine(cfg, nil)
+
+	// Trace with an actual error → global rule satisfied → takes precedence
+	trace := testutil.NewTrace().
+		AddResource("any-service").
+		AddSpan("bad op", testutil.WithStatus(ptrace.StatusCodeError)).
+		Done().Build()
+
+	assert.True(t, engine.ShouldSample(trace))
+}
+
+// TestRuleEngine_EmptyRules ensures engine handles config with no rules
+func TestRuleEngine_EmptyRules(t *testing.T) {
+	cfg := &Config{}
+
+	engine := NewRuleEngine(cfg, nil)
+
+	trace := testutil.NewTrace().
+		AddResource("empty").
+		AddSpan("noop").
 		Done().Build()
 
 	assert.True(t, engine.ShouldSample(trace))
