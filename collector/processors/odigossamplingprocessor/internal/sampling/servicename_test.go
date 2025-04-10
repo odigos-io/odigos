@@ -21,11 +21,11 @@ func TestServiceName_MatchingService_Sampled(t *testing.T) {
 		Done().
 		Build()
 
-	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
+	matched, satisfied, ratio := s.Evaluate(trace)
 
-	assert.True(t, filterMatch)
-	assert.True(t, conditionMatch)
-	assert.Equal(t, 100.0, fallback)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 100.0, ratio)
 }
 
 // TestServiceName_MatchingService_NotSampled ensures that a matching service is reported as satisfied even with 0% ratio.
@@ -42,11 +42,11 @@ func TestServiceName_MatchingService_NotSampled(t *testing.T) {
 		Done().
 		Build()
 
-	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
+	matched, satisfied, ratio := s.Evaluate(trace)
 
-	assert.True(t, filterMatch)
-	assert.True(t, conditionMatch) // satisfied == true since rule matched
-	assert.Equal(t, 0.0, fallback)
+	assert.True(t, matched)
+	assert.True(t, satisfied) // satisfied == true since rule matched
+	assert.Equal(t, 0.0, ratio)
 }
 
 // TestServiceName_NoMatchingService verifies behavior when no service matches; fallback ratio applies.
@@ -63,11 +63,11 @@ func TestServiceName_NoMatchingService(t *testing.T) {
 		Done().
 		Build()
 
-	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
+	matched, satisfied, ratio := s.Evaluate(trace)
 
-	assert.False(t, filterMatch)
-	assert.False(t, conditionMatch)
-	assert.Equal(t, 5.0, fallback)
+	assert.False(t, matched)
+	assert.False(t, satisfied)
+	assert.Equal(t, 5.0, ratio)
 }
 
 // TestServiceName_MultipleResources_OneMatches confirms that when one of multiple resource spans
@@ -88,11 +88,11 @@ func TestServiceName_MultipleResources_OneMatches(t *testing.T) {
 		Done().
 		Build()
 
-	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
+	matched, satisfied, ratio := s.Evaluate(trace)
 
-	assert.True(t, filterMatch)
-	assert.True(t, conditionMatch)
-	assert.Equal(t, 100.0, fallback)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 100.0, ratio)
 }
 
 // TestServiceName_EmptyTrace ensures an empty trace is handled gracefully with fallback ratio.
@@ -105,11 +105,11 @@ func TestServiceName_EmptyTrace(t *testing.T) {
 
 	trace := testutil.NewTrace().Build()
 
-	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
+	matched, satisfied, ratio := s.Evaluate(trace)
 
-	assert.False(t, filterMatch)
-	assert.False(t, conditionMatch)
-	assert.Equal(t, 20.0, fallback)
+	assert.False(t, matched)
+	assert.False(t, satisfied)
+	assert.Equal(t, 20.0, ratio)
 }
 
 // TestServiceName_InvalidServiceKey verifies handling when service.name attribute is missing.
@@ -126,11 +126,11 @@ func TestServiceName_InvalidServiceKey(t *testing.T) {
 		Done().
 		Build()
 
-	filterMatch, conditionMatch, fallback := s.Evaluate(trace)
+	matched, satisfied, ratio := s.Evaluate(trace)
 
-	assert.False(t, filterMatch)
-	assert.False(t, conditionMatch)
-	assert.Equal(t, 30.0, fallback)
+	assert.False(t, matched)
+	assert.False(t, satisfied)
+	assert.Equal(t, 30.0, ratio)
 }
 
 // TestServiceName_InvalidSamplingRatio validates rule with invalid SamplingRatio.

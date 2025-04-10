@@ -40,10 +40,10 @@ func TestSpanAttribute_StringCondition_Exists(t *testing.T) {
 		FallbackSamplingRatio: 10.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"env": "prod"})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 10.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 10.0, ratio)
 }
 
 // Equals
@@ -57,10 +57,10 @@ func TestSpanAttribute_StringCondition_Equals_Match(t *testing.T) {
 		FallbackSamplingRatio: 5.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"env": "prod"})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 5.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 5.0, ratio)
 }
 
 // Not Equals
@@ -74,10 +74,10 @@ func TestSpanAttribute_StringCondition_NotEquals(t *testing.T) {
 		FallbackSamplingRatio: 5.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"env": "prod"})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 5.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 5.0, ratio)
 }
 
 // Contains
@@ -91,10 +91,10 @@ func TestSpanAttribute_StringCondition_Contains(t *testing.T) {
 		FallbackSamplingRatio: 5.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"env": "production"})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 5.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 5.0, ratio)
 }
 
 // Not Contains
@@ -108,10 +108,10 @@ func TestSpanAttribute_StringCondition_NotContains(t *testing.T) {
 		FallbackSamplingRatio: 5.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"env": "prod"})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 5.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 5.0, ratio)
 }
 
 // Regex Match
@@ -125,10 +125,10 @@ func TestSpanAttribute_StringCondition_Regex_Match(t *testing.T) {
 		FallbackSamplingRatio: 12.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"version": "v1.23"})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 12.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 12.0, ratio)
 }
 
 // Regex No Match
@@ -142,10 +142,10 @@ func TestSpanAttribute_StringCondition_Regex_NoMatch(t *testing.T) {
 		FallbackSamplingRatio: 12.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"version": "version1.23"})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.False(t, fm)
-	assert.False(t, cm)
-	assert.Equal(t, 12.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.False(t, matched)
+	assert.False(t, satisfied)
+	assert.Equal(t, 12.0, ratio)
 }
 
 // ----------- Number Conditions -----------
@@ -161,10 +161,10 @@ func TestSpanAttribute_NumberCondition_GreaterThan_Match(t *testing.T) {
 		FallbackSamplingRatio: 20.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"latency": 150})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 20.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 20.0, ratio)
 }
 
 // Equals
@@ -178,10 +178,10 @@ func TestSpanAttribute_NumberCondition_Equals(t *testing.T) {
 		FallbackSamplingRatio: 30.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"latency": 123.45})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 30.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 30.0, ratio)
 }
 
 // Exists (Number)
@@ -194,10 +194,10 @@ func TestSpanAttribute_NumberCondition_Exists(t *testing.T) {
 		FallbackSamplingRatio: 10.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"latency": 77.0})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 10.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 10.0, ratio)
 }
 
 // Greater Than or Equal & Less Than or Equal
@@ -246,10 +246,10 @@ func TestSpanAttribute_BooleanCondition_Equals_Match(t *testing.T) {
 		FallbackSamplingRatio: 15.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"cache_hit": true})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 15.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 15.0, ratio)
 }
 
 // Exists (Boolean)
@@ -262,10 +262,10 @@ func TestSpanAttribute_BooleanCondition_Exists(t *testing.T) {
 		FallbackSamplingRatio: 20.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"cache_hit": false})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 20.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 20.0, ratio)
 }
 
 // ----------- JSON Conditions -----------
@@ -281,10 +281,10 @@ func TestSpanAttribute_JSONCondition_Exists(t *testing.T) {
 		FallbackSamplingRatio: 50.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"payload": `{"foo": "bar"}`})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 50.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 50.0, ratio)
 }
 
 // is_valid_json
@@ -298,10 +298,10 @@ func TestSpanAttribute_JSONCondition_IsValidJSON_Match(t *testing.T) {
 		FallbackSamplingRatio: 25.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"payload": `{"valid":true}`})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 25.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 25.0, ratio)
 }
 
 // is_invalid_json
@@ -315,10 +315,10 @@ func TestSpanAttribute_JSONCondition_IsInvalidJSON(t *testing.T) {
 		FallbackSamplingRatio: 33.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"payload": `{"invalid":`})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 33.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 33.0, ratio)
 }
 
 // jsonpath_exists
@@ -332,10 +332,10 @@ func TestSpanAttribute_JSONCondition_JsonPathExists(t *testing.T) {
 		FallbackSamplingRatio: 70.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"payload": `{"foo": {"bar": "value"}}`})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 70.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 70.0, ratio)
 }
 
 // contains_key: sample if the JSON key exists (using JsonPath)
@@ -349,10 +349,10 @@ func TestSpanAttribute_JSONCondition_ContainsKey(t *testing.T) {
 		FallbackSamplingRatio: 40.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"payload": `{"foo": {"bar": "baz"}}`})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 40.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 40.0, ratio)
 }
 
 // not_contains_key: sample if the JSON key does not exist.
@@ -366,10 +366,10 @@ func TestSpanAttribute_JSONCondition_NotContainsKey(t *testing.T) {
 		FallbackSamplingRatio: 60.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"payload": `{"foo": "bar"}`})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 60.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 60.0, ratio)
 }
 
 // key_equals: sample if the JSON value at the given JsonPath equals ExpectedValue.
@@ -384,10 +384,10 @@ func TestSpanAttribute_JSONCondition_KeyEquals(t *testing.T) {
 		FallbackSamplingRatio: 80.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"payload": `{"foo": {"bar": 123}}`})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 80.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 80.0, ratio)
 }
 
 // key_not_equals: sample if the JSON value at the given JsonPath does not equal ExpectedValue.
@@ -402,8 +402,8 @@ func TestSpanAttribute_JSONCondition_KeyNotEquals(t *testing.T) {
 		FallbackSamplingRatio: 90.0,
 	}
 	trace := buildTrace("test-service", map[string]interface{}{"payload": `{"foo": {"bar": "right"}}`})
-	fm, cm, fb := rule.Evaluate(trace)
-	assert.True(t, fm)
-	assert.True(t, cm)
-	assert.Equal(t, 90.0, fb)
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 90.0, ratio)
 }
