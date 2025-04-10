@@ -84,10 +84,32 @@ export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: Upd
   cy.get(fieldKey).click().focused().clear().type(fieldValue);
   cy.get(fieldKey).should('have.value', fieldValue);
 
-  cy.get(DATA_IDS.DRAWER_SAVE).click();
-  cy.get(DATA_IDS.DRAWER_CLOSE).click();
+  // The awaits below are an attempt to fix the following flake:
+  //
+  // CypressError: Timed out retrying after 4050ms: `cy.click()` failed because this element:
+  // `<div data-id="Source-2" class="sc-jFQJiD jLKqqL nowheel nodrag">...</div>`
+  // is being covered by another element:
+  // `<div class="sc-dUwGTt WdrMZ" style="opacity: 0;"></div>`
+  //
+  // This flake is caused by the fact that the "cancel warning modal" is shown when the user clicks on the "save" or "close" button.
+  // This failed to reproduce by user interaction, this could be an issue only for Cypress.
 
-  if (!!callback) callback();
+  cy.wait(500).then(() => {
+    cy.get(DATA_IDS.DRAWER_SAVE).click();
+
+    cy.wait(500).then(() => {
+      cy.get(DATA_IDS.DRAWER_CLOSE).click();
+
+      cy.wait(500).then(() => {
+        // press enter to close the warn modal (if any)
+        cy.get('body').trigger('keydown', { keyCode: 13 });
+        cy.wait(500);
+        cy.get('body').trigger('keyup', { keyCode: 13 });
+
+        if (!!callback) callback();
+      });
+    });
+  });
 };
 
 interface DeleteEntityOptions {
