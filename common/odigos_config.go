@@ -93,13 +93,13 @@ type CollectorGatewayConfiguration struct {
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 }
 type AdditionalInstrumentationEnvs struct {
-	Languages map[string]LanguageConfig `json:"languages,omitempty"`
+	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
 }
 
 // Struct to represent configuration for each language
 type LanguageConfig struct {
 	Enabled bool              `json:"enabled"`
-	Env     map[string]string `json:"env,omitempty"`
+	EnvVars map[string]string `json:"env,omitempty"`
 }
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
