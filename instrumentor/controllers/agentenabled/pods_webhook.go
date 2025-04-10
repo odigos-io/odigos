@@ -36,9 +36,7 @@ type PodsWebhook struct {
 var _ webhook.CustomDefaulter = &PodsWebhook{}
 
 func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
-
 	logger := log.FromContext(ctx)
-
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		logger.Error(errors.New("expected a Pod but got a %T"), "failed to inject odigos agent")
@@ -130,6 +128,33 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	// we can pull only our pods into cache, and follow the lifecycle of the instrumentation process.
 	pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel] = ic.Spec.AgentsMetaHash
 
+	if odigosConfig.AdditionalInstrumentationEnvs != nil {
+		languageSpecificEnvs := odigosConfig.AdditionalInstrumentationEnvs.Languages
+
+		// Check for conatiner language and inject env vars if they not exists
+		for _, containerDetailes := range ic.Status.RuntimeDetailsByContainer {
+			langConfig, exists := languageSpecificEnvs[containerDetailes.Language]
+			if !exists || !langConfig.Enabled {
+				continue
+			}
+
+			container := getContainerByName(pod, containerDetailes.ContainerName)
+			if container == nil {
+				continue
+			}
+			existingEnvNames := getEnvVarNamesSet(container)
+
+			for envName, envValue := range langConfig.EnvVars {
+				existingEnvNames = podswebhook.InjectEnvVarToPodContainer(
+					existingEnvNames,
+					container,
+					envName,
+					envValue,
+				)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -202,10 +227,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 
 	// check for existing env vars so we don't introduce them again
-	existingEnvNames := make(podswebhook.EnvVarNamesMap)
-	for _, envVar := range podContainerSpec.Env {
-		existingEnvNames[envVar.Name] = struct{}{}
-	}
+	existingEnvNames := getEnvVarNamesSet(podContainerSpec)
 
 	// inject various kinds of distro environment variables
 	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroName, pw.Namespace)
@@ -311,4 +333,24 @@ func getRelevantOtelSDKs(ctx context.Context, kubeClient client.Client, podWorkl
 	}
 
 	return otelSdkToUse, nil
+}
+
+func getContainerByName(pod *corev1.Pod, name string) *corev1.Container {
+	for i := range pod.Spec.Containers {
+		if pod.Spec.Containers[i].Name == name {
+			return &pod.Spec.Containers[i]
+		}
+	}
+	return nil
+}
+
+// Create a set of existing environment variable names
+// to avoid duplicates when injecting new environment variables
+// into the container.
+func getEnvVarNamesSet(container *corev1.Container) podswebhook.EnvVarNamesMap {
+	envSet := make(podswebhook.EnvVarNamesMap, len(container.Env))
+	for _, envVar := range container.Env {
+		envSet[envVar.Name] = struct{}{}
+	}
+	return envSet
 }
