@@ -66,7 +66,8 @@ build-image/%:
 	--build-arg VERSION=$(TAG) \
 	--build-arg RELEASE=$(TAG) \
 	--build-arg SUMMARY="$(SUMMARY)" \
-	--build-arg DESCRIPTION="$(DESCRIPTION)"
+	--build-arg DESCRIPTION="$(DESCRIPTION)" \
+	--build-arg LD_FLAGS="$(LD_FLAGS)"
 
 .PHONY: build-operator-index
 build-operator-index:
