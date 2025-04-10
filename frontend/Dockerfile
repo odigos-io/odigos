@@ -16,7 +16,7 @@ COPY --from=builder /webapp/out frontend/webapp/out
 WORKDIR /app/frontend
 ARG TARGETARCH
 ARG LD_FLAGS
-RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -ldflags="{$LD_FLAGS}" -o odigos-ui
+RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -ldflags="${LD_FLAGS}" -o odigos-ui
 
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /app
