@@ -47,8 +47,8 @@ type DataStreamSpec struct {
 }
 
 type DataStreamStatus struct {
-	// Represents the observations of a streams's current state.
-	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
+	// Represents the observations of a DataStream's current state.
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 //+kubebuilder:object:root=true
