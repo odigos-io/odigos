@@ -90,8 +90,6 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 
 func injectEnvVarsFromRuntime(logger logr.Logger, container *corev1.Container, envVarName string,
 	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer) bool {
-	logger.Info("Inject Odigos values based on runtime details", "envVarName", envVarName, "container", container.Name)
-
 	if !shouldInject(runtimeDetails, logger, container.Name) {
 		return false
 	}

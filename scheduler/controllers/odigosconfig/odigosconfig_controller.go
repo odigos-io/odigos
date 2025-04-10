@@ -148,7 +148,7 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 	if err != nil {
 		return err
 	}
-	// how to make sure the vakue from chart isapply into the configmap?
+
 	err = r.Client.Patch(ctx, &effectiveConfigMap, client.RawPatch(types.ApplyYAMLPatchType, objApplyBytes), client.ForceOwnership, client.FieldOwner("scheduler-odigosconfig"))
 	if err != nil {
 		return err
