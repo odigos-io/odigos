@@ -62,7 +62,8 @@ spec:
           status:
             properties:
               conditions:
-                description: Represents the observations of a streams's current state.
+                description: Represents the observations of a DataStream's current
+                  state.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -118,9 +119,6 @@ spec:
                   - type
                   type: object
                 type: array
-                x-kubernetes-list-map-keys:
-                - type
-                x-kubernetes-list-type: map
             type: object
         required:
         - spec
