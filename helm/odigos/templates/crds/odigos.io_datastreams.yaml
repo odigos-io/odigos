@@ -15,17 +15,11 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.workload.name
-      name: Workload
+    - jsonPath: .spec.streamName
+      name: Name
       type: string
-    - jsonPath: .spec.workload.kind
-      name: Kind
-      type: string
-    - jsonPath: .spec.workload.namespace
-      name: Namespace
-      type: string
-    - jsonPath: .spec.disableInstrumentation
-      name: Disabled
+    - jsonPath: .spec.default
+      name: Default
       type: string
     name: v1alpha1
     schema:

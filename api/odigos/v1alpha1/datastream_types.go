@@ -24,10 +24,8 @@ import (
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Workload",type=string,JSONPath=`.spec.workload.name`
-// +kubebuilder:printcolumn:name="Kind",type=string,JSONPath=`.spec.workload.kind`
-// +kubebuilder:printcolumn:name="Namespace",type=string,JSONPath=`.spec.workload.namespace`
-// +kubebuilder:printcolumn:name="Disabled",type=string,JSONPath=`.spec.disableInstrumentation`
+// +kubebuilder:printcolumn:name="Name",type=string,JSONPath=`.spec.streamName`
+// +kubebuilder:printcolumn:name="Default",type=string,JSONPath=`.spec.default`
 type DataStream struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -50,10 +48,6 @@ type DataStreamSpec struct {
 
 type DataStreamStatus struct {
 	// Represents the observations of a streams's current state.
-	// +patchMergeKey=type
-	// +patchStrategy=merge
-	// +listType=map
-	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
