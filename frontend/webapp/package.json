@@ -12,26 +12,26 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@apollo/client": "^3.13.5",
-    "@apollo/experimental-nextjs-app-support": "^0.11.11",
-    "@odigos/ui-kit": "^0.0.20",
+    "@apollo/client": "^3.13.6",
+    "@apollo/experimental-nextjs-app-support": "^0.12.0",
+    "@odigos/ui-kit": "^0.0.21",
     "graphql": "^16.10.0",
     "next": "15.2.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-error-boundary": "^5.0.0",
-    "styled-components": "^6.1.16",
+    "styled-components": "^6.1.17",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@types/node": "22.13.14",
-    "@types/react": "19.0.12",
-    "@types/react-dom": "19.0.4",
+    "@types/node": "22.14.0",
+    "@types/react": "19.1.0",
+    "@types/react-dom": "19.1.1",
     "autoprefixer": "^10.4.21",
     "cypress": "^14.2.1",
-    "eslint": "9.23.0",
+    "eslint": "9.24.0",
     "eslint-config-next": "15.2.4",
     "postcss": "^8.5.3",
-    "typescript": "5.8.2"
+    "typescript": "5.8.3"
   }
 }
