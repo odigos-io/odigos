@@ -59,12 +59,12 @@ export const useSSE = () => {
         } else if (isSource) {
           switch (notification.title) {
             case EVENT_TYPES.MODIFIED:
-              // If not waiting, or we're waiting on the last few percent% (of creating), then proceed
-              // 1 == 100% || 0.5 == 50% || 0.05 == 5%
-              const matchPercent = 0.1;
-              if (notification.target && (!isAwaitingInstrumentation || (isAwaitingInstrumentation && (!sourcesToCreate || sourcesCreated / sourcesToCreate <= matchPercent)))) {
+              if (notification.target) {
                 const id = getIdFromSseTarget(notification.target, EntityTypes.Source);
-                fetchSourceById(id as WorkloadId);
+
+                // This timeout is to ensure that the object isn't in paginating state when we start fetching the data,
+                // otherwise paginated fetch will replace the modified data with the paginated data
+                setTimeout(() => fetchSourceById(id as WorkloadId), 3000);
               }
               break;
 
