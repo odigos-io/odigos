@@ -5,6 +5,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
+	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	appsv1 "k8s.io/api/apps/v1"
@@ -15,16 +16,18 @@ import (
 )
 
 type centralProxyResourceManager struct {
-	client      *kube.Client
-	ns          string
-	config      *common.OdigosConfiguration
-	managerOpts resourcemanager.ManagerOpts
+	client        *kube.Client
+	ns            string
+	odigosVersion string
+	config        *common.OdigosConfiguration
+	managerOpts   resourcemanager.ManagerOpts
 }
 
-func NewCentralProxyResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
+func NewCentralProxyResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
 	return &centralProxyResourceManager{client: client, ns: ns,
-		config:      config,
-		managerOpts: managerOpts}
+		config:        config,
+		odigosVersion: odigosVersion,
+		managerOpts:   managerOpts}
 }
 
 func (m *centralProxyResourceManager) Name() string { return k8sconsts.CentralProxyAppName }
@@ -34,13 +37,13 @@ func (m *centralProxyResourceManager) InstallFromScratch(ctx context.Context) er
 		NewCentralProxyServiceAccount(m.ns),
 		NewCentralProxyRoleBinding(m.ns),
 		NewCentralProxyRole(m.ns),
-		NewCentralProxyDeployment(m.ns),
+		NewCentralProxyDeployment(m.ns, m.odigosVersion, m.config.ImagePrefix, m.managerOpts.ImageReferences.CentralProxyImage),
 	}
 
 	return m.client.ApplyResources(ctx, m.config.ConfigVersion, resources, m.managerOpts)
 }
 
-func NewCentralProxyDeployment(ns string) *appsv1.Deployment {
+func NewCentralProxyDeployment(ns string, version string, imagePrefix string, imageName string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -71,7 +74,7 @@ func NewCentralProxyDeployment(ns string) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.CentralProxyContainerName,
-							Image: k8sconsts.CentralProxyContainerImage,
+							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: k8sconsts.CentralProxyContainerPort,

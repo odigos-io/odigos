@@ -26,7 +26,7 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 	}
 	shouldInstallCentralProxy := config.ClusterName != "" && config.CentralBackendURL != ""
 	if shouldInstallCentralProxy {
-		resourceManagers = append(resourceManagers, centralodigos.NewCentralProxyResourceManager(client, odigosNs, config, managerOpts))
+		resourceManagers = append(resourceManagers, centralodigos.NewCentralProxyResourceManager(client, odigosNs, config, odigosVersion, managerOpts))
 	}
 
 	// odigos core components are installed for all tiers.

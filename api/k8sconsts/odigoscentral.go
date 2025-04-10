@@ -9,9 +9,10 @@ const (
 	CentralProxyRoleBindingName    = "central-proxy"
 	CentralProxyLabelAppNameValue  = "central-proxy"
 	CentralProxyContainerName      = "central-proxy"
-	CentralProxyContainerImage     = "staging-registry.odigos.io/central-proxy:dev" //TODO: change to odigos registry
-	CentralProxyContainerPort      = 8080
-	CentralProxyConfigMapResource  = "configmaps"
+
+	CentralProxyContainerPort     = 8080
+	CentralProxyConfigMapResource = "configmaps"
+	CentralProxyImage             = "odigos-central-proxy"
 )
 
 const (

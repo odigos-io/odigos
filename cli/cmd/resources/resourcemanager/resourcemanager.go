@@ -25,6 +25,7 @@ type ImageReferences struct {
 	KeyvalProxyImage  string
 	SchedulerImage    string
 	UIImage           string
+	CentralProxyImage string
 }
 
 type ResourceManager interface {

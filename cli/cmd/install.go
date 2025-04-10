@@ -289,6 +289,7 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcema
 		} else {
 			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImage
 			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageName
+			imageReferences.CentralProxyImage = k8sconsts.CentralProxyImage
 		}
 	}
 	return imageReferences
@@ -309,7 +310,7 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		autoScalerImage = k8sconsts.AutoScalerImageUBI9
 	}
 
-	config := common.OdigosConfiguration{
+	return common.OdigosConfiguration{
 		ConfigVersion:                    1,
 		TelemetryEnabled:                 telemetryEnabled,
 		OpenshiftEnabled:                 openshiftEnabled,
@@ -321,14 +322,10 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		ImagePrefix:                      imagePrefix,
 		Profiles:                         selectedProfiles,
 		UiMode:                           common.UiMode(uiMode),
+		ClusterName:                      clusterName,
+		CentralBackendURL:                centralBackendURL,
 	}
 
-	if clusterName != "" && centralBackendURL != "" {
-		config.ClusterName = clusterName
-		config.CentralBackendURL = centralBackendURL
-	}
-
-	return config
 }
 
 func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, ns string, create ResourceCreationFunc) {
