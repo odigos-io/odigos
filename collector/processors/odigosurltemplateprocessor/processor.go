@@ -1,0 +1,181 @@
+package odigosurltemplateprocessor
+
+import (
+	"context"
+	"fmt"
+	"net/url"
+	"strings"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/collector/processor"
+	semconv "go.opentelemetry.io/collector/semconv/v1.27.0"
+	"go.uber.org/zap"
+)
+
+type urlTemplateProcessor struct {
+	logger *zap.Logger
+}
+
+func newUrlTemplateProcessor(set processor.Settings, cfg *Config) (*urlTemplateProcessor, error) {
+	return &urlTemplateProcessor{
+		logger: set.Logger,
+	}, nil
+}
+
+func (p *urlTemplateProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
+	for i := 0; i < td.ResourceSpans().Len(); i++ {
+		resourceSpans := td.ResourceSpans().At(i)
+		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
+			scopeSpans := resourceSpans.ScopeSpans().At(j)
+			for k := 0; k < scopeSpans.Spans().Len(); k++ {
+				span := scopeSpans.Spans().At(k)
+				processSpan(span)
+			}
+		}
+	}
+	return td, nil
+}
+
+func getHttpMethod(attr pcommon.Map) (string, bool) {
+	// prefer to use the new "http.request.method" attribute
+	if method, found := attr.Get(semconv.AttributeHTTPRequestMethod); found {
+		return method.AsString(), true
+	}
+	// fallback to the old "http.method" attribute which might still be used
+	// by some instrumentations.
+	// TODO: remove this fallback in the future when all instrumentations are aligned with
+	// update semantic conventions and no longer report "http.method"
+	if method, found := attr.Get("http.method"); found {
+		return method.AsString(), true
+	}
+	return "", false
+}
+
+func getUrlPath(attr pcommon.Map) (string, bool) {
+
+	// prefer the updated semantic convention "url.path" if available
+	if urlPath, found := attr.Get(semconv.AttributeURLPath); found {
+		return urlPath.AsString(), true
+	}
+
+	// fallback to the old "http.target" attribute which might still be used
+	// by some instrumentations.
+	// TODO: remove this fallback in the future when all instrumentations are aligned with
+	// update semantic conventions and no longer report "http.target"
+	if httpTarget, found := attr.Get("http.target"); found {
+		// the "http.target" attribute might contain a query string, so we need to
+		// split it and only use the path part.
+		// for example: "/user?id=123" => "/user"
+		path := strings.SplitN(httpTarget.AsString(), "?", 2)[0]
+		return path, true
+	}
+	return "", false
+}
+
+func getFullUrl(attr pcommon.Map) (string, bool) {
+	// prefer the updated semantic convention "url.full" if available
+	if fullUrl, found := attr.Get(semconv.AttributeURLFull); found {
+		return fullUrl.AsString(), true
+	}
+	// fallback to the old "http.url" attribute which might still be used
+	// by some instrumentations.
+	// TODO: remove this fallback in the future when all instrumentations are aligned with
+	// update semantic conventions and no longer report "http.url"
+	if httpUrl, found := attr.Get("http.url"); found {
+		return httpUrl.AsString(), true
+	}
+	return "", false
+}
+
+func calculateTemplatedUrl(attr pcommon.Map) (string, bool) {
+	// this processor enhances url template value, which it extracts from full url or url path.
+	// one of these is required for this processor to handle this span.
+	urlPath, urlPathFound := getUrlPath(attr)
+	if urlPathFound {
+		// if url path is available, we can use it to generate the templated url
+		// in case of query string, we only want the path part of the url (used with deprecated "http.target" attribute)
+		templatedUrl := templatizeURLPath(urlPath)
+		return templatedUrl, true
+	}
+
+	fullUrl, fullUrlFound := getFullUrl(attr)
+	if fullUrlFound {
+		parsed, err := url.Parse(fullUrl)
+		if err != nil {
+			// if we are unable to parse the url, we can't generate the templated url
+			// so we skip this span
+			return "", false
+		}
+		templatedUrl := templatizeURLPath(parsed.Path)
+		return templatedUrl, true
+	}
+
+	return "", false
+}
+
+func updateHttpSpanName(span ptrace.Span, httpMethod string, templatedUrl string) {
+	currentName := span.Name()
+	if currentName != httpMethod {
+		// be conservative and only update the name for the use case "GET" => "GET /user/:id"
+		// if the span name is set to something else, keep it and don't override it.
+		// we might want to revisit this in the future based on real world feedback.
+		return
+	}
+
+	// if the templated url is not available, we keep the span name as is.
+	if templatedUrl == "" {
+		return
+	}
+
+	// generate span name based on semantic conventions:
+	// HTTP span names SHOULD be {method} {target} if there is a (low-cardinality) target available.
+	// the "target" in our case is the templated url (which is either http.route or url.template attributes).
+	newSpanName := fmt.Sprintf("%s %s", httpMethod, templatedUrl)
+	span.SetName(newSpanName)
+}
+
+func enhanceSpan(span ptrace.Span, httpMethod string, targetAttribute string) {
+
+	attr := span.Attributes()
+
+	if _, found := attr.Get(targetAttribute); found {
+		// avoid overriding the attribute if it is already set
+		return
+	}
+
+	templatedUrl, found := calculateTemplatedUrl(attr)
+	if !found {
+		// don't modify the span if we are unable to calculate the templated url
+		return
+	}
+
+	// set the templated url in the target attribute and update the span name if needed
+	attr.PutStr(targetAttribute, templatedUrl)
+	updateHttpSpanName(span, httpMethod, templatedUrl)
+}
+
+func processSpan(span ptrace.Span) {
+
+	attr := span.Attributes()
+
+	httpMethod, found := getHttpMethod(attr)
+	if !found {
+		// we only enhance http spans, so if there is no http.method attribute, we can skip it
+		return
+	}
+
+	switch span.Kind() {
+
+	case ptrace.SpanKindClient:
+		// client spans write the url templated value in "url.template" attribute.
+		enhanceSpan(span, httpMethod, semconv.AttributeURLTemplate)
+	case ptrace.SpanKindServer:
+		// server spans write the url templated value in "http.route" attribute.
+		enhanceSpan(span, httpMethod, semconv.AttributeHTTPRoute)
+	default:
+		// http spans are either client or server
+		// all other spans are ignored and never enhanced
+		return
+	}
+}
