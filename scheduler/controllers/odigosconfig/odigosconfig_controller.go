@@ -3,7 +3,6 @@ package odigosconfig
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -141,8 +140,6 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 			consts.OdigosConfigurationFileName: string(effectiveConfigYamlText),
 		},
 	}
-
-	log.Printf("Effective config: %s", string(effectiveConfigYamlText))
 
 	objApplyBytes, err := yaml.Marshal(effectiveConfigMap)
 	if err != nil {
