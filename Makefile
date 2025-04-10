@@ -1,5 +1,7 @@
 TAG ?= $(shell odigos version --cluster)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
+CLUSTER_NAME ?= my-cluster
+CENTRAL_BACKEND_URL ?= https://central.odigos.local
 ORG ?= registry.odigos.io
 GOLANGCI_LINT_VERSION ?= v1.63.4
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
@@ -325,6 +327,17 @@ cli-diagnose:
 helm-install:
 	@echo "Installing odigos using helm"
 	helm upgrade --install odigos  ./helm/odigos --create-namespace --namespace odigos-system --set image.tag=$(ODIGOS_CLI_VERSION)
+	kubectl label namespace odigos-system odigos.io/system-object="true"
+
+helm-install-central-proxy:
+	@echo "Installing odigos using helm"
+	helm upgrade --install odigos ./helm/odigos \
+		--create-namespace \
+		--namespace odigos-system \
+		--set image.tag=$(ODIGOS_CLI_VERSION) \
+		--set centralProxy.enabled=true \
+		--set clusterName=$(CLUSTER_NAME) \
+		--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL)
 	kubectl label namespace odigos-system odigos.io/system-object="true"
 
 .PHONY: api-all
