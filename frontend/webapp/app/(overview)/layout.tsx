@@ -13,9 +13,7 @@ import { DataFlowActionsMenu, NavIconIds, SideNav, ToastList } from '@odigos/ui-
 const PageContent = styled(FlexColumn)`
   width: 100%;
   height: 100vh;
-  background-color: ${({ theme }) =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (theme as any).colors.primary};
+  background-color: ${({ theme }) => theme.colors.primary};
   align-items: center;
 `;
 
