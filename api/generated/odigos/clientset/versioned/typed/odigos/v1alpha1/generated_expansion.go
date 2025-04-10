@@ -19,6 +19,8 @@ package v1alpha1
 
 type CollectorsGroupExpansion interface{}
 
+type DataStreamExpansion interface{}
+
 type DestinationExpansion interface{}
 
 type InstrumentationConfigExpansion interface{}

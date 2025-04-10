@@ -25,6 +25,14 @@ type CollectorsGroupListerExpansion interface{}
 // CollectorsGroupNamespaceLister.
 type CollectorsGroupNamespaceListerExpansion interface{}
 
+// DataStreamListerExpansion allows custom methods to be added to
+// DataStreamLister.
+type DataStreamListerExpansion interface{}
+
+// DataStreamNamespaceListerExpansion allows custom methods to be added to
+// DataStreamNamespaceLister.
+type DataStreamNamespaceListerExpansion interface{}
+
 // DestinationListerExpansion allows custom methods to be added to
 // DestinationLister.
 type DestinationListerExpansion interface{}

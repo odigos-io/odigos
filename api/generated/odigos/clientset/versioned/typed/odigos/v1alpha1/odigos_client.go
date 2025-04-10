@@ -28,6 +28,7 @@ import (
 type OdigosV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	CollectorsGroupsGetter
+	DataStreamsGetter
 	DestinationsGetter
 	InstrumentationConfigsGetter
 	InstrumentationInstancesGetter
@@ -44,6 +45,10 @@ type OdigosV1alpha1Client struct {
 
 func (c *OdigosV1alpha1Client) CollectorsGroups(namespace string) CollectorsGroupInterface {
 	return newCollectorsGroups(c, namespace)
+}
+
+func (c *OdigosV1alpha1Client) DataStreams(namespace string) DataStreamInterface {
+	return newDataStreams(c, namespace)
 }
 
 func (c *OdigosV1alpha1Client) Destinations(namespace string) DestinationInterface {
