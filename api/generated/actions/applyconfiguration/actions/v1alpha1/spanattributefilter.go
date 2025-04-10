@@ -23,6 +23,7 @@ type SpanAttributeFilterApplyConfiguration struct {
 	ServiceName           *string                               `json:"service_name,omitempty"`
 	AttributeKey          *string                               `json:"attribute_key,omitempty"`
 	Condition             *AttributeConditionApplyConfiguration `json:"condition,omitempty"`
+	SamplingRatio         *float64                              `json:"sampling_ratio,omitempty"`
 	FallbackSamplingRatio *float64                              `json:"fallback_sampling_ratio,omitempty"`
 }
 
@@ -53,6 +54,14 @@ func (b *SpanAttributeFilterApplyConfiguration) WithAttributeKey(value string) *
 // If called multiple times, the Condition field is set to the value of the last call.
 func (b *SpanAttributeFilterApplyConfiguration) WithCondition(value *AttributeConditionApplyConfiguration) *SpanAttributeFilterApplyConfiguration {
 	b.Condition = value
+	return b
+}
+
+// WithSamplingRatio sets the SamplingRatio field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SamplingRatio field is set to the value of the last call.
+func (b *SpanAttributeFilterApplyConfiguration) WithSamplingRatio(value float64) *SpanAttributeFilterApplyConfiguration {
+	b.SamplingRatio = &value
 	return b
 }
 

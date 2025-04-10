@@ -28,7 +28,11 @@ func (s *ServiceNameRule) Validate() error {
 	return nil
 }
 
-func (s *ServiceNameRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMatch bool, fallbackRatio float64) {
+// Evaluate checks the presence of a specific service within a trace.
+// - matched: True if service exists in the span.
+// - satisfied: True if service exists in the span.
+// - samplingRatio: sample ration on satisfy and fallback ration otherwise.
+func (s *ServiceNameRule) Evaluate(td ptrace.Traces) (bool, bool, float64) {
 	rs := td.ResourceSpans()
 
 	for i := range rs.Len() {
@@ -39,9 +43,7 @@ func (s *ServiceNameRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMatc
 		}
 
 		// Matched a span from the target service
-		filterMatch = true
-		conditionMatch = true // Report that this rule is satisfied
-		return filterMatch, conditionMatch, s.SamplingRatio
+		return true, true, s.SamplingRatio
 	}
 
 	// No match → report fallback sampling ratio

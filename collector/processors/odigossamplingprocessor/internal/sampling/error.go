@@ -25,8 +25,8 @@ func (r *ErrorRule) Validate() error {
 // Evaluate scans all spans in the trace and returns:
 // - filterMatch: always true (this rule applies globally)
 // - conditionMatch: true if any span has error status
-// - fallbackRatio: 0 if error is found, fallback ratio otherwise
-func (r *ErrorRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMatch bool, fallbackRatio float64) {
+// - ratio: 100 if error is found (sample always), fallback ratio otherwise
+func (r *ErrorRule) Evaluate(td ptrace.Traces) (bool, bool, float64) {
 	rs := td.ResourceSpans()
 	for i := 0; i < rs.Len(); i++ {
 		scopeSpans := rs.At(i).ScopeSpans()

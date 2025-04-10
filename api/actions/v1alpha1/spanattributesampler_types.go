@@ -66,6 +66,16 @@ type SpanAttributeFilter struct {
 	// +kubebuilder:validation:Required
 	Condition AttributeCondition `json:"condition"`
 
+	// SamplingRatio determines the percentage (0–100) of traces to sample
+	// when the specified attribute satisfies the filter.
+	//
+	// For example, a value of 100 means all such traces will be kept,
+	// while a value of 0 means all will be dropped.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
+	// +kubebuilder:default=100
+	SamplingRatio float64 `json:"sampling_ratio"`
+
 	// FallbackSamplingRatio is the percentage (0–100) of spans to sample
 	// when the condition does not explicitly match. For example, if set to 50,
 	// then half of non-matching spans would be sampled.
@@ -133,7 +143,6 @@ type JsonAttributeCondition struct {
 	// Operation defines the evaluation logic applied to the JSON value.
 	//
 	// Supported values:
-	//   - exists
 	//   - is_valid_json
 	//   - is_invalid_json
 	//   - equals
@@ -142,7 +151,7 @@ type JsonAttributeCondition struct {
 	//   - key_equals
 	//   - key_not_equals
 	//
-	// +kubebuilder:validation:Enum=exists;is_valid_json;is_invalid_json;equals;not_equals;jsonpath_exists;key_equals;key_not_equals
+	// +kubebuilder:validation:Enum=is_valid_json;is_invalid_json;equals;not_equals;jsonpath_exists;key_equals;key_not_equals
 	Operation string `json:"operation"`
 
 	// JsonPath is required for:

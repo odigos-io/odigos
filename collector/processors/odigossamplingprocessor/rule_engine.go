@@ -79,7 +79,7 @@ func (re *RuleEngine) ShouldSample(td ptrace.Traces) bool {
 		return (rand.Float64() * 100) < *minFallback
 	}
 
-	return false
+	return true
 }
 
 // evaluateLevel runs all rules in a given level and returns:

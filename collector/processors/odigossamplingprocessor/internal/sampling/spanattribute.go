@@ -28,12 +28,20 @@ type SpanAttributeRule struct {
 	Operation             string                 `mapstructure:"operation"`
 	ExpectedValue         string                 `mapstructure:"expected_value,omitempty"`
 	JsonPath              string                 `mapstructure:"json_path,omitempty"`
+	SamplingRatio         float64                `mapstructure:"sampling_ratio"`
 	FallbackSamplingRatio float64                `mapstructure:"fallback_sampling_ratio"`
 }
 
 var _ SamplingDecision = (*SpanAttributeRule)(nil)
 
 func (s *SpanAttributeRule) Validate() error {
+	if s.SamplingRatio < 0 || s.SamplingRatio > 100 {
+		return errors.New("sampling ratio must be between 0 and 100")
+	}
+	if s.FallbackSamplingRatio < 0 || s.FallbackSamplingRatio > 100 {
+		return errors.New("fallback sampling ratio must be between 0 and 100")
+	}
+
 	if s.ServiceName == "" {
 		return errors.New("service_name cannot be empty")
 	}
@@ -97,7 +105,7 @@ func (s *SpanAttributeRule) Validate() error {
 		if !validOps[s.Operation] {
 			return errors.New("invalid json operation")
 		}
-		// For all JSON operations, a jsonPath is required.
+		// For some JSON operations, a jsonPath is required.
 		if (s.Operation != "exists" && s.Operation != "is_valid_json" && s.Operation != "is_invalid_json") && s.JsonPath == "" {
 			return errors.New("json_path required for json operations")
 		}
@@ -110,8 +118,11 @@ func (s *SpanAttributeRule) Validate() error {
 	return nil
 }
 
-func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMatch bool, fallbackRatio float64) {
-	fallbackRatio = s.FallbackSamplingRatio
+// Evaluate checks if the trace contains a specific attribute and if it matching the attribute condition
+// - matched: Attribute exists in the trace.
+// - satisfied: The attribute rule is satisfied with it's value.
+// - samplingRatio: sample ration on satisfy and fallback ration otherwise.
+func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (bool, bool, float64) {
 	rs := td.ResourceSpans()
 	for i := 0; i < rs.Len(); i++ {
 		resourceAttrs := rs.At(i).Resource().Attributes()
@@ -127,12 +138,11 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 					continue
 				}
 				// At this point, the attribute exists.
-				filterMatch = true
 				switch s.ConditionType {
 				case TypeString:
 					if s.Operation == "exists" {
 						if attr.Type() == pcommon.ValueTypeStr && attr.AsString() != "" {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					}
 					if attr.Type() != pcommon.ValueTypeStr {
@@ -142,19 +152,19 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 					switch s.Operation {
 					case "equals":
 						if val == s.ExpectedValue {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					case "not_equals":
 						if val != s.ExpectedValue {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					case "contains":
 						if strings.Contains(val, s.ExpectedValue) {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					case "not_contains":
 						if !strings.Contains(val, s.ExpectedValue) {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					case "regex":
 						re, err := regexp.Compile(s.ExpectedValue)
@@ -162,13 +172,13 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 							continue
 						}
 						if re.MatchString(val) {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					}
 				case TypeNumber:
 					if s.Operation == "exists" {
 						if attr.Type() == pcommon.ValueTypeInt || attr.Type() == pcommon.ValueTypeDouble {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					}
 					numVal, err := strconv.ParseFloat(s.ExpectedValue, 64)
@@ -187,33 +197,33 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 					switch s.Operation {
 					case "equals":
 						if attrNum == numVal {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					case "not_equals":
 						if attrNum != numVal {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					case "greater_than":
 						if attrNum > numVal {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					case "less_than":
 						if attrNum < numVal {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					case "greater_than_or_equal":
 						if attrNum >= numVal {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					case "less_than_or_equal":
 						if attrNum <= numVal {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					}
 				case TypeBoolean:
 					if s.Operation == "exists" {
 						if attr.Type() == pcommon.ValueTypeBool {
-							return true, true, fallbackRatio
+							return true, true, s.SamplingRatio
 						}
 					}
 					expectedBool, err := strconv.ParseBool(s.ExpectedValue)
@@ -221,7 +231,7 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 						continue
 					}
 					if s.Operation == "equals" && attr.Bool() == expectedBool {
-						return true, true, fallbackRatio
+						return true, true, s.SamplingRatio
 					}
 				case TypeJSON:
 					if attr.Type() != pcommon.ValueTypeStr {
@@ -231,39 +241,25 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 					var jsonVal interface{}
 					err := json.Unmarshal([]byte(jsonStr), &jsonVal)
 					switch s.Operation {
-					case "exists":
-						if err == nil {
-							if res, err2 := jsonpath.Get(s.JsonPath, jsonVal); err2 == nil && res != nil {
-								return true, true, fallbackRatio
-							}
-						}
 					case "is_valid_json":
 						if err == nil {
-							if res, err2 := jsonpath.Get(s.JsonPath, jsonVal); err2 == nil && res != nil {
-								return true, true, fallbackRatio
-							}
+							return true, true, s.SamplingRatio
 						}
 					case "is_invalid_json":
 						if err != nil {
-							return true, true, fallbackRatio
-						}
-					case "jsonpath_exists":
-						if err == nil {
-							if res, err2 := jsonpath.Get(s.JsonPath, jsonVal); err2 == nil && res != nil {
-								return true, true, fallbackRatio
-							}
+							return true, true, s.SamplingRatio
 						}
 					case "contains_key":
 						if err == nil {
 							if res, err2 := jsonpath.Get(s.JsonPath, jsonVal); err2 == nil && res != nil {
-								return true, true, fallbackRatio
+								return true, true, s.SamplingRatio
 							}
 						}
 					case "not_contains_key":
 						if err == nil {
 							// If the key does not exist, jsonpath.Get should return an error.
 							if _, err2 := jsonpath.Get(s.JsonPath, jsonVal); err2 != nil {
-								return true, true, fallbackRatio
+								return true, true, s.SamplingRatio
 							}
 						}
 					case "key_equals":
@@ -287,7 +283,7 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 								valStr = string(b)
 							}
 							if valStr == s.ExpectedValue {
-								return true, true, fallbackRatio
+								return true, true, s.SamplingRatio
 							}
 						}
 					case "key_not_equals":
@@ -311,7 +307,7 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 								valStr = string(b)
 							}
 							if valStr != s.ExpectedValue {
-								return true, true, fallbackRatio
+								return true, true, s.SamplingRatio
 							}
 						}
 					}
@@ -319,5 +315,5 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (filterMatch, conditionMa
 			}
 		}
 	}
-	return false, false, fallbackRatio
+	return false, false, s.FallbackSamplingRatio
 }

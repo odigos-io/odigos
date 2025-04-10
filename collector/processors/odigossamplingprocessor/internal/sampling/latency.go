@@ -38,7 +38,10 @@ func (r *HttpRouteLatencyRule) Validate() error {
 // Evaluate checks if the trace contains spans for the target service and HTTP route,
 // and whether the trace latency exceeds the threshold. Sampling ratios are returned
 // for the RuleEngine to apply.
-func (r *HttpRouteLatencyRule) Evaluate(td ptrace.Traces) (filterMatch bool, conditionMatch bool, fallbackRatio float64) {
+// - matched: True if both endpoint and service name has matched.
+// - satisfied: True if the latency was higher than the threshold
+// - samplingRatio: sample ration on satisfy and fallback ration otherwise
+func (r *HttpRouteLatencyRule) Evaluate(td ptrace.Traces) (bool, bool, float64) {
 	resources := td.ResourceSpans()
 	var serviceFound, endpointFound bool
 	var minStart, maxEnd pcommon.Timestamp
@@ -81,8 +84,6 @@ func (r *HttpRouteLatencyRule) Evaluate(td ptrace.Traces) (filterMatch bool, con
 
 	// Compute total trace latency
 	duration := maxEnd.AsTime().Sub(minStart.AsTime()).Milliseconds()
-
-	filterMatch = true
 
 	if duration >= int64(r.Threshold) {
 		// Latency condition satisfied → sample fully
