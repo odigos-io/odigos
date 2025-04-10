@@ -59,7 +59,10 @@ export const useSSE = () => {
         } else if (isSource) {
           switch (notification.title) {
             case EVENT_TYPES.MODIFIED:
-              if (!isAwaitingInstrumentation && notification.target) {
+              // If not waiting, or we're waiting on the last few percent% (of creating), then proceed
+              // 1 == 100% || 0.5 == 50% || 0.05 == 5%
+              const matchPercent = 0.1;
+              if (notification.target && (!isAwaitingInstrumentation || (isAwaitingInstrumentation && (!sourcesToCreate || sourcesCreated / sourcesToCreate <= matchPercent)))) {
                 const id = getIdFromSseTarget(notification.target, EntityTypes.Source);
                 fetchSourceById(id as WorkloadId);
               }
@@ -69,6 +72,7 @@ export const useSSE = () => {
               const created = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
               setInstrumentCount('sourcesCreated', created);
 
+              // If not waiting, or we're at 100%, then proceed
               if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
                 addNotification({ type: StatusType.Success, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
                 setInstrumentAwait(false);
@@ -80,6 +84,7 @@ export const useSSE = () => {
               const deleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
               setInstrumentCount('sourcesDeleted', deleted);
 
+              // If not waiting, or we're at 100%, then proceed
               if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && deleted >= sourcesToDelete)) {
                 addNotification({ type: StatusType.Success, title: EVENT_TYPES.DELETED, message: `Successfully deleted ${deleted} sources` });
                 setInstrumentAwait(false);
