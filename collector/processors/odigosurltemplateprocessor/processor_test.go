@@ -70,9 +70,9 @@ func TestProcessor_Traces(t *testing.T) {
 				"http.request.method": "GET",
 				"url.path":            "/user/1234",
 			},
-			expectedSpanName:  "GET /user/:id",
+			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/:id",
+			expectedAttrValue: "/user/{id}",
 		},
 		{
 			name:          "guid in url path",
@@ -83,9 +83,9 @@ func TestProcessor_Traces(t *testing.T) {
 				"http.request.method": "GET",
 				"url.path":            "/user/123e4567-e89b-12d3-a456-426614174000",
 			},
-			expectedSpanName:  "GET /user/:id",
+			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/:id",
+			expectedAttrValue: "/user/{id}",
 		},
 		{
 			name:          "multiple numeric ids in url path",
@@ -96,9 +96,9 @@ func TestProcessor_Traces(t *testing.T) {
 				"http.request.method": "GET",
 				"url.path":            "/user/1234/friends/4567",
 			},
-			expectedSpanName:  "GET /user/:id/friends/:id",
+			expectedSpanName:  "GET /user/{id}/friends/{id}",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/:id/friends/:id",
+			expectedAttrValue: "/user/{id}/friends/{id}",
 		},
 		{
 			name:          "deprecated method attribute",
@@ -109,9 +109,9 @@ func TestProcessor_Traces(t *testing.T) {
 				"http.method": "GET",
 				"url.path":    "/user/1234",
 			},
-			expectedSpanName:  "GET /user/:id",
+			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/:id",
+			expectedAttrValue: "/user/{id}",
 		},
 		{
 			name:          "deprecated http.target attribute",
@@ -122,9 +122,9 @@ func TestProcessor_Traces(t *testing.T) {
 				"http.request.method": "GET",
 				"http.target":         "/user/1234",
 			},
-			expectedSpanName:  "GET /user/:id",
+			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/:id",
+			expectedAttrValue: "/user/{id}",
 		},
 		{
 			name:          "http.target with query params",
@@ -135,9 +135,9 @@ func TestProcessor_Traces(t *testing.T) {
 				"http.request.method": "GET",
 				"http.target":         "/user/1234?name=John",
 			},
-			expectedSpanName:  "GET /user/:id",
+			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/:id",
+			expectedAttrValue: "/user/{id}",
 		},
 		{
 			name:          "with url.full attribute",
@@ -148,9 +148,9 @@ func TestProcessor_Traces(t *testing.T) {
 				"http.request.method": "GET",
 				"url.full":            "http://example.com/user/1234?name=John",
 			},
-			expectedSpanName:  "GET /user/:id",
+			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/:id",
+			expectedAttrValue: "/user/{id}",
 		},
 		{
 			name:          "with deprecated http.url attribute",
@@ -161,9 +161,9 @@ func TestProcessor_Traces(t *testing.T) {
 				"http.request.method": "GET",
 				"http.url":            "http://example.com/user/1234?name=John",
 			},
-			expectedSpanName:  "GET /user/:id",
+			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/:id",
+			expectedAttrValue: "/user/{id}",
 		},
 		{
 			name:          "client span",
@@ -174,9 +174,9 @@ func TestProcessor_Traces(t *testing.T) {
 				"http.request.method": "GET",
 				"url.full":            "http://example.com/user/1234?name=John",
 			},
-			expectedSpanName:  "GET /user/:id",
+			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "url.template",
-			expectedAttrValue: "/user/:id",
+			expectedAttrValue: "/user/{id}",
 		},
 		{
 			name:          "span name is not the method",
@@ -189,7 +189,7 @@ func TestProcessor_Traces(t *testing.T) {
 			},
 			expectedSpanName:  "some-other-name", // should not be modified
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/:id", // should exist
+			expectedAttrValue: "/user/{id}", // should exist
 		},
 		{
 			name:          "ignore internal span",
@@ -297,22 +297,22 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 			name:              "simple-templatization",
 			rules:             []string{"/user/{user-name}"},
 			path:              "/user/john",
-			expectedName:      "GET /user/:user-name",
-			expectedHttpRoute: "/user/:user-name",
+			expectedName:      "GET /user/{user-name}",
+			expectedHttpRoute: "/user/{user-name}",
 		},
 		{
 			name:              "multiple-templatization",
 			rules:             []string{"/user/{user-id}/friends/{friend-id}"},
 			path:              "/user/1234/friends/4567",
-			expectedName:      "GET /user/:user-id/friends/:friend-id",
-			expectedHttpRoute: "/user/:user-id/friends/:friend-id",
+			expectedName:      "GET /user/{user-id}/friends/{friend-id}",
+			expectedHttpRoute: "/user/{user-id}/friends/{friend-id}",
 		},
 		{
 			name:              "regex-templatization",
 			rules:             []string{"/user/{user-id:\\d+}"},
 			path:              "/user/1234",
-			expectedName:      "GET /user/:user-id",
-			expectedHttpRoute: "/user/:user-id",
+			expectedName:      "GET /user/{user-id}",
+			expectedHttpRoute: "/user/{user-id}",
 		},
 		{
 			name:              "regex-templatization-fail",
@@ -325,8 +325,8 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 			name:              "path-no-leading-slash",
 			rules:             []string{"user/{user-id}"},
 			path:              "user/1234",
-			expectedName:      "GET user/:user-id",
-			expectedHttpRoute: "user/:user-id",
+			expectedName:      "GET user/{user-id}",
+			expectedHttpRoute: "user/{user-id}",
 		},
 		{
 			name:              "rule-overrides-default-templatization",
@@ -366,29 +366,29 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 				"/user/{user-name}",
 			},
 			path:              "/user/jane",
-			expectedName:      "GET /user/:user-name",
-			expectedHttpRoute: "/user/:user-name",
+			expectedName:      "GET /user/{user-name}",
+			expectedHttpRoute: "/user/{user-name}",
 		},
 		{
 			name:              "missing-section-name",
 			rules:             []string{"/user/{}"},
 			path:              "/user/john",
-			expectedName:      "GET /user/:id", // fallback to name "id" when missing
-			expectedHttpRoute: "/user/:id",
+			expectedName:      "GET /user/{id}", // fallback to name "id" when missing
+			expectedHttpRoute: "/user/{id}",
 		},
 		{
 			name:              "regexp-no-name",
 			rules:             []string{"/user/{:[0-9]+}"},
 			path:              "/user/1234",
-			expectedName:      "GET /user/:id", // fallback to name "id" when missing
-			expectedHttpRoute: "/user/:id",
+			expectedName:      "GET /user/{id}", // fallback to name "id" when missing
+			expectedHttpRoute: "/user/{id}",
 		},
 		{
 			name:              "segment-rule-with-spaces",
 			rules:             []string{"/user/{user-name : [a-zA-Z]+}"},
 			path:              "/user/John",
-			expectedName:      "GET /user/:user-name",
-			expectedHttpRoute: "/user/:user-name",
+			expectedName:      "GET /user/{user-name}",
+			expectedHttpRoute: "/user/{user-name}",
 		},
 	}
 

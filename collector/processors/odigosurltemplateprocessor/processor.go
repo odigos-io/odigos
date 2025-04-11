@@ -166,7 +166,7 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttr(attr pcommon.Map) (
 func updateHttpSpanName(span ptrace.Span, httpMethod string, templatedUrl string) {
 	currentName := span.Name()
 	if currentName != httpMethod {
-		// be conservative and only update the name for the use case "GET" => "GET /user/:id"
+		// be conservative and only update the name for the use case "GET" => "GET /user/{id}"
 		// if the span name is set to something else, keep it and don't override it.
 		// we might want to revisit this in the future based on real world feedback.
 		return

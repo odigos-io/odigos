@@ -116,7 +116,7 @@ func attemptTemplateWithRule(pathSegments []string, ruleSegments TemplatizationR
 	result := make([]string, 0, len(ruleSegments))
 	for _, segment := range ruleSegments {
 		if segment.TemplateName != "" {
-			result = append(result, ":"+segment.TemplateName)
+			result = append(result, "{"+segment.TemplateName+"}")
 		} else {
 			result = append(result, segment.StaticString)
 		}
@@ -125,14 +125,14 @@ func attemptTemplateWithRule(pathSegments []string, ruleSegments TemplatizationR
 	return strings.Join(result, "/"), true
 }
 
-// This function will replace all segments that matches a number or uuid with ":id"
+// This function will replace all segments that matches a number or uuid with "{id}"
 func defaultTemplatizeURLPath(pathSegments []string) (string, bool) {
 	templated := false
 	// avoid modifying the original segments slice
 	templatizedSegments := make([]string, len(pathSegments))
 	for i, segment := range pathSegments {
 		if uuidRegex.MatchString(segment) || numberRegex.MatchString(segment) {
-			templatizedSegments[i] = ":id"
+			templatizedSegments[i] = "{id}"
 			templated = true
 		} else {
 			templatizedSegments[i] = segment
