@@ -11,7 +11,7 @@ cli/odigos
 serving-certs/
 **/.tools/
 **/LICENSES
-odigos
+/odigos
 gha-creds-*.json
 artifacts/
 preflight*
