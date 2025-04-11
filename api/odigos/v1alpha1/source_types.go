@@ -37,6 +37,7 @@ var ErrorTooManySources = errors.New("too many Sources found for workload")
 // +kubebuilder:printcolumn:name="Kind",type=string,JSONPath=`.spec.workload.kind`
 // +kubebuilder:printcolumn:name="Namespace",type=string,JSONPath=`.spec.workload.namespace`
 // +kubebuilder:printcolumn:name="Disabled",type=string,JSONPath=`.spec.disableInstrumentation`
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
 type Source struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
