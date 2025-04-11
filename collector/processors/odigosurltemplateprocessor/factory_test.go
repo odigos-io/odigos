@@ -12,7 +12,7 @@ func TestCreateDefaultConfig(t *testing.T) {
 	cfg := createDefaultConfig()
 	// assert that the config is of type *Config
 	assert.IsType(t, &Config{}, cfg)
-	assert.Empty(t, cfg.(*Config).SpecificPathPatterns)
+	assert.Empty(t, cfg.(*Config).TemplatizationRules)
 }
 
 func TestCreateProcessor(t *testing.T) {
@@ -47,7 +47,7 @@ func TestInvalidRules(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			factory := NewFactory()
 			set := processortest.NewNopSettings(factory.Type())
-			_, err := factory.CreateTraces(context.Background(), set, &Config{SpecificPathPatterns: []string{test.rule}}, nil)
+			_, err := factory.CreateTraces(context.Background(), set, &Config{TemplatizationRules: []string{test.rule}}, nil)
 			assert.Error(t, err)
 		})
 	}

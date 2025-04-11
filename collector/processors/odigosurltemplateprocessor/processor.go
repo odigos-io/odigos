@@ -21,8 +21,8 @@ type urlTemplateProcessor struct {
 
 func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTemplateProcessor, error) {
 
-	parsedRules := make([]TemplatizationRule, 0, len(config.SpecificPathPatterns))
-	for _, rule := range config.SpecificPathPatterns {
+	parsedRules := make([]TemplatizationRule, 0, len(config.TemplatizationRules))
+	for _, rule := range config.TemplatizationRules {
 		parsedRule, err := parseUserInputRuleString(rule)
 		if err != nil {
 			return nil, err

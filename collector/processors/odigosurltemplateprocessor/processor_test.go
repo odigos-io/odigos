@@ -400,7 +400,7 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 			}
 			traces := generateTraceData("test-service-name", "GET", ptrace.SpanKindServer, spanAttr)
 			// Add the templated rule to the processor
-			processor, err := newUrlTemplateProcessor(processortest.NewNopSettings(processortest.NopType), &Config{SpecificPathPatterns: tc.rules})
+			processor, err := newUrlTemplateProcessor(processortest.NewNopSettings(processortest.NopType), &Config{TemplatizationRules: tc.rules})
 			require.NoError(t, err)
 			// Process the traces
 			ctx := context.Background()
