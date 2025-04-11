@@ -14,12 +14,24 @@ import (
 )
 
 type urlTemplateProcessor struct {
-	logger *zap.Logger
+	logger              *zap.Logger
+	templatizationRules []TemplatizationRule `mapstructure:"templatization_rules"`
 }
 
-func newUrlTemplateProcessor(set processor.Settings, cfg *Config) (*urlTemplateProcessor, error) {
+func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTemplateProcessor, error) {
+
+	parsedRules := make([]TemplatizationRule, 0, len(config.SpecificPathPatterns))
+	for _, rule := range config.SpecificPathPatterns {
+		parsedRule, err := parseUserInputRuleString(rule)
+		if err != nil {
+			return nil, err
+		}
+		parsedRules = append(parsedRules, parsedRule)
+	}
+
 	return &urlTemplateProcessor{
-		logger: set.Logger,
+		logger:              set.Logger,
+		templatizationRules: parsedRules,
 	}, nil
 }
 
@@ -30,7 +42,7 @@ func (p *urlTemplateProcessor) processTraces(ctx context.Context, td ptrace.Trac
 			scopeSpans := resourceSpans.ScopeSpans().At(j)
 			for k := 0; k < scopeSpans.Spans().Len(); k++ {
 				span := scopeSpans.Spans().At(k)
-				processSpan(span)
+				p.processSpan(span)
 			}
 		}
 	}
@@ -88,14 +100,50 @@ func getFullUrl(attr pcommon.Map) (string, bool) {
 	return "", false
 }
 
-func calculateTemplatedUrl(attr pcommon.Map) (string, bool) {
+func (p *urlTemplateProcessor) applyTemplatizationOnPath(path string) string {
+	inputPathSegments := strings.Split(path, "/")
+	if len(inputPathSegments) == 0 {
+		// if the path is empty, we can't generate a templated url
+		return path
+	}
+	hasLeadingSlash := strings.HasPrefix(path, "/")
+	if hasLeadingSlash {
+		// if the path has a leading slash, we need to remove it
+		// to avoid empty segments in the inputPathSegments
+		inputPathSegments = inputPathSegments[1:]
+	}
+
+	for _, rule := range p.templatizationRules {
+		// apply the rule on the path and return the result if it matches
+		if templatedUrl, matched := attemptTemplateWithRule(inputPathSegments, rule); matched {
+			if hasLeadingSlash {
+				// if the path has a leading slash, we need to add it back
+				templatedUrl = "/" + templatedUrl
+			}
+			return templatedUrl
+		}
+	}
+	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments)
+	if isTemplated {
+		if hasLeadingSlash {
+			// if the path has a leading slash, we need to add it back
+			templatedPath = "/" + templatedPath
+		}
+		return templatedPath
+	} else {
+		// if no templated url is generated, we return the original path
+		return path
+	}
+}
+
+func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttr(attr pcommon.Map) (string, bool) {
 	// this processor enhances url template value, which it extracts from full url or url path.
 	// one of these is required for this processor to handle this span.
 	urlPath, urlPathFound := getUrlPath(attr)
 	if urlPathFound {
 		// if url path is available, we can use it to generate the templated url
 		// in case of query string, we only want the path part of the url (used with deprecated "http.target" attribute)
-		templatedUrl := templatizeURLPath(urlPath)
+		templatedUrl := p.applyTemplatizationOnPath(urlPath)
 		return templatedUrl, true
 	}
 
@@ -107,7 +155,7 @@ func calculateTemplatedUrl(attr pcommon.Map) (string, bool) {
 			// so we skip this span
 			return "", false
 		}
-		templatedUrl := templatizeURLPath(parsed.Path)
+		templatedUrl := p.applyTemplatizationOnPath(parsed.Path)
 		return templatedUrl, true
 	}
 
@@ -135,7 +183,7 @@ func updateHttpSpanName(span ptrace.Span, httpMethod string, templatedUrl string
 	span.SetName(newSpanName)
 }
 
-func enhanceSpan(span ptrace.Span, httpMethod string, targetAttribute string) {
+func (p *urlTemplateProcessor) enhanceSpan(span ptrace.Span, httpMethod string, targetAttribute string) {
 
 	attr := span.Attributes()
 
@@ -144,7 +192,7 @@ func enhanceSpan(span ptrace.Span, httpMethod string, targetAttribute string) {
 		return
 	}
 
-	templatedUrl, found := calculateTemplatedUrl(attr)
+	templatedUrl, found := p.calculateTemplatedUrlFromAttr(attr)
 	if !found {
 		// don't modify the span if we are unable to calculate the templated url
 		return
@@ -155,7 +203,7 @@ func enhanceSpan(span ptrace.Span, httpMethod string, targetAttribute string) {
 	updateHttpSpanName(span, httpMethod, templatedUrl)
 }
 
-func processSpan(span ptrace.Span) {
+func (p *urlTemplateProcessor) processSpan(span ptrace.Span) {
 
 	attr := span.Attributes()
 
@@ -169,10 +217,10 @@ func processSpan(span ptrace.Span) {
 
 	case ptrace.SpanKindClient:
 		// client spans write the url templated value in "url.template" attribute.
-		enhanceSpan(span, httpMethod, semconv.AttributeURLTemplate)
+		p.enhanceSpan(span, httpMethod, semconv.AttributeURLTemplate)
 	case ptrace.SpanKindServer:
 		// server spans write the url templated value in "http.route" attribute.
-		enhanceSpan(span, httpMethod, semconv.AttributeHTTPRoute)
+		p.enhanceSpan(span, httpMethod, semconv.AttributeHTTPRoute)
 	default:
 		// http spans are either client or server
 		// all other spans are ignored and never enhanced
