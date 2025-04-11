@@ -2,6 +2,7 @@ package odigosurltemplateprocessor
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -47,7 +48,7 @@ func parseRuleTemplateString(ruleTemplateString string) (string, *regexp.Regexp,
 		var err error
 		regexpPattern, err = regexp.Compile(regexpString)
 		if err != nil {
-			return "", nil, err
+			return "", nil, fmt.Errorf("invalid rule template string. regexp is invalid: %w", err)
 		}
 	}
 	return templateName, regexpPattern, nil
