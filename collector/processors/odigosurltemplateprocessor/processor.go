@@ -9,6 +9,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
+	deprecatedsemconv "go.opentelemetry.io/collector/semconv/v1.18.0"
 	semconv "go.opentelemetry.io/collector/semconv/v1.27.0"
 	"go.uber.org/zap"
 )
@@ -58,7 +59,7 @@ func getHttpMethod(attr pcommon.Map) (string, bool) {
 	// by some instrumentations.
 	// TODO: remove this fallback in the future when all instrumentations are aligned with
 	// update semantic conventions and no longer report "http.method"
-	if method, found := attr.Get("http.method"); found {
+	if method, found := attr.Get(deprecatedsemconv.AttributeHTTPMethod); found {
 		return method.AsString(), true
 	}
 	return "", false
@@ -75,7 +76,7 @@ func getUrlPath(attr pcommon.Map) (string, bool) {
 	// by some instrumentations.
 	// TODO: remove this fallback in the future when all instrumentations are aligned with
 	// update semantic conventions and no longer report "http.target"
-	if httpTarget, found := attr.Get("http.target"); found {
+	if httpTarget, found := attr.Get(deprecatedsemconv.AttributeHTTPTarget); found {
 		// the "http.target" attribute might contain a query string, so we need to
 		// split it and only use the path part.
 		// for example: "/user?id=123" => "/user"
@@ -94,7 +95,7 @@ func getFullUrl(attr pcommon.Map) (string, bool) {
 	// by some instrumentations.
 	// TODO: remove this fallback in the future when all instrumentations are aligned with
 	// update semantic conventions and no longer report "http.url"
-	if httpUrl, found := attr.Get("http.url"); found {
+	if httpUrl, found := attr.Get(deprecatedsemconv.AttributeHTTPURL); found {
 		return httpUrl.AsString(), true
 	}
 	return "", false
