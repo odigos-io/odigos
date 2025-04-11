@@ -39,6 +39,10 @@ type Interface interface {
 	ProbabilisticSamplers() ProbabilisticSamplerInformer
 	// RenameAttributes returns a RenameAttributeInformer.
 	RenameAttributes() RenameAttributeInformer
+	// ServiceNameSamplers returns a ServiceNameSamplerInformer.
+	ServiceNameSamplers() ServiceNameSamplerInformer
+	// SpanAttributeSamplers returns a SpanAttributeSamplerInformer.
+	SpanAttributeSamplers() SpanAttributeSamplerInformer
 }
 
 type version struct {
@@ -90,4 +94,14 @@ func (v *version) ProbabilisticSamplers() ProbabilisticSamplerInformer {
 // RenameAttributes returns a RenameAttributeInformer.
 func (v *version) RenameAttributes() RenameAttributeInformer {
 	return &renameAttributeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// ServiceNameSamplers returns a ServiceNameSamplerInformer.
+func (v *version) ServiceNameSamplers() ServiceNameSamplerInformer {
+	return &serviceNameSamplerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// SpanAttributeSamplers returns a SpanAttributeSamplerInformer.
+func (v *version) SpanAttributeSamplers() SpanAttributeSamplerInformer {
+	return &spanAttributeSamplerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
