@@ -61,7 +61,9 @@ spec:
           - description: OnPremToken is an optional enterprise token for Odigos Enterprise.
             displayName: On-Prem Token
             path: onPremToken
-          - description: OpenShiftEnabled configures selinux on OpenShift nodes.
+          - description: |-
+              OpenShiftEnabled configures selinux on OpenShift nodes.
+              DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
             displayName: OpenShift Enabled
             path: openshiftEnabled
           - description: PodSecurityPolicy enables the pod security policy.
@@ -96,8 +98,6 @@ spec:
     - Frontend UI
 
     With Odigos installed, follow the Odigos docs at docs.odigos.io for instructions on instrumenting applications and configuring destinations.
-
-    (OpenShift clusters): Set `spec.openshiftEnabled: true` in your `Odigos` CRD to install required functionality for OpenShift.
   displayName: Odigos Operator
   icon:
     - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAtMiAxNiAxNiIgZmlsbD0iIzE1MTUxNSI+CiAgPHBhdGgKICAgIGQ9Ik01LjE3MjE1IDkuMDE4ODRMMi4xODM3NyA3LjY5ODEzQzEuNDgxNTkgNy4zODczMiAxLjA0NDggNi43MzY3NyAxLjA0NDggNS45OTk0OEMxLjA0NDggNS4yNjIyIDEuNDgwNTYgNC42MTE2NSAyLjE4Mzc3IDQuMzAwODNMNi4zNjE3MiAyLjQ1MzQ5TDYuNDUxNTYgMi40MTQyNVYwSDEuNjYxMjdDMS4wNDE3IDAgMC41Mzg4MTggMC40NzgxIDAuNTM4ODE4IDEuMDY3NzJWMTAuOTMxMkMwLjUzODgxOCAxMS41MjA5IDEuMDQxNyAxMS45OTkgMS42NjEyNyAxMS45OTlINS44MzMwM0g2LjQ1MjU5VjkuNTY4Mkw1LjE3MzE5IDkuMDE3ODFINS4xNzIxNVY5LjAxODg0WiIgLz4KICA8cGF0aAogICAgZD0iTTE0LjMzOTcgMEg5LjU0ODRWMi40NDExTDEwLjgwNDEgMi45ODExNUwxMC44MDEgMi45Njk4TDEzLjgxNjIgNC4zMDI5QzE0LjUxODQgNC42MTM3MiAxNC45NTUyIDUuMjY0MjYgMTQuOTU1MiA2LjAwMTU1QzE0Ljk1NTIgNi43Mzg4MyAxNC41MTk0IDcuMzg5MzggMTMuODE2MiA3LjcwMDJMMTAuMTY0OSA5LjMxNDE3TDkuNTQ3MzYgOS41NzY0NlYxMkgxNC4zMzg3QzE0Ljk1ODMgMTIgMTUuNDYxMSAxMS41MjE5IDE1LjQ2MTEgMTAuOTMyM1YxLjA2NzcyQzE1LjQ2MTEgMC40NzgxIDE0Ljk1ODMgMCAxNC4zMzg3IDBIMTQuMzM5N1oiIC8+CiAgPHBhdGgKICAgIGQ9Ik04LjAwMDQ4IDguNDc5NzJDOS4zNjk3MiA4LjQ3OTcyIDEwLjQ4MDggNy4zNjk2NiAxMC40ODA4IDUuOTk5MzhDMTAuNDgwOCA0LjYyOTEgOS4zNzA3NiAzLjUxOTA0IDguMDAwNDggMy41MTkwNEM2LjYzMDIgMy41MTkwNCA1LjUyMDE0IDQuNjI5MSA1LjUyMDE0IDUuOTk5MzhDNS41MjAxNCA3LjM2OTY2IDYuNjMwMiA4LjQ3OTcyIDguMDAwNDggOC40Nzk3MloiIC8+Cjwvc3ZnPg==
