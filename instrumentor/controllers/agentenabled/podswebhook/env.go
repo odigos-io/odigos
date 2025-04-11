@@ -28,7 +28,7 @@ func injectEnvVarObjectFieldRefToPodContainer(existingEnvNames EnvVarNamesMap, c
 	return existingEnvNames
 }
 
-func injectEnvVarToPodContainer(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVarName, envVarValue string) EnvVarNamesMap {
+func InjectEnvVarToPodContainer(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVarName, envVarValue string) EnvVarNamesMap {
 	if _, exists := existingEnvNames[envVarName]; exists {
 		return existingEnvNames
 	}
@@ -47,27 +47,27 @@ func injectNodeIpEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Conta
 }
 
 func InjectOdigosK8sEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, distroName string, ns string) EnvVarNamesMap {
-	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarContainerName, container.Name)
-	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarDistroName, distroName)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarContainerName, container.Name)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarDistroName, distroName)
 	existingEnvNames = injectEnvVarObjectFieldRefToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarPodName, "metadata.name")
-	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarNamespace, ns)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarNamespace, ns)
 	return existingEnvNames
 }
 
 func InjectStaticEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVarName string, envVarValue string) EnvVarNamesMap {
-	return injectEnvVarToPodContainer(existingEnvNames, container, envVarName, envVarValue)
+	return InjectEnvVarToPodContainer(existingEnvNames, container, envVarName, envVarValue)
 }
 
 func InjectOpampServerEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
 	existingEnvNames = injectNodeIpEnvVar(existingEnvNames, container)
 	opAmpServerHost := fmt.Sprintf("$(NODE_IP):%d", commonconsts.OpAMPPort)
-	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OpampServerHostEnvName, opAmpServerHost)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OpampServerHostEnvName, opAmpServerHost)
 	return existingEnvNames
 }
 
 func InjectOtlpHttpEndpointEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
 	existingEnvNames = injectNodeIpEnvVar(existingEnvNames, container)
 	otlpHttpEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)")
-	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelExporterEndpointEnvName, otlpHttpEndpoint)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelExporterEndpointEnvName, otlpHttpEndpoint)
 	return existingEnvNames
 }
