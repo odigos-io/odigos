@@ -19,7 +19,7 @@ type RulePathSegment struct {
 	// it this rule segment path is replaced with templated name, the TemplateName will be non-empty
 	TemplateName string
 	// for templated segment names, a user can also include an optional regexp
-	// which mush match for the rule to be applied.
+	// which must match for the rule to be applied.
 	RegexpPattern *regexp.Regexp
 }
 
