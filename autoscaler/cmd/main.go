@@ -168,6 +168,9 @@ func main() {
 				&odigosv1.Processor{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.Action{}: {
+					Field: nsSelector,
+				},
 				&apiactions.AddClusterInfo{}: {
 					Field: nsSelector,
 				},

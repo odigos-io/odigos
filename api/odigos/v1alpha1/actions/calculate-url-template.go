@@ -9,5 +9,5 @@ type CalculateUrlTemplate struct {
 	// A rule looks like this: "/user/{userName}/profile/{profileId}"
 	// The rule will match a path like "/user/john/profile/1234"
 	// and will templatize it as "/user/{userName}/profile/{profileId}"
-	TempltizationRules []string `json:"templtizationRules,omitempty"`
+	TemplatizationRules []string `json:"templatizationRules,omitempty"`
 }

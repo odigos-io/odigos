@@ -51,7 +51,7 @@ spec:
                 description: enhance http span with calculated low-cardinality url
                   templated value
                 properties:
-                  templtizationRules:
+                  templatizationRules:
                     description: |-
                       A list of url-templatization rules that when match a url.path,
                       will replace some of it's path-segments with templated name.
