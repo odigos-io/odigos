@@ -31,6 +31,12 @@ import (
 func ForKind(kind schema.GroupVersionKind) interface{} {
 	switch kind {
 	// Group=odigos.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithKind("Action"):
+		return &odigosv1alpha1.ActionApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ActionSpec"):
+		return &odigosv1alpha1.ActionSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ActionStatus"):
+		return &odigosv1alpha1.ActionStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Attribute"):
 		return &odigosv1alpha1.AttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AttributeCondition"):
