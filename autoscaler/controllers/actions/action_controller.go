@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -91,12 +92,12 @@ func convertToProcessor(action *odigosv1.Action, processorType string, orderHint
 	return &processor, nil
 }
 
-func (r *ActionReconciler) reportReconciledToProcessorFailed(ctx context.Context, action *odigosv1.Action, reason string, msg string) error {
+func (r *ActionReconciler) reportReconciledToProcessorFailed(ctx context.Context, action *odigosv1.Action, reason string, err error) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               ActionTransformedToProcessorType,
 		Status:             metav1.ConditionFalse,
 		Reason:             reason,
-		Message:            msg,
+		Message:            err.Error(),
 		ObservedGeneration: action.Generation,
 	})
 
@@ -119,8 +120,11 @@ func (r *ActionReconciler) reportReconciledToProcessor(ctx context.Context, acti
 	})
 
 	if changed {
+		logger := ctrl.LoggerFrom(ctx)
+		logger.Info("Action reconciled successfully")
 		err := r.Status().Update(ctx, action)
 		if err != nil {
+			logger.Error(err, "Failed to update action status to success")
 			return err
 		}
 	}
@@ -128,6 +132,8 @@ func (r *ActionReconciler) reportReconciledToProcessor(ctx context.Context, acti
 }
 
 func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+
+	logger := ctrl.LoggerFrom(ctx)
 
 	action := &odigosv1.Action{}
 	err := r.Get(ctx, req.NamespacedName, action)
@@ -137,27 +143,30 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	processorType, orderHint, config, err := actionProcessorDetails(action)
 	if err != nil {
-		logger := ctrl.LoggerFrom(ctx)
-		logger.Error(err, "Failed to get processor details", "action", action.Name)
-		r.reportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
-		return ctrl.Result{}, nil
+		logger.Error(err, "Failed to get processor details from action")
+		err = r.reportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err)
+		return utils.K8SUpdateErrorHandler(err) // return error of setting status, or nil if success (since the original error is not retryable and logged)
 	}
 
 	processor, err := convertToProcessor(action, processorType, orderHint, config)
 	if err != nil {
-		logger := ctrl.LoggerFrom(ctx)
-		logger.Error(err, "Failed to convert action to processor", "action", action.Name)
-		r.reportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
-		return ctrl.Result{}, nil
+		logger.Error(err, "Failed to convert action to processor")
+		err = r.reportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err)
+		return utils.K8SUpdateErrorHandler(err) // return error of setting status, or nil if success (since the original error is not retryable and logged)
 	}
 
 	err = r.Patch(ctx, processor, client.Apply, client.FieldOwner(action.Name), client.ForceOwnership)
 	if err != nil {
-		r.reportReconciledToProcessorFailed(ctx, action, FailedToCreateProcessorReason, err.Error())
-		// err will retry the patch
-		return ctrl.Result{}, err
+		statusErr := r.reportReconciledToProcessorFailed(ctx, action, FailedToCreateProcessorReason, err)
+		if statusErr == nil {
+			return ctrl.Result{}, err // return original error on success
+		} else {
+			logger := ctrl.LoggerFrom(ctx)
+			logger.Error(statusErr, "Failed to set status on action")
+			return ctrl.Result{}, err // return original error on success
+		}
 	}
 
-	r.reportReconciledToProcessor(ctx, action)
-	return ctrl.Result{}, nil
+	err = r.reportReconciledToProcessor(ctx, action)
+	return utils.K8SUpdateErrorHandler(err) // return error of setting status, or nil if success (since the original reconcile is successful)
 }
