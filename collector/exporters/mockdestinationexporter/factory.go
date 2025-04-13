@@ -5,9 +5,12 @@ import (
 	"time"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter/internal/metadata"
+	"go.opentelemetry.io/collector/config/configretry"
+	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/exporter"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/exporter/exporterbatcher"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 )
 
@@ -25,6 +28,10 @@ func createDefaultConfig() component.Config {
 	return &Config{
 		ResponseDuration: time.Millisecond * 100,
 		RejectFraction:   0,
+		TimeoutConfig:    exporterhelper.NewDefaultTimeoutConfig(),
+		RetryConfig:      configretry.NewDefaultBackOffConfig(),
+		QueueConfig:      exporterhelper.NewDefaultQueueConfig(),
+		BatcherConfig:    exporterbatcher.NewDefaultConfig(),
 	}
 }
 
@@ -43,7 +50,13 @@ func createLogsExporter(
 		ctx,
 		set,
 		cfg,
-		gcsExporter.ConsumeLogs)
+		gcsExporter.ConsumeLogs,
+		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
+		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
+		exporterhelper.WithRetry(pCfg.RetryConfig),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
+		exporterhelper.WithBatcher(pCfg.BatcherConfig),
+	)
 }
 
 func createTracesExporter(
@@ -62,6 +75,11 @@ func createTracesExporter(
 		set,
 		cfg,
 		gcsExporter.ConsumeTraces,
+		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
+		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
+		exporterhelper.WithRetry(pCfg.RetryConfig),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
+		exporterhelper.WithBatcher(pCfg.BatcherConfig),
 	)
 }
 
@@ -81,5 +99,10 @@ func createMetricsExporter(
 		set,
 		cfg,
 		gcsExporter.ConsumeMetrics,
+		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
+		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
+		exporterhelper.WithRetry(pCfg.RetryConfig),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
+		exporterhelper.WithBatcher(pCfg.BatcherConfig),
 	)
 }
