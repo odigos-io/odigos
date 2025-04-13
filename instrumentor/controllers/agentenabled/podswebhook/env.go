@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	corev1 "k8s.io/api/core/v1"
@@ -28,7 +30,7 @@ func injectEnvVarObjectFieldRefToPodContainer(existingEnvNames EnvVarNamesMap, c
 	return existingEnvNames
 }
 
-func InjectEnvVarToPodContainer(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVarName, envVarValue string) EnvVarNamesMap {
+func injectEnvVarToPodContainer(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVarName, envVarValue string) EnvVarNamesMap {
 	if _, exists := existingEnvNames[envVarName]; exists {
 		return existingEnvNames
 	}
@@ -47,27 +49,74 @@ func injectNodeIpEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Conta
 }
 
 func InjectOdigosK8sEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, distroName string, ns string) EnvVarNamesMap {
-	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarContainerName, container.Name)
-	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarDistroName, distroName)
+	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarContainerName, container.Name)
+	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarDistroName, distroName)
 	existingEnvNames = injectEnvVarObjectFieldRefToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarPodName, "metadata.name")
-	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarNamespace, ns)
+	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarNamespace, ns)
 	return existingEnvNames
 }
 
 func InjectStaticEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVarName string, envVarValue string) EnvVarNamesMap {
-	return InjectEnvVarToPodContainer(existingEnvNames, container, envVarName, envVarValue)
+	return injectEnvVarToPodContainer(existingEnvNames, container, envVarName, envVarValue)
 }
 
 func InjectOpampServerEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
 	existingEnvNames = injectNodeIpEnvVar(existingEnvNames, container)
 	opAmpServerHost := fmt.Sprintf("$(NODE_IP):%d", commonconsts.OpAMPPort)
-	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OpampServerHostEnvName, opAmpServerHost)
+	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OpampServerHostEnvName, opAmpServerHost)
 	return existingEnvNames
 }
 
 func InjectOtlpHttpEndpointEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
 	existingEnvNames = injectNodeIpEnvVar(existingEnvNames, container)
 	otlpHttpEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)")
-	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelExporterEndpointEnvName, otlpHttpEndpoint)
+	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelExporterEndpointEnvName, otlpHttpEndpoint)
 	return existingEnvNames
+}
+
+func InjectEnvsBasedOnLanguage(odigosConfig *common.OdigosConfiguration, pod *corev1.Pod, ic *odigosv1alpha1.InstrumentationConfig) {
+	languageSpecificEnvs := odigosConfig.AdditionalInstrumentationEnvs.Languages
+
+	// Check for conatiner language and inject env vars if they not exists
+	for _, containerDetailes := range ic.Status.RuntimeDetailsByContainer {
+		langConfig, exists := languageSpecificEnvs[containerDetailes.Language]
+		if !exists || !langConfig.Enabled {
+			continue
+		}
+
+		container := getContainerByName(pod, containerDetailes.ContainerName)
+		if container == nil {
+			continue
+		}
+		existingEnvNames := GetEnvVarNamesSet(container)
+
+		for envName, envValue := range langConfig.EnvVars {
+			existingEnvNames = injectEnvVarToPodContainer(
+				existingEnvNames,
+				container,
+				envName,
+				envValue,
+			)
+		}
+	}
+}
+
+func getContainerByName(pod *corev1.Pod, name string) *corev1.Container {
+	for i := range pod.Spec.Containers {
+		if pod.Spec.Containers[i].Name == name {
+			return &pod.Spec.Containers[i]
+		}
+	}
+	return nil
+}
+
+// Create a set of existing environment variable names
+// to avoid duplicates when injecting new environment variables
+// into the container.
+func GetEnvVarNamesSet(container *corev1.Container) EnvVarNamesMap {
+	envSet := make(EnvVarNamesMap, len(container.Env))
+	for _, envVar := range container.Env {
+		envSet[envVar.Name] = struct{}{}
+	}
+	return envSet
 }
