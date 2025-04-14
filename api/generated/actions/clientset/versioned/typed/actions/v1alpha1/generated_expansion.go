@@ -32,3 +32,7 @@ type PiiMaskingExpansion interface{}
 type ProbabilisticSamplerExpansion interface{}
 
 type RenameAttributeExpansion interface{}
+
+type ServiceNameSamplerExpansion interface{}
+
+type SpanAttributeSamplerExpansion interface{}
