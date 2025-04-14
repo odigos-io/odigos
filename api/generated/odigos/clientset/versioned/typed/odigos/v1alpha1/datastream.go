@@ -39,8 +39,6 @@ type DataStreamsGetter interface {
 type DataStreamInterface interface {
 	Create(ctx context.Context, dataStream *odigosv1alpha1.DataStream, opts v1.CreateOptions) (*odigosv1alpha1.DataStream, error)
 	Update(ctx context.Context, dataStream *odigosv1alpha1.DataStream, opts v1.UpdateOptions) (*odigosv1alpha1.DataStream, error)
-	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, dataStream *odigosv1alpha1.DataStream, opts v1.UpdateOptions) (*odigosv1alpha1.DataStream, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
 	Get(ctx context.Context, name string, opts v1.GetOptions) (*odigosv1alpha1.DataStream, error)
@@ -48,8 +46,6 @@ type DataStreamInterface interface {
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *odigosv1alpha1.DataStream, err error)
 	Apply(ctx context.Context, dataStream *applyconfigurationodigosv1alpha1.DataStreamApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.DataStream, err error)
-	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-	ApplyStatus(ctx context.Context, dataStream *applyconfigurationodigosv1alpha1.DataStreamApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.DataStream, err error)
 	DataStreamExpansion
 }
 

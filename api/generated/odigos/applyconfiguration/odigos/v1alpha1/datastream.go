@@ -28,8 +28,6 @@ import (
 type DataStreamApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                             *DataStreamSpecApplyConfiguration   `json:"spec,omitempty"`
-	Status                           *DataStreamStatusApplyConfiguration `json:"status,omitempty"`
 }
 
 // DataStream constructs a declarative configuration of the DataStream type for use with
@@ -199,22 +197,6 @@ func (b *DataStreamApplyConfiguration) ensureObjectMetaApplyConfigurationExists(
 	if b.ObjectMetaApplyConfiguration == nil {
 		b.ObjectMetaApplyConfiguration = &v1.ObjectMetaApplyConfiguration{}
 	}
-}
-
-// WithSpec sets the Spec field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Spec field is set to the value of the last call.
-func (b *DataStreamApplyConfiguration) WithSpec(value *DataStreamSpecApplyConfiguration) *DataStreamApplyConfiguration {
-	b.Spec = value
-	return b
-}
-
-// WithStatus sets the Status field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Status field is set to the value of the last call.
-func (b *DataStreamApplyConfiguration) WithStatus(value *DataStreamStatusApplyConfiguration) *DataStreamApplyConfiguration {
-	b.Status = value
-	return b
 }
 
 // GetName retrieves the value of the Name field in the declarative configuration.
