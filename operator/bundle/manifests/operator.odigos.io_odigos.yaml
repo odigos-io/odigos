@@ -68,7 +68,9 @@ spec:
                   Enterprise.
                 type: string
               openshiftEnabled:
-                description: OpenShiftEnabled configures selinux on OpenShift nodes.
+                description: |-
+                  OpenShiftEnabled configures selinux on OpenShift nodes.
+                  DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
                 type: boolean
               podSecurityPolicy:
                 description: PodSecurityPolicy enables the pod security policy.
