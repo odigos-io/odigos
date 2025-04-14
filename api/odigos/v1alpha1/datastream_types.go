@@ -17,7 +17,12 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // DataStream configures a group/stream/sub-pipeline to export telemetry data from explicit sources to explicit destinations.
@@ -42,4 +47,43 @@ type DataStreamList struct {
 // +kubebuilder:object:generate=false
 func init() {
 	SchemeBuilder.Register(&DataStream{}, &DataStreamList{})
+}
+
+func GetDataStream(ctx context.Context, kubeClient client.Client, streamName string) (*DataStream, error) {
+	stream := &DataStream{}
+	objectKey := client.ObjectKey{
+		Name:      streamName,
+		Namespace: env.GetCurrentNamespace(),
+	}
+
+	err := kubeClient.Get(ctx, objectKey, stream)
+	if err != nil {
+		return nil, err
+	}
+
+	return stream, nil
+}
+
+func CreateDataStream(ctx context.Context, kubeClient client.Client, streamName string) (*DataStream, error) {
+	stream, err := GetDataStream(ctx, kubeClient, streamName)
+	if err != nil {
+		return nil, err
+	}
+	if stream != nil {
+		return stream, nil
+	}
+
+	stream = &DataStream{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      streamName,
+			Namespace: env.GetCurrentNamespace(),
+		},
+	}
+
+	err = kubeClient.Create(ctx, stream)
+	if err != nil {
+		return nil, err
+	}
+
+	return stream, nil
 }
