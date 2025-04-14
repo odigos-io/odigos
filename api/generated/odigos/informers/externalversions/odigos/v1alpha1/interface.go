@@ -25,6 +25,8 @@ import (
 type Interface interface {
 	// CollectorsGroups returns a CollectorsGroupInformer.
 	CollectorsGroups() CollectorsGroupInformer
+	// DataStreams returns a DataStreamInformer.
+	DataStreams() DataStreamInformer
 	// Destinations returns a DestinationInformer.
 	Destinations() DestinationInformer
 	// InstrumentationConfigs returns a InstrumentationConfigInformer.
@@ -55,6 +57,11 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // CollectorsGroups returns a CollectorsGroupInformer.
 func (v *version) CollectorsGroups() CollectorsGroupInformer {
 	return &collectorsGroupInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// DataStreams returns a DataStreamInformer.
+func (v *version) DataStreams() DataStreamInformer {
+	return &dataStreamInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Destinations returns a DestinationInformer.

@@ -1,0 +1,47 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.1
+  labels:
+    odigos.io/config: "1"
+    odigos.io/system-object: "true"
+  name: datastreams.odigos.io
+spec:
+  group: odigos.io
+  names:
+    kind: DataStream
+    listKind: DataStreamList
+    plural: datastreams
+    singular: datastream
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          DataStream configures a group/stream/sub-pipeline to export telemetry data from explicit sources to explicit destinations.
+          At the moment this is used only for naming the stream.
+          In the future it will be used to configure settings/features of the stream.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+        type: object
+    served: true
+    storage: true

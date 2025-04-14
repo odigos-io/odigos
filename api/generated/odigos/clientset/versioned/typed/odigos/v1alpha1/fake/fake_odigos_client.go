@@ -31,6 +31,10 @@ func (c *FakeOdigosV1alpha1) CollectorsGroups(namespace string) v1alpha1.Collect
 	return newFakeCollectorsGroups(c, namespace)
 }
 
+func (c *FakeOdigosV1alpha1) DataStreams(namespace string) v1alpha1.DataStreamInterface {
+	return newFakeDataStreams(c, namespace)
+}
+
 func (c *FakeOdigosV1alpha1) Destinations(namespace string) v1alpha1.DestinationInterface {
 	return newFakeDestinations(c, namespace)
 }

@@ -11,6 +11,7 @@ auto_generated: true
 
 
 - [CollectorsGroup](#odigos-io-v1alpha1-CollectorsGroup)
+- [DataStream](#odigos-io-v1alpha1-DataStream)
 - [Destination](#odigos-io-v1alpha1-Destination)
 - [InstrumentationConfig](#odigos-io-v1alpha1-InstrumentationConfig)
 - [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)
@@ -64,6 +65,35 @@ auto_generated: true
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `DataStream` <a id="odigos-io-v1alpha1-DataStream"></a>
+    
+<p>DataStream configures a group/stream/sub-pipeline to export telemetry data from explicit sources to explicit destinations.
+At the moment this is used only for naming the stream.
+In the future it will be used to configure settings/features of the stream.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>DataStream</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
    </td>
 </tr>
 </tbody>
