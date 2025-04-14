@@ -58,7 +58,7 @@ func GetDataStream(ctx context.Context, kubeClient client.Client, streamName str
 
 	err := kubeClient.Get(ctx, objectKey, stream)
 	if err != nil {
-		return nil, err
+		return nil, client.IgnoreNotFound(err)
 	}
 
 	return stream, nil
