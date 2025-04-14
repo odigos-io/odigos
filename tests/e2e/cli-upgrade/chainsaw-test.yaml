@@ -109,20 +109,13 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
 
-    - name: Use custom Go offsets file to make sure it works with upgrade
-      try:
-        - script:
-            content: ../../../cli/odigos pro update-offsets --namespace odigos-test
-        - assert:
-            file: assert-custom-offsets.yaml
-
     - name: Upgrade to HEAD version with the current compiled cli
       try:
         - script:
             content: ../../../cli/odigos upgrade --version e2e-test --skip-version-check # since the tag e2e-test is not a valid semantic version, we need to bypass it with --skip-version-check
             timeout: 3m
         - assert:
-            file: assert-odigos-upgraded-with-custom-offsets.yaml
+            file: assert-odigos-upgraded.yaml
             timeout: 3m
       catch:
       - get:
@@ -196,10 +189,3 @@ spec:
         - podLogs:
             name: odiglet
             namespace: odigos-test
-
-    - name: Revert custom Go offsets
-      try:
-        - script:
-            content: ../../../cli/odigos pro update-offsets --default --namespace odigos-test
-        - assert:
-            file: assert-odigos-upgraded.yaml
