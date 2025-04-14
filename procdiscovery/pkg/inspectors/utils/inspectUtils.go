@@ -1,6 +1,6 @@
 package utils
 
-func IsBaseExeMatchProcessName(baseExe string, processName string) bool {
+func IsBaseExeContainsProcessName(baseExe string, processName string) bool {
 	baseLen := len(baseExe)
 	procLen := len(processName)
 

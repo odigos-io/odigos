@@ -11,10 +11,9 @@ import (
 type PhpInspector struct{}
 
 func (n *PhpInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	proc := pcx.Details
-	baseExe := filepath.Base(proc.ExePath)
+	baseExe := filepath.Base(pcx.ExePath)
 
-	if utils.IsBaseExeMatchProcessName(baseExe, "php") {
+	if utils.IsBaseExeContainsProcessName(baseExe, "php") {
 		return common.PhpProgrammingLanguage, true
 	}
 
