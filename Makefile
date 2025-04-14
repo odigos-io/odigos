@@ -1,6 +1,6 @@
 TAG ?= $(shell odigos version --cluster)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
-CLUSTER_NAME ?= my-cluster
+CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?= https://central.odigos.local
 ORG ?= registry.odigos.io
 GOLANGCI_LINT_VERSION ?= v1.63.4
@@ -329,7 +329,7 @@ helm-install:
 	kubectl label namespace odigos-system odigos.io/system-object="true"
 
 helm-install-central-proxy:
-	@echo "Installing odigos using helm"
+	@echo "Installing odigos with central control plane using helm"
 	helm upgrade --install odigos ./helm/odigos \
 		--create-namespace \
 		--namespace odigos-system \

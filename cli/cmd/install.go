@@ -155,7 +155,7 @@ odigos install --kubeconfig <path-to-kubeconfig>
 odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
 
 # Install Odigos and connect the cluster to forward data to the centralized backend
-odigos install --cluster-name my-cluster --central-backend-url https://central.odigos.local
+odigos install --cluster-name ${YOUR_CLUSTER_NAME} --central-backend-url ${YOUR_CENTRAL_BACKEND_URL}
 `,
 }
 

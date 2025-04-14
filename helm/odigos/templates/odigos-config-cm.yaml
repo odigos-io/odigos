@@ -11,8 +11,8 @@ metadata:
 data:
   config.yaml: |
     configVersion: 1
-    {{- if .Values.centralProxy.clusterName }}
-    clusterName: {{ .Values.centralProxy.clusterName }}
+    {{- if .Values.clusterName }}
+    clusterName: {{ .Values.clusterName }}
     {{- end }}
     {{- if .Values.centralProxy.centralBackendURL }}
     centralBackendURL: {{ .Values.centralProxy.centralBackendURL }}
