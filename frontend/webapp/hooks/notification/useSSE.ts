@@ -107,11 +107,6 @@ export const useSSE = () => {
         // and remove the specific pending items based on their entityType and entityId
         setPendingItems([]);
 
-        // This works for now,
-        // but in the future we might have to change this to "removePendingItems",
-        // and remove the specific pending items based on their entityType and entityId
-        setPendingItems([]);
-
         // Reset retry count on successful connection
         retryCount.current = 0;
       };
