@@ -8,7 +8,7 @@ require (
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/cli v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/odigos/k8sutils v0.0.0
+	github.com/odigos-io/odigos/k8sutils v1.0.170
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.1
 	k8s.io/apiextensions-apiserver v0.32.3
