@@ -46,3 +46,11 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 
 	return resourceManagers
 }
+
+func CreateCentralizedManagers(client *kube.Client, managerOpts resourcemanager.ManagerOpts, ns string, odigosVersion string) []resourcemanager.ResourceManager {
+	return []resourcemanager.ResourceManager{
+		centralodigos.NewRedisResourceManager(client, ns, managerOpts),
+		centralodigos.NewCentralUIResourceManager(client, ns, managerOpts, odigosVersion),
+		centralodigos.NewCentralBackendResourceManager(client, ns, odigosVersion, managerOpts),
+	}
+}

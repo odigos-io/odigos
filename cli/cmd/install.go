@@ -290,6 +290,8 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcema
 			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImage
 			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageName
 			imageReferences.CentralProxyImage = k8sconsts.CentralProxyImage
+			imageReferences.CentralBackendImage = k8sconsts.CentralBackendImage
+			imageReferences.CentralUIImage = k8sconsts.CentralUIImage
 		}
 	}
 	return imageReferences

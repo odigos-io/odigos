@@ -9,14 +9,21 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
-	updateRemoteFlag bool
+	updateRemoteFlag     bool
+	installOdigosCentral bool
 )
 
 var proCmd = &cobra.Command{
@@ -26,6 +33,18 @@ var proCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		onPremToken := cmd.Flag("onprem-token").Value.String()
+
+		if installOdigosCentral {
+			if err := installCentralBackendAndUI(ctx, client, namespaceFlag, onPremToken); err != nil {
+				fmt.Println("\033[31mERROR\033[0m Failed to install Odigos central:")
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			return
+		}
+
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {
 			fmt.Println("\033[31mERROR\033[0m no odigos installation found in the current cluster")
@@ -34,7 +53,7 @@ var proCmd = &cobra.Command{
 			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
 			os.Exit(1)
 		}
-		onPremToken := cmd.Flag("onprem-token").Value.String()
+
 		if updateRemoteFlag {
 			err = executeRemoteUpdateToken(ctx, client, ns, onPremToken)
 		} else {
@@ -92,10 +111,60 @@ func executeRemoteUpdateToken(ctx context.Context, client *kube.Client, namespac
 	return nil
 }
 
+func createOdigosCentralSecret(ctx context.Context, client *kube.Client, ns, token string) error {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigosCentralSecretName,
+			Namespace: ns,
+		},
+		StringData: map[string]string{
+			k8sconsts.OdigosOnpremTokenSecretKey: token,
+		},
+	}
+	_, err := client.CoreV1().Secrets(ns).Create(ctx, secret, metav1.CreateOptions{})
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		return fmt.Errorf("failed to create odigos-central secret: %w", err)
+	}
+	return nil
+}
+
+func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns string, onPremToken string) error {
+
+	_, err := client.AppsV1().Deployments(ns).Get(ctx, k8sconsts.CentralBackendName, metav1.GetOptions{})
+	if err == nil {
+		fmt.Printf("\n\u001B[33mINFO:\u001B[0m Odigos Central is already installed in namespace %s\n", ns)
+		return nil
+	} else if !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to check existing central backend: %w", err)
+	}
+
+	fmt.Println("Installing Odigos central backend and UI ...")
+
+	managerOpts := resourcemanager.ManagerOpts{
+		ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+	}
+
+	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
+		client, ns, createNamespace)
+	if err := createOdigosCentralSecret(ctx, client, ns, onPremToken); err != nil {
+		return err
+	}
+	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, OdigosVersion)
+	if err := resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating"); err != nil {
+		return fmt.Errorf("failed to install Odigos central: %w", err)
+	}
+
+	fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos central installed.\n")
+	return nil
+}
+
 func init() {
 	rootCmd.AddCommand(proCmd)
 
 	proCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	proCmd.MarkFlagRequired("onprem-token")
 	proCmd.PersistentFlags().BoolVarP(&updateRemoteFlag, "remote", "r", false, "use odigos ui service in the cluster to update the onprem token")
+	proCmd.Flags().BoolVar(&installOdigosCentral, "install-central", false, "Install central backend and UI components (Odigos Enterprise)")
+	proCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
+
 }

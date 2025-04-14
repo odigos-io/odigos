@@ -15,14 +15,16 @@ type ManagerOpts struct {
 }
 
 type ImageReferences struct {
-	AutoscalerImage   string
-	CollectorImage    string
-	InstrumentorImage string
-	OdigletImage      string
-	KeyvalProxyImage  string
-	SchedulerImage    string
-	UIImage           string
-	CentralProxyImage string
+	AutoscalerImage     string
+	CollectorImage      string
+	InstrumentorImage   string
+	OdigletImage        string
+	KeyvalProxyImage    string
+	SchedulerImage      string
+	UIImage             string
+	CentralProxyImage   string
+	CentralBackendImage string
+	CentralUIImage      string
 }
 
 type ResourceManager interface {
