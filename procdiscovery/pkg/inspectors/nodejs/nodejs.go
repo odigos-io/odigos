@@ -19,8 +19,7 @@ var nodeExecutables = map[string]bool{
 }
 
 func (n *NodejsInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	proc := pcx.Details
-	baseExe := filepath.Base(proc.ExePath)
+	baseExe := filepath.Base(pcx.ExePath)
 
 	if utils.IsBaseExeContainsProcessName(baseExe, "node") {
 		return common.JavascriptProgrammingLanguage, true
