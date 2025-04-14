@@ -7,12 +7,14 @@ import (
 )
 
 type ErrorRule struct {
+	// FallbackSamplingRatio determines the percentage of traces to sample
+	// if no error spans are present. Valid range: 0–100.
 	FallbackSamplingRatio float64 `mapstructure:"fallback_sampling_ratio"`
 }
 
 var _ SamplingDecision = (*ErrorRule)(nil)
 
-// Validate ensures the rule's configuration is correct.
+// Validate ensures the fallback ratio is within acceptable bounds.
 func (r *ErrorRule) Validate() error {
 	if r.FallbackSamplingRatio < 0 || r.FallbackSamplingRatio > 100 {
 		return errors.New("fallback_sampling_ratio must be between 0 and 100")
@@ -20,10 +22,10 @@ func (r *ErrorRule) Validate() error {
 	return nil
 }
 
-// Evaluate checks if the trace contains any spans with errors.
-// - matched is always true because the error rule is global (or service-level, if configured).
-// - satisfied is true if an error span is found (always sample).
-// - fallbackRatio used if no error span is found (probabilistic sampling).
+// Evaluate scans all spans in the trace and returns:
+// - filterMatch: always true (this rule applies globally)
+// - conditionMatch: true if any span has error status
+// - ratio: 100 if error is found (sample always), fallback ratio otherwise
 func (r *ErrorRule) Evaluate(td ptrace.Traces) (bool, bool, float64) {
 	rs := td.ResourceSpans()
 	for i := 0; i < rs.Len(); i++ {
@@ -32,10 +34,11 @@ func (r *ErrorRule) Evaluate(td ptrace.Traces) (bool, bool, float64) {
 			spans := scopeSpans.At(j).Spans()
 			for k := 0; k < spans.Len(); k++ {
 				if spans.At(k).Status().Code() == ptrace.StatusCodeError {
-					return true, true, 0.0 // Immediate sample if an error is found
+					return true, true, 100.0 // satisfied; RuleEngine will always sample this
 				}
 			}
 		}
 	}
-	return true, false, r.FallbackSamplingRatio // Probabilistic fallback if no errors found
+	// No error spans; matched but not satisfied — fallback may apply
+	return true, false, r.FallbackSamplingRatio
 }
