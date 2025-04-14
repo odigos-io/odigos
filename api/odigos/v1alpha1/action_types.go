@@ -29,7 +29,7 @@ const (
 	ActionTransformedToProcessorType = "TransformedToProcessor"
 )
 
-// +kubebuilder:validation:Enum=ProcessorCreated,FailedToCreateProcessor,FailedToTransformToProcessor
+// +kubebuilder:validation:Enum=ProcessorCreated;FailedToCreateProcessor;FailedToTransformToProcessor
 type ActionTransformedToProcessorReason string
 
 // Reasons for action condition types
