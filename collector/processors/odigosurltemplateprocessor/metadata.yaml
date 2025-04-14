@@ -1,0 +1,8 @@
+type: odigosurltemplate
+status:
+  class: processor
+  stability:
+    alpha: [traces]
+  distributions: [odigos]
+  codeowners:
+    active: [blumamir]
