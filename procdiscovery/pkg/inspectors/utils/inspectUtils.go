@@ -6,16 +6,11 @@ func IsBaseExeContainsProcessName(baseExe string, processName string) bool {
 
 	// Check if baseExe starts with processName
 	if baseLen >= procLen && baseExe[:procLen] == processName {
-		// If it's exactly processName, return true
-		if baseLen == procLen {
-			return true
-		}
-		// Use the helper function to check remaining characters
-		if IsDigitsOnly(baseExe[procLen:]) {
+		// If it's exactly processName, or only digits follow
+		if baseLen == procLen || IsDigitsOnly(baseExe[procLen:]) {
 			return true
 		}
 	}
-
 	return false
 }
 
