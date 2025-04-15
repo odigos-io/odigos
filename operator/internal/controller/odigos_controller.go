@@ -247,12 +247,10 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		return ctrl.Result{}, r.Status().Update(ctx, odigos)
 	}
 
-	// Check if the cluster meets the minimum requirements
-	clusterKind := cmdcontext.ClusterKindFromContext(ctx)
-	if clusterKind == autodetect.KindUnknown {
-		logger.Info("Unknown Kubernetes cluster detected, proceeding with installation")
-	} else {
-		logger.Info(fmt.Sprintf("Detected cluster: Kubernetes kind: %s\n", clusterKind))
+	details := autodetect.GetK8SClusterDetails(ctx, "", "", kubeClient)
+	if details.Kind == autodetect.KindOpenShift {
+		logger.Info("Detected OpenShift cluster, enabling required configuration")
+		odigos.Spec.OpenShiftEnabled = true
 	}
 
 	k8sVersion := cmdcontext.K8SVersionFromContext(ctx)
