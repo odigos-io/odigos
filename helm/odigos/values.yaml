@@ -19,23 +19,31 @@ ignoredNamespaces:
 ignoredContainers:
 
 # Instrumentation settings for language-specific configurations
-# additionalInstrumentationEnvs:
-#   languages:
-#     java:
-#       enabled: false
-#       env: {}
-#     python:
-#       enabled: false
-#       env: {}
-#     nodejs:
-#       enabled: false
-#       env: {}
-#     go:
-#       enabled: false
-#       env: {}
-#     dotnet: 
-#       enabled: false
-#       env: {}
+# Example:
+# languages:
+#   java:
+#     enabled: true
+#     env:
+#       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
+additionalInstrumentationEnvs:
+  languages:
+    java:
+      enabled: true
+      env:
+        OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED: true
+        OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: true
+    python:
+      enabled: false
+      env: {}
+    nodejs:
+      enabled: false
+      env: {}
+    go:
+      enabled: false
+      env: {}
+    dotnet: 
+      enabled: false
+      env: {}
 
 collectorGateway:
   # the memory request for the cluster gateway collector deployment.
@@ -178,10 +186,6 @@ odiglet:
     ## regardless of its taints (including master/control-plane nodes)
     - operator: Exists
   affinity: {}
-  # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
-  # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
-  # into the Odiglet to ensure it can access the container runtime unix socket.  
-  customContainerRuntimeSocketPath: ''
 
 cli:
   image:
