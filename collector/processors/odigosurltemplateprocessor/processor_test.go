@@ -75,8 +75,8 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrValue: "/user/{id}",
 		},
 		{
-			name:          "guid in url path",
-			serviceName:   "guid-templated-string",
+			name:          "uuid in url path",
+			serviceName:   "uuid-templated-string",
 			spanKind:      ptrace.SpanKindServer,
 			inputSpanName: "GET",
 			inputSpanAttrs: map[string]any{
@@ -86,6 +86,32 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "http.route",
 			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name:          "uuid with any suffix",
+			serviceName:   "uuid-templated-string-with-suffix",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/processes/PROCESS_123e4567-e89b-12d3-a456-426614174000",
+			},
+			expectedSpanName:  "GET /processes/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/processes/{id}",
+		},
+		{
+			name:          "uuid with any prefix",
+			serviceName:   "uuid-templated-string-with-prefix",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/processes/123e4567-e89b-12d3-a456-426614174000_PROCESS",
+			},
+			expectedSpanName:  "GET /processes/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/processes/{id}",
 		},
 		{
 			name:          "multiple numeric ids in url path",

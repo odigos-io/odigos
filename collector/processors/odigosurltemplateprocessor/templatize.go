@@ -8,17 +8,25 @@ import (
 )
 
 var (
-	uuidRegex   = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 	numberRegex = regexp.MustCompile(`^\d+$`)
 
+	// matches UUIDs in the format 123e4567-e89b-12d3-a456-426614174000
+	// these UUIDs are common in cloud systems and are often used as ids
+	// they are 36 characters long and are made up of 5 groups of hexadecimal characters
+	// separated by hyphens.
+	// this regexp will allow any prefix OR suffix of the UUID to be matched
+	// so for example: "PROCESS_123e4567-e89b-12d3-a456-426614174000" will also be matched
+	uuidRegex = regexp.MustCompile(`(^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})|([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$)`)
+
+	// Covers hex encoded values like (for example) span/trace IDs.
+	// These are common as ids in cloud systems.
+	//
 	// To enforce the following conditions in a single Go regular expression:
 	// - Only lowercase hexadecimal characters (0-9 and a-f),
 	// - More than 16 characters,
 	// - An even number of characters
 	//
-	// covers hex encoded values like (for example) span/trace IDs.
-	// these are common as ids in cloud systems.
-	// it is considered safe as:
+	// It is considered safe as:
 	// - letters are only limited to lowercase a-f, which any real word with 16 chars or more will fail.
 	// - the regex will not match if the string is less than 16 chars, so things like "feed12" (all letters a-f) will not match.
 	// - the regex will not match if the string is odd length (indicating it's not hex encoded) so another filter for extreme corner cases.
