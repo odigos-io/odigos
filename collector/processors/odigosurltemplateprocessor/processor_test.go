@@ -373,6 +373,33 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrKey:   "http.route",
 			expectedAttrValue: "/user/abcdefabcdefabcde",
 		},
+		{
+			name:          "long number with text",
+			serviceName:   "long-number-with-text",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/INC001268637", // contains 9 digits number
+			},
+			expectedSpanName:  "GET /user/{id}", // should be templated as the number is long
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name: "long number in middle of text",
+			// this is a corner case where the number is long, but it is not at the beginning or end of the string
+			serviceName:   "long-number-in-middle-of-text",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/INC001268637US", // contains 9 digits number
+			},
+			expectedSpanName:  "GET /user/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
 	}
 
 	for _, tc := range tt {

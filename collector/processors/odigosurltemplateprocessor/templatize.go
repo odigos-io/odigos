@@ -38,6 +38,11 @@ var (
 	// 	 - 8 × 2 = 16 characters minimum
 	// 	 - Each repetition is of 2 characters → ensures even length.
 	hexEncodedRegex = regexp.MustCompile(`^(?:[0-9a-f]{2}){8,}$`)
+
+	// assume that long numbers (more than 8 digits) are ids.
+	// even if they are found with some text (for example "INC001268637") they are treated as ids
+	// it is very unlikely for a a number with so many digits to be static and meaningful.
+	longNumberRegex = regexp.MustCompile(`\d{9,}`)
 )
 
 type RulePathSegment struct {
@@ -160,7 +165,11 @@ func defaultTemplatizeURLPath(pathSegments []string) (string, bool) {
 	// avoid modifying the original segments slice
 	templatizedSegments := make([]string, len(pathSegments))
 	for i, segment := range pathSegments {
-		if uuidRegex.MatchString(segment) || numberRegex.MatchString(segment) || hexEncodedRegex.MatchString(segment) {
+		if uuidRegex.MatchString(segment) ||
+			numberRegex.MatchString(segment) ||
+			hexEncodedRegex.MatchString(segment) ||
+			longNumberRegex.MatchString(segment) {
+
 			templatizedSegments[i] = "{id}"
 			templated = true
 		} else {
