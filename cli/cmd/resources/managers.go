@@ -24,7 +24,7 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 	if odigosTier != common.CommunityOdigosTier {
 		resourceManagers = append(resourceManagers, odigospro.NewOdigosProResourceManager(client, odigosNs, config, odigosTier, proTierToken, managerOpts))
 	}
-	shouldInstallCentralProxy := config.ClusterName != "" && config.CentralBackendURL != ""
+	shouldInstallCentralProxy := odigosTier == common.OnPremOdigosTier && config.ClusterName != "" && config.CentralBackendURL != ""
 	if shouldInstallCentralProxy {
 		resourceManagers = append(resourceManagers, centralodigos.NewCentralProxyResourceManager(client, odigosNs, config, odigosVersion, managerOpts))
 	}

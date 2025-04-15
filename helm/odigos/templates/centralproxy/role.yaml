@@ -1,4 +1,4 @@
-{{- if .Values.centralProxy.enabled }}
+{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName .Values.onPremToken}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:

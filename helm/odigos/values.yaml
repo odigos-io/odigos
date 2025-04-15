@@ -171,9 +171,6 @@ centralProxy:
   enabled: false
   # Central backend URL where this proxy will forward data
   centralBackendURL: ''
-
-  image: staging-registry.odigos.io/central-proxy:dev
-
   resources:
     requests:
       cpu: 100m

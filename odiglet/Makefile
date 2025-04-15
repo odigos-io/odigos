@@ -4,7 +4,7 @@ LIBRARIES := go.opentelemetry.io/auto \
 			github.com/odigos-io/runtime-detector
 
 build-odiglet: generate
-	CGO_ENABLED=0 go build -o odiglet cmd/main.go
+	CGO_ENABLED=0 go build -ldflags="$(LD_FLAGS)" -o odiglet cmd/main.go
 
 debug-build-odiglet: generate
 	go build -o odiglet -gcflags "all=-N -l" cmd/main.go

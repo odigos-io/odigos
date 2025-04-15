@@ -113,7 +113,10 @@ It will install k8s components that will auto-instrument your applications with 
 			odigosTier = common.OnPremOdigosTier
 			odigosProToken = odigosOnPremToken
 		}
-
+		if centralBackendURL != "" && odigosTier != common.OnPremOdigosTier {
+			fmt.Printf("\033[31mERROR\033[0m Central backend connection is only available in the OnPrem tier.\n")
+			fmt.Println("Please upgrade to the OnPrem tier or remove the --central-backend-url flag.")
+		}
 		// validate user input profiles against available profiles
 		err = ValidateUserInputProfiles(odigosTier)
 		if err != nil {
@@ -155,7 +158,7 @@ odigos install --kubeconfig <path-to-kubeconfig>
 odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
 
 # Install Odigos and connect the cluster to forward data to the centralized backend
-odigos install --cluster-name my-cluster --central-backend-url https://central.odigos.local
+odigos install --cluster-name ${YOUR_CLUSTER_NAME} --central-backend-url ${YOUR_CENTRAL_BACKEND_URL}
 `,
 }
 
