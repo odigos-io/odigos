@@ -29,6 +29,7 @@ type OdigosSpec struct {
 	TelemetryEnabled bool `json:"telemetryEnabled,omitempty"`
 
 	// OpenShiftEnabled configures selinux on OpenShift nodes.
+	// DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OpenShift Enabled"
 	OpenShiftEnabled bool `json:"openshiftEnabled,omitempty"`
 
