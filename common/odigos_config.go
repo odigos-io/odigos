@@ -1,6 +1,8 @@
 package common
 
 type ProfileName string
+
+// +kubebuilder:validation:Enum=normal;readonly
 type UiMode string
 
 const (

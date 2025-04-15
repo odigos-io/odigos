@@ -60,8 +60,8 @@ spec:
                   MountMethod defines the mechanism for mounting Odigos files into instrumented pods.
                   Must be one of: (k8s-virtual-device, k8s-host-path)
                 enum:
-                - virtual-device
-                - host-path
+                - k8s-virtual-device
+                - k8s-host-path
                 type: string
               onPremToken:
                 description: OnPremToken is an optional enterprise token for Odigos
@@ -92,6 +92,9 @@ spec:
                 type: boolean
               uiMode:
                 description: 'UIMode sets the UI mode (one-of: normal, readonly)'
+                enum:
+                - normal
+                - readonly
                 type: string
             type: object
           status:

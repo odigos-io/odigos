@@ -59,7 +59,7 @@ type OdigosSpec struct {
 
 	// UIMode sets the UI mode (one-of: normal, readonly)
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UI Mode"
-	UIMode string `json:"uiMode,omitempty"`
+	UIMode common.UiMode `json:"uiMode,omitempty"`
 
 	// OnPremToken is an optional enterprise token for Odigos Enterprise.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="On-Prem Token"
