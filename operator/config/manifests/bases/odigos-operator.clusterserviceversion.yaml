@@ -30,21 +30,24 @@ spec:
       kind: Odigos
       name: odigos.operator.odigos.io
       specDescriptors:
-      - description: IgnoredContainers is a list of container names to exclude from
-          instrumentation (useful for sidecars)
+      - description: IgnoredContainers is an optional list of container names to exclude
+          from instrumentation (useful for ignoring sidecars).
         displayName: Ignored Containers
         path: ignoredContainers
-      - description: IgnoredNamespaces is a list of namespaces to not show in the
-          Odigos UI
+      - description: IgnoredNamespaces is an optional list of namespaces to not show
+          in the Odigos UI.
         displayName: Ignored Namespaces
         path: ignoredNamespaces
-      - description: ImagePrefix is the prefix for all container images. used when
-          your cluster doesn't have access to docker hub
+      - description: |-
+          ImagePrefix is an optional prefix for all container images.
+          This should only be used if you are pulling Odigos images from the non-default registry.
+          Default: registry.odigos.io
+          Default (OpenShift): registry.connect.redhat.com
         displayName: Image Prefix
         path: imagePrefix
       - description: |-
-          MountMethod defines the mechanism for mounting Odigos files into instrumented pods.
-          Must be one of: (k8s-virtual-device, k8s-host-path)
+          MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.
+          One of "k8s-virtual-device" (default) or "k8s-host-path".
         displayName: Mount Method
         path: mountMethod
       - description: OnPremToken is an optional enterprise token for Odigos Enterprise.
@@ -55,20 +58,25 @@ spec:
           DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
         displayName: OpenShift Enabled
         path: openshiftEnabled
-      - description: PodSecurityPolicy enables the pod security policy.
+      - description: PodSecurityPolicy optionally enables the pod security policy.
         displayName: Pod Security Policy
         path: podSecurityPolicy
-      - description: Profiles is a list of preset profiles with a specific configuration.
+      - description: Profiles is an optional list of preset profiles with a specific
+          configuration.
         displayName: Profiles
         path: profiles
-      - description: SkipWebhookIssuerCreation skips creating the Issuer and Certificate
-          for the Instrumentor pod webhook if cert-manager is installed.
+      - description: SkipWebhookIssuerCreation optionally skips creating the Issuer
+          and Certificate for the Instrumentor pod webhook if cert-manager is installed.
         displayName: Skip Webhook Issuer Creation
         path: skipWebhookIssuerCreation
       - description: TelemetryEnabled records general telemetry regarding Odigos usage.
         displayName: Telemetry Enabled
         path: telemetryEnabled
-      - description: 'UIMode sets the UI mode (one-of: normal, readonly)'
+      - description: |-
+          UIMode sets the UI mode to either "normal" (default) or "readonly".
+          In "normal" mode the UI is fully interactive, allowing users to view and edit
+          Odigos configuration and settings. In "readonly" mode, the UI can only be
+          used to view current Odigos configuration and is not interactive.
         displayName: UI Mode
         path: uiMode
       statusDescriptors:

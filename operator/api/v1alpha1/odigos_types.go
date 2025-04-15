@@ -29,7 +29,10 @@ type OdigosSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:order=1
 	OnPremToken string `json:"onPremToken,omitempty"`
 
-	// UIMode sets the UI mode (one-of: normal, readonly)
+	// UIMode sets the UI mode to either "normal" (default) or "readonly".
+	// In "normal" mode the UI is fully interactive, allowing users to view and edit
+	// Odigos configuration and settings. In "readonly" mode, the UI can only be
+	// used to view current Odigos configuration and is not interactive.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UI Mode"
 	// +operator-sdk:csv:customresourcedefinitions:order=2
 	UIMode common.UiMode `json:"uiMode,omitempty"`
@@ -39,35 +42,38 @@ type OdigosSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:order=2
 	TelemetryEnabled bool `json:"telemetryEnabled,omitempty"`
 
-	// IgnoredNamespaces is a list of namespaces to not show in the Odigos UI
+	// IgnoredNamespaces is an optional list of namespaces to not show in the Odigos UI.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +operator-sdk:csv:customresourcedefinitions:order=2
 	IgnoredNamespaces []string `json:"ignoredNamespaces,omitempty"`
 
-	// IgnoredContainers is a list of container names to exclude from instrumentation (useful for sidecars)
+	// IgnoredContainers is an optional list of container names to exclude from instrumentation (useful for ignoring sidecars).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +operator-sdk:csv:customresourcedefinitions:order=2
 	IgnoredContainers []string `json:"ignoredContainers,omitempty"`
 
-	// Profiles is a list of preset profiles with a specific configuration.
+	// Profiles is an optional list of preset profiles with a specific configuration.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	// +operator-sdk:csv:customresourcedefinitions:order=3
 	Profiles []common.ProfileName `json:"profiles,omitempty"`
 
-	// SkipWebhookIssuerCreation skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
+	// SkipWebhookIssuerCreation optionally skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	SkipWebhookIssuerCreation bool `json:"skipWebhookIssuerCreation,omitempty"`
 
-	// PodSecurityPolicy enables the pod security policy.
+	// PodSecurityPolicy optionally enables the pod security policy.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	PodSecurityPolicy bool `json:"podSecurityPolicy,omitempty"`
 
-	// ImagePrefix is the prefix for all container images. used when your cluster doesn't have access to docker hub
+	// ImagePrefix is an optional prefix for all container images.
+	// This should only be used if you are pulling Odigos images from the non-default registry.
+	// Default: registry.odigos.io
+	// Default (OpenShift): registry.connect.redhat.com
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ImagePrefix string `json:"imagePrefix,omitempty"`
 
-	// MountMethod defines the mechanism for mounting Odigos files into instrumented pods.
-	// Must be one of: (k8s-virtual-device, k8s-host-path)
+	// MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.
+	// One of "k8s-virtual-device" (default) or "k8s-host-path".
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Mount Method"
 	MountMethod common.MountMethod `json:"mountMethod,omitempty"`
 

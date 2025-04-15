@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:487394779173baf86ef6425100c61c153a2163c579f01870aeb5e3b709b3e23d
-    createdAt: "2025-04-15T18:49:24Z"
+    createdAt: "2025-04-15T18:56:30Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and eBPF.
     features.operators.openshift.io/disconnected: "false"
     features.operators.openshift.io/fips-compliant: "true"
@@ -44,18 +44,22 @@ spec:
         kind: Odigos
         name: odigos.operator.odigos.io
         specDescriptors:
-          - description: IgnoredContainers is a list of container names to exclude from instrumentation (useful for sidecars)
+          - description: IgnoredContainers is an optional list of container names to exclude from instrumentation (useful for ignoring sidecars).
             displayName: Ignored Containers
             path: ignoredContainers
-          - description: IgnoredNamespaces is a list of namespaces to not show in the Odigos UI
+          - description: IgnoredNamespaces is an optional list of namespaces to not show in the Odigos UI.
             displayName: Ignored Namespaces
             path: ignoredNamespaces
-          - description: ImagePrefix is the prefix for all container images. used when your cluster doesn't have access to docker hub
+          - description: |-
+              ImagePrefix is an optional prefix for all container images.
+              This should only be used if you are pulling Odigos images from the non-default registry.
+              Default: registry.odigos.io
+              Default (OpenShift): registry.connect.redhat.com
             displayName: Image Prefix
             path: imagePrefix
           - description: |-
-              MountMethod defines the mechanism for mounting Odigos files into instrumented pods.
-              Must be one of: (k8s-virtual-device, k8s-host-path)
+              MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.
+              One of "k8s-virtual-device" (default) or "k8s-host-path".
             displayName: Mount Method
             path: mountMethod
           - description: OnPremToken is an optional enterprise token for Odigos Enterprise.
@@ -66,19 +70,23 @@ spec:
               DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
             displayName: OpenShift Enabled
             path: openshiftEnabled
-          - description: PodSecurityPolicy enables the pod security policy.
+          - description: PodSecurityPolicy optionally enables the pod security policy.
             displayName: Pod Security Policy
             path: podSecurityPolicy
-          - description: Profiles is a list of preset profiles with a specific configuration.
+          - description: Profiles is an optional list of preset profiles with a specific configuration.
             displayName: Profiles
             path: profiles
-          - description: SkipWebhookIssuerCreation skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
+          - description: SkipWebhookIssuerCreation optionally skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
             displayName: Skip Webhook Issuer Creation
             path: skipWebhookIssuerCreation
           - description: TelemetryEnabled records general telemetry regarding Odigos usage.
             displayName: Telemetry Enabled
             path: telemetryEnabled
-          - description: 'UIMode sets the UI mode (one-of: normal, readonly)'
+          - description: |-
+              UIMode sets the UI mode to either "normal" (default) or "readonly".
+              In "normal" mode the UI is fully interactive, allowing users to view and edit
+              Odigos configuration and settings. In "readonly" mode, the UI can only be
+              used to view current Odigos configuration and is not interactive.
             displayName: UI Mode
             path: uiMode
         statusDescriptors:
@@ -533,28 +541,28 @@ spec:
     name: Odigos
     url: https://odigos.io
   relatedImages:
+    - image: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:f25a35e65a0706e616ab32b9a5bfb94206978c6767bb8beff20504cecd39bd62
+      name: collector
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:06dcf548aaeb4d32c1e8d30f1d0440c91f696d9f94807d983c366e3ee124310e
+      name: enterprise-odiglet
+    - image: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9@sha256:4d213af27d432665bf72caffbafa33a7991cb627bad9c2d894c4f8931e14d27b
+      name: scheduler
+    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:487394779173baf86ef6425100c61c153a2163c579f01870aeb5e3b709b3e23d
+      name: manager
     - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:3297a0997597a5dcced94e0efe12f218d6af40773e736305f8d0dfcd1ebf902e
       name: enterprise_instrumentor
     - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:487394779173baf86ef6425100c61c153a2163c579f01870aeb5e3b709b3e23d
       name: odigos-certified-operator-ubi9-487394779173baf86ef6425100c61c153a2163c579f01870aeb5e3b709b3e23d-annotation
+    - image: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:51d62c00c2aa4515543830a88fc27d63e1970f885d9fc3f1da8711d53b9aa68d
+      name: autoscaler
+    - image: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:fc7afc383cd35657b899ecdd1ea3a9851fa4c6cf49c309a20356dd246453e281
+      name: frontend
     - image: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:54a4075fdd861c43b13f50861a4f82b7cb2f6146660b023ca4afa4e9e27bce02
       name: instrumentor
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:3297a0997597a5dcced94e0efe12f218d6af40773e736305f8d0dfcd1ebf902e
+      name: enterprise-instrumentor
     - image: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9@sha256:40aaece592d75ebacc636153dfbf96452984100b563c31f773c88988182cefe0
       name: odiglet
     - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:06dcf548aaeb4d32c1e8d30f1d0440c91f696d9f94807d983c366e3ee124310e
-      name: enterprise-odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:487394779173baf86ef6425100c61c153a2163c579f01870aeb5e3b709b3e23d
-      name: manager
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:06dcf548aaeb4d32c1e8d30f1d0440c91f696d9f94807d983c366e3ee124310e
       name: enterprise_odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:51d62c00c2aa4515543830a88fc27d63e1970f885d9fc3f1da8711d53b9aa68d
-      name: autoscaler
-    - image: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:f25a35e65a0706e616ab32b9a5bfb94206978c6767bb8beff20504cecd39bd62
-      name: collector
-    - image: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:fc7afc383cd35657b899ecdd1ea3a9851fa4c6cf49c309a20356dd246453e281
-      name: frontend
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:3297a0997597a5dcced94e0efe12f218d6af40773e736305f8d0dfcd1ebf902e
-      name: enterprise-instrumentor
-    - image: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9@sha256:4d213af27d432665bf72caffbafa33a7991cb627bad9c2d894c4f8931e14d27b
-      name: scheduler
   version: 1.0.170
