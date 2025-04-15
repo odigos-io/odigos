@@ -24,22 +24,35 @@ import (
 
 // OdigosSpec defines the desired state of Odigos
 type OdigosSpec struct {
+	// OnPremToken is an optional enterprise token for Odigos Enterprise.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="On-Prem Token"
+	// +operator-sdk:csv:customresourcedefinitions:order=1
+	OnPremToken string `json:"onPremToken,omitempty"`
+
+	// UIMode sets the UI mode (one-of: normal, readonly)
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UI Mode"
+	// +operator-sdk:csv:customresourcedefinitions:order=2
+	UIMode common.UiMode `json:"uiMode,omitempty"`
+
 	// TelemetryEnabled records general telemetry regarding Odigos usage.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +operator-sdk:csv:customresourcedefinitions:order=2
 	TelemetryEnabled bool `json:"telemetryEnabled,omitempty"`
-
-	// OpenShiftEnabled configures selinux on OpenShift nodes.
-	// DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OpenShift Enabled"
-	OpenShiftEnabled bool `json:"openshiftEnabled,omitempty"`
 
 	// IgnoredNamespaces is a list of namespaces to not show in the Odigos UI
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +operator-sdk:csv:customresourcedefinitions:order=2
 	IgnoredNamespaces []string `json:"ignoredNamespaces,omitempty"`
 
 	// IgnoredContainers is a list of container names to exclude from instrumentation (useful for sidecars)
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +operator-sdk:csv:customresourcedefinitions:order=2
 	IgnoredContainers []string `json:"ignoredContainers,omitempty"`
+
+	// Profiles is a list of preset profiles with a specific configuration.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec
+	// +operator-sdk:csv:customresourcedefinitions:order=3
+	Profiles []common.ProfileName `json:"profiles,omitempty"`
 
 	// SkipWebhookIssuerCreation skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
@@ -53,22 +66,15 @@ type OdigosSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ImagePrefix string `json:"imagePrefix,omitempty"`
 
-	// Profiles is a list of preset profiles with a specific configuration.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	Profiles []common.ProfileName `json:"profiles,omitempty"`
-
-	// UIMode sets the UI mode (one-of: normal, readonly)
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UI Mode"
-	UIMode common.UiMode `json:"uiMode,omitempty"`
-
-	// OnPremToken is an optional enterprise token for Odigos Enterprise.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="On-Prem Token"
-	OnPremToken string `json:"onPremToken,omitempty"`
-
 	// MountMethod defines the mechanism for mounting Odigos files into instrumented pods.
 	// Must be one of: (k8s-virtual-device, k8s-host-path)
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Mount Method"
 	MountMethod common.MountMethod `json:"mountMethod,omitempty"`
+
+	// OpenShiftEnabled configures selinux on OpenShift nodes.
+	// DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OpenShift Enabled"
+	OpenShiftEnabled bool `json:"openshiftEnabled,omitempty"`
 }
 
 // OdigosStatus defines the observed state of Odigos
