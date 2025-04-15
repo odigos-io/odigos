@@ -29,9 +29,7 @@ additionalInstrumentationEnvs:
   languages:
     java:
       enabled: true
-      env:
-        OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED: true
-        OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: true
+      env: {}
     python:
       enabled: false
       env: {}
