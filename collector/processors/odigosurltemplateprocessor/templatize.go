@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	numberRegex = regexp.MustCompile(`^\d+$`)
+	onlyDigitsRegex = regexp.MustCompile(`^\d+$`)
 
 	// matches UUIDs in the format 123e4567-e89b-12d3-a456-426614174000
 	// these UUIDs are common in cloud systems and are often used as ids
@@ -42,7 +42,7 @@ var (
 	// assume that long numbers (more than 8 digits) are ids.
 	// even if they are found with some text (for example "INC001268637") they are treated as ids
 	// it is very unlikely for a a number with so many digits to be static and meaningful.
-	longNumberRegex = regexp.MustCompile(`\d{9,}`)
+	longNumberAnywhereRegex = regexp.MustCompile(`\d{9,}`)
 )
 
 type RulePathSegment struct {
@@ -165,10 +165,10 @@ func defaultTemplatizeURLPath(pathSegments []string) (string, bool) {
 	// avoid modifying the original segments slice
 	templatizedSegments := make([]string, len(pathSegments))
 	for i, segment := range pathSegments {
-		if uuidRegex.MatchString(segment) ||
-			numberRegex.MatchString(segment) ||
-			hexEncodedRegex.MatchString(segment) ||
-			longNumberRegex.MatchString(segment) {
+		if onlyDigitsRegex.MatchString(segment) ||
+			longNumberAnywhereRegex.MatchString(segment) ||
+			uuidRegex.MatchString(segment) ||
+			hexEncodedRegex.MatchString(segment) {
 
 			templatizedSegments[i] = "{id}"
 			templated = true
