@@ -269,6 +269,71 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrKey:   "http.route",
 			expectedAttrValue: "/products",
 		},
+		{
+			name:          "mixed-numbers-and-text",
+			serviceName:   "mixed-numbers-and-text",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/api/v1",
+			},
+			expectedSpanName:  "GET /api/v1",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/api/v1",
+		},
+		{
+			name:          "hexencoded id",
+			serviceName:   "hexencoded-id",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/6f2a9cdeab34f01e",
+			},
+			expectedSpanName:  "GET /user/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name:          "short looking like hexencoded id",
+			serviceName:   "short-looking-like-hexencoded-id",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/feed12",
+			},
+			expectedSpanName:  "GET /user/feed12", // should not be templated as the string contains hex chars, but it's too short
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/feed12",
+		},
+		{
+			name:          "long text",
+			serviceName:   "long-text",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/CamelCaseLongTextThatShouldNotBeTemplated",
+			},
+			expectedSpanName:  "GET /user/CamelCaseLongTextThatShouldNotBeTemplated", // should not be templated as chars are not hex
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/CamelCaseLongTextThatShouldNotBeTemplated",
+		},
+		{
+			name:          "non-even length hex",
+			serviceName:   "non-even-length-hex",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/abcdefabcdefabcde", // contains 17 chars
+			},
+			expectedSpanName:  "GET /user/abcdefabcdefabcde", // should not be templated as the string contains hex chars, but it's too short
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/abcdefabcdefabcde",
+		},
 	}
 
 	for _, tc := range tt {

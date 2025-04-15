@@ -10,6 +10,26 @@ import (
 var (
 	uuidRegex   = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 	numberRegex = regexp.MustCompile(`^\d+$`)
+
+	// To enforce the following conditions in a single Go regular expression:
+	// - Only lowercase hexadecimal characters (0-9 and a-f),
+	// - More than 16 characters,
+	// - An even number of characters
+	//
+	// covers hex encoded values like (for example) span/trace IDs.
+	// these are common as ids in cloud systems.
+	// it is considered safe as:
+	// - letters are only limited to lowercase a-f, which any real word with 16 chars or more will fail.
+	// - the regex will not match if the string is less than 16 chars, so things like "feed12" (all letters a-f) will not match.
+	// - the regex will not match if the string is odd length (indicating it's not hex encoded) so another filter for extreme corner cases.
+	//
+	// Explanation (ChatGPT):
+	// - (?:...) — A non-capturing group.
+	// - [0-9a-f]{2} — Matches exactly two hexadecimal characters.
+	// - {8,} — Repeats that group 8 or more times, ensuring:
+	// 	 - 8 × 2 = 16 characters minimum
+	// 	 - Each repetition is of 2 characters → ensures even length.
+	hexEncodedRegex = regexp.MustCompile(`^(?:[0-9a-f]{2}){8,}$`)
 )
 
 type RulePathSegment struct {
@@ -132,7 +152,7 @@ func defaultTemplatizeURLPath(pathSegments []string) (string, bool) {
 	// avoid modifying the original segments slice
 	templatizedSegments := make([]string, len(pathSegments))
 	for i, segment := range pathSegments {
-		if uuidRegex.MatchString(segment) || numberRegex.MatchString(segment) {
+		if uuidRegex.MatchString(segment) || numberRegex.MatchString(segment) || hexEncodedRegex.MatchString(segment) {
 			templatizedSegments[i] = "{id}"
 			templated = true
 		} else {
