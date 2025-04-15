@@ -25,36 +25,30 @@ import (
 // OdigosSpec defines the desired state of Odigos
 type OdigosSpec struct {
 	// OnPremToken is an optional enterprise token for Odigos Enterprise.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="On-Prem Token"
-	// +operator-sdk:csv:customresourcedefinitions:order=1
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="On-Prem Token",order=1
 	OnPremToken string `json:"onPremToken,omitempty"`
 
 	// UIMode sets the UI mode to either "normal" (default) or "readonly".
 	// In "normal" mode the UI is fully interactive, allowing users to view and edit
 	// Odigos configuration and settings. In "readonly" mode, the UI can only be
 	// used to view current Odigos configuration and is not interactive.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UI Mode"
-	// +operator-sdk:csv:customresourcedefinitions:order=2
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UI Mode",order=2
 	UIMode common.UiMode `json:"uiMode,omitempty"`
 
 	// TelemetryEnabled records general telemetry regarding Odigos usage.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +operator-sdk:csv:customresourcedefinitions:order=2
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	TelemetryEnabled bool `json:"telemetryEnabled,omitempty"`
 
 	// IgnoredNamespaces is an optional list of namespaces to not show in the Odigos UI.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +operator-sdk:csv:customresourcedefinitions:order=2
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	IgnoredNamespaces []string `json:"ignoredNamespaces,omitempty"`
 
 	// IgnoredContainers is an optional list of container names to exclude from instrumentation (useful for ignoring sidecars).
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +operator-sdk:csv:customresourcedefinitions:order=2
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	IgnoredContainers []string `json:"ignoredContainers,omitempty"`
 
 	// Profiles is an optional list of preset profiles with a specific configuration.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	// +operator-sdk:csv:customresourcedefinitions:order=3
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	Profiles []common.ProfileName `json:"profiles,omitempty"`
 
 	// SkipWebhookIssuerCreation optionally skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.

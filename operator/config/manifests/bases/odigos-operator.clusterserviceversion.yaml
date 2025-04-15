@@ -30,6 +30,9 @@ spec:
       kind: Odigos
       name: odigos.operator.odigos.io
       specDescriptors:
+      - description: OnPremToken is an optional enterprise token for Odigos Enterprise.
+        displayName: On-Prem Token
+        path: onPremToken
       - description: IgnoredContainers is an optional list of container names to exclude
           from instrumentation (useful for ignoring sidecars).
         displayName: Ignored Containers
@@ -38,6 +41,20 @@ spec:
           in the Odigos UI.
         displayName: Ignored Namespaces
         path: ignoredNamespaces
+      - description: TelemetryEnabled records general telemetry regarding Odigos usage.
+        displayName: Telemetry Enabled
+        path: telemetryEnabled
+      - description: |-
+          UIMode sets the UI mode to either "normal" (default) or "readonly".
+          In "normal" mode the UI is fully interactive, allowing users to view and edit
+          Odigos configuration and settings. In "readonly" mode, the UI can only be
+          used to view current Odigos configuration and is not interactive.
+        displayName: UI Mode
+        path: uiMode
+      - description: Profiles is an optional list of preset profiles with a specific
+          configuration.
+        displayName: Profiles
+        path: profiles
       - description: |-
           ImagePrefix is an optional prefix for all container images.
           This should only be used if you are pulling Odigos images from the non-default registry.
@@ -50,9 +67,6 @@ spec:
           One of "k8s-virtual-device" (default) or "k8s-host-path".
         displayName: Mount Method
         path: mountMethod
-      - description: OnPremToken is an optional enterprise token for Odigos Enterprise.
-        displayName: On-Prem Token
-        path: onPremToken
       - description: |-
           OpenShiftEnabled configures selinux on OpenShift nodes.
           DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
@@ -61,24 +75,10 @@ spec:
       - description: PodSecurityPolicy optionally enables the pod security policy.
         displayName: Pod Security Policy
         path: podSecurityPolicy
-      - description: Profiles is an optional list of preset profiles with a specific
-          configuration.
-        displayName: Profiles
-        path: profiles
       - description: SkipWebhookIssuerCreation optionally skips creating the Issuer
           and Certificate for the Instrumentor pod webhook if cert-manager is installed.
         displayName: Skip Webhook Issuer Creation
         path: skipWebhookIssuerCreation
-      - description: TelemetryEnabled records general telemetry regarding Odigos usage.
-        displayName: Telemetry Enabled
-        path: telemetryEnabled
-      - description: |-
-          UIMode sets the UI mode to either "normal" (default) or "readonly".
-          In "normal" mode the UI is fully interactive, allowing users to view and edit
-          Odigos configuration and settings. In "readonly" mode, the UI can only be
-          used to view current Odigos configuration and is not interactive.
-        displayName: UI Mode
-        path: uiMode
       statusDescriptors:
       - description: Conditions store the status conditions of the Odigos instances
         displayName: Conditions
