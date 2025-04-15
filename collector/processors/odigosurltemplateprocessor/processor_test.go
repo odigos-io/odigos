@@ -322,6 +322,19 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrValue: "/user/{id}",
 		},
 		{
+			name:          "long hexencoded id",
+			serviceName:   "long-hexencoded-id",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/6f2a9cdeab34f01e1234567890abcdef", // 32 chars
+			},
+			expectedSpanName:  "GET /user/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
 			name:          "short looking like hexencoded id",
 			serviceName:   "short-looking-like-hexencoded-id",
 			spanKind:      ptrace.SpanKindServer,
