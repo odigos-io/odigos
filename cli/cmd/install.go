@@ -113,7 +113,10 @@ It will install k8s components that will auto-instrument your applications with 
 			odigosTier = common.OnPremOdigosTier
 			odigosProToken = odigosOnPremToken
 		}
-
+		if centralBackendURL != "" && odigosTier != common.OnPremOdigosTier {
+			fmt.Printf("\033[31mERROR\033[0m Central backend connection is only available in the OnPrem tier.\n")
+			fmt.Println("Please upgrade to the OnPrem tier or remove the --central-backend-url flag.")
+		}
 		// validate user input profiles against available profiles
 		err = ValidateUserInputProfiles(odigosTier)
 		if err != nil {
