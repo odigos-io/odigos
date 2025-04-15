@@ -38,6 +38,7 @@ var _ webhook.CustomDefaulter = &PodsWebhook{}
 func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	logger := log.FromContext(ctx)
 	pod, ok := obj.(*corev1.Pod)
+
 	if !ok {
 		logger.Error(errors.New("expected a Pod but got a %T"), "failed to inject odigos agent")
 		return nil
