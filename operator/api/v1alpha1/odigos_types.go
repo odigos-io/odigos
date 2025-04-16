@@ -24,54 +24,58 @@ import (
 
 // OdigosSpec defines the desired state of Odigos
 type OdigosSpec struct {
-	// OnPremToken is an optional enterprise token for Odigos Enterprise.
+	// (Optional) OnPremToken is an enterprise token for Odigos Enterprise.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="On-Prem Token",order=1
 	OnPremToken string `json:"onPremToken,omitempty"`
 
-	// UIMode sets the UI mode to either "normal" (default) or "readonly".
+	// (Optional) UIMode sets the UI mode to either "normal" or "readonly".
 	// In "normal" mode the UI is fully interactive, allowing users to view and edit
 	// Odigos configuration and settings. In "readonly" mode, the UI can only be
 	// used to view current Odigos configuration and is not interactive.
+	// Default=normal
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UI Mode",order=2
 	UIMode common.UiMode `json:"uiMode,omitempty"`
 
-	// TelemetryEnabled records general telemetry regarding Odigos usage.
+	// (Optional) TelemetryEnabled records general telemetry regarding Odigos usage.
+	// Default=false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	TelemetryEnabled bool `json:"telemetryEnabled,omitempty"`
 
-	// IgnoredNamespaces is an optional list of namespaces to not show in the Odigos UI.
+	// (Optional) IgnoredNamespaces is a list of namespaces to not show in the Odigos UI.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	IgnoredNamespaces []string `json:"ignoredNamespaces,omitempty"`
 
-	// IgnoredContainers is an optional list of container names to exclude from instrumentation (useful for ignoring sidecars).
+	// (Optional) IgnoredContainers is a list of container names to exclude from instrumentation (useful for ignoring sidecars).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	IgnoredContainers []string `json:"ignoredContainers,omitempty"`
 
-	// Profiles is an optional list of preset profiles with a specific configuration.
+	// (Optional) Profiles is a list of preset profiles with a specific configuration.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	Profiles []common.ProfileName `json:"profiles,omitempty"`
 
-	// SkipWebhookIssuerCreation optionally skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
+	// (Optional) SkipWebhookIssuerCreation skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
+	// Default=false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	SkipWebhookIssuerCreation bool `json:"skipWebhookIssuerCreation,omitempty"`
 
-	// PodSecurityPolicy optionally enables the pod security policy.
+	// (Optional) PodSecurityPolicy allows Odigos pods to use a privileged pod security policy.
+	// Default=false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	PodSecurityPolicy bool `json:"podSecurityPolicy,omitempty"`
 
-	// ImagePrefix is an optional prefix for all container images.
+	// (Optional) ImagePrefix is a prefix for all container images.
 	// This should only be used if you are pulling Odigos images from the non-default registry.
 	// Default: registry.odigos.io
 	// Default (OpenShift): registry.connect.redhat.com
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ImagePrefix string `json:"imagePrefix,omitempty"`
 
-	// MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.
+	// (Optional) MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.
 	// One of "k8s-virtual-device" (default) or "k8s-host-path".
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Mount Method"
 	MountMethod common.MountMethod `json:"mountMethod,omitempty"`
 
-	// OpenShiftEnabled configures selinux on OpenShift nodes.
+	// (Optional) OpenShiftEnabled configures selinux on OpenShift nodes.
 	// DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OpenShift Enabled"
 	OpenShiftEnabled bool `json:"openshiftEnabled,omitempty"`
