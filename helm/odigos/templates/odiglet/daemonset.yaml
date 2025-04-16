@@ -88,9 +88,9 @@ spec:
                   fieldPath: metadata.namespace
             - name: OTEL_LOG_LEVEL
               value: info
+            {{- if .Values.onPremToken }}
             - name: OTEL_GO_OFFSETS_FILE
               value: /offsets/offset_results.json
-            {{- if .Values.onPremToken }}
             - name: ODIGOS_ONPREM_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -129,8 +129,10 @@ spec:
               readOnly: true
             - name: kernel-debug
               mountPath: /sys/kernel/debug
+            {{- if .Values.onPremToken }}
             - name: odigos-go-offsets
               mountPath: /offsets
+            {{- end }}
       hostNetwork: true
       hostPID: true
       dnsPolicy: ClusterFirstWithHostNet
@@ -162,9 +164,11 @@ spec:
         - name: kernel-debug
           hostPath:
             path: /sys/kernel/debug
+        {{- if .Values.onPremToken }}
         - name: odigos-go-offsets
           configMap:
             name: odigos-go-offsets
+        {{- end }}
 {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 6 }}

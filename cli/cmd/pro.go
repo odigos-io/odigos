@@ -111,7 +111,7 @@ Internet access is required to fetch latest offset manifests.
 It stores this data in a ConfigMap in the Odigos Namespace and updates the Odiglet DaemonSet to mount it.
 
 Use this command when instrumenting apps that depend on very new dependencies that aren't currently supported
-with the previous release of Odigos.
+with the installed version of Odigos.
 
 Note that updating offsets does not guarantee instrumentation for libraries with significant changes that
 require an update to Odigos. See docs for more info: https://docs.odigos.io/instrumentations/golang/ebpf#about-go-offsets
@@ -126,7 +126,11 @@ odigos pro update-offsets --default
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
-		ns := cmd.Flag("namespace").Value.String()
+		ns, err := resources.GetOdigosNamespace(client, ctx)
+		if err != nil {
+			fmt.Println("Unable to get Odigos namespace")
+			os.Exit(1)
+		}
 
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
 		if err != nil {
@@ -287,6 +291,5 @@ func init() {
 	proCmd.PersistentFlags().BoolVarP(&updateRemoteFlag, "remote", "r", false, "use odigos ui service in the cluster to update the onprem token")
 
 	proCmd.AddCommand(offsetsCmd)
-	offsetsCmd.Flags().StringVarP(&namespaceFlag, "namespace", "n", consts.DefaultOdigosNamespace, "target k8s namespace for Odigos installation")
 	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
 }
