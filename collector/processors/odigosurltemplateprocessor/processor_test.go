@@ -94,7 +94,7 @@ func TestProcessor_Traces(t *testing.T) {
 			inputSpanName: "GET",
 			inputSpanAttrs: map[string]any{
 				"http.request.method": "GET",
-				"url.path":            "/processes/PROCESS_123e4567-e89b-12d3-a456-426614174000",
+				"url.path":            "/processes/123e4567-e89b-12d3-a456-426614174000_PROCESS",
 			},
 			expectedSpanName:  "GET /processes/{id}",
 			expectedAttrKey:   "http.route",
@@ -102,12 +102,12 @@ func TestProcessor_Traces(t *testing.T) {
 		},
 		{
 			name:          "uuid with any prefix",
-			serviceName:   "uuid-templated-string-with-prefix",
+			serviceName:   "uuid-with-any-prefix",
 			spanKind:      ptrace.SpanKindServer,
 			inputSpanName: "GET",
 			inputSpanAttrs: map[string]any{
 				"http.request.method": "GET",
-				"url.path":            "/processes/123e4567-e89b-12d3-a456-426614174000_PROCESS",
+				"url.path":            "/processes/PROCESS_123e4567-e89b-12d3-a456-426614174000",
 			},
 			expectedSpanName:  "GET /processes/{id}",
 			expectedAttrKey:   "http.route",
