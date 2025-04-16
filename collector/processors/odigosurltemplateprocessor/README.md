@@ -70,6 +70,8 @@ To denote a template path segment, use `{}` brackets with name and optional rege
 
 The default rule will match various common ids as described above. Systems can and do use a variety of ids conventions and formats. The processor allows you to set custom regexp for the id matching that will be used in addition to the default id templatization regexps.
 
+Custom Templatization takes precedence over the custom id regexp. If any custom custom rule matches a path, it will be taken the the custom ids regexp will not take effect for that path.
+
 For example, if your system uses `id`s in format `id-1234`, you can set the regexp `^id-\d+$` to match this format, so that `/user/id-1234` will be templatized to `/user/{id}`.
 
 Few more examples for ids that will not be catched by default but can be configured with custom regexp:
