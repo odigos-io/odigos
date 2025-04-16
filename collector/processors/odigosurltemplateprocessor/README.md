@@ -45,10 +45,12 @@ The templatization process should be monitored and adjusted according to the val
 
 By default, the processor will split the path to segment (e.g. "/user/1234" -> ["user", "1234"]) and replace the segments with the following rules:
 
-- numbers - `\d+` -> `{id}`
-- uuids - `[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}` -> `{uuid}`
+- only digits - `^\d+$` -> `{id}` (`1234`, `328962358623904`, `0`)
+- uuids - `[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}` -> `{id}` (`123e4567-e89b-12d3-a456-426614174000`). They can appear as either prefix or suffix of the segment (for example `/process/PROCESS_123e4567-e89b-12d3-a456-42661bd74000`)
+- hex-encoded strings - `[0-9a-f]{2}([0-9a-f]{2})*` -> `{id}` (`6f2a9cdeab34f01e`)
+- long numbers anywhere - `\d{9,}` -> `{id}` (`123456789`, `INC328962358623904`, `sb_12345678901234567890_us`)
 
-This will address paths like `/user/1234` and `/user/123e4567-e89b-12d3-a456-426614174000`, but will not templatize paths like `/user/john` or `/user/s111222333` which will be copied as is into the span name and attribute with potentially high cardinality.
+These default rules will not templatize paths like `/user/john` or `/user/s11112222` which will be copied as is into the span name and attribute with potentially high cardinality.
 
 ## Custom Templatization
 
