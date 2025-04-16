@@ -8,8 +8,41 @@ import (
 )
 
 var (
-	uuidRegex   = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-	numberRegex = regexp.MustCompile(`^\d+$`)
+	onlyDigitsRegex = regexp.MustCompile(`^\d+$`)
+
+	// matches UUIDs in the format 123e4567-e89b-12d3-a456-426614174000
+	// these UUIDs are common in cloud systems and are often used as ids
+	// they are 36 characters long and are made up of 5 groups of hexadecimal characters
+	// separated by hyphens.
+	// this regexp will allow any prefix OR suffix of the UUID to be matched
+	// so for example: "PROCESS_123e4567-e89b-12d3-a456-426614174000" will also be matched
+	uuidRegex = regexp.MustCompile(`(^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})|([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$)`)
+
+	// Covers hex encoded values like (for example) span/trace IDs.
+	// These are common as ids in cloud systems.
+	//
+	// To enforce the following conditions in a single Go regular expression:
+	// - Only lowercase hexadecimal characters (0-9 and a-f),
+	// - More than 16 characters,
+	// - An even number of characters
+	//
+	// It is considered safe as:
+	// - letters are only limited to lowercase a-f, which any real word with 16 chars or more will fail.
+	// - the regex will not match if the string is less than 16 chars, so things like "feed12" (all letters a-f) will not match.
+	// - the regex will not match if the string is odd length (indicating it's not hex encoded) so another filter for extreme corner cases.
+	//
+	// Explanation (ChatGPT):
+	// - (?:...) — A non-capturing group.
+	// - [0-9a-f]{2} — Matches exactly two hexadecimal characters.
+	// - {8,} — Repeats that group 8 or more times, ensuring:
+	// 	 - 8 × 2 = 16 characters minimum
+	// 	 - Each repetition is of 2 characters → ensures even length.
+	hexEncodedRegex = regexp.MustCompile(`^(?:[0-9a-f]{2}){8,}$`)
+
+	// assume that long numbers (more than 8 digits) are ids.
+	// even if they are found with some text (for example "INC001268637") they are treated as ids
+	// it is very unlikely for a a number with so many digits to be static and meaningful.
+	longNumberAnywhereRegex = regexp.MustCompile(`\d{9,}`)
 )
 
 type RulePathSegment struct {
@@ -132,7 +165,11 @@ func defaultTemplatizeURLPath(pathSegments []string) (string, bool) {
 	// avoid modifying the original segments slice
 	templatizedSegments := make([]string, len(pathSegments))
 	for i, segment := range pathSegments {
-		if uuidRegex.MatchString(segment) || numberRegex.MatchString(segment) {
+		if onlyDigitsRegex.MatchString(segment) ||
+			longNumberAnywhereRegex.MatchString(segment) ||
+			uuidRegex.MatchString(segment) ||
+			hexEncodedRegex.MatchString(segment) {
+
 			templatizedSegments[i] = "{id}"
 			templated = true
 		} else {
