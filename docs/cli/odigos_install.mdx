@@ -31,13 +31,17 @@ odigos install --kubeconfig <path-to-kubeconfig>
 # Install Odigos onprem tier for enterprise users
 odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
 
+# Install Odigos and connect the cluster to forward data to the centralized backend
+odigos install --cluster-name ${YOUR_CLUSTER_NAME} --central-backend-url ${YOUR_CENTRAL_BACKEND_URL}
+
 ```
 
 ### Options
 
 ```
   -k, --api-key string                         api key for odigos cloud
-      --central-backend-url string             URL for centralized Odigos backend
+      --central-backend-url string             use to connect this cluster to the centralized odigos cluster
+      --cluster-name string                    name of the cluster to be used in the centralized backend
       --container-runtime-socket-path string   custom configuration of a path to the container runtime socket path (e.g. /var/lib/rancher/rke2/agent/containerd/containerd.sock)
   -h, --help                                   help for install
       --ignore-container strings               container names to exclude from instrumentation (useful for sidecar container) (default [istio-proxy,vault-agent,filebeat,linkerd-proxy,fluentd,akeyless-init])
