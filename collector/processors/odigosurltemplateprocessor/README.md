@@ -65,3 +65,26 @@ Example for templatization rules:
 This rule, when applied to the path `/user/john/friends/1234`, will result in the templated value `/user/{user-name}/friends/{friend-id}`.
 
 To denote a template path segment, use `{}` brackets with name and optional regexp: `{name:regexp}`. name will be used to generate the templated path (e.g `/user/{foo})` will result in this template value when matched against `/user/john`).
+
+## Custom Ids Regexp
+
+The default rule will match various common ids as described above. Systems can and do use a variety of ids conventions and formats. The processor allows you to set custom regexp for the id matching that will be used in addition to the default id templatization regexps.
+
+For example, if your system uses `id`s in format `id-1234`, you can set the regexp `^id-\d+$` to match this format, so that `/user/id-1234` will be templatized to `/user/{id}`.
+
+Few more examples for ids that will not be catched by default but can be configured with custom regexp:
+
+- `SA_8856_BH` - `^SA_\d{4}_\w{2}$` ("SA_" then 4 digits then "_" then 2 word characters ([a-zA-Z0-9_]))
+- `prod-api-001` - `^(dev|staging|prod)-[a-z]+-\d{3}$` (limit the first part to dev/staging/prod)
+- `backup_20250416_073045` - `^backup_\d{8}_\d{6}$` (Timestamped IDs)
+- `v2.3.4-beta` - `^v\d+\.\d+\.\d+(-[a-z]+)?$` (Application Release Tags)
+- `svc_auth_xyz123TOKEN` - `^svc_[a-z]+_[a-zA-Z0-9]+$` (Keys)
+- `svc-us-west-2-db12` - `^svc-[a-z]{2}-[a-z]+-\d-[a-z0-9]+$` (Multi-region Services)
+
+Few considerations for the custom regexp:
+
+- The regexp must match the entire segment value, not just part of it.
+- Keep regexp precise and correct so they don't match unrelated values from other endpoints in the same cluster. The value will be evaluated against all un-templated http spans in the pipeline.
+- The regexp must be valid and will be evaluated at runtime. If the regexp is invalid, the processor will fail to start.
+- Regexp syntax should be compatible with the Go regexp syntax. For more information, see [Go regexp syntax](https://pkg.go.dev/regexp/syntax).
+- Avoid using too complex expressions or adding too many custom regexp values, as these will be evaluated very often and can impact performance.

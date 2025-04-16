@@ -544,3 +544,49 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 		})
 	}
 }
+
+func TestProcessor_CustomIdsRegexp(t *testing.T) {
+	tt := []struct {
+		name              string
+		customIds         []string
+		path              string
+		expectedName      string
+		expectedHttpRoute string
+	}{
+		{
+			name:              "custom id",
+			customIds:         []string{"^in_[0-9]+$"},
+			path:              "/product/in_005",
+			expectedName:      "GET /product/{id}",
+			expectedHttpRoute: "/product/{id}",
+		},
+		{
+			name:              "multiple custom ids",
+			customIds:         []string{"^in_[0-9]+$", "^out_[0-9]+$"},
+			path:              "/foo/out_005/bar/in_123",
+			expectedName:      "GET /foo/{id}/bar/{id}",
+			expectedHttpRoute: "/foo/{id}/bar/{id}",
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			spanAttr := map[string]any{
+				"http.request.method": "GET",
+				"url.path":            tc.path,
+			}
+			traces := generateTraceData("test-service-name", "GET", ptrace.SpanKindServer, spanAttr)
+			// Add the templated rule to the processor
+			processor, err := newUrlTemplateProcessor(processortest.NewNopSettings(processortest.NopType), &Config{CustomIdsRegexp: tc.customIds})
+			require.NoError(t, err)
+			// Process the traces
+			ctx := context.Background()
+			processedTraces, err := processor.processTraces(ctx, traces)
+			require.NoError(t, err)
+			// Get the processed span
+			processedSpan := processedTraces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+			// Assert the span name and http.route attribute
+			assertSpanNameAndAttribute(t, processedSpan, tc.expectedName, "http.route", tc.expectedHttpRoute)
+		})
+	}
+}
