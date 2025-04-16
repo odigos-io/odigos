@@ -112,6 +112,22 @@ rules:
       - patch
       - update
   - apiGroups:
+      - odigos.io
+    resources:
+      - actions
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - actions/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
       - actions.odigos.io
     resources:
       - '*'

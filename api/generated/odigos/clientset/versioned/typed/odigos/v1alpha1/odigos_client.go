@@ -27,6 +27,7 @@ import (
 
 type OdigosV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	ActionsGetter
 	CollectorsGroupsGetter
 	DestinationsGetter
 	InstrumentationConfigsGetter
@@ -40,6 +41,10 @@ type OdigosV1alpha1Interface interface {
 // OdigosV1alpha1Client is used to interact with features provided by the odigos.io group.
 type OdigosV1alpha1Client struct {
 	restClient rest.Interface
+}
+
+func (c *OdigosV1alpha1Client) Actions(namespace string) ActionInterface {
+	return newActions(c, namespace)
 }
 
 func (c *OdigosV1alpha1Client) CollectorsGroups(namespace string) CollectorsGroupInterface {

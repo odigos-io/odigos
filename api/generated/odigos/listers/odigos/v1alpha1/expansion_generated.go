@@ -17,6 +17,14 @@ limitations under the License.
 
 package v1alpha1
 
+// ActionListerExpansion allows custom methods to be added to
+// ActionLister.
+type ActionListerExpansion interface{}
+
+// ActionNamespaceListerExpansion allows custom methods to be added to
+// ActionNamespaceLister.
+type ActionNamespaceListerExpansion interface{}
+
 // CollectorsGroupListerExpansion allows custom methods to be added to
 // CollectorsGroupLister.
 type CollectorsGroupListerExpansion interface{}

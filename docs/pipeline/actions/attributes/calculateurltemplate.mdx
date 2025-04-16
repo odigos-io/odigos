@@ -1,0 +1,158 @@
+---
+title: "Calculate URL Template"
+description: "This action will attempt to heuristically guess a http templated url path value for the span name and attributes."
+sidebarTitle: "Calculate URL Template"
+icon: "layer-group"
+---
+
+import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
+
+## Considerations
+
+<Warning>
+  Before enabling **calculate url template**, please note the following:
+    - This action can cause high cardinality values to be added to the span name and attributes in a non-spec-compliant way.
+    - The action is not guaranteed to be correct and may not always produce the expected results.
+    - User is expected to monitor the generated telemetry and adjust the configuration accordingly to avoid high cardinality values.
+    - The action will execute regexp in the collector 
+</Warning>
+
+## Use Cases
+
+**Usability**
+
+When some of your span names contains only the http method (e.g. "GET"), it is hard to understand what the span is doing.
+Templated value (e.g. `/user/{id}`) is much more informative and allows you to understand the span and derive meaningful metrics, dashboards and alerts when it's available.
+When it's not available, odigos can try to "guess" the templated value and set it in the span name and relevant attributes.
+This action can enhance the usability of the generated telemetry, in the risk of excitedly introducing high cardinality values.
+
+## OpenTelemetry Specification Requirements
+
+OpenTelemetry specification defines 2 http low-cardinality attributes that are meant to capture the http url path templated value:
+
+- `http.route` - for server spans
+- `url.template` - for client spans
+
+These attributes are referred to as "target" and are used to construct the span name as `{method} {target}`.
+
+The issue is that these values are not always available, it depends on the language, framework and instrumentation and in practice, they are many times absent.
+
+The spec mentions regarding these attributes:
+
+```
+[6] http.route: MUST NOT be populated when this is not supported by the HTTP server framework as the route attribute should have low-cardinality and the URI path can NOT substitute it. SHOULD include the application root if there is one.
+[14] url.template: The url.template MUST have low cardinality. It is not usually available on HTTP clients, but may be known by the application or specialized HTTP instrumentation.
+```
+
+And for the span name:
+
+```
+HTTP span names SHOULD be {method} {target} if there is a (low-cardinality) target available. If there is no (low-cardinality) {target} available, HTTP span names SHOULD be {method}.
+```
+
+Odigos will be default follow the semantic conventions and will produce spans with the span name as `{method} {target}` if the target is available, or `{method}` if not.
+This behavior is compliant with the OpenTelemetry specification and guarantees low-cardinality values in the span name, but it can conflict with user expectations and usability.
+
+## Mechanism
+
+To bridge this gap, the action will attempt to "guess" the templated value and set it in the span name and relevant attribute accordingly.
+
+For a span to be considered for this action, it must:
+
+- be an http span - contain `http.request.method` or `http.method` attribute.
+- not already have the `http.route` or `url.template` attribute set by instrumentation.
+- have the url path recorded on a relevant attribute in the span (`url.path` / `url.full`) or the deprecated attributes (`http.target` / `http.url`).
+
+Each url path is split into segments (e.g. `/user/1234` -> ["user", "1234"]) and the segments are replaced with the following rules:
+
+- numbers - `\d+` -> `{id}` (e.g. `/user/1234` -> `/user/{id}`)
+- uuids - `[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}` -> `{id}` (e.g. `/user/123e4567-e89b-12d3-a456-426614174000` -> `/user/{id}`)
+
+This simple rule addresses many common cases, but it is not enough to cover all cases and it may leak high cardinality values into span names and low-cardinality attributes.
+
+For example:
+
+- `/user/john` will not be templatized since `john` is not a number or uuid. It will copy the "user-name" section into the templated value.
+- `/user/s111222333` will not be templatized since `s111222333` is a high-cardinality dynamic value, but the `s` prefix will fail the templatization.
+- `/user/SGVsbG8gd29ybGQh` which is a base64 encoded string.
+
+### Templatization rules
+
+Templatization Rules allows you to define custom rules for the templatization process, to address "difficult" cases where the default rules are not enough.
+
+Giving the url path `/user/john/friends/SGVsbG8gd29ybGQh` which will get high-cardinality templatization by default, the rule 
+`/user/{user-name}/friends/{friend-id}` will result in the low cardinality templated value `/user/{user-name}/friends/{friend-id}`.
+
+url segments with static value `user` and `friends` will be matched and copy as is, while the dynamic values `john` and `SGVsbG8gd29ybGQh` will be templated and replaced with the template value name (`{user-name}` and `{friend-id}`).
+
+- if the template value name is not set (`{}`), it will default to `id`.
+- user can add a regexp which needs to match the url segment value for the rule to be matched:
+
+```
+/user/{user-name}/friends/{friend-id:\d+}
+```
+
+requires that the value in the url segment `friend-id` is a number, otherwise the rule will not be matched.
+
+## Configuration Options
+
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the processor will act on.
+    - This field is *required*
+    - Supported values: `TRACES`
+  </Accordion>
+  <Accordion title="templatizationRules">
+    **templatizationRules** `string[]` : An array of strings representing the templatization rules to be applied to the telemetry signals.
+
+    Example for templatization rules:
+
+    ```
+    /user/{user-name}/friends/{friend-id}
+    ```
+
+  </Accordion>
+</AccordionGroup>
+
+## Basic Example
+
+The following example demonstrates how to enhance spans with url template using default behavior.
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml calculate-url-template.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
+    metadata:
+      name: calculate-url-template
+      namespace: odigos-system
+    spec:
+      actionName: calculate-url-template
+      signals:
+        - TRACES
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```bash
+    kubectl apply -f calculate-url-template.yaml
+    ```
+  </Step>
+</Steps>
