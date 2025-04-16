@@ -1,6 +1,9 @@
 package odigosurltemplateprocessor
 
 import (
+	"fmt"
+	"regexp"
+
 	"go.opentelemetry.io/collector/confmap/xconfmap"
 )
 
@@ -17,6 +20,15 @@ type Config struct {
 	// if regex is not used, the segment will always match and replaced with the name.
 	// if regex is used, and does not match, the segment will be skipped and will not take effect.
 	TemplatizationRules []string `mapstructure:"templatization_rules"`
+
+	// CustomIdsRegexp is a list of regex patterns that will be used to match and templated in any path segment
+	// It allows users to define their own regex patterns for ids used/observed in their applications.
+	// Note that this regexp should catch ids, but avoid catching other static strings.
+	// For example, if you have ids in the system like "ap123" then a regexp that matches "^ap\d+" would be good,
+	// but regexp like "^ap" is too permissive and will also catch "/api".
+	// compatible with golang regexp module https://pkg.go.dev/regexp
+	// for performance reasons, avoid using compute-intensive expressions or adding too many values here.
+	CustomIdsRegexp []string `mapstructure:"custom_ids_regexp"`
 }
 
 var _ xconfmap.Validator = (*Config)(nil)
@@ -26,6 +38,12 @@ func (c Config) Validate() error {
 	for _, rule := range c.TemplatizationRules {
 		if _, err := parseUserInputRuleString(rule); err != nil {
 			return err
+		}
+	}
+
+	for _, r := range c.CustomIdsRegexp {
+		if _, err := regexp.Compile(r); err != nil {
+			return fmt.Errorf("invalid custom id regexp: %w", err)
 		}
 	}
 	return nil
