@@ -1,4 +1,4 @@
-{{- if .Values.centralUI.enabled }}
+{{- if .Values.onPremToken }}
 
 apiVersion: apps/v1
 kind: Deployment

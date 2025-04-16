@@ -184,35 +184,6 @@ centralProxy:
   tolerations: []
   affinity: {}
 
-centralUI:
-  enabled: false
-  resources:
-    requests:
-      cpu: 100m
-      memory: 64Mi
-    limits:
-      cpu: 500m
-      memory: 256Mi
-  nodeSelector:
-    kubernetes.io/os: linux
-  tolerations: []
-  affinity: {}
-
-centralBackend:
-  enabled: false
-  resources:
-    requests:
-      cpu: 100m
-      memory: 64Mi
-    limits:
-      cpu: 500m
-      memory: 256Mi
-  nodeSelector:
-    kubernetes.io/os: linux
-  tolerations: []
-  affinity: {}
-  token: ''
-
 cli:
   image:
     repository: registry.odigos.io/odigos-cli
