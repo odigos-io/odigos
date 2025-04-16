@@ -22,18 +22,8 @@ var versionRegex = regexp.MustCompile(JavaVersionRegex)
 func (j *JavaInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	baseExe := filepath.Base(pcx.ExePath)
 
-	// Check if baseExe starts with "java"
-	if len(baseExe) >= 4 && baseExe[:4] == "java" {
-		// If it's exactly "java", return true
-		if len(baseExe) == 4 {
-			return common.JavaProgrammingLanguage, true
-		}
-
-		// Use IsDigitsOnly from utils to ensure all remaining characters are digits
-		if utils.IsDigitsOnly(baseExe[4:]) {
-			return common.JavaProgrammingLanguage, true
-		}
-		return "", false
+	if utils.IsBaseExeContainsProcessName(baseExe, "java") {
+		return common.JavaProgrammingLanguage, true
 	}
 
 	return "", false

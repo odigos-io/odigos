@@ -45,10 +45,12 @@ The templatization process should be monitored and adjusted according to the val
 
 By default, the processor will split the path to segment (e.g. "/user/1234" -> ["user", "1234"]) and replace the segments with the following rules:
 
-- numbers - `\d+` -> `{id}`
-- uuids - `[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}` -> `{uuid}`
+- only digits - `^\d+$` -> `{id}` (`1234`, `328962358623904`, `0`)
+- uuids - `[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}` -> `{id}` (`123e4567-e89b-12d3-a456-426614174000`). They can appear as either prefix or suffix of the segment (for example `/process/PROCESS_123e4567-e89b-12d3-a456-42661bd74000`)
+- hex-encoded strings - `[0-9a-f]{2}([0-9a-f]{2})*` -> `{id}` (`6f2a9cdeab34f01e`)
+- long numbers anywhere - `\d{9,}` -> `{id}` (`123456789`, `INC328962358623904`, `sb_12345678901234567890_us`)
 
-This will address paths like `/user/1234` and `/user/123e4567-e89b-12d3-a456-426614174000`, but will not templatize paths like `/user/john` or `/user/s111222333` which will be copied as is into the span name and attribute with potentially high cardinality.
+These default rules will not templatize paths like `/user/john` or `/user/s11112222` which will be copied as is into the span name and attribute with potentially high cardinality.
 
 ## Custom Templatization
 
@@ -63,3 +65,28 @@ Example for templatization rules:
 This rule, when applied to the path `/user/john/friends/1234`, will result in the templated value `/user/{user-name}/friends/{friend-id}`.
 
 To denote a template path segment, use `{}` brackets with name and optional regexp: `{name:regexp}`. name will be used to generate the templated path (e.g `/user/{foo})` will result in this template value when matched against `/user/john`).
+
+## Custom Ids Regexp
+
+The default rule will match various common ids as described above. Systems can and do use a variety of ids conventions and formats. The processor allows you to set custom regexp for the id matching that will be used in addition to the default id templatization regexps.
+
+Custom Templatization takes precedence over the custom id regexp. If any custom custom rule matches a path, it will be taken the the custom ids regexp will not take effect for that path.
+
+For example, if your system uses `id`s in format `id-1234`, you can set the regexp `^id-\d+$` to match this format, so that `/user/id-1234` will be templatized to `/user/{id}`.
+
+Few more examples for ids that will not be catched by default but can be configured with custom regexp:
+
+- `SA_8856_BH` - `^SA_\d{4}_\w{2}$` ("SA_" then 4 digits then "_" then 2 word characters ([a-zA-Z0-9_]))
+- `prod-api-001` - `^(dev|staging|prod)-[a-z]+-\d{3}$` (limit the first part to dev/staging/prod)
+- `backup_20250416_073045` - `^backup_\d{8}_\d{6}$` (Timestamped IDs)
+- `v2.3.4-beta` - `^v\d+\.\d+\.\d+(-[a-z]+)?$` (Application Release Tags)
+- `svc_auth_xyz123TOKEN` - `^svc_[a-z]+_[a-zA-Z0-9]+$` (Keys)
+- `svc-us-west-2-db12` - `^svc-[a-z]{2}-[a-z]+-\d-[a-z0-9]+$` (Multi-region Services)
+
+Few considerations for the custom regexp:
+
+- The regexp must match the entire segment value, not just part of it.
+- Keep regexp precise and correct so they don't match unrelated values from other endpoints in the same cluster. The value will be evaluated against all un-templated http spans in the pipeline.
+- The regexp must be valid and will be evaluated at runtime. If the regexp is invalid, the processor will fail to start.
+- Regexp syntax should be compatible with the Go regexp syntax. For more information, see [Go regexp syntax](https://pkg.go.dev/regexp/syntax).
+- Avoid using too complex expressions or adding too many custom regexp values, as these will be evaluated very often and can impact performance.
