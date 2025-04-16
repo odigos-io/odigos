@@ -19,15 +19,12 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 
 	"github.com/spf13/cobra"
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
-	useDefault          bool
-	updateRemoteFlag    bool
+	useDefault       bool
+	updateRemoteFlag bool
 )
 
 var proCmd = &cobra.Command{
@@ -150,42 +147,18 @@ odigos pro update-offsets --default
 
 		cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
 		if err != nil {
-			if !apierrors.IsNotFound(err) {
-				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to get Go offsets ConfigMap: %s", err))
-				os.Exit(1)
-			}
-			cm = &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      k8sconsts.GoOffsetsConfigMap,
-					Namespace: ns,
-				},
-				Data: map[string]string{
-					k8sconsts.GoOffsetsFileName: string(data),
-				},
-			}
-
-			cm, err = client.Clientset.CoreV1().ConfigMaps(ns).Create(ctx, cm, metav1.CreateOptions{})
-			if err != nil {
-				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to create Go offsets ConfigMap: %s", err))
-				os.Exit(1)
-			}
-		} else {
-			if cm.Data == nil {
-				cm.Data = make(map[string]string)
-			}
-
-			cm.Data[k8sconsts.GoOffsetsFileName] = string(data)
-			_, err = client.Clientset.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
-			if err != nil {
-				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Go offsets ConfigMap: %s", err))
-				os.Exit(1)
-			}
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to get Go offsets ConfigMap: %s", err))
+			os.Exit(1)
 		}
 
-		ds := updateOdigletDaemonSet(ctx, client, ns, useDefault)
-		_, err = client.Clientset.AppsV1().DaemonSets(ns).Update(ctx, ds, metav1.UpdateOptions{})
+		if cm.Data == nil {
+			cm.Data = make(map[string]string)
+		}
+
+		cm.Data[k8sconsts.GoOffsetsFileName] = string(data)
+		_, err = client.Clientset.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
 		if err != nil {
-			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Odiglet DaemonSet: %s", err))
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Go offsets ConfigMap: %s", err))
 			os.Exit(1)
 		}
 
@@ -213,74 +186,6 @@ func getLatestOffsets(revert bool) ([]byte, error) {
 		return nil, fmt.Errorf("unable to read response body: %s", err)
 	}
 	return data, nil
-}
-
-func updateOdigletDaemonSet(ctx context.Context, client *kube.Client, ns string, revert bool) *appsv1.DaemonSet {
-	ds, err := client.Clientset.AppsV1().DaemonSets(ns).Get(ctx, k8sconsts.OdigletDaemonSetName, metav1.GetOptions{})
-	if err != nil {
-		fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to get Odiglet DaemonSet: %s", err))
-		os.Exit(1)
-	}
-
-	// Add offsets volume (if not already exist)
-	volumes := ds.Spec.Template.Spec.Volumes
-	if volumes == nil {
-		volumes = make([]v1.Volume, 0)
-	}
-	addVolume := true
-	for _, vol := range volumes {
-		if vol.Name == k8sconsts.GoOffsetsConfigMap {
-			addVolume = false
-			break
-		}
-	}
-	if addVolume {
-		volumes = append(volumes, v1.Volume{Name: k8sconsts.GoOffsetsConfigMap,
-			VolumeSource: v1.VolumeSource{
-				ConfigMap: &v1.ConfigMapVolumeSource{
-					LocalObjectReference: v1.LocalObjectReference{
-						Name: k8sconsts.GoOffsetsConfigMap,
-					},
-				},
-			},
-		})
-		ds.Spec.Template.Spec.Volumes = volumes
-	}
-
-	// Add offsets volume mounnt (if not already exist)
-	volumeMounts := ds.Spec.Template.Spec.Containers[0].VolumeMounts
-	if volumeMounts == nil {
-		volumeMounts = make([]v1.VolumeMount, 0)
-	}
-	addVolumeMount := true
-	for _, vm := range volumeMounts {
-		if vm.Name == k8sconsts.GoOffsetsConfigMap {
-			addVolumeMount = false
-			break
-		}
-	}
-	if addVolumeMount {
-		volumeMounts = append(volumeMounts, v1.VolumeMount{Name: k8sconsts.GoOffsetsConfigMap, MountPath: k8sconsts.OffsetFileMountPath})
-		ds.Spec.Template.Spec.Containers[0].VolumeMounts = volumeMounts
-	}
-
-	// Add offsets Env Var (if not already exist)
-	envVars := ds.Spec.Template.Spec.Containers[0].Env
-	if envVars == nil {
-		envVars = make([]v1.EnvVar, 0)
-	}
-	addEnvVar := true
-	for _, env := range envVars {
-		if env.Name == k8sconsts.GoOffsetsEnvVar {
-			addEnvVar = false
-			break
-		}
-	}
-	if addEnvVar {
-		envVars = append(envVars, v1.EnvVar{Name: k8sconsts.GoOffsetsEnvVar, Value: k8sconsts.OffsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName})
-		ds.Spec.Template.Spec.Containers[0].Env = envVars
-	}
-	return ds
 }
 
 func init() {
