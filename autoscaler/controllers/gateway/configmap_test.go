@@ -104,7 +104,7 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			c := tc.cfg
-			err := addSelfTelemetryPipeline(c)
+			err := addSelfTelemetryPipeline(c, 1234)
 			if !assert.ErrorIs(t, err, tc.err) {
 				return
 			}

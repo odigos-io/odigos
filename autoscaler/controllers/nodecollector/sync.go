@@ -1,4 +1,4 @@
-package datacollection
+package nodecollector
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -18,39 +19,44 @@ const (
 	syncDaemonsetRetry = 3
 )
 
-func Sync(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
+func reconcileNodeCollector(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	var sources odigosv1.InstrumentationConfigList
 	if err := c.List(ctx, &sources); err != nil {
-		return err
+		return ctrl.Result{}, err
 	}
 
 	if len(sources.Items) == 0 {
 		logger.V(3).Info("No odigos sources found, skipping data collection sync")
-		return nil
+		return ctrl.Result{}, nil
 	}
 
 	odigosNs := env.GetCurrentNamespace()
 	var dataCollectionCollectorGroup odigosv1.CollectorsGroup
 	err := c.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, &dataCollectionCollectorGroup)
 	if err != nil {
-		return client.IgnoreNotFound(err)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	var dests odigosv1.DestinationList
 	if err := c.List(ctx, &dests); err != nil {
 		logger.Error(err, "Failed to list destinations")
-		return err
+		return ctrl.Result{}, err
 	}
 
 	var processors odigosv1.ProcessorList
 	if err := c.List(ctx, &processors); err != nil {
 		logger.Error(err, "Failed to list processors")
-		return err
+		return ctrl.Result{}, err
 	}
 
-	return syncDataCollection(&sources, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	err = syncDataCollection(&sources, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func syncDataCollection(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
