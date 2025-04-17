@@ -7,15 +7,32 @@ spec:
   language: php
   runtimeEnvironments:
     - name: php
-      supportedVersions: '>= 8'
+      supportedVersions: '>=8.1 <8.2'
   displayName: 'PHP Community Native Instrumentation'
   description: |
     This distribution is for PHP applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
   environmentVariables:
     otlpHttpLocalNode: true
     staticVariables:
+      # Assuming /etc/php.d/*.ini is the default configuration file...
+
+      # RUN php
+      # will load all files in /etc/php.d/*.ini
+
+      # RUN PHP_INI_SCAN_DIR=/usr/local/etc/php.d php
+      # will load all files in /usr/local/etc/php.d/*.ini
+
+      # RUN PHP_INI_SCAN_DIR=:/usr/local/etc/php.d php
+      # will load all files in /etc/php.d/*.ini,
+      # then /usr/local/etc/php.d/*.ini
+
+      # RUN PHP_INI_SCAN_DIR=/usr/local/etc/php.d: php
+      # will load all files in /usr/local/etc/php.d/*.ini,
+      # then /etc/php.d/*.ini
+
       - envName: PHP_INI_SCAN_DIR
-        envValue: ':/var/odigos/php/8.1'
+        envValue: '/var/odigos/php/8.1:'
+
       - envName: OTEL_PHP_AUTOLOAD_ENABLED
         envValue: true
   runtimeAgent:
