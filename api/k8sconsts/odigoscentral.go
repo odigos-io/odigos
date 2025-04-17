@@ -12,7 +12,7 @@ const (
 
 	CentralProxyContainerPort     = 8080
 	CentralProxyConfigMapResource = "configmaps"
-	CentralProxyImage             = "odigos-central-proxy"
+	CentralProxyImage             = "odigos-enterprise-central-proxy"
 )
 
 const (
