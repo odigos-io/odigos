@@ -141,69 +141,16 @@ func main() {
 		setupLog.Info("Running on GKE")
 	}
 
-	// wire up the controllers and webhooks
-	err = controllers.SetupWithManager(mgr, imagePullSecrets, odigosVersion)
-	if err != nil {
-		setupLog.Error(err, "unable to create odigos controllers")
-		os.Exit(1)
-	}
-
 	commonconfig.ControllerConfig = &controllerconfig.ControllerConfig{
 		K8sVersion:     k8sVersion,
 		CollectorImage: collectorImage,
 		OnGKE:          onGKE,
 	}
 
-	if err = (&controllers.DestinationReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ImagePullSecrets: imagePullSecrets,
-		OdigosVersion:    odigosVersion,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Destination")
-		os.Exit(1)
-	}
-
-	if err = (&controllers.ProcessorReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ImagePullSecrets: imagePullSecrets,
-		OdigosVersion:    odigosVersion,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Processor")
-		os.Exit(1)
-	}
-	if err = (&controllers.CollectorsGroupReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ImagePullSecrets: imagePullSecrets,
-		OdigosVersion:    odigosVersion,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
-		os.Exit(1)
-	}
-	if err = (&controllers.SecretReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ImagePullSecrets: imagePullSecrets,
-		OdigosVersion:    odigosVersion,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Secret")
-		os.Exit(1)
-	}
-	if err = (&controllers.GatewayDeploymentReconciler{
-		Client: mgr.GetClient(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
-		os.Exit(1)
-	}
-	if err = (&controllers.SourceReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ImagePullSecrets: imagePullSecrets,
-		OdigosVersion:    odigosVersion,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Source")
+	// wire up the controllers and webhooks
+	err = controllers.SetupWithManager(mgr, imagePullSecrets, odigosVersion)
+	if err != nil {
+		setupLog.Error(err, "unable to create odigos controllers")
 		os.Exit(1)
 	}
 

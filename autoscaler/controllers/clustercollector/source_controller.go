@@ -1,17 +1,12 @@
-package controllers
+package clustercollector
 
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
-	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 type SourceReconciler struct {
@@ -26,21 +21,5 @@ type SourceReconciler struct {
 func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Source")
-
-	err := gateway.Sync(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *SourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.Source{}).
-		WithEventFilter(predicate.Or(
-			odigospredicate.ExistencePredicate{},
-			predicate.LabelChangedPredicate{},
-		)).
-		Complete(r)
+	return reconcileClusterCollector(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
 }

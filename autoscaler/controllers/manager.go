@@ -2,13 +2,12 @@ package controllers
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/go-logr/logr"
 
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
-	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
+	"github.com/odigos-io/odigos/autoscaler/controllers/clustercollector"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/labels"
@@ -19,7 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
@@ -49,7 +47,7 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 
 	odigosNs := env.GetCurrentNamespace()
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
-	clusterCollectorLabelSelector := labels.Set(gateway.ClusterCollectorGateway).AsSelector()
+	clusterCollectorLabelSelector := labels.Set(clustercollector.ClusterCollectorGateway).AsSelector()
 
 	mgrOptions := ctrl.Options{
 		Scheme: scheme,
@@ -58,7 +56,7 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 		},
 		HealthProbeBindAddress: opts.HealthProbeBindAddress,
 		LeaderElection:         opts.EnableLeaderElection,
-		LeaderElectionID:       "201bdfa0.odigos.io",
+		LeaderElectionID:       "f681cfed.odigos.io",
 		/*
 			Leader Election Parameters:
 
@@ -149,16 +147,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 		},
 	}
 
-	// Check if the environment variable `LOCAL_WEBHOOK_CERT_DIR` is set.
-	// If defined, add WebhookServer options with the specified certificate directory.
-	// This is used primarily for local development environments to provide a custom path for serving TLS certificates.
-	localCertDir := os.Getenv("LOCAL_MUTATING_WEBHOOK_CERT_DIR")
-	if localCertDir != "" {
-		mgrOptions.WebhookServer = webhook.NewServer(webhook.Options{
-			CertDir: localCertDir,
-		})
-	}
-
 	return ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
 }
 
@@ -171,6 +159,11 @@ func SetupWithManager(mgr manager.Manager, imagePullSecrets []string, odigosVers
 	err := nodecollector.SetupWithManager(mgr, imagePullSecrets, odigosVersion)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for node collector: %w", err)
+	}
+
+	err = clustercollector.SetupWithManager(mgr, imagePullSecrets, odigosVersion)
+	if err != nil {
+		return fmt.Errorf("failed to create controller for cluster collector: %w", err)
 	}
 
 	return nil
