@@ -24,7 +24,7 @@ import (
 var (
 	updateRemoteFlag     bool
 	installOdigosCentral bool
-	namespace            string
+	proNamespaceFlag     string
 )
 
 var proCmd = &cobra.Command{
@@ -38,7 +38,7 @@ var proCmd = &cobra.Command{
 		onPremToken := cmd.Flag("onprem-token").Value.String()
 
 		if installOdigosCentral {
-			if err := installCentralBackendAndUI(ctx, client, namespace, onPremToken); err != nil {
+			if err := installCentralBackendAndUI(ctx, client, proNamespaceFlag, onPremToken); err != nil {
 				fmt.Println("\033[31mERROR\033[0m Failed to install Odigos central:")
 				fmt.Println(err)
 				os.Exit(1)
@@ -73,6 +73,13 @@ var proCmd = &cobra.Command{
 	Example: `  
 # Renew the on-premises token for Odigos,
 odigos pro --onprem-token ${ODIGOS_TOKEN}
+
+
+# Install the Odigos Central (backend + UI) in a dedicated cluster:
+odigos pro --install-central --onprem-token $ODIGOS_TOKEN
+
+# Install Odigos Central in a custom namespace:
+odigos pro --install-central --onprem-token $ODIGOS_TOKEN --namespace my-central-namespace
 `,
 }
 
@@ -166,6 +173,6 @@ func init() {
 	proCmd.MarkFlagRequired("onprem-token")
 	proCmd.PersistentFlags().BoolVarP(&updateRemoteFlag, "remote", "r", false, "use odigos ui service in the cluster to update the onprem token")
 	proCmd.Flags().BoolVar(&installOdigosCentral, "install-central", false, "Install central backend and UI components (Odigos Enterprise)")
-	proCmd.Flags().StringVarP(&namespace, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
+	proCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
 
 }
