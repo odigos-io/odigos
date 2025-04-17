@@ -1,4 +1,3 @@
-
 ######### python Native Community Agent #########
 
 FROM python:3.11.9 AS python-builder
@@ -42,7 +41,6 @@ COPY --from=nodejs-agent-src / .
 RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
 RUN yarn compile
 
-
 # The fourth step 'nodejs-agent-native-community-src' prepares the agent sources for the native-community agent.
 # it COPY the nodejs agent source from 'nodejs-agent-build' stage and then build the agent in the 'agents/nodejs-native-community' directory.
 # The output of this stage is the compiled agent code in:
@@ -58,15 +56,14 @@ COPY --from=nodejs-agent-build /opentelemetry-node opentelemetry-node
 RUN yarn --cwd ./odigos/agents/nodejs-native-community --production --frozen-lockfile
 
 
-
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.9.0
 ARG TARGETARCH
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        echo "arm64" > /tmp/arch_suffix; \
+    echo "arm64" > /tmp/arch_suffix; \
     else \
-        echo "x64" > /tmp/arch_suffix; \
+    echo "x64" > /tmp/arch_suffix; \
     fi
 
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
@@ -84,6 +81,18 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
     mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
+
+
+# TODO(ben): Add support for other PHP 8+ versions (8.0, 8.1, 8.2, 8.3, 8.4, etc.)
+FROM --platform=$BUILDPLATFORM php:8.1-cli AS php8.1-builder
+WORKDIR /php8.1-instrumentation
+RUN apt-get update && apt-get upgrade -y && apt-get install -y wget unzip gcc make autoconf
+RUN curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o /usr/local/bin/install-php-extensions \
+    && chmod +x /usr/local/bin/install-php-extensions
+RUN install-php-extensions opentelemetry
+RUN cp "$(php-config --extension-dir)/opentelemetry.so" opentelemetry.so
+RUN echo "extension=/var/odigos/php/8.1/opentelemetry.so" > opentelemetry.ini
+
 
 FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.7 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
@@ -119,6 +128,13 @@ COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-na
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
+
+# PHP
+# COPY --from=php8.0-builder /php8.0-instrumentation /instrumentations/php/8.0
+COPY --from=php8.1-builder /php8.1-instrumentation /instrumentations/php/8.1
+# COPY --from=php8.2-builder /php8.2-instrumentation /instrumentations/php/8.2
+# COPY --from=php8.3-builder /php8.3-instrumentation /instrumentations/php/8.3
+# COPY --from=php8.4-builder /php8.4-instrumentation /instrumentations/php/8.4
 
 FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
