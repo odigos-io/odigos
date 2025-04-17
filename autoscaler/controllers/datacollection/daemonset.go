@@ -9,7 +9,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
-	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -115,10 +114,6 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
-	}
-
-	if custom.ShouldApplyCustomDataCollection(dests) {
-		custom.ApplyCustomChangesToDaemonSet(desiredDs, dests)
 	}
 
 	existing := &appsv1.DaemonSet{}
