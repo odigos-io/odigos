@@ -46,7 +46,6 @@ import (
 	"github.com/odigos-io/odigos/common"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
-	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 
@@ -151,11 +150,6 @@ func main() {
 	err = controllers.SetupWithManager(mgr, imagePullSecrets, odigosVersion)
 	if err != nil {
 		setupLog.Error(err, "unable to create odigos controllers")
-		os.Exit(1)
-	}
-
-	if err = actions.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create odigos actions controllers")
 		os.Exit(1)
 	}
 

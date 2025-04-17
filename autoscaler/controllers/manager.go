@@ -7,6 +7,7 @@ import (
 	"github.com/go-logr/logr"
 
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
 	"github.com/odigos-io/odigos/autoscaler/controllers/clustercollector"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -164,6 +165,10 @@ func SetupWithManager(mgr manager.Manager, imagePullSecrets []string, odigosVers
 	err = clustercollector.SetupWithManager(mgr, imagePullSecrets, odigosVersion)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for cluster collector: %w", err)
+	}
+
+	if err = actions.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to create controller for actions: %w", err)
 	}
 
 	return nil
