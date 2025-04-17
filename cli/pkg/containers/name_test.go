@@ -59,6 +59,13 @@ func TestGetName(t *testing.T) {
 			version:  "v1.0.0",
 			expected: "docker.io/keyval/test-component:v1.0.0",
 		},
+		{
+			testName: "image name with tag isn't overwritten",
+			prefix:   "",
+			name:     "docker.io/keyval/test-component:v1.0.0",
+			version:  "v1.0.1",
+			expected: "docker.io/keyval/test-component:v1.0.0",
+		},
 	}
 
 	for _, tt := range tests {

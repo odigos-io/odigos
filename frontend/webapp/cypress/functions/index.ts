@@ -73,18 +73,43 @@ interface UpdateEntityOptions {
 
 export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: UpdateEntityOptions, callback?: () => void) => {
   if (!!nodeContains) {
-    cy.contains(nodeId, nodeContains).should('exist').click({ force: true });
+    cy.contains(nodeId, nodeContains).should('exist').click();
   } else {
-    cy.get(nodeId).should('exist').click({ force: true });
+    cy.get(nodeId).should('exist').click();
   }
 
   cy.get(DATA_IDS.DRAWER).should('exist');
   cy.get(DATA_IDS.DRAWER_EDIT).click();
-  cy.get(fieldKey).clear().type(fieldValue);
-  cy.get(DATA_IDS.DRAWER_SAVE).click();
-  cy.get(DATA_IDS.DRAWER_CLOSE).click();
 
-  if (!!callback) callback();
+  cy.get(fieldKey).click().focused().clear().type(fieldValue);
+  cy.get(fieldKey).should('have.value', fieldValue);
+
+  // The awaits below are an attempt to fix the following flake:
+  //
+  // CypressError: Timed out retrying after 4050ms: `cy.click()` failed because this element:
+  // `<div data-id="Source-2" class="sc-jFQJiD jLKqqL nowheel nodrag">...</div>`
+  // is being covered by another element:
+  // `<div class="sc-dUwGTt WdrMZ" style="opacity: 0;"></div>`
+  //
+  // This flake is caused by the fact that the "cancel warning modal" is shown when the user clicks on the "save" or "close" button.
+  // This failed to reproduce by user interaction, this could be an issue only for Cypress.
+
+  cy.wait(500).then(() => {
+    cy.get(DATA_IDS.DRAWER_SAVE).click();
+
+    cy.wait(500).then(() => {
+      cy.get(DATA_IDS.DRAWER_CLOSE).click();
+
+      cy.wait(500).then(() => {
+        // press enter to close the warn modal (if any)
+        cy.get('body').trigger('keydown', { keyCode: 13 });
+        cy.wait(500);
+        cy.get('body').trigger('keyup', { keyCode: 13 });
+
+        if (!!callback) callback();
+      });
+    });
+  });
 };
 
 interface DeleteEntityOptions {
@@ -108,22 +133,15 @@ export const deleteEntity = ({ nodeId, nodeContains, warnModalTitle, warnModalNo
 };
 
 interface AwaitToastOptions {
-  withSSE: boolean;
   message: string;
 }
 
-export const awaitToast = ({ withSSE, message }: AwaitToastOptions, callback?: () => void) => {
-  // In case of SSE, we need around 5 seconds to allow the backend to batch a notification.
-  // We will force 2 seconds, and Cypress will add 4 more seconds, giving us 6 seconds total.
-  // We don't want to force too much time or we might miss a notification that was sent earlier than expected!
+export const awaitToast = ({ message }: AwaitToastOptions, callback?: () => void) => {
+  cy.get(DATA_IDS.TOAST).contains(message).as('toast-msg');
+  cy.get('@toast-msg').should('exist');
+  cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click({ force: true });
 
-  cy.wait(withSSE ? 2000 : 0).then(() => {
-    cy.get(DATA_IDS.TOAST).contains(message).as('toast-msg');
-    cy.get('@toast-msg').should('exist');
-    cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click({ force: true });
-
-    if (!!callback) callback();
-  });
+  if (!!callback) callback();
 };
 
 export const handleExceptions = () => {

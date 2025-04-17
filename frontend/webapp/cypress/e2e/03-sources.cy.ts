@@ -38,9 +38,10 @@ describe('Sources CRUD', () => {
 
         cy.contains('button', BUTTONS.DONE).click();
 
+        awaitToast({ message: TEXTS.NOTIF_SOURCES_PERSISTING });
         // Wait for sources to instrument
         cy.wait('@gql').then(() => {
-          awaitToast({ withSSE: true, message: TEXTS.NOTIF_SOURCES_CREATED(totalEntities) });
+          awaitToast({ message: TEXTS.NOTIF_SOURCES_CREATED(totalEntities) });
         });
       });
     });
@@ -64,15 +65,12 @@ describe('Sources CRUD', () => {
             fieldValue: TEXTS.UPDATED_NAME,
           },
           () => {
+            awaitToast({ message: TEXTS.NOTIF_SOURCE_UPDATING });
             // Wait for the source to update
             cy.wait('@gql').then(() => {
-              awaitToast({ withSSE: false, message: TEXTS.NOTIF_UPDATED });
-
-              // Since we're updating all sources, and the modified event batcher (in SSE) refreshes the sources...
-              // We will force an extra 3 seconds-wait before we continue to the next source in the loop, this is to ensure we have an updated UI before we proceed to update the next source (otherwise Cypress will fail to find the elements).
-              cy.wait(3000).then(() => {
-                expect(true).to.be.true;
-              });
+              awaitToast({ message: TEXTS.NOTIF_UPDATED });
+              // Wait for the cluster to inherit the changes...
+              cy.wait(500).then(() => expect(true).to.be.true);
             });
           },
         );
@@ -105,9 +103,10 @@ describe('Sources CRUD', () => {
       cy.get(DATA_IDS.MODAL).contains(TEXTS.SOURCE_WARN_MODAL_NOTE).should('exist');
       cy.get(DATA_IDS.APPROVE).click();
 
+      awaitToast({ message: TEXTS.NOTIF_SOURCES_PERSISTING });
       // Wait for the sources to delete
       cy.wait('@gql').then(() => {
-        awaitToast({ withSSE: true, message: TEXTS.NOTIF_SOURCES_DELETED(totalEntities) });
+        awaitToast({ message: TEXTS.NOTIF_SOURCES_DELETED(totalEntities) });
       });
     });
   });

@@ -10,6 +10,7 @@ import (
 	servicegraphconnector "github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector"
 	spanmetricsconnector "github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector"
 	awscloudwatchlogsexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter"
+	awsemfexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter"
 	awss3exporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter"
 	awsxrayexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter"
 	azuredataexplorerexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter"
@@ -47,6 +48,7 @@ import (
 	tencentcloudlogserviceexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/tencentcloudlogserviceexporter"
 	zipkinexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter"
 	basicauthextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension"
+	bearertokenauthextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension"
 	healthcheckextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
 	pprofextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension"
 	azureblobstorageexporter "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter"
@@ -97,6 +99,7 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
 
+	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
 	odigossourcesfilterprocessor "github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor"
 )
 
@@ -109,6 +112,7 @@ func components() (otelcol.Factories, error) {
 		healthcheckextension.NewFactory(),
 		pprofextension.NewFactory(),
 		basicauthextension.NewFactory(),
+		bearertokenauthextension.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -118,6 +122,7 @@ func components() (otelcol.Factories, error) {
 	factories.ExtensionModules[healthcheckextension.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.121.0"
 	factories.ExtensionModules[pprofextension.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.121.0"
 	factories.ExtensionModules[basicauthextension.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.121.0"
+	factories.ExtensionModules[bearertokenauthextension.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.121.0"
 
 	factories.Receivers, err = otelcol.MakeFactoryMap[receiver.Factory](
 		otlpreceiver.NewFactory(),
@@ -147,6 +152,7 @@ func components() (otelcol.Factories, error) {
 		googlecloudstorageexporter.NewFactory(),
 		mockdestinationexporter.NewFactory(),
 		awscloudwatchlogsexporter.NewFactory(),
+		awsemfexporter.NewFactory(),
 		awss3exporter.NewFactory(),
 		awsxrayexporter.NewFactory(),
 		azuredataexplorerexporter.NewFactory(),
@@ -196,6 +202,7 @@ func components() (otelcol.Factories, error) {
 	factories.ExporterModules[googlecloudstorageexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter v0.121.0"
 	factories.ExporterModules[mockdestinationexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter v0.121.0"
 	factories.ExporterModules[awscloudwatchlogsexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.121.0"
+	factories.ExporterModules[awsemfexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.121.0"
 	factories.ExporterModules[awss3exporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.121.0"
 	factories.ExporterModules[awsxrayexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.121.0"
 	factories.ExporterModules[azuredataexplorerexporter.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.121.0"
@@ -260,6 +267,7 @@ func components() (otelcol.Factories, error) {
 		remotetapprocessor.NewFactory(),
 		odigostrafficmetrics.NewFactory(),
 		odigossourcesfilterprocessor.NewFactory(),
+		odigosurltemplateprocessor.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -291,6 +299,7 @@ func components() (otelcol.Factories, error) {
 	factories.ProcessorModules[remotetapprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor v0.121.0"
 	factories.ProcessorModules[odigostrafficmetrics.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics v0.121.0"
 	factories.ProcessorModules[odigossourcesfilterprocessor.NewFactory().Type()] = "github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor v0.121.0"
+	factories.ProcessorModules[odigosurltemplateprocessor.NewFactory().Type()] = "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.121.0"
 
 	factories.Connectors, err = otelcol.MakeFactoryMap[connector.Factory](
 		forwardconnector.NewFactory(),

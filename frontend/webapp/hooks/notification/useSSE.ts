@@ -61,7 +61,10 @@ export const useSSE = () => {
             case EVENT_TYPES.MODIFIED:
               if (!isAwaitingInstrumentation && notification.target) {
                 const id = getIdFromSseTarget(notification.target, EntityTypes.Source);
-                fetchSourceById(id as WorkloadId);
+
+                // This timeout is to ensure that the object isn't in paginating state when we start fetching the data,
+                // otherwise paginated-fetch will replace the modified-data with old-data.
+                setTimeout(() => fetchSourceById(id as WorkloadId), 1000);
               }
               break;
 
@@ -69,6 +72,7 @@ export const useSSE = () => {
               const created = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
               setInstrumentCount('sourcesCreated', created);
 
+              // If not waiting, or we're at 100%, then proceed
               if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
                 addNotification({ type: StatusType.Success, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
                 setInstrumentAwait(false);
@@ -80,6 +84,7 @@ export const useSSE = () => {
               const deleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
               setInstrumentCount('sourcesDeleted', deleted);
 
+              // If not waiting, or we're at 100%, then proceed
               if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && deleted >= sourcesToDelete)) {
                 addNotification({ type: StatusType.Success, title: EVENT_TYPES.DELETED, message: `Successfully deleted ${deleted} sources` });
                 setInstrumentAwait(false);
@@ -96,11 +101,6 @@ export const useSSE = () => {
         } else {
           console.warn('Unhandled SSE for CRD type:', notification.crdType);
         }
-
-        // This works for now,
-        // but in the future we might have to change this to "removePendingItems",
-        // and remove the specific pending items based on their entityType and entityId
-        setPendingItems([]);
 
         // This works for now,
         // but in the future we might have to change this to "removePendingItems",

@@ -11,7 +11,22 @@ on:
         required: true
 
 jobs:
+  verify-offsets:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ['enterprise-go-instrumentation']
+    steps:
+      - name: Verify no open offsets PRs
+        run: |
+          curl -s -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+          "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100" | \
+          jq '[.[] | select(.labels | any(.name == "offsets"))]' | \
+          jq 'if length > 0 then error("❌ Error: Open PRs with label \"offsets\" found!") else empty end'
+
   print-tag:
+    needs: verify-offsets
     runs-on: ubuntu-latest
     steps:
       - name: Extract Tag
@@ -25,6 +40,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Detected new git tag. initializing a release", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   tag-modules:
+    needs: verify-offsets
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -80,6 +96,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: Odigos go modules release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   publish-images:
+    needs: verify-offsets
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -176,6 +193,7 @@ jobs:
             VERSION=${{ env.ODIGOS_TAG }}
             SUMMARY=${{ matrix.summary }}
             DESCRIPTION=${{ matrix.description }}
+            LD_FLAGS=-s -w
           platforms: linux/amd64,linux/arm64
           file: >-
             ${{ matrix.service == 'odiglet' && format('odiglet/{0}', matrix.dockerfile) ||
@@ -205,6 +223,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: odigos component ${{ matrix.service }} release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   publish-collector-linux-packages:
+    needs: verify-offsets
     runs-on: ubuntu-latest
     steps:
       - name: Extract Tag

@@ -18,6 +18,9 @@ ignoredNamespaces:
 # you can add additional container names to ignore by adding them to the list
 ignoredContainers:
 
+# Name of the cluster, will be used to identify this cluster in the centralized backend
+clusterName: ''
+
 collectorGateway:
   # the memory request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
@@ -158,6 +161,27 @@ odiglet:
     ## will match ALL taints, allowing pods to be scheduled on any node
     ## regardless of its taints (including master/control-plane nodes)
     - operator: Exists
+  affinity: {}
+  # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
+  # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
+  # into the Odiglet to ensure it can access the container runtime unix socket.
+  customContainerRuntimeSocketPath: ''
+
+centralProxy:
+  enabled: false
+  # Central backend URL where this proxy will forward data
+  centralBackendURL: ''
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
   affinity: {}
 
 cli:
