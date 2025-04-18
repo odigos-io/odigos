@@ -93,37 +93,33 @@ RUN cp -r ./opentelemetry-php/* ./
 FROM --platform=$BUILDPLATFORM php:8.0-cli AS php8.0-builder
 WORKDIR /php-instrumentation
 COPY --from=php-agents ./php-agents/8.0/* ./
+RUN apt-get update && apt-get upgrade -y && apt-get install -y git unzip
 RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
-    && composer config --no-plugins allow-plugins.* true \
-    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-plugins
 FROM --platform=$BUILDPLATFORM php:8.1-cli AS php8.1-builder
 WORKDIR /php-instrumentation
 COPY --from=php-agents ./php-agents/8.1/* ./
-RUN apt-get update && apt-get upgrade -y && apt-get install -y unzip
+RUN apt-get update && apt-get upgrade -y && apt-get install -y git unzip
 RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
-    && composer config --no-plugins allow-plugins.* true \
-    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-plugins
 FROM --platform=$BUILDPLATFORM php:8.2-cli AS php8.2-builder
 WORKDIR /php-instrumentation
 COPY --from=php-agents ./php-agents/8.2/* ./
-RUN apt-get update && apt-get upgrade -y && apt-get install -y unzip
+RUN apt-get update && apt-get upgrade -y && apt-get install -y git unzip
 RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
-    && composer config --no-plugins allow-plugins.* true \
-    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-plugins
 FROM --platform=$BUILDPLATFORM php:8.3-cli AS php8.3-builder
 WORKDIR /php-instrumentation
 COPY --from=php-agents ./php-agents/8.3/* ./
-RUN apt-get update && apt-get upgrade -y && apt-get install -y unzip
+RUN apt-get update && apt-get upgrade -y && apt-get install -y git unzip
 RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
-    && composer config --no-plugins allow-plugins.* true \
-    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-plugins
 FROM --platform=$BUILDPLATFORM php:8.4-cli AS php8.4-builder
 WORKDIR /php-instrumentation
 COPY --from=php-agents ./php-agents/8.4/* ./
-RUN apt-get update && apt-get upgrade -y && apt-get install -y unzip
+RUN apt-get update && apt-get upgrade -y && apt-get install -y git unzip
 RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
-    && composer config --no-plugins allow-plugins.* true \
-    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-plugins
 
 
 FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.7 AS builder
