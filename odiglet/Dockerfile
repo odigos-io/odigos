@@ -83,55 +83,47 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
 
 
-# TODO(ben): Build the binaries outside of this repo (e.g. @odigos/opentelemetry-php), then use a single Docker engine to clone the external repo and select the relative version's directory.
+# PHP: clone agents repo
+FROM --platform=$BUILDPLATFORM php:8-cli AS php-agents
+WORKDIR /php-agents
+RUN apt-get update && apt-get upgrade -y && apt-get install -y git
+RUN git clone https://github.com/odigos-io/opentelemetry-php
+RUN cp -r ./opentelemetry-php/* ./
+# PHP: install libraries for each agent
 FROM --platform=$BUILDPLATFORM php:8.0-cli AS php8.0-builder
-WORKDIR /php8.0-instrumentation
-RUN apt-get update && apt-get upgrade -y && apt-get install -y wget unzip gcc make autoconf
-RUN curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o /usr/local/bin/install-php-extensions \
-    && chmod +x /usr/local/bin/install-php-extensions
-RUN install-php-extensions opentelemetry
-RUN cp "$(php-config --extension-dir)/opentelemetry.so" opentelemetry.so
-RUN echo "extension=/var/odigos/php/8.0/opentelemetry.so" > opentelemetry.ini
-
-# TODO(ben): Build the binaries outside of this repo (e.g. @odigos/opentelemetry-php), then use a single Docker engine to clone the external repo and select the relative version's directory.
+WORKDIR /php-instrumentation
+COPY --from=php-agents ./php-agents/8.0/* ./
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
+    && composer config --no-plugins allow-plugins.* true \
+    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 FROM --platform=$BUILDPLATFORM php:8.1-cli AS php8.1-builder
-WORKDIR /php8.1-instrumentation
-RUN apt-get update && apt-get upgrade -y && apt-get install -y wget unzip gcc make autoconf
-RUN curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o /usr/local/bin/install-php-extensions \
-    && chmod +x /usr/local/bin/install-php-extensions
-RUN install-php-extensions opentelemetry
-RUN cp "$(php-config --extension-dir)/opentelemetry.so" opentelemetry.so
-RUN echo "extension=/var/odigos/php/8.1/opentelemetry.so" > opentelemetry.ini
-
-# TODO(ben): Build the binaries outside of this repo (e.g. @odigos/opentelemetry-php), then use a single Docker engine to clone the external repo and select the relative version's directory.
+WORKDIR /php-instrumentation
+COPY --from=php-agents ./php-agents/8.1/* ./
+RUN apt-get update && apt-get upgrade -y && apt-get install -y unzip
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
+    && composer config --no-plugins allow-plugins.* true \
+    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 FROM --platform=$BUILDPLATFORM php:8.2-cli AS php8.2-builder
-WORKDIR /php8.2-instrumentation
-RUN apt-get update && apt-get upgrade -y && apt-get install -y wget unzip gcc make autoconf
-RUN curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o /usr/local/bin/install-php-extensions \
-    && chmod +x /usr/local/bin/install-php-extensions
-RUN install-php-extensions opentelemetry
-RUN cp "$(php-config --extension-dir)/opentelemetry.so" opentelemetry.so
-RUN echo "extension=/var/odigos/php/8.2/opentelemetry.so" > opentelemetry.ini
-
-# TODO(ben): Build the binaries outside of this repo (e.g. @odigos/opentelemetry-php), then use a single Docker engine to clone the external repo and select the relative version's directory.
+WORKDIR /php-instrumentation
+COPY --from=php-agents ./php-agents/8.2/* ./
+RUN apt-get update && apt-get upgrade -y && apt-get install -y unzip
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
+    && composer config --no-plugins allow-plugins.* true \
+    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 FROM --platform=$BUILDPLATFORM php:8.3-cli AS php8.3-builder
-WORKDIR /php8.3-instrumentation
-RUN apt-get update && apt-get upgrade -y && apt-get install -y wget unzip gcc make autoconf
-RUN curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o /usr/local/bin/install-php-extensions \
-    && chmod +x /usr/local/bin/install-php-extensions
-RUN install-php-extensions opentelemetry
-RUN cp "$(php-config --extension-dir)/opentelemetry.so" opentelemetry.so
-RUN echo "extension=/var/odigos/php/8.3/opentelemetry.so" > opentelemetry.ini
-
-# TODO(ben): Build the binaries outside of this repo (e.g. @odigos/opentelemetry-php), then use a single Docker engine to clone the external repo and select the relative version's directory.
+WORKDIR /php-instrumentation
+COPY --from=php-agents ./php-agents/8.3/* ./
+RUN apt-get update && apt-get upgrade -y && apt-get install -y unzip
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
+    && composer config --no-plugins allow-plugins.* true \
+    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 FROM --platform=$BUILDPLATFORM php:8.4-cli AS php8.4-builder
-WORKDIR /php8.4-instrumentation
-RUN apt-get update && apt-get upgrade -y && apt-get install -y wget unzip gcc make autoconf
-RUN curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o /usr/local/bin/install-php-extensions \
-    && chmod +x /usr/local/bin/install-php-extensions
-RUN install-php-extensions opentelemetry
-RUN cp "$(php-config --extension-dir)/opentelemetry.so" opentelemetry.so
-RUN echo "extension=/var/odigos/php/8.4/opentelemetry.so" > opentelemetry.ini
+WORKDIR /php-instrumentation
+COPY --from=php-agents ./php-agents/8.4/* ./
+RUN apt-get update && apt-get upgrade -y && apt-get install -y unzip
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
+    && composer config --no-plugins allow-plugins.* true \
+    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
 
 FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.7 AS builder
@@ -170,11 +162,11 @@ COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-na
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 # PHP
-COPY --from=php8.0-builder /php8.0-instrumentation /instrumentations/php/8.0
-COPY --from=php8.1-builder /php8.1-instrumentation /instrumentations/php/8.1
-COPY --from=php8.2-builder /php8.2-instrumentation /instrumentations/php/8.2
-COPY --from=php8.3-builder /php8.3-instrumentation /instrumentations/php/8.3
-COPY --from=php8.4-builder /php8.4-instrumentation /instrumentations/php/8.4
+COPY --from=php8.0-builder /php-instrumentation /instrumentations/php/8.0
+COPY --from=php8.1-builder /php-instrumentation /instrumentations/php/8.1
+COPY --from=php8.2-builder /php-instrumentation /instrumentations/php/8.2
+COPY --from=php8.3-builder /php-instrumentation /instrumentations/php/8.3
+COPY --from=php8.4-builder /php-instrumentation /instrumentations/php/8.4
 
 FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
