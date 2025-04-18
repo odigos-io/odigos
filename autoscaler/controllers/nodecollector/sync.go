@@ -6,6 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -22,27 +23,28 @@ const (
 func reconcileNodeCollector(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var sources odigosv1.InstrumentationConfigList
-	if err := c.List(ctx, &sources); err != nil {
+	var ics odigosv1.InstrumentationConfigList
+	if err := c.List(ctx, &ics); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if len(sources.Items) == 0 {
+	if len(ics.Items) == 0 {
 		logger.V(3).Info("No odigos sources found, skipping data collection sync")
 		return ctrl.Result{}, nil
 	}
 
 	odigosNs := env.GetCurrentNamespace()
+
 	var dataCollectionCollectorGroup odigosv1.CollectorsGroup
 	err := c.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, &dataCollectionCollectorGroup)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	var dests odigosv1.DestinationList
-	if err := c.List(ctx, &dests); err != nil {
-		logger.Error(err, "Failed to list destinations")
-		return ctrl.Result{}, err
+	var clusterCollectorCollectorGroup odigosv1.CollectorsGroup
+	err = c.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosClusterCollectorConfigMapName}, &clusterCollectorCollectorGroup)
+	if err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	var processors odigosv1.ProcessorList
@@ -51,7 +53,7 @@ func reconcileNodeCollector(ctx context.Context, c client.Client, scheme *runtim
 		return ctrl.Result{}, err
 	}
 
-	err = syncDataCollection(&sources, &dests, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	err = syncDataCollection(&ics, clusterCollectorCollectorGroup.Status.ReceiverSignals, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -59,7 +61,7 @@ func reconcileNodeCollector(ctx context.Context, c client.Client, scheme *runtim
 	return ctrl.Result{}, nil
 }
 
-func syncDataCollection(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
+func syncDataCollection(sources *odigosv1.InstrumentationConfigList, signals []common.ObservabilitySignal, processors *odigosv1.ProcessorList,
 	dataCollection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client,
 	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
 	logger := log.FromContext(ctx)
@@ -71,13 +73,13 @@ func syncDataCollection(sources *odigosv1.InstrumentationConfigList, dests *odig
 		return err
 	}
 
-	err = SyncConfigMap(sources, dests, processors, dataCollection, ctx, c, scheme)
+	err = SyncConfigMap(sources, signals, processors, dataCollection, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
 	}
 
-	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, dests, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
 
 	return nil
 }
