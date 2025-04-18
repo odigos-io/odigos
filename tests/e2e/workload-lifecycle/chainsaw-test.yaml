@@ -50,6 +50,7 @@ spec:
     - name: '01 Assert Pipeline'
       try:
         - assert:
+            timeout: 1m
             file: ../../common/assert/pipeline-ready.yaml
 
     - name: '01 Assert Instrumented'
