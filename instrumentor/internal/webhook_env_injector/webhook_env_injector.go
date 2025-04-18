@@ -3,6 +3,7 @@ package webhookenvinjector
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -21,8 +22,14 @@ import (
 func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
 	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, client client.Client) {
 
-	if runtimeDetails.Language == common.JavaProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity {
-		injectJavaCommunityEnvVars(ctx, logger, container, client)
+	otelSignalExporterLangugages := []common.ProgrammingLanguage{
+		common.JavaProgrammingLanguage,
+		common.PhpProgrammingLanguage,
+	}
+
+	if slices.Contains(otelSignalExporterLangugages, runtimeDetails.Language) && otelsdk == common.OtelSdkNativeCommunity {
+		// Set the OTEL signals exporter env vars
+		setOtelSignalsExporterEnvVars(ctx, logger, container, client)
 	}
 
 	envVarsPerLanguage := getEnvVarNamesForLanguage(runtimeDetails.Language)
@@ -187,13 +194,6 @@ func getContainerEnvVarPointer(containerEnv *[]corev1.EnvVar, envVarName string)
 		}
 	}
 	return nil
-}
-
-func injectJavaCommunityEnvVars(ctx context.Context, logger logr.Logger,
-	container *corev1.Container, client client.Client) {
-
-	// Set the OTEL signals exporter env vars
-	setOtelSignalsExporterEnvVars(ctx, logger, container, client)
 }
 
 func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger,
