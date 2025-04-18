@@ -27,7 +27,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
-func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
+func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme) error {
 	logger := log.FromContext(ctx)
@@ -38,7 +38,7 @@ func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.
 	SamplingExists := commonconf.FindFirstProcessorByType(allProcessors, "odigossampling")
 	setTracesLoadBalancer := SamplingExists != nil
 
-	desired, err := getDesiredConfigMap(sources, dests, processors, datacollection, scheme, setTracesLoadBalancer)
+	desired, err := getDesiredConfigMap(sources, signals, processors, datacollection, scheme, setTracesLoadBalancer)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
@@ -95,9 +95,9 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 	return desired, nil
 }
 
-func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
+func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
 	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool) (*v1.ConfigMap, error) {
-	cmData, err := calculateConfigMapData(datacollection, sources, dests, processors, setTracesLoadBalancer)
+	cmData, err := calculateConfigMapData(datacollection, sources, signals, processors, setTracesLoadBalancer)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odi
 	return &desired, nil
 }
 
-func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
+func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
 	setTracesLoadBalancer bool) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
@@ -268,23 +268,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		},
 	}
 
-	collectTraces := false
-	collectMetrics := false
-	collectLogs := false
-	for _, dst := range dests.Items {
-		for _, s := range dst.Spec.Signals {
-			if s == odigoscommon.LogsObservabilitySignal {
-				collectLogs = true
-			}
-			if s == odigoscommon.TracesObservabilitySignal || dst.Spec.Type == odigoscommon.PrometheusDestinationType {
-				collectTraces = true
-			}
-			if s == odigoscommon.MetricsObservabilitySignal {
-				collectMetrics = true
-			}
-		}
-	}
-
+	collectLogs := slices.Contains(signals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
 		includes := make([]string, 0)
 		for _, element := range sources.Items {
@@ -340,6 +324,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		}
 	}
 
+	collectTraces := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
 			Receivers:  []string{"otlp"},
@@ -348,6 +333,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		}
 	}
 
+	collectMetrics := slices.Contains(signals, odigoscommon.MetricsObservabilitySignal)
 	if collectMetrics {
 		cfg.Receivers["kubeletstats"] = config.GenericMap{
 			"auth_type":            "serviceAccount",
