@@ -22,12 +22,12 @@ import (
 func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
 	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, client client.Client) {
 
-	otelSignalExporterLangugages := []common.ProgrammingLanguage{
+	otelSignalExporterLanguages := []common.ProgrammingLanguage{
 		common.JavaProgrammingLanguage,
 		common.PhpProgrammingLanguage,
 	}
 
-	if slices.Contains(otelSignalExporterLangugages, runtimeDetails.Language) && otelsdk == common.OtelSdkNativeCommunity {
+	if slices.Contains(otelSignalExporterLanguages, runtimeDetails.Language) && otelsdk == common.OtelSdkNativeCommunity {
 		// Set the OTEL signals exporter env vars
 		setOtelSignalsExporterEnvVars(ctx, logger, container, client)
 	}
