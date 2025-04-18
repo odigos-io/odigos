@@ -78,6 +78,7 @@ spec:
     - name: '[2 - Workload Instrumentation] Odigos pipeline ready'
       try:
         - assert:
+            timeout: 1m
             file: ../../common/assert/pipeline-ready.yaml
 
     - name: '[2 - Workload Instrumentation] Simple-demo instrumented after destination added'

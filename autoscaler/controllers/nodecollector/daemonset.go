@@ -1,4 +1,4 @@
-package datacollection
+package nodecollector
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
-	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -45,7 +44,7 @@ type DelayManager struct {
 }
 
 // RunSyncDaemonSetWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
-func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int, dests *odigosv1.DestinationList,
+func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int,
 	collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string) {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
@@ -75,7 +74,7 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 		}()
 
 		for i := 0; i < retries; i++ {
-			_, err = syncDaemonSet(ctx, dests, collection, c, scheme, secrets, version)
+			_, err = syncDaemonSet(ctx, collection, c, scheme, secrets, version)
 			if err == nil {
 				return
 			}
@@ -89,7 +88,7 @@ func (dm *DelayManager) finishProgress() {
 	dm.inProgress = false
 }
 
-func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacollection *odigosv1.CollectorsGroup,
+func syncDaemonSet(ctx context.Context, datacollection *odigosv1.CollectorsGroup,
 	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
 
@@ -115,10 +114,6 @@ func syncDaemonSet(ctx context.Context, dests *odigosv1.DestinationList, datacol
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
-	}
-
-	if custom.ShouldApplyCustomDataCollection(dests) {
-		custom.ApplyCustomChangesToDaemonSet(desiredDs, dests)
 	}
 
 	existing := &appsv1.DaemonSet{}
