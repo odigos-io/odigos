@@ -1,4 +1,4 @@
-package datacollection
+package nodecollector
 
 import (
 	"context"
