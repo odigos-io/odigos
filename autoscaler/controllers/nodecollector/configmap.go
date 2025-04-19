@@ -142,7 +142,7 @@ func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
 			return fmt.Errorf("failed to cast k8s attributes processor extract config to GenericMap")
 		}
 		if _, exists := extract["metadata"]; !exists {
-			extract["metadata"] = []string{}
+			extract["metadata"] = []interface{}{}
 		}
 		metadata, ok := extract["metadata"].([]interface{})
 		if !ok {
@@ -392,6 +392,13 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		err := updateOrCreateK8sAttributesForLogs(&cfg)
 		if err != nil {
 			return "", err
+		}
+		// remove logs processors from CRD logsProcessors in case it is there so not to add it twice
+		for i, processor := range logsProcessors {
+			if processor == K8sAttributesProcessorName {
+				logsProcessors = append(logsProcessors[:i], logsProcessors[i+1:]...)
+				break
+			}
 		}
 
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
