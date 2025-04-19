@@ -10,7 +10,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
@@ -28,7 +27,8 @@ import (
 )
 
 const (
-	K8sAttributesProcessorName = "k8sattributes/odigos-k8sattributes"
+	k8sAttributesProcessorName   = "k8sattributes/odigos-k8sattributes"
+	logsServiceNameProcessorName = "resource/service-name"
 )
 
 func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
@@ -125,12 +125,12 @@ func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, signals []
 
 func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
 
-	_, k8sProcessorExists := cfg.Processors[K8sAttributesProcessorName]
+	_, k8sProcessorExists := cfg.Processors[k8sAttributesProcessorName]
 
 	if k8sProcessorExists {
 		// make sure it includes the workload names attributes in the processor "extract" section.
 		// this is added automatically for logs regardless of any action configuration.
-		k8sAttributesCfg, ok := cfg.Processors[K8sAttributesProcessorName].(config.GenericMap)
+		k8sAttributesCfg, ok := cfg.Processors[k8sAttributesProcessorName].(config.GenericMap)
 		if !ok {
 			return fmt.Errorf("failed to cast k8s attributes processor config to GenericMap")
 		}
@@ -165,10 +165,10 @@ func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
 		}
 		extract["metadata"] = metadata                                // set the copy back to the config
 		k8sAttributesCfg["extract"] = extract                         // set the copy back to the config
-		cfg.Processors[K8sAttributesProcessorName] = k8sAttributesCfg // set the copy back to the config
+		cfg.Processors[k8sAttributesProcessorName] = k8sAttributesCfg // set the copy back to the config
 	} else {
 		// if the processor does not exist, create it with the default configuration
-		cfg.Processors[K8sAttributesProcessorName] = config.GenericMap{
+		cfg.Processors[k8sAttributesProcessorName] = config.GenericMap{
 			"auth_type": "serviceAccount",
 			"extract": config.GenericMap{
 				"metadata": []string{
@@ -203,7 +203,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		log.Log.V(0).Error(err, "processor", name)
 	}
 
-	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
+	memoryLimiterConfiguration := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
 
 	processorsCfg["batch"] = empty
 	processorsCfg["memory_limiter"] = memoryLimiterConfiguration
@@ -395,10 +395,32 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		}
 		// remove logs processors from CRD logsProcessors in case it is there so not to add it twice
 		for i, processor := range logsProcessors {
-			if processor == K8sAttributesProcessorName {
+			if processor == k8sAttributesProcessorName {
 				logsProcessors = append(logsProcessors[:i], logsProcessors[i+1:]...)
 				break
 			}
+		}
+
+		// set "service.name" for logs same as the workload name.
+		// note: this does not respect the override service name a user can set in sources.
+		cfg.Processors[logsServiceNameProcessorName] = config.GenericMap{
+			"attributes": []config.GenericMap{
+				{
+					"key":            string(semconv.ServiceNameKey),
+					"from_attribute": string(semconv.K8SDeploymentNameKey),
+					"action":         "insert", // avoid overwriting existing value
+				},
+				{
+					"key":            string(semconv.ServiceNameKey),
+					"from_attribute": string(semconv.K8SStatefulSetNameKey),
+					"action":         "insert", // avoid overwriting existing value
+				},
+				{
+					"key":            string(semconv.ServiceNameKey),
+					"from_attribute": string(semconv.K8SDaemonSetNameKey),
+					"action":         "insert", // avoid overwriting existing value
+				},
+			},
 		}
 
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
@@ -545,7 +567,7 @@ func getFileLogPipelineProcessors() []string {
 	// no need to batch, as the stanza receiver already batches the data, and so is the gateway.
 	// batch processor will also mask and hide any back-pressure from receivers which we want propagated to the source.
 	return append(
-		[]string{"memory_limiter", K8sAttributesProcessorName},
+		[]string{"memory_limiter", k8sAttributesProcessorName, logsServiceNameProcessorName},
 		getCommonProcessors()...,
 	)
 }
