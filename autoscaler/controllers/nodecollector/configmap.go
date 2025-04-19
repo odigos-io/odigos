@@ -27,6 +27,10 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
+const (
+	K8sAttributesProcessorName = "k8sattributes/odigos-k8sattributes"
+)
+
 func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme) error {
@@ -117,6 +121,74 @@ func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, signals []
 	}
 
 	return &desired, nil
+}
+
+func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
+
+	_, k8sProcessorExists := cfg.Processors[K8sAttributesProcessorName]
+
+	if k8sProcessorExists {
+		// make sure it includes the workload names attributes in the processor "extract" section.
+		// this is added automatically for logs regardless of any action configuration.
+		k8sAttributesCfg, ok := cfg.Processors[K8sAttributesProcessorName].(config.GenericMap)
+		if !ok {
+			return fmt.Errorf("failed to cast k8s attributes processor config to GenericMap")
+		}
+		if _, exists := k8sAttributesCfg["extract"]; !exists {
+			k8sAttributesCfg["extract"] = config.GenericMap{}
+		}
+		extract, ok := k8sAttributesCfg["extract"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to cast k8s attributes processor extract config to GenericMap")
+		}
+		if _, exists := extract["metadata"]; !exists {
+			extract["metadata"] = []string{}
+		}
+		metadata, ok := extract["metadata"].([]interface{})
+		if !ok {
+			return fmt.Errorf("failed to cast k8s attributes processor metadata config to []interface{}")
+		}
+		// convert the metadata to a string array to compare it's values
+		asStrArray := make([]string, len(metadata))
+		for i, v := range metadata {
+			asStrArray[i] = v.(string)
+		}
+		// add the workload names attributes to the metadata list
+		if !slices.Contains(asStrArray, string(semconv.K8SDeploymentNameKey)) {
+			metadata = append(metadata, string(semconv.K8SDeploymentNameKey))
+		}
+		if !slices.Contains(asStrArray, string(semconv.K8SStatefulSetNameKey)) {
+			metadata = append(metadata, string(semconv.K8SStatefulSetNameKey))
+		}
+		if !slices.Contains(asStrArray, string(semconv.K8SDaemonSetNameKey)) {
+			metadata = append(metadata, string(semconv.K8SDaemonSetNameKey))
+		}
+		extract["metadata"] = metadata                                // set the copy back to the config
+		k8sAttributesCfg["extract"] = extract                         // set the copy back to the config
+		cfg.Processors[K8sAttributesProcessorName] = k8sAttributesCfg // set the copy back to the config
+	} else {
+		// if the processor does not exist, create it with the default configuration
+		cfg.Processors[K8sAttributesProcessorName] = config.GenericMap{
+			"auth_type": "serviceAccount",
+			"extract": config.GenericMap{
+				"metadata": []string{
+					string(semconv.K8SDeploymentNameKey),
+					string(semconv.K8SStatefulSetNameKey),
+					string(semconv.K8SDaemonSetNameKey),
+				},
+			},
+			"pod_association": []config.GenericMap{
+				{
+					"sources": []config.GenericMap{
+						{"from": "resource_attribute", "name": string(semconv.K8SPodNameKey)},
+						{"from": "resource_attribute", "name": string(semconv.K8SNamespaceNameKey)},
+					},
+				},
+			},
+		}
+	}
+
+	return nil
 }
 
 func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
@@ -317,6 +389,11 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			},
 		}
 
+		err := updateOrCreateK8sAttributesForLogs(&cfg)
+		if err != nil {
+			return "", err
+		}
+
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
 			Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
@@ -461,7 +538,7 @@ func getFileLogPipelineProcessors() []string {
 	// no need to batch, as the stanza receiver already batches the data, and so is the gateway.
 	// batch processor will also mask and hide any back-pressure from receivers which we want propagated to the source.
 	return append(
-		[]string{"memory_limiter"},
+		[]string{"memory_limiter", K8sAttributesProcessorName},
 		getCommonProcessors()...,
 	)
 }
