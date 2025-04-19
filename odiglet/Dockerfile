@@ -83,45 +83,17 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
 
 
-# PHP: clone agents repo
+# PHP: Clone agents repo (contains pre-compiled binaries and libraries for each PHP version)
 FROM --platform=$BUILDPLATFORM php:8-cli AS php-agents
 WORKDIR /php-agents
+ARG PHP_AGENT_VERSION=main
 RUN apt-get update && apt-get upgrade -y && apt-get install -y git
-RUN git clone https://github.com/odigos-io/opentelemetry-php
-RUN cp -r ./opentelemetry-php/* ./
-# PHP: install libraries for each agent
-FROM --platform=$BUILDPLATFORM php:8.0-cli AS php8.0-builder
-WORKDIR /php-instrumentation
-COPY --from=php-agents ./php-agents/8.0/* ./
-RUN apt-get update && apt-get upgrade -y && apt-get install -y git unzip
-RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
-    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-plugins
-FROM --platform=$BUILDPLATFORM php:8.1-cli AS php8.1-builder
-WORKDIR /php-instrumentation
-COPY --from=php-agents ./php-agents/8.1/* ./
-RUN apt-get update && apt-get upgrade -y && apt-get install -y git unzip
-RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
-    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-plugins
-FROM --platform=$BUILDPLATFORM php:8.2-cli AS php8.2-builder
-WORKDIR /php-instrumentation
-COPY --from=php-agents ./php-agents/8.2/* ./
-RUN apt-get update && apt-get upgrade -y && apt-get install -y git unzip
-RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
-    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-plugins
-FROM --platform=$BUILDPLATFORM php:8.3-cli AS php8.3-builder
-WORKDIR /php-instrumentation
-COPY --from=php-agents ./php-agents/8.3/* ./
-RUN apt-get update && apt-get upgrade -y && apt-get install -y git unzip
-RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
-    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-plugins
-FROM --platform=$BUILDPLATFORM php:8.4-cli AS php8.4-builder
-WORKDIR /php-instrumentation
-COPY --from=php-agents ./php-agents/8.4/* ./
-RUN apt-get update && apt-get upgrade -y && apt-get install -y git unzip
-RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer \
-    && composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-plugins
+RUN git clone https://github.com/odigos-io/opentelemetry-php \
+    && cd opentelemetry-php \
+    && git checkout $PHP_AGENT_VERSION
 
 
+######### ODIGLET #########
 FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.7 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
@@ -158,11 +130,11 @@ COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-na
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 # PHP
-COPY --from=php8.0-builder /php-instrumentation /instrumentations/php/8.0
-COPY --from=php8.1-builder /php-instrumentation /instrumentations/php/8.1
-COPY --from=php8.2-builder /php-instrumentation /instrumentations/php/8.2
-COPY --from=php8.3-builder /php-instrumentation /instrumentations/php/8.3
-COPY --from=php8.4-builder /php-instrumentation /instrumentations/php/8.4
+COPY --from=php-agents /php-agents/opentelemetry-php/8.0 /instrumentations/php/8.0
+COPY --from=php-agents /php-agents/opentelemetry-php/8.1 /instrumentations/php/8.1
+COPY --from=php-agents /php-agents/opentelemetry-php/8.2 /instrumentations/php/8.2
+COPY --from=php-agents /php-agents/opentelemetry-php/8.3 /instrumentations/php/8.3
+COPY --from=php-agents /php-agents/opentelemetry-php/8.4 /instrumentations/php/8.4
 
 FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
