@@ -41,31 +41,29 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+	configProfiles := odigosConfig.Profiles
 
 	odigosDeployment := corev1.ConfigMap{}
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosDeploymentConfigMapName}, &odigosDeployment)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+	onPremTokenProfiles := []common.ProfileName{}
+	if tokenProfilesString, ok := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]; ok && len(tokenProfilesString) > 0 {
+		onPremTokenProfilesString := strings.Split(tokenProfilesString, ", ")
+		for i := range onPremTokenProfilesString {
+			onPremTokenProfiles = append(onPremTokenProfiles, common.ProfileName(common.ProfileName(onPremTokenProfilesString[i])))
+		}
+	}
 
 	// effective profiles are what is actually used in the cluster (minus non existing profiles and plus dependencies)
 	availableProfiles := profiles.GetAvailableProfilesForTier(r.Tier)
 
-	allProfiles := make([]common.ProfileName, 0)
-	allProfiles = append(allProfiles, odigosConfig.Profiles...)
-
-	if tokenProfilesString, ok := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]; ok {
-		tokenProfiles := strings.Split(tokenProfilesString, ", ")
-		// cast tokenProfiles to common.ProfileName
-		for _, p := range tokenProfiles {
-			allProfiles = append(allProfiles, common.ProfileName(p))
-		}
-	}
-
-	effectiveProfiles := calculateEffectiveProfiles(allProfiles, availableProfiles)
+	effectiveConfigProfiles := calculateEffectiveProfiles(configProfiles, availableProfiles)
+	effectiveOnPremTokenProfiles := calculateEffectiveProfiles(onPremTokenProfiles, availableProfiles)
 
 	// apply the current profiles list to the cluster
-	err = r.applyProfileManifests(ctx, effectiveProfiles)
+	err = r.applyProfileManifests(ctx, effectiveConfigProfiles, effectiveOnPremTokenProfiles)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -77,6 +75,7 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	// make sure the default ignored containers are always present
 	odigosConfig.IgnoredContainers = mergeIgnoredItemLists(odigosConfig.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
 
+	effectiveProfiles := append(effectiveConfigProfiles, effectiveOnPremTokenProfiles...)
 	modifyConfigWithEffectiveProfiles(effectiveProfiles, odigosConfig)
 	odigosConfig.Profiles = effectiveProfiles
 
@@ -157,22 +156,39 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 	return nil
 }
 
-func (r *odigosConfigController) applyProfileManifests(ctx context.Context, effectiveProfiles []common.ProfileName) error {
+func (r *odigosConfigController) applySingleProfile(ctx context.Context, profileName common.ProfileName, profileDeploymentHash string, profileSource string) error {
+	yamls, err := manifests.ReadProfileYamlManifests(profileName)
+	if err != nil {
+		return err
+	}
 
-	profileDeploymentHash := calculateProfilesDeploymentHash(effectiveProfiles, r.OdigosVersion)
-
-	for _, profileName := range effectiveProfiles {
-
-		yamls, err := manifests.ReadProfileYamlManifests(profileName)
+	for _, yamlBytes := range yamls {
+		err = r.applySingleProfileManifest(ctx, profileName, yamlBytes, profileDeploymentHash, profileSource)
 		if err != nil {
 			return err
 		}
+	}
 
-		for _, yamlBytes := range yamls {
-			err = r.applySingleProfileManifest(ctx, profileName, yamlBytes, profileDeploymentHash)
-			if err != nil {
-				return err
-			}
+	return nil
+}
+
+func (r *odigosConfigController) applyProfileManifests(ctx context.Context, effectiveConfigProfiles []common.ProfileName, effecitveTokenProfiles []common.ProfileName) error {
+
+	allProfiles := append(effectiveConfigProfiles, effecitveTokenProfiles...)
+
+	profileDeploymentHash := calculateProfilesDeploymentHash(allProfiles, r.OdigosVersion)
+
+	// apply token profiles first, so if there as an override, it will be flaged as the last one (config)
+	for _, profileName := range effecitveTokenProfiles {
+		err := r.applySingleProfile(ctx, profileName, profileDeploymentHash, k8sconsts.OdigosProfileSourceOnPremToken)
+		if err != nil {
+			return err
+		}
+	}
+	for _, profileName := range effectiveConfigProfiles {
+		err := r.applySingleProfile(ctx, profileName, profileDeploymentHash, k8sconsts.OdigosProfileSourceConfig)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -212,7 +228,7 @@ func (r *odigosConfigController) applyProfileManifests(ctx context.Context, effe
 	return nil
 }
 
-func (r *odigosConfigController) applySingleProfileManifest(ctx context.Context, profileName common.ProfileName, yamlBytes []byte, profileDeploymentHash string) error {
+func (r *odigosConfigController) applySingleProfileManifest(ctx context.Context, profileName common.ProfileName, yamlBytes []byte, profileDeploymentHash string, profileSource string) error {
 
 	obj := &unstructured.Unstructured{}
 	err := yaml.Unmarshal(yamlBytes, obj)
@@ -233,6 +249,7 @@ func (r *odigosConfigController) applySingleProfileManifest(ctx context.Context,
 		annotations = make(map[string]string)
 	}
 	annotations[k8sconsts.OdigosProfileAnnotation] = string(profileName)
+	annotations[k8sconsts.OdigosProfileSourceAnnotation] = profileSource
 	obj.SetAnnotations(annotations)
 
 	gvk := obj.GroupVersionKind()
