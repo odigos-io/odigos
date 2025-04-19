@@ -4,17 +4,22 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/odigos-io/odigos/profiles"
 	"github.com/odigos-io/odigos/profiles/profile"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 var profileCmd = &cobra.Command{
@@ -64,13 +69,66 @@ var profileCmd = &cobra.Command{
 			fmt.Println("Odigos profile unavailable - no configuration found")
 			os.Exit(1)
 		}
+		configProfiles := config.Profiles
 
-		if len(config.Profiles) == 0 {
+		odigosDeployment, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Println("Odigos profile unavailable - unable to read odigos deployment configmap")
+			os.Exit(1)
+		}
+		tokenProfilesStr := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]
+		var tokenProfiles []string
+		if tokenProfilesStr != "" {
+			tokenProfiles = strings.Split(tokenProfilesStr, ",")
+		}
+
+		effectiveCm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Println("Odigos profile unavailable - unable to read effective configmap")
+			os.Exit(1)
+		}
+		var effectiveConfig common.OdigosConfiguration
+		if err := yaml.Unmarshal([]byte(effectiveCm.Data[consts.OdigosConfigurationFileName]), &effectiveConfig); err != nil {
+			fmt.Println("Odigos profile unavailable - unable to read effective configmap")
+			os.Exit(1)
+		}
+		effecitveProfilesStr := effectiveConfig.Profiles
+		var effectiveProfiles []string
+		if len(effecitveProfilesStr) > 0 {
+			effectiveProfiles = make([]string, len(effecitveProfilesStr))
+			for i, profile := range effecitveProfilesStr {
+				effectiveProfiles[i] = string(profile)
+			}
+		}
+
+		if len(configProfiles) == 0 && len(tokenProfiles) == 0 && len(effectiveProfiles) == 0 {
 			fmt.Println("No profiles are currently applied")
 			os.Exit(0)
 		}
 
-		fmt.Println("Currently applied profiles:", config.Profiles)
+		if len(configProfiles) > 0 {
+			fmt.Println("Profiles set in config:")
+			for _, profile := range configProfiles {
+				fmt.Println("-", profile)
+			}
+			fmt.Println("")
+		}
+
+		if len(tokenProfiles) > 0 {
+			fmt.Println("Profiles from odigos api token:")
+			for _, profile := range tokenProfiles {
+				fmt.Println("-", profile)
+			}
+			fmt.Println("")
+		}
+
+		if len(effectiveProfiles) > 0 {
+			fmt.Println("Effective profiles:")
+			for _, profile := range effectiveProfiles {
+				fmt.Println("-", profile)
+			}
+			fmt.Println("")
+		}
 	},
 	Example: `
 # Enable payload collection for all supported workloads and instrumentation libraries in the cluster
