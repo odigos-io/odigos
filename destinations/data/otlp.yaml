@@ -22,3 +22,4 @@ spec:
         required: true
         placeholder: 'host:port'
         tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`.
+  testConnectionSupported: true
