@@ -554,27 +554,33 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 // If one already exists, it will return that object (to support upgrades while preserving existing file).
 // Otherwise, it returns a configmap with a blank file, which instructs Odiglet to use the default offsets.
 func NewOdigletGoOffsetsConfigMap(ctx context.Context, client *kube.Client, ns string) (*v1.ConfigMap, error) {
-	cm := &v1.ConfigMap{}
-	cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return nil, err
-		}
-		cm = &v1.ConfigMap{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "ConfigMap",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      k8sconsts.GoOffsetsConfigMap,
-				Namespace: ns,
-			},
-			Data: map[string]string{
-				k8sconsts.GoOffsetsFileName: "",
-			},
+	existingCm := &v1.ConfigMap{}
+	existingCm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
+
+	if err != nil && !apierrors.IsNotFound(err) {
+		return nil, err
+	}
+
+	goOffsetContent := ""
+	if err == nil {
+		if _, exists := existingCm.Data[k8sconsts.GoOffsetsFileName]; exists {
+			goOffsetContent = existingCm.Data[k8sconsts.GoOffsetsFileName]
 		}
 	}
-	return cm, nil
+
+	return &v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.GoOffsetsConfigMap,
+			Namespace: ns,
+		},
+		Data: map[string]string{
+			k8sconsts.GoOffsetsFileName: goOffsetContent,
+		},
+	}, nil
 }
 
 // used to inject the host volumes into odigos components for selinux update
