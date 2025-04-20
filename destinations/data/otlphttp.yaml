@@ -42,6 +42,7 @@ spec:
         tooltip: in case the otlp receiver requires basic auth, this is the password
       secret: true
 
+<<<<<<< HEAD
     - name: OTLP_HTTP_COMPRESSION
       displayName: Destination Compression Type
       componentType: dropdown
@@ -57,4 +58,12 @@ spec:
         required: false
         tooltip: 'Compression type to use for the destination. The default is `none`. The compression type must be supported by the destination.'
       initialValue: 'none'
+=======
+    - name: OTLP_HTTP_HEADERS
+      displayName: Headers
+      componentType: keyValuePairs
+      componentProps:
+        required: false
+        tooltip: 'Headers is the option to set custom HTTP headers for OTLP HTTP destination. If specified, please provide each header in the format: key:value. Multiple headers can be added. Keys must be non-empty strings and follow standard HTTP header conventions. Values must be non-empty strings and may include alphanumerics, whitespace, and standard punctuation.'
+>>>>>>> origin/otlphttp-dest-headers
   testConnectionSupported: true
