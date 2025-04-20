@@ -10,7 +10,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
@@ -25,6 +24,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+)
+
+const (
+	k8sAttributesProcessorName   = "k8sattributes/odigos-k8sattributes"
+	logsServiceNameProcessorName = "resource/service-name"
 )
 
 func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
@@ -119,6 +123,74 @@ func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, signals []
 	return &desired, nil
 }
 
+func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
+
+	_, k8sProcessorExists := cfg.Processors[k8sAttributesProcessorName]
+
+	if k8sProcessorExists {
+		// make sure it includes the workload names attributes in the processor "extract" section.
+		// this is added automatically for logs regardless of any action configuration.
+		k8sAttributesCfg, ok := cfg.Processors[k8sAttributesProcessorName].(config.GenericMap)
+		if !ok {
+			return fmt.Errorf("failed to cast k8s attributes processor config to GenericMap")
+		}
+		if _, exists := k8sAttributesCfg["extract"]; !exists {
+			k8sAttributesCfg["extract"] = config.GenericMap{}
+		}
+		extract, ok := k8sAttributesCfg["extract"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to cast k8s attributes processor extract config to GenericMap")
+		}
+		if _, exists := extract["metadata"]; !exists {
+			extract["metadata"] = []interface{}{}
+		}
+		metadata, ok := extract["metadata"].([]interface{})
+		if !ok {
+			return fmt.Errorf("failed to cast k8s attributes processor metadata config to []interface{}")
+		}
+		// convert the metadata to a string array to compare it's values
+		asStrArray := make([]string, len(metadata))
+		for i, v := range metadata {
+			asStrArray[i] = v.(string)
+		}
+		// add the workload names attributes to the metadata list
+		if !slices.Contains(asStrArray, string(semconv.K8SDeploymentNameKey)) {
+			metadata = append(metadata, string(semconv.K8SDeploymentNameKey))
+		}
+		if !slices.Contains(asStrArray, string(semconv.K8SStatefulSetNameKey)) {
+			metadata = append(metadata, string(semconv.K8SStatefulSetNameKey))
+		}
+		if !slices.Contains(asStrArray, string(semconv.K8SDaemonSetNameKey)) {
+			metadata = append(metadata, string(semconv.K8SDaemonSetNameKey))
+		}
+		extract["metadata"] = metadata                                // set the copy back to the config
+		k8sAttributesCfg["extract"] = extract                         // set the copy back to the config
+		cfg.Processors[k8sAttributesProcessorName] = k8sAttributesCfg // set the copy back to the config
+	} else {
+		// if the processor does not exist, create it with the default configuration
+		cfg.Processors[k8sAttributesProcessorName] = config.GenericMap{
+			"auth_type": "serviceAccount",
+			"extract": config.GenericMap{
+				"metadata": []string{
+					string(semconv.K8SDeploymentNameKey),
+					string(semconv.K8SStatefulSetNameKey),
+					string(semconv.K8SDaemonSetNameKey),
+				},
+			},
+			"pod_association": []config.GenericMap{
+				{
+					"sources": []config.GenericMap{
+						{"from": "resource_attribute", "name": string(semconv.K8SPodNameKey)},
+						{"from": "resource_attribute", "name": string(semconv.K8SNamespaceNameKey)},
+					},
+				},
+			},
+		}
+	}
+
+	return nil
+}
+
 func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
 	setTracesLoadBalancer bool) (string, error) {
 
@@ -131,7 +203,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		log.Log.V(0).Error(err, "processor", name)
 	}
 
-	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
+	memoryLimiterConfiguration := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
 
 	processorsCfg["batch"] = empty
 	processorsCfg["memory_limiter"] = memoryLimiterConfiguration
@@ -317,6 +389,40 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			},
 		}
 
+		err := updateOrCreateK8sAttributesForLogs(&cfg)
+		if err != nil {
+			return "", err
+		}
+		// remove logs processors from CRD logsProcessors in case it is there so not to add it twice
+		for i, processor := range logsProcessors {
+			if processor == k8sAttributesProcessorName {
+				logsProcessors = append(logsProcessors[:i], logsProcessors[i+1:]...)
+				break
+			}
+		}
+
+		// set "service.name" for logs same as the workload name.
+		// note: this does not respect the override service name a user can set in sources.
+		cfg.Processors[logsServiceNameProcessorName] = config.GenericMap{
+			"attributes": []config.GenericMap{
+				{
+					"key":            string(semconv.ServiceNameKey),
+					"from_attribute": string(semconv.K8SDeploymentNameKey),
+					"action":         "insert", // avoid overwriting existing value
+				},
+				{
+					"key":            string(semconv.ServiceNameKey),
+					"from_attribute": string(semconv.K8SStatefulSetNameKey),
+					"action":         "insert", // avoid overwriting existing value
+				},
+				{
+					"key":            string(semconv.ServiceNameKey),
+					"from_attribute": string(semconv.K8SDaemonSetNameKey),
+					"action":         "insert", // avoid overwriting existing value
+				},
+			},
+		}
+
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
 			Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
@@ -461,7 +567,7 @@ func getFileLogPipelineProcessors() []string {
 	// no need to batch, as the stanza receiver already batches the data, and so is the gateway.
 	// batch processor will also mask and hide any back-pressure from receivers which we want propagated to the source.
 	return append(
-		[]string{"memory_limiter"},
+		[]string{"memory_limiter", k8sAttributesProcessorName, logsServiceNameProcessorName},
 		getCommonProcessors()...,
 	)
 }
