@@ -77,14 +77,14 @@ var proCmd = &cobra.Command{
 	},
 	Example: `  
 # Renew the on-premises token for Odigos,
-odigos pro --onprem-token ${ODIGOS_TOKEN}
+odigos pro --onprem-token <token>
 
 
 # Install the Odigos Central (backend + UI) in a dedicated cluster:
-odigos pro --install-central --onprem-token $ODIGOS_TOKEN
+odigos pro --install-central --onprem-token <token>
 
 # Install Odigos Central in a custom namespace:
-odigos pro --install-central --onprem-token $ODIGOS_TOKEN --namespace my-central-namespace
+odigos pro --install-central --onprem-token <token> --namespace <namespace>
 `,
 }
 
