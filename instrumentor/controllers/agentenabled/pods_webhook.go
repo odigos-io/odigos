@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -16,7 +15,6 @@ import (
 	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
-	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
@@ -83,8 +81,8 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	// this is temporary and should be refactored so the service name and other resource attributes are written to agent config
-	serviceName := p.getServiceNameForEnv(ctx, logger, pw)
-	if serviceName == nil || *serviceName == "" {
+	serviceName := ic.Spec.ServiceName
+	if serviceName == "" {
 		logger.Error(errors.New("failed to get service name for pod"), "Skipping Injection of ODIGOS agent")
 		return nil
 	}
@@ -106,7 +104,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 			continue
 		}
 
-		containerVolumeMounted, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, *serviceName, *odigosConfig.MountMethod)
+		containerVolumeMounted, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, *odigosConfig.MountMethod)
 		if err != nil {
 			logger.Error(err, "failed to inject ODIGOS agent to container")
 			continue
@@ -202,9 +200,21 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 
 	// check for existing env vars so we don't introduce them again
-	existingEnvNames := make(map[string]struct{})
+	existingEnvNames := make(podswebhook.EnvVarNamesMap)
 	for _, envVar := range podContainerSpec.Env {
 		existingEnvNames[envVar.Name] = struct{}{}
+	}
+
+	// inject various kinds of distro environment variables
+	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroName, pw.Namespace)
+	for _, envVar := range distroMetadata.EnvironmentVariables.StaticVariables {
+		existingEnvNames = podswebhook.InjectStaticEnvVar(existingEnvNames, podContainerSpec, envVar.EnvName, envVar.EnvValue)
+	}
+	if distroMetadata.EnvironmentVariables.OpAmpClientEnvironments {
+		existingEnvNames = podswebhook.InjectOpampServerEnvVar(existingEnvNames, podContainerSpec)
+	}
+	if distroMetadata.EnvironmentVariables.OtlpHttpLocalNode {
+		existingEnvNames = podswebhook.InjectOtlpHttpEndpointEnvVar(existingEnvNames, podContainerSpec)
 	}
 
 	volumeMounted := false
@@ -217,7 +227,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 			}
 		}
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
-			podswebhook.InjectOtelResourceAndServerNameEnvVars(&existingEnvNames, podContainerSpec, distroName, pw, serviceName)
+			podswebhook.InjectOtelResourceAndServiceNameEnvVars(existingEnvNames, podContainerSpec, distroName, pw, serviceName)
 		}
 		// TODO: once we have a flag to enable/disable device injection, we should check it here.
 		if distroMetadata.RuntimeAgent.Device != nil {
@@ -245,31 +255,8 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 			}
 		}
 	}
-	podswebhook.InjectOdigosK8sEnvVars(&existingEnvNames, podContainerSpec, distroName, pw.Namespace)
 
 	return volumeMounted, nil
-}
-
-// checks for the service name on the annotation, or fallback to the workload name
-func (p *PodsWebhook) getServiceNameForEnv(ctx context.Context, logger logr.Logger, podWorkload *k8sconsts.PodWorkload) *string {
-	workloadObj := workload.ClientObjectFromWorkloadKind(podWorkload.Kind)
-	err := p.Client.Get(ctx, client.ObjectKey{Namespace: podWorkload.Namespace, Name: podWorkload.Name}, workloadObj)
-	if err != nil {
-		logger.Error(err, "failed to get workload object from cache. cannot check for workload source. using workload name as OTEL_SERVICE_NAME")
-		return &podWorkload.Name
-	}
-
-	resolvedServiceName, err := sourceutils.OtelServiceNameBySource(ctx, p.Client, workloadObj)
-	if err != nil {
-		logger.Error(err, "failed to get OTel service name from source. using workload name as OTEL_SERVICE_NAME")
-		return &podWorkload.Name
-	}
-
-	if resolvedServiceName == "" {
-		resolvedServiceName = podWorkload.Name
-	}
-
-	return &resolvedServiceName
 }
 
 func getRelevantOtelSDKs(ctx context.Context, kubeClient client.Client, podWorkload k8sconsts.PodWorkload) (map[common.ProgrammingLanguage]common.OtelSdk, error) {

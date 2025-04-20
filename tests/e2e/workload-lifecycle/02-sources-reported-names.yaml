@@ -208,4 +208,59 @@ spec:
     kind: Deployment
   otelServiceName: python-min-version-reported
 ---
-
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: dotnet8-glibc
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: dotnet8-glibc
+    namespace: default
+    kind: Deployment
+  otelServiceName: dotnet8-glibc-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: dotnet8-musl
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: dotnet8-musl
+    namespace: default
+    kind: Deployment
+  otelServiceName: dotnet8-musl-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: dotnet6-glibc
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: dotnet6-glibc
+    namespace: default
+    kind: Deployment
+  otelServiceName: dotnet6-glibc-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: dotnet6-musl
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: dotnet6-musl
+    namespace: default
+    kind: Deployment
+  otelServiceName: dotnet6-musl-reported
+---

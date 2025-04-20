@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-logr/logr"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
@@ -34,6 +35,9 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		scheme:        mgr.GetScheme(),
 		nodeName:      nodeName,
 	}
+
+	// Buffered channel for instrumentation instances updates
+	updateChannel := make(chan InstrumentationUpdateTask, 1000)
 
 	http.HandleFunc("POST /v1/opamp", func(w http.ResponseWriter, req *http.Request) {
 
@@ -89,11 +93,14 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				return
 			}
 		}
-		if connectionInfo != nil {
-			err = handlers.UpdateInstrumentationInstanceStatus(ctx, &agentToServer, connectionInfo)
-			if err != nil {
-				logger.Error(err, "Failed to persist instrumentation device status")
-				// still return the opamp response
+
+		// Only update the InstrumentationInstance if the message contains the relevant data
+		// This is to avoid unnecessary updates when the message is a heartbeat
+		if connectionInfo != nil && (agentToServer.AgentDescription != nil || agentToServer.Health != nil) {
+			select {
+			case updateChannel <- InstrumentationUpdateTask{ctx, UpdateInstance, &agentToServer, connectionInfo}:
+			default:
+				logger.Error(nil, "Update channel is full, dropping task")
 			}
 		}
 
@@ -138,6 +145,13 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 	server := &http.Server{Addr: listenEndpoint, Handler: nil}
 	var wg sync.WaitGroup
 
+	// Start the worker goroutine to process instrumentation instances updates sequentially
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ProcessInstrumentationUpdates(ctx, updateChannel, handlers, logger)
+	}()
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -155,6 +169,10 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 		for {
 			select {
 			case <-ctx.Done():
+
+				// Close the updateChannel here so the worker goroutine exits
+				close(updateChannel)
+
 				if err := server.Shutdown(ctx); err != nil {
 					logger.Error(err, "Failed to shut down the http server for incoming connections")
 				}
@@ -164,10 +182,12 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 				// Clean up stale connections
 				deadConnections := connectionCache.CleanupStaleConnections()
 				for _, conn := range deadConnections {
-					err := handlers.OnConnectionNoHeartbeat(ctx, &conn)
-					if err != nil {
-						logger.Error(err, "Failed to process connection with no heartbeat")
+					select {
+					case updateChannel <- InstrumentationUpdateTask{ctx, DeleteInstance, &protobufs.AgentToServer{}, &conn}:
+					default:
+						logger.Error(nil, "Update channel is full, dropping task")
 					}
+
 				}
 			}
 		}
@@ -175,4 +195,42 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 
 	wg.Wait()
 	return nil
+}
+
+type InstrumentationUpdateTask struct {
+	ctx            context.Context
+	taskType       InstrumentationTaskType
+	agentToServer  *protobufs.AgentToServer
+	connectionInfo *connection.ConnectionInfo
+}
+
+type InstrumentationTaskType int
+
+const (
+	UpdateInstance InstrumentationTaskType = iota
+	DeleteInstance
+)
+
+func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan InstrumentationUpdateTask, handlers *ConnectionHandlers, logger logr.Logger) {
+	logger.Info("Starting instrumentation instance update worker")
+
+	for task := range updateChannel {
+		switch task.taskType {
+		case UpdateInstance:
+			err := handlers.UpdateInstrumentationInstanceStatus(task.ctx, task.agentToServer, task.connectionInfo)
+			if err != nil {
+				logger.Error(err, "Failed to update instrumentation instance")
+			}
+		case DeleteInstance:
+			err := instrumentation_instance.DeleteInstrumentationInstance(ctx, task.connectionInfo.Pod, task.connectionInfo.ContainerName,
+				handlers.kubeclient, int(task.connectionInfo.Pid))
+			if err != nil {
+				logger.Error(err, "failed to delete instrumentation instance on connection timedout")
+			}
+		default:
+			logger.Error(nil, "Unknown task type received", "taskType", task.taskType)
+
+		}
+	}
+	logger.Info("Shutting down instrumentation update worker")
 }

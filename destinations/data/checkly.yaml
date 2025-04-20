@@ -1,0 +1,33 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: checkly
+  displayName: Checkly
+  category: managed
+spec:
+  image: checkly.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  fields:
+    - name: CHECKLY_ENDOINT
+      displayName: OTLP gRPC Endpoint
+      componentType: input
+      componentProps:
+        required: true
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`.
+    - name: CHECKLY_API_KEY
+      displayName: API Key
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+  note:
+    type: Warning
+    content: |
+      Odigos will only filter and export traces to Checkly if their `trace_state` includes the tag `checkly="true"`, which is added by a Checkly SDK.

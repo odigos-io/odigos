@@ -22,6 +22,7 @@ rules:
       - create
       - patch
       - update
+      - delete
       {{- end }}
   - apiGroups:
       - odigos.io

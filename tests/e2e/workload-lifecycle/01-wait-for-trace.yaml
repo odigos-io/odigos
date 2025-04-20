@@ -2,23 +2,23 @@ apiVersion: e2e.tests.odigos.io/v1
 kind: TraceTest
 description: This test waits for a trace that is generated from the successful instrumented services.
 query: |
-  { resource.service.name = "nodejs-minimum-version" } ||
-  { resource.service.name = "nodejs-latest-version" } ||
-  { resource.service.name = "nodejs-dockerfile-env" } ||
-  { resource.service.name = "nodejs-manifest-env" } ||
-  { resource.service.name = "java-supported-version" } ||
-  { resource.service.name = "java-latest-version" } ||
-  { resource.service.name = "java-old-version" } ||
-  { resource.service.name = "java-supported-docker-env" } ||
-  { resource.service.name = "java-supported-manifest-env" } ||
-  { resource.service.name = "java-special-exec" } ||
-  { resource.service.name = "java-azul" } ||
-  { resource.service.name = "python-latest-version" && span.http.route = "insert-random/" } ||
-  { resource.service.name = "python-alpine" && span.http.route = "insert-random/" } ||
-  { resource.service.name = "python-min-version" && span.http.route = "insert-random/" }  ||
-  { resource.service.name = "dotnet8-glibc" } ||
-  { resource.service.name = "dotnet8-musl" } ||
-  { resource.service.name = "dotnet6-glibc" } ||
-  { resource.service.name = "dotnet6-musl" }
+  length([?span.serviceName == 'nodejs-minimum-version']) > `0` ||
+  length([?span.serviceName == 'nodejs-latest-version']) > `0` ||
+  length([?span.serviceName == 'nodejs-dockerfile-env']) > `0` ||
+  length([?span.serviceName == 'nodejs-manifest-env']) > `0` ||
+  length([?span.serviceName == 'java-supported-version']) > `0` ||
+  length([?span.serviceName == 'java-latest-version']) > `0` ||
+  length([?span.serviceName == 'java-old-version']) > `0` ||
+  length([?span.serviceName == 'java-supported-docker-env']) > `0` ||
+  length([?span.serviceName == 'java-supported-manifest-env']) > `0` ||
+  length([?span.serviceName == 'java-special-exec']) > `0` ||
+  length([?span.serviceName == 'java-azul']) > `0` ||
+  length([?span.serviceName == 'python-latest-version' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
+  length([?span.serviceName == 'python-alpine' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
+  length([?span.serviceName == 'python-min-version' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
+  length([?span.serviceName == 'dotnet8-glibc']) > `0` ||
+  length([?span.serviceName == 'dotnet8-musl']) > `0` ||
+  length([?span.serviceName == 'dotnet6-glibc']) > `0` ||
+  length([?span.serviceName == 'dotnet6-musl']) > `0`
 expected:
   count: 18

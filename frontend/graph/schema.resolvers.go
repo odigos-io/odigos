@@ -163,8 +163,10 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 	}
 
 	src := instrumentationConfigToActualSource(*ic)
-	// note: the following is done only for fetch-by-id, we removed this from paginate-all due to peformance issues
-	services.AddHealthyInstrumentationInstancesCondition(ctx, ic, src)
+	condition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
+	if condition.Status != "" {
+		src.Conditions = append(src.Conditions, &condition)
+	}
 
 	return src, nil
 }
@@ -350,37 +352,45 @@ func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj 
 	return services.ListInstrumentationRules(ctx)
 }
 
-// K8sActualSources is the resolver for the k8sActualSources field.
-func (r *k8sActualNamespaceResolver) K8sActualSources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error) {
+// Sources is the resolver for the sources field.
+func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error) {
 	ns := obj.Name
-	nsWorkloads, err := services.GetWorkloadsInNamespace(ctx, ns)
+
+	workloads, err := services.GetWorkloadsInNamespace(ctx, ns)
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert nsWorkloads to []*model.K8sActualSource
-	nsActualSources := make([]*model.K8sActualSource, len(nsWorkloads))
-	for i, workload := range nsWorkloads {
-		nsActualSources[i] = &workload
-
-		namespaceSource, err := services.GetSourceCRD(ctx, ns, ns, services.WorkloadKindNamespace)
-		if err != nil && !strings.Contains(err.Error(), "not found") {
-			return make([]*model.K8sActualSource, 0), err
-		}
-
-		workloadSource, err := services.GetSourceCRD(ctx, ns, workload.Name, services.WorkloadKind(workload.Kind))
-		if err != nil && !strings.Contains(err.Error(), "not found") {
-			return make([]*model.K8sActualSource, 0), err
-		}
-
-		nsInstrumented := namespaceSource != nil && !namespaceSource.Spec.DisableInstrumentation
-		srcInstrumented := workloadSource != nil && !workloadSource.Spec.DisableInstrumentation
-
-		instrumented := (nsInstrumented && (srcInstrumented || workloadSource == nil)) || (!nsInstrumented && srcInstrumented)
-		nsActualSources[i].Selected = &instrumented
+	sourceList, err := kube.DefaultClient.OdigosClient.Sources(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
 	}
 
-	return nsActualSources, nil
+	var namespaceSource *v1alpha1.Source
+	sourceObjects := make(map[string]*v1alpha1.Source)
+	for _, source := range sourceList.Items {
+		if services.WorkloadKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace {
+			namespaceSource = &source
+		} else {
+			key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
+			sourceObjects[key] = &source
+		}
+	}
+
+	// Convert workloads to []*model.K8sActualSource
+	sources := make([]*model.K8sActualSource, len(workloads))
+	for i, workload := range workloads {
+		workloadSource := sourceObjects[fmt.Sprintf("%s/%s/%s", workload.Namespace, workload.Name, workload.Kind)]
+
+		namespaceInstrumented := namespaceSource != nil && !namespaceSource.Spec.DisableInstrumentation
+		sourceInstrumented := workloadSource != nil && !workloadSource.Spec.DisableInstrumentation
+		isInstrumented := (namespaceInstrumented && (sourceInstrumented || workloadSource == nil)) || (!namespaceInstrumented && sourceInstrumented)
+
+		sources[i] = &workload
+		sources[i].Selected = &isInstrumented
+	}
+
+	return sources, nil
 }
 
 // UpdateAPIToken is the resolver for the updateApiToken field.
@@ -958,6 +968,11 @@ func (r *queryResolver) DescribeOdigos(ctx context.Context) (*model.OdigosAnalyz
 // DescribeSource is the resolver for the describeSource field.
 func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error) {
 	return source_describe.GetSourceDescription(ctx, namespace, kind, name)
+}
+
+// InstrumentationInstancesHealth is the resolver for the instrumentationInstancesHealth field.
+func (r *queryResolver) InstrumentationInstancesHealth(ctx context.Context) ([]*model.InstrumentationInstanceHealth, error) {
+	return services.GetInstrumentationInstancesHealthConditions(ctx)
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.

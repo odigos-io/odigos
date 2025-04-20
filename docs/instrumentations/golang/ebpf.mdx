@@ -22,7 +22,7 @@ Odigos uses the official [opentelemetry-go-instrumentation](https://github.com/o
 
 ## Traces
 
-Odigos will automatically instrument your golang services to record and collect spans for distributed tracing, by utilizing the OpenTelemetry go official auto Instrumentation Libraries.
+Odigos will automatically instrument your golang services to record and collect spans for distributed tracing, by utilizing the OpenTelemetry Go official auto Instrumentation Libraries.
 
 ## Instrumentation Libraries
 
@@ -60,3 +60,20 @@ The following go modules will be auto instrumented by Odigos:
 - [`google.golang.org/grpc`](https://pkg.go.dev/google.golang.org/grpc) versions `>= v1.14.0`. rpc client and server for gRPC framework
 
 Please note that modules marked with ⭐️ are available in Odigos pro only.
+
+## About Go Offsets
+
+Auto-instrumentation for Go with eBPF works by using eBPF uprobes to dynamically read variables in memory at runtime. For example,
+when instrumenting the `net/http` package Odigos is able to determine the `http.request.method` by probing the [`Method`](https://pkg.go.dev/net/http#Request) 
+field in the current `Request`.
+
+Doing so relies on knowing the exact memory location of this field. This is known as the field's "offset" (because it refers to the field's location as a
+number of bytes offset from the start of the current struct). With this information, our eBPF code can access the value directly.
+
+However, most production Go programs do not preserve this offset information at compile time. Only Go programs compiled with [debug information](https://go.dev/doc/gdb)
+will include this information by default. To work with all Go programs, Odigos ships with a precompiled list of known offsets for all currently supported
+versions of instrumented libraries.
+
+This precompiled list is updated to be up-to-date with every release of Odigos. But, this means that you may encounter errors instrumenting applications
+that use very newly released versions of dependencies. If this occurs, it will be resolved by updating to the next release of Odigos, or alternatively
+upgrading the locally-stored offsets with the [`odigos pro update-offsets`](/cli/odigos_pro_update-offsets) command.

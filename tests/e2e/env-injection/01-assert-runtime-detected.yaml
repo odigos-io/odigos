@@ -1,0 +1,64 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-java-supported-docker-env
+status:
+  runtimeDetailsByContainer:
+  - containerName: java-supported-docker-env
+    envFromContainerRuntime:
+    - name: JAVA_OPTS
+      value: -Dthis.does.not.exist=true
+    (envFromContainerRuntime[?name=='JAVA_TOOL_OPTIONS']): []           
+    envVars:
+    - name: JAVA_OPTS
+      value: -Dthis.does.not.exist=true
+    (envVars[?name=='JAVA_TOOL_OPTIONS']): []           
+    language: java
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-java-supported-manifest-env
+status:
+  runtimeDetailsByContainer:
+  - containerName: java-supported-manifest-env
+    (!envFromContainerRuntime): true
+    envVars:
+    - name: JAVA_TOOL_OPTIONS
+      value: "-Dnot.work=true"
+    (envVars[?name=='JAVA_OPTS']): []      
+    language: java
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-java-latest-version
+status:
+  runtimeDetailsByContainer:
+    - containerName: java-latest-version
+      (!envVars): true
+      (!envFromContainerRuntime): true
+      language: java
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-inventory
+status:
+  runtimeDetailsByContainer:
+    - containerName: inventory
+      language: python
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-frontend
+status:
+  runtimeDetailsByContainer:
+    - containerName: frontend
+      language: java

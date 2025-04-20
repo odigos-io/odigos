@@ -4,9 +4,29 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'image tag'
+        required: true
 
 jobs:
+  verify-offsets:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ['enterprise-go-instrumentation']
+    steps:
+      - name: Verify no open offsets PRs
+        run: |
+          curl -s -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+          "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100" | \
+          jq '[.[] | select(.labels | any(.name == "offsets"))]' | \
+          jq 'if length > 0 then error("❌ Error: Open PRs with label \"offsets\" found!") else empty end'
+
   print-tag:
+    needs: verify-offsets
     runs-on: ubuntu-latest
     steps:
       - name: Extract Tag
@@ -20,6 +40,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Detected new git tag. initializing a release", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   tag-modules:
+    needs: verify-offsets
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -74,7 +95,11 @@ jobs:
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: Odigos go modules release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
-  publish-docker-images:
+  publish-images:
+    needs: verify-offsets
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
@@ -107,7 +132,7 @@ jobs:
           - service: operator
             runner: ubuntu-latest
             summary: 'Odigos Operator'
-            description: 'Kubernetes Operator for Odigos installs Odigos'
+            description: 'The Odigos Operator installs and manages Odigos in a cluster'
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
@@ -128,6 +153,22 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+      
+      - id: gcp-auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          access_token_lifetime: 1200s
+
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: us-central1-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.gcp-auth.outputs.access_token }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -137,16 +178,22 @@ jobs:
 
       - name: Build and Push Docker Image for ${{ matrix.service }}
         uses: docker/build-push-action@v6
+        env:
+          ODIGOS_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || steps.extract_tag.outputs.tag}}
         with:
           push: true
-          tags: keyval/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ steps.extract_tag.outputs.tag }}
+          provenance: false
+          tags : |
+            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
+            keyval/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
-            ODIGOS_VERSION=${{ steps.extract_tag.outputs.tag }}
-            RELEASE=${{ steps.extract_tag.outputs.tag }}
-            VERSION=${{ steps.extract_tag.outputs.tag }}
+            ODIGOS_VERSION=${{ env.ODIGOS_TAG }}
+            RELEASE=${{ env.ODIGOS_TAG }}
+            VERSION=${{ env.ODIGOS_TAG }}
             SUMMARY=${{ matrix.summary }}
             DESCRIPTION=${{ matrix.description }}
+            LD_FLAGS=-s -w
           platforms: linux/amd64,linux/arm64
           file: >-
             ${{ matrix.service == 'odiglet' && format('odiglet/{0}', matrix.dockerfile) ||
@@ -176,6 +223,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: odigos component ${{ matrix.service }} release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   publish-collector-linux-packages:
+    needs: verify-offsets
     runs-on: ubuntu-latest
     steps:
       - name: Extract Tag

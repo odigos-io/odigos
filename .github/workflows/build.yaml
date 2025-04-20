@@ -25,6 +25,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: false
           tags: autoscaler:pr-${{ github.event.number }}
+          provenance: false
           build-args: SERVICE_NAME=autoscaler
           file: ${{ matrix.dockerfile }}
 
@@ -44,6 +45,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: false
           tags: scheduler:pr-${{ github.event.number }}
+          provenance: false
           build-args: SERVICE_NAME=scheduler
           file: ${{ matrix.dockerfile }}
 
@@ -66,6 +68,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: false
           tags: instrumentor:pr-${{ github.event.number }}
+          provenance: false
           build-args: SERVICE_NAME=instrumentor
           file: ${{ matrix.dockerfile }}
       - name: run tests
@@ -89,6 +92,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: false
           tags: odigos-collector:pr-${{ github.event.number }}
+          provenance: false
           context: ./collector
           file: ${{ matrix.dockerfile }}
       - name: run tests
@@ -116,6 +120,7 @@ jobs:
           context: .
           push: false
           tags: odiglet:pr-${{ github.event.number }}
+          provenance: false
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev
@@ -142,6 +147,7 @@ jobs:
           context: .
           push: false
           tags: frontend:pr-${{ github.event.number }}
+          provenance: false
 
   build-operator:
     name: build-operator
@@ -161,6 +167,7 @@ jobs:
           context: .
           push: false
           tags: operator:pr-${{ github.event.number }}
+          provenance: false
 
   build-cli:
     runs-on: ubuntu-latest
@@ -171,7 +178,7 @@ jobs:
         with:
           go-version: '1.23.0'
       - name: Set up Goreleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
           args: build --snapshot --clean

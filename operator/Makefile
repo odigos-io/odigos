@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 1.0.159
+VERSION ?= 1.0.170
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -51,6 +51,14 @@ endif
 OPERATOR_SDK_VERSION ?= v1.39.1
 # Image URL to use all building/pushing image targets
 IMG ?= registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v$(VERSION)
+AUTOSCALER_IMG ?= registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v$(VERSION)
+COLLECTOR_IMG ?= registry.connect.redhat.com/odigos/odigos-collector-ubi9:v$(VERSION)
+FRONTEND_IMG ?= registry.connect.redhat.com/odigos/odigos-ui-ubi9:v$(VERSION)
+INSTRUMENTOR_IMG ?= registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9:v$(VERSION)
+ENTERPRISE_INSTRUMENTOR_IMG ?= registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9:v$(VERSION)
+ODIGLET_IMG ?= registry.connect.redhat.com/odigos/odigos-odiglet-ubi9:v$(VERSION)
+ENTERPRISE_ODIGLET_IMG ?= registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9:v$(VERSION)
+SCHEDULER_IMG ?= registry.connect.redhat.com/odigos/odigos-scheduler-ubi9:v$(VERSION)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.31.0
 
@@ -271,6 +279,14 @@ endif
 bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image autoscaler=$(AUTOSCALER_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image collector=$(COLLECTOR_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image frontend=$(FRONTEND_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image instrumentor=$(INSTRUMENTOR_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image enterprise-instrumentor=$(ENTERPRISE_INSTRUMENTOR_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image odiglet=$(ODIGLET_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image enterprise-odiglet=$(ENTERPRISE_ODIGLET_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image scheduler=$(SCHEDULER_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set configmap odigos-version --from-literal=ODIGOS_VERSION=$(VERSION)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 	$(OPERATOR_SDK) bundle validate ./bundle

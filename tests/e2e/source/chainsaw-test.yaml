@@ -6,21 +6,11 @@ spec:
   description: This e2e test runs a multi-apps scenario with Source instrumentation
   skipDelete: true
   steps:
-    - name: Prepare destination
+    - name: '[1 - Setup] Prepare destination'
       try:
-        - script:
-            timeout: 5m
-            content: |
-              if helm status e2e-tests -n traces >/dev/null 2>&1; then
-                echo "e2e-tests helm already installed, probably from previous run. Skipping..."
-              else
-                helm repo add grafana https://grafana.github.io/helm-charts
-                helm repo update
-                helm install e2e-tests grafana/tempo -n traces --create-namespace \
-                -f ../../common/tempo_values.yaml \
-                --version 1.18.2
-              fi
-    - name: Install Odigos
+        - apply: 
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+    - name: '[1 - Setup] Install Odigos'
       try:
         - script:
             timeout: 2m
@@ -32,12 +22,12 @@ spec:
               fi
         - assert:
             file: ../../common/assert/odigos-installed.yaml
-    - name: Assert Tempo Is Up
+    - name: '[1 - Setup]Assert Trace DB is up'
       try:
         - assert:
-            timeout: 5m
-            file: ../../common/assert/tempo-running.yaml
-    - name: Install Demo App
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+    - name: '[1 - Setup] Install Demo App'
       try:
         - script:
             timeout: 5m
@@ -69,31 +59,32 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 
-    - name: Instrument Deployments using Sources with otelServiceName field set
+    - name: '[2 - Workload Instrumentation] Instrument Deployments using Sources with otelServiceName field set'
       try:
         - apply:
             file: 01-sources.yaml
 
-    - name: Assert Runtime Detected
+    - name: '[2 - Workload Instrumentation] Assert Runtime Detected'
       try:
         - assert:
             timeout: 2m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
-    - name: Add Destination
+    - name: '[2 - Workload Instrumentation] Add Destination'
       try:
         - apply:
-            file: ../../common/apply/add-tempo-traces-destination.yaml
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
 
-    - name: Odigos pipeline ready
+    - name: '[2 - Workload Instrumentation] Odigos pipeline ready'
       try:
         - assert:
+            timeout: 1m
             file: ../../common/assert/pipeline-ready.yaml
 
-    - name: Simple-demo instrumented after destination added
+    - name: '[2 - Workload Instrumentation] Simple-demo instrumented after destination added'
       try:
         - assert:
-            file: ../../common/assert/simple-demo-instrumented-full.yaml
+            file: ../../common/assert/simple-demo-instrumented.yaml
         - assert:
             timeout: 2m
             file: 01-workloads.yaml
@@ -101,7 +92,7 @@ spec:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
-    - name: Generate Traffic
+    - name: '[2 - Workload Instrumentation] Generate Traffic'
       try:
         - script:
             timeout: 10m
@@ -121,51 +112,48 @@ spec:
                 kubectl delete -f ../../common/apply/generate-traffic-job.yaml
 
                 # Run the wait-for-trace script
-                echo "Running TraceQL test at $(date)"
-                ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
+                echo "Running Simple-trace-db query for full trace at $(date)"
+                ../../common/simple_trace_db_query_runner.sh queries/wait-for-trace.yaml
 
                 if [ $? -eq 0 ]; then
                   break
-                else
-                  ../../common/flush_traces.sh
-                  sleep 5
                 fi
               done
 
-    - name: Verify Trace - Context Propagation
+    - name: '[2 - Workload Instrumentation] Verify Trace - Context Propagation'
       try:
         - script:
             timeout: 3m
             content: |
-              ../../common/traceql_runner.sh tracesql/context-propagation.yaml
+              ../../common/simple_trace_db_query_runner.sh queries/context-propagation.yaml
       catch:
         - podLogs:
             name: odiglet
             namespace: odigos-test
 
-    - name: Verify Trace - Resource Attributes
+    - name: '[2 - Workload Instrumentation] Verify Trace - Resource Attributes'
       try:
         - script:
             timeout: 3m
             content: |
-              ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh queries/resource-attributes.yaml
       catch:
         - podLogs:
             name: odiglet
             namespace: odigos-test
 
-    - name: Verify Trace - Span Attributes
+    - name: '[2 - Workload Instrumentation] Verify Trace - Span Attributes'
       try:
         - script:
             timeout: 3m
             content: |
-              ../../common/traceql_runner.sh tracesql/span-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh queries/span-attributes.yaml
       catch:
         - podLogs:
             name: odiglet
             namespace: odigos-test
 
-    - name: Uninstrument individual deployments
+    - name: '[3 - Workload Uninstrumentation] Uninstrument individual deployments'
       try:
         - script:
             timeout: 3m
@@ -179,24 +167,24 @@ spec:
                 sleep 5
               done
 
-    - name: Assert workloads updated after uninstrumentation
+    - name: '[3 - Workload Uninstrumentation] Assert workloads updated after uninstrumentation'
       try:
         - assert:
             timeout: 2m
             file: 02-workloads.yaml
 
-    - name: Rollout deployments for second phase of the test
+    - name: '[4 - Namespace Instrumentation] Rollout deployments for second phase of the test'
       try:
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
-    - name: Instrument Namespace
+    - name: '[4 - Namespace Instrumentation] Instrument Namespace'
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
 
-    - name: Assert Runtime Detected
+    - name: '[4 - Namespace Instrumentation] Assert Runtime Detected'
       try:
         - assert:
             timeout: 2m
@@ -205,15 +193,15 @@ spec:
             timeout: 2m
             file: 03-workloads.yaml
 
-    - name: Simple demo instrumented after runtime detection
+    - name: '[4 - Namespace Instrumentation] Simple demo instrumented after runtime detection'
       try:
         - assert:
-            file: ../../common/assert/simple-demo-instrumented-full.yaml
+            file: ../../common/assert/simple-demo-instrumented.yaml
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
-    - name: Generate Traffic
+    - name: '[4 - Namespace Instrumentation] Generate Traffic'
       try:
         - script:
             timeout: 10m
@@ -233,51 +221,48 @@ spec:
                 kubectl delete -f ../../common/apply/generate-traffic-job.yaml
 
                 # Run the wait-for-trace script
-                echo "Running TraceQL test at $(date)"
-                ../../common/traceql_runner.sh tracesql/wait-for-trace-2.yaml
+                echo "Running Simple-trace-db query for full trace at $(date)"
+                ../../common/simple_trace_db_query_runner.sh queries/wait-for-trace-2.yaml
 
                 if [ $? -eq 0 ]; then
                   break
-                else
-                  ../../common/flush_traces.sh
-                  sleep 5
                 fi
               done
 
-    - name: Verify Trace - Context Propagation
+    - name: '[4 - Namespace Instrumentation] Verify Trace - Context Propagation'
       try:
         - script:
             timeout: 3m
             content: |
-              ../../common/traceql_runner.sh tracesql/context-propagation-2.yaml
+              ../../common/simple_trace_db_query_runner.sh queries/context-propagation-2.yaml
       catch:
         - podLogs:
             name: odiglet
             namespace: odigos-test
 
-    - name: Verify Trace - Resource Attributes
+    - name: '[4 - Namespace Instrumentation] Verify Trace - Resource Attributes'
       try:
         - script:
             timeout: 3m
             content: |
-              ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh queries/resource-attributes.yaml
       catch:
         - podLogs:
             name: odiglet
             namespace: odigos-test
 
-    - name: Verify Trace - Span Attributes
+    - name: '[4 - Namespace Instrumentation] Verify Trace - Span Attributes'
       try:
         - script:
             timeout: 3m
             content: |
-              ../../common/traceql_runner.sh tracesql/span-attributes-2.yaml
+              ../../common/simple_trace_db_query_runner.sh queries/span-attributes-2.yaml
       catch:
         - podLogs:
             name: odiglet
             namespace: odigos-test
 
-    - name: Uninstrument namespace
+    - name: '[5 - Namespace Uninstrumentation] Uninstrument namespace'
       try:
         - script:
             timeout: 60s
@@ -291,7 +276,7 @@ spec:
                 sleep 5
               done
 
-    - name: Assert workloads updated after uninstrumentation
+    - name: '[5 - Namespace Uninstrumentation] Assert workloads updated after uninstrumentation'
       try:
         - assert:
             timeout: 2m
@@ -300,12 +285,12 @@ spec:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
-    - name: Instrument frontend workload specifically
+    - name: '[6 - Namespace + Workload Instrumentation] Instrument frontend workload specifically'
       try:
         - apply:
             file: 05-source.yaml
 
-    - name: Assert Runtime Detected for single workload
+    - name: '[6 - Namespace + Workload Instrumentation] Assert Runtime Detected for single workload'
       try:
         - assert:
             timeout: 2m
@@ -314,24 +299,24 @@ spec:
             timeout: 2m
             file: 05-workloads.yaml
 
-    - name: Single workload instrumented after runtime detection
+    - name: '[6 - Namespace + Workload Instrumentation] Single workload instrumented after runtime detection'
       try:
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
-    - name: Instrument rest of Namespace
+    - name: '[6 - Namespace + Workload Instrumentation] Instrument rest of Namespace'
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
 
-    - name: Wait for workloads to roll out new revisions
+    - name: '[6 - Namespace + Workload Instrumentation] Wait for workloads to roll out new revisions'
       try:
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
-    - name: Assert Runtime Detected for all workloads
+    - name: '[6 - Namespace + Workload Instrumentation] Assert Runtime Detected for all workloads'
       try:
         - assert:
             timeout: 2m
@@ -340,7 +325,7 @@ spec:
             timeout: 2m
             file: 06-workloads.yaml
 
-    - name: Uninstrument namespace
+    - name: '[6 - Namespace + Workload Instrumentation] Uninstrument namespace'
       try:
         - script:
             timeout: 60s
@@ -354,13 +339,13 @@ spec:
                 sleep 5
               done
 
-    - name: Wait for deleted sources to roll out new revisions
+    - name: '[6 - Namespace + Workload Instrumentation] Wait for deleted sources to roll out new revisions'
       try:
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
-    - name: Assert Runtime still Detected for single workload
+    - name: '[6 - Namespace + Workload Instrumentation] Assert Runtime still Detected for single workload'
       try:
         - assert:
             timeout: 2m
@@ -369,23 +354,23 @@ spec:
             timeout: 2m
             file: 07-workloads.yaml
 
-    - name: Create Workload exclusion Source for single workload
+    - name: '[7 - Workload Exclusion] Create Workload exclusion Source for single workload'
       try:
         - apply:
             file: 08-source.yaml
 
-    - name: Instrument rest of Namespace
+    - name: '[7 - Workload Exclusion] Instrument rest of Namespace'
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
 
-    - name: Wait for created source to roll out new revisions
+    - name: '[7 - Workload Exclusion] Wait for created source to roll out new revisions'
       try:
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
-    - name: Assert runtime detected for all workloads except excluded (coupon)
+    - name: '[7 - Workload Exclusion] Assert runtime detected for all workloads except excluded (coupon)'
       try:
         - assert:
             timeout: 2m
@@ -394,27 +379,27 @@ spec:
             timeout: 2m
             file: 08-workloads.yaml
 
-    - name: Assert runtime not detected for excluded (coupon)
+    - name: '[7 - Workload Exclusion] Assert runtime not detected for excluded (coupon)'
       try:
         - script:
             content: kubectl get instrumentationconfigs/deployment-coupon
             check:
               ($error != null): true
 
-    - name: Delete excluded workload Source
+    - name: '[8 - Workload Inclusion] Delete excluded workload Source'
       try:
         - script:
             content: kubectl delete sources -l odigos.io/e2e=source-excluded
             check:
               ($error == null): true
 
-    - name: Wait for deleted exclusion source to roll out new revisions
+    - name: '[8 - Workload Inclusion] Wait for deleted exclusion source to roll out new revisions'
       try:
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
-    - name: Assert runtime detected for no-longer-excluded workload
+    - name: '[8 - Workload Inclusion] Assert runtime detected for no-longer-excluded workload'
       try:
         - assert:
             timeout: 2m
@@ -423,18 +408,18 @@ spec:
             timeout: 2m
             file: 08-workloads-2.yaml
 
-    - name: Create excluded workload Source while namespace is instrumented
+    - name: '[9 - Workload Exclusion (2)] Create excluded workload Source while namespace is instrumented'
       try:
         - apply:
             file: 09-source.yaml
 
-    - name: Wait for created source to roll out new revisions
+    - name: '[9 - Workload Exclusion (2)] Wait for created source to roll out new revisions'
       try:
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
-    - name: Assert runtime detected for all workloads except newly excluded (membership)
+    - name: '[9 - Workload Exclusion (2)] Assert runtime detected for all workloads except newly excluded (membership)'
       try:
         - assert:
             timeout: 2m
@@ -443,26 +428,26 @@ spec:
             timeout: 2m
             file: 09-workloads.yaml
 
-    - name: Assert runtime not detected for newly excluded (membership)
+    - name: '[9 - Workload Exclusion (2)] Assert runtime not detected for newly excluded (membership)'
       try:
         - script:
             content: kubectl get instrumentationconfigs/deployment-membership
             check:
               ($error != null): true
 
-    - name: Set disableInstrumentation=false on excluded Source
+    - name: '[9 - Workload Exclusion (2)] Set disableInstrumentation=false on excluded Source'
       try:
         - script:
             timeout: 70s
             content: kubectl patch source/membership-excluded --type=merge -p '{"spec":{"disableInstrumentation":false}}'
 
-    - name: Wait for updated source to roll out new revisions
+    - name: '[9 - Workload Exclusion (2)] Wait for updated source to roll out new revisions'
       try:
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
-    - name: Assert runtime detected for no-longer-excluded workload
+    - name: '[9 - Workload Exclusion (2)] Assert runtime detected for no-longer-excluded workload'
       try:
         - assert:
             timeout: 2m
@@ -471,26 +456,26 @@ spec:
             timeout: 2m
             file: 10-workloads.yaml
 
-    - name: Set disableInstrumentation=true on previously-excluded Source
+    - name: '[9 - Workload Exclusion (2)] Set disableInstrumentation=true on previously-excluded Source'
       try:
         - script:
             timeout: 70s
             content: kubectl patch source/membership-excluded --type=merge -p '{"spec":{"disableInstrumentation":true}}'
 
-    - name: Wait for updated source to roll out new revisions
+    - name: '[9 - Workload Exclusion (2)] Wait for updated source to roll out new revisions'
       try:
         - script:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
-    - name: Assert runtime not detected for re-excluded (membership)
+    - name: '[9 - Workload Exclusion (2)] Assert runtime not detected for re-excluded (membership)'
       try:
         - script:
             content: kubectl get instrumentationconfigs/deployment-membership
             check:
               ($error != null): true
 
-    - name: Irrelevant Namespace update does not trigger uninstrumentation
+    - name: '[9 - Workload Exclusion (2)] Irrelevant Namespace update does not trigger uninstrumentation'
       try:
         - script:
             timeout: 70s
@@ -499,7 +484,7 @@ spec:
             timeout: 2m
             file: 09-assert-runtime-detected.yaml
 
-    - name: Delete Namespace Source
+    - name: '[9 - Workload Exclusion (2)] Delete Namespace Source'
       try:
         - script:
             timeout: 60s
@@ -516,7 +501,7 @@ spec:
             timeout: 2m
             file: 11-workloads.yaml
 
-    - name: Delete excluded Source in non-instrumented Namespace is no-op
+    - name: '[9 - Workload Exclusion (2)] Delete excluded Source in non-instrumented Namespace is no-op'
       try:
         - script:
             timeout: 60s
@@ -526,5 +511,81 @@ spec:
             file: 11-workloads.yaml
         - script:
             content: kubectl get instrumentationconfigs/deployment-membership
+            check:
+              ($error != null): true
+
+    - name: '[Migration - 1] - odigos-instrumentation: enabled creates normal Source'
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl label deployment/coupon odigos-instrumentation=enabled
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-coupon
+            check:
+              ($error == null): true
+    - name: '[Migration - 2] - Changing odigos-instrumentation: disabled has no effect on existing Source'
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl label deployment/coupon odigos-instrumentation=disabled --overwrite
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-coupon
+            check:
+              ($error == null): true
+
+    - name: '[Migration - 3] - odigos-instrumentation: disabled creates disabled Source'
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl label deployment/pricing odigos-instrumentation=disabled
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-pricing
+            check:
+              ($error != null): true
+    - name: '[Migration - 4] - Changing odigos-instrumentation: enabled has no effect on existing disabled Source'
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl label deployment/pricing odigos-instrumentation=enabled --overwrite
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-pricing
+            check:
+              ($error != null): true
+    
+    - name: '[Migration - 5.1] - Label workload with odigos-instrumentation: disabled to create Disabled Source'
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl label deployment/membership odigos-instrumentation=disabled
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-membership
+            check:
+              ($error != null): true
+    - name: '[Migration - 5.2] - Patching Disabled Source for labeled Workload to Enabled enables workload (overriding disabled label)'
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl patch source $(kubectl get source -l odigos.io/workload-name=membership --no-headers -o custom-columns=":metadata.name") --type=merge -p '{"spec":{"disableInstrumentation":false}}'
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-membership
+            check:
+              ($error == null): true
+
+    - name: '[Migration - 6.1] - Label workload with odigos-instrumentation: enabled to create Enabled Source'
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl label deployment/inventory odigos-instrumentation=enabled
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-inventory
+            check:
+              ($error == null): true
+    - name: '[Migration - 6.2] - Patching Enabled Source for labeled Workload to Disabled disables workload (overriding enabled label)'
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl patch source $(kubectl get source -l odigos.io/workload-name=inventory --no-headers -o custom-columns=":metadata.name") --type=merge -p '{"spec":{"disableInstrumentation":true}}'
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-inventory
             check:
               ($error != null): true

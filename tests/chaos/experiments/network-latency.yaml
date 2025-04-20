@@ -1,0 +1,15 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: network-delay
+  namespace: ${NAMESPACE}
+spec:
+  action: delay
+  mode: all
+  selector:
+    labelSelectors:
+      app.kubernetes.io/name: ${APP_NAME}
+      pod-template-hash: ${TEMPLATE_HASH}
+  delay:
+    latency: ${LATENCY}
+    jitter: ${JITTER}

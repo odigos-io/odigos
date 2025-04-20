@@ -24,9 +24,6 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
-Odigos exports data to AWS s3 in [OTLP format](https://opentelemetry.io/docs/specs/otlp/).
-Data can be exported either in JSON format or in binary format (protobuf).
-
 **Setting up AWS S3 Bucket**
 
 If you haven't already, you need to create an S3 bucket to store your data. You can do it using the [AWS Management Console](https://console.aws.amazon.com/s3/home) or the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html).
@@ -37,18 +34,11 @@ For example, to create a bucket named `otel-data` in region `us-east-1` using th
 aws s3api create-bucket --bucket otel-data --region us-east-1
 ```
 
-**Setting up AWS credentials with AWS EKS (Elastic Kubernetes Service)**
+import AwsCredentials from '/snippets/aws-credentials.mdx';
 
-The follwoing command will create a link between your EKS cluster and your IAM account, 
-effectively allowing the EKS cluster to assume IAM roles and access AWS services.
+<AwsCredentials />
 
-Replace `$EKS_CLUSTER_REGION` with the region of your EKS cluster and `$EKS_CLUSTER_NAME` with the name of your EKS cluster (or set them as environment variables).
-
-```bash
-eksctl utils associate-iam-oidc-provider --region=$EKS_CLUSTER_REGION --cluster=$EKS_CLUSTER_NAME --approve
-```
-
-Then, create an IAM policy that allows Odigos to send data to your S3 bucket:
+**Setting up the IAM policy**
 
 ```json
 {
@@ -168,7 +158,12 @@ There are two primary methods for configuring destinations in Odigos:
           otlp_proto])>'
         S3_PARTITION: '<Time granularity of S3 Bucket (default: minute) (options: [minute,
           hour])>'
-        S3_REGION: <Bucket Region>
+        S3_REGION: '<Bucket Region (options: [af-south-1, ap-east-1, ap-northeast-1, ap-northeast-2,
+          ap-northeast-3, ap-south-1, ap-south-2, ap-southeast-1, ap-southeast-2, ap-southeast-3,
+          ap-southeast-4, ap-southeast-5, ap-southeast-7, ca-central-1, ca-west-1, eu-central-1,
+          eu-central-2, eu-north-1, eu-south-1, eu-south-2, eu-west-1, eu-west-2, eu-west-3,
+          il-central-1, me-central-1, me-south-1, mx-central-1, sa-east-1, us-east-1,
+          us-east-2, us-gov-east-1, us-gov-west-1, us-west-1, us-west-2])>'
       destinationName: s3
       signals:
       - TRACES

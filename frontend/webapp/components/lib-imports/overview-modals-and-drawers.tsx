@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, InstrumentationRuleDrawer, InstrumentationRuleModal, SourceDrawer, SourceModal } from '@odigos/ui-containers';
+import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, InstrumentationRuleDrawer, InstrumentationRuleModal, SourceDrawer, SourceModal } from '@odigos/ui-kit/containers';
 import {
   useActionCRUD,
   useConfig,
-  useDescribeSource,
+  useDescribe,
   useDestinationCategories,
   useDestinationCRUD,
   useInstrumentationRuleCRUD,
@@ -16,38 +16,30 @@ import {
 const OverviewModalsAndDrawers = () => {
   const { isEnterprise } = useConfig();
 
+  const { fetchDescribeSource } = useDescribe();
+  const { categories } = useDestinationCategories();
   const { persistSources, updateSource } = useSourceCRUD();
+  const { potentialDestinations } = usePotentialDestinations();
   const { createAction, updateAction, deleteAction } = useActionCRUD();
+  const { testConnection, testConnectionResult, isTestConnectionLoading } = useTestConnection();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
   const { createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   const [selectedNamespace, setSelectedNamespace] = useState('');
-  const { namespaces, data: namespace, loading: nsLoad } = useNamespace(selectedNamespace);
-
-  const { categories } = useDestinationCategories();
-  const { fetchDescribeSource } = useDescribeSource();
-  const { potentialDestinations } = usePotentialDestinations();
-  const { data: testResult, loading: testLoading, testConnection } = useTestConnection();
+  const { namespace } = useNamespace(selectedNamespace);
 
   return (
     <>
       {/* modals */}
-      <SourceModal
-        namespaces={namespaces}
-        namespace={namespace}
-        namespacesLoading={nsLoad}
-        selectedNamespace={selectedNamespace}
-        setSelectedNamespace={setSelectedNamespace}
-        persistSources={persistSources}
-      />
+      <SourceModal namespace={namespace} selectedNamespace={selectedNamespace} setSelectedNamespace={setSelectedNamespace} persistSources={persistSources} />
       <DestinationModal
         isOnboarding={false}
         categories={categories}
         potentialDestinations={potentialDestinations}
         createDestination={createDestination}
         testConnection={testConnection}
-        testLoading={testLoading}
-        testResult={testResult}
+        testResult={testConnectionResult}
+        testLoading={isTestConnectionLoading}
       />
       <InstrumentationRuleModal isEnterprise={isEnterprise} createInstrumentationRule={createInstrumentationRule} />
       <ActionModal createAction={createAction} />
@@ -59,8 +51,8 @@ const OverviewModalsAndDrawers = () => {
         updateDestination={updateDestination}
         deleteDestination={deleteDestination}
         testConnection={testConnection}
-        testLoading={testLoading}
-        testResult={testResult}
+        testResult={testConnectionResult}
+        testLoading={isTestConnectionLoading}
       />
       <InstrumentationRuleDrawer updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />
       <ActionDrawer updateAction={updateAction} deleteAction={deleteAction} />

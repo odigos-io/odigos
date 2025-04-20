@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: lycheeverse/lychee-action@v2.3.0
+      - uses: lycheeverse/lychee-action@v2.4.0
         with:
           args: >-
             -v -n "*.md" "**/*.md" "**/*.mdx"
@@ -20,4 +20,5 @@ jobs:
             --exclude ".*your-account.*"
             --exclude ".*qryn.local.*"
             --exclude "^https://d15jtxgb40qetw\\.cloudfront\\.net/.*"
+            --exclude "https://github.com/odigos-io/ui-kit"
           fail: true

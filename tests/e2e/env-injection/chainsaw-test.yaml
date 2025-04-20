@@ -1,0 +1,67 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: multi-apps
+spec:
+  description: This e2e test runs a multi-apps scenario
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply: 
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+    - name: Install Odigos
+      try:
+        - script:
+            timeout: 3m
+            content: ../../../cli/odigos install --namespace odigos-test --version e2e-test
+        - assert:
+            file: ../../common/assert/odigos-installed.yaml
+    - name: Verify Node Odiglet label has been added
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+  
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+    - name: '01 - Install Test Apps'
+      try:
+        - apply:
+            file: 01-install-test-apps.yaml
+    - name: '01 - Assert Apps installed'
+      try:
+        - assert:
+            timeout: 150s
+            file: 01-assert-apps-installed.yaml
+
+    - name: Instrument Namespace
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Assert Runtime Detected
+      try:
+        - assert:
+            timeout: 3m
+            file: 01-assert-runtime-detected.yaml
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Odigos pipeline ready
+      try:
+        - assert:
+            timeout: 1m
+            file:  ../../common/assert/pipeline-ready.yaml
+
+    - name: Assert Environment Variables
+      try:
+        - assert:
+            file: 01-assert-env-vars.yaml
+
+    

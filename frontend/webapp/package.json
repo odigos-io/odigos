@@ -12,30 +12,26 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@apollo/client": "^3.13.1",
-    "@apollo/experimental-nextjs-app-support": "^0.11.9",
-    "@odigos/ui-components": "^0.0.93",
-    "@odigos/ui-containers": "^0.0.82",
-    "@odigos/ui-icons": "^0.0.14",
-    "@odigos/ui-theme": "^0.0.16",
-    "@odigos/ui-utils": "^0.0.44",
+    "@apollo/client": "^3.13.7",
+    "@apollo/experimental-nextjs-app-support": "^0.12.1",
+    "@odigos/ui-kit": "^0.0.23",
     "graphql": "^16.10.0",
-    "next": "15.2.1",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
+    "next": "15.3.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
     "react-error-boundary": "^5.0.0",
-    "styled-components": "^6.1.15",
+    "styled-components": "6.1.15",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@types/node": "22.13.9",
-    "@types/react": "19.0.10",
-    "@types/react-dom": "19.0.4",
-    "autoprefixer": "^10.4.20",
-    "cypress": "^14.1.0",
-    "eslint": "9.21.0",
-    "eslint-config-next": "15.2.1",
+    "@types/node": "22.14.1",
+    "@types/react": "19.1.1",
+    "@types/react-dom": "19.1.2",
+    "autoprefixer": "^10.4.21",
+    "cypress": "^14.3.0",
+    "eslint": "9.24.0",
+    "eslint-config-next": "15.3.0",
     "postcss": "^8.5.3",
-    "typescript": "5.8.2"
+    "typescript": "5.8.3"
   }
 }

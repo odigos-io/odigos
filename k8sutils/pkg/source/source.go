@@ -8,6 +8,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -79,27 +80,35 @@ func IsObjectInstrumentedBySource(ctx context.Context,
 	return false, condition, nil
 }
 
-// IsSourceRelevant returns true if a Source:
-// 1) Inclusive AND NOT terminating, or
-// 2) Exclusive AND terminating
-// This function alone should not be used to determine any instrumentation changes, and is provided
-// for the Instrumentor controllers to filter events.
-func IsSourceRelevant(source *odigosv1.Source) bool {
-	return odigosv1.IsDisabledSource(source) == k8sutils.IsTerminating(source)
-}
-
 // OtelServiceNameBySource returns the ReportedName for the given workload object.
 // OTel service name is only valid for workload sources (not namespace sources).
-// If none is configured, an empty string is returned.
+// If none is configured, it returns the default name which is the k8s workload resource name.
 func OtelServiceNameBySource(ctx context.Context, k8sClient client.Client, obj client.Object) (string, error) {
 	sources, err := odigosv1.GetSources(ctx, k8sClient, obj)
 	if err != nil {
 		return "", err
 	}
 
+	// use the otel service name attribute on the source if it exists
 	if sources.Workload != nil {
-		return sources.Workload.Spec.OtelServiceName, nil
+		if sources.Workload.Spec.OtelServiceName != "" {
+			return sources.Workload.Spec.OtelServiceName, nil
+		}
 	}
 
-	return "", nil
+	// otherwise, fallback to the name of the workload (deployment/ds/sst name)
+	return obj.GetName(), nil
+}
+
+// GetClientObjectFromSource returns the client.Object reference by the Source's spec.workload
+// field, if the object exists.
+// It is not valid to call this function with a namespace Source.
+func GetClientObjectFromSource(ctx context.Context, kubeClient client.Client, source *odigosv1.Source) (client.Object, error) {
+	obj := workload.ClientObjectFromWorkloadKind(source.Spec.Workload.Kind)
+	err := kubeClient.Get(ctx, client.ObjectKey{Name: source.Spec.Workload.Name, Namespace: source.Spec.Workload.Namespace}, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return obj, nil
 }

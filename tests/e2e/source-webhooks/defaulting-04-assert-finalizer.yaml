@@ -1,0 +1,12 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: 04-finalizer
+  namespace: default
+  finalizers:
+  - odigos.io/source-instrumentation-finalizer
+spec:
+  workload:
+    name: finalizer
+    namespace: default
+    kind: Deployment
