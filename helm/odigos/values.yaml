@@ -186,8 +186,25 @@ odiglet:
   affinity: {}
   # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
-  # into the Odiglet to ensure it can access the container runtime unix socket.  
+  # into the Odiglet to ensure it can access the container runtime unix socket.
   customContainerRuntimeSocketPath: ''
+
+centralProxy:
+  enabled: false
+  # Central backend URL where this proxy will forward data
+  centralBackendURL: ''
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: {}
 
 cli:
   image:

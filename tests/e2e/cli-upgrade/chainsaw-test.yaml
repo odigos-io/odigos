@@ -125,6 +125,7 @@ spec:
     - name: Odigos pipeline ready after upgrade
       try:
         - assert:
+            timeout: 1m
             file:  ../../common/assert/pipeline-ready.yaml
 
     - name: Simple-demo instrumented after upgrade

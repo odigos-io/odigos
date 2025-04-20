@@ -2,7 +2,6 @@ package agentenabled
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/hashicorp/go-version"
@@ -105,7 +104,10 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 
 	if rolloutChanged || agentEnabledChanged {
 		updateErr := c.Status().Update(ctx, &ic)
-		err = errors.Join(err, updateErr)
+		if updateErr != nil {
+			// if the update fails, we should not return an error, but rather log it and retry later.
+			return utils.K8SUpdateErrorHandler(updateErr)
+		}
 	}
 
 	return res, err

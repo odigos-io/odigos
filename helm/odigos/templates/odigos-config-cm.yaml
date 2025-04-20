@@ -11,6 +11,12 @@ metadata:
 data:
   config.yaml: |
     configVersion: 1
+    {{- if .Values.clusterName }}
+    clusterName: {{ .Values.clusterName }}
+    {{- end }}
+    {{- if .Values.centralProxy.centralBackendURL }}
+    centralBackendURL: {{ .Values.centralProxy.centralBackendURL }}
+    {{- end }}
     {{- if .Values.imagePrefix }}
     imagePrefix: {{ .Values.imagePrefix }}
     {{- end }}

@@ -50,6 +50,7 @@ spec:
     - name: '01 Assert Pipeline'
       try:
         - assert:
+            timeout: 1m
             file: ../../common/assert/pipeline-ready.yaml
 
     - name: '01 Assert Instrumented'
@@ -125,6 +126,9 @@ spec:
       try:
         - apply:
             file: 02-sources-reported-names.yaml
+        - assert:
+            timeout: 1m
+            file: 02-assert-ic-service-names.yaml
         - script:
             content: kubectl rollout restart deployment -l odigos.io/e2e=test-workload
 
