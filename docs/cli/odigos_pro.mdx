@@ -21,6 +21,13 @@ odigos pro [flags]
 # Renew the on-premises token for Odigos,
 odigos pro --onprem-token ${ODIGOS_TOKEN}
 
+
+# Install the Odigos Central (backend + UI) in a dedicated cluster:
+odigos pro --install-central --onprem-token $ODIGOS_TOKEN
+
+# Install Odigos Central in a custom namespace:
+odigos pro --install-central --onprem-token $ODIGOS_TOKEN --namespace my-central-namespace
+
 ```
 
 ### Options
