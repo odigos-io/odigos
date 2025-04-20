@@ -15,25 +15,10 @@ spec:
     otlpHttpLocalNode: true
     staticVariables:
       # How to use PHP_INI_SCAN_DIR env with colon (:) separator...
-      # Assuming /etc/php.d/*.ini is the default configuration file;
-      #
-      # RUN php
-      # will load all files in /etc/php.d/*.ini (default)
-      #
-      # RUN PHP_INI_SCAN_DIR=/usr/local/etc/php.d php
-      # will load all files in /usr/local/etc/php.d/*.ini (custom),
-      # and ignore /etc/php.d/*.ini (default)
-      #
-      # RUN PHP_INI_SCAN_DIR=:/usr/local/etc/php.d php
-      # will 1st load all files in /etc/php.d/*.ini (default),
-      # then load /usr/local/etc/php.d/*.ini (custom)
-      #
-      # RUN PHP_INI_SCAN_DIR=/usr/local/etc/php.d: php
-      # will 1st load all files in /usr/local/etc/php.d/*.ini (custom),
-      # then load /etc/php.d/*.ini (default)
+      # See https://github.com/odigos-io/opentelemetry-php?tab=readme-ov-file#deploying-an-agent
       - envName: PHP_INI_SCAN_DIR
         # TODO: add support for dynamic PHP versions
-        envValue: '/var/odigos/php/8.1:'
+        envValue: ':/var/odigos/php/8.1'
       - envName: OTEL_PHP_AUTOLOAD_ENABLED
         envValue: true
   runtimeAgent:
