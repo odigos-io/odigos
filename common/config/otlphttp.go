@@ -11,6 +11,7 @@ const (
 	otlpHttpEndpointKey          = "OTLP_HTTP_ENDPOINT"
 	otlpHttpBasicAuthUsernameKey = "OTLP_HTTP_BASIC_AUTH_USERNAME"
 	otlpHttpBasicAuthPasswordKey = "OTLP_HTTP_BASIC_AUTH_PASSWORD"
+	otlpHttpCompression          = "OTLP_HTTP_COMPRESSION"
 )
 
 type OTLPHttp struct{}
@@ -20,7 +21,9 @@ func (g *OTLPHttp) DestType() common.DestinationType {
 }
 
 func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	url, exists := dest.GetConfig()[otlpHttpEndpointKey]
+	config := dest.GetConfig()
+
+	url, exists := config[otlpHttpEndpointKey]
 	if !exists {
 		return nil, errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
 	}
@@ -46,6 +49,9 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		exporterConf["auth"] = GenericMap{
 			"authenticator": basicAuthExtensionName,
 		}
+	}
+	if compression, ok := config[otlpHttpCompression]; ok {
+		exporterConf["compression"] = compression
 	}
 	currentConfig.Exporters[otlpHttpExporterName] = exporterConf
 	var pipelineNames []string
