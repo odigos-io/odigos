@@ -41,4 +41,11 @@ spec:
         placeholder: 'password'
         tooltip: in case the otlp receiver requires basic auth, this is the password
       secret: true
+
+    - name: OTLP_HTTP_HEADERS
+      displayName: Headers
+      componentType: keyValuePairs
+      componentProps:
+        required: false
+        tooltip: 'Headers is the option to set custom HTTP headers for OTLP HTTP destination. If specified, please provide each header in the format: key:value. Multiple headers can be added. Keys must be non-empty strings and follow standard HTTP header conventions. Values must be non-empty strings and may include alphanumerics, whitespace, and standard punctuation.'
   testConnectionSupported: true
