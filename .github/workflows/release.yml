@@ -80,7 +80,7 @@ jobs:
         with:
           node-version: 18
 
-      - uses: ko-build/setup-ko@v0.8
+      - uses: ko-build/setup-ko@v0.9
 
       - name: publish cli image to docker registries
         working-directory: ./cli

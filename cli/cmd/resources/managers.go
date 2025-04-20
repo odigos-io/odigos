@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/odigos-io/odigos/cli/cmd/resources/centralodigos"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -22,6 +23,10 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 
 	if odigosTier != common.CommunityOdigosTier {
 		resourceManagers = append(resourceManagers, odigospro.NewOdigosProResourceManager(client, odigosNs, config, odigosTier, proTierToken, managerOpts))
+	}
+	shouldInstallCentralProxy := odigosTier == common.OnPremOdigosTier && config.ClusterName != "" && config.CentralBackendURL != ""
+	if shouldInstallCentralProxy {
+		resourceManagers = append(resourceManagers, centralodigos.NewCentralProxyResourceManager(client, odigosNs, config, odigosVersion, managerOpts))
 	}
 
 	// odigos core components are installed for all tiers.

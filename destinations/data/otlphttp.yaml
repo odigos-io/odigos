@@ -21,7 +21,7 @@ spec:
         type: text
         required: true
         placeholder: 'http://host:port'
-        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`.
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`.
 
     - name: OTLP_HTTP_BASIC_AUTH_USERNAME
       displayName: Basic Auth Username
@@ -41,3 +41,4 @@ spec:
         placeholder: 'password'
         tooltip: in case the otlp receiver requires basic auth, this is the password
       secret: true
+  testConnectionSupported: true

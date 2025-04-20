@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -16,7 +17,8 @@ import (
 
 type urlTemplateProcessor struct {
 	logger              *zap.Logger
-	templatizationRules []TemplatizationRule `mapstructure:"templatization_rules"`
+	templatizationRules []TemplatizationRule
+	customIdsRegexp     []regexp.Regexp
 }
 
 func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTemplateProcessor, error) {
@@ -30,9 +32,19 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 		parsedRules = append(parsedRules, parsedRule)
 	}
 
+	customIdsRegexp := make([]regexp.Regexp, 0, len(config.CustomIdsRegexp))
+	for _, regex := range config.CustomIdsRegexp {
+		compiledRegex, err := regexp.Compile(regex)
+		if err != nil {
+			return nil, fmt.Errorf("invalid custom id regex: %w", err)
+		}
+		customIdsRegexp = append(customIdsRegexp, *compiledRegex)
+	}
+
 	return &urlTemplateProcessor{
 		logger:              set.Logger,
 		templatizationRules: parsedRules,
+		customIdsRegexp:     customIdsRegexp,
 	}, nil
 }
 
@@ -124,7 +136,7 @@ func (p *urlTemplateProcessor) applyTemplatizationOnPath(path string) string {
 			return templatedUrl
 		}
 	}
-	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments)
+	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments, p.customIdsRegexp)
 	if isTemplated {
 		if hasLeadingSlash {
 			// if the path has a leading slash, we need to add it back

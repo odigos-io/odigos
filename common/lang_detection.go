@@ -10,7 +10,7 @@ type ProgramLanguageDetails struct {
 	RuntimeVersion *version.Version
 }
 
-// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;mysql;nginx;unknown;ignored
+// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;mysql;nginx;unknown;ignored
 type ProgrammingLanguage string
 
 const (
@@ -19,6 +19,7 @@ const (
 	GoProgrammingLanguage         ProgrammingLanguage = "go"
 	DotNetProgrammingLanguage     ProgrammingLanguage = "dotnet"
 	JavascriptProgrammingLanguage ProgrammingLanguage = "javascript"
+	PhpProgrammingLanguage        ProgrammingLanguage = "php"
 	// This is an experimental feature, It is not a language
 	// but in order to avoid huge refactoring we are adding it here for now
 	MySQLProgrammingLanguage ProgrammingLanguage = "mysql"

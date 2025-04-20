@@ -63,3 +63,8 @@ apis:
     title: actions.odigos.io/v1alpha1
     package: github.com/odigos-io/odigos
     path: api/actions/v1alpha1
+
+  - name: operator.odigos.io
+    title: operator.odigos.io/v1alpha1
+    package: github.com/odigos-io/odigos/operator
+    path: api/v1alpha1
