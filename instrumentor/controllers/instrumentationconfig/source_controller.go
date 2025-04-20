@@ -45,8 +45,14 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if instConfig.Spec.ServiceName != source.Spec.OtelServiceName {
-		instConfig.Spec.ServiceName = source.Spec.OtelServiceName
+	currentServiceName := source.Spec.OtelServiceName
+	if currentServiceName == "" {
+		// if the user did not override the service name, we should use the name of the workload
+		currentServiceName = source.Spec.Workload.Name
+	}
+
+	if instConfig.Spec.ServiceName != currentServiceName {
+		instConfig.Spec.ServiceName = currentServiceName
 		logger.Info("Updating InstrumentationConfig service name", "instrumentationConfig", instConfigName, "namespace", req.Namespace, "serviceName", source.Spec.OtelServiceName)
 		err = r.Update(ctx, instConfig)
 		return utils.K8SUpdateErrorHandler(err)

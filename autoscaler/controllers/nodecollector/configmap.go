@@ -1,4 +1,4 @@
-package datacollection
+package nodecollector
 
 import (
 	"context"
@@ -10,9 +10,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
-	"github.com/odigos-io/odigos/autoscaler/controllers/datacollection/custom"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
@@ -28,7 +26,12 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
-func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList,
+const (
+	k8sAttributesProcessorName   = "k8sattributes/odigos-k8sattributes"
+	logsServiceNameProcessorName = "resource/service-name"
+)
+
+func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme) error {
 	logger := log.FromContext(ctx)
@@ -39,7 +42,7 @@ func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.
 	SamplingExists := commonconf.FindFirstProcessorByType(allProcessors, "odigossampling")
 	setTracesLoadBalancer := SamplingExists != nil
 
-	desired, err := getDesiredConfigMap(sources, dests, processors, datacollection, scheme, setTracesLoadBalancer)
+	desired, err := getDesiredConfigMap(sources, signals, processors, datacollection, scheme, setTracesLoadBalancer)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
@@ -96,9 +99,9 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 	return desired, nil
 }
 
-func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
+func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
 	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool) (*v1.ConfigMap, error) {
-	cmData, err := calculateConfigMapData(datacollection, sources, dests, processors, setTracesLoadBalancer)
+	cmData, err := calculateConfigMapData(datacollection, sources, signals, processors, setTracesLoadBalancer)
 	if err != nil {
 		return nil, err
 	}
@@ -113,10 +116,6 @@ func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odi
 		},
 	}
 
-	if custom.ShouldApplyCustomDataCollection(dests) {
-		custom.AddCustomConfigMap(dests, &desired)
-	}
-
 	if err := ctrl.SetControllerReference(datacollection, &desired, scheme); err != nil {
 		return nil, err
 	}
@@ -124,7 +123,75 @@ func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, dests *odi
 	return &desired, nil
 }
 
-func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, dests *odigosv1.DestinationList, processors []*odigosv1.Processor,
+func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
+
+	_, k8sProcessorExists := cfg.Processors[k8sAttributesProcessorName]
+
+	if k8sProcessorExists {
+		// make sure it includes the workload names attributes in the processor "extract" section.
+		// this is added automatically for logs regardless of any action configuration.
+		k8sAttributesCfg, ok := cfg.Processors[k8sAttributesProcessorName].(config.GenericMap)
+		if !ok {
+			return fmt.Errorf("failed to cast k8s attributes processor config to GenericMap")
+		}
+		if _, exists := k8sAttributesCfg["extract"]; !exists {
+			k8sAttributesCfg["extract"] = config.GenericMap{}
+		}
+		extract, ok := k8sAttributesCfg["extract"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("failed to cast k8s attributes processor extract config to GenericMap")
+		}
+		if _, exists := extract["metadata"]; !exists {
+			extract["metadata"] = []interface{}{}
+		}
+		metadata, ok := extract["metadata"].([]interface{})
+		if !ok {
+			return fmt.Errorf("failed to cast k8s attributes processor metadata config to []interface{}")
+		}
+		// convert the metadata to a string array to compare it's values
+		asStrArray := make([]string, len(metadata))
+		for i, v := range metadata {
+			asStrArray[i] = v.(string)
+		}
+		// add the workload names attributes to the metadata list
+		if !slices.Contains(asStrArray, string(semconv.K8SDeploymentNameKey)) {
+			metadata = append(metadata, string(semconv.K8SDeploymentNameKey))
+		}
+		if !slices.Contains(asStrArray, string(semconv.K8SStatefulSetNameKey)) {
+			metadata = append(metadata, string(semconv.K8SStatefulSetNameKey))
+		}
+		if !slices.Contains(asStrArray, string(semconv.K8SDaemonSetNameKey)) {
+			metadata = append(metadata, string(semconv.K8SDaemonSetNameKey))
+		}
+		extract["metadata"] = metadata                                // set the copy back to the config
+		k8sAttributesCfg["extract"] = extract                         // set the copy back to the config
+		cfg.Processors[k8sAttributesProcessorName] = k8sAttributesCfg // set the copy back to the config
+	} else {
+		// if the processor does not exist, create it with the default configuration
+		cfg.Processors[k8sAttributesProcessorName] = config.GenericMap{
+			"auth_type": "serviceAccount",
+			"extract": config.GenericMap{
+				"metadata": []string{
+					string(semconv.K8SDeploymentNameKey),
+					string(semconv.K8SStatefulSetNameKey),
+					string(semconv.K8SDaemonSetNameKey),
+				},
+			},
+			"pod_association": []config.GenericMap{
+				{
+					"sources": []config.GenericMap{
+						{"from": "resource_attribute", "name": string(semconv.K8SPodNameKey)},
+						{"from": "resource_attribute", "name": string(semconv.K8SNamespaceNameKey)},
+					},
+				},
+			},
+		}
+	}
+
+	return nil
+}
+
+func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
 	setTracesLoadBalancer bool) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
@@ -136,7 +203,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		log.Log.V(0).Error(err, "processor", name)
 	}
 
-	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
+	memoryLimiterConfiguration := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
 
 	processorsCfg["batch"] = empty
 	processorsCfg["memory_limiter"] = memoryLimiterConfiguration
@@ -273,23 +340,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		},
 	}
 
-	collectTraces := false
-	collectMetrics := false
-	collectLogs := false
-	for _, dst := range dests.Items {
-		for _, s := range dst.Spec.Signals {
-			if s == odigoscommon.LogsObservabilitySignal && !custom.DestRequiresCustom(dst.Spec.Type) {
-				collectLogs = true
-			}
-			if s == odigoscommon.TracesObservabilitySignal || dst.Spec.Type == odigoscommon.PrometheusDestinationType {
-				collectTraces = true
-			}
-			if s == odigoscommon.MetricsObservabilitySignal && !custom.DestRequiresCustom(dst.Spec.Type) {
-				collectMetrics = true
-			}
-		}
-	}
-
+	collectLogs := slices.Contains(signals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
 		includes := make([]string, 0)
 		for _, element := range sources.Items {
@@ -338,6 +389,40 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			},
 		}
 
+		err := updateOrCreateK8sAttributesForLogs(&cfg)
+		if err != nil {
+			return "", err
+		}
+		// remove logs processors from CRD logsProcessors in case it is there so not to add it twice
+		for i, processor := range logsProcessors {
+			if processor == k8sAttributesProcessorName {
+				logsProcessors = append(logsProcessors[:i], logsProcessors[i+1:]...)
+				break
+			}
+		}
+
+		// set "service.name" for logs same as the workload name.
+		// note: this does not respect the override service name a user can set in sources.
+		cfg.Processors[logsServiceNameProcessorName] = config.GenericMap{
+			"attributes": []config.GenericMap{
+				{
+					"key":            string(semconv.ServiceNameKey),
+					"from_attribute": string(semconv.K8SDeploymentNameKey),
+					"action":         "insert", // avoid overwriting existing value
+				},
+				{
+					"key":            string(semconv.ServiceNameKey),
+					"from_attribute": string(semconv.K8SStatefulSetNameKey),
+					"action":         "insert", // avoid overwriting existing value
+				},
+				{
+					"key":            string(semconv.ServiceNameKey),
+					"from_attribute": string(semconv.K8SDaemonSetNameKey),
+					"action":         "insert", // avoid overwriting existing value
+				},
+			},
+		}
+
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
 			Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
@@ -345,6 +430,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		}
 	}
 
+	collectTraces := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
 			Receivers:  []string{"otlp"},
@@ -353,6 +439,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 		}
 	}
 
+	collectMetrics := slices.Contains(signals, odigoscommon.MetricsObservabilitySignal)
 	if collectMetrics {
 		cfg.Receivers["kubeletstats"] = config.GenericMap{
 			"auth_type":            "serviceAccount",
@@ -480,7 +567,7 @@ func getFileLogPipelineProcessors() []string {
 	// no need to batch, as the stanza receiver already batches the data, and so is the gateway.
 	// batch processor will also mask and hide any back-pressure from receivers which we want propagated to the source.
 	return append(
-		[]string{"memory_limiter"},
+		[]string{"memory_limiter", k8sAttributesProcessorName, logsServiceNameProcessorName},
 		getCommonProcessors()...,
 	)
 }

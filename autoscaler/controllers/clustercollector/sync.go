@@ -1,4 +1,4 @@
-package gateway
+package clustercollector
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -20,7 +21,7 @@ var (
 	}
 )
 
-func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
+func reconcileClusterCollector(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	odigosNs := env.GetCurrentNamespace()
@@ -29,20 +30,21 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 	if err != nil {
 		// collectors group is created by the scheduler, after the first destination is added.
 		// it is however possible that some reconciler (like deployment) triggered and the collectors group will be created shortly.
-		return client.IgnoreNotFound(err)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	var dests odigosv1.DestinationList
-	if err := k8sClient.List(ctx, &dests); err != nil {
-		logger.Error(err, "Failed to list destinations")
-		return err
+	err = k8sClient.List(ctx, &dests)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	var processors odigosv1.ProcessorList
-	if err := k8sClient.List(ctx, &processors); err != nil {
-		logger.Error(err, "Failed to list processors")
-		return err
+	err = k8sClient.List(ctx, &processors)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
+
 	// Add the generic batch processor to the list of processors
 	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
 
@@ -53,7 +55,7 @@ func Sync(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, 
 		logger.Error(statusErr, "Failed to patch collectors group status")
 		// just log the error, do not fail the reconciliation
 	}
-	return err
+	return ctrl.Result{}, err
 }
 
 func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
