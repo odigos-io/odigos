@@ -1,17 +1,17 @@
-package gateway
+package clustercollector
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
