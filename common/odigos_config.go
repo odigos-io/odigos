@@ -1,6 +1,8 @@
 package common
 
 type ProfileName string
+
+// +kubebuilder:validation:Enum=normal;readonly
 type UiMode string
 
 const (
@@ -102,7 +104,6 @@ type OdigosConfiguration struct {
 	IgnoredContainers                []string                       `json:"ignoredContainers,omitempty"`
 	Psp                              bool                           `json:"psp,omitempty"`
 	ImagePrefix                      string                         `json:"imagePrefix,omitempty"`
-	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
 	SkipWebhookIssuerCreation        bool                           `json:"skipWebhookIssuerCreation,omitempty"`
 	CollectorGateway                 *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
 	CollectorNode                    *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
@@ -112,4 +113,6 @@ type OdigosConfiguration struct {
 	UiPaginationLimit                int                            `json:"uiPaginationLimit,omitempty"`
 	CentralBackendURL                string                         `json:"centralBackendURL,omitempty"`
 	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
+	ClusterName                      string                         `json:"clusterName,omitempty"`
+	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
 }
