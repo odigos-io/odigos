@@ -67,6 +67,7 @@ const (
 	MountMethodProperty               = "mount-method"
 	CentralBackendURLProperty         = "central-backend-url"
 	CustomContainerRunetimeSocketPath = "custom-container-runtime-socket-path"
+	K8sNodeLogsDirectory              = "k8s-node-logs-directory"
 )
 
 var (

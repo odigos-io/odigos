@@ -195,6 +195,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	setTracesLoadBalancer bool) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
+	odigosSystemNsName := nodeCG.Namespace
 
 	empty := struct{}{}
 
@@ -342,6 +343,13 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 
 	collectLogs := slices.Contains(signals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
+
+		k8sNodeLogsDirectory := nodeCG.Spec.K8sNodeLogsDirectory
+		if k8sNodeLogsDirectory == "" {
+			// the k8s logs directory should always be set in collector group, this is just for safety
+			k8sNodeLogsDirectory = k8sconsts.DefaultK8sNodeLogsDirectory
+		}
+
 		includes := make([]string, 0)
 		for _, element := range sources.Items {
 			// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
@@ -360,13 +368,17 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			}
 			owner := element.OwnerReferences[0]
 			name := owner.Name
-			includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
+			includePath := fmt.Sprintf("%s/pods/%s_%s-*_*/*/*.log", k8sNodeLogsDirectory, element.Namespace, name)
+			includes = append(includes, includePath)
 		}
 
-		odigosSystemNamespaceName := env.GetCurrentNamespace()
+		excludeKubeSystem := fmt.Sprintf("%s/pods/kube-system_*/**/*", k8sNodeLogsDirectory)
+		excludeOdigosSystem := fmt.Sprintf("%s/pods/%s_*/**/*", k8sNodeLogsDirectory, odigosSystemNsName)
+		exclude := []string{excludeKubeSystem, excludeOdigosSystem}
+
 		cfg.Receivers["filelog"] = config.GenericMap{
 			"include":           includes,
-			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},
+			"exclude":           exclude,
 			"start_at":          "end",
 			"include_file_path": true,
 			"include_file_name": false,

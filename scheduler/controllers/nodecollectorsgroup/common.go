@@ -110,6 +110,11 @@ func newNodeCollectorGroup(odigosConfig common.OdigosConfiguration) *odigosv1.Co
 		ownMetricsPort = odigosConfig.CollectorNode.CollectorOwnMetricsPort
 	}
 
+	k8sNodeLogsDirectory := k8sconsts.DefaultK8sNodeLogsDirectory
+	if odigosConfig.CollectorNode != nil && odigosConfig.CollectorNode.K8sNodeLogsDirectory != "" {
+		k8sNodeLogsDirectory = odigosConfig.CollectorNode.K8sNodeLogsDirectory
+	}
+
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -123,6 +128,7 @@ func newNodeCollectorGroup(odigosConfig common.OdigosConfiguration) *odigosv1.Co
 			Role:                    odigosv1.CollectorsGroupRoleNodeCollector,
 			CollectorOwnMetricsPort: ownMetricsPort,
 			ResourcesSettings:       getResourceSettings(odigosConfig),
+			K8sNodeLogsDirectory:    k8sNodeLogsDirectory,
 		},
 	}
 }

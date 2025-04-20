@@ -88,17 +88,17 @@ func (dm *DelayManager) finishProgress() {
 	dm.inProgress = false
 }
 
-func syncDaemonSet(ctx context.Context, datacollection *odigosv1.CollectorsGroup,
+func syncDaemonSet(ctx context.Context, nodeCG *odigosv1.CollectorsGroup,
 	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
 
-	odigletDaemonsetPodSpec, err := getOdigletDaemonsetPodSpec(ctx, c, datacollection.Namespace)
+	odigletDaemonsetPodSpec, err := getOdigletDaemonsetPodSpec(ctx, c, nodeCG.Namespace)
 	if err != nil {
 		logger.Error(err, "Failed to get Odiglet DaemonSet")
 		return nil, err
 	}
 
-	configMap, err := getConfigMap(ctx, c, datacollection.Namespace)
+	configMap, err := getConfigMap(ctx, c, nodeCG.Namespace)
 	if err != nil {
 		logger.Error(err, "Failed to get Config Map data")
 		return nil, err
@@ -110,21 +110,21 @@ func syncDaemonSet(ctx context.Context, datacollection *odigosv1.CollectorsGroup
 		logger.Error(err, "Failed to get signals from otelcol config")
 		return nil, err
 	}
-	desiredDs, err := getDesiredDaemonSet(datacollection, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
+	desiredDs, err := getDesiredDaemonSet(nodeCG, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
 	}
 
 	existing := &appsv1.DaemonSet{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: datacollection.Namespace, Name: datacollection.Name}, existing); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Namespace: nodeCG.Namespace, Name: nodeCG.Name}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Info("Creating DaemonSet")
 			if err := c.Create(ctx, desiredDs); err != nil {
 				logger.Error(err, "Failed to create DaemonSet")
 				return nil, err
 			}
-			err = common.UpdateCollectorGroupReceiverSignals(ctx, c, datacollection, signals)
+			err = common.UpdateCollectorGroupReceiverSignals(ctx, c, nodeCG, signals)
 			if err != nil {
 				logger.Error(err, "Failed to update node collectors group received signals")
 				return nil, err
@@ -143,7 +143,7 @@ func syncDaemonSet(ctx context.Context, datacollection *odigosv1.CollectorsGroup
 		return nil, err
 	}
 
-	err = common.UpdateCollectorGroupReceiverSignals(ctx, c, datacollection, signals)
+	err = common.UpdateCollectorGroupReceiverSignals(ctx, c, nodeCG, signals)
 	if err != nil {
 		logger.Error(err, "Failed to update node collectors group received signals")
 		return nil, err
@@ -162,7 +162,7 @@ func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace 
 	return &odigletDaemonset.Spec.Template.Spec, nil
 }
 
-func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
+func getDesiredDaemonSet(nodeCG *odigosv1.CollectorsGroup,
 	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
 	odigletDaemonsetPodSpec *corev1.PodSpec) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
@@ -184,15 +184,20 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 		rollingUpdate.MaxSurge = &maxSurge
 	}
 
-	resourceMemoryRequestQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.ResourcesSettings.MemoryRequestMiB))
-	resourceMemoryLimitQuantity := resource.MustParse(fmt.Sprintf("%dMi", datacollection.Spec.ResourcesSettings.MemoryLimitMiB))
-	resourceCpuRequestQuantity := resource.MustParse(fmt.Sprintf("%dm", datacollection.Spec.ResourcesSettings.CpuRequestMillicores))
-	resourceCpuLimitQuantity := resource.MustParse(fmt.Sprintf("%dm", datacollection.Spec.ResourcesSettings.CpuLimitMillicores))
+	resourceMemoryRequestQuantity := resource.MustParse(fmt.Sprintf("%dMi", nodeCG.Spec.ResourcesSettings.MemoryRequestMiB))
+	resourceMemoryLimitQuantity := resource.MustParse(fmt.Sprintf("%dMi", nodeCG.Spec.ResourcesSettings.MemoryLimitMiB))
+	resourceCpuRequestQuantity := resource.MustParse(fmt.Sprintf("%dm", nodeCG.Spec.ResourcesSettings.CpuRequestMillicores))
+	resourceCpuLimitQuantity := resource.MustParse(fmt.Sprintf("%dm", nodeCG.Spec.ResourcesSettings.CpuLimitMillicores))
+
+	k8sNodeLogsDirectory := k8sconsts.DefaultK8sNodeLogsDirectory
+	if nodeCG.Spec.K8sNodeLogsDirectory != "" {
+		k8sNodeLogsDirectory = nodeCG.Spec.K8sNodeLogsDirectory
+	}
 
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
-			Namespace: datacollection.Namespace,
+			Namespace: nodeCG.Namespace,
 			Labels:    NodeCollectorsLabels,
 		},
 		Spec: appsv1.DaemonSetSpec{
@@ -218,7 +223,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: datacollection.Name,
+										Name: nodeCG.Name,
 									},
 									Items: []corev1.KeyToPath{
 										{
@@ -233,7 +238,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 							Name: "varlog",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/log",
+									Path: k8sNodeLogsDirectory,
 								},
 							},
 						},
@@ -271,7 +276,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 								},
 								{
 									Name:      "varlog",
-									MountPath: "/var/log",
+									MountPath: k8sNodeLogsDirectory,
 									ReadOnly:  true,
 								},
 								{
@@ -299,7 +304,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 								},
 								{
 									Name:  "GOMEMLIMIT",
-									Value: fmt.Sprintf("%dMiB", datacollection.Spec.ResourcesSettings.GomemlimitMiB),
+									Value: fmt.Sprintf("%dMiB", nodeCG.Spec.ResourcesSettings.GomemlimitMiB),
 								},
 								{
 									// let the Go runtime know how many CPUs are available,
@@ -365,7 +370,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 		}
 	}
 
-	err := ctrl.SetControllerReference(datacollection, desiredDs, scheme)
+	err := ctrl.SetControllerReference(nodeCG, desiredDs, scheme)
 	if err != nil {
 		return nil, err
 	}

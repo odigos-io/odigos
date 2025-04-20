@@ -85,6 +85,9 @@ data:
       {{- with .Values.collectorNode.goMemLimitMiB }}
       goMemLimitMiB: {{ . }}
       {{- end }}
+      {{- if .Values.collectorNode.k8sNodeLogsDirectory }}
+      k8sNodeLogsDirectory: {{ .Values.collectorNode.k8sNodeLogsDirectory }}
+      {{- end }}
     {{- end }}
     {{- if .Values.profiles }}
     profiles: 
@@ -106,3 +109,4 @@ data:
     {{- else }}
     {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path' and 'k8s-virtual-device'." }}
     {{- end }}
+    

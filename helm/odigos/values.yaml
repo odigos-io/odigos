@@ -104,6 +104,11 @@ collectorNode:
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
   goMemLimitMiB: 360
 
+  # by default, odigos will attempt to collect logs from '/var/log' on each k8s node.
+  # use this option to specify a different directory if your cluster is configured to use a different log directory.
+  # for example: '/mnt/var/log'.
+  k8sNodeLogsDirectory: '/var/log'
+
 autoscaler:
   nodeSelector:
     kubernetes.io/os: linux

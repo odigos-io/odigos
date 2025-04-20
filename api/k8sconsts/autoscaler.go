@@ -12,4 +12,6 @@ const (
 	AutoScalerClusterRoleBindingName = AutoScalerDeploymentName
 	AutoScalerServiceName            = "auto-scaler"
 	AutoScalerContainerName          = "manager"
+
+	DefaultK8sNodeLogsDirectory = "/var/log"
 )

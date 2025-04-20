@@ -181,6 +181,15 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 				common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod)
 		}
 
+	case consts.K8sNodeLogsDirectory:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		if config.CollectorNode == nil {
+			config.CollectorNode = &common.CollectorNodeConfiguration{}
+		}
+		config.CollectorNode.K8sNodeLogsDirectory = value[0]
+
 	default:
 		return fmt.Errorf("invalid property: %s", property)
 	}

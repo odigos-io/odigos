@@ -93,6 +93,10 @@ type CollectorsGroupSpec struct {
 	// - consuming all available memory on the node which can lead to node instability
 	// - pushing back pressure to the instrumented applications
 	ResourcesSettings CollectorsGroupResourcesSettings `json:"resourcesSettings"`
+
+	// This field is the directory on k8s host where logs can be found.
+	// It is usually set to '/var/log' but can be set to any other directory (like '/mnt/var/log')
+	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

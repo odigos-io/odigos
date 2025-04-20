@@ -48,6 +48,11 @@ spec:
                   This can be used to resolve conflicting ports when a collector is using the host network.
                 format: int32
                 type: integer
+              k8sNodeLogsDirectory:
+                description: |-
+                  This field is the directory on k8s host where logs can be found.
+                  It is usually set to '/var/log' but can be set to any other directory (like '/mnt/var/log')
+                type: string
               resourcesSettings:
                 description: |-
                   Resources [memory/cpu] settings for the collectors group.
