@@ -43,13 +43,13 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	}
 	configProfiles := odigosConfig.Profiles
 
-	odigosDeployment := corev1.ConfigMap{}
-	err = r.Client.Get(ctx, types.NamespacedName{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosDeploymentConfigMapName}, &odigosDeployment)
+	odigosDeploymentCm := corev1.ConfigMap{}
+	err = r.Client.Get(ctx, types.NamespacedName{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosDeploymentConfigMapName}, &odigosDeploymentCm)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	onPremTokenProfiles := []common.ProfileName{}
-	if tokenProfilesString, ok := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]; ok && len(tokenProfilesString) > 0 {
+	if tokenProfilesString, ok := odigosDeploymentCm.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]; ok && len(tokenProfilesString) > 0 {
 		onPremTokenProfilesString := strings.Split(tokenProfilesString, ", ")
 		for i := range onPremTokenProfilesString {
 			onPremTokenProfiles = append(onPremTokenProfiles, common.ProfileName(common.ProfileName(onPremTokenProfilesString[i])))

@@ -66,7 +66,7 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 			continue
 		}
 
-		if ir.Spec.OtelSdks == nil {
+		if ir.Spec.OtelDistros == nil {
 			// we only care about otel sdks rules at the moment.
 			// no need to process other rules.
 			continue
