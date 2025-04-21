@@ -50,6 +50,9 @@ const (
 	Destination             = "Destination"
 
 	GoOffsetsPublicURL = "https://storage.googleapis.com/odigos-cloud/offset_results_min.json"
+
+	LdPreloadEnvVarName = "LD_PRELOAD"
+	OdigosLoaderName    = "loader.so"
 )
 
 // Odigos config properties

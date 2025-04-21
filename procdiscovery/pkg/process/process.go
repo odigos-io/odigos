@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 )
 
@@ -212,6 +213,7 @@ func getRelevantEnvVars(pid int) ProcessEnvs {
 	for k := range envOverwrite.EnvValuesMap {
 		relevantOverwriteEnvVars[k] = nil
 	}
+	relevantOverwriteEnvVars[consts.LdPreloadEnvVarName] = nil
 
 	overWriteEnvsResult := make(map[string]string)
 	detailedEnvsResult := make(map[string]string)

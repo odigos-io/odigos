@@ -3,11 +3,13 @@ package webhookenvinjector
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -29,6 +31,16 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 	if envVarsPerLanguage == nil {
 		return
 	}
+
+	if !isLD_PRELOADEnvVarPresent(container, runtimeDetails) {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  consts.LdPreloadEnvVarName,
+			Value: filepath.Join(k8sconsts.OdigosAgentsDirectory, consts.OdigosLoaderName),
+		})
+		return
+	}
+
+	logger.Info("LD_PRELOAD env var already exists, using runtime detection based injection", "container", container.Name)
 
 	// Odigos appends necessary environment variables to enable its agent.
 	// It handles this in the following ways:
@@ -55,6 +67,21 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 	if !isOdigosAgentEnvAppended {
 		applyOdigosEnvDefaults(container, envVarsPerLanguage, otelsdk)
 	}
+}
+
+func isLD_PRELOADEnvVarPresent(container *corev1.Container, runtimeDetails *odigosv1.RuntimeDetailsByContainer) bool {
+	// Check the container's environment variables
+	if getContainerEnvVarPointer(&container.Env, consts.LdPreloadEnvVarName) != nil {
+		return true
+	}
+
+	// Check the runtime details
+	for _, envVar := range runtimeDetails.EnvVars {
+		if envVar.Name == consts.LdPreloadEnvVarName {
+			return true
+		}
+	}
+	return false
 }
 
 func getEnvVarNamesForLanguage(pl common.ProgrammingLanguage) []string {
