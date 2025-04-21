@@ -12,10 +12,15 @@ import (
 
 type PhpInspector struct{}
 
+var processNames = []string{
+	"php",
+	"php-fpm",
+}
+
 func (n *PhpInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	baseExe := filepath.Base(pcx.ExePath)
 
-	if utils.IsBaseExeContainsProcessName(baseExe, "php") {
+	if utils.IsBaseExeContainsProcessName(baseExe, processNames) {
 		return common.PhpProgrammingLanguage, true
 	}
 
