@@ -121,6 +121,9 @@ COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-na
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
+ARG ODIGOS_LOADER_VERSION=v0.0.2
+RUN wget https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
+
 FROM registry.fedoraproject.org/fedora-minimal:38
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=builder /go/bin/dlv /root/dlv
