@@ -7,7 +7,7 @@ spec:
   language: php
   runtimeEnvironments:
     - name: php
-      supportedVersions: '>=8.1 <8.2'
+      supportedVersions: '>=8.0,<8.5'
   displayName: 'PHP Community Native Instrumentation'
   description: |
     This distribution is for PHP applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
@@ -17,8 +17,7 @@ spec:
       # How to use PHP_INI_SCAN_DIR env with colon (:) separator...
       # See https://github.com/odigos-io/opentelemetry-php?tab=readme-ov-file#deploying-an-agent
       - envName: PHP_INI_SCAN_DIR
-        # TODO: add support for dynamic PHP versions
-        envValue: ':/var/odigos/php/8.1'
+        envValue: ':/var/odigos/php/{{RUNTIME_VERSION_MAJOR_MINOR}}'
       - envName: OTEL_PHP_AUTOLOAD_ENABLED
         envValue: true
   runtimeAgent:
