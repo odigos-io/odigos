@@ -63,7 +63,6 @@ type LatencySamplerStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=latencysamplers,scope=Namespaced,shortName=ls
-//+kubebuilder:metadata:labels=odigos.io/config=1
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // LatencySampler is the Schema for the LatencySampler odigos action API
