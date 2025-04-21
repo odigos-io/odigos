@@ -37,10 +37,16 @@ func injectEnvVarToPodContainer(existingEnvNames EnvVarNamesMap, container *core
 		return existingEnvNames
 	}
 
-	if runtimeDetails != nil {
-		// This was added to support dynamic versions for PHP agents
-		majorMinor := common.MajorMinorStringOnly(common.GetVersion(runtimeDetails.RuntimeVersion))
-		envVarValue = strings.ReplaceAll(envVarValue, distro.RuntimeVersionPlaceholderMajorMinor, majorMinor)
+	if strings.Contains(envVarValue, distro.RuntimeVersionPlaceholderMajorMinor) {
+		// This is a placeholder for the runtime version
+		// We need to replace it with the actual runtime version
+		if runtimeDetails != nil {
+			majorMinor := common.MajorMinorStringOnly(common.GetVersion(runtimeDetails.RuntimeVersion))
+			envVarValue = strings.ReplaceAll(envVarValue, distro.RuntimeVersionPlaceholderMajorMinor, majorMinor)
+		} else {
+			// If we don't have runtime details, we can't replace the placeholder
+			return existingEnvNames
+		}
 	}
 
 	container.Env = append(container.Env, corev1.EnvVar{
