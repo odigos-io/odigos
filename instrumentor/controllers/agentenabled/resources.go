@@ -2,6 +2,7 @@ package agentenabled
 
 import (
 	"context"
+	"sort"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -11,6 +12,17 @@ import (
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func getInstrumentationRulePriority(ir *odigosv1.InstrumentationRule) int {
+	switch ir.Annotations[k8sconsts.OdigosProfileSourceAnnotation] {
+	case k8sconsts.OdigosProfileSourceOnPremToken:
+		return 1
+	case k8sconsts.OdigosProfileSourceConfig:
+		return 2
+	default:
+		return 3
+	}
+}
 
 // fetches the relevant resources for reconciliation of the current workload object.
 // if err is returned, the reconciliation should be retried.
@@ -74,6 +86,17 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 
 		relevantIr = append(relevantIr, *ir)
 	}
+
+	// sort rules according to priority: onprem token rules first, then other rules which will override them.
+	// if both rules have the same priority, use creation timestamp to sort them.
+	sort.Slice(relevantIr, func(i, j int) bool {
+		priorityI := getInstrumentationRulePriority(&relevantIr[i])
+		priorityJ := getInstrumentationRulePriority(&relevantIr[j])
+		if priorityI == priorityJ {
+			return relevantIr[i].CreationTimestamp.Before(&relevantIr[j].CreationTimestamp)
+		}
+		return priorityI < priorityJ
+	})
 
 	return &relevantIr, nil
 }
