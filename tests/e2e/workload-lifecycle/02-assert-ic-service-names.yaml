@@ -1,0 +1,143 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-nodejs-minimum-version
+  namespace: default
+spec:
+  serviceName: nodejs-minimum-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-nodejs-latest-version
+  namespace: default
+spec:
+  serviceName: nodejs-latest-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-nodejs-dockerfile-env
+  namespace: default
+spec:
+  serviceName: nodejs-dockerfile-env-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-nodejs-manifest-env
+  namespace: default
+spec:
+  serviceName: nodejs-manifest-env-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-java-supported-version
+  namespace: default
+spec:
+  serviceName: java-supported-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-java-azul
+  namespace: default
+spec:
+  serviceName: java-azul-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-java-supported-docker-env
+  namespace: default
+spec:
+  serviceName: java-supported-docker-env-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-java-supported-manifest-env
+  namespace: default
+spec:
+  serviceName: java-supported-manifest-env-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-java-latest-version
+  namespace: default
+spec:
+  serviceName: java-latest-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-java-old-version
+  namespace: default
+spec:
+  serviceName: java-old-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-python-latest-version
+  namespace: default
+spec:
+  serviceName: python-latest-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-python-alpine
+  namespace: default
+spec:
+  serviceName: python-alpine-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-python-not-supported
+  namespace: default
+spec:
+  serviceName: python-not-supported-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-python-min-version
+  namespace: default
+spec:
+  serviceName: python-min-version-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-dotnet8-glibc
+  namespace: default
+spec:
+  serviceName: dotnet8-glibc-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-dotnet8-musl
+  namespace: default
+spec:
+  serviceName: dotnet8-musl-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-dotnet6-glibc
+  namespace: default
+spec:
+  serviceName: dotnet6-glibc-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-dotnet6-musl
+  namespace: default
+spec:
+  serviceName: dotnet6-musl-reported

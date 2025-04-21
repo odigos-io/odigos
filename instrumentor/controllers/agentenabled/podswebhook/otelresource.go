@@ -60,7 +60,7 @@ func getResourceAttributesEnvVarValue(ra []resourceAttribute) string {
 	return strings.Join(attrs, ",")
 }
 
-func InjectOtelResourceAndServerNameEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, distroName string, pw k8sconsts.PodWorkload, serviceName string) EnvVarNamesMap {
+func InjectOtelResourceAndServiceNameEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, distroName string, pw k8sconsts.PodWorkload, serviceName string) EnvVarNamesMap {
 
 	// OTEL_SERVICE_NAME
 	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, otelServiceNameEnvVarName, serviceName)

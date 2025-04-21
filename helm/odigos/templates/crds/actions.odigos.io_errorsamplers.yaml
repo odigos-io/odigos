@@ -21,8 +21,10 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ErrorSampler is the Schema for the ErrorSampler odigos action
-          API
+        description: |-
+          ErrorSampler is the Schema for the ErrorSampler CRD.
+          It defines sampling logic that always retains traces with errors, and optionally samples
+          non-error traces based on the fallback ratio.
         properties:
           apiVersion:
             description: |-
@@ -42,19 +44,34 @@ spec:
           metadata:
             type: object
           spec:
-            description: ErrorSamplerSpec defines the desired state of ErrorSampler
-              action
+            description: |-
+              ErrorSamplerSpec defines the configuration for an ErrorSampler action.
+              This sampler prioritizes traces that contain errors, and allows specifying a fallback sampling ratio
+              for traces that do not include any errors.
             properties:
               actionName:
+                description: |-
+                  ActionName is an optional identifier for this sampler rule.
+                  It can be used for referencing, labeling, or displaying the rule in UIs.
                 type: string
               disabled:
+                description: |-
+                  Disabled indicates whether the sampler is currently active.
+                  When true, the sampler will not be evaluated or applied.
                 type: boolean
               fallback_sampling_ratio:
-                description: Specifies the ratio of non-error traces to be sampled.
+                description: |-
+                  FallbackSamplingRatio determines the percentage (0–100) of non-error traces
+                  that should be sampled. Error traces are always sampled.
                 type: number
               notes:
+                description: Notes provides free-form documentation or context for
+                  the user.
                 type: string
               signals:
+                description: |-
+                  Signals specifies the types of telemetry data this sampler should apply to.
+                  Typically, this includes "traces", but may also include "logs" or "metrics".
                 items:
                   enum:
                   - LOGS
@@ -67,13 +84,13 @@ spec:
             - signals
             type: object
           status:
-            description: ErrorSamplerStatus defines the observed state of ErrorSampler
-              action
+            description: |-
+              ErrorSamplerStatus defines the runtime state and observed conditions of an ErrorSampler.
+              It may include conditions such as "Available" or "Progressing".
             properties:
               conditions:
-                description: |-
-                  Represents the observations of a ErrorSampler's current state.
-                  Known .status.conditions.type are: "Available", "Progressing"
+                description: Conditions captures the current operational state of
+                  the sampler.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.

@@ -95,7 +95,8 @@
           "group": "API Reference",
           "pages": [
             "api-reference/odigos.io.v1alpha1",
-            "api-reference/actions.odigos.io.v1alpha1"
+            "api-reference/actions.odigos.io.v1alpha1",
+            "api-reference/operator.odigos.io.v1alpha1"
           ]
         }
       ]
@@ -202,7 +203,9 @@
               "pages": [
                 "pipeline/actions/sampling/errorsampler",
                 "pipeline/actions/sampling/latencysampler",
-                "pipeline/actions/sampling/probabilisticsampler"
+                "pipeline/actions/sampling/probabilisticsampler",
+                "pipeline/actions/sampling/servicenamesampler",
+                "pipeline/actions/sampling/spanattributesampler"
               ]
             },
             "pipeline/actions/crd",

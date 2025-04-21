@@ -384,6 +384,7 @@ spec:
                       - go
                       - dotnet
                       - javascript
+                      - php
                       - mysql
                       - nginx
                       - unknown
@@ -590,6 +591,7 @@ spec:
                       - go
                       - dotnet
                       - javascript
+                      - php
                       - mysql
                       - nginx
                       - unknown

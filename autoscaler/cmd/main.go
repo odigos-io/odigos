@@ -24,15 +24,7 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
-
-	corev1 "k8s.io/api/core/v1"
-
-	appsv1 "k8s.io/api/apps/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
@@ -42,24 +34,20 @@ import (
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
-	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
-	"github.com/odigos-io/odigos/autoscaler/controllers/gateway"
 
 	//+kubebuilder:scaffold:imports
 
@@ -82,15 +70,14 @@ func init() {
 }
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	var probeAddr string
 	var imagePullSecretsString string
 	var imagePullSecrets []string
 
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
+	managerOptions := controllers.KubeManagerOptions{}
+
+	flag.StringVar(&managerOptions.MetricsServerBindAddress, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&managerOptions.HealthProbeBindAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.BoolVar(&managerOptions.EnableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&imagePullSecretsString, "image-pull-secrets", "",
@@ -129,75 +116,8 @@ func main() {
 	go common.StartPprofServer(ctx, setupLog)
 
 	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
-	odigosNs := env.GetCurrentNamespace()
-	nsSelector := client.InNamespace(odigosNs).AsSelector()
-	clusterCollectorLabelSelector := labels.Set(gateway.ClusterCollectorGateway).AsSelector()
 
-	cfg := ctrl.GetConfigOrDie()
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme,
-		Metrics: metricsserver.Options{
-			BindAddress: metricsAddr,
-		},
-		Cache: cache.Options{
-			DefaultTransform: cache.TransformStripManagedFields(),
-			ByObject: map[client.Object]cache.ByObject{
-				&appsv1.Deployment{}: {
-					Label: clusterCollectorLabelSelector,
-					Field: nsSelector,
-				},
-				&corev1.Service{}: {
-					Label: clusterCollectorLabelSelector,
-					Field: nsSelector,
-				},
-				&appsv1.DaemonSet{}: {
-					Field: nsSelector,
-				},
-				&corev1.ConfigMap{}: {
-					Field: nsSelector,
-				},
-				&corev1.Secret{}: {
-					Field: nsSelector,
-				},
-				&odigosv1.CollectorsGroup{}: {
-					Field: nsSelector,
-				},
-				&odigosv1.Destination{}: {
-					Field: nsSelector,
-				},
-				&odigosv1.Processor{}: {
-					Field: nsSelector,
-				},
-				&apiactions.AddClusterInfo{}: {
-					Field: nsSelector,
-				},
-				&apiactions.DeleteAttribute{}: {
-					Field: nsSelector,
-				},
-				&apiactions.ErrorSampler{}: {
-					Field: nsSelector,
-				},
-				&apiactions.LatencySampler{}: {
-					Field: nsSelector,
-				},
-				&apiactions.PiiMasking{}: {
-					Field: nsSelector,
-				},
-				&apiactions.ProbabilisticSampler{}: {
-					Field: nsSelector,
-				},
-				&apiactions.RenameAttribute{}: {
-					Field: nsSelector,
-				},
-				&apiactions.K8sAttributesResolver{}: {
-					Field: nsSelector,
-				},
-			},
-		},
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "f681cfed.odigos.io",
-	})
+	mgr, err := controllers.CreateManager(managerOptions)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
@@ -226,80 +146,12 @@ func main() {
 		OnGKE:          onGKE,
 	}
 
-	if err = (&controllers.DestinationReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ImagePullSecrets: imagePullSecrets,
-		OdigosVersion:    odigosVersion,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Destination")
+	// wire up the controllers and webhooks
+	err = controllers.SetupWithManager(mgr, imagePullSecrets, odigosVersion)
+	if err != nil {
+		setupLog.Error(err, "unable to create odigos controllers")
 		os.Exit(1)
 	}
-
-	if err = (&controllers.ProcessorReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ImagePullSecrets: imagePullSecrets,
-		OdigosVersion:    odigosVersion,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Processor")
-		os.Exit(1)
-	}
-	if err = (&controllers.CollectorsGroupReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ImagePullSecrets: imagePullSecrets,
-		OdigosVersion:    odigosVersion,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CollectorsGroup")
-		os.Exit(1)
-	}
-	if err = (&controllers.InstrumentationConfigReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ImagePullSecrets: imagePullSecrets,
-		OdigosVersion:    odigosVersion,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "InstrumentationConfig")
-		os.Exit(1)
-	}
-	if err = (&controllers.SecretReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ImagePullSecrets: imagePullSecrets,
-		OdigosVersion:    odigosVersion,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Secret")
-		os.Exit(1)
-	}
-	if err = (&controllers.GatewayDeploymentReconciler{
-		Client: mgr.GetClient(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
-		os.Exit(1)
-	}
-	if err = (&controllers.DataCollectionDaemonSetReconciler{
-		Client: mgr.GetClient(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DaemonSet")
-		os.Exit(1)
-	}
-	if err = (&controllers.SourceReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		ImagePullSecrets: imagePullSecrets,
-		OdigosVersion:    odigosVersion,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Source")
-		os.Exit(1)
-	}
-
-	if err = actions.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create odigos actions controllers")
-		os.Exit(1)
-	}
-
-	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")

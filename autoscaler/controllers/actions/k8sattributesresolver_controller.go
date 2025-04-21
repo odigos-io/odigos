@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -57,6 +58,12 @@ var (
 		string(semconv.K8SDeploymentUIDKey),
 		string(semconv.K8SDaemonSetUIDKey),
 		string(semconv.K8SStatefulSetUIDKey),
+	}
+
+	workloadNameAttributes = []string{
+		string(semconv.K8SDeploymentNameKey),
+		string(semconv.K8SDaemonSetNameKey),
+		string(semconv.K8SStatefulSetNameKey),
 	}
 
 	containerAttributes = []string{
@@ -189,14 +196,22 @@ func (r *K8sAttributesResolverReconciler) convertToUnifiedProcessor(actions *act
 	collectWorkloadUID := false
 	collectContainerAttributes := false
 	collectClusterUID := false
+	collectWorkloadNames := false
 
 	// create a union of all the actions' configuration to one processor
 	for actionIndex := range actions.Items {
 		currentAction := &actions.Items[actionIndex]
 
+		if currentAction.Spec.Disabled {
+			continue
+		}
+
 		collectContainerAttributes = (collectContainerAttributes || currentAction.Spec.CollectContainerAttributes)
 		collectWorkloadUID = (collectWorkloadUID || currentAction.Spec.CollectWorkloadUID)
 		collectClusterUID = (collectClusterUID || currentAction.Spec.CollectClusterUID)
+		// traces should already contain workload name (if they originated from odigos)
+		// logs collected from filelog receiver will lack this info thus needs to be added
+		collectWorkloadNames = (collectWorkloadNames || slices.Contains(currentAction.Spec.Signals, common.LogsObservabilitySignal))
 
 		for labelIndex := range currentAction.Spec.LabelsAttributes {
 			labels[currentAction.Spec.LabelsAttributes[labelIndex].LabelKey] = currentAction.Spec.LabelsAttributes[labelIndex].AttributeKey
@@ -218,6 +233,9 @@ func (r *K8sAttributesResolverReconciler) convertToUnifiedProcessor(actions *act
 
 	if collectWorkloadUID {
 		config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, workloadUIDAttributes...)
+	}
+	if collectWorkloadNames {
+		config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, workloadNameAttributes...)
 	}
 	if collectContainerAttributes {
 		config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, containerAttributes...)
@@ -277,10 +295,10 @@ func (r *K8sAttributesResolverReconciler) reportActionsStatuses(ctx context.Cont
 	for actionIndex := range actions.Items {
 		action := &actions.Items[actionIndex]
 		changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
-			Type:               "ActionTransformedToProcessorType",
-			Status:             status,
-			Reason:             reason,
-			Message:            message,
+			Type:    "ActionTransformedToProcessorType",
+			Status:  status,
+			Reason:  reason,
+			Message: message,
 		})
 
 		if changed {
@@ -288,7 +306,6 @@ func (r *K8sAttributesResolverReconciler) reportActionsStatuses(ctx context.Cont
 			updateErr = errors.Join(updateErr, err)
 		}
 	}
-	
 
 	return updateErr
 }
