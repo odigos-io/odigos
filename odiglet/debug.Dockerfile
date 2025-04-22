@@ -41,7 +41,6 @@ COPY --from=nodejs-agent-src / .
 RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
 RUN yarn compile
 
-
 # The fourth step 'nodejs-agent-native-community-src' prepares the agent sources for the native-community agent.
 # it COPY the nodejs agent source from 'nodejs-agent-build' stage and then build the agent in the 'agents/nodejs-native-community' directory.
 # The output of this stage is the compiled agent code in:
@@ -57,15 +56,14 @@ COPY --from=nodejs-agent-build /opentelemetry-node opentelemetry-node
 RUN yarn --cwd ./odigos/agents/nodejs-native-community --production --frozen-lockfile
 
 
-
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.9.0
 ARG TARGETARCH
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        echo "arm64" > /tmp/arch_suffix; \
+    echo "arm64" > /tmp/arch_suffix; \
     else \
-        echo "x64" > /tmp/arch_suffix; \
+    echo "x64" > /tmp/arch_suffix; \
     fi
 
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
@@ -84,6 +82,18 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
     mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
 
+
+# PHP: Clone agents repo (contains pre-compiled binaries and libraries for each PHP version)
+FROM --platform=$BUILDPLATFORM php:8-cli AS php-agents
+WORKDIR /php-agents
+ARG PHP_AGENT_VERSION=main
+RUN apt-get update && apt-get upgrade -y && apt-get install -y git
+RUN git clone https://github.com/odigos-io/opentelemetry-php \
+    && cd opentelemetry-php \
+    && git checkout $PHP_AGENT_VERSION
+
+
+######### ODIGLET #########
 FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.7 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
@@ -120,6 +130,13 @@ COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-na
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
+
+# PHP
+COPY --from=php-agents /php-agents/opentelemetry-php/8.0 /instrumentations/php/8.0
+COPY --from=php-agents /php-agents/opentelemetry-php/8.1 /instrumentations/php/8.1
+COPY --from=php-agents /php-agents/opentelemetry-php/8.2 /instrumentations/php/8.2
+COPY --from=php-agents /php-agents/opentelemetry-php/8.3 /instrumentations/php/8.3
+COPY --from=php-agents /php-agents/opentelemetry-php/8.4 /instrumentations/php/8.4
 
 ARG ODIGOS_LOADER_VERSION=v0.0.2
 RUN wget https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
