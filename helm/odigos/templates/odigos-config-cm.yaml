@@ -86,10 +86,10 @@ data:
       goMemLimitMiB: {{ . }}
       {{- end }}
     {{- end }}
-    {{- if .Values.additionalInstrumentationEnvs.languages }}
-    additionalInstrumentationEnvs:
+    {{- if .Values.UserInstrumentationEnvs.languages }}
+    UserInstrumentationEnvs:
       languages:
-        {{- range $lang, $config := .Values.additionalInstrumentationEnvs.languages }}
+        {{- range $lang, $config := .Values.UserInstrumentationEnvs.languages }}
         {{ $lang }}:
           enabled: {{ $config.enabled }}
           {{- if $config.env }}

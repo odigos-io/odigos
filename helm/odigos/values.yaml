@@ -1,5 +1,5 @@
 image:
-  tag: 'avihu'
+  tag: ''
 imagePullSecrets: []
 
 # By default, images are pulled from odigos registry at `registry.odigos.io`
@@ -18,23 +18,24 @@ ignoredNamespaces:
 # you can add additional container names to ignore by adding them to the list
 ignoredContainers:
 
-# Configuration for OpenTelemetry (OTEL) agents instrumentation.
-# These settings enable and configure OTEL agents for programming languages supported by Odigos.
-# See the official OTEL documentation for language-specific configuration details:
-# https://opentelemetry.io/docs/zero-code/
-# Example:
-# languages:
-#   java:
-#     enabled: true
-#     env:
-#       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
-# Note: For eBPF-based distributions, exporting and batching cannot be configured here, as they are managed by the Odiglet.
-# Warning: This is an advanced feature. Only modify these settings if you are familiar with OTEL and its implications.
-additionalInstrumentationEnvs:
+UserInstrumentationEnvs:
+  # Configuration for OpenTelemetry (OTEL) agents instrumentation.
+  # These settings enable and configure OTEL agents for programming languages supported by Odigos.
+  # See the official OTEL documentation for language-specific configuration details:
+  # https://opentelemetry.io/docs/zero-code/
+  # Example:
+  # languages:
+  #   java:
+  #     enabled: true
+  #     env:
+  #       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
+  # Note: For eBPF-based distributions, exporting and batching cannot be configured here, as they are managed by the Odiglet.
+  # Warning: This is an advanced feature. Only modify these settings if you are familiar with OTEL and its implications.
   languages:
     java:
-      enabled: false
-      env: {}
+      enabled: true
+      env: 
+        OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
     python:
       enabled: false
       env: {}
