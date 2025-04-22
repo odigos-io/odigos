@@ -15,10 +15,16 @@ const (
 	NodeVersionConst   = "NODE_VERSION"
 	PythonVersionConst = "PYTHON_VERSION"
 	JavaVersionConst   = "JAVA_VERSION"
+	PhpVersionConst    = "PHP_VERSION"
 )
 
 // LangsVersionEnvs is a map of environment variables used for detecting the versions of different languages
-var LangsVersionEnvs = map[string]struct{}{NodeVersionConst: {}, PythonVersionConst: {}, JavaVersionConst: {}}
+var LangsVersionEnvs = map[string]struct{}{
+	NodeVersionConst:   {},
+	PythonVersionConst: {},
+	JavaVersionConst:   {},
+	PhpVersionConst:    {},
+}
 
 const (
 	NewRelicAgentEnv = "NEW_RELIC_CONFIG_FILE"
@@ -227,7 +233,6 @@ func getRelevantEnvVars(pid int) ProcessEnvs {
 		}
 
 		str = strings.TrimRight(str, "\x00")
-
 		envParts := strings.SplitN(str, "=", 2)
 		if len(envParts) != 2 {
 			continue
