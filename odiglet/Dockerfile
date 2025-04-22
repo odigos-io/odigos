@@ -86,7 +86,7 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
 # PHP: Clone agents repo (contains pre-compiled binaries and libraries for each PHP version)
 FROM --platform=$BUILDPLATFORM php:8-cli AS php-agents
 WORKDIR /php-agents
-ARG PHP_AGENT_VERSION=v0.0.1
+ARG PHP_AGENT_VERSION=v0.0.2
 RUN apt-get update && apt-get upgrade -y && apt-get install -y git
 RUN git clone https://github.com/odigos-io/opentelemetry-php \
     && cd opentelemetry-php \
