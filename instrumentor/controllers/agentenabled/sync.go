@@ -3,12 +3,14 @@ package agentenabled
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
+	distroTypes "github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -288,6 +290,21 @@ func containerInstrumentationConfig(containerName string,
 				AgentEnabled:        false,
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
 				AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", distro.RuntimeEnvironments[0].Name, constraint, detectedVersion),
+			}
+		}
+		for _, staticVariable := range distro.EnvironmentVariables.StaticVariables {
+			if strings.Contains(staticVariable.EnvValue, distroTypes.RuntimeVersionPlaceholderMajorMinor) {
+				// This is a placeholder for the runtime version
+				// If the runtime does not have a version, we can't replace the placeholder
+				// so we should not inject the agent.
+
+				return odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
+					AgentEnabledMessage: "runtime version is not available, but the distribution requires it to be set",
+				}
+
 			}
 		}
 	}

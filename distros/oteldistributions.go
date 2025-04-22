@@ -48,6 +48,7 @@ func (c *communityDefaulter) GetDefaultDistroNames() map[common.ProgrammingLangu
 		common.DotNetProgrammingLanguage:     "dotnet-community",
 		common.JavaProgrammingLanguage:       "java-community",
 		common.GoProgrammingLanguage:         "golang-community",
+		common.PhpProgrammingLanguage:        "php-community",
 	}
 }
 
