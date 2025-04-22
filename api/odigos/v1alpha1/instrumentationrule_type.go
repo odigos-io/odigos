@@ -84,8 +84,7 @@ type InstrumentationRuleStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 type InstrumentationRule struct {
 	metav1.TypeMeta   `json:",inline"`
