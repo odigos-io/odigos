@@ -123,7 +123,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
-	if odigosConfig.AdditionalInstrumentationEnvs != nil {
+	if odigosConfig.UserInstrumentationEnvs != nil {
 		podswebhook.InjectUserEnvForLang(&odigosConfig, pod, &ic)
 	}
 

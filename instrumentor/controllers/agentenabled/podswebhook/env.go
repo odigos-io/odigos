@@ -89,7 +89,7 @@ func InjectOtlpHttpEndpointEnvVar(existingEnvNames EnvVarNamesMap, container *co
 }
 
 func InjectUserEnvForLang(odigosConfig *common.OdigosConfiguration, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig) {
-	languageSpecificEnvs := odigosConfig.AdditionalInstrumentationEnvs.Languages
+	languageSpecificEnvs := odigosConfig.UserInstrumentationEnvs.Languages
 
 	// Check for conatiner language and inject env vars if they not exists
 	for _, containerDetailes := range ic.Status.RuntimeDetailsByContainer {

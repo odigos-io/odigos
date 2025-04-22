@@ -94,7 +94,7 @@ type CollectorGatewayConfiguration struct {
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 }
-type AdditionalInstrumentationEnvs struct {
+type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
 }
 
@@ -124,5 +124,5 @@ type OdigosConfiguration struct {
 	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
 	ClusterName                      string                         `json:"clusterName,omitempty"`
 	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
-	AdditionalInstrumentationEnvs    *AdditionalInstrumentationEnvs `json:"additionalInstrumentationEnvs,omitempty"`
+	UserInstrumentationEnvs          *UserInstrumentationEnvs       `json:"UserInstrumentationEnvs,omitempty"`
 }
