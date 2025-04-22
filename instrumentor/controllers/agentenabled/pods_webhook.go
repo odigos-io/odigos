@@ -123,13 +123,13 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
+	if odigosConfig.AdditionalInstrumentationEnvs != nil {
+		podswebhook.InjectUserEnvForLang(&odigosConfig, pod, &ic)
+	}
+
 	// store the agents deployment value so we can later associate each pod with the instrumentation version.
 	// we can pull only our pods into cache, and follow the lifecycle of the instrumentation process.
 	pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel] = ic.Spec.AgentsMetaHash
-
-	if odigosConfig.AdditionalInstrumentationEnvs != nil {
-		podswebhook.InjectEnvsBasedOnLanguage(&odigosConfig, pod, &ic)
-	}
 
 	return nil
 }
