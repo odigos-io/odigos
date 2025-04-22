@@ -89,8 +89,7 @@ type K8sAttributesStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=k8sattributesresolvers,scope=Namespaced
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // K8sAttributesResolver allows adding an action to collect k8s attributes.
 type K8sAttributesResolver struct {

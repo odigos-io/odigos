@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/hashicorp/go-version"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
@@ -47,4 +49,13 @@ func GetVersion(versionString string) *version.Version {
 		return nil
 	}
 	return runtimeVersion
+}
+
+func MajorMinorStringOnly(v *version.Version) string {
+	segments := v.Segments()
+	if len(segments) < 2 {
+		// fallback for malformed versions
+		return v.String()
+	}
+	return fmt.Sprintf("%d.%d", segments[0], segments[1])
 }
