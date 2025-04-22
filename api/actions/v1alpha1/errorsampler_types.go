@@ -61,7 +61,6 @@ type ErrorSamplerStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=errorsamplers,scope=Namespaced,shortName=es
-//+kubebuilder:metadata:labels=odigos.io/config=1
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // ErrorSampler is the Schema for the ErrorSampler CRD.

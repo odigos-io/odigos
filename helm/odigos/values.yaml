@@ -1,5 +1,5 @@
 image:
-  tag: ''
+  tag: 'avihu'
 imagePullSecrets: []
 
 # By default, images are pulled from odigos registry at `registry.odigos.io`
