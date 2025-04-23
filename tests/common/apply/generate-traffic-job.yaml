@@ -16,12 +16,12 @@ spec:
       securityContext: {}
       terminationGracePeriodSeconds: 30
       containers:
-        - name: 'execute purchase'
+        - name: 'execute-purchase'
           image: curlimages/curl:8.4.0
           imagePullPolicy: IfNotPresent
           command: ['curl']
           args: ['-s', '-X', 'POST', 'http://frontend:8080/buy?id=123']
-        - name: 'get currency'
+        - name: 'get-currency'
           image: curlimages/curl:8.4.0
           imagePullPolicy: IfNotPresent
           command: ['curl']
