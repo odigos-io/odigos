@@ -98,7 +98,7 @@ spec:
 
                 # Run the wait-for-trace script
                 echo "Running Simple-trace-db query for full trace at $(date)"
-                ../../common/simple_trace_db_query_runner.sh queries/wait-for-trace.yaml
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-reported.yaml
 
                 if [ $? -eq 0 ]; then
                   break
@@ -207,7 +207,7 @@ spec:
 
                 # Run the wait-for-trace script
                 echo "Running Simple-trace-db query for full trace at $(date)"
-                ../../common/simple_trace_db_query_runner.sh queries/wait-for-trace-2.yaml
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
 
                 if [ $? -eq 0 ]; then
                   break
