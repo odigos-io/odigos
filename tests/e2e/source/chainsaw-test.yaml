@@ -8,7 +8,7 @@ spec:
   steps:
     - name: '[1 - Setup] Prepare destination'
       try:
-        - apply: 
+        - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
     - name: '[1 - Setup] Install Odigos'
       try:
@@ -27,35 +27,20 @@ spec:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
-    - name: '[1 - Setup] Install Demo App'
+
+    - name: '[1 - Setup] Install - Simple Demo Apps'
       try:
-        - script:
-            timeout: 5m
-            content: |
-              if [ "$MODE" != "cross-cloud-tests" ]; then
-                docker pull registry.odigos.io/odigos-demo-inventory:v0.1
-                docker pull registry.odigos.io/odigos-demo-membership:v0.1
-                docker pull registry.odigos.io/odigos-demo-coupon:v0.1
-                docker pull registry.odigos.io/odigos-demo-pricing:v0.1
-                docker pull registry.odigos.io/odigos-demo-frontend:v0.2
-                kind load docker-image registry.odigos.io/odigos-demo-inventory:v0.1
-                kind load docker-image registry.odigos.io/odigos-demo-membership:v0.1
-                kind load docker-image registry.odigos.io/odigos-demo-coupon:v0.1
-                kind load docker-image registry.odigos.io/odigos-demo-pricing:v0.1
-                kind load docker-image registry.odigos.io/odigos-demo-frontend:v0.2
-              else
-                echo "Skipping docker pull and kind load for cross-cloud-tests mode"
-              fi
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
         - script:
-            timeout: 70s
+            timeout: 2m
             content: |
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 
@@ -551,7 +536,7 @@ spec:
             content: kubectl get instrumentationconfigs/deployment-pricing
             check:
               ($error != null): true
-    
+
     - name: '[Migration - 5.1] - Label workload with odigos-instrumentation: disabled to create Disabled Source'
       try:
         - script:

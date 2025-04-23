@@ -67,3 +67,20 @@ status:
   runtimeDetailsByContainer:
     - containerName: pricing
       language: dotnet
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-currency
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: currency
+status:
+  runtimeDetailsByContainer:
+    - containerName: currency
+      language: php
+      runtimeVersion: 8.2.28
