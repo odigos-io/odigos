@@ -29,7 +29,7 @@ export const NAMESPACES = {
 
 export const SELECTED_ENTITIES = {
   NAMESPACE: NAMESPACES.DEFAULT,
-  NAMESPACE_SOURCES: ['coupon', 'frontend', 'inventory', 'membership', 'pricing'],
+  NAMESPACE_SOURCES: ['coupon', 'currency', 'frontend', 'inventory', 'membership', 'pricing'],
   DESTINATION: {
     TYPE: 'jaeger',
     DISPLAY_NAME: 'Jaeger',
