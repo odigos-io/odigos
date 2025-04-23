@@ -10,7 +10,7 @@ function verify_yaml_schema() {
   local expected_count=$(yq e '.expected.count' "$file")
   local minimum_count=$(yq e '.expected.minimum' "$file")
 
-  if [[ -z "$query" || ( "$expected_count" == "null"  &&  "$minimum_count" == "null" ) || ( -z "$minimum_count" && -z "$expected_count" ) ]]; then
+  if [[ -z "$query" || ("$expected_count" == "null" && "$minimum_count" == "null") || (-z "$minimum_count" && -z "$expected_count") ]]; then
     echo "Invalid YAML schema in file: $file"
     exit 1
   fi
@@ -18,11 +18,11 @@ function verify_yaml_schema() {
 
 function urlencode() (
   local length="${#1}"
-  for (( i = 0; i < length; i++ )); do
+  for ((i = 0; i < length; i++)); do
     local c="${1:i:1}"
     case $c in
-      [a-zA-Z0-9.~_-]) printf "$c" ;;
-      *) printf '%%%02X' "'$c" ;;
+    [a-zA-Z0-9.~_-]) printf "$c" ;;
+    *) printf '%%%02X' "'$c" ;;
     esac
   done
 )
@@ -44,11 +44,11 @@ function process_yaml_file() {
 
   response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/v1/traces\?jmespath=$encoded_query)
 
-  if [ "$verbose" == "true" ]; then
-    echo "============== Raw response from trace db ===================="
-    echo "$response" | jq .
-    echo "========================================================="
-  fi
+  # if [ "$verbose" == "true" ]; then
+  echo "============== Raw response from trace db ===================="
+  echo "$response" | jq .
+  echo "========================================================="
+  # fi
 
   num_of_traces=$(echo "$response" | jq 'keys | length')
 
@@ -88,7 +88,7 @@ if [ "$2" == "--verbose" ]; then
 fi
 
 # Check if yq is installed
-if ! command -v yq &> /dev/null; then
+if ! command -v yq &>/dev/null; then
   echo "yq command not found. Please install yq."
   exit 1
 fi
