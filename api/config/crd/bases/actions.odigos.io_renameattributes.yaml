@@ -5,7 +5,6 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
   labels:
-    odigos.io/config: "1"
     odigos.io/system-object: "true"
   name: renameattributes.actions.odigos.io
 spec:

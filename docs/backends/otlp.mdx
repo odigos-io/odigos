@@ -50,6 +50,17 @@ For advanced users trying to implement complex observability pipelines, Odigos s
 - **OTLP_GRPC_ENDPOINT** `string` : OTLP gRPC Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`.
   - This field is required
   - Example: `host:port`
+- **OTLP_GRPC_COMPRESSION** `string` : Destination Compression Type. Compression type to use for the destination. The default is `none`. The compression type must be supported by the destination.
+  - This field is optional and defaults to `none`
+- **OTLP_GRPC_HEADERS** `{ key: string; value: string; }[]` : Headers. Headers is the option to set custom GRPC headers for OTLP GRPC destination. If specified, please provide each header in the format: key:value. Multiple headers can be added. Keys must be non-empty strings and follow standard HTTP header conventions. Values must be non-empty strings and may include alphanumerics, whitespace, and standard punctuation.
+  - This field is optional
+- **OTLP_GRPC_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
+  - This field is optional and defaults to `False`
+- **OTLP_GRPC_CA_PEM** `string` : Certificate Authority. When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
+- **OTLP_GRPC_INSECURE_SKIP_VERIFY** `boolean` : Insecure Skip Verify. Skip TLS certificate verification
+  - This field is optional and defaults to `False`
 
 ### Adding Destination to Odigos
 
@@ -83,6 +94,12 @@ There are two primary methods for configuring destinations in Odigos:
     spec:
       data:
         OTLP_GRPC_ENDPOINT: <OTLP gRPC Endpoint>
+        # Note: The commented fields below are optional.
+        # OTLP_GRPC_COMPRESSION: <Destination Compression Type (default: none) (options: [none, gzip, snappy, lz4, zlib, deflate, zstd])>
+        # OTLP_GRPC_HEADERS: <Headers>
+        # OTLP_GRPC_TLS_ENABLED: <Enable TLS>
+        # OTLP_GRPC_CA_PEM: <Certificate Authority>
+        # OTLP_GRPC_INSECURE_SKIP_VERIFY: <Insecure Skip Verify>
       destinationName: otlp
       signals:
       - TRACES
