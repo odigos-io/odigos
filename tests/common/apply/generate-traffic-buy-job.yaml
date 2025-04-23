@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: traffic-bot
+  name: buy-bot
   namespace: default
 spec:
   template:
@@ -9,7 +9,7 @@ spec:
       annotations:
         workload: job
       labels:
-        app: traffic-bot
+        app: buy-bot
     spec:
       restartPolicy: Never
       schedulerName: default-scheduler
@@ -21,8 +21,3 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ['curl']
           args: ['-s', '-X', 'POST', 'http://frontend:8080/buy?id=123']
-        - name: 'get-currency'
-          image: curlimages/curl:8.4.0
-          imagePullPolicy: IfNotPresent
-          command: ['curl']
-          args: ['-s', '-X', 'GET', 'http://frontend:8080/currency']

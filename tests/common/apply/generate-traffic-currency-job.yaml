@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: currency-bot
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        workload: job
+      labels:
+        app: currency-bot
+    spec:
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: 'get-currency'
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: ['curl']
+          args: ['-s', '-X', 'GET', 'http://frontend:8080/currency']
