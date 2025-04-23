@@ -8,7 +8,7 @@ spec:
   steps:
     - name: Prepare destination
       try:
-        - apply: 
+        - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
@@ -58,23 +58,20 @@ spec:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
-    - name: Install Demo App
+
+    - name: Install - Simple Demo Apps
       try:
-        - script:
-            timeout: 5m
-            content: |
-              docker pull registry.odigos.io/odigos-demo-inventory:v0.1
-              docker pull registry.odigos.io/odigos-demo-membership:v0.1
-              docker pull registry.odigos.io/odigos-demo-coupon:v0.1
-              docker pull registry.odigos.io/odigos-demo-pricing:v0.1
-              docker pull registry.odigos.io/odigos-demo-frontend:v0.2
-              kind load docker-image registry.odigos.io/odigos-demo-inventory:v0.1
-              kind load docker-image registry.odigos.io/odigos-demo-membership:v0.1
-              kind load docker-image registry.odigos.io/odigos-demo-coupon:v0.1
-              kind load docker-image registry.odigos.io/odigos-demo-pricing:v0.1
-              kind load docker-image registry.odigos.io/odigos-demo-frontend:v0.2
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
+        - script:
+            timeout: 2m
+            content: |
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 
@@ -95,10 +92,10 @@ spec:
             file: ../../common/apply/add-simple-trace-db-destination.yaml
 
     - name: Odigos pipeline pods ready
-    # We make sure that the pipeline pods are ready before proceeding with the next steps
-    # This is intentionally different from pipeline-ready.yaml, which checks for the pipeline CRDs
-    # When adding a feature related to the pipeline, if we would use the same assert before the upgrade, the test would fail.
-    # Since the version installed here is latest official one.
+      # We make sure that the pipeline pods are ready before proceeding with the next steps
+      # This is intentionally different from pipeline-ready.yaml, which checks for the pipeline CRDs
+      # When adding a feature related to the pipeline, if we would use the same assert before the upgrade, the test would fail.
+      # Since the version installed here is latest official one.
       try:
         - script:
             content: ../../common/assert_pipeline_pods_ready.sh
@@ -118,15 +115,15 @@ spec:
             file: assert-odigos-upgraded.yaml
             timeout: 3m
       catch:
-      - get:
-          apiVersion: v1
-          kind: Pod
+        - get:
+            apiVersion: v1
+            kind: Pod
 
     - name: Odigos pipeline ready after upgrade
       try:
         - assert:
             timeout: 1m
-            file:  ../../common/assert/pipeline-ready.yaml
+            file: ../../common/assert/pipeline-ready.yaml
 
     - name: Simple-demo instrumented after upgrade
       try:
