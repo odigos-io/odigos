@@ -50,7 +50,7 @@ status:
         - name: PYTHONPATH
           value: /bar # this env exists in the test image
       language: python
-      runtimeVersion: 3.11.11
+      runtimeVersion: 3.11.12
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
