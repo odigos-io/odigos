@@ -1,8 +1,0 @@
-apiVersion: e2e.tests.odigos.io/v1
-kind: TraceTest
-description: ya
-# TODO: remove this after testing
-query: |
-  length([?span.serviceName == 'currency']) > `0`
-expected:
-  minimum: 1
