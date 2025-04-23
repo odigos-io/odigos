@@ -35,7 +35,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 
 	grpcEndpoint, err := parseOtlpGrpcUrl(url, tlsEnabled)
 	if err != nil {
-		return nil, errors.Join(err, errors.New("otlp endpoint invalid, gateway will not be configured for otlp"))
+		return nil, errorMissingKey(genericOtlpTlsKey)
 	}
 
 	tlsConfig := GenericMap{
