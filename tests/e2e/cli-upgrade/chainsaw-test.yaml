@@ -112,7 +112,7 @@ spec:
             content: ../../../cli/odigos upgrade --version e2e-test --skip-version-check # since the tag e2e-test is not a valid semantic version, we need to bypass it with --skip-version-check
             timeout: 3m
         - assert:
-            file: assert-odigos-upgraded.yaml
+            file: ../../common/assert/odigos-upgraded.yaml
             timeout: 3m
       catch:
         - get:
