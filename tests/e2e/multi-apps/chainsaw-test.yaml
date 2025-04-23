@@ -127,7 +127,7 @@ spec:
       try:
         - script:
             content: |
-              ../../common/simple_trace_db_query_runner.sh queries/span-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/span-attributes.yaml
       catch:
         - podLogs:
             name: odiglet
