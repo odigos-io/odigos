@@ -47,7 +47,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 	insecureSkipVerify, skipExists := config[genericOtlpInsecureSkipVerify]
 	if skipExists && insecureSkipVerify != "" {
-		tlsConfig["insecure_skip_verify"] = insecureSkipVerify
+		tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
 	}
 
 	genericOtlpExporterName := "otlp/generic-" + dest.GetID()
