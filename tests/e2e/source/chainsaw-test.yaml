@@ -110,7 +110,7 @@ spec:
         - script:
             timeout: 3m
             content: |
-              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation-reported.yaml
       catch:
         - podLogs:
             name: odiglet
@@ -219,7 +219,7 @@ spec:
         - script:
             timeout: 3m
             content: |
-              ../../common/simple_trace_db_query_runner.sh queries/context-propagation-2.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation.yaml
       catch:
         - podLogs:
             name: odiglet
