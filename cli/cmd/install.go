@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
@@ -47,6 +48,7 @@ var (
 	odigletImage                     string
 	autoScalerImage                  string
 	imagePrefix                      string
+	nodeSelectorFlag                 string
 
 	clusterName       string
 	centralBackendURL string
@@ -176,8 +178,14 @@ func isOdigosInstalled(ctx context.Context, client *kube.Client, ns string) (boo
 func installOdigos(ctx context.Context, client *kube.Client, ns string, config *common.OdigosConfiguration, token *string, odigosTier common.OdigosTier, label string) error {
 	fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
+	nodeSelector, err := parseNodeSelectorFlag()
+	if err != nil {
+		return err
+	}
+
 	managerOpts := resourcemanager.ManagerOpts{
 		ImageReferences: GetImageReferences(odigosTier, openshiftEnabled),
+		NodeSelector:    nodeSelector,
 	}
 
 	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, k8sconsts.OdigosSystemLabelKey, createNamespace)
@@ -185,6 +193,22 @@ func installOdigos(ctx context.Context, client *kube.Client, ns string, config *
 	resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, token, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 	return resources.ApplyResourceManagers(ctx, client, resourceManagers, label)
 
+}
+
+func parseNodeSelectorFlag() (map[string]string, error) {
+	nodeSelector := make(map[string]string)
+	if len(nodeSelector) == 0 {
+		return nodeSelector, nil
+	}
+	selectors := strings.Split(nodeSelectorFlag, ",")
+	for _, selector := range selectors {
+		s := strings.Split(selector, "=")
+		if len(s) != 2 {
+			return nodeSelector, errors.New(fmt.Sprintf("invalid node selector, must be in form 'key=value': %s", selector))
+		}
+		nodeSelector[s[0]] = s[1]
+	}
+	return nodeSelector, nil
 }
 
 func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (bool, error) {
@@ -367,6 +391,7 @@ func init() {
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
+	installCmd.Flags().StringVar(&nodeSelectorFlag, "node-selector", "", "comma-separated key=value pair of Kubernetes NodeSelectors to set on Odigos components. Example: kubernetes.io/hostname=myhost")
 
 	installCmd.Flags().StringVar(&clusterName, "cluster-name", "", "name of the cluster to be used in the centralized backend")
 	installCmd.Flags().StringVar(&centralBackendURL, "central-backend-url", "", "use to connect this cluster to the centralized odigos cluster")
