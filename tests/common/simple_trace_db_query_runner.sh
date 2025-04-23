@@ -42,7 +42,7 @@ function process_yaml_file() {
   expected_count=$(yq e '.expected.count' "$file")
   minimum_count=$(yq e '.expected.minimum' "$file")
 
-  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/v1/traces\?limit=1000\&jmespath=$encoded_query)
+  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/v1/traces\?jmespath=$encoded_query)
 
   if [ "$verbose" == "true" ]; then
     echo "============== Raw response from trace db ===================="
