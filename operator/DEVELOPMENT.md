@@ -89,3 +89,19 @@ Once a new version of Odigos has been released, and the components have all pass
     3. The `metadata.name` version
     4. The `spec.version` value
 4. Run `USE_IMAGE_DIGESTS=true make generate manifests bundle` to update the generated bundle and commit the results.
+
+### Publishing the release to OpenShift
+
+When you have verified the new version, open a pull request to https://github.com/redhat-openshift-ecosystem/certified-operators
+
+Example: https://github.com/redhat-openshift-ecosystem/certified-operators/pull/5535
+
+Do the following in your PR:
+
+1. Create a new folder called `operators/odigos-operator/v<VERSION>`
+2. Create 2 sub-folders in `operators/odigos-operator/v<VERSION>`:
+    1. `manifests`
+    2. `metadata`
+3. Copy everything from `config/bundle/manifests` (in this repo) to your new `operators/odigos-operator/v<VERSION>/manifests` folder
+4. Copy the `annotations.yaml` from a previous version of `operators/odigos-operator` to your new `metadata` folder
+5. Open a pull request to the Red Hat repo with the title format: `operator odigos-operator (v<VERSION>)`
