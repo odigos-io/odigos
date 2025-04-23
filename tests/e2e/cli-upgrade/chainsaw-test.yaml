@@ -162,7 +162,7 @@ spec:
       try:
         - script:
             content: |
-              ../../common/simple_trace_db_query_runner.sh../../common/queries/context-propagation.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation.yaml
       catch:
         - podLogs:
             name: odiglet
@@ -172,7 +172,7 @@ spec:
       try:
         - script:
             content: |
-              ../../common/simple_trace_db_query_runner.sh queries/resource-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/resource-attributes.yaml
       catch:
         - podLogs:
             name: odiglet

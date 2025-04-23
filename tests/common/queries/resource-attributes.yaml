@@ -12,7 +12,10 @@ query: |
     !(
       starts_with(span.resourceAttributes."k8s.node.name", 'kind-') ||
       starts_with(span.resourceAttributes."k8s.node.name", 'aks-') ||
-      ( starts_with(span.resourceAttributes."k8s.node.name", 'ip-') && ends_with(span.resourceAttributes."k8s.node.name", '.ec2.internal') )
+      (
+        starts_with(span.resourceAttributes."k8s.node.name", 'ip-') &&
+        ends_with(span.resourceAttributes."k8s.node.name", '.ec2.internal')
+      )
     )
   )]) > `0`
 expected:
