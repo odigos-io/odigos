@@ -33,7 +33,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.39.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     support: Odigos
-  name: odigos-operator.v1.0.170
+  name: odigos-operator.v1.0.177
   namespace: odigos-operator-system
 spec:
   apiservicedefinitions: {}

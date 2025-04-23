@@ -76,3 +76,16 @@ Clean up with:
 ```
 operator-sdk cleanup odigos-operator  --delete-all
 ```
+
+## Preparing a new release
+
+Once a new version of Odigos has been released, and the components have all passed OpenShift certification, do the following:
+
+1. Update the `VERSION` variable at the top of the `Makefile`
+2. Update the tag for each `RELATED_IMAGE_*` environment variable in `config/manager/manager.yaml`
+3. In `config/manifests/bases/odigos-operator.clusterserviceversion.yaml`, update the following:
+    1. The `version` in the `alm-examples` annotation
+    2. The tag on the `containerImage` annotation
+    3. The `metadata.name` version
+    4. The `spec.version` value
+4. Run `USE_IMAGE_DIGESTS=true make generate manifests bundle` to update the generated bundle and commit the results.
