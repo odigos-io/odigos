@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: buy-bot
+  name: buybot-job
   namespace: default
 spec:
   template:
@@ -9,14 +9,14 @@ spec:
       annotations:
         workload: job
       labels:
-        app: buy-bot
+        app: buybot
     spec:
       restartPolicy: Never
       schedulerName: default-scheduler
       securityContext: {}
       terminationGracePeriodSeconds: 30
       containers:
-        - name: 'execute-purchase'
+        - name: curl
           image: curlimages/curl:8.4.0
           imagePullPolicy: IfNotPresent
           command: ['curl']
