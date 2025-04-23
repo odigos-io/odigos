@@ -79,30 +79,27 @@ spec:
 
     - name: '[2 - Workload Instrumentation] Generate Traffic'
       try:
+        - apply:
+            file: ../../common/apply/generate-traffic-job.yaml
+        - script:
+            timeout: 1m
+            content: |
+              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+        - delete:
+            file: ../../common/apply/generate-traffic-job.yaml
+
+    - name: '[2 - Workload Instrumentation] Wait For Trace'
+      try:
         - script:
             timeout: 1m
             content: |
               while true; do
-                # wait for traces to be available
-                sleep 8
-
-                # Apply the job
-                kubectl apply -f ../../common/apply/generate-traffic-job.yaml
-
-                # Wait for the job to complete
-                job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-                kubectl wait --for=condition=complete job/$job_name
-
-                # Delete the job
-                kubectl delete -f ../../common/apply/generate-traffic-job.yaml
-
-                # Run the wait-for-trace script
-                echo "Running Simple-trace-db query for full trace at $(date)"
                 ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-reported.yaml
 
                 if [ $? -eq 0 ]; then
                   break
                 fi
+                sleep 1
               done
 
     - name: '[2 - Workload Instrumentation] Verify Trace - Context Propagation'
@@ -188,30 +185,26 @@ spec:
 
     - name: '[4 - Namespace Instrumentation] Generate Traffic'
       try:
+        - apply:
+            file: ../../common/apply/generate-traffic-job.yaml
+        - script:
+            timeout: 1m
+            content: |
+              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+        - delete:
+            file: ../../common/apply/generate-traffic-job.yaml
+
+    - name: '[4 - Namespace Instrumentation] Wait For Trace'
+      try:
         - script:
             timeout: 1m
             content: |
               while true; do
-                # wait for traces to be available
-                sleep 8
-
-                # Apply the job
-                kubectl apply -f ../../common/apply/generate-traffic-job.yaml
-
-                # Wait for the job to complete
-                job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-                kubectl wait --for=condition=complete job/$job_name
-
-                # Delete the job
-                kubectl delete -f ../../common/apply/generate-traffic-job.yaml
-
-                # Run the wait-for-trace script
-                echo "Running Simple-trace-db query for full trace at $(date)"
                 ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
-
                 if [ $? -eq 0 ]; then
                   break
                 fi
+                sleep 1
               done
 
     - name: '[4 - Namespace Instrumentation] Verify Trace - Context Propagation'
