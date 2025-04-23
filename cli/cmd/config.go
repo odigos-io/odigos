@@ -180,6 +180,8 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			return fmt.Errorf("invalid mount method: %s (valid values: %s, %s)", value[0],
 				common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod)
 		}
+	
+	case consts.
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
