@@ -9,4 +9,4 @@ query: |
   length([?span.serviceName == 'membership']) > `0` &&
   length([?span.serviceName == 'currency']) > `0`
 expected:
-  count: 1
+  minimum: 1

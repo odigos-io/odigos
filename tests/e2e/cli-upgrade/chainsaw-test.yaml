@@ -130,20 +130,20 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
 
-    - name: 'Generate "Buy" Traffic'
+    - name: Generate Traffic
       try:
         - script:
             timeout: 1m
             content: |
               # Apply the job
-              kubectl apply -f ../../common/apply/generate-traffic-buy-job.yaml
+              kubectl apply -f ../../common/apply/generate-traffic-job.yaml
 
               # Wait for the job to complete
-              job_name=$(kubectl get -f ../../common/apply/generate-traffic-buy-job.yaml -o=jsonpath='{.metadata.name}')
+              job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
               kubectl wait --for=condition=complete job/$job_name
 
               # Delete the job
-              kubectl delete -f ../../common/apply/generate-traffic-buy-job.yaml
+              kubectl delete -f ../../common/apply/generate-traffic-job.yaml
 
               while true; do
                 # wait for traces to be available
@@ -151,35 +151,7 @@ spec:
 
                 # Run the wait-for-trace script
                 echo "Running Simple-trace-db query for full trace at $(date)"
-                ../../common/simple_trace_db_query_runner.sh queries/wait-for-buy-trace.yaml
-
-                if [ $? -eq 0 ]; then
-                  break
-                fi
-              done
-
-    - name: 'Generate "Currency" Traffic'
-      try:
-        - script:
-            timeout: 1m
-            content: |
-              # Apply the job
-              kubectl apply -f ../../common/apply/generate-traffic-currency-job.yaml
-
-              # Wait for the job to complete
-              job_name=$(kubectl get -f ../../common/apply/generate-traffic-currency-job.yaml -o=jsonpath='{.metadata.name}')
-              kubectl wait --for=condition=complete job/$job_name
-
-              # Delete the job
-              kubectl delete -f ../../common/apply/generate-traffic-currency-job.yaml
-
-              while true; do
-                # wait for traces to be available
-                sleep 1
-
-                # Run the wait-for-trace script
-                echo "Running Simple-trace-db query for full trace at $(date)"
-                ../../common/simple_trace_db_query_runner.sh queries/wait-for-currency-trace.yaml
+                ../../common/simple_trace_db_query_runner.sh queries/wait-for-trace.yaml true
 
                 if [ $? -eq 0 ]; then
                   break

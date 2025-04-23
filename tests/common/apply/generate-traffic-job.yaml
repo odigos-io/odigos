@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: buybot-job
+  name: traffic-bot
   namespace: default
 spec:
   template:
@@ -9,7 +9,7 @@ spec:
       annotations:
         workload: job
       labels:
-        app: buybot
+        app: traffic-bot
     spec:
       restartPolicy: Never
       schedulerName: default-scheduler
