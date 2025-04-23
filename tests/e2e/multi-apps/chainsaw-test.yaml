@@ -86,7 +86,35 @@ spec:
         - delete:
             file: ../../common/apply/generate-traffic-job.yaml
 
-    - name: Wait For Trace
+    # TODO: remove this after testing
+    - name: Wait For Trace (testing yes php)
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-testing-yes-php.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 1
+              done
+
+    # TODO: remove this after testing
+    - name: Wait For Trace (testing no php)
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-testing-no-php.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 1
+              done
+
+    - name: Wait For Trace (real)
       try:
         - script:
             timeout: 1m
