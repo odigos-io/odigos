@@ -290,7 +290,7 @@ spec:
       (env[?name == 'OTEL_TRACES_EXPORTER']):
         - value: otlp
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
-        - value: 'http://odigos-data-collection-local-traffic.odigos-system:4318'
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
       (env[?name == 'PHP_INI_SCAN_DIR']):
         - value: ':/var/odigos/php/8.2'
 status:
