@@ -379,7 +379,7 @@ func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) err
 		NewKeyvalProxyRoleBinding(a.ns),
 		NewKeyvalProxyClusterRole(),
 		NewKeyvalProxyClusterRoleBinding(a.ns),
-		NewKeyvalProxyDeployment(k8sconsts.OdigosCloudProxyVersion, a.ns, a.config.ImagePrefix, a.managerOpts.NodeSelector),
+		NewKeyvalProxyDeployment(k8sconsts.OdigosCloudProxyVersion, a.ns, a.config.ImagePrefix, a.config.NodeSelector),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

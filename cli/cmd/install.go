@@ -125,7 +125,13 @@ It will install k8s components that will auto-instrument your applications with 
 			os.Exit(1)
 		}
 
-		config := CreateOdigosConfig(odigosTier)
+		nodeSelector, err := parseNodeSelectorFlag()
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Unable to parse node-selector flag.\n")
+			os.Exit(1)
+		}
+
+		config := CreateOdigosConfig(odigosTier, nodeSelector)
 
 		err = installOdigos(ctx, client, ns, &config, &odigosProToken, odigosTier, "Creating")
 		if err != nil {
@@ -178,14 +184,8 @@ func isOdigosInstalled(ctx context.Context, client *kube.Client, ns string) (boo
 func installOdigos(ctx context.Context, client *kube.Client, ns string, config *common.OdigosConfiguration, token *string, odigosTier common.OdigosTier, label string) error {
 	fmt.Printf("Installing Odigos version %s in namespace %s ...\n", versionFlag, ns)
 
-	nodeSelector, err := parseNodeSelectorFlag()
-	if err != nil {
-		return err
-	}
-
 	managerOpts := resourcemanager.ManagerOpts{
 		ImageReferences: GetImageReferences(odigosTier, openshiftEnabled),
-		NodeSelector:    nodeSelector,
 	}
 
 	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, k8sconsts.OdigosSystemLabelKey, createNamespace)
@@ -332,7 +332,7 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcema
 	return imageReferences
 }
 
-func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
+func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]string) common.OdigosConfiguration {
 	selectedProfiles := []common.ProfileName{}
 	for _, profile := range userInputInstallProfiles {
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))
@@ -361,6 +361,7 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		UiMode:                           common.UiMode(uiMode),
 		ClusterName:                      clusterName,
 		CentralBackendURL:                centralBackendURL,
+		NodeSelector:                     nodeSelector,
 	}
 
 }

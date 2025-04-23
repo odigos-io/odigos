@@ -37,7 +37,7 @@ func (m *centralProxyResourceManager) InstallFromScratch(ctx context.Context) er
 		NewCentralProxyServiceAccount(m.ns),
 		NewCentralProxyRoleBinding(m.ns),
 		NewCentralProxyRole(m.ns),
-		NewCentralProxyDeployment(m.ns, m.odigosVersion, m.config.ImagePrefix, m.managerOpts.ImageReferences.CentralProxyImage, m.managerOpts.NodeSelector),
+		NewCentralProxyDeployment(m.ns, m.odigosVersion, m.config.ImagePrefix, m.managerOpts.ImageReferences.CentralProxyImage, m.config.NodeSelector),
 	}
 
 	return m.client.ApplyResources(ctx, m.config.ConfigVersion, resources, m.managerOpts)

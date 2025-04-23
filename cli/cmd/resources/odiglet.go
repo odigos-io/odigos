@@ -700,7 +700,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
 				K8SVersion: cmdcontext.K8SVersionFromContext(ctx),
-			}, a.config.CustomContainerRuntimeSocketPath, a.managerOpts.NodeSelector))
+			}, a.config.CustomContainerRuntimeSocketPath, a.config.NodeSelector))
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

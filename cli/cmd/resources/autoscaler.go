@@ -389,7 +389,7 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerClusterRole(a.config.OpenshiftEnabled),
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
-		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.AutoscalerImage, a.managerOpts.ImageReferences.CollectorImage, a.managerOpts.NodeSelector),
+		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.AutoscalerImage, a.managerOpts.ImageReferences.CollectorImage, a.config.NodeSelector),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }
