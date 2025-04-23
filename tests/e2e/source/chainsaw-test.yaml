@@ -80,7 +80,7 @@ spec:
     - name: '[2 - Workload Instrumentation] Generate Traffic'
       try:
         - script:
-            timeout: 10m
+            timeout: 1m
             content: |
               while true; do
                 # wait for traces to be available
@@ -189,7 +189,7 @@ spec:
     - name: '[4 - Namespace Instrumentation] Generate Traffic'
       try:
         - script:
-            timeout: 10m
+            timeout: 1m
             content: |
               while true; do
                 # wait for traces to be available
