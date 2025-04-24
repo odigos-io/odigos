@@ -35,6 +35,21 @@ apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
   namespace: default
+  name: deployment-java-supported-empty-manifest-env
+status:
+  runtimeDetailsByContainer:
+  - containerName: ava-supported-empty-manifest-env
+    (!envFromContainerRuntime): true
+    envVars:
+    - name: JAVA_OPTS
+      value: ""
+    (envVars[?name=='JAVA_TOOL_OPTIONS']): []
+    language: java
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
   name: deployment-java-latest-version
 status:
   runtimeDetailsByContainer:
