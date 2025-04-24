@@ -57,8 +57,6 @@ spec:
         - name: frontend
           image: registry.odigos.io/odigos-demo-frontend:v0.1.15
           imagePullPolicy: Always
-          securityContext:
-            runAsUser: 1000
           env:
             - name: INVENTORY_SERVICE_HOST
               value: inventory:8080
@@ -70,12 +68,6 @@ spec:
               value: currency:8080
           ports:
             - containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: /actuator/health/readiness
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 600
 ---
 kind: Service
 apiVersion: v1
