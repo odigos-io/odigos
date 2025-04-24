@@ -132,7 +132,7 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 		case consts.AllowConcurrentAgentsProperty:
 			config.AllowConcurrentAgents = &boolValue
 		case consts.AvoidJavaOptsEnvVar:
-			config.AvoidInjectingJavaOptsEnvVar = boolValue
+			config.AvoidInjectingJavaOptsEnvVar = &boolValue
 		}
 
 	case consts.ImagePrefixProperty, consts.UiModeProperty, consts.UiPaginationLimit:

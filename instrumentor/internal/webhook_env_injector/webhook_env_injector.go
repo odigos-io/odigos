@@ -37,9 +37,7 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 		return
 	}
 
-	avoidAddingJavaOpts := config != nil && config.AvoidInjectingJavaOptsEnvVar
-	// TODO: remove this log line
-	logger.Info("####### avoidAddingJavaOpts", "avoidAddingJavaOpts", avoidAddingJavaOpts)
+	avoidAddingJavaOpts := config != nil && config.AvoidInjectingJavaOptsEnvVar != nil && *config.AvoidInjectingJavaOptsEnvVar
 
 	// Odigos appends necessary environment variables to enable its agent.
 	// It handles this in the following ways:

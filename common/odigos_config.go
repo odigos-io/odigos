@@ -119,5 +119,6 @@ type OdigosConfiguration struct {
 	// Used for migration - we are migrating away from using the JAVA_OPTS env var
 	// to only using the JAVA_TOOL_OPTIONS env var.
 	// When this is true, we will not inject the JAVA_OPTS env var into the container.
-	AvoidInjectingJavaOptsEnvVar     bool                               `json:"avoidInjectingJavaOptsEnvVar,omitempty"`
+	// when false or not set the original behavior will be used and the JAVA_OPTS env var will be injected.
+	AvoidInjectingJavaOptsEnvVar     *bool                               `json:"avoidInjectingJavaOptsEnvVar,omitempty"`
 }
