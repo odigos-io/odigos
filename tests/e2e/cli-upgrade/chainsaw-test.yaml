@@ -153,6 +153,11 @@ spec:
                 fi
                 sleep 1
               done
+      # TODO: remove this after testing
+      catch:
+        - script:
+            content: |
+              kubectl logs $(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend) -n default
 
     - name: Verify Trace - Context Propagation
       try:
