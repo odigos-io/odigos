@@ -52,6 +52,5 @@ const (
 )
 
 const (
-	OdigosSystemLabelCentralKey   = "odigos.io/central-system-object"
-	SystemObjectLabelScopeCentral = "odigos-central"
+	OdigosSystemLabelCentralKey = "odigos.io/central-system-object"
 )
