@@ -17,7 +17,7 @@ spec:
       containers:
         - name: coupon
           image: registry.odigos.io/odigos-demo-coupon:v0.1.15
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: MEMBERSHIP_SERVICE_HOST
               value: membership:8080
@@ -56,7 +56,7 @@ spec:
       containers:
         - name: frontend
           image: registry.odigos.io/odigos-demo-frontend:v0.1.15
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           securityContext:
             runAsUser: 1000
           env:
@@ -75,7 +75,7 @@ spec:
               path: /actuator/health/readiness
               port: 8080
             initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 600
 ---
 kind: Service
 apiVersion: v1
@@ -109,7 +109,7 @@ spec:
       containers:
         - name: inventory
           image: registry.odigos.io/odigos-demo-inventory:v0.1.15
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
 ---
@@ -145,7 +145,7 @@ spec:
       containers:
         - name: membership
           image: registry.odigos.io/odigos-demo-membership:v0.1.15
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
 ---
@@ -181,7 +181,7 @@ spec:
       containers:
         - name: pricing
           image: registry.odigos.io/odigos-demo-pricing:v0.1.15
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
 ---
@@ -217,7 +217,7 @@ spec:
       containers:
         - name: currency
           image: registry.odigos.io/odigos-demo-currency:v0.1.15
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
 ---
