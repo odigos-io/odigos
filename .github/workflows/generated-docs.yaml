@@ -40,6 +40,24 @@ jobs:
             exit 1
           fi
 
+  check-rbac-doc-change:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+      - name: Generate RBAC docs
+        run: |
+          make rbac-docs
+      - name: Check for changes in RBAC docs
+        run: |
+          if [[ $(git diff --exit-code) ]]; then
+            git diff
+            echo "RBAC docs need to be updated. Please run 'make rbac-docs', then commit the changes."
+            exit 1
+          fi
+
   check-destination-doc-change:
     runs-on: ubuntu-latest
     steps:

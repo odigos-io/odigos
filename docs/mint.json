@@ -262,7 +262,13 @@
     },
     {
       "group": "Concepts",
-      "pages": ["telemetry-types", "custom-resources", "usage-reports", "benchmarks"]
+      "pages": [
+        "telemetry-types",
+        "custom-resources",
+        "usage-reports",
+        "benchmarks",
+        "permissions"
+      ]
     },
     {
       "group": "Contibution Guidelines",

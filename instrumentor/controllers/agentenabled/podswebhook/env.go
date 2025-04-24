@@ -87,3 +87,51 @@ func InjectOtlpHttpEndpointEnvVar(existingEnvNames EnvVarNamesMap, container *co
 	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelExporterEndpointEnvName, otlpHttpEndpoint, nil)
 	return existingEnvNames
 }
+
+func InjectUserEnvForLang(odigosConfig *common.OdigosConfiguration, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig) {
+	languageSpecificEnvs := odigosConfig.UserInstrumentationEnvs.Languages
+
+	// Check for conatiner language and inject env vars if they not exists
+	for _, containerDetailes := range ic.Status.RuntimeDetailsByContainer {
+		langConfig, exists := languageSpecificEnvs[containerDetailes.Language]
+		if !exists || !langConfig.Enabled {
+			continue
+		}
+
+		container := getContainerByName(pod, containerDetailes.ContainerName)
+		if container == nil {
+			continue
+		}
+		existingEnvNames := GetEnvVarNamesSet(container)
+
+		for envName, envValue := range langConfig.EnvVars {
+			existingEnvNames = injectEnvVarToPodContainer(
+				existingEnvNames,
+				container,
+				envName,
+				envValue,
+				nil,
+			)
+		}
+	}
+}
+
+func getContainerByName(pod *corev1.Pod, name string) *corev1.Container {
+	for i := range pod.Spec.Containers {
+		if pod.Spec.Containers[i].Name == name {
+			return &pod.Spec.Containers[i]
+		}
+	}
+	return nil
+}
+
+// Create a set of existing environment variable names
+// to avoid duplicates when injecting new environment variables
+// into the container.
+func GetEnvVarNamesSet(container *corev1.Container) EnvVarNamesMap {
+	envSet := make(EnvVarNamesMap, len(container.Env))
+	for _, envVar := range container.Env {
+		envSet[envVar.Name] = struct{}{}
+	}
+	return envSet
+}
