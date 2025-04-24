@@ -158,6 +158,7 @@ spec:
         - script:
             content: |
               kubectl logs $(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend) -n default
+              kubectl logs $(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^currency) -n default
 
     - name: Verify Trace - Context Propagation
       try:
