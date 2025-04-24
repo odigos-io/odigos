@@ -334,7 +334,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: frontend
       language: java
-      runtimeVersion: 17.0.14+6
+      runtimeVersion: 17.0.15+6
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
