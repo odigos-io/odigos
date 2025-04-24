@@ -34,10 +34,9 @@ type PodsWebhook struct {
 var _ webhook.CustomDefaulter = &PodsWebhook{}
 
 func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
-
 	logger := log.FromContext(ctx)
-
 	pod, ok := obj.(*corev1.Pod)
+
 	if !ok {
 		logger.Error(errors.New("expected a Pod but got a %T"), "failed to inject odigos agent")
 		return nil
@@ -124,6 +123,10 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
+	if odigosConfig.UserInstrumentationEnvs != nil {
+		podswebhook.InjectUserEnvForLang(&odigosConfig, pod, &ic)
+	}
+
 	// store the agents deployment value so we can later associate each pod with the instrumentation version.
 	// we can pull only our pods into cache, and follow the lifecycle of the instrumentation process.
 	pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel] = ic.Spec.AgentsMetaHash
@@ -198,10 +201,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 
 	// check for existing env vars so we don't introduce them again
-	existingEnvNames := make(podswebhook.EnvVarNamesMap)
-	for _, envVar := range podContainerSpec.Env {
-		existingEnvNames[envVar.Name] = struct{}{}
-	}
+	existingEnvNames := podswebhook.GetEnvVarNamesSet(podContainerSpec)
 
 	// inject various kinds of distro environment variables
 	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroName, pw.Namespace)
