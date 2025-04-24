@@ -61,7 +61,7 @@ func parseRuleField(list []string) string {
 		}
 		docString += value
 		if i < len(list)-1 {
-			docString += ","
+			docString += "<br />"
 		}
 	}
 	docString += " |"

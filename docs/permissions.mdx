@@ -7,32 +7,32 @@ This page lists the cluster roles used by the Odigos Operator.
 
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
-| \* | configmaps,endpoints,secrets | \* | create,delete,get,list,patch,update,watch |
-| \* | events | \* | create,patch |
-| \* | namespaces,nodes | \* | get,list,patch,watch |
-| \* | nodes/proxy,nodes/stats | \* | get,list |
-| \* | pods | \* | get,list,watch |
+| \* | configmaps<br />endpoints<br />secrets | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
+| \* | events | \* | create<br />patch |
+| \* | namespaces<br />nodes | \* | get<br />list<br />patch<br />watch |
+| \* | nodes/proxy<br />nodes/stats | \* | get<br />list |
+| \* | pods | \* | get<br />list<br />watch |
 | \* | pods/finalizers | \* | update |
 | \* | pods/status | \* | get |
-| \* | serviceaccounts | \* | create,delete,get,list,patch,watch |
-| \* | services | \* | create,delete,deletecollection,get,list,patch,update,watch |
-| actions.odigos.io | \* | \* | create,delete,get,list,patch,update,watch |
-| actions.odigos.io | */status | \* | get,patch,update |
-| admissionregistration.k8s.io | mutatingwebhookconfigurations,validatingwebhookconfigurations | \* | create,delete,get,list,patch,update,watch |
-| apiextensions.k8s.io | customresourcedefinitions | \* | create,delete,get,list,patch,update,watch |
-| apps | daemonsets,deployments,replicasets,statefulsets | \* | create,delete,deletecollection,get,list,patch,update,watch |
-| apps | daemonsets/finalizers,deployments/finalizers,replicasets/finalizers,statefulsets/finalizers | \* | update |
-| apps | daemonsets/status,deployments/status,statefulsets/status | \* | get |
-| autoscaling | horizontalpodautoscalers | \* | create,delete,patch,update |
-| coordination.k8s.io | leases | \* | create,delete,get,list,patch,update,watch |
+| \* | serviceaccounts | \* | create<br />delete<br />get<br />list<br />patch<br />watch |
+| \* | services | \* | create<br />delete<br />deletecollection<br />get<br />list<br />patch<br />update<br />watch |
+| actions.odigos.io | \* | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
+| actions.odigos.io | */status | \* | get<br />patch<br />update |
+| admissionregistration.k8s.io | mutatingwebhookconfigurations<br />validatingwebhookconfigurations | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
+| apiextensions.k8s.io | customresourcedefinitions | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
+| apps | daemonsets<br />deployments<br />replicasets<br />statefulsets | \* | create<br />delete<br />deletecollection<br />get<br />list<br />patch<br />update<br />watch |
+| apps | daemonsets/finalizers<br />deployments/finalizers<br />replicasets/finalizers<br />statefulsets/finalizers | \* | update |
+| apps | daemonsets/status<br />deployments/status<br />statefulsets/status | \* | get |
+| autoscaling | horizontalpodautoscalers | \* | create<br />delete<br />patch<br />update |
+| coordination.k8s.io | leases | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | odigos.io | \* | \* | \* |
-| odigos.io | collectorsgroups/finalizers,sources/finalizers | \* | update |
-| odigos.io | collectorsgroups/status,destinations/status,instrumentationconfigs/status,instrumentationinstances/status | \* | get,list,patch,update,watch |
-| operator.odigos.io | odigos | \* | create,delete,get,list,patch,update,watch |
+| odigos.io | collectorsgroups/finalizers<br />sources/finalizers | \* | update |
+| odigos.io | collectorsgroups/status<br />destinations/status<br />instrumentationconfigs/status<br />instrumentationinstances/status | \* | get<br />list<br />patch<br />update<br />watch |
+| operator.odigos.io | odigos | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | operator.odigos.io | odigos/finalizers | \* | update |
-| operator.odigos.io | odigos/status | \* | get,patch,update |
+| operator.odigos.io | odigos/status | \* | get<br />patch<br />update |
 | policy | podsecuritypolicies | privileged | use |
-| rbac.authorization.k8s.io | clusterrolebindings,clusterroles,rolebindings,roles | \* | create,delete,get,list,patch,update,watch |
+| rbac.authorization.k8s.io | clusterrolebindings<br />clusterroles<br />rolebindings<br />roles | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | security.openshift.io | securitycontextconstraints | \* | use |
 | authentication.k8s.io | tokenreviews | \* | create |
 | authorization.k8s.io | subjectaccessreviews | \* | create |
