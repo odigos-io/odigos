@@ -72,7 +72,7 @@ func getEnvVarNamesForLanguage(pl common.ProgrammingLanguage) []string {
 // Return false if the env was not processed using the manifest value and requires further handling by other methods.
 func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsdk common.OtelSdk, logger logr.Logger) bool {
 	manifestEnvVar := getContainerEnvVarPointer(&container.Env, envVarName)
-	if manifestEnvVar == nil {
+	if manifestEnvVar == nil || (manifestEnvVar.ValueFrom == nil && manifestEnvVar.Value == "") {
 		return false // Not found in manifest. further process it
 	}
 
@@ -139,6 +139,14 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByC
 			continue
 		}
 
+		if envVar.Value == "" {
+			// if the value is empty, treat it as it's not existing.
+			// from the env appending perspective, this is the same as not having it at all
+			// we want to set it to the odigos value
+			// this will be done at the last step
+			continue
+		}
+
 		patchedEnvVarValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
 		envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
 	}
@@ -155,6 +163,14 @@ func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []st
 
 		valueToInject, ok := odigosValueForOtelSdk[otelsdk]
 		if !ok { // No Odigos value for this SDK
+			continue
+		}
+
+		existingEnv := getContainerEnvVarPointer(&container.Env, envVarName)
+		if existingEnv != nil && existingEnv.ValueFrom == nil {
+			if existingEnv.Value == "" {
+				existingEnv.Value = valueToInject
+			}
 			continue
 		}
 
