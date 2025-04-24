@@ -86,7 +86,7 @@ spec:
         - delete:
             file: ../../common/apply/generate-traffic-job.yaml
 
-    - name: Wait For Trace (real)
+    - name: Wait For Trace
       try:
         - script:
             timeout: 1m
