@@ -20,23 +20,26 @@ jobs:
       - name: Verify no open offsets PRs
         id: verify
         run: |
+          # Fetch open PRs and filter by "offsets" label
           result=$(curl -s -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
             "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100")
 
-          pr_links=$(echo "$result" | jq '[.[] | select(.labels | any(.name == "offsets")) | .html_url]')
+          pr_links=$(echo "$result" \
+            | jq -r '[.[] | select(.labels | any(.name == "offsets")) | .html_url] | join(" ")')
 
-          count=$(echo "$pr_links" | jq 'length')
+          count=$(echo "$pr_links" | wc -w)
           if [ "$count" -gt 0 ]; then
-            echo "::set-output name=status::failed"
-            echo "::set-output name=links::$pr_links"
-            echo "❌ Error: Open PRs with label \"offsets\" found!"
+            # Write outputs to GITHUB_OUTPUT instead of using ::set-output
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "links=$pr_links" >> $GITHUB_OUTPUT
+            echo "❌ Error: Open PRs with label \"offsets\" found!" >&2
             exit 1
           else
-            echo "::set-output name=status::success"
+            echo "status=success" >> $GITHUB_OUTPUT
             echo "✅ No open PRs with label \"offsets\"."
           fi
-
+          
       - name: Notify Slack on Success
         if: ${{ steps.verify.outputs.status == 'success' }}
         env:
