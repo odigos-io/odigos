@@ -115,4 +115,9 @@ type OdigosConfiguration struct {
 	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
 	ClusterName                      string                         `json:"clusterName,omitempty"`
 	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
+
+	// Used for migration - we are migrating away from using the JAVA_OPTS env var
+	// to only using the JAVA_TOOL_OPTIONS env var.
+	// When this is true, we will not inject the JAVA_OPTS env var into the container.
+	AvoidInjectingJavaOptsEnvVar     bool                               `json:"avoidInjectingJavaOptsEnvVar,omitempty"`
 }

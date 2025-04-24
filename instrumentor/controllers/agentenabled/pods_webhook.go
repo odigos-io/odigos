@@ -118,7 +118,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
-	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
+	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw, &odigosConfig)
 	if injectErr != nil {
 		logger.Error(injectErr, "failed to inject ODIGOS instrumentation. Skipping Injection of ODIGOS agent")
 		return nil
@@ -162,7 +162,7 @@ func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod) (*k8scon
 	return pw, nil
 }
 
-func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload) error {
+func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload, config *common.OdigosConfiguration) error {
 	logger := log.FromContext(ctx)
 
 	otelSdkToUse, err := getRelevantOtelSDKs(ctx, p.Client, *pw)
@@ -185,7 +185,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 		if !found {
 			continue
 		}
-		webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, *pw, container, otelSdk, runtimeDetails, p.Client)
+		webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, *pw, container, otelSdk, runtimeDetails, p.Client, config)
 	}
 	return nil
 }
