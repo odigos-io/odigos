@@ -18,12 +18,49 @@ jobs:
         repo: ['enterprise-go-instrumentation']
     steps:
       - name: Verify no open offsets PRs
+        id: verify
         run: |
-          curl -s -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
-          "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100" | \
-          jq '[.[] | select(.labels | any(.name == "offsets"))]' | \
-          jq 'if length > 0 then error("❌ Error: Open PRs with label \"offsets\" found!") else empty end'
+          result=$(curl -s -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100")
+
+          pr_links=$(echo "$result" | jq '[.[] | select(.labels | any(.name == "offsets")) | .html_url]')
+
+          count=$(echo "$pr_links" | jq 'length')
+          if [ "$count" -gt 0 ]; then
+            echo "::set-output name=status::failed"
+            echo "::set-output name=links::$pr_links"
+            echo "❌ Error: Open PRs with label \"offsets\" found!"
+            exit 1
+          else
+            echo "::set-output name=status::success"
+            echo "✅ No open PRs with label \"offsets\"."
+          fi
+
+      - name: Notify Slack on Success
+        if: ${{ steps.verify.outputs.status == 'success' }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "description": "✅ No open offset PRs in `${{ matrix.repo }}`",
+            "tag": "verify-offsets-success"
+          }' $SLACK_WEBHOOK_URL
+  
+      - name: Notify Slack on Failure
+        if: ${{ failure() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          pr_links=${{ steps.verify.outputs.links }}
+          pr_links_formatted=$(echo "$pr_links" | jq -r '.[]' | awk '{print "- " $0}' | tr '\n' '\n')
+          curl -X POST -H 'Content-type: application/json' --data "{
+            \"description\": \"❌ ERROR: Open offset PRs found in \`${{ matrix.repo }}\`\n\n$pr_links_formatted\",
+            \"link\": \"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}\",
+            \"tag\": \"verify-offsets-failure\"
+          }" $SLACK_WEBHOOK_URL      
 
   print-tag:
     needs: verify-offsets
