@@ -78,21 +78,21 @@ spec:
               name: odigos-version
               key: ODIGOS_VERSION
         - name: RELATED_IMAGE_AUTOSCALER
-          value: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.170
+          value: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.177
         - name: RELATED_IMAGE_COLLECTOR
-          value: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.170
+          value: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.177
         - name: RELATED_IMAGE_FRONTEND
-          value: registry.connect.redhat.com/odigos/odigos-ui-ubi9:v1.0.170
+          value: registry.connect.redhat.com/odigos/odigos-ui-ubi9:v1.0.177
         - name: RELATED_IMAGE_INSTRUMENTOR
-          value: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9:v1.0.170
+          value: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9:v1.0.177
         - name: RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR
-          value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9:v1.0.170
+          value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9:v1.0.177
         - name: RELATED_IMAGE_ODIGLET
-          value: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9:v1.0.170
+          value: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9:v1.0.177
         - name: RELATED_IMAGE_ENTERPRISE_ODIGLET
-          value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9:v1.0.170
+          value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9:v1.0.177
         - name: RELATED_IMAGE_SCHEDULER
-          value: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9:v1.0.170
+          value: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9:v1.0.177
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

@@ -61,12 +61,14 @@ jobs:
 
           for REPO in "${REPOS[@]}"; do
             echo "Checking tag $TAG_TO_CHECK in $REPO..."
-            TAGS_JSON=$(curl -s "https://artifactregistry.us-central1.rep.googleapis.com/v1/projects/odigos-cloud/locations/us-central1/repositories/components/packages/$REPO/tags")
-            if echo "$TAGS_JSON" | grep -q "\"name\": \"projects/odigos-cloud/locations/us-central1/repositories/components/packages/$REPO/tags/$TAG_TO_CHECK"; then
-                echo "Tag $TAG_TO_CHECK exists in Docker Hub repository $REPO."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://artifactregistry.us-central1.rep.googleapis.com/v1/projects/odigos-cloud/locations/us-central1/repositories/components/packages/$REPO/tags/$TAG_TO_CHECK")
+
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "Tag $TAG_TO_CHECK exists in $REPO."
             else
-                echo "Tag $TAG_TO_CHECK does not exist in Docker Hub repository $REPO."
-                exit 1
+              echo "Tag $TAG_TO_CHECK does NOT exist in $REPO. HTTP status: $HTTP_STATUS"
+              exit 1
             fi
           done
 
