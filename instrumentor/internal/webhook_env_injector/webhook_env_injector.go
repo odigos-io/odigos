@@ -72,7 +72,7 @@ func getEnvVarNamesForLanguage(pl common.ProgrammingLanguage) []string {
 // Return false if the env was not processed using the manifest value and requires further handling by other methods.
 func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsdk common.OtelSdk, logger logr.Logger) bool {
 	manifestEnvVar := getContainerEnvVarPointer(&container.Env, envVarName)
-	if manifestEnvVar == nil {
+	if manifestEnvVar == nil || manifestEnvVar.Value == "" {
 		return false // Not found in manifest. further process it
 	}
 
@@ -136,6 +136,14 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByC
 
 		// Get the relevant envVar that we're iterating over
 		if envVar.Name != envVarName {
+			continue
+		}
+
+		if envVar.Value == "" {
+			// if the value is empty, treat it as it's not existing.
+			// from the env appending perspective, this is the same as not having it at all
+			// we want to set it to the odigos value
+			// this will be done at the last step
 			continue
 		}
 
