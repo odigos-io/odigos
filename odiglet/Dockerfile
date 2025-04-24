@@ -95,11 +95,8 @@ RUN git clone https://github.com/odigos-io/opentelemetry-php \
     && git checkout tags/${PHP_AGENT_VERSION}
 # PHP: Move the pre-compiled binaries to the correct directories
 RUN for v in ${PHP_VERSIONS}; do \
-    mkdir -p /agents/$v; \
-    mv opentelemetry-php/$v/* /agents/$v; \
-    mv /agents/$v/${TARGETARCH}/* /agents/$v/; \
+    mv ./opentelemetry-php/$v/${TARGETARCH}/* ./opentelemetry-php/$v/; \
     done
-RUN rm -rf opentelemetry-php
 
 
 ######### ODIGLET #########
@@ -139,11 +136,11 @@ COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-na
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 # PHP
-COPY --from=php-agents /php-agents/agents/8.0 /instrumentations/php/8.0
-COPY --from=php-agents /php-agents/agents/8.1 /instrumentations/php/8.1
-COPY --from=php-agents /php-agents/agents/8.2 /instrumentations/php/8.2
-COPY --from=php-agents /php-agents/agents/8.3 /instrumentations/php/8.3
-COPY --from=php-agents /php-agents/agents/8.4 /instrumentations/php/8.4
+COPY --from=php-agents /php-agents/opentelemetry-php/8.0 /instrumentations/php/8.0
+COPY --from=php-agents /php-agents/opentelemetry-php/8.1 /instrumentations/php/8.1
+COPY --from=php-agents /php-agents/opentelemetry-php/8.2 /instrumentations/php/8.2
+COPY --from=php-agents /php-agents/opentelemetry-php/8.3 /instrumentations/php/8.3
+COPY --from=php-agents /php-agents/opentelemetry-php/8.4 /instrumentations/php/8.4
 
 FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
