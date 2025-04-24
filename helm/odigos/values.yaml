@@ -36,9 +36,8 @@ UserInstrumentationEnvs:
   # Warning: This is an advanced feature. Only modify these settings if you are familiar with OTEL and its implications.
   languages:
     java:
-      enabled: true
-      env: 
-        OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
+      enabled: false
+      env: {}
     python:
       enabled: false
       env: {}
