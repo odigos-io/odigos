@@ -29,7 +29,6 @@ const (
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
-	odigletDaemonSetName = "odiglet"
 )
 
 var (
