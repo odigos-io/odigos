@@ -1,9 +1,164 @@
 ---
-title: "Operator Permissions"
-sidebarTitle: "Operator Permissions"
+title: "Kubernetes RBAC Permissions"
+sidebarTitle: "Kubernetes Permissions"
 ---
 
-This page lists the cluster roles used by the Odigos Operator.
+This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odigos Operator.
+
+# Components
+
+## ClusterRoles
+
+### odigos-autoscaler
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| odigos.io | instrumentationconfigs | \* | get<br />list<br />watch |
+| odigos.io | sources | \* | get<br />list<br />watch |
+
+### cleanup-clusterrole
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| apps | deployments<br />statefulsets<br />daemonsets | \* | get<br />list<br />patch |
+| \* | namespaces<br />services<br />secrets<br />nodes | \* | get<br />list<br />patch |
+| rbac.authorization.k8s.io | clusterroles<br />clusterrolebindings | \* | get<br />list<br />patch |
+| apiextensions.k8s.io | customresourcedefinitions | \* | list<br />get<br />patch<br />delete |
+| admissionregistration.k8s.io | mutatingwebhookconfigurations<br />validatingwebhookconfigurations | \* | get<br />list<br />delete |
+
+### odigos-data-collection
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | nodes/stats<br />nodes/proxy | \* | get<br />list |
+| \* | pods<br />namespaces | \* | get<br />list<br />watch |
+| apps | replicasets<br />deployments<br />daemonsets<br />statefulsets | \* | get<br />list<br />watch |
+| \* | endpoints | \* | get<br />list<br />watch |
+
+### odigos-instrumentor
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | nodes | \* | list<br />watch<br />get |
+| \* | namespaces | \* | list<br />watch<br />get |
+| \* | pods | \* | list<br />watch<br />get |
+| apps | daemonsets | \* | get<br />list<br />watch<br />update<br />patch |
+| apps | deployments | \* | get<br />list<br />watch<br />update<br />patch |
+| apps | statefulsets | \* | get<br />list<br />watch<br />update<br />patch |
+| operator.odigos.io | odigos/finalizers | \* | update |
+| odigos.io | instrumentedapplications | \* | delete<br />get<br />list<br />watch |
+| odigos.io | instrumentationconfigs/status | \* | get<br />patch<br />update |
+| odigos.io | instrumentationconfigs | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
+| odigos.io | sources | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
+| odigos.io | sources/finalizers | \* | update |
+
+### odiglet
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | pods | \* | get<br />list<br />watch |
+| \* | pods/status | \* | get |
+| \* | nodes | \* | get<br />list<br />watch<br />patch |
+| odigos.io | instrumentationinstances | \* | create<br />get<br />list<br />patch<br />update<br />watch<br />delete |
+| odigos.io | instrumentationinstances/status | \* | get<br />patch<br />update |
+| odigos.io | instrumentationconfigs | \* | get<br />list<br />watch<br />patch<br />update |
+| odigos.io | instrumentationconfigs/status | \* | get<br />patch<br />update |
+
+### odigos-scheduler
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| odigos.io | instrumentationconfigs | \* | get<br />list<br />watch |
+
+### odigos-ui
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | namespaces | \* | get<br />list<br />patch |
+| apps | deployments<br />statefulsets<br />daemonsets | \* | get<br />list |
+| apps | replicasets | \* | get<br />list |
+| \* | services | \* | get<br />list |
+| \* | pods | \* | get<br />list<br />watch |
+| odigos.io | instrumentationconfigs<br />instrumentationinstances | \* | get<br />list<br />watch |
+| odigos.io | sources | \* | get<br />list<br />patch<br />create<br />delete |
+
+## Roles
+
+### odigos-autoscaler
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | configmaps | \* | get<br />list<br />watch<br />create<br />patch<br />update<br />delete |
+| \* | services | \* | get<br />list<br />watch<br />create<br />patch<br />update<br />delete<br />deletecollection |
+| apps | daemonsets | \* | get<br />list<br />watch<br />create<br />patch<br />update<br />delete<br />deletecollection |
+| apps | daemonsets/status | \* | get |
+| apps | deployments | \* | create<br />delete<br />deletecollection<br />get<br />list<br />patch<br />update<br />watch |
+| apps | deployments/status | \* | get |
+| autoscaling | horizontalpodautoscalers | \* | create<br />patch<br />update<br />delete |
+| \* | secrets | \* | get<br />list<br />watch |
+| odigos.io | destinations | \* | get<br />list<br />watch |
+| odigos.io | destinations/status | \* | get<br />patch<br />update |
+| odigos.io | processors | \* | get<br />list<br />watch<br />create<br />patch<br />update |
+| actions.odigos.io | \* | \* | get<br />list<br />watch |
+| actions.odigos.io | */status | \* | get<br />patch<br />update |
+| odigos.io | collectorsgroups | \* | get<br />list<br />watch |
+| odigos.io | collectorsgroups/status | \* | get<br />patch<br />update |
+
+### cleanup-role
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | namespaces<br />configmaps | \* | get<br />list<br />patch<br />delete |
+
+### odigos-instrumentor
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | configmaps | effective-config | get<br />list<br />watch |
+| odigos.io | collectorsgroups | \* | get<br />list<br />watch |
+| odigos.io | collectorsgroups/status | \* | get<br />list<br />watch |
+| odigos.io | destinations | \* | get<br />list<br />watch |
+| odigos.io | instrumentationrules | \* | get<br />list<br />watch |
+
+### odigos-leader-election-role
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | events | \* | create<br />patch |
+| coordination.k8s.io | leases | \* | get<br />list<br />watch<br />create<br />update<br />patch<br />delete |
+
+### odiglet
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| odigos.io | collectorsgroups<br />collectorsgroups/status | \* | get<br />list<br />watch |
+
+### odigos-scheduler
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | configmaps | \* | get<br />list<br />watch |
+| \* | configmaps | effective-config<br />odigos-deployment | patch<br />create<br />update |
+| odigos.io | collectorsgroups | \* | get<br />list<br />create<br />patch<br />update<br />watch<br />delete |
+| odigos.io | collectorsgroups/status | \* | get |
+| odigos.io | destinations | \* | get<br />list<br />watch |
+| odigos.io | instrumentationrules<br />processors | \* | get<br />list<br />watch<br />patch<br />delete<br />create |
+| \* | secrets | \* | get<br />list<br />watch |
+
+### odigos-ui
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | configmaps | \* | get<br />list |
+| \* | secrets | \* | get<br />list<br />create<br />patch<br />update<br />delete |
+| odigos.io | instrumentationrules<br />destinations | \* | get<br />list<br />create<br />patch<br />update<br />delete |
+| odigos.io | destinations | \* | watch |
+| odigos.io | collectorsgroups | \* | get<br />list |
+| actions.odigos.io | \* | \* | get<br />list<br />create<br />patch<br />update<br />delete |
+
+# Operator
+
+## ClusterRoles
 
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
