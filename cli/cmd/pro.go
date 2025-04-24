@@ -254,11 +254,11 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 	fmt.Println("Installing Odigos central backend and UI ...")
 
 	managerOpts := resourcemanager.ManagerOpts{
-		ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+		ImageReferences:      GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+		SystemObjectLabelKey: k8sconsts.OdigosSystemLabelCentralKey,
 	}
 
-	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns),
-		client, ns, createNamespace)
+	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, k8sconsts.OdigosSystemLabelCentralKey, createNamespace)
 	if err := createOdigosCentralSecret(ctx, client, ns, onPremToken); err != nil {
 		return err
 	}

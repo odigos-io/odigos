@@ -50,3 +50,7 @@ const (
 	RedisPortName            = "redis"
 	RedisCommand             = "redis-server"
 )
+
+const (
+	OdigosSystemLabelCentralKey = "odigos.io/central-system-object"
+)
