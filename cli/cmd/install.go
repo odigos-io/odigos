@@ -197,7 +197,7 @@ func installOdigos(ctx context.Context, client *kube.Client, ns string, config *
 
 func parseNodeSelectorFlag() (map[string]string, error) {
 	nodeSelector := make(map[string]string)
-	if len(nodeSelector) == 0 {
+	if len(nodeSelectorFlag) == 0 {
 		return nodeSelector, nil
 	}
 	selectors := strings.Split(nodeSelectorFlag, ",")
