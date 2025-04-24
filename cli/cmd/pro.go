@@ -26,10 +26,9 @@ import (
 )
 
 var (
-	updateRemoteFlag     bool
-	installOdigosCentral bool
-	proNamespaceFlag     string
-	useDefault           bool
+	updateRemoteFlag bool
+	proNamespaceFlag string
+	useDefault       bool
 )
 
 var proCmd = &cobra.Command{
