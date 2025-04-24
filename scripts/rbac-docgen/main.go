@@ -36,7 +36,7 @@ This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odi
 
 `
 
-	cmd := exec.Command("helm", "template", "odigos", "../../helm/odigos")
+	cmd := exec.Command("helm", "template", "odigos", "../../helm/odigos", "--set", "openshift.enabled=true")
 	out, err := cmd.Output()
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -64,55 +64,26 @@ This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odi
 		}
 	}
 
-	docString += "# Components\n\n"
-	docString += "## ClusterRoles\n\n"
+	docString += "# Components\n\nThis section lists the RBAC policies used by the Odigos components.\n\n"
+	docString += "## ClusterRoles\n\nBelow are the ClusterRoles used by Odigos components.\n\n"
 
 	for _, cr := range clusterRoles {
 		docString += "### " + cr.GetName() + "\n\n"
-
-		docString += "| APIGroups | Resources | Resource Names | Verbs |\n"
-		docString += "|---|---|---|---|"
-		for _, rule := range cr.Rules {
-			docString = docString + "\n|"
-			docString += parseRuleField(rule.APIGroups)
-			docString += parseRuleField(rule.Resources)
-			docString += parseRuleField(rule.ResourceNames)
-			docString += parseRuleField(rule.Verbs)
-		}
-		docString += "\n\n"
+		docString += parseRbacRules(cr.Rules)
 	}
 
-	docString += "## Roles\n\n"
+	docString += "## Roles\n\nBelow are the Roles used by Odigos components.\n\n"
 
 	for _, r := range roles {
 		docString += "### " + r.GetName() + "\n\n"
-
-		docString += "| APIGroups | Resources | Resource Names | Verbs |\n"
-		docString += "|---|---|---|---|"
-		for _, rule := range r.Rules {
-			docString = docString + "\n|"
-			docString += parseRuleField(rule.APIGroups)
-			docString += parseRuleField(rule.Resources)
-			docString += parseRuleField(rule.ResourceNames)
-			docString += parseRuleField(rule.Verbs)
-		}
-		docString += "\n\n"
+		docString += parseRbacRules(r.Rules)
 	}
 
-	docString += "# Operator\n\n"
+	docString += "# Operator\n\nThis section lists the RBAC policies used by the Odigos Operator. Many of these permissions are necessary in order to create the RBAC policies for the components listed above.\n\n"
 	docString += "## ClusterRoles\n\n"
 
-	docString += "| APIGroups | Resources | Resource Names | Verbs |\n"
-	docString += "|---|---|---|---|"
-
 	for _, permission := range csv.Spec.InstallStrategy.StrategySpec.ClusterPermissions {
-		for _, rule := range permission.Rules {
-			docString = docString + "\n|"
-			docString += parseRuleField(rule.APIGroups)
-			docString += parseRuleField(rule.Resources)
-			docString += parseRuleField(rule.ResourceNames)
-			docString += parseRuleField(rule.Verbs)
-		}
+		docString += parseRbacRules(permission.Rules)
 	}
 
 	err = os.WriteFile("../../docs/permissions.mdx", []byte(docString), 0644)

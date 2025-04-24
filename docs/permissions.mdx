@@ -7,7 +7,11 @@ This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odi
 
 # Components
 
+This section lists the RBAC policies used by the Odigos components.
+
 ## ClusterRoles
+
+Below are the ClusterRoles used by Odigos components.
 
 ### odigos-autoscaler
 
@@ -15,6 +19,7 @@ This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odi
 |---|---|---|---|
 | odigos.io | instrumentationconfigs | \* | get<br />list<br />watch |
 | odigos.io | sources | \* | get<br />list<br />watch |
+| odigos.io | collectorsgroups/finalizers | \* | get<br />patch<br />update |
 
 ### cleanup-clusterrole
 
@@ -45,6 +50,7 @@ This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odi
 | apps | daemonsets | \* | get<br />list<br />watch<br />update<br />patch |
 | apps | deployments | \* | get<br />list<br />watch<br />update<br />patch |
 | apps | statefulsets | \* | get<br />list<br />watch<br />update<br />patch |
+| apps | statefulsets/finalizers<br />deployments/finalizers<br />daemonsets/finalizers | \* | update |
 | operator.odigos.io | odigos/finalizers | \* | update |
 | odigos.io | instrumentedapplications | \* | delete<br />get<br />list<br />watch |
 | odigos.io | instrumentationconfigs/status | \* | get<br />patch<br />update |
@@ -58,6 +64,7 @@ This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odi
 |---|---|---|---|
 | \* | pods | \* | get<br />list<br />watch |
 | \* | pods/status | \* | get |
+| \* | pods/finalizers | \* | update |
 | \* | nodes | \* | get<br />list<br />watch<br />patch |
 | odigos.io | instrumentationinstances | \* | create<br />get<br />list<br />patch<br />update<br />watch<br />delete |
 | odigos.io | instrumentationinstances/status | \* | get<br />patch<br />update |
@@ -83,6 +90,8 @@ This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odi
 | odigos.io | sources | \* | get<br />list<br />patch<br />create<br />delete |
 
 ## Roles
+
+Below are the Roles used by Odigos components.
 
 ### odigos-autoscaler
 
@@ -158,6 +167,8 @@ This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odi
 
 # Operator
 
+This section lists the RBAC policies used by the Odigos Operator. Many of these permissions are necessary in order to create the RBAC policies for the components listed above.
+
 ## ClusterRoles
 
 | APIGroups | Resources | Resource Names | Verbs |
@@ -191,3 +202,4 @@ This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odi
 | security.openshift.io | securitycontextconstraints | \* | use |
 | authentication.k8s.io | tokenreviews | \* | create |
 | authorization.k8s.io | subjectaccessreviews | \* | create |
+
