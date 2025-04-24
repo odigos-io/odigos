@@ -38,7 +38,7 @@ metadata:
   name: deployment-java-supported-empty-manifest-env
 status:
   runtimeDetailsByContainer:
-  - containerName: ava-supported-empty-manifest-env
+  - containerName: java-supported-empty-manifest-env
     (!envFromContainerRuntime): true
     envVars:
     - name: JAVA_OPTS
