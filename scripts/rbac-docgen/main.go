@@ -72,7 +72,7 @@ This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odi
 		docString += parseRbacRules(cr.Rules)
 	}
 
-	docString += "## Roles\n\nBelow are the Roles used by Odigos components.\n\n"
+	docString += "## Roles\n\nBelow are the Roles used by Odigos components. These Roles are only scoped to the Namespace in which Odigos is installed.\n\n"
 
 	for _, r := range roles {
 		docString += "### " + r.GetName() + "\n\n"
