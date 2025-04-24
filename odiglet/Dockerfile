@@ -86,28 +86,20 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
 # PHP: Clone agents repo (contains pre-compiled binaries and libraries for each PHP version)
 FROM --platform=$BUILDPLATFORM php:8-cli AS php-agents
 WORKDIR /php-agents
+ARG TARGETARCH
 ARG PHP_AGENT_VERSION=v0.0.3
+ARG PHP_VERSIONS=8.0 8.1 8.2 8.3 8.4
 RUN apt-get update && apt-get upgrade -y && apt-get install -y git
 RUN git clone https://github.com/odigos-io/opentelemetry-php \
     && cd opentelemetry-php \
     && git checkout tags/${PHP_AGENT_VERSION}
-RUN mkdir -p /agents/8.0 \
-    && mkdir -p /agents/8.1 \
-    && mkdir -p /agents/8.2 \
-    && mkdir -p /agents/8.3 \
-    && mkdir -p /agents/8.4
-RUN mv opentelemetry-php/8.0/* /agents/8.0 \
-    && mv opentelemetry-php/8.1/* /agents/8.1 \
-    && mv opentelemetry-php/8.2/* /agents/8.2 \
-    && mv opentelemetry-php/8.3/* /agents/8.3 \
-    && mv opentelemetry-php/8.4/* /agents/8.4
-RUN rm -rf opentelemetry-php
 # PHP: Move the pre-compiled binaries to the correct directories
-RUN mv agents/8.0/$TARGETARCH/* agents/8.0 \
-    && mv agents/8.1/$TARGETARCH/* agents/8.1 \
-    && mv agents/8.2/$TARGETARCH/* agents/8.2 \
-    && mv agents/8.3/$TARGETARCH/* agents/8.3 \
-    && mv agents/8.4/$TARGETARCH/* agents/8.4
+RUN for v in ${PHP_VERSIONS}; do \
+    mkdir -p /agents/$v; \
+    mv opentelemetry-php/$v/* /agents/$v; \
+    mv /agents/$v/${TARGETARCH}/* /agents/$v/; \
+    done
+RUN rm -rf opentelemetry-php
 
 
 ######### ODIGLET #########
