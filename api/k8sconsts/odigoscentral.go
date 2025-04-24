@@ -26,7 +26,7 @@ const (
 	// Odigos Central Backend
 	CentralBackendAppName = "central-backend"
 	CentralBackendName    = "central-backend"
-	CentralBackendImage   = "odigos-central-backend"
+	CentralBackendImage   = "odigos-enterprise-central-backend"
 )
 
 const (
@@ -36,7 +36,7 @@ const (
 	CentralUIDeploymentName = "central-ui"
 	CentralUILabelAppValue  = "central-ui"
 	CentralUIContainerName  = "central-ui"
-	CentralUIImage          = "odigos-central-ui"
+	CentralUIImage          = "odigos-enterprise-central-ui"
 )
 
 const (
