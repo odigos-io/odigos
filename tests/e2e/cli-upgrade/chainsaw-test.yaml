@@ -158,6 +158,9 @@ spec:
             content: |
               java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
               kubectl logs $java_pod_name -n default
+              # TODO: remove this after testing
+              php_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^currency)
+              kubectl exec -it $php_pod_name -n default -- ls /var/odigos/php/8.2
 
     - name: Verify Trace - Context Propagation
       try:
