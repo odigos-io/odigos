@@ -529,6 +529,89 @@ func TestDefaultDateTemplatization(t *testing.T) {
 	runProcessorTests(t, tt, processor)
 }
 
+func TestProcessor_EmailAddresses(t *testing.T) {
+	tt := []processorTestManifest{
+		{
+			name:          "email in url path",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/abc@def.com",
+			},
+			expectedSpanName:  "GET /user/{email}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{email}",
+		},
+		{
+			name:          "special chars in email address",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/cq2020+authzv2_cee_2@gmail.com",
+			},
+			expectedSpanName:  "GET /user/{email}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{email}",
+		},
+		{
+			name:          "email with subdomain",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/foo@bar.baz.bla.io",
+			},
+			expectedSpanName:  "GET /user/{email}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{email}",
+		},
+		{
+			name:          "exact match no suffix",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/foo@bar.com_1234",
+			},
+			expectedSpanName:  "GET /user/foo@bar.com_1234",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/foo@bar.com_1234",
+		},
+		{
+			name:          "local part must exist",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/users/@foo.com", // not an email
+			},
+			expectedSpanName:  "GET /users/@foo.com",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/users/@foo.com",
+		},
+		{
+			name:          "no top level domain",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/users/foo@bar", // not an email
+			},
+			expectedSpanName:  "GET /users/foo@bar",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/users/foo@bar",
+		},
+	}
+
+	set := processortest.NewNopSettings(processortest.NopType)
+	processor, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
+
+	runProcessorTests(t, tt, processor)
+}
+
 func TestProcessor_TemplatizationRules(t *testing.T) {
 	tt := []struct {
 		name              string

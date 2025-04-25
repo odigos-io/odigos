@@ -62,6 +62,9 @@ var (
 	// 2025-12-04T14:55:04.123Z (milliseconds)
 	// 2025-12-04T14:55:04.123+0000 (millis with offset)
 	datesRegex = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?(?:Z|[+-]\d{4})?$`)
+
+	// matches email addresses
+	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 )
 
 type RulePathSegment struct {
@@ -192,6 +195,10 @@ func getSegmentTemplatizationString(segment string, customIdsRegexp []regexp.Reg
 
 	if datesRegex.MatchString(segment) {
 		return "date"
+	}
+
+	if emailRegex.MatchString(segment) {
+		return "email"
 	}
 
 	// check if the segment matches any of the custom ids regexp

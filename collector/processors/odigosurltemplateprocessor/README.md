@@ -50,6 +50,7 @@ By default, the processor will split the path to segment (e.g. "/user/1234" -> [
 - hex-encoded strings - `[0-9a-f]{2}([0-9a-f]{2})*` -> `{id}` (`6f2a9cdeab34f01e`)
 - long numbers anywhere - `\d{7,}` -> `{id}` (`1234567`, `INC328962358623904`, `sb_12345678901234567890_us`)
 - common [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) date-time formats - `^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?(?:Z|[+-]\d{4})?$` -> `{date}` (`2023-10-01T12:00:00+0000`)
+- emails - `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$` like `foo@bar.io` -> `{email}`
 
 These default rules will not templatize paths like `/user/john`, `/user/s111222`, `/users/123456_789` which will be copied as is into the span name and attribute with potentially high cardinality.
 
