@@ -63,7 +63,7 @@ query: |
     span.kind == 'server' &&
     span.spanAttributes."http.request.method" == 'GET' &&
     span.spanAttributes."http.response.status_code" == `200` &&
-    span.spanAttributes."url.path" == '/currency'
+    span.spanAttributes."url.path" == '/rate/usd-ils'
   )]) > `0`
 
 expected:
