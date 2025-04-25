@@ -716,7 +716,7 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 	// TODO: remove once honeycomb fixes the issue
 	var res testconnection.TestConnectionResult
 	if destType == common.HoneycombDestinationType {
-		res = testconnection.TestConnectionHoneycomb(configurer)
+		res = testconnection.TestConnectionHoneycomb(ctx, configurer)
 	} else {
 		res = testconnection.TestConnection(ctx, configurer)
 	}

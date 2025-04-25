@@ -69,7 +69,7 @@ func getConnectionTester(exporterID string) ExporterConnectionTester {
 	return nil
 }
 
-func TestConnectionHoneycomb(dest config.ExporterConfigurer) TestConnectionResult {
+func TestConnectionHoneycomb(ctx context.Context, dest config.ExporterConfigurer) TestConnectionResult {
 	// make an http request to the honeycomb api
 	// to check if the api key is valid
 	// request like 	curl -i -X GET https://api.honeycomb.io/1/auth -H 'X-Honeycomb-Team: YOUR_API_KEY_HERE'
@@ -82,7 +82,7 @@ func TestConnectionHoneycomb(dest config.ExporterConfigurer) TestConnectionResul
 	}
 	authEndpoint := fmt.Sprintf("https://%s/1/auth", honeycombEndpoint)
 
-	req, err := http.NewRequest("GET", authEndpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", authEndpoint, nil)
 	if err != nil {
 		return TestConnectionResult{Succeeded: false, Message: err.Error(), Reason: FailedToConnect, DestinationType: dest.GetType(), StatusCode: http.StatusInternalServerError}
 	}
