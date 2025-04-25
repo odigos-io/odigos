@@ -3,8 +3,6 @@ package containers
 import (
 	"fmt"
 	"strings"
-
-	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 func GetImageName(imagePrefix string, name string, version string) string {
@@ -17,7 +15,7 @@ func GetImageName(imagePrefix string, name string, version string) string {
 		fullName = fmt.Sprintf("%s:%s", name, version)
 	}
 	if imagePrefix == "" {
-		imagePrefix = k8sconsts.OdigosImagePrefix
+		return fullName
 	}
 
 	// if ImagePrefix has a trailing slash, remove it

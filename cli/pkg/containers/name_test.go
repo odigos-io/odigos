@@ -72,7 +72,7 @@ func TestGetName(t *testing.T) {
 		t.Run(tt.testName, func(t *testing.T) {
 			got := GetImageName(tt.prefix, tt.name, tt.version)
 			if got != tt.expected {
-				t.Errorf("Test '%s' failed: input=%+v, expected=%d, actual=%d", tt.name, tt, tt.expected, got)
+				t.Errorf("Test '%s' failed: input=%+v, expected=%s, actual=%s", tt.name, tt, tt.expected, got)
 			}
 		})
 	}
