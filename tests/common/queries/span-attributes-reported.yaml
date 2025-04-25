@@ -48,7 +48,7 @@ query: |
     span.resourceAttributes."odigos.version" == 'e2e-test' &&
     span.resourceAttributes."telemetry.sdk.language" == 'go' &&
     span.serviceName == 'membership-reported' &&
-    span.kind == 'server'
+    span.kind == 'server' &&
     span.spanAttributes."http.request.method" == 'GET' &&
     span.spanAttributes."http.response.status_code" == `200` &&
     span.spanAttributes."url.path" == '/isMember'
