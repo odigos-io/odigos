@@ -86,6 +86,20 @@ data:
       goMemLimitMiB: {{ . }}
       {{- end }}
     {{- end }}
+    {{- if .Values.UserInstrumentationEnvs.languages }}
+    UserInstrumentationEnvs:
+      languages:
+        {{- range $lang, $config := .Values.UserInstrumentationEnvs.languages }}
+        {{ $lang }}:
+          enabled: {{ $config.enabled }}
+          {{- if $config.env }}
+          env:
+            {{- range $key, $value := $config.env }}
+            {{ $key }}: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+    {{- end }}
     {{- if .Values.profiles }}
     profiles: 
       {{- toYaml .Values.profiles | nindent 6 }}

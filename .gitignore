@@ -22,3 +22,5 @@ preflight*
 
 *.log
 *.logs
+
+/agents/php
