@@ -10,7 +10,7 @@ import (
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=odigos.io/system-object=true
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // InstrumentationConfig is the Schema for the instrumentationconfig API
 type InstrumentationConfig struct {
