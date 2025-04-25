@@ -19,40 +19,45 @@ type ActionReconciler struct {
 	client.Client
 }
 
+type ActionConfig interface {
+	ProcessorType() string
+	OrderHint() int
+}
+
 // giving an action, return it's specific processor details
 // returns the type of the processors, order hint, config, and error
-func actionProcessorDetails(action *odigosv1.Action) (string, int, any, error) {
+func actionProcessorDetails(action *odigosv1.Action) (ActionConfig, any, error) {
 	var config any
 	if action.Spec.AddClusterInfo != nil {
 		config = addClusterInfoConfig(action.Spec.AddClusterInfo.ClusterAttributes)
-		return action.Spec.AddClusterInfo.ProcessorType(), action.Spec.AddClusterInfo.OrderHint(), config, nil
+		return action.Spec.AddClusterInfo, config, nil
 	}
 
 	if action.Spec.DeleteAttribute != nil {
 		config, err := deleteAttributeConfig(action.Spec.DeleteAttribute.AttributeNamesToDelete, action.Spec.Signals)
 		if err != nil {
-			return "", 0, nil, err
+			return nil, nil, err
 		}
-		return action.Spec.AddClusterInfo.ProcessorType(), action.Spec.AddClusterInfo.OrderHint(), config, nil
+		return action.Spec.AddClusterInfo, config, nil
 	}
 
 	if action.Spec.PiiMasking != nil {
 		config, err := piiMaskingConfig(action.Spec.PiiMasking.PiiCategories)
 		if err != nil {
-			return "", 0, nil, err
+			return nil, nil, err
 		}
-		return action.Spec.PiiMasking.ProcessorType(), action.Spec.AddClusterInfo.OrderHint(), config, nil
+		return action.Spec.PiiMasking, config, nil
 	}
 
 	if action.Spec.RenameAttribute != nil {
 		config, err := renameAttributeConfig(action.Spec.RenameAttribute.Renames, action.Spec.Signals)
 		if err != nil {
-			return "", 0, nil, err
+			return nil, nil, err
 		}
-		return action.Spec.PiiMasking.ProcessorType(), action.Spec.AddClusterInfo.OrderHint(), config, nil
+		return action.Spec.PiiMasking, config, nil
 	}
 
-	return "", 0, nil, errors.New("no supported action found in resource")
+	return nil, nil, errors.New("no supported action found in resource")
 }
 
 // returns a processor object with:
@@ -62,7 +67,7 @@ func actionProcessorDetails(action *odigosv1.Action) (string, int, any, error) {
 // - type and order hint based on the function input
 // - config based on the function input, stringified in JSON
 // - collector roles set to ClusterGateway
-func convertToProcessor(action *odigosv1.Action, processorType string, orderHint int, processorConfig any) (*odigosv1.Processor, error) {
+func convertToProcessor(action *odigosv1.Action, actionConfig ActionConfig, processorConfig any) (*odigosv1.Processor, error) {
 
 	configJson, err := json.Marshal(processorConfig)
 	if err != nil {
@@ -87,13 +92,13 @@ func convertToProcessor(action *odigosv1.Action, processorType string, orderHint
 			},
 		},
 		Spec: odigosv1.ProcessorSpec{
-			Type:            processorType,
+			Type:            actionConfig.ProcessorType(),
 			ProcessorName:   action.Spec.ActionName,
 			Disabled:        action.Spec.Disabled,
 			Notes:           action.Spec.Notes,
 			Signals:         action.Spec.Signals,
 			CollectorRoles:  []odigosv1.CollectorsGroupRole{odigosv1.CollectorsGroupRoleClusterGateway},
-			OrderHint:       orderHint,
+			OrderHint:       actionConfig.OrderHint(),
 			ProcessorConfig: runtime.RawExtension{Raw: configJson},
 		},
 	}
@@ -150,14 +155,14 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	processorType, orderHint, config, err := actionProcessorDetails(action)
+	actionConfig, config, err := actionProcessorDetails(action)
 	if err != nil {
 		logger.Error(err, "Failed to get processor details from action")
 		err = r.reportReconciledToProcessorFailed(ctx, action, odigosv1.ActionTransformedToProcessorReasonFailedToTransformToProcessorReason, err)
 		return utils.K8SUpdateErrorHandler(err) // return error of setting status, or nil if success (since the original error is not retryable and logged)
 	}
 
-	processor, err := convertToProcessor(action, processorType, orderHint, config)
+	processor, err := convertToProcessor(action, actionConfig, config)
 	if err != nil {
 		logger.Error(err, "Failed to convert action to processor")
 		err = r.reportReconciledToProcessorFailed(ctx, action, odigosv1.ActionTransformedToProcessorReasonFailedToTransformToProcessorReason, err)
