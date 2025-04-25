@@ -1094,32 +1094,32 @@ spec:
               value: "non-web"
           "io.opentelemetry.netty-3.8":
             - new_attribute: "odigos.category"
-              value: "Messaging queues"
+              value: "HTTP" # Per request - to have it as http and not messaging system
             - new_attribute: "odigos.sub_category"
-              from_field: "messaging.system"
+              from_field: "http.request.method"
             - new_attribute: "odigos.transaction.type"
-              value: "non-web"
+              value: "web"
           "io.opentelemetry.netty-4.0":
             - new_attribute: "odigos.category"
-              value: "Messaging queues"
+              value: "HTTP"
             - new_attribute: "odigos.sub_category"
-              from_field: "messaging.system"
+              from_field: "http.request.method"
             - new_attribute: "odigos.transaction.type"
-              value: "non-web"
+              value: "web"
           "io.opentelemetry.netty-4.1":
             - new_attribute: "odigos.category"
-              value: "Messaging queues"
+              value: "HTTP"
             - new_attribute: "odigos.sub_category"
-              from_field: "messaging.system"
+              from_field: "http.request.method"
             - new_attribute: "odigos.transaction.type"
-              value: "non-web"
+              value: "web"
           "io.opentelemetry.reactor-netty-1.0":
             - new_attribute: "odigos.category"
-              value: "Messaging queues"
+              value: "HTTP"
             - new_attribute: "odigos.sub_category"
-              from_field: "messaging.system"
+              from_field: "http.request.method"
             - new_attribute: "odigos.transaction.type"
-              value: "non-web"
+              value: "web"
           # Web Framework
           "io.opentelemetry.wicket":
             - new_attribute: "odigos.category"
@@ -1491,6 +1491,48 @@ spec:
               from_field: "db.system"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
+          "io.opentelemetry.elasticsearch-rest-5.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.elasticsearch-rest-6.4":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.elasticsearch-rest-7.0":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.elasticsearch-transport-5.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.elasticsearch-transport-5.3":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "io.opentelemetry.elasticsearch-transport-6.0":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
           # Logging
           "io.opentelemetry.log4j":
             - new_attribute: "odigos.category"
@@ -1542,40 +1584,6 @@ spec:
           "io.opentelemetry.kubernetes-client-7.0":
             - new_attribute: "odigos.category"
               value: "Kubernetes"
-            - new_attribute: "odigos.transaction.type"
-              value: "non-web"
-
-          # Search Engine
-          "io.opentelemetry.elasticsearch-rest-5.0":
-            - new_attribute: "odigos.category"
-              value: "Search Engine"
-            - new_attribute: "odigos.transaction.type"
-              value: "non-web"
-          "io.opentelemetry.elasticsearch-rest-6.4":
-            - new_attribute: "odigos.category"
-              value: "Search Engine"
-            - new_attribute: "odigos.transaction.type"
-              value: "non-web"
-          "io.opentelemetry.elasticsearch-rest-7.0":
-            - new_attribute: "odigos.category"
-              value: "HTTP"
-            - new_attribute: "odigos.transaction.type"
-              value: "web"
-            - new_attribute: "odigos.sub_category"
-              from_field: "http.request.method"
-          "io.opentelemetry.elasticsearch-transport-5.0":
-            - new_attribute: "odigos.category"
-              value: "Search Engine"
-            - new_attribute: "odigos.transaction.type"
-              value: "non-web"
-          "io.opentelemetry.elasticsearch-transport-5.3":
-            - new_attribute: "odigos.category"
-              value: "Search Engine"
-            - new_attribute: "odigos.transaction.type"
-              value: "non-web"
-          "io.opentelemetry.elasticsearch-transport-6.0":
-            - new_attribute: "odigos.category"
-              value: "Search Engine"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
 
