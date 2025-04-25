@@ -69,7 +69,7 @@ func getConnectionTester(exporterID string) ExporterConnectionTester {
 	return nil
 }
 
-func testConnectionHoneycomb(dest config.ExporterConfigurer) TestConnectionResult {
+func TestConnectionHoneycomb(dest config.ExporterConfigurer) TestConnectionResult {
 	// make an http request to the honeycomb api
 	// to check if the api key is valid
 	// request like 	curl -i -X GET https://api.honeycomb.io/1/auth -H 'X-Honeycomb-Team: YOUR_API_KEY_HERE'
@@ -109,11 +109,6 @@ func testConnectionHoneycomb(dest config.ExporterConfigurer) TestConnectionResul
 
 func TestConnection(ctx context.Context, dest config.ExporterConfigurer) TestConnectionResult {
 	destType := dest.GetType()
-
-	// exceptions:
-	if destType == common.HoneycombDestinationType {
-		return testConnectionHoneycomb(dest)
-	}
 
 	configer, ok := configres[destType]
 	if !ok {
