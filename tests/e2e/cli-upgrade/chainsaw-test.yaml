@@ -159,6 +159,10 @@ spec:
               java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
               kubectl logs $java_pod_name -n default
 
+              php_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^currency)
+              kubectl exec $php_pod_name -c currency -- cat /var/odigos/php/8.2/opentelemetry.ini
+              kubectl exec $php_pod_name -c currency -- php --ri opentelemetry
+
     - name: Verify Trace - Context Propagation
       try:
         - script:
