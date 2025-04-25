@@ -148,6 +148,14 @@
           ]
         },
         {
+          "group": "PHP",
+          "icon": "php",
+          "pages": [
+            "instrumentations/php/native",
+            "instrumentations/php/enrichment"
+          ]
+        },
+        {
           "group": "Advanced",
           "icon": "gear",
           "pages": [
