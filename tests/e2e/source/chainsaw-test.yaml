@@ -95,12 +95,16 @@ spec:
             content: |
               while true; do
                 ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-reported.yaml
-
                 if [ $? -eq 0 ]; then
                   break
                 fi
                 sleep 1
               done
+      catch:
+        - script:
+            content: |
+              java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
+              kubectl logs $java_pod_name -n default
 
     - name: '[2 - Workload Instrumentation] Verify Trace - Context Propagation'
       try:
