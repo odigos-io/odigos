@@ -39,10 +39,10 @@ var (
 	// 	 - Each repetition is of 2 characters → ensures even length.
 	hexEncodedRegex = regexp.MustCompile(`^(?:[0-9a-f]{2}){8,}$`)
 
-	// assume that long numbers (more than 8 digits) are ids.
-	// even if they are found with some text (for example "INC001268637") they are treated as ids
+	// assume that long numbers (7 continues digits or more) are ids.
+	// even if they are found with some text (for example "INC0012686") they are treated as ids
 	// it is very unlikely for a a number with so many digits to be static and meaningful.
-	longNumberAnywhereRegex = regexp.MustCompile(`\d{9,}`)
+	longNumberAnywhereRegex = regexp.MustCompile(`\d{7,}`)
 )
 
 type RulePathSegment struct {

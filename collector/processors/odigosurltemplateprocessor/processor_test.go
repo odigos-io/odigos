@@ -380,7 +380,7 @@ func TestProcessor_Traces(t *testing.T) {
 			inputSpanName: "GET",
 			inputSpanAttrs: map[string]any{
 				"http.request.method": "GET",
-				"url.path":            "/user/INC001268637", // contains 9 digits number
+				"url.path":            "/user/INC0012686", // contains 7 digits number
 			},
 			expectedSpanName:  "GET /user/{id}", // should be templated as the number is long
 			expectedAttrKey:   "http.route",
@@ -394,11 +394,25 @@ func TestProcessor_Traces(t *testing.T) {
 			inputSpanName: "GET",
 			inputSpanAttrs: map[string]any{
 				"http.request.method": "GET",
-				"url.path":            "/user/INC001268637US", // contains 9 digits number
+				"url.path":            "/user/INC0012637US", // contains 7 digits number
 			},
 			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "http.route",
 			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name: "6 digits number should not be templated",
+			// this is a corner case where the number is under the limit of digits (7)
+			serviceName:   "6-digits-number-should-not-be-templated",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/123456_654321", // contains 6 digits number twice
+			},
+			expectedSpanName:  "GET /user/123456_654321", // should not be templated as the number is under the limit
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/123456_654321",
 		},
 	}
 
