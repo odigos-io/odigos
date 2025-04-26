@@ -65,5 +65,5 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: currency
-      language: dotnet
+      language: php
       runtimeVersion: 8.2.28
