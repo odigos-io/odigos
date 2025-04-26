@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -24,8 +25,10 @@ import (
 	"go.uber.org/multierr"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	k8slabels "k8s.io/apimachinery/pkg/labels"
 
 	"github.com/spf13/cobra"
 )
@@ -56,6 +59,11 @@ and rollback any metadata changes made to your objects.`,
 					return
 				}
 			}
+
+			// delete all sources, and wait for the pods to rollout without instrumentation
+			// this is done before the instrumentor is removed, to ensure that the instrumentation is removed
+			unInstrumentAllSources(ctx, client)
+			waitForPodsToRolloutWithoutInstrumentation(ctx, client)
 
 			UninstallOdigosResources(ctx, client, ns)
 
@@ -141,6 +149,25 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 	createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
 		client, ns, uninstallCRDs)
 
+}
+
+func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kube.Client) {
+	l := log.Print("Rolling back odigos changes to pods...")
+	instrumentedPodReq, _ := k8slabels.NewRequirement(k8sconsts.OdigosAgentsMetaHashLabel, selection.Exists, []string{})
+	wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
+		pods, err := client.CoreV1().Pods("").List(ctx, metav1.ListOptions{
+			Limit: 1,
+			LabelSelector: instrumentedPodReq.String(),
+		})
+		if err != nil {
+			return false, err
+		}
+		if len(pods.Items) == 0 {
+			l.Success()
+			return true, nil
+		}
+		return false, nil
+	})
 }
 
 func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns string) {
@@ -429,21 +456,24 @@ func uninstallConfigMaps(ctx context.Context, client *kube.Client, ns string) er
 	return nil
 }
 
-func uninstallCRDs(ctx context.Context, client *kube.Client, ns string) error {
-	// Clear finalizers from Source objects so they can be uninstalled
+func unInstrumentAllSources(ctx context.Context, client *kube.Client) error {
 	sources, err := client.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	var deleteErr error
 	for _, i := range sources.Items {
-		source, err := client.OdigosClient.Sources(i.Namespace).Get(ctx, i.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		source.SetFinalizers([]string{})
-		_, err = client.OdigosClient.Sources(i.Namespace).Update(ctx, source, metav1.UpdateOptions{})
-		if err != nil {
-			return err
+		e := client.OdigosClient.Sources(i.Namespace).Delete(ctx, i.Name, metav1.DeleteOptions{})
+		if e != nil {
+			deleteErr = errors.Join(deleteErr, e)
 		}
 	}
 
+	return deleteErr
+}
+
+func uninstallCRDs(ctx context.Context, client *kube.Client, ns string) error {
 	list, err := client.ApiExtensions.ApiextensionsV1().CustomResourceDefinitions().List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
