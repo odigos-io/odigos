@@ -39,10 +39,32 @@ var (
 	// 	 - Each repetition is of 2 characters → ensures even length.
 	hexEncodedRegex = regexp.MustCompile(`^(?:[0-9a-f]{2}){8,}$`)
 
-	// assume that long numbers (more than 8 digits) are ids.
-	// even if they are found with some text (for example "INC001268637") they are treated as ids
+	// assume that long numbers (7 continues digits or more) are ids.
+	// even if they are found with some text (for example "INC0012686") they are treated as ids
 	// it is very unlikely for a a number with so many digits to be static and meaningful.
-	longNumberAnywhereRegex = regexp.MustCompile(`\d{9,}`)
+	longNumberAnywhereRegex = regexp.MustCompile(`\d{7,}`)
+
+	// based on example from real users
+	// we want to catch dates that looks like "2025-25-04T12:00:00+0000" but possibly also other common date formats like:
+	// ✅ Summary of Supported Formats (Chat GPT):
+	//
+	// Format	Example
+	// YYYY-MM-DD	2025-12-04
+	// YYYY-MM-DDTHH:MM	2025-12-04T14:55
+	// YYYY-MM-DDTHH:MM:SS	2025-12-04T14:55:04
+	// YYYY-MM-DDTHH:MMZ	2025-12-04T14:55Z
+	// YYYY-MM-DDTHH:MM:SS+0000	2025-12-04T14:55:04+0000
+	//
+	// ❌ Not matched:
+	// 2025/12/04 (slashes)
+	// 04-12-2025 (day first)
+	// 2025-12-04T14:55:04+00:00 (timezone with colon)
+	// 2025-12-04T14:55:04.123Z (milliseconds)
+	// 2025-12-04T14:55:04.123+0000 (millis with offset)
+	datesRegex = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?(?:Z|[+-]\d{4})?$`)
+
+	// matches email addresses
+	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 )
 
 type RulePathSegment struct {
@@ -159,23 +181,34 @@ func attemptTemplateWithRule(pathSegments []string, ruleSegments TemplatizationR
 	return strings.Join(result, "/"), true
 }
 
-func isSegmentTemplatedId(segment string, customIdsRegexp []regexp.Regexp) bool {
+// return the name to use for templatization "id" / "date" etc which will be embedded in the template
+// as {id} / {date} etc
+// empty string as return value means that the segment is not a templated id
+func getSegmentTemplatizationString(segment string, customIdsRegexp []regexp.Regexp) string {
 	// check if the segment is a number or uuid
 	if onlyDigitsRegex.MatchString(segment) ||
 		longNumberAnywhereRegex.MatchString(segment) ||
 		uuidRegex.MatchString(segment) ||
 		hexEncodedRegex.MatchString(segment) {
-		return true
+		return "id"
+	}
+
+	if datesRegex.MatchString(segment) {
+		return "date"
+	}
+
+	if emailRegex.MatchString(segment) {
+		return "email"
 	}
 
 	// check if the segment matches any of the custom ids regexp
 	for _, customRegexp := range customIdsRegexp {
 		if customRegexp.MatchString(segment) {
-			return true
+			return "id"
 		}
 	}
 
-	return false
+	return ""
 }
 
 // This function will replace all segments that matches a number or uuid with "{id}"
@@ -184,8 +217,8 @@ func defaultTemplatizeURLPath(pathSegments []string, customIdsRegexp []regexp.Re
 	// avoid modifying the original segments slice
 	templatizedSegments := make([]string, len(pathSegments))
 	for i, segment := range pathSegments {
-		if isSegmentTemplatedId(segment, customIdsRegexp) {
-			templatizedSegments[i] = "{id}"
+		if templateName := getSegmentTemplatizationString(segment, customIdsRegexp); templateName != "" {
+			templatizedSegments[i] = "{" + templateName + "}"
 			templated = true
 		} else {
 			templatizedSegments[i] = segment

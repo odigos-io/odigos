@@ -11,10 +11,10 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
+	"go.opentelemetry.io/collector/confmap/xconfmap"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exportertest"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	"go.opentelemetry.io/collector/confmap/xconfmap"
 )
 
 var (
@@ -69,8 +69,47 @@ func getConnectionTester(exporterID string) ExporterConnectionTester {
 	return nil
 }
 
+func TestConnectionHoneycomb(ctx context.Context, dest config.ExporterConfigurer) TestConnectionResult {
+	// make an http request to the honeycomb api
+	// to check if the api key is valid
+	// request like 	curl -i -X GET https://api.honeycomb.io/1/auth -H 'X-Honeycomb-Team: YOUR_API_KEY_HERE'
+
+	client := &http.Client{}
+
+	honeycombEndpoint, found := dest.GetConfig()["HONEYCOMB_ENDPOINT"]
+	if !found {
+		return TestConnectionResult{Succeeded: false, Message: "HONEYCOMB_ENDPOINT not found in config", Reason: FailedToConnect, DestinationType: dest.GetType(), StatusCode: http.StatusInternalServerError}
+	}
+	authEndpoint := fmt.Sprintf("https://%s/1/auth", honeycombEndpoint)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", authEndpoint, nil)
+	if err != nil {
+		return TestConnectionResult{Succeeded: false, Message: err.Error(), Reason: FailedToConnect, DestinationType: dest.GetType(), StatusCode: http.StatusInternalServerError}
+	}
+
+	apiKey, found := dest.GetConfig()["HONEYCOMB_API_KEY"]
+	if !found {
+		return TestConnectionResult{Succeeded: false, Message: "HONEYCOMB_API_KEY not found in config", Reason: FailedToConnect, DestinationType: dest.GetType(), StatusCode: http.StatusInternalServerError}
+	}
+
+	req.Header.Add("X-Honeycomb-Team", apiKey)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return TestConnectionResult{Succeeded: false, Message: err.Error(), Reason: FailedToConnect, DestinationType: dest.GetType(), StatusCode: http.StatusInternalServerError}
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return TestConnectionResult{Succeeded: false, Message: "failed to connect to honeycomb api", Reason: FailedToConnect, DestinationType: dest.GetType(), StatusCode: resp.StatusCode}
+	}
+
+	return TestConnectionResult{Succeeded: true, DestinationType: dest.GetType(), StatusCode: http.StatusOK}
+}
+
 func TestConnection(ctx context.Context, dest config.ExporterConfigurer) TestConnectionResult {
 	destType := dest.GetType()
+
 	configer, ok := configres[destType]
 	if !ok {
 		return TestConnectionResult{Succeeded: false, Reason: UnKnownDestination, DestinationType: destType, StatusCode: http.StatusNotImplemented}
