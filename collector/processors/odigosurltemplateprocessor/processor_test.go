@@ -785,24 +785,36 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 func TestProcessor_CustomIdsRegexp(t *testing.T) {
 	tt := []struct {
 		name              string
-		customIds         []string
+		customIds         []CustomIdConfig
 		path              string
 		expectedName      string
 		expectedHttpRoute string
 	}{
 		{
 			name:              "custom id",
-			customIds:         []string{"^in_[0-9]+$"},
+			customIds:         []CustomIdConfig{{Regexp: "^in_[0-9]+$"}},
 			path:              "/product/in_005",
 			expectedName:      "GET /product/{id}",
 			expectedHttpRoute: "/product/{id}",
 		},
 		{
 			name:              "multiple custom ids",
-			customIds:         []string{"^in_[0-9]+$", "^out_[0-9]+$"},
+			customIds:         []CustomIdConfig{{Regexp: "^in_[0-9]+$"}, {Regexp: "^out_[0-9]+$"}},
 			path:              "/foo/out_005/bar/in_123",
 			expectedName:      "GET /foo/{id}/bar/{id}",
 			expectedHttpRoute: "/foo/{id}/bar/{id}",
+		},
+		{
+			name: "custom id with template name",
+			customIds: []CustomIdConfig{
+				{
+					Regexp:       "^in_[0-9]+$",
+					TemplateName: "custom-id",
+				},
+			},
+			path:              "/product/in_005",
+			expectedName:      "GET /product/{custom-id}",
+			expectedHttpRoute: "/product/{custom-id}",
 		},
 	}
 
@@ -816,7 +828,7 @@ func TestProcessor_CustomIdsRegexp(t *testing.T) {
 			// Add the templated rule to the processor
 			processor, err := newUrlTemplateProcessor(processortest.NewNopSettings(processortest.NopType), &Config{
 				TemplatizationConfig: TemplatizationConfig{
-					CustomIdsRegexp: tc.customIds,
+					CustomIds: tc.customIds,
 				},
 			})
 			require.NoError(t, err)
