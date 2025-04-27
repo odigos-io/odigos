@@ -110,7 +110,7 @@ and apply any required migrations and adaptations.`,
 
 		// Migrate images from prior to registry.odigos.io
 		if config.ImagePrefix == "" {
-			config.ImagePrefix = "registry.odigos.io"
+			config.ImagePrefix = k8sconsts.OdigosImagePrefix
 		}
 
 		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)

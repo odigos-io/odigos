@@ -66,6 +66,7 @@ const (
 	MountMethodProperty               = "mount-method"
 	CentralBackendURLProperty         = "central-backend-url"
 	CustomContainerRunetimeSocketPath = "custom-container-runtime-socket-path"
+	AvoidJavaOptsEnvVar               = "avoid-java-opts-env-var"
 )
 
 var (

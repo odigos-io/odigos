@@ -24,17 +24,49 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
-**Obtaining Honeycomb API Key**
+**Where to find the data**
 
-[Click here](https://ui.honeycomb.io) to login to your honeycomb account.
-From the top left corner, select the environment you want to send data to, and click the **Settings** configuration gear icon to go to the settings page.
-Select the `API Keys` tab and create/copy an API Key.
+- Each Odigos destination send collected telemetry to a **single environment** in Honeycomb.
+- The collected telemetry will go into HoneyComb [datasets](https://docs.honeycomb.io/configure/datasets/manage/) based on the `service.name` resource attribute. odigos will set it by default to the k8s workload (deployment) name (or as set in source configuration).
 
-Make sure the API Key is permitted to **Send Events** to Honeycomb.
+**Login to Honeycomb**<br />
+Go to the **[🔗 website](https://ui.honeycomb.io)** and login/create your honeycomb account.
+You can start with the Free plan to test sending traces, logs and metrics without needing to provide a credit card.
+
+**Select Environment**<br />
+Honeycomb uses [environments](https://docs.honeycomb.io/configure/environments/manage/) to partition and organize data.
+
+Common environments includes `staging`, `production`, `development`, `integration`, or you might want to include the cluster/unit name
+to group and isolate telemetry that is unrelated.
+
+Each Odigos Honeycomb destination always sends the data to a **single environment**, based on the "API Key" it is configured with.
+Before creating your API Key, make sure to select in ui the environment you want your odigos collected telemetry to show up in.
 
 <Frame>
-  <img src="/backends/images/honeycomb.png" alt="API Keys settings page in Honeycomb" />
+  <img src="/backends/images/honeycombenv.png" alt="API Keys settings page in Honeycomb" />
 </Frame>
+
+**Obtaining Honeycomb API Key**
+
+From the top left corner click on the ENVIRONMENT, and click the **Settings** configuration gear icon to go to the settings page.
+
+<Frame>
+  <img src="/backends/images/honeycombenvsettings.png" alt="API Keys settings page in Honeycomb" />
+</Frame>
+
+From the Settings page, click on the **API Keys** tab, make sure you are on "Ingest" sub-tab and click on the **Create Ingest API Key** blue button on the right.
+
+<Frame>
+  <img src="/backends/images/honeycombcreateapikey.png" alt="API Keys settings page in Honeycomb" />
+</Frame>
+
+Give your API Key a name (include "odigos" in the name to identify it easily later on), make sure the checkbox for "Can create services/datasets" is checked, and click the **Create** button on the modal bottom right.
+
+<Frame>
+  <img src="/backends/images/honeycombcreateapikeymodal.png" alt="API Keys settings page in Honeycomb" />
+</Frame>
+
+Copy the ingest key to keyboard and paste it in your Honeycomb Odigos destination configuration (ui or kubernetes manifest).
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!

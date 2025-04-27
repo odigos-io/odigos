@@ -3,6 +3,7 @@ package webhookenvinjector
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -19,16 +20,24 @@ import (
 )
 
 func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
-	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, client client.Client) {
+	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, client client.Client, config *common.OdigosConfiguration) {
 
-	if runtimeDetails.Language == common.JavaProgrammingLanguage && otelsdk == common.OtelSdkNativeCommunity {
-		injectJavaCommunityEnvVars(ctx, logger, container, client)
+	otelSignalExporterLanguages := []common.ProgrammingLanguage{
+		common.JavaProgrammingLanguage,
+		common.PhpProgrammingLanguage,
+	}
+
+	if slices.Contains(otelSignalExporterLanguages, runtimeDetails.Language) && otelsdk == common.OtelSdkNativeCommunity {
+		// Set the OTEL signals exporter env vars
+		setOtelSignalsExporterEnvVars(ctx, logger, container, client)
 	}
 
 	envVarsPerLanguage := getEnvVarNamesForLanguage(runtimeDetails.Language)
 	if envVarsPerLanguage == nil {
 		return
 	}
+
+	avoidAddingJavaOpts := config != nil && config.AvoidInjectingJavaOptsEnvVar != nil && *config.AvoidInjectingJavaOptsEnvVar
 
 	// Odigos appends necessary environment variables to enable its agent.
 	// It handles this in the following ways:
@@ -38,6 +47,13 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 
 	isOdigosAgentEnvAppended := false
 	for _, envVarName := range envVarsPerLanguage {
+		// Skip JAVA_OPTS env var if avoidAddingJavaOpts is true
+		// this is a migration path - we should eventually remove this and the avoidAddingJavaOpts config
+		// and never add the JAVA_OPTS env var
+		if avoidAddingJavaOpts && envVarName == "JAVA_OPTS" {
+			continue
+		}
+
 		// 1.
 		if handleManifestEnvVar(container, envVarName, otelsdk, logger) {
 			isOdigosAgentEnvAppended = true
@@ -53,7 +69,7 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 
 	// 3.
 	if !isOdigosAgentEnvAppended {
-		applyOdigosEnvDefaults(container, envVarsPerLanguage, otelsdk)
+		applyOdigosEnvDefaults(container, envVarsPerLanguage, otelsdk, avoidAddingJavaOpts)
 	}
 }
 
@@ -65,7 +81,7 @@ func getEnvVarNamesForLanguage(pl common.ProgrammingLanguage) []string {
 // Return false if the env was not processed using the manifest value and requires further handling by other methods.
 func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsdk common.OtelSdk, logger logr.Logger) bool {
 	manifestEnvVar := getContainerEnvVarPointer(&container.Env, envVarName)
-	if manifestEnvVar == nil {
+	if manifestEnvVar == nil || (manifestEnvVar.ValueFrom == nil && manifestEnvVar.Value == "") {
 		return false // Not found in manifest. further process it
 	}
 
@@ -132,6 +148,14 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByC
 			continue
 		}
 
+		if envVar.Value == "" {
+			// if the value is empty, treat it as it's not existing.
+			// from the env appending perspective, this is the same as not having it at all
+			// we want to set it to the odigos value
+			// this will be done at the last step
+			continue
+		}
+
 		patchedEnvVarValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
 		envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
 	}
@@ -139,8 +163,12 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByC
 	return envVars
 }
 
-func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []string, otelsdk common.OtelSdk) {
+func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []string, otelsdk common.OtelSdk, avoidAddingJavaOpts bool) {
 	for _, envVarName := range envVarsPerLanguage {
+		if avoidAddingJavaOpts && envVarName == "JAVA_OPTS" {
+			continue
+		}
+
 		odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
 		if odigosValueForOtelSdk == nil { // No Odigos values for this env var
 			continue
@@ -148,6 +176,14 @@ func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []st
 
 		valueToInject, ok := odigosValueForOtelSdk[otelsdk]
 		if !ok { // No Odigos value for this SDK
+			continue
+		}
+
+		existingEnv := getContainerEnvVarPointer(&container.Env, envVarName)
+		if existingEnv != nil && existingEnv.ValueFrom == nil {
+			if existingEnv.Value == "" {
+				existingEnv.Value = valueToInject
+			}
 			continue
 		}
 
@@ -187,13 +223,6 @@ func getContainerEnvVarPointer(containerEnv *[]corev1.EnvVar, envVarName string)
 		}
 	}
 	return nil
-}
-
-func injectJavaCommunityEnvVars(ctx context.Context, logger logr.Logger,
-	container *corev1.Container, client client.Client) {
-
-	// Set the OTEL signals exporter env vars
-	setOtelSignalsExporterEnvVars(ctx, logger, container, client)
 }
 
 func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger,
