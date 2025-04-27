@@ -19,7 +19,7 @@ To work around this, this processor will attempt to heuristically "guess" a temp
 
 The following conditions must be met for a span to be considered relevant for this processor:
 
-0. the span matches any processor "include" or "exclude" filters which can limit the spans to be processed.
+0. the span matches any processor "include" or "exclude" filters which can limit the spans to be processed (more info and examples below).
 1. an http span - contains `http.request.method` or `http.method` attribute.
 2. the attribute is not already set by instrumentation. e.g. no `http.route` for server spans and no `url.template` for client spans.
 3. the url path is recorded on a relevant attribute in the span (`url.path` / `url.full`) or the deprecated attributes (`http.target` / `http.url`).
