@@ -184,7 +184,7 @@ func attemptTemplateWithRule(pathSegments []string, ruleSegments TemplatizationR
 // return the name to use for templatization "id" / "date" etc which will be embedded in the template
 // as {id} / {date} etc
 // empty string as return value means that the segment is not a templated id
-func getSegmentTemplatizationString(segment string, customIdsRegexp []regexp.Regexp) string {
+func getSegmentTemplatizationString(segment string, customIds []internalCustomIdConfig) string {
 	// check if the segment is a number or uuid
 	if onlyDigitsRegex.MatchString(segment) ||
 		longNumberAnywhereRegex.MatchString(segment) ||
@@ -202,9 +202,9 @@ func getSegmentTemplatizationString(segment string, customIdsRegexp []regexp.Reg
 	}
 
 	// check if the segment matches any of the custom ids regexp
-	for _, customRegexp := range customIdsRegexp {
-		if customRegexp.MatchString(segment) {
-			return "id"
+	for _, customRegexp := range customIds {
+		if customRegexp.Regexp.MatchString(segment) {
+			return customRegexp.Name
 		}
 	}
 
@@ -212,7 +212,7 @@ func getSegmentTemplatizationString(segment string, customIdsRegexp []regexp.Reg
 }
 
 // This function will replace all segments that matches a number or uuid with "{id}"
-func defaultTemplatizeURLPath(pathSegments []string, customIdsRegexp []regexp.Regexp) (string, bool) {
+func defaultTemplatizeURLPath(pathSegments []string, customIdsRegexp []internalCustomIdConfig) (string, bool) {
 	templated := false
 	// avoid modifying the original segments slice
 	templatizedSegments := make([]string, len(pathSegments))

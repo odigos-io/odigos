@@ -2,6 +2,7 @@ package odigosurltemplateprocessor
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -17,6 +18,13 @@ type workloadStringRepresentation string
 func k8sWorkloadToStringRepresentation(workload K8sWorkload) workloadStringRepresentation {
 	lowercaseKind := strings.ToLower(workload.Kind)
 	return workloadStringRepresentation(fmt.Sprintf("%s/%s/%s", workload.Namespace, lowercaseKind, workload.Name))
+}
+
+// internal representation of the custom id config.
+// in this representation, the regexp is already parsed from the input string.
+type internalCustomIdConfig struct {
+	Regexp regexp.Regexp
+	Name   string
 }
 
 func resourceToWorkloadStringRepresentation(resource pcommon.Resource) (workloadStringRepresentation, error) {
