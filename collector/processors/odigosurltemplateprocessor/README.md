@@ -82,7 +82,7 @@ processors:
     # but regexp like "^ap" is too permissive and will also catch "/api".
     # compatible with golang regexp module https://pkg.go.dev/regexp
     # for performance reasons, avoid using compute-intensive expressions or adding too many values here.
-    custom_ids_regexp:
+    custom_ids:
       - regexp: "^inc_\d+$"
         name: "incidentId"
 ```
