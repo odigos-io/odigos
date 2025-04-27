@@ -19,9 +19,15 @@ type urlTemplateProcessor struct {
 	logger              *zap.Logger
 	templatizationRules []TemplatizationRule
 	customIdsRegexp     []regexp.Regexp
+
+	excludeMatcher *PropertiesMatcher
+	includeMatcher *PropertiesMatcher
 }
 
 func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTemplateProcessor, error) {
+
+	excludeMatcher := NewPropertiesMatcher(config.Exclude)
+	includeMatcher := NewPropertiesMatcher(config.Include)
 
 	parsedRules := make([]TemplatizationRule, 0, len(config.TemplatizationRules))
 	for _, rule := range config.TemplatizationRules {
@@ -45,12 +51,27 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 		logger:              set.Logger,
 		templatizationRules: parsedRules,
 		customIdsRegexp:     customIdsRegexp,
+		excludeMatcher:      excludeMatcher,
+		includeMatcher:      includeMatcher,
 	}, nil
 }
 
 func (p *urlTemplateProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 	for i := 0; i < td.ResourceSpans().Len(); i++ {
 		resourceSpans := td.ResourceSpans().At(i)
+
+		// before processing the spans, first check if it should be processed according to the include/exclude matchers
+		if p.excludeMatcher != nil && p.excludeMatcher.Match(resourceSpans.Resource()) {
+			// always skip the resource spans if it matches the exclude matcher
+			continue
+		}
+		// it doesn't make sense to have both include and exclude matchers, but we support it anyway
+		if p.includeMatcher != nil && !p.includeMatcher.Match(resourceSpans.Resource()) {
+			// if we have an include matcher, it must match the resource for it to be processed
+			continue
+		}
+		// it is ok that both include and exclude matchers are nil, in that case we process all spans
+
 		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
 			scopeSpans := resourceSpans.ScopeSpans().At(j)
 			for k := 0; k < scopeSpans.Spans().Len(); k++ {
