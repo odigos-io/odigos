@@ -1,4 +1,4 @@
-### Simple-demo Pods ### 
+### Simple-demo Pods ###
 apiVersion: v1
 kind: Pod
 metadata:
@@ -14,14 +14,14 @@ spec:
               - key: odigos.io/odiglet-oss-installed
                 operator: In
                 values:
-                  - "true"
+                  - 'true'
   containers:
     - name: frontend
       resources:
         limits:
-          instrumentation.odigos.io/generic: "1"
+          instrumentation.odigos.io/generic: '1'
         requests:
-          instrumentation.odigos.io/generic: "1"
+          instrumentation.odigos.io/generic: '1'
 status:
   containerStatuses:
     - name: frontend
@@ -45,14 +45,14 @@ spec:
               - key: odigos.io/odiglet-oss-installed
                 operator: In
                 values:
-                  - "true"
+                  - 'true'
   containers:
     - name: coupon
       resources:
         limits:
-          instrumentation.odigos.io/generic: "1"
+          instrumentation.odigos.io/generic: '1'
         requests:
-          instrumentation.odigos.io/generic: "1"
+          instrumentation.odigos.io/generic: '1'
 status:
   containerStatuses:
     - name: coupon
@@ -76,14 +76,14 @@ spec:
               - key: odigos.io/odiglet-oss-installed
                 operator: In
                 values:
-                  - "true"
+                  - 'true'
   containers:
     - name: inventory
       resources:
         limits:
-          instrumentation.odigos.io/generic: "1"
+          instrumentation.odigos.io/generic: '1'
         requests:
-          instrumentation.odigos.io/generic: "1"
+          instrumentation.odigos.io/generic: '1'
 status:
   containerStatuses:
     - name: inventory
@@ -107,9 +107,10 @@ spec:
               - key: odigos.io/odiglet-oss-installed
                 operator: In
                 values:
-                  - "true"
+                  - 'true'
   containers:
     - name: membership
+    # !! no resources for Golang
 status:
   containerStatuses:
     - name: membership
@@ -133,17 +134,48 @@ spec:
               - key: odigos.io/odiglet-oss-installed
                 operator: In
                 values:
-                  - "true"
+                  - 'true'
   containers:
     - name: pricing
       resources:
         limits:
-          instrumentation.odigos.io/dotnet-native-community: "1"
+          instrumentation.odigos.io/dotnet-native-community: '1'
         requests:
-          instrumentation.odigos.io/dotnet-native-community: "1"
+          instrumentation.odigos.io/dotnet-native-community: '1'
 status:
   containerStatuses:
     - name: pricing
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: currency
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: odigos.io/odiglet-oss-installed
+                operator: In
+                values:
+                  - 'true'
+  containers:
+    - name: currency
+      resources:
+        limits:
+          instrumentation.odigos.io/generic: '1'
+        requests:
+          instrumentation.odigos.io/generic: '1'
+status:
+  containerStatuses:
+    - name: currency
       ready: true
       restartCount: 0
       started: true
@@ -224,6 +256,21 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: pricing
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-currency
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: currency
+status:
+  runtimeDetailsByContainer:
+    - containerName: currency
 ---
 ### Instrumentation Instances ###
 apiVersion: odigos.io/v1alpha1

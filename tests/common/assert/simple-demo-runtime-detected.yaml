@@ -30,7 +30,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: frontend
       language: java
-      runtimeVersion: 17.0.14+7
+      runtimeVersion: 17.0.15+6
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -50,7 +50,7 @@ status:
         - name: PYTHONPATH
           value: /bar # this env exists in the test image
       language: python
-      runtimeVersion: 3.11.11
+      runtimeVersion: 3.11.12
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -84,3 +84,20 @@ status:
   runtimeDetailsByContainer:
     - containerName: pricing
       language: dotnet
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-currency
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: currency
+status:
+  runtimeDetailsByContainer:
+    - containerName: currency
+      language: php
+      runtimeVersion: 8.2.28

@@ -67,3 +67,17 @@ spec:
     namespace: default
     kind: Deployment
   otelServiceName: membership-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: currency
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: currency
+    namespace: default
+    kind: Deployment
+  otelServiceName: currency-reported
