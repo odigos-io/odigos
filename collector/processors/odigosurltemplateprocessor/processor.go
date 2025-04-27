@@ -18,7 +18,7 @@ import (
 type urlTemplateProcessor struct {
 	logger              *zap.Logger
 	templatizationRules []TemplatizationRule
-	customIdsRegexp     []regexp.Regexp
+	customIds           []internalCustomIdConfig
 
 	excludeMatcher *PropertiesMatcher
 	includeMatcher *PropertiesMatcher
@@ -38,19 +38,27 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 		parsedRules = append(parsedRules, parsedRule)
 	}
 
-	customIdsRegexp := make([]regexp.Regexp, 0, len(config.CustomIdsRegexp))
-	for _, regex := range config.CustomIdsRegexp {
-		compiledRegex, err := regexp.Compile(regex)
+	customIdsRegexp := make([]internalCustomIdConfig, 0, len(config.CustomIds))
+	for _, ci := range config.CustomIds {
+		regexpPattern, err := regexp.Compile(ci.Regexp)
 		if err != nil {
 			return nil, fmt.Errorf("invalid custom id regex: %w", err)
 		}
-		customIdsRegexp = append(customIdsRegexp, *compiledRegex)
+		templateName := "id"
+		if ci.TemplateName != "" {
+			// if the template name is empty, we default to "id"
+			templateName = ci.TemplateName
+		}
+		customIdsRegexp = append(customIdsRegexp, internalCustomIdConfig{
+			Regexp: *regexpPattern,
+			Name:   templateName,
+		})
 	}
 
 	return &urlTemplateProcessor{
 		logger:              set.Logger,
 		templatizationRules: parsedRules,
-		customIdsRegexp:     customIdsRegexp,
+		customIds:           customIdsRegexp,
 		excludeMatcher:      excludeMatcher,
 		includeMatcher:      includeMatcher,
 	}, nil
@@ -157,7 +165,7 @@ func (p *urlTemplateProcessor) applyTemplatizationOnPath(path string) string {
 			return templatedUrl
 		}
 	}
-	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments, p.customIdsRegexp)
+	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments, p.customIds)
 	if isTemplated {
 		if hasLeadingSlash {
 			// if the path has a leading slash, we need to add it back
