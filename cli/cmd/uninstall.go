@@ -62,8 +62,14 @@ and rollback any metadata changes made to your objects.`,
 
 			// delete all sources, and wait for the pods to rollout without instrumentation
 			// this is done before the instrumentor is removed, to ensure that the instrumentation is removed
-			unInstrumentAllSources(ctx, client)
-			waitForPodsToRolloutWithoutInstrumentation(ctx, client)
+			err := removeAllSources(ctx, client)
+			if err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Failed to remove all sources: %s\n", err)
+				os.Exit(1)
+			}
+			if !cmd.Flag("no-wait").Changed {
+				waitForPodsToRolloutWithoutInstrumentation(ctx, client)
+			}
 
 			UninstallOdigosResources(ctx, client, ns)
 
@@ -152,22 +158,33 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 }
 
 func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kube.Client) {
-	l := log.Print("Rolling back odigos changes to pods...")
 	instrumentedPodReq, _ := k8slabels.NewRequirement(k8sconsts.OdigosAgentsMetaHashLabel, selection.Exists, []string{})
-	wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
-		pods, err := client.CoreV1().Pods("").List(ctx, metav1.ListOptions{
-			Limit: 1,
+	fmt.Printf("Waiting for pods to rollout without instrumentation...\n")
+
+	pollErr := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, true, func(innerCtx context.Context) (bool, error) {
+		pods, err := client.CoreV1().Pods("").List(innerCtx, metav1.ListOptions{
 			LabelSelector: instrumentedPodReq.String(),
 		})
 		if err != nil {
 			return false, err
 		}
 		if len(pods.Items) == 0 {
+			l := log.Print("All pods rolled out without instrumentation")
 			l.Success()
 			return true, nil
 		}
+		log.Print(fmt.Sprintf("\tWaiting for %d pods to rollout without instrumentation...\n", len(pods.Items)))
 		return false, nil
 	})
+
+	if pollErr != nil {
+		if errors.Is(pollErr, context.DeadlineExceeded) {
+			fmt.Printf("\033[33m!\tWARN\033[0m deadline exceeded for waiting pods to roll out cleanly\n")
+		}
+		if errors.Is(pollErr, context.Canceled) {
+			fmt.Printf("\033[33m!\tWARN\033[0m context canceled for waiting pods to roll out cleanly\n")
+		}
+	}
 }
 
 func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns string) {
@@ -456,7 +473,8 @@ func uninstallConfigMaps(ctx context.Context, client *kube.Client, ns string) er
 	return nil
 }
 
-func unInstrumentAllSources(ctx context.Context, client *kube.Client) error {
+func removeAllSources(ctx context.Context, client *kube.Client) error {
+	l := log.Print("Removing Odigos Sources...")
 	sources, err := client.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -470,7 +488,36 @@ func unInstrumentAllSources(ctx context.Context, client *kube.Client) error {
 		}
 	}
 
-	return deleteErr
+	if deleteErr != nil {
+		return deleteErr
+	}
+
+	// make sure all sources are deleted, this is required regardless of the --no-wait flag,
+	// in order to make sure the Source CRD can be deleted later in the uninstall process.
+	// failing to remove all the sources may cause the Source CRD to not get removed - since kubernetes
+	// has a finalizer on a CRD, waiting for all the CR instances to be deleted before removing the CRD.
+	err = wait.PollUntilContextTimeout(ctx, 5*time.Second, 1*time.Minute, true, func(innerCtx context.Context) (bool, error) {
+		sources, err := client.OdigosClient.Sources("").List(innerCtx, metav1.ListOptions{})
+		if err != nil {
+			return false, err
+		}
+		if len(sources.Items) == 0 {
+			l.Success()
+			return true, nil
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			fmt.Printf("\033[33m!\tWARN\033[0m deadline exceeded for waiting sources to be deleted\n")
+		} else if errors.Is(err, context.Canceled) {
+			fmt.Printf("\033[33m!\tWARN\033[0m context canceled for waiting sources to be deleted\n")
+		} else {
+			fmt.Printf("\033[33m!\tWARN\033[0m error while waiting for sources to be deleted: %s\n", err)
+		}
+	}
+	return nil
 }
 
 func uninstallCRDs(ctx context.Context, client *kube.Client, ns string) error {
@@ -647,4 +694,5 @@ func uninstallNamespace(ctx context.Context, client *kube.Client, ns string) err
 func init() {
 	rootCmd.AddCommand(uninstallCmd)
 	uninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
+	uninstallCmd.Flags().Bool("no-wait", false, "skip waiting for pods to rollout without instrumentation")
 }
