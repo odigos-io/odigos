@@ -84,7 +84,7 @@ processors:
     # for performance reasons, avoid using compute-intensive expressions or adding too many values here.
     custom_ids:
       - regexp: "^inc_\d+$"
-        name: "incidentId"
+        template_name: "incidentId"
 ```
 
 ## Include/Exclude Filters
