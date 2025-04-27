@@ -50,6 +50,7 @@ spec:
               fi
 
         - assert:
+            timeout: 1m
             file: ../../common/assert/odigos-installed.yaml  # ✅ Moved outside `catch`
 
       catch:

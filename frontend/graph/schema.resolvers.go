@@ -710,7 +710,17 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 		return nil, err
 	}
 
-	res := testconnection.TestConnection(ctx, configurer)
+	// temporary workaround for honeycomb which does not allow empty payload in otlp export.
+	// they have a ticket open to fix that, but for now, we are using a specific honeycomb api for test connection
+	// "Permanent error: rpc error: code = InvalidArgument desc = request body should not be empty"
+	// TODO: remove once honeycomb fixes the issue
+	var res testconnection.TestConnectionResult
+	if destType == common.HoneycombDestinationType {
+		res = testconnection.TestConnectionHoneycomb(ctx, configurer)
+	} else {
+		res = testconnection.TestConnection(ctx, configurer)
+	}
+
 	if !res.Succeeded {
 		return &model.TestConnectionResponse{
 			Succeeded:       false,

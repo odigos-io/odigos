@@ -12,17 +12,21 @@ type ManagerOpts struct {
 	ImageReferences ImageReferences
 	// OwnerReferences is a slice of metav1.OwnerReferences to be applied to each installed resource.
 	OwnerReferences []metav1.OwnerReference
+	// SystemObjectLabelScope defines which system label to use for Odigos resources (system-object or central-system-object).
+	SystemObjectLabelKey string
 }
 
 type ImageReferences struct {
-	AutoscalerImage   string
-	CollectorImage    string
-	InstrumentorImage string
-	OdigletImage      string
-	KeyvalProxyImage  string
-	SchedulerImage    string
-	UIImage           string
-	CentralProxyImage string
+	AutoscalerImage     string
+	CollectorImage      string
+	InstrumentorImage   string
+	OdigletImage        string
+	KeyvalProxyImage    string
+	SchedulerImage      string
+	UIImage             string
+	CentralProxyImage   string
+	CentralBackendImage string
+	CentralUIImage      string
 }
 
 type ResourceManager interface {

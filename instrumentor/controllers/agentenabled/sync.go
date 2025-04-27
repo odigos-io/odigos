@@ -415,6 +415,15 @@ func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.Instru
 	}
 
 	if len(ic.Status.RuntimeDetailsByContainer) == 0 {
+		// differentiate between the case where we expect runtime detection to be completed soon,
+		// vs the case where we know it is staled due to no running pods preventing the runtime inspection
+		for _, condition := range ic.Status.Conditions {
+			if condition.Type == odigosv1.RuntimeDetectionStatusConditionType {
+				if odigosv1.RuntimeDetectionReason(condition.Reason) == odigosv1.RuntimeDetectionReasonNoRunningPods {
+					return false, odigosv1.AgentEnabledReasonRuntimeDetailsUnavailable, "agent will be enabled once runtime details from running pods is available"
+				}
+			}
+		}
 		return false, odigosv1.AgentEnabledReasonWaitingForRuntimeInspection, "waiting for runtime inspection to complete"
 	}
 
