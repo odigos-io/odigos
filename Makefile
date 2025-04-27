@@ -61,6 +61,10 @@ cli-docs:
 		mv $${file} $${file%.md}.mdx; \
 	done
 
+.PHONY: rbac-docs
+rbac-docs:
+	cd scripts/rbac-docgen && go run main.go
+
 build-image/%:
 	docker build -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	--build-arg SERVICE_NAME="$*" \

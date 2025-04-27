@@ -5,17 +5,16 @@ import (
 )
 
 const (
-	CurrentNamespaceEnvVar        = "CURRENT_NS"
-	OdigosVersionEnvVarName       = "ODIGOS_VERSION"
-	OdigosTierEnvVarName          = "ODIGOS_TIER"
-	DefaultOdigosNamespace        = "odigos-system"
-	DefaultOdigosCentralNamespace = "odigos-central"
-	OdigosConfigurationName       = "odigos-config"
-	OdigosEffectiveConfigName     = "effective-config"
-	OdigosConfigurationFileName   = "config.yaml"
-	OTLPPort                      = 4317
-	OTLPHttpPort                  = 4318
-	PprofOdigosPort               = 6060
+	CurrentNamespaceEnvVar      = "CURRENT_NS"
+	OdigosVersionEnvVarName     = "ODIGOS_VERSION"
+	OdigosTierEnvVarName        = "ODIGOS_TIER"
+	DefaultOdigosNamespace      = "odigos-system"
+	OdigosConfigurationName     = "odigos-config"
+	OdigosEffectiveConfigName   = "effective-config"
+	OdigosConfigurationFileName = "config.yaml"
+	OTLPPort                    = 4317
+	OTLPHttpPort                = 4318
+	PprofOdigosPort             = 6060
 
 	// Deprecated: Sources are used to mark workloads for instrumentation.
 	OdigosInstrumentationLabel = "odigos-instrumentation"
@@ -67,6 +66,8 @@ const (
 	MountMethodProperty               = "mount-method"
 	CentralBackendURLProperty         = "central-backend-url"
 	CustomContainerRunetimeSocketPath = "custom-container-runtime-socket-path"
+	AvoidJavaOptsEnvVar               = "avoid-java-opts-env-var"
+	ClusterNameProperty               = "cluster-name"
 )
 
 var (
@@ -82,4 +83,9 @@ var (
 	// Python related ones
 	OpampServerHostEnvName = "ODIGOS_OPAMP_SERVER_HOST"
 	OpAMPPort              = 4320
+)
+
+// Odigos Central related consts
+const (
+	DefaultOdigosCentralNamespace = "odigos-central"
 )

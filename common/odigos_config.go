@@ -94,6 +94,15 @@ type CollectorGatewayConfiguration struct {
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 }
+type UserInstrumentationEnvs struct {
+	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
+}
+
+// Struct to represent configuration for each language
+type LanguageConfig struct {
+	Enabled bool              `json:"enabled"`
+	EnvVars map[string]string `json:"env,omitempty"`
+}
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
@@ -115,4 +124,11 @@ type OdigosConfiguration struct {
 	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
 	ClusterName                      string                         `json:"clusterName,omitempty"`
 	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
+
+	// Used for migration - we are migrating away from using the JAVA_OPTS env var
+	// to only using the JAVA_TOOL_OPTIONS env var.
+	// When this is true, we will not inject the JAVA_OPTS env var into the container.
+	// when false or not set the original behavior will be used and the JAVA_OPTS env var will be injected.
+	AvoidInjectingJavaOptsEnvVar *bool                    `json:"avoidInjectingJavaOptsEnvVar,omitempty"`
+	UserInstrumentationEnvs      *UserInstrumentationEnvs `json:"UserInstrumentationEnvs,omitempty"`
 }

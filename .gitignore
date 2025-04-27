@@ -19,3 +19,8 @@ preflight*
 **.tfstate
 **.tfstate.backup
 **.terraform**
+
+*.log
+*.logs
+
+/agents/php
