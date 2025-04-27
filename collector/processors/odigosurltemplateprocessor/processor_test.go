@@ -80,18 +80,6 @@ func TestProcessor_Traces(t *testing.T) {
 
 	tt := []processorTestManifest{
 		{
-			name:          "numeric id in url path",
-			spanKind:      ptrace.SpanKindServer,
-			inputSpanName: "GET",
-			inputSpanAttrs: map[string]any{
-				"http.request.method": "GET",
-				"url.path":            "/user/1234",
-			},
-			expectedSpanName:  "GET /user/{id}",
-			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/{id}",
-		},
-		{
 			name:          "uuid in url path",
 			spanKind:      ptrace.SpanKindServer,
 			inputSpanName: "GET",
@@ -399,13 +387,60 @@ func TestProcessor_Traces(t *testing.T) {
 			inputSpanName: "GET",
 			inputSpanAttrs: map[string]any{
 				"http.request.method": "GET",
-				"url.path":            "/user/123456_654321", // contains 6 digits number twice
+				"url.path":            "/user/inc_654321", // contains 6 digits number twice
 			},
-			expectedSpanName:  "GET /user/123456_654321", // should not be templated as the number is under the limit
+			expectedSpanName:  "GET /user/inc_654321", // should not be templated as the number is under the limit
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/123456_654321",
+			expectedAttrValue: "/user/inc_654321",
 		},
 	}
+
+	runProcessorTests(t, tt, processor)
+}
+
+func TestProcessor_NoLetters(t *testing.T) {
+	tt := []processorTestManifest{
+		{
+			name:          "numeric id in url path",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/1234",
+			},
+			expectedSpanName:  "GET /user/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name:          "id with special chars",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/1234-5678",
+			},
+			expectedSpanName:  "GET /user/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name:          "id with special chars and text",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/v1234-5678",
+			},
+			expectedSpanName:  "GET /user/v1234-5678",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/v1234-5678",
+		},
+	}
+
+	set := processortest.NewNopSettings(processortest.NopType)
+	processor, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
 
 	runProcessorTests(t, tt, processor)
 }
@@ -516,11 +551,11 @@ func TestDefaultDateTemplatization(t *testing.T) {
 			inputSpanName: "GET",
 			inputSpanAttrs: map[string]any{
 				"http.request.method": "GET",
-				"url.path":            "04-12-2025",
+				"url.path":            "04-12-2025T14:15:16",
 			},
-			expectedSpanName:  "GET 04-12-2025",
+			expectedSpanName:  "GET 04-12-2025T14:15:16",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "04-12-2025",
+			expectedAttrValue: "04-12-2025T14:15:16",
 		},
 	}
 
