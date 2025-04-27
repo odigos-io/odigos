@@ -214,6 +214,17 @@ spec:
                       - attributesAndSamplerRules
                       - fallbackFraction
                       type: object
+                    headersCollection:
+                      description: default configuration for collecting http headers,
+                        in case the instrumentation library does not provide a configuration.
+                      properties:
+                        headerKeys:
+                          description: Limit payload collection to specific header
+                            keys.
+                          items:
+                            type: string
+                          type: array
+                      type: object
                     instrumentationLibraryConfigs:
                       description: configurations for the instrumentation libraries
                         the the SDK should use
@@ -255,6 +266,15 @@ spec:
                                   Should record the `code.stacktrace` attribute.
                                   if unset, the value will resolve from other relevant rules, or fallback to false
                                 type: boolean
+                            type: object
+                          headersCollection:
+                            properties:
+                              headerKeys:
+                                description: Limit payload collection to specific
+                                  header keys.
+                                items:
+                                  type: string
+                                type: array
                             type: object
                           libraryId:
                             properties:

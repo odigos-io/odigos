@@ -69,6 +69,9 @@ type InstrumentationRuleSpec struct {
 
 	// Configure which code attributes should be recorded as span attributes.
 	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	// Allows to configure the collection of http headers for different types of payloads.
+	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
 type InstrumentationRuleStatus struct {

@@ -292,6 +292,9 @@ type SdkConfig struct {
 
 	// default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.
 	DefaultCodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	// default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.
+	DefaultHeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
@@ -357,6 +360,8 @@ type InstrumentationLibraryConfig struct {
 	// if not set, the default code attributes configuration for the workload will be used.
 	// if set, but internal fields are empty, those fields will be used from the default configuration.
 	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
 type InstrumentationLibraryId struct {
