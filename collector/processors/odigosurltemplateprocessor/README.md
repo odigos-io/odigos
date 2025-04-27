@@ -69,7 +69,7 @@ processors:
     # The template name is the name that will be used in the span name and attributes (e.g. "/users/{userId}").
     # The regex is optional, and if provided, it will be used to match the segment.
     # If the regex does not match, the rule will be skipped and other rules and templatization will be evaluated.
-    # Example: "/v1/{foo:\d+}" will match "/v1/123" producing "/v1/foo", but not with "/v1/abc".
+    # Example: "/v1/{foo:\d+}" will match "/v1/123" producing "/v1/{foo}", but not with "/v1/abc".
     # compatible with golang regexp module https://pkg.go.dev/regexp
     # for performance reasons, avoid using compute-intensive expressions or adding too many values here.
     custom_templatization_rules:
