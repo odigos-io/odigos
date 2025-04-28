@@ -100,16 +100,6 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				Resources: []string{"processors"},
 				Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
 			},
-			{ // Needed to watch actions in order to transform them to processors
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"actions"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // Update conditions of the action after transforming it to a processor
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"actions/status"},
-				Verbs:     []string{"get", "patch", "update"},
-			},
 			{ // Needed to read actions transform them to processors
 				APIGroups: []string{"actions.odigos.io"},
 				Resources: []string{"*"},
@@ -186,6 +176,16 @@ func NewAutoscalerClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRo
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationconfigs"},
 				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed to watch actions in order to transform them to processors
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"actions"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Update conditions of the action after transforming it to a processor
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"actions/status"},
+				Verbs:     []string{"get", "patch", "update"},
 			},
 			// Needed to read the sources for build the odigos routing processor
 			{
