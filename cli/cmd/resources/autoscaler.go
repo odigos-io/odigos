@@ -405,6 +405,31 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 	return dep
 }
 
+func NewAutoscalerService(ns string) *corev1.Service {
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.AutoScalerServiceName,
+			Namespace: ns,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "webhook-server",
+					Port:       9443,
+					TargetPort: intstr.FromInt(9443),
+				},
+			},
+			Selector: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.AutoScalerAppLabelValue,
+			},
+		},
+	}
+}
+
 func NewAutoscalerTLSSecret(ns string, cert *crypto.Certificate) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -533,6 +558,7 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
 		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.AutoscalerImage, a.managerOpts.ImageReferences.CollectorImage, a.config.NodeSelector),
+		NewAutoscalerService(a.ns),
 		NewAutoscalerTLSSecret(a.ns, &cert),
 		NewActionValidatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
 	}
