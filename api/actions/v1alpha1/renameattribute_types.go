@@ -21,15 +21,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const ActionNameRenameAttribute = "renameAttribute"
+const ActionNameRenameAttribute = "RenameAttribute"
 
 type RenameAttributeConfig struct {
 	// +kubebuilder:validation:Type=object
 	Renames map[string]string `json:"renames"`
-}
-
-func (RenameAttributeConfig) Name() string {
-	return ActionNameRenameAttribute
 }
 
 func (RenameAttributeConfig) ProcessorType() string {

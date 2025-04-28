@@ -20,7 +20,6 @@ type ActionReconciler struct {
 }
 
 type ActionConfig interface {
-	Name() string
 	ProcessorType() string
 	OrderHint() int
 }

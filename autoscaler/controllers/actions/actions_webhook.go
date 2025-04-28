@@ -90,18 +90,23 @@ func (s *ActionsValidator) ValidateDelete(ctx context.Context, obj runtime.Objec
 
 // TODO: Refactor Action config to cast a generic config field in v1alpha2 to one of the matching action configs to allow type-switch validation.
 func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.Action) field.ErrorList {
-	fields := make(map[*field.Path]ActionConfig, 0)
 	var allErrs field.ErrorList
-	for _, cfg := range []ActionConfig{
-		action.Spec.AddClusterInfo,
-		action.Spec.DeleteAttribute,
-		action.Spec.RenameAttribute,
-		action.Spec.PiiMasking,
-	} {
-		if cfg != nil {
-			path := field.NewPath("spec").Child(cfg.Name())
-			fields[path] = cfg
-		}
+	fields := make(map[*field.Path]ActionConfig)
+	if action.Spec.AddClusterInfo != nil {
+		path := field.NewPath("spec").Child("addClusterInfo")
+		fields[path] = action.Spec.AddClusterInfo
+	}
+	if action.Spec.DeleteAttribute != nil {
+		path := field.NewPath("spec").Child("deleteAttribute")
+		fields[path] = action.Spec.DeleteAttribute
+	}
+	if action.Spec.RenameAttribute != nil {
+		path := field.NewPath("spec").Child("renameAttribute")
+		fields[path] = action.Spec.RenameAttribute
+	}
+	if action.Spec.PiiMasking != nil {
+		path := field.NewPath("spec").Child("piiMasking")
+		fields[path] = action.Spec.PiiMasking
 	}
 
 	if len(fields) == 0 {
@@ -115,8 +120,7 @@ func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.
 				fmt.Sprintf("Only one of (%s) may be set", strings.Join(validActionConfigNames, ", ")),
 			))
 		}
-		return allErrs
 	}
 
-	return nil
+	return allErrs
 }

@@ -21,14 +21,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const ActionNameDeleteAttribute = "deleteAttribute"
+const ActionNameDeleteAttribute = "DeleteAttribute"
 
 type DeleteAttributeConfig struct {
 	AttributeNamesToDelete []string `json:"attributeNamesToDelete"`
-}
-
-func (DeleteAttributeConfig) Name() string {
-	return ActionNameDeleteAttribute
 }
 
 func (DeleteAttributeConfig) ProcessorType() string {
