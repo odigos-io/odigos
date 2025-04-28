@@ -9,10 +9,14 @@ status:
     envFromContainerRuntime:
     - name: JAVA_OPTS
       value: -Dthis.does.not.exist=true
+    - name: LD_PRELOAD
+      value: ""
     (envFromContainerRuntime[?name=='JAVA_TOOL_OPTIONS']): []           
     envVars:
     - name: JAVA_OPTS
       value: -Dthis.does.not.exist=true
+    - name: LD_PRELOAD
+      value: ""
     (envVars[?name=='JAVA_TOOL_OPTIONS']): []           
     language: java
 ---
