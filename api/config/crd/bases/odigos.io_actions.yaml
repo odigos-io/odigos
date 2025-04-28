@@ -5,7 +5,6 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
   labels:
-    metadata.labels.odigos.io/config: "1"
     metadata.labels.odigos.io/system-object: "true"
   name: actions.odigos.io
 spec:
@@ -43,11 +42,10 @@ spec:
               actionName:
                 description: Allows you to attach a meaningful name to the action
                   for convenience. Odigos does not use or assume any meaning from
-                  this field.Allows you to attach a meaningful name to the rule for
-                  convenience. Odigos does not use or assume any meaning from this
-                  field.
+                  this field.
                 type: string
               addClusterInfo:
+                description: AddClusterInfo is the config for the AddClusterInfo Action.
                 properties:
                   clusterAttributes:
                     items:
@@ -69,6 +67,8 @@ spec:
                 - clusterAttributes
                 type: object
               deleteAttribute:
+                description: DeleteAttribute is the config for the DeleteAttribute
+                  Action.
                 properties:
                   attributeNamesToDelete:
                     items:
@@ -83,10 +83,11 @@ spec:
                 type: boolean
               notes:
                 description: 'A free-form text field that allows you to attach notes
-                  regarding the rule for convenience. For example: why it was added.
+                  regarding the action for convenience. For example: why it was added.
                   Odigos does not use or assume any meaning from this field.'
                 type: string
               piiMasking:
+                description: PiiMasking is the config for the PiiMasking Action.
                 properties:
                   piiCategories:
                     items:
@@ -98,6 +99,8 @@ spec:
                 - piiCategories
                 type: object
               renameAttribute:
+                description: RenameAttribute is the config for the RenameAttribute
+                  Action.
                 properties:
                   renames:
                     additionalProperties:

@@ -177,7 +177,7 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		} else {
 			logger := ctrl.LoggerFrom(ctx)
 			logger.Error(statusErr, "Failed to set status on action")
-			return ctrl.Result{}, err // return original error on success
+			return ctrl.Result{}, err // return original error if the patch fails
 		}
 	}
 

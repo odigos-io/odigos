@@ -31,8 +31,8 @@ type ActionSpecApplyConfiguration struct {
 	Signals         []common.ObservabilitySignal           `json:"signals,omitempty"`
 	AddClusterInfo  *actionsv1alpha1.AddClusterInfoConfig  `json:"addClusterInfo,omitempty"`
 	DeleteAttribute *actionsv1alpha1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
-	PiiMasking      *actionsv1alpha1.PiiMaskingConfig      `json:"piiMasking,omitempty"`
 	RenameAttribute *actionsv1alpha1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
+	PiiMasking      *actionsv1alpha1.PiiMaskingConfig      `json:"piiMasking,omitempty"`
 }
 
 // ActionSpecApplyConfiguration constructs a declarative configuration of the ActionSpec type for use with
@@ -91,18 +91,18 @@ func (b *ActionSpecApplyConfiguration) WithDeleteAttribute(value actionsv1alpha1
 	return b
 }
 
-// WithPiiMasking sets the PiiMasking field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the PiiMasking field is set to the value of the last call.
-func (b *ActionSpecApplyConfiguration) WithPiiMasking(value actionsv1alpha1.PiiMaskingConfig) *ActionSpecApplyConfiguration {
-	b.PiiMasking = &value
-	return b
-}
-
 // WithRenameAttribute sets the RenameAttribute field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the RenameAttribute field is set to the value of the last call.
 func (b *ActionSpecApplyConfiguration) WithRenameAttribute(value actionsv1alpha1.RenameAttributeConfig) *ActionSpecApplyConfiguration {
 	b.RenameAttribute = &value
+	return b
+}
+
+// WithPiiMasking sets the PiiMasking field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PiiMasking field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithPiiMasking(value actionsv1alpha1.PiiMaskingConfig) *ActionSpecApplyConfiguration {
+	b.PiiMasking = &value
 	return b
 }

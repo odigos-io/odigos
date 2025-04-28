@@ -107,14 +107,14 @@ func (in *ActionSpec) DeepCopyInto(out *ActionSpec) {
 		*out = new(actionsv1alpha1.DeleteAttributeConfig)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.PiiMasking != nil {
-		in, out := &in.PiiMasking, &out.PiiMasking
-		*out = new(actionsv1alpha1.PiiMaskingConfig)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.RenameAttribute != nil {
 		in, out := &in.RenameAttribute, &out.RenameAttribute
 		*out = new(actionsv1alpha1.RenameAttributeConfig)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.PiiMasking != nil {
+		in, out := &in.PiiMasking, &out.PiiMasking
+		*out = new(actionsv1alpha1.PiiMaskingConfig)
 		(*in).DeepCopyInto(*out)
 	}
 }

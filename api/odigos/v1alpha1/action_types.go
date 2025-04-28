@@ -45,10 +45,10 @@ const (
 
 type ActionSpec struct {
 
-	// Allows you to attach a meaningful name to the action for convenience. Odigos does not use or assume any meaning from this field.Allows you to attach a meaningful name to the rule for convenience. Odigos does not use or assume any meaning from this field.
+	// Allows you to attach a meaningful name to the action for convenience. Odigos does not use or assume any meaning from this field.
 	ActionName string `json:"actionName,omitempty"`
 
-	// A free-form text field that allows you to attach notes regarding the rule for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.
+	// A free-form text field that allows you to attach notes regarding the action for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.
 	Notes string `json:"notes,omitempty"`
 
 	// A boolean field allowing to temporarily disable the action, but keep it around for future use
@@ -57,13 +57,17 @@ type ActionSpec struct {
 	// Which signals should this action operate on.
 	Signals []common.ObservabilitySignal `json:"signals"`
 
+	// AddClusterInfo is the config for the AddClusterInfo Action.
 	AddClusterInfo *actionsv1.AddClusterInfoConfig `json:"addClusterInfo,omitempty"`
 
+	// DeleteAttribute is the config for the DeleteAttribute Action.
 	DeleteAttribute *actionsv1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
 
-	PiiMasking *actionsv1.PiiMaskingConfig `json:"piiMasking,omitempty"`
-
+	// RenameAttribute is the config for the RenameAttribute Action.
 	RenameAttribute *actionsv1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
+
+	// PiiMasking is the config for the PiiMasking Action.
+	PiiMasking *actionsv1.PiiMaskingConfig `json:"piiMasking,omitempty"`
 }
 
 type ActionStatus struct {
@@ -79,7 +83,6 @@ type ActionStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
 //+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
 
 type Action struct {

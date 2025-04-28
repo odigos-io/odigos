@@ -2,6 +2,7 @@ package actions
 
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	v1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -10,6 +11,7 @@ import (
 func SetupWithManager(mgr ctrl.Manager) error {
 	err := ctrl.NewControllerManagedBy(mgr).
 		For(&odigosv1.Action{}).
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(&ActionReconciler{
 			Client: mgr.GetClient(),
 		})
