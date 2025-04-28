@@ -35,7 +35,7 @@ var availableConfigers = []Configer{
 	&Dynatrace{},
 	&ElasticAPM{},
 	&Elasticsearch{},
-	&Generic{},
+	&Dynamic{},
 	&GenericOTLP{},
 	&GoogleCloud{},
 	&GoogleCloudStorage{},

@@ -8,69 +8,69 @@ import (
 )
 
 const (
-	DestinationName   = "GENERIC_DESTINATION_NAME"
-	DestinationType   = "GENERIC_DESTINATION_TYPE"
-	ConfigurationData = "GENERIC_CONFIGURATION_DATA"
+	DestinationName   = "DYNAMIC_DESTINATION_NAME"
+	DestinationType   = "DYNAMIC_DESTINATION_TYPE"
+	ConfigurationData = "DYNAMIC_CONFIGURATION_DATA"
 )
 
 var (
-	ErrorGenericMissingName       = errors.New("Generic destination is missing a required field (\"GENERIC_DESTINATION_NAME\"), Generic destination will not be configured")
-	ErrorGenericMissingType       = errors.New("Generic destination is missing a required field (\"GENERIC_DESTINATION_TYPE\"), Generic destination will not be configured")
-	ErrorGenericMissingConfData   = errors.New("Generic destination is missing a required field (\"GENERIC_CONFIGURATION_DATA\"), Generic destination will not be configured")
-	ErrorGenericTracingDisabled   = errors.New("Generic destination is missing a required field (\"TRACES\"), Generic destination will not be configured")
-	ErrorGenericMetricsNotAllowed = errors.New("Generic destination has a forbidden field (\"METRICS\"), Generic destination will not be configured")
-	ErrorGenericLogsNotAllowed    = errors.New("Generic destination has a forbidden field (\"LOGS\"), Generic destination will not be configured")
+	ErrorDynamicMissingName       = errors.New("Dynamic destination is missing a required field (\"DYNAMIC_DESTINATION_NAME\"), Dynamic destination will not be configured")
+	ErrorDynamicMissingType       = errors.New("Dynamic destination is missing a required field (\"DYNAMIC_DESTINATION_TYPE\"), Dynamic destination will not be configured")
+	ErrorDynamicMissingConfData   = errors.New("Dynamic destination is missing a required field (\"DYNAMIC_CONFIGURATION_DATA\"), Dynamic destination will not be configured")
+	ErrorDynamicTracingDisabled   = errors.New("Dynamic destination is missing a required field (\"TRACES\"), Dynamic destination will not be configured")
+	ErrorDynamicMetricsNotAllowed = errors.New("Dynamic destination has a forbidden field (\"METRICS\"), Dynamic destination will not be configured")
+	ErrorDynamicLogsNotAllowed    = errors.New("Dynamic destination has a forbidden field (\"LOGS\"), Dynamic destination will not be configured")
 )
 
-type Generic struct{}
+type Dynamic struct{}
 
 // compile time checks
-var _ Configer = (*Generic)(nil)
+var _ Configer = (*Dynamic)(nil)
 
-func (g *Generic) DestType() common.DestinationType {
-	return common.GenericDestinationType
+func (g *Dynamic) DestType() common.DestinationType {
+	return common.DynamicDestinationType
 }
 
-func (g *Generic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
+func (g *Dynamic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 
 	// destinationType, exists := config[DestinationType]
 	// if !exists {
-	// 	return nil, ErrorGenericMissingType
+	// 	return nil, ErrorDynamicMissingType
 	// }
-	exporterName := "generic/" + dest.GetID()
+	exporterName := "dynamic/" + dest.GetID()
 
-	genericData, exists := config[ConfigurationData]
+	DynamicData, exists := config[ConfigurationData]
 	if !exists {
-		return nil, ErrorGenericMissingConfData
+		return nil, ErrorDynamicMissingConfData
 	}
 
 	var parsedConfig map[string]interface{}
-	err := yaml.Unmarshal([]byte(genericData), &parsedConfig)
+	err := yaml.Unmarshal([]byte(DynamicData), &parsedConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	// Attempt to assert genericData to GenericMap (map[string]interface{})
-	//genericMap, ok := genericData.(GenericMap)
+	// Attempt to assert DynamicData to DynamicMap (map[string]interface{})
+	//DynamicMap, ok := DynamicData.(DynamicMap)
 	// if !ok {
 	// 	// If the type assertion fails, return an error
-	// 	return nil, fmt.Errorf("expected %v to be of type GenericMap, but got %T", ConfigurationData, genericData)
+	// 	return nil, fmt.Errorf("expected %v to be of type DynamicMap, but got %T", ConfigurationData, DynamicData)
 	// }
 
 	currentConfig.Exporters[exporterName] = parsedConfig
 
 	pipelineNames := []string{}
 	if isTracingEnabled(dest) {
-		return nil, ErrorGenericTracingDisabled
+		return nil, ErrorDynamicTracingDisabled
 	}
 
 	if isMetricsEnabled(dest) {
-		return nil, ErrorGenericMetricsNotAllowed
+		return nil, ErrorDynamicMetricsNotAllowed
 	}
 
 	if isLoggingEnabled(dest) {
-		return nil, ErrorGenericLogsNotAllowed
+		return nil, ErrorDynamicLogsNotAllowed
 	}
 
 	return pipelineNames, nil
