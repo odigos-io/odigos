@@ -336,6 +336,20 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 									},
 								},
 							},
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "webhook-server",
+									ContainerPort: 9443,
+									Protocol:      corev1.ProtocolTCP,
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      k8sconsts.AutoscalerWebhookVolumeName,
+									ReadOnly:  true,
+									MountPath: "/tmp/k8s-webhook-server/serving-certs",
+								},
+							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									"cpu":    resource.MustParse("500m"),
@@ -369,6 +383,17 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 					ServiceAccountName:            k8sconsts.AutoScalerServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: k8sconsts.AutoscalerWebhookVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName:  k8sconsts.AutoscalerWebhookSecretName,
+									DefaultMode: ptrint32(420),
+								},
+							},
+						},
 					},
 				},
 			},
