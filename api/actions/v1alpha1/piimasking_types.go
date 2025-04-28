@@ -28,8 +28,14 @@ const (
 	CreditCardMasking PiiCategory = "CREDIT_CARD"
 )
 
+const ActionNamePiiMasking = "piiMasking"
+
 type PiiMaskingConfig struct {
 	PiiCategories []PiiCategory `json:"piiCategories"`
+}
+
+func (PiiMaskingConfig) Name() string {
+	return ActionNamePiiMasking
 }
 
 func (PiiMaskingConfig) ProcessorType() string {

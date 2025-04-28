@@ -31,8 +31,14 @@ type OtelAttributeWithValue struct {
 	AttributeStringValue *string `json:"attributeStringValue"`
 }
 
+const ActionNameAddClusterInfo = "addClusterInfo"
+
 type AddClusterInfoConfig struct {
 	ClusterAttributes []OtelAttributeWithValue `json:"clusterAttributes"`
+}
+
+func (AddClusterInfoConfig) Name() string {
+	return ActionNameAddClusterInfo
 }
 
 func (AddClusterInfoConfig) ProcessorType() string {
