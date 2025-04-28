@@ -76,6 +76,7 @@ jobs:
           - 'workload-lifecycle'
           - 'source'
           - 'source-webhooks'
+          - 'action-webhooks'
           - 'env-injection'
         include:
           - kube-version: '1.20.15'
