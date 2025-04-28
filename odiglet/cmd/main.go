@@ -17,7 +17,7 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-
+"sigs.k8s.io/controller-runtime/pkg/log"
 	_ "net/http/pprof"
 )
 

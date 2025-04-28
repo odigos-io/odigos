@@ -24,6 +24,7 @@ const (
 	ElasticAPMDestinationType             DestinationType = "elasticapm"
 	ElasticsearchDestinationType          DestinationType = "elasticsearch"
 	GCSDestinationType                    DestinationType = "gcs"
+	GenericDestinationType                DestinationType = "generic"
 	GenericOTLPDestinationType            DestinationType = "otlp"
 	GoogleCloudDestinationType            DestinationType = "googlecloud"
 	GrafanaCloudLokiDestinationType       DestinationType = "grafanacloudloki"

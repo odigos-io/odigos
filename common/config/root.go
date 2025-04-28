@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/goccy/go-yaml"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 )
@@ -36,6 +35,7 @@ var availableConfigers = []Configer{
 	&Dynatrace{},
 	&ElasticAPM{},
 	&Elasticsearch{},
+	&Generic{},
 	&GenericOTLP{},
 	&GoogleCloud{},
 	&GoogleCloudStorage{},
