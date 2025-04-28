@@ -34,12 +34,6 @@ func (g *Dynamic) DestType() common.DestinationType {
 func (g *Dynamic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 
-	// destinationType, exists := config[DestinationType]
-	// if !exists {
-	// 	return nil, ErrorDynamicMissingType
-	// }
-	exporterName := "dynamic/" + dest.GetID()
-
 	DynamicData, exists := config[ConfigurationData]
 	if !exists {
 		return nil, ErrorDynamicMissingConfData
@@ -51,26 +45,33 @@ func (g *Dynamic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 		return nil, err
 	}
 
-	// Attempt to assert DynamicData to DynamicMap (map[string]interface{})
-	//DynamicMap, ok := DynamicData.(DynamicMap)
-	// if !ok {
-	// 	// If the type assertion fails, return an error
-	// 	return nil, fmt.Errorf("expected %v to be of type DynamicMap, but got %T", ConfigurationData, DynamicData)
-	// }
-
+	exporterName := config[DestinationType] + "/" + dest.GetID()
 	currentConfig.Exporters[exporterName] = parsedConfig
 
-	pipelineNames := []string{}
+	var pipelineNames []string
+
 	if isTracingEnabled(dest) {
-		return nil, ErrorDynamicTracingDisabled
+		tracesPipelineName := "traces/" + dest.GetID()
+		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
+			Exporters: []string{exporterName},
+		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
 	if isMetricsEnabled(dest) {
-		return nil, ErrorDynamicMetricsNotAllowed
+		metricsPipelineName := "metrics/" + dest.GetID()
+		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
+			Exporters: []string{exporterName},
+		}
+		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
 	if isLoggingEnabled(dest) {
-		return nil, ErrorDynamicLogsNotAllowed
+		logsPipelineName := "logs/" + dest.GetID()
+		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
+			Exporters: []string{exporterName},
+		}
+		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
 	return pipelineNames, nil
