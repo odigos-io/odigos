@@ -8,7 +8,10 @@ import (
 )
 
 var (
-	onlyDigitsRegex = regexp.MustCompile(`^\d+$`)
+
+	// matches any string that contains only digits or special characters
+	// will catch things like "1234_567" but not anything that contains a letter
+	noLettersRegex = regexp.MustCompile(`^[\d_\-!@#$%^&*()=+{}\[\]:;"'<>,.?/\\|` + "`" + `~]+$`)
 
 	// matches UUIDs in the format 123e4567-e89b-12d3-a456-426614174000
 	// these UUIDs are common in cloud systems and are often used as ids
@@ -184,13 +187,13 @@ func attemptTemplateWithRule(pathSegments []string, ruleSegments TemplatizationR
 // return the name to use for templatization "id" / "date" etc which will be embedded in the template
 // as {id} / {date} etc
 // empty string as return value means that the segment is not a templated id
-func getSegmentTemplatizationString(segment string, customIdsRegexp []regexp.Regexp) string {
-	// check if the segment is a number or uuid
-	if onlyDigitsRegex.MatchString(segment) ||
-		longNumberAnywhereRegex.MatchString(segment) ||
-		uuidRegex.MatchString(segment) ||
-		hexEncodedRegex.MatchString(segment) {
-		return "id"
+func getSegmentTemplatizationString(segment string, customIds []internalCustomIdConfig) string {
+
+	// check if the segment matches any of the custom ids regexp
+	for _, customRegexp := range customIds {
+		if customRegexp.Regexp.MatchString(segment) {
+			return customRegexp.Name
+		}
 	}
 
 	if datesRegex.MatchString(segment) {
@@ -201,18 +204,19 @@ func getSegmentTemplatizationString(segment string, customIdsRegexp []regexp.Reg
 		return "email"
 	}
 
-	// check if the segment matches any of the custom ids regexp
-	for _, customRegexp := range customIdsRegexp {
-		if customRegexp.MatchString(segment) {
-			return "id"
-		}
+	// check if the segment is a number or uuid
+	if noLettersRegex.MatchString(segment) ||
+		longNumberAnywhereRegex.MatchString(segment) ||
+		uuidRegex.MatchString(segment) ||
+		hexEncodedRegex.MatchString(segment) {
+		return "id"
 	}
 
 	return ""
 }
 
 // This function will replace all segments that matches a number or uuid with "{id}"
-func defaultTemplatizeURLPath(pathSegments []string, customIdsRegexp []regexp.Regexp) (string, bool) {
+func defaultTemplatizeURLPath(pathSegments []string, customIdsRegexp []internalCustomIdConfig) (string, bool) {
 	templated := false
 	// avoid modifying the original segments slice
 	templatizedSegments := make([]string, len(pathSegments))

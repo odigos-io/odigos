@@ -1,0 +1,49 @@
+image:
+  tag: ''
+imagePrefix: ''
+imagePullSecrets: []
+
+onPremToken: ''
+
+centralBackend:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: []
+
+centralUI:
+  uiMode: normal
+  uiPaginationLimit: 0
+  centralBackendURL: ''
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: []
+
+redis:
+  image: redis:7.4.2
+  port: 6379
+  portName: redis
+
+openshift:
+  enabled: false
+
+gke:
+  enabled: false

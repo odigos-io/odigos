@@ -184,6 +184,12 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 				common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod)
 		}
 
+	case consts.ClusterNameProperty:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		config.ClusterName = value[0]
+
 	default:
 		return fmt.Errorf("invalid property: %s", property)
 	}
