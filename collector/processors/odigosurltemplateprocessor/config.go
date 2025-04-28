@@ -3,6 +3,7 @@ package odigosurltemplateprocessor
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"go.opentelemetry.io/collector/confmap/xconfmap"
 )
@@ -43,6 +44,18 @@ type MatchConfig struct {
 	// If neither Include nor Exclude are specified, the processor will match all otel resources.
 }
 
+type CustomIdConfig struct {
+
+	// A regexp string which will be matched against all path segments.
+	// If the regexp matches, the segment will be templatized.
+	Regexp string `mapstructure:"regexp"`
+
+	// If the regexp matches, this is the name that will be used in the span name and attributes.
+	// e.g. if name is "userId" then route like this will be produced "/users/{userId}".
+	// default value (if empty) is "id".
+	TemplateName string `mapstructure:"template_name"`
+}
+
 type TemplatizationConfig struct {
 
 	// This option allows fine-tuning for specific paths to customize what to templatize and what not.
@@ -57,14 +70,14 @@ type TemplatizationConfig struct {
 	// for performance reasons, avoid using compute-intensive expressions or adding too many values here.
 	TemplatizationRules []string `mapstructure:"templatization_rules"`
 
-	// CustomIdsRegexp is a list of additional regex patterns that will be used to match and templated matching path segment.
+	// CustomIds is a list of additional regex patterns that will be used to match and templated matching path segment.
 	// It allows users to define their own regex patterns for custom id formats used/observed in their applications.
 	// Note that this regexp should catch ids, but avoid catching other static unrelated strings.
 	// For example, if you have ids in the system like "ap123" then a regexp that matches "^ap\d+" would be good,
 	// but regexp like "^ap" is too permissive and will also catch "/api".
 	// compatible with golang regexp module https://pkg.go.dev/regexp
 	// for performance reasons, avoid using compute-intensive expressions or adding too many values here.
-	CustomIdsRegexp []string `mapstructure:"custom_ids_regexp"`
+	CustomIds []CustomIdConfig `mapstructure:"custom_ids"`
 }
 
 type Config struct {
@@ -78,16 +91,57 @@ type Config struct {
 
 var _ xconfmap.Validator = (*Config)(nil)
 
+func validateK8sWorkload(workload K8sWorkload) error {
+	if workload.Namespace == "" {
+		return fmt.Errorf("namespace is required")
+	}
+	if workload.Kind == "" {
+		return fmt.Errorf("kind is required")
+	}
+	lowercaseKind := strings.ToLower(workload.Kind)
+	if lowercaseKind != "deployment" && lowercaseKind != "statefulset" && lowercaseKind != "daemonset" {
+		return fmt.Errorf("kind must be one of deployment, statefulset or daemonset")
+	}
+	if workload.Name == "" {
+		return fmt.Errorf("name is required")
+	}
+	return nil
+}
+
+func validatePropertiesConfig(mp *MatchProperties) error {
+	if mp == nil {
+		return nil
+	}
+	for _, workload := range mp.K8sWorkloads {
+		if err := validateK8sWorkload(workload); err != nil {
+			return fmt.Errorf("invalid workload: %w", err)
+		}
+	}
+	return nil
+}
+
 // Validate checks if the processor configuration is valid
 func (c Config) Validate() error {
+
+	if c.Exclude != nil {
+		if err := validatePropertiesConfig(c.Exclude); err != nil {
+			return fmt.Errorf("invalid exclude properties: %w", err)
+		}
+	}
+	if c.Include != nil {
+		if err := validatePropertiesConfig(c.Include); err != nil {
+			return fmt.Errorf("invalid include properties: %w", err)
+		}
+	}
+
 	for _, rule := range c.TemplatizationRules {
 		if _, err := parseUserInputRuleString(rule); err != nil {
 			return err
 		}
 	}
 
-	for _, r := range c.CustomIdsRegexp {
-		if _, err := regexp.Compile(r); err != nil {
+	for _, r := range c.CustomIds {
+		if _, err := regexp.Compile(r.Regexp); err != nil {
 			return fmt.Errorf("invalid custom id regexp: %w", err)
 		}
 	}
