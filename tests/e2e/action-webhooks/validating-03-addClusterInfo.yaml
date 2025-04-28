@@ -4,6 +4,8 @@ metadata:
   name: 01-action-no-config
   namespace: default
 spec:
+  signals:
+  - TRACES
   addClusterInfo:
     clusterAttributes:
     - attributeName: foo

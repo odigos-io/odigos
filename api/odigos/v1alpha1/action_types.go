@@ -44,7 +44,6 @@ const (
 )
 
 type ActionSpec struct {
-
 	// Allows you to attach a meaningful name to the action for convenience. Odigos does not use or assume any meaning from this field.
 	ActionName string `json:"actionName,omitempty"`
 
