@@ -1,0 +1,9 @@
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: 01-action-no-config
+  namespace: default
+spec:
+  piiMasking:
+    piiCategories:
+      - CREDIT_CARD

@@ -1,0 +1,62 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: source
+spec:
+  description: This e2e test runs scenarios to verify Action validation via webhook
+  skipDelete: true
+  steps:
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                ../../../cli/odigos install --namespace odigos-test --version "$COMMIT_HASH" --image-prefix=public.ecr.aws/y2v0v6s7
+              else
+                ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              fi
+            timeout: 60s
+        - assert:
+            file: ../../common/assert/odigos-installed.yaml
+    - name: "[Validating] - Action with no config is invalid"
+      try:
+        - apply:
+            file: validating-01-no-config.yaml
+            expect:
+              - check:
+                  ($error != null): true
+    - name: "[Validating] - Action with multiple configs is invalid"
+      try:
+        - apply:
+            file: validating-02-multi-config.yaml
+            expect:
+              - check:
+                  ($error != null): true
+    - name: "[Validating] - valid AddClusterInfo"
+      try:
+        - apply:
+            file: validating-03-addClusterInfo.yaml
+            expect:
+              - check:
+                  ($error == null): true
+    - name: "[Validating] - valid DeleteAttribute"
+      try:
+        - apply:
+            file: validating-04-deleteAttribute.yaml
+            expect:
+              - check:
+                  ($error == null): true
+    - name: "[Validating] - valid RenameAttribute"
+      try:
+        - apply:
+            file: validating-05-renameAttribute.yaml
+            expect:
+              - check:
+                  ($error == null): true
+    - name: "[Validating] - valid PiiMasking"
+      try:
+        - apply:
+            file: validating-06-piiMasking.yaml
+            expect:
+              - check:
+                  ($error == null): true
