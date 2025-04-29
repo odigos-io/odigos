@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -36,6 +37,7 @@ var configCmd = &cobra.Command{
 	- "mount-method": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
 	- "container-runtime-socket-path": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
 	- "avoid-java-opts-env-var": Avoid injecting the Odigos value in JAVA_OPTS environment variable into Java applications.
+	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., {"languages":{"go":{"enabled":true,"env":{"OTEL_GO_ENABLED":"true"}}}}
 	`,
 }
 
@@ -189,6 +191,16 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			return fmt.Errorf("%s expects exactly one value", property)
 		}
 		config.ClusterName = value[0]
+
+	case consts.UserInstrumentationEnvsProperty:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects a single JSON string value", property)
+		}
+		var uie common.UserInstrumentationEnvs
+		if err := json.Unmarshal([]byte(value[0]), &uie); err != nil {
+			return fmt.Errorf("invalid JSON for %s: %w", property, err)
+		}
+		config.UserInstrumentationEnvs = &uie
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)

@@ -70,6 +70,7 @@ const (
 	CustomContainerRunetimeSocketPath = "custom-container-runtime-socket-path"
 	AvoidJavaOptsEnvVar               = "avoid-java-opts-env-var"
 	ClusterNameProperty               = "cluster-name"
+	UserInstrumentationEnvsProperty   = "user-instrumentation-envs"
 )
 
 var (
