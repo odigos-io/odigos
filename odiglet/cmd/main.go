@@ -10,6 +10,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
+	_ "net/http/pprof"
+
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -17,8 +19,6 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-
-	_ "net/http/pprof"
 )
 
 func main() {

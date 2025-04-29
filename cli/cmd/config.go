@@ -35,6 +35,7 @@ var configCmd = &cobra.Command{
 	- "ignored-containers": List of containers to be ignored.
 	- "mount-method": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
 	- "container-runtime-socket-path": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
+	- "avoid-java-opts-env-var": Avoid injecting the Odigos value in JAVA_OPTS environment variable into Java applications.
 	`,
 }
 
@@ -109,7 +110,7 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 		config.CentralBackendURL = value[0]
 
 	case consts.TelemetryEnabledProperty, consts.OpenshiftEnabledProperty, consts.PspProperty,
-		consts.SkipWebhookIssuerCreationProperty, consts.AllowConcurrentAgentsProperty:
+		consts.SkipWebhookIssuerCreationProperty, consts.AllowConcurrentAgentsProperty, consts.AvoidJavaOptsEnvVar:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value (true/false)", property)
@@ -130,6 +131,8 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			config.SkipWebhookIssuerCreation = boolValue
 		case consts.AllowConcurrentAgentsProperty:
 			config.AllowConcurrentAgents = &boolValue
+		case consts.AvoidJavaOptsEnvVar:
+			config.AvoidInjectingJavaOptsEnvVar = &boolValue
 		}
 
 	case consts.ImagePrefixProperty, consts.UiModeProperty, consts.UiPaginationLimit:
@@ -180,6 +183,12 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			return fmt.Errorf("invalid mount method: %s (valid values: %s, %s)", value[0],
 				common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod)
 		}
+
+	case consts.ClusterNameProperty:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		config.ClusterName = value[0]
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)

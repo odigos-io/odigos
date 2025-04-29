@@ -1,16 +1,19 @@
 package utils
 
-func IsBaseExeContainsProcessName(baseExe string, processName string) bool {
-	baseLen := len(baseExe)
-	procLen := len(processName)
+func IsBaseExeContainsProcessName(baseExe string, processNames []string) bool {
+	for _, processName := range processNames {
+		baseLen := len(baseExe)
+		procLen := len(processName)
 
-	// Check if baseExe starts with processName
-	if baseLen >= procLen && baseExe[:procLen] == processName {
-		// If it's exactly processName, or only digits follow
-		if baseLen == procLen || IsDigitsOnly(baseExe[procLen:]) {
-			return true
+		// Check if baseExe starts with processName
+		if baseLen >= procLen && baseExe[:procLen] == processName {
+			// If it's exactly processName, or only digits follow
+			if baseLen == procLen || IsDigitsOnly(baseExe[procLen:]) {
+				return true
+			}
 		}
 	}
+
 	return false
 }
 

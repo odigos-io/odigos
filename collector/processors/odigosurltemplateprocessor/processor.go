@@ -18,10 +18,16 @@ import (
 type urlTemplateProcessor struct {
 	logger              *zap.Logger
 	templatizationRules []TemplatizationRule
-	customIdsRegexp     []regexp.Regexp
+	customIds           []internalCustomIdConfig
+
+	excludeMatcher *PropertiesMatcher
+	includeMatcher *PropertiesMatcher
 }
 
 func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTemplateProcessor, error) {
+
+	excludeMatcher := NewPropertiesMatcher(config.Exclude)
+	includeMatcher := NewPropertiesMatcher(config.Include)
 
 	parsedRules := make([]TemplatizationRule, 0, len(config.TemplatizationRules))
 	for _, rule := range config.TemplatizationRules {
@@ -32,25 +38,48 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 		parsedRules = append(parsedRules, parsedRule)
 	}
 
-	customIdsRegexp := make([]regexp.Regexp, 0, len(config.CustomIdsRegexp))
-	for _, regex := range config.CustomIdsRegexp {
-		compiledRegex, err := regexp.Compile(regex)
+	customIdsRegexp := make([]internalCustomIdConfig, 0, len(config.CustomIds))
+	for _, ci := range config.CustomIds {
+		regexpPattern, err := regexp.Compile(ci.Regexp)
 		if err != nil {
 			return nil, fmt.Errorf("invalid custom id regex: %w", err)
 		}
-		customIdsRegexp = append(customIdsRegexp, *compiledRegex)
+		templateName := "id"
+		if ci.TemplateName != "" {
+			// if the template name is empty, we default to "id"
+			templateName = ci.TemplateName
+		}
+		customIdsRegexp = append(customIdsRegexp, internalCustomIdConfig{
+			Regexp: *regexpPattern,
+			Name:   templateName,
+		})
 	}
 
 	return &urlTemplateProcessor{
 		logger:              set.Logger,
 		templatizationRules: parsedRules,
-		customIdsRegexp:     customIdsRegexp,
+		customIds:           customIdsRegexp,
+		excludeMatcher:      excludeMatcher,
+		includeMatcher:      includeMatcher,
 	}, nil
 }
 
 func (p *urlTemplateProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 	for i := 0; i < td.ResourceSpans().Len(); i++ {
 		resourceSpans := td.ResourceSpans().At(i)
+
+		// before processing the spans, first check if it should be processed according to the include/exclude matchers
+		if p.excludeMatcher != nil && p.excludeMatcher.Match(resourceSpans.Resource()) {
+			// always skip the resource spans if it matches the exclude matcher
+			continue
+		}
+		// it doesn't make sense to have both include and exclude matchers, but we support it anyway
+		if p.includeMatcher != nil && !p.includeMatcher.Match(resourceSpans.Resource()) {
+			// if we have an include matcher, it must match the resource for it to be processed
+			continue
+		}
+		// it is ok that both include and exclude matchers are nil, in that case we process all spans
+
 		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
 			scopeSpans := resourceSpans.ScopeSpans().At(j)
 			for k := 0; k < scopeSpans.Spans().Len(); k++ {
@@ -136,7 +165,7 @@ func (p *urlTemplateProcessor) applyTemplatizationOnPath(path string) string {
 			return templatedUrl
 		}
 	}
-	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments, p.customIdsRegexp)
+	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments, p.customIds)
 	if isTemplated {
 		if hasLeadingSlash {
 			// if the path has a leading slash, we need to add it back
