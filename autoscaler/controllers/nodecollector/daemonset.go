@@ -237,14 +237,14 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 								},
 							},
 						},
-						{
-							Name: "mntvarlog",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/mnt/var/log",
-								},
-							},
-						},
+						// {
+						// 	Name: "mntvarlog",
+						// 	VolumeSource: corev1.VolumeSource{
+						// 		HostPath: &corev1.HostPathVolumeSource{
+						// 			Path: "/mnt/var/log",
+						// 		},
+						// 	},
+						// },
 						{
 							Name: "varlibdockercontainers",
 							VolumeSource: corev1.VolumeSource{
@@ -282,11 +282,11 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 									MountPath: "/var/log",
 									ReadOnly:  true,
 								},
-								{ // for clusters where /var/log is not a symlink to /mnt/var/log
-									Name:      "mntvarlog",
-									MountPath: "/mnt/var/log",
-									ReadOnly:  true,
-								},
+								// { // for clusters where /var/log is not a symlink to /mnt/var/log
+								// 	Name:      "mntvarlog",
+								// 	MountPath: "/mnt/var/log",
+								// 	ReadOnly:  true,
+								// },
 								{
 									Name:      "hostfs",
 									MountPath: "/hostfs",
