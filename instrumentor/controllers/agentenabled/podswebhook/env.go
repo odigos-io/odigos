@@ -38,11 +38,14 @@ func InjectEnvVarToPodContainer(existingEnvNames EnvVarNamesMap, container *core
 	}
 
 	if strings.Contains(envVarValue, distro.RuntimeVersionPlaceholderMajorMinor) {
-		// This is a placeholder for the runtime version
-		// We need to replace it with the actual runtime version
+		// This is a placeholder for the runtime version, we need to replace it with the actual runtime version
 		if runtimeDetails != nil {
 			majorMinor := common.MajorMinorStringOnly(common.GetVersion(runtimeDetails.RuntimeVersion))
 			envVarValue = strings.ReplaceAll(envVarValue, distro.RuntimeVersionPlaceholderMajorMinor, majorMinor)
+		} else if envVarName == "PHP_INI_SCAN_DIR" {
+			// Force our way through PHP with version 8.1
+			// TODO: remove this after we confirmed TextGroove runtime
+			envVarValue = strings.ReplaceAll(envVarValue, distro.RuntimeVersionPlaceholderMajorMinor, "8.1")
 		} else {
 			// If we don't have runtime details, we can't replace the placeholder
 			return existingEnvNames
