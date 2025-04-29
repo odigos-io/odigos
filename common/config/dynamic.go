@@ -49,7 +49,6 @@ func (g *Dynamic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 	currentConfig.Exporters[exporterName] = parsedConfig
 
 	var pipelineNames []string
-
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
