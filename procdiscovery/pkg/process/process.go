@@ -219,6 +219,8 @@ func getRelevantEnvVars(pid int) ProcessEnvs {
 	for k := range envOverwrite.EnvValuesMap {
 		relevantOverwriteEnvVars[k] = nil
 	}
+
+	// Add LD_PRELOAD to the list of relevant environment variables
 	relevantOverwriteEnvVars[consts.LdPreloadEnvVarName] = nil
 
 	overWriteEnvsResult := make(map[string]string)

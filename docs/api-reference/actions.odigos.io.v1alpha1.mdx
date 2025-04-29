@@ -1192,6 +1192,20 @@ container.image.tag</p>
 </tr>
 <tr>
 <td>
+<code>collectReplicaSetAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>collect replicaset related attributes (when relevant, e.g. for deployments):
+k8s.replicaset.name
+if CollectWorkloadUID is set, also collect:
+k8s.replicaset.uid</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>collectWorkloadUID</code> <B>[Required]</B>
 </td>
 <td>
