@@ -1,7 +1,0 @@
-Odigos UI is available at: http://localhost:3000
-
-Port-forwarding from odigos-system/odigos-ui-7b4d566855-6qfdx
-Press Ctrl+C to stop
-E0304 09:54:12.179377   32832 portforward.go:391] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:3000->127.0.0.1:55111: write tcp4 127.0.0.1:3000->127.0.0.1:55111: write: broken pipe" logger="UnhandledError"
-E0304 09:54:13.737562   32832 portforward.go:391] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:3000->127.0.0.1:55060: write tcp4 127.0.0.1:3000->127.0.0.1:55060: write: broken pipe" logger="UnhandledError"
-E0304 09:56:17.890508   32832 portforward.go:391] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:3000->127.0.0.1:55538: write tcp4 127.0.0.1:3000->127.0.0.1:55538: write: broken pipe" logger="UnhandledError"

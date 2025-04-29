@@ -83,14 +83,23 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
 
 
-# PHP: Clone agents repo (contains pre-compiled binaries and libraries for each PHP version)
+# PHP
 FROM --platform=$BUILDPLATFORM php:8-cli AS php-agents
 WORKDIR /php-agents
-ARG PHP_AGENT_VERSION=main
+ARG TARGETARCH
+ARG PHP_AGENT_VERSION="v0.0.5"
+ARG PHP_VERSIONS="8.0 8.1 8.2 8.3 8.4"
+ENV PHP_VERSIONS=${PHP_VERSIONS}
+# Clone agents repo (contains pre-compiled binaries and libraries for each PHP version)
 RUN apt-get update && apt-get upgrade -y && apt-get install -y git
 RUN git clone https://github.com/odigos-io/opentelemetry-php \
     && cd opentelemetry-php \
-    && git checkout $PHP_AGENT_VERSION
+    && git checkout tags/${PHP_AGENT_VERSION}
+# Move the pre-compiled binaries to the correct directories
+RUN for v in ${PHP_VERSIONS}; do \
+    mv opentelemetry-php/$v/bin/${TARGETARCH}/* opentelemetry-php/$v/; \
+    rm -rf opentelemetry-php/$v/bin; \
+    done
 
 
 ######### ODIGLET #########

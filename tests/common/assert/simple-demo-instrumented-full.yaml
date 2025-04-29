@@ -1,4 +1,4 @@
-### Simple-demo Pods ### 
+### Simple-demo Pods ###
 apiVersion: v1
 kind: Pod
 metadata:
@@ -14,14 +14,14 @@ spec:
               - key: odigos.io/odiglet-oss-installed
                 operator: In
                 values:
-                  - "true"
+                  - 'true'
   containers:
     - name: frontend
       resources:
         limits:
-          instrumentation.odigos.io/generic: "1"
+          instrumentation.odigos.io/generic: '1'
         requests:
-          instrumentation.odigos.io/generic: "1"
+          instrumentation.odigos.io/generic: '1'
       (env[?name == 'ODIGOS_CONTAINER_NAME']):
         - value: frontend
       (env[?name == 'ODIGOS_DISTRO_NAME']):
@@ -71,14 +71,14 @@ spec:
               - key: odigos.io/odiglet-oss-installed
                 operator: In
                 values:
-                  - "true"
+                  - 'true'
   containers:
     - name: coupon
       resources:
         limits:
-          instrumentation.odigos.io/generic: "1"
+          instrumentation.odigos.io/generic: '1'
         requests:
-          instrumentation.odigos.io/generic: "1"
+          instrumentation.odigos.io/generic: '1'
       (env[?name == 'ODIGOS_CONTAINER_NAME']):
         - value: coupon
       (env[?name == 'ODIGOS_DISTRO_NAME']):
@@ -124,14 +124,14 @@ spec:
               - key: odigos.io/odiglet-oss-installed
                 operator: In
                 values:
-                  - "true"
+                  - 'true'
   containers:
     - name: inventory
       resources:
         limits:
-          instrumentation.odigos.io/generic: "1"
+          instrumentation.odigos.io/generic: '1'
         requests:
-          instrumentation.odigos.io/generic: "1"
+          instrumentation.odigos.io/generic: '1'
       (env[?name == 'ODIGOS_CONTAINER_NAME']):
         - value: inventory
       (env[?name == 'ODIGOS_DISTRO_NAME']):
@@ -177,7 +177,7 @@ spec:
               - key: odigos.io/odiglet-oss-installed
                 operator: In
                 values:
-                  - "true"
+                  - 'true'
   containers:
     - name: membership
       (env[?name == 'ODIGOS_CONTAINER_NAME']):
@@ -214,14 +214,14 @@ spec:
               - key: odigos.io/odiglet-oss-installed
                 operator: In
                 values:
-                  - "true"
+                  - 'true'
   containers:
     - name: pricing
       resources:
         limits:
-          instrumentation.odigos.io/dotnet-native-community: "1"
+          instrumentation.odigos.io/dotnet-native-community: '1'
         requests:
-          instrumentation.odigos.io/dotnet-native-community: "1"
+          instrumentation.odigos.io/dotnet-native-community: '1'
       (env[?name == 'ODIGOS_CONTAINER_NAME']):
         - value: pricing
       (env[?name == 'ODIGOS_DISTRO_NAME']):
@@ -240,6 +240,62 @@ spec:
 status:
   containerStatuses:
     - name: pricing
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: currency
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: odigos.io/odiglet-oss-installed
+                operator: In
+                values:
+                  - 'true'
+  containers:
+    - name: currency
+      resources:
+        limits:
+          instrumentation.odigos.io/generic: '1'
+        requests:
+          instrumentation.odigos.io/generic: '1'
+      (env[?name == 'ODIGOS_CONTAINER_NAME']):
+        - value: currency
+      (env[?name == 'ODIGOS_DISTRO_NAME']):
+        - value: php-community
+      (env[?name == 'ODIGOS_POD_NAME']):
+        - valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+      (env[?name == 'ODIGOS_WORKLOAD_NAMESPACE']):
+        - value: default
+      (env[?name == 'OTEL_SERVICE_NAME']):
+        - value: currency
+      (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
+        - value: 'k8s.pod.name=$(ODIGOS_POD_NAME),k8s.container.name=currency,k8s.namespace.name=default,k8s.deployment.name=currency'
+      (env[?name == 'OTEL_LOGS_EXPORTER']):
+        - value: none
+      (env[?name == 'OTEL_METRICS_EXPORTER']):
+        - value: none
+      (env[?name == 'OTEL_TRACES_EXPORTER']):
+        - value: otlp
+      (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
+      (env[?name == 'PHP_INI_SCAN_DIR']):
+        - value: ':/var/odigos/php/8.2'
+status:
+  containerStatuses:
+    - name: currency
       ready: true
       restartCount: 0
       started: true
@@ -278,7 +334,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: frontend
       language: java
-      runtimeVersion: 17.0.14+7
+      runtimeVersion: 17.0.15+6
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -295,7 +351,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: inventory
       language: python
-      runtimeVersion: 3.11.11
+      runtimeVersion: 3.11.12
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -330,6 +386,23 @@ status:
     - containerName: pricing
       language: dotnet
 ---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-currency
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: currency
+status:
+  runtimeDetailsByContainer:
+    - containerName: currency
+      language: php
+      runtimeVersion: 8.2.28
+---
 ### Instrumentation Instances ###
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -355,7 +428,7 @@ status:
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true      
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -377,7 +450,7 @@ status:
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true        
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance

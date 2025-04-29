@@ -21,6 +21,39 @@ ignoredContainers:
 # Name of the cluster, will be used to identify this cluster in the centralized backend
 clusterName: ''
 
+UserInstrumentationEnvs:
+  # Configuration for OpenTelemetry (OTEL) agents instrumentation.
+  # These settings enable and configure OTEL agents for programming languages supported by Odigos.
+  # See the official OTEL documentation for language-specific configuration details:
+  # https://opentelemetry.io/docs/zero-code/
+  # Example:
+  # languages:
+  #   java:
+  #     enabled: true
+  #     env:
+  #       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
+  # Note: For eBPF-based distributions, exporting and batching cannot be configured here, as they are managed by the Odiglet.
+  # Warning: This is an advanced feature. Only modify these settings if you are familiar with OTEL and its implications.
+  languages:
+    java:
+      enabled: false
+      env: {}
+    python:
+      enabled: false
+      env: {}
+    nodejs:
+      enabled: false
+      env: {}
+    go:
+      enabled: false
+      env: {}
+    dotnet: 
+      enabled: false
+      env: {}
+    php:
+      enabled: false
+      env: {}
+
 collectorGateway:
   # the memory request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
@@ -184,10 +217,6 @@ centralProxy:
   tolerations: []
   affinity: {}
 
-cli:
-  image:
-    repository: registry.odigos.io/odigos-cli
-
 # Pod Security Policy
 psp:
   enabled: false
@@ -202,3 +231,9 @@ gke:
   enabled: false
 
 profiles: []
+
+# Used for migration - we are migrating away from using the JAVA_OPTS env var
+# to only using the JAVA_TOOL_OPTIONS env var.
+# When this is true, we will not inject the JAVA_OPTS env var into the container.
+# when false or not set the original behavior will be used and the JAVA_OPTS env var will be injected.
+avoidInjectingJavaOptsEnvVar: null

@@ -148,6 +148,14 @@
           ]
         },
         {
+          "group": "PHP",
+          "icon": "php",
+          "pages": [
+            "instrumentations/php/native",
+            "instrumentations/php/enrichment"
+          ]
+        },
+        {
           "group": "Advanced",
           "icon": "gear",
           "pages": [
@@ -293,7 +301,8 @@
         "telemetry-types",
         "custom-resources",
         "usage-reports",
-        "benchmarks"
+        "benchmarks",
+        "permissions"
       ]
     },
     {

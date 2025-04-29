@@ -10,6 +10,7 @@ import (
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // InstrumentationConfig is the Schema for the instrumentationconfig API
 type InstrumentationConfig struct {
@@ -99,6 +100,9 @@ const (
 	AgentEnabledReasonUnsupportedRuntimeVersion      AgentEnabledReason = "UnsupportedRuntimeVersion"
 	AgentEnabledReasonMissingDistroParameter         AgentEnabledReason = "MissingDistroParameter"
 	AgentEnabledReasonOtherAgentDetected             AgentEnabledReason = "OtherAgentDetected"
+	// if the source cannot be instrumented because there are no running pods,
+	// we want to show this reason to the user so it's not a spinner
+	AgentEnabledReasonRuntimeDetailsUnavailable AgentEnabledReason = "RuntimeDetailsUnavailable"
 )
 
 // +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
@@ -116,24 +120,26 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 	switch reason {
 	case AgentEnabledReasonEnabledSuccessfully:
 		return 0
+	case AgentEnabledReasonRuntimeDetailsUnavailable:
+		return 10
 	case AgentEnabledReasonWaitingForRuntimeInspection:
-		return 1
+		return 20
 	case AgentEnabledReasonWaitingForNodeCollector:
-		return 2
+		return 30
 	case AgentEnabledReasonIgnoredContainer:
-		return 3
+		return 40
 	case AgentEnabledReasonUnsupportedProgrammingLanguage:
-		return 4
+		return 50
 	case AgentEnabledReasonUnsupportedRuntimeVersion:
-		return 5
+		return 60
 	case AgentEnabledReasonNoAvailableAgent:
-		return 6
+		return 70
 	case AgentEnabledReasonMissingDistroParameter:
-		return 7
+		return 80
 	case AgentEnabledReasonOtherAgentDetected:
-		return 8
+		return 90
 	default:
-		return 9
+		return 100
 	}
 }
 
@@ -146,7 +152,8 @@ func IsReasonStatusDisabled(reason string) bool {
 		string(RuntimeDetectionReasonNoRunningPods),
 		string(AgentEnabledReasonIgnoredContainer),
 		string(AgentEnabledReasonNoAvailableAgent),
-		string(AgentEnabledReasonOtherAgentDetected):
+		string(AgentEnabledReasonOtherAgentDetected),
+		string(AgentEnabledReasonRuntimeDetailsUnavailable):
 
 		return true
 	default:

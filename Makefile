@@ -61,6 +61,10 @@ cli-docs:
 		mv $${file} $${file%.md}.mdx; \
 	done
 
+.PHONY: rbac-docs
+rbac-docs:
+	cd scripts/rbac-docgen && go run main.go
+
 build-image/%:
 	docker build -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	--build-arg SERVICE_NAME="$*" \
@@ -373,6 +377,10 @@ dev-debug-destination:
 .PHONY: dev-add-nop-destination
 dev-nop-destination:
 	kubectl apply -f ./tests/nop-exporter.yaml
+
+.PHONY: dev-add-dynamic-destination
+dev-dynamic-destination:
+	kubectl apply -f ./tests/dynamic-exporter.yaml	
 
 .PHONY: dev-add-backpressue-destination
 dev-backpressue-destination:

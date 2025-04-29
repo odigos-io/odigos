@@ -53,7 +53,6 @@ type PiiMaskingStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=piimaskings,scope=Namespaced,shortName=red
-//+kubebuilder:metadata:labels=odigos.io/config=1
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // PiiMasking is the Schema for the PiiMasking odigos action API

@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -22,7 +23,7 @@ import (
 )
 
 func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
-	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, client client.Client) {
+	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, client client.Client, config *common.OdigosConfiguration) {
 
 	otelSignalExporterLanguages := []common.ProgrammingLanguage{
 		common.JavaProgrammingLanguage,
@@ -49,6 +50,8 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 
 	logger.Info("LD_PRELOAD env var already exists, using runtime detection based injection", "container", container.Name)
 
+	avoidAddingJavaOpts := config != nil && config.AvoidInjectingJavaOptsEnvVar != nil && *config.AvoidInjectingJavaOptsEnvVar
+
 	// Odigos appends necessary environment variables to enable its agent.
 	// It handles this in the following ways:
 	// 1. Appends Odigos-specific values to environment variables already defined by the user in the manifest.
@@ -57,6 +60,13 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 
 	isOdigosAgentEnvAppended := false
 	for _, envVarName := range envVarsPerLanguage {
+		// Skip JAVA_OPTS env var if avoidAddingJavaOpts is true
+		// this is a migration path - we should eventually remove this and the avoidAddingJavaOpts config
+		// and never add the JAVA_OPTS env var
+		if avoidAddingJavaOpts && envVarName == "JAVA_OPTS" {
+			continue
+		}
+
 		// 1.
 		if handleManifestEnvVar(container, envVarName, otelsdk, logger) {
 			isOdigosAgentEnvAppended = true
@@ -72,7 +82,7 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 
 	// 3.
 	if !isOdigosAgentEnvAppended {
-		applyOdigosEnvDefaults(container, envVarsPerLanguage, otelsdk)
+		applyOdigosEnvDefaults(container, envVarsPerLanguage, otelsdk, avoidAddingJavaOpts)
 	}
 }
 
@@ -99,7 +109,7 @@ func getEnvVarNamesForLanguage(pl common.ProgrammingLanguage) []string {
 // Return false if the env was not processed using the manifest value and requires further handling by other methods.
 func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsdk common.OtelSdk, logger logr.Logger) bool {
 	manifestEnvVar := getContainerEnvVarPointer(&container.Env, envVarName)
-	if manifestEnvVar == nil {
+	if manifestEnvVar == nil || (manifestEnvVar.ValueFrom == nil && manifestEnvVar.Value == "") {
 		return false // Not found in manifest. further process it
 	}
 
@@ -166,6 +176,14 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByC
 			continue
 		}
 
+		if envVar.Value == "" {
+			// if the value is empty, treat it as it's not existing.
+			// from the env appending perspective, this is the same as not having it at all
+			// we want to set it to the odigos value
+			// this will be done at the last step
+			continue
+		}
+
 		patchedEnvVarValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
 		envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
 	}
@@ -173,8 +191,12 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByC
 	return envVars
 }
 
-func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []string, otelsdk common.OtelSdk) {
+func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []string, otelsdk common.OtelSdk, avoidAddingJavaOpts bool) {
 	for _, envVarName := range envVarsPerLanguage {
+		if avoidAddingJavaOpts && envVarName == "JAVA_OPTS" {
+			continue
+		}
+
 		odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
 		if odigosValueForOtelSdk == nil { // No Odigos values for this env var
 			continue
@@ -182,6 +204,14 @@ func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []st
 
 		valueToInject, ok := odigosValueForOtelSdk[otelsdk]
 		if !ok { // No Odigos value for this SDK
+			continue
+		}
+
+		existingEnv := getContainerEnvVarPointer(&container.Env, envVarName)
+		if existingEnv != nil && existingEnv.ValueFrom == nil {
+			if existingEnv.Value == "" {
+				existingEnv.Value = valueToInject
+			}
 			continue
 		}
 
@@ -223,9 +253,7 @@ func getContainerEnvVarPointer(containerEnv *[]corev1.EnvVar, envVarName string)
 	return nil
 }
 
-func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger,
-	container *corev1.Container, client client.Client) {
-
+func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger, container *corev1.Container, client client.Client) {
 	odigosNamespace := env.GetCurrentNamespace()
 
 	var nodeCollectorGroup odigosv1.CollectorsGroup
@@ -259,15 +287,17 @@ func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger,
 		}
 	}
 
-	container.Env = append(container.Env,
-		corev1.EnvVar{Name: commonconsts.OtelLogsExporter, Value: logsExporter},
-		corev1.EnvVar{Name: commonconsts.OtelMetricsExporter, Value: metricsExporter},
-		corev1.EnvVar{Name: commonconsts.OtelTracesExporter, Value: tracesExporter},
-	)
+	// check for existing env vars so we don't introduce them again
+	existingEnvNames := podswebhook.GetEnvVarNamesSet(container)
+	existingEnvNames = podswebhook.InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelLogsExporter, logsExporter, nil)
+	existingEnvNames = podswebhook.InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelMetricsExporter, metricsExporter, nil)
+	podswebhook.InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelTracesExporter, tracesExporter, nil)
 }
+
 func isValueFromConfigmap(envVar *corev1.EnvVar) bool {
 	return envVar.ValueFrom != nil
 }
+
 func handleValueFromEnvVar(container *corev1.Container, envVar *corev1.EnvVar, originalName, odigosValue string) {
 	originalNewKey := "ORIGINAL_" + envVar.Name
 
