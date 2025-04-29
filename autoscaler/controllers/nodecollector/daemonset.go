@@ -155,7 +155,7 @@ func syncDaemonSet(ctx context.Context, datacollection *odigosv1.CollectorsGroup
 func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace string) (*corev1.PodSpec, error) {
 	odigletDaemonset := &appsv1.DaemonSet{}
 
-	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: odigletDaemonSetName}, odigletDaemonset); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: k8sconsts.OdigletDaemonSetName}, odigletDaemonset); err != nil {
 		return nil, err
 	}
 

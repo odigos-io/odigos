@@ -338,6 +338,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	}
 	managerOpts := resourcemanager.ManagerOpts{
 		OwnerReferences: []metav1.OwnerReference{ownerReference},
+		NodeSelector:    odigos.Spec.NodeSelector,
 	}
 	imageReferences := cmd.GetImageReferences(odigosTier, odigos.Spec.OpenShiftEnabled)
 	if odigos.Spec.OpenShiftEnabled {

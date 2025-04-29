@@ -267,8 +267,14 @@ func NewResourceQuota(ns string) *corev1.ResourceQuota {
 }
 
 func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string,
-	odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails, customContainerRuntimeSocketPath string) *appsv1.DaemonSet {
+	odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails, customContainerRuntimeSocketPath string, nodeSelector map[string]string) *appsv1.DaemonSet {
+	if nodeSelector == nil {
+		nodeSelector = make(map[string]string)
+	}
 
+	if _, ok := nodeSelector["kubernetes.io/os"]; !ok {
+		nodeSelector["kubernetes.io/os"] = "linux"
+	}
 	dynamicEnv := []corev1.EnvVar{}
 	if odigosTier == common.CloudOdigosTier {
 		dynamicEnv = append(dynamicEnv, odigospro.CloudTokenAsEnvVar())
@@ -369,9 +375,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: map[string]string{
-						"kubernetes.io/os": "linux",
-					},
+					NodeSelector: nodeSelector,
 					Tolerations: []corev1.Toleration{
 						{
 							// This toleration with 'Exists' operator and no key/effect specified
@@ -696,7 +700,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
 				K8SVersion: cmdcontext.K8SVersionFromContext(ctx),
-			}, a.config.CustomContainerRuntimeSocketPath))
+			}, a.config.CustomContainerRuntimeSocketPath, a.managerOpts.NodeSelector))
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

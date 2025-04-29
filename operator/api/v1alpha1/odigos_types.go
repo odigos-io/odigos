@@ -53,6 +53,11 @@ type OdigosSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	Profiles []common.ProfileName `json:"profiles,omitempty"`
 
+	// (Optional) NodeSelector is a map of key-value Kubernetes NodeSelector labels to apply to all Odigos components.
+	// Note that Odigos will only be able to instrument applications on the same node.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
 	// (Optional) SkipWebhookIssuerCreation skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
 	// Default=false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
