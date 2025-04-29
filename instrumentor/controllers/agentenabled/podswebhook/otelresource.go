@@ -63,11 +63,11 @@ func getResourceAttributesEnvVarValue(ra []resourceAttribute) string {
 func InjectOtelResourceAndServiceNameEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, distroName string, pw k8sconsts.PodWorkload, serviceName string) EnvVarNamesMap {
 
 	// OTEL_SERVICE_NAME
-	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, otelServiceNameEnvVarName, serviceName, nil)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, otelServiceNameEnvVarName, serviceName, nil)
 
 	// OTEL_RESOURCE_ATTRIBUTES
 	resourceAttributes := getResourceAttributes(pw, container.Name)
 	resourceAttributesEnvValue := getResourceAttributesEnvVarValue(resourceAttributes)
-	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, otelResourceAttributesEnvVarName, resourceAttributesEnvValue, nil)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, otelResourceAttributesEnvVarName, resourceAttributesEnvValue, nil)
 	return existingEnvNames
 }
