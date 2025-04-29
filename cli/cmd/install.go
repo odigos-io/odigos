@@ -326,13 +326,13 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		autoScalerImage = k8sconsts.AutoScalerImageUBI9
 	}
 
-	var parsedJson *common.UserInstrumentationEnvs
+	var parsedUserJson *common.UserInstrumentationEnvs
 	if userInstrumentationEnvsRaw != "" {
-		var tmp common.UserInstrumentationEnvs
-		if err := json.Unmarshal([]byte(userInstrumentationEnvsRaw), &tmp); err != nil {
+		var uie common.UserInstrumentationEnvs
+		if err := json.Unmarshal([]byte(userInstrumentationEnvsRaw), &uie); err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to parse --user-instrumentation-envs: %v\n", err)
 		}
-		parsedJson = &tmp
+		parsedUserJson = &uie
 	}
 
 	return common.OdigosConfiguration{
@@ -349,7 +349,7 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		UiMode:                           common.UiMode(uiMode),
 		ClusterName:                      clusterName,
 		CentralBackendURL:                centralBackendURL,
-		UserInstrumentationEnvs:          parsedJson,
+		UserInstrumentationEnvs:          parsedUserJson,
 	}
 
 }
