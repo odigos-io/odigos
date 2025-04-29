@@ -292,19 +292,17 @@ func containerInstrumentationConfig(containerName string,
 				AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", distro.RuntimeEnvironments[0].Name, constraint, detectedVersion),
 			}
 		}
+	} else if runtimeDetails.RuntimeVersion == "" {
+		// If the runtime does not have a version, we can't replace placeholders
 		for _, staticVariable := range distro.EnvironmentVariables.StaticVariables {
+			// This is a placeholder for the runtime version, disable the agent
 			if strings.Contains(staticVariable.EnvValue, distroTypes.RuntimeVersionPlaceholderMajorMinor) {
-				// This is a placeholder for the runtime version
-				// If the runtime does not have a version, we can't replace the placeholder
-				// so we should not inject the agent.
-
 				return odigosv1.ContainerAgentConfig{
 					ContainerName:       containerName,
 					AgentEnabled:        false,
 					AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
 					AgentEnabledMessage: "runtime version is not available, but the distribution requires it to be set",
 				}
-
 			}
 		}
 	}
@@ -417,6 +415,15 @@ func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.Instru
 	}
 
 	if len(ic.Status.RuntimeDetailsByContainer) == 0 {
+		// differentiate between the case where we expect runtime detection to be completed soon,
+		// vs the case where we know it is staled due to no running pods preventing the runtime inspection
+		for _, condition := range ic.Status.Conditions {
+			if condition.Type == odigosv1.RuntimeDetectionStatusConditionType {
+				if odigosv1.RuntimeDetectionReason(condition.Reason) == odigosv1.RuntimeDetectionReasonNoRunningPods {
+					return false, odigosv1.AgentEnabledReasonRuntimeDetailsUnavailable, "agent will be enabled once runtime details from running pods is available"
+				}
+			}
+		}
 		return false, odigosv1.AgentEnabledReasonWaitingForRuntimeInspection, "waiting for runtime inspection to complete"
 	}
 

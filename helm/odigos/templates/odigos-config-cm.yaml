@@ -17,9 +17,7 @@ data:
     {{- if .Values.centralProxy.centralBackendURL }}
     centralBackendURL: {{ .Values.centralProxy.centralBackendURL }}
     {{- end }}
-    {{- if .Values.imagePrefix }}
-    imagePrefix: {{ .Values.imagePrefix }}
-    {{- end }}
+    imagePrefix: {{ template "utils.imagePrefix" (dict "Values" .Values) }}
     {{- if .Values.ui.uiMode }}
     uiMode: {{ .Values.ui.uiMode }}
     {{- end }}
@@ -119,4 +117,7 @@ data:
     mountMethod: {{ .Values.instrumentor.mountMethod }}
     {{- else }}
     {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path' and 'k8s-virtual-device'." }}
+    {{- end }}
+    {{- if .Values.avoidInjectingJavaOptsEnvVar }}
+    avoidInjectingJavaOptsEnvVar: {{ .Values.avoidInjectingJavaOptsEnvVar }}
     {{- end }}
