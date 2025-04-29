@@ -378,6 +378,10 @@ dev-debug-destination:
 dev-nop-destination:
 	kubectl apply -f ./tests/nop-exporter.yaml
 
+.PHONY: dev-add-dynamic-destination
+dev-dynamic-destination:
+	kubectl apply -f ./tests/dynamic-exporter.yaml	
+
 .PHONY: dev-add-backpressue-destination
 dev-backpressue-destination:
 	kubectl apply -f ./tests/backpressure-exporter.yaml
