@@ -1,25 +1,14 @@
 package config
 
 import (
-	"errors"
-
 	"github.com/odigos-io/odigos/common"
 	"gopkg.in/yaml.v2"
 )
 
 const (
-	DestinationName   = "DYNAMIC_DESTINATION_NAME"
-	DestinationType   = "DYNAMIC_DESTINATION_TYPE"
-	ConfigurationData = "DYNAMIC_CONFIGURATION_DATA"
-)
-
-var (
-	ErrorDynamicMissingName       = errors.New("Dynamic destination is missing a required field (\"DYNAMIC_DESTINATION_NAME\"), Dynamic destination will not be configured")
-	ErrorDynamicMissingType       = errors.New("Dynamic destination is missing a required field (\"DYNAMIC_DESTINATION_TYPE\"), Dynamic destination will not be configured")
-	ErrorDynamicMissingConfData   = errors.New("Dynamic destination is missing a required field (\"DYNAMIC_CONFIGURATION_DATA\"), Dynamic destination will not be configured")
-	ErrorDynamicTracingDisabled   = errors.New("Dynamic destination is missing a required field (\"TRACES\"), Dynamic destination will not be configured")
-	ErrorDynamicMetricsNotAllowed = errors.New("Dynamic destination has a forbidden field (\"METRICS\"), Dynamic destination will not be configured")
-	ErrorDynamicLogsNotAllowed    = errors.New("Dynamic destination has a forbidden field (\"LOGS\"), Dynamic destination will not be configured")
+	destinationName   = "DYNAMIC_DESTINATION_NAME"
+	destinationType   = "DYNAMIC_DESTINATION_TYPE"
+	configurationData = "DYNAMIC_CONFIGURATION_DATA"
 )
 
 type Dynamic struct{}
@@ -34,18 +23,23 @@ func (g *Dynamic) DestType() common.DestinationType {
 func (g *Dynamic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 
-	DynamicData, exists := config[ConfigurationData]
+	dynamicConfData, exists := config[configurationData]
 	if !exists {
-		return nil, ErrorDynamicMissingConfData
+		return nil, errorMissingKey(configurationData)
 	}
 
 	var parsedConfig map[string]interface{}
-	err := yaml.Unmarshal([]byte(DynamicData), &parsedConfig)
+	err := yaml.Unmarshal([]byte(dynamicConfData), &parsedConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	exporterName := config[DestinationType] + "/" + dest.GetID()
+	destinationType, exists := config[destinationType]
+	if !exists {
+		return nil, errorMissingKey(destinationType)
+	}
+
+	exporterName := config[destinationType] + "/" + dest.GetID()
 	currentConfig.Exporters[exporterName] = parsedConfig
 
 	var pipelineNames []string
