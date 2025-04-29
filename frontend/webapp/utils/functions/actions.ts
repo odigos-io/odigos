@@ -11,6 +11,7 @@ export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
     switch (type) {
       case ActionType.K8sAttributes:
         spec.collectContainerAttributes = parsedSpec.collectContainerAttributes || false;
+        spec.collectReplicaSetAttributes = parsedSpec.collectReplicaSetAttributes || false;
         spec.collectWorkloadId = parsedSpec.collectWorkloadUID || false;
         spec.collectClusterId = parsedSpec.collectClusterUID || false;
         spec.labelsAttributes = parsedSpec.labelsAttributes;
@@ -75,6 +76,7 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
     disabled = false,
     signals,
     collectContainerAttributes,
+    collectReplicaSetAttributes,
     collectWorkloadId,
     collectClusterId,
     labelsAttributes,
@@ -101,6 +103,7 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
     case ActionType.K8sAttributes:
       payload['details'] = JSON.stringify({
         collectContainerAttributes,
+        collectReplicaSetAttributes,
         collectWorkloadId,
         collectClusterId,
         labelsAttributes,

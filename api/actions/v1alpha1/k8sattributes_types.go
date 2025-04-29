@@ -56,6 +56,12 @@ type K8sAttributesSpec struct {
 	// container.image.tag
 	CollectContainerAttributes bool `json:"collectContainerAttributes,omitempty"`
 
+	// collect replicaset related attributes (when relevant, e.g. for deployments):
+	// k8s.replicaset.name
+	// if CollectWorkloadUID is set, also collect:
+	// k8s.replicaset.uid
+	CollectReplicaSetAttributes bool `json:"collectReplicaSetAttributes,omitempty"`
+
 	// Collect the following workload UID attributes:
 	// k8s.deployment.uid
 	// k8s.daemonset.uid
