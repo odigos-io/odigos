@@ -370,25 +370,25 @@ spec:
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: java-special-exec
+  name: java-unique-exec
   namespace: default
   labels:
-    app: java-special-exec
+    app: java-unique-exec
     odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
-      app: java-special-exec
+      app: java-unique-exec
   template:
     metadata:
       labels:
-        app: java-special-exec
+        app: java-unique-exec
       annotations:
         odigos-test-step: "2"
     spec:
       containers:
-        - name: java-special-exec
-          image: java-special-exec:v0.0.1
+        - name: java-unique-exec
+          image: java-unique-exec:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000

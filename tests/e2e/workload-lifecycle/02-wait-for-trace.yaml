@@ -12,7 +12,7 @@ query: |
   length([?span.serviceName == 'java-supported-docker-env-reported']) > `0` ||
   length([?span.serviceName == 'java-supported-manifest-env-reported']) > `0` ||
   length([?span.serviceName == 'java-azul-reported']) > `0` ||
-  length([?span.serviceName == 'java-special-exec-reported']) > `0` ||
+  length([?span.serviceName == 'java-unique-exec-reported']) > `0` ||
   length([?span.serviceName == 'python-latest-version-reported' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
   length([?span.serviceName == 'python-alpine-reported' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
   length([?span.serviceName == 'python-not-supported-reported' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||

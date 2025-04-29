@@ -490,22 +490,22 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: java-special-exec
+  name: java-unique-exec
   namespace: default
   labels:
-    app: java-special-exec
+    app: java-unique-exec
 spec:
   selector:
     matchLabels:
-      app: java-special-exec
+      app: java-unique-exec
   template:
     metadata:
       labels:
-        app: java-special-exec
+        app: java-unique-exec
     spec:
       containers:
-        - name: java-special-exec
-          image: public.ecr.aws/odigos/java-special-exec:v0.0.1
+        - name: java-unique-exec
+          image: public.ecr.aws/odigos/java-unique-exec:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -517,11 +517,11 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: java-special-exec
+  name: java-unique-exec
   namespace: default
 spec:
   selector:
-    app: java-special-exec
+    app: java-unique-exec
   ports:
     - protocol: TCP
       port: 3000

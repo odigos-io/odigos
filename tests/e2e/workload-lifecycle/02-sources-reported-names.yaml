@@ -141,16 +141,16 @@ spec:
 apiVersion: odigos.io/v1alpha1
 kind: Source
 metadata:
-  name: java-special-exec
+  name: java-unique-exec
   namespace: default
   labels:
     odigos.io/e2e: source
 spec:
   workload:
-    name: java-special-exec
+    name: java-unique-exec
     namespace: default
     kind: Deployment
-  otelServiceName: java-special-exec-reported
+  otelServiceName: java-unique-exec-reported
 ---
 apiVersion: odigos.io/v1alpha1
 kind: Source

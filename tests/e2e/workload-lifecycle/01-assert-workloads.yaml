@@ -359,18 +359,18 @@ metadata:
     deployment.kubernetes.io/revision: '2'
   generation: 2
   labels:
-    app: java-special-exec
-  name: java-special-exec
+    app: java-unique-exec
+  name: java-unique-exec
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: java-special-exec
+      app: java-unique-exec
   template:
     spec:
       containers:
-        - image: java-special-exec:v0.0.1
-          name: java-special-exec
+        - image: java-unique-exec:v0.0.1
+          name: java-unique-exec
           ports:
             - containerPort: 3000
               protocol: TCP

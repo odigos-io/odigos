@@ -291,7 +291,7 @@ apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
   namespace: default
-  name: deployment-java-special-exec
+  name: deployment-java-unique-exec
 status:
   conditions:
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
@@ -302,7 +302,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [java-special-exec]"
+    - message: "agent injected successfully to 1 containers: [java-unique-exec]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
