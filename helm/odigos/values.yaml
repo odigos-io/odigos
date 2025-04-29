@@ -18,6 +18,9 @@ ignoredNamespaces:
 # you can add additional container names to ignore by adding them to the list
 ignoredContainers:
 
+# Name of the cluster, will be used to identify this cluster in the centralized backend
+clusterName: ''
+
 UserInstrumentationEnvs:
   # Configuration for OpenTelemetry (OTEL) agents instrumentation.
   # These settings enable and configure OTEL agents for programming languages supported by Odigos.
