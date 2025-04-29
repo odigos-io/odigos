@@ -32,7 +32,7 @@ func injectEnvVarObjectFieldRefToPodContainer(existingEnvNames EnvVarNamesMap, c
 	return existingEnvNames
 }
 
-func injectEnvVarToPodContainer(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVarName, envVarValue string, runtimeDetails *odigosv1.RuntimeDetailsByContainer) EnvVarNamesMap {
+func InjectEnvVarToPodContainer(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVarName, envVarValue string, runtimeDetails *odigosv1.RuntimeDetailsByContainer) EnvVarNamesMap {
 	if _, exists := existingEnvNames[envVarName]; exists {
 		return existingEnvNames
 	}
@@ -63,28 +63,28 @@ func injectNodeIpEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Conta
 }
 
 func InjectOdigosK8sEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, distroName string, ns string) EnvVarNamesMap {
-	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarContainerName, container.Name, nil)
-	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarDistroName, distroName, nil)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarContainerName, container.Name, nil)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarDistroName, distroName, nil)
 	existingEnvNames = injectEnvVarObjectFieldRefToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarPodName, "metadata.name")
-	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarNamespace, ns, nil)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OdigosEnvVarNamespace, ns, nil)
 	return existingEnvNames
 }
 
 func InjectStaticEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVarName string, envVarValue string, runtimeDetails *odigosv1.RuntimeDetailsByContainer) EnvVarNamesMap {
-	return injectEnvVarToPodContainer(existingEnvNames, container, envVarName, envVarValue, runtimeDetails)
+	return InjectEnvVarToPodContainer(existingEnvNames, container, envVarName, envVarValue, runtimeDetails)
 }
 
 func InjectOpampServerEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
 	existingEnvNames = injectNodeIpEnvVar(existingEnvNames, container)
 	opAmpServerHost := fmt.Sprintf("$(NODE_IP):%d", commonconsts.OpAMPPort)
-	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OpampServerHostEnvName, opAmpServerHost, nil)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OpampServerHostEnvName, opAmpServerHost, nil)
 	return existingEnvNames
 }
 
 func InjectOtlpHttpEndpointEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
 	existingEnvNames = injectNodeIpEnvVar(existingEnvNames, container)
 	otlpHttpEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)")
-	existingEnvNames = injectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelExporterEndpointEnvName, otlpHttpEndpoint, nil)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelExporterEndpointEnvName, otlpHttpEndpoint, nil)
 	return existingEnvNames
 }
 
@@ -105,7 +105,7 @@ func InjectUserEnvForLang(odigosConfig *common.OdigosConfiguration, pod *corev1.
 		existingEnvNames := GetEnvVarNamesSet(container)
 
 		for envName, envValue := range langConfig.EnvVars {
-			existingEnvNames = injectEnvVarToPodContainer(
+			existingEnvNames = InjectEnvVarToPodContainer(
 				existingEnvNames,
 				container,
 				envName,

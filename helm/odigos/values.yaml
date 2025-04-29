@@ -217,10 +217,6 @@ centralProxy:
   tolerations: []
   affinity: {}
 
-cli:
-  image:
-    repository: registry.odigos.io/odigos-cli
-
 # Pod Security Policy
 psp:
   enabled: false
