@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/odigos-io/odigos/common"
 	"gopkg.in/yaml.v2"
+
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
