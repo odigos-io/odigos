@@ -33,40 +33,6 @@ UserInstrumentationEnvs:
   # Warning: This is an advanced feature. Only modify these settings if you are familiar with OTEL and its implications.
   languages:
     java:
-      enabled: true
-      env: 
-        OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
-    python:
-      enabled: false
-      env: {}
-    nodejs:
-      enabled: false
-      env: {}
-    go:
-      enabled: false
-      env: {}
-    dotnet: 
-      enabled: false
-      env: {}
-    php:
-      enabled: false
-      env: {}
-
-UserInstrumentationEnvs:
-  # Configuration for OpenTelemetry (OTEL) agents instrumentation.
-  # These settings enable and configure OTEL agents for programming languages supported by Odigos.
-  # See the official OTEL documentation for language-specific configuration details:
-  # https://opentelemetry.io/docs/zero-code/
-  # Example:
-  # languages:
-  #   java:
-  #     enabled: true
-  #     env:
-  #       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
-  # Note: For eBPF-based distributions, exporting and batching cannot be configured here, as they are managed by the Odiglet.
-  # Warning: This is an advanced feature. Only modify these settings if you are familiar with OTEL and its implications.
-  languages:
-    java:
       enabled: false
       env: {}
     python:
