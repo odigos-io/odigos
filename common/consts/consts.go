@@ -70,6 +70,7 @@ const (
 	CentralBackendURLProperty         = "central-backend-url"
 	CustomContainerRunetimeSocketPath = "custom-container-runtime-socket-path"
 	AvoidJavaOptsEnvVar               = "avoid-java-opts-env-var"
+	AgentEnvVarsInjectionMethod       = "agent-env-vars-injection-method"
 	ClusterNameProperty               = "cluster-name"
 )
 

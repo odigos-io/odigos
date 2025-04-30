@@ -19,3 +19,16 @@ var AvoidInjectingJavaOptsEnvVar = profile.Profile{
 		}
 	},
 }
+
+
+var PodManifestEnvVarInjection = profile.Profile{
+	ProfileName:      common.ProfileName("pod-manifest-env-var-injection"),
+	MinimumTier:      common.CommunityOdigosTier,
+	ShortDescription: "Adding the runtime specific agent loading env vars (e.g PYTHONPATH, NODE_OPTIONS) to the pod manifest",
+	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
+		method := common.PodManifestEnvInjectionMethod
+		if config.AgentEnvVarsInjectionMethod == nil {
+			config.AgentEnvVarsInjectionMethod = &method
+		}
+	},
+}

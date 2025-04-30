@@ -121,3 +121,9 @@ data:
     {{- if .Values.avoidInjectingJavaOptsEnvVar }}
     avoidInjectingJavaOptsEnvVar: {{ .Values.avoidInjectingJavaOptsEnvVar }}
     {{- end }}
+    {{- $envMethod := .Values.instrumentor.agentEnvVarsInjectionMethod }}
+    {{- if and $envMethod (not (has $envMethod (list "loader" "pod-manifest" "loader-fallback-to-pod-manifest"))) }}
+    {{- fail "Error: Invalid agentEnvVarsInjectionMethod. Supported values are 'loader', 'pod-manifest', and 'loader-fallback-to-pod-manifest'." }}
+    {{- else if $envMethod }}
+    agentEnvVarsInjectionMethod: {{ $envMethod }}
+    {{- end }}

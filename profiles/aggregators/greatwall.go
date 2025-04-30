@@ -14,5 +14,6 @@ var GreatwallProfile = profile.Profile{
 		"java-ebpf-instrumentations",
 		"legacy-dotnet-instrumentation",
 		"mount-method-k8s-virtual-device",
+		"pod-manifest-env-var-injection",
 	},
 }

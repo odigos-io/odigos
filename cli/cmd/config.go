@@ -36,6 +36,7 @@ var configCmd = &cobra.Command{
 	- "mount-method": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
 	- "container-runtime-socket-path": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
 	- "avoid-java-opts-env-var": Avoid injecting the Odigos value in JAVA_OPTS environment variable into Java applications.
+	- "agent-env-vars-injection-method": Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest.
 	`,
 }
 
@@ -189,6 +190,20 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			return fmt.Errorf("%s expects exactly one value", property)
 		}
 		config.ClusterName = value[0]
+
+	case consts.AgentEnvVarsInjectionMethod:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+
+		injectionMethod := common.EnvInjectionMethod(value[0])
+		switch injectionMethod {
+		case common.LoaderEnvInjectionMethod, common.PodManifestEnvInjectionMethod, common.LoaderFallbackToPodManifestInjectionMethod:
+			config.AgentEnvVarsInjectionMethod = &injectionMethod
+		default:
+			return fmt.Errorf("invalid agent env vars injection method: %s (valid values: %s, %s, %s)", value[0],
+				common.LoaderEnvInjectionMethod, common.PodManifestEnvInjectionMethod, common.LoaderFallbackToPodManifestInjectionMethod)
+		}
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
