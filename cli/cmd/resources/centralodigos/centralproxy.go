@@ -37,13 +37,16 @@ func (m *centralProxyResourceManager) InstallFromScratch(ctx context.Context) er
 		NewCentralProxyServiceAccount(m.ns),
 		NewCentralProxyRoleBinding(m.ns),
 		NewCentralProxyRole(m.ns),
-		NewCentralProxyDeployment(m.ns, m.odigosVersion, m.config.ImagePrefix, m.managerOpts.ImageReferences.CentralProxyImage),
+		NewCentralProxyDeployment(m.ns, m.odigosVersion, m.config.ImagePrefix, m.managerOpts.ImageReferences.CentralProxyImage, m.config.NodeSelector),
 	}
 
 	return m.client.ApplyResources(ctx, m.config.ConfigVersion, resources, m.managerOpts)
 }
 
-func NewCentralProxyDeployment(ns string, version string, imagePrefix string, imageName string) *appsv1.Deployment {
+func NewCentralProxyDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+	if nodeSelector == nil {
+		nodeSelector = make(map[string]string)
+	}
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -70,6 +73,7 @@ func NewCentralProxyDeployment(ns string, version string, imagePrefix string, im
 					},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector: nodeSelector,
 					ServiceAccountName: k8sconsts.CentralProxyServiceAccountName,
 					Containers: []corev1.Container{
 						{

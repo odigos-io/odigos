@@ -72,6 +72,7 @@ const (
 	AvoidJavaOptsEnvVar               = "avoid-java-opts-env-var"
 	AgentEnvVarsInjectionMethod       = "agent-env-vars-injection-method"
 	ClusterNameProperty               = "cluster-name"
+	NodeSelectorProperty              = "node-selector"
 )
 
 var (

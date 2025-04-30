@@ -127,3 +127,7 @@ data:
     {{- else if $envMethod }}
     agentEnvVarsInjectionMethod: {{ $envMethod }}
     {{- end }}
+    {{- if .Values.nodeSelector }}
+    nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 6 }}
+    {{- end }}
