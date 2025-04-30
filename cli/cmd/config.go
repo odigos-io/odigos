@@ -193,7 +193,6 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 		}
 		config.ClusterName = value[0]
 
-<<<<<<< HEAD
 	case consts.AgentEnvVarsInjectionMethod:
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -207,7 +206,6 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			return fmt.Errorf("invalid agent env vars injection method: %s (valid values: %s, %s, %s)", value[0],
 				common.LoaderEnvInjectionMethod, common.PodManifestEnvInjectionMethod, common.LoaderFallbackToPodManifestInjectionMethod)
 		}
-=======
 	case consts.NodeSelectorProperty:
 		nodeSelectorMap := make(map[string]string)
 		for _, v := range value {
@@ -218,7 +216,6 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			nodeSelectorMap[label[0]] = label[1]
 		}
 		config.NodeSelector = nodeSelectorMap
->>>>>>> main
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
