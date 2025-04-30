@@ -38,8 +38,7 @@ func InjectEnvVarToPodContainer(existingEnvNames EnvVarNamesMap, container *core
 	}
 
 	if strings.Contains(envVarValue, distro.RuntimeVersionPlaceholderMajorMinor) {
-		// This is a placeholder for the runtime version
-		// We need to replace it with the actual runtime version
+		// This is a placeholder for the runtime version, we need to replace it with the actual runtime version
 		if runtimeDetails != nil {
 			majorMinor := common.MajorMinorStringOnly(common.GetVersion(runtimeDetails.RuntimeVersion))
 			envVarValue = strings.ReplaceAll(envVarValue, distro.RuntimeVersionPlaceholderMajorMinor, majorMinor)
