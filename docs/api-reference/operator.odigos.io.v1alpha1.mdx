@@ -140,6 +140,18 @@ Default=false</p>
 </tr>
 <tr>
 <td>
+<code>nodeSelector</code> <B>[Required]</B>
+</td>
+<td>
+<code>map[string]string</code>
+</td>
+<td>
+   <p>(Optional) NodeSelector is a map of key-value Kubernetes NodeSelector labels to apply to all Odigos components.
+Note that Odigos will only be able to instrument applications on the same node.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>skipWebhookIssuerCreation</code> <B>[Required]</B>
 </td>
 <td>
