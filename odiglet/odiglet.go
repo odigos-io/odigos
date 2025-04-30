@@ -202,7 +202,6 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	// executing selinux commands to make agents readable by pods.
 	if err := fs.ApplyOpenShiftSELinuxSettings(); err != nil {
 		log.Logger.Error(err, "Failed to apply SELinux settings on RHEL host")
-		os.Exit(-1)
 	}
 
 	os.Exit(0)
