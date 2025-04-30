@@ -117,7 +117,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    odigos.io/config: '1'
+    (odigos.io/config != null): true
     odigos.io/system-object: 'true'
   name: odigos-config
   namespace: odigos-test
