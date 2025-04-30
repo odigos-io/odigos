@@ -18,6 +18,10 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-autoscaler
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       containers:
       - args:
           - --health-probe-bind-address=:8081

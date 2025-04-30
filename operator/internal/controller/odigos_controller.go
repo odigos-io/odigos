@@ -320,6 +320,11 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		upgrade = true
 	}
 
+	nodeSelector := make(map[string]string)
+	if odigos.Spec.NodeSelector != nil {
+		nodeSelector = odigos.Spec.NodeSelector
+	}
+
 	odigosConfig.TelemetryEnabled = odigos.Spec.TelemetryEnabled
 	odigosConfig.OpenshiftEnabled = odigos.Spec.OpenShiftEnabled
 	odigosConfig.IgnoredNamespaces = odigos.Spec.IgnoredNamespaces
@@ -329,6 +334,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	odigosConfig.ImagePrefix = odigos.Spec.ImagePrefix
 	odigosConfig.Profiles = odigos.Spec.Profiles
 	odigosConfig.UiMode = common.UiMode(odigos.Spec.UIMode)
+	odigosConfig.NodeSelector = nodeSelector
 
 	ownerReference := metav1.OwnerReference{
 		APIVersion: odigos.APIVersion,

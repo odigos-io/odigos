@@ -66,6 +66,11 @@ spec:
               Default=normal
             displayName: UI Mode
             path: uiMode
+          - description: |-
+              (Optional) NodeSelector is a map of key-value Kubernetes NodeSelector labels to apply to all Odigos components.
+              Note that Odigos will only be able to instrument applications on the same node.
+            displayName: Node Selector
+            path: nodeSelector
           - description: (Optional) Profiles is a list of preset profiles with a specific configuration.
             displayName: Profiles
             path: profiles
