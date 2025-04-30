@@ -20,7 +20,6 @@ var AvoidInjectingJavaOptsEnvVar = profile.Profile{
 	},
 }
 
-
 var PodManifestEnvVarInjection = profile.Profile{
 	ProfileName:      common.ProfileName("pod-manifest-env-var-injection"),
 	MinimumTier:      common.CommunityOdigosTier,
