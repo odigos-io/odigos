@@ -11,9 +11,10 @@ const (
 	AutoScalerClusterRoleName             = AutoScalerDeploymentName
 	AutoScalerClusterRoleBindingName      = AutoScalerDeploymentName
 	AutoscalerCertificateName             = AutoScalerDeploymentName
-	AutoScalerServiceName                 = "autoscaler"
+	AutoScalerServiceName                 = "auto-scaler"
 	AutoScalerContainerName               = "manager"
 	AutoscalerActionValidatingWebhookName = "action-validating-webhook-configuration"
 	AutoscalerWebhookSecretName           = "autoscaler-webhook-cert"
 	AutoscalerWebhookVolumeName           = "autoscaler-webhook-cert"
+	AutoScalerWebhookServiceName          = "odigos-autoscaler"
 )

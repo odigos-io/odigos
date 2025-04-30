@@ -412,7 +412,7 @@ func NewAutoscalerService(ns string) *corev1.Service {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.AutoScalerServiceName,
+			Name:      k8sconsts.AutoScalerWebhookServiceName,
 			Namespace: ns,
 		},
 		Spec: corev1.ServiceSpec{
@@ -465,7 +465,7 @@ func NewActionValidatingWebhookConfiguration(ns string, caBundle []byte) *admiss
 			APIVersion: "admissionregistration.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: k8sconsts.InstrumentorSourceValidatingWebhookName,
+			Name: k8sconsts.AutoscalerActionValidatingWebhookName,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "action-validating-webhook",
 				"app.kubernetes.io/instance":   k8sconsts.AutoscalerActionValidatingWebhookName,
@@ -479,7 +479,7 @@ func NewActionValidatingWebhookConfiguration(ns string, caBundle []byte) *admiss
 				Name: "action-validating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      k8sconsts.AutoScalerServiceName,
+						Name:      k8sconsts.AutoScalerWebhookServiceName,
 						Namespace: ns,
 						Path:      ptrString("/validate-odigos-io-v1alpha1-action"),
 						Port:      intPtr(9443),
@@ -541,8 +541,8 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 	}
 
 	altNames := []string{
-		fmt.Sprintf("%s.%s.svc", k8sconsts.AutoScalerServiceName, a.ns),
-		fmt.Sprintf("%s.%s.svc.cluster.local", k8sconsts.AutoScalerServiceName, a.ns),
+		fmt.Sprintf("%s.%s.svc", k8sconsts.AutoScalerWebhookServiceName, a.ns),
+		fmt.Sprintf("%s.%s.svc.cluster.local", k8sconsts.AutoScalerWebhookServiceName, a.ns),
 	}
 
 	cert, err := crypto.GenerateSignedCertificate("serving-cert", nil, altNames, 365, ca)
