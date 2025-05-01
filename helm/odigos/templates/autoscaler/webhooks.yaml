@@ -1,0 +1,53 @@
+{{- $altNames := list (printf "odigos-autoscaler.%s.svc" .Release.Namespace) (printf "odigos-autoscaler.%s.svc.cluster.local" .Release.Namespace) -}}
+{{- $ca := genCA "serving-cert" 365 -}}
+{{- $cert := genSignedCert "serving-cert" nil $altNames 365 $ca -}}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: action-validating-webhook-configuration
+  labels:
+    app.kubernetes.io/name: action-validating-webhook
+    app.kubernetes.io/instance: action-validating-webhook-configuration
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: autoscaler
+    app.kubernetes.io/part-of: odigos
+webhooks:
+  - name: action-validating-webhook.odigos.io
+    clientConfig:
+      caBundle: {{ $ca.Cert | b64enc }}
+      service:
+        name: odigos-autoscaler
+        namespace: {{ .Release.Namespace }}
+        path: /validate-odigos-io-v1alpha1-action
+        port: 9443
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups: ["odigos.io"]
+        apiVersions: ["v1alpha1"]
+        resources: ["actions"]
+        scope: Namespaced
+    failurePolicy: Ignore
+    sideEffects: None
+    timeoutSeconds: 10
+    admissionReviewVersions: ["v1"]
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/tls
+metadata:
+  name: autoscaler-webhook-cert
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: autoscaler-cert
+    app.kubernetes.io/instance: autoscaler-cert
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: autoscaler
+    app.kubernetes.io/part-of: odigos
+  annotations:
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+data:
+  tls.crt: {{ $cert.Cert | b64enc }}
+  tls.key: {{ $cert.Key | b64enc }}

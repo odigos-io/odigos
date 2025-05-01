@@ -19,6 +19,22 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - actions
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - actions/status
+    verbs:
+      - get
+      - patch
+      - update
 {{- if .Values.openshift.enabled }}
   - apiGroups:
       - odigos.io
