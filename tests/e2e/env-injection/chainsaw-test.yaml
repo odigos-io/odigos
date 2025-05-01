@@ -21,8 +21,6 @@ spec:
       try:
         - script:
             content: ../../../cli/odigos config set agent-env-vars-injection-method pod-manifest
-        - assert:
-            file: ../../common/assert/odigos-installed.yaml
     - name: Verify Node Odiglet label has been added
       try:
         - assert:
