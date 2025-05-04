@@ -21,6 +21,11 @@ spec:
         - name: central-ui
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "central-ui" "Tag" $imageTag) }}
+          env:
+          - name: NEXT_PUBLIC_BACKEND_URL
+            value: "http://central-backend.{{ .Release.Namespace }}.svc.cluster.local:8081/graphql"
+          - name: NEXT_PUBLIC_BACKEND_WS_URL
+            value: "ws://central-backend.{{ .Release.Namespace }}.svc.cluster.local:8081/graphql"
           resources:
             requests:
               cpu: {{ .Values.centralUI.resources.requests.cpu }}
