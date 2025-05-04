@@ -18,6 +18,10 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-autoscaler
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       containers:
       - args:
           - --health-probe-bind-address=:8081
@@ -51,6 +55,10 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
+        volumeMounts:
+          - name: autoscaler-webhook-cert
+            mountPath: /tmp/k8s-webhook-server/serving-certs
+            readOnly: true
         resources:
           limits:
             cpu: 500m
@@ -63,6 +71,11 @@ spec:
       securityContext:
         runAsNonRoot: true
       serviceAccountName: odigos-autoscaler
+      volumes:
+        - name: autoscaler-webhook-cert
+          secret:
+            secretName: autoscaler-webhook-cert
+            defaultMode: 420
       terminationGracePeriodSeconds: 10
 {{- if .Values.imagePullSecrets }}
       imagePullSecrets:

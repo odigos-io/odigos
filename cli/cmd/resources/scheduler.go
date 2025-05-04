@@ -173,7 +173,10 @@ func NewSchedulerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewSchedulerDeployment(ns string, version string, imagePrefix string, imageName string) *appsv1.Deployment {
+func NewSchedulerDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+	if nodeSelector == nil {
+		nodeSelector = make(map[string]string)
+	}
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -203,6 +206,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 					},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector: nodeSelector,
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.SchedulerContainerName,
@@ -324,7 +328,7 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 		NewSchedulerRoleBinding(a.ns),
 		NewSchedulerClusterRole(),
 		NewSchedulerClusterRoleBinding(a.ns),
-		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.SchedulerImage),
+		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.SchedulerImage, a.config.NodeSelector),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

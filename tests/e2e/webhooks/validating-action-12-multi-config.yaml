@@ -1,0 +1,13 @@
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: 02-action-multi-config
+  namespace: default
+spec:
+  addClusterInfo:
+    clusterAttributes:
+    - attributeName: foo
+      attributeStringValue: bar
+  deleteAttribute:
+    attributeNamesToDelete:
+    - baz

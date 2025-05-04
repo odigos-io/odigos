@@ -31,6 +31,20 @@ type OtelAttributeWithValue struct {
 	AttributeStringValue *string `json:"attributeStringValue"`
 }
 
+const ActionNameAddClusterInfo = "AddClusterInfo"
+
+type AddClusterInfoConfig struct {
+	ClusterAttributes []OtelAttributeWithValue `json:"clusterAttributes"`
+}
+
+func (AddClusterInfoConfig) ProcessorType() string {
+	return "resource"
+}
+
+func (AddClusterInfoConfig) OrderHint() int {
+	return 1
+}
+
 // AddClusterInfoSpec defines the desired state of AddClusterInfo action
 type AddClusterInfoSpec struct {
 	ActionName string                       `json:"actionName,omitempty"`

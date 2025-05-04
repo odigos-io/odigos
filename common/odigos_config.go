@@ -131,4 +131,6 @@ type OdigosConfiguration struct {
 	// when false or not set the original behavior will be used and the JAVA_OPTS env var will be injected.
 	AvoidInjectingJavaOptsEnvVar *bool                    `json:"avoidInjectingJavaOptsEnvVar,omitempty"`
 	UserInstrumentationEnvs      *UserInstrumentationEnvs `json:"userInstrumentationEnvs,omitempty"`
+	UserInstrumentationEnvs      *UserInstrumentationEnvs `json:"UserInstrumentationEnvs,omitempty"`
+	NodeSelector                 map[string]string        `json:"nodeSelector,omitempty"`
 }

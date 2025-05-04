@@ -14,6 +14,9 @@ type ManagerOpts struct {
 	OwnerReferences []metav1.OwnerReference
 	// SystemObjectLabelScope defines which system label to use for Odigos resources (system-object or central-system-object).
 	SystemObjectLabelKey string
+	// NodeSelector is a Kubernetes NodeSelector that will be applied to all Odigos components.
+	// Note that Odigos will only be able to instrument applications on the same node.
+	NodeSelector map[string]string
 }
 
 type ImageReferences struct {
