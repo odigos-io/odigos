@@ -21,11 +21,11 @@ var AvoidInjectingJavaOptsEnvVar = profile.Profile{
 }
 
 var PodManifestEnvVarInjection = profile.Profile{
-	ProfileName:      common.ProfileName("pod-manifest-env-var-injection"),
+	ProfileName:      common.ProfileName("loader-fallback-to-pod-manifest-env-var-injection"),
 	MinimumTier:      common.CommunityOdigosTier,
-	ShortDescription: "Adding the runtime specific agent loading env vars (e.g PYTHONPATH, NODE_OPTIONS) to the pod manifest",
+	ShortDescription: "Try using odigos loader env var injection method, fallback to pod manifest if not possible",
 	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
-		method := common.PodManifestEnvInjectionMethod
+		method := common.LoaderFallbackToPodManifestInjectionMethod
 		if config.AgentEnvVarsInjectionMethod == nil {
 			config.AgentEnvVarsInjectionMethod = &method
 		}

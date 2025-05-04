@@ -17,10 +17,8 @@ spec:
             content: ../../../cli/odigos install --namespace odigos-test --version e2e-test
         - assert:
             file: ../../common/assert/odigos-installed.yaml
-    - name: Set Env injection method to pod-manifest
-      try:
-        - script:
-            content: ../../../cli/odigos config set agent-env-vars-injection-method pod-manifest
+
+    # currently the default env injection method is pod-manifest
 
     - name: Assert config set successfully
       try:

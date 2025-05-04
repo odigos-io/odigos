@@ -23,6 +23,5 @@ var KratosProfile = profile.Profile{
 		"allow_concurrent_agents",
 		"mount-method-k8s-host-path",
 		"avoid-java-opts-env-var",
-		"pod-manifest-env-var-injection",
 	},
 }

@@ -288,7 +288,7 @@ func resolveMountMethod(odigosConfig *common.OdigosConfiguration) {
 }
 
 func resolveEnvInjectionMethod(odigosConfig *common.OdigosConfiguration) {
-	defaultInjectionMethod := common.LoaderFallbackToPodManifestInjectionMethod
+	defaultInjectionMethod := common.PodManifestEnvInjectionMethod
 
 	if odigosConfig.AgentEnvVarsInjectionMethod == nil {
 		odigosConfig.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
@@ -303,7 +303,7 @@ func resolveEnvInjectionMethod(odigosConfig *common.OdigosConfiguration) {
 	case common.PodManifestEnvInjectionMethod:
 		return
 	default:
-		// any illegal value will be defaulted to host-path
+		// any illegal value will be defaulted to pod-manifest
 		odigosConfig.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
 	}
 }
