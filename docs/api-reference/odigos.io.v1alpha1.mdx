@@ -10,6 +10,7 @@ auto_generated: true
 ## Resource Types 
 
 
+- [Action](#odigos-io-v1alpha1-Action)
 - [CollectorsGroup](#odigos-io-v1alpha1-CollectorsGroup)
 - [Destination](#odigos-io-v1alpha1-Destination)
 - [InstrumentationConfig](#odigos-io-v1alpha1-InstrumentationConfig)
@@ -19,6 +20,53 @@ auto_generated: true
 - [Processor](#odigos-io-v1alpha1-Processor)
 - [Source](#odigos-io-v1alpha1-Source)
   
+
+## `Action` <a id="odigos-io-v1alpha1-Action"></a>
+    
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>Action</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ActionSpec"><code>ActionSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ActionStatus"><code>ActionStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
 
 ## `CollectorsGroup` <a id="odigos-io-v1alpha1-CollectorsGroup"></a>
     
@@ -407,6 +455,136 @@ auto_generated: true
 <td>
    <span class="text-muted">No description provided.</span>
    </td>
+</tr>
+</tbody>
+</table>
+
+## `ActionSpec` <a id="odigos-io-v1alpha1-ActionSpec"></a>
+    
+
+**Appears in:**
+
+- [Action](#odigos-io-v1alpha1-Action)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>actionName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Allows you to attach a meaningful name to the action for convenience. Odigos does not use or assume any meaning from this field.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>A free-form text field that allows you to attach notes regarding the action for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>A boolean field allowing to temporarily disable the action, but keep it around for future use</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>signals</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <p>Which signals should this action operate on.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>addClusterInfo</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.AddClusterInfoConfig</code>
+</td>
+<td>
+   <p>AddClusterInfo is the config for the AddClusterInfo Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>deleteAttribute</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.DeleteAttributeConfig</code>
+</td>
+<td>
+   <p>DeleteAttribute is the config for the DeleteAttribute Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>renameAttribute</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.RenameAttributeConfig</code>
+</td>
+<td>
+   <p>RenameAttribute is the config for the RenameAttribute Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>piiMasking</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.PiiMaskingConfig</code>
+</td>
+<td>
+   <p>PiiMasking is the config for the PiiMasking Action.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `ActionStatus` <a id="odigos-io-v1alpha1-ActionStatus"></a>
+    
+
+**Appears in:**
+
+- [Action](#odigos-io-v1alpha1-Action)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a action's current state.
+Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
+</td>
 </tr>
 </tbody>
 </table>
