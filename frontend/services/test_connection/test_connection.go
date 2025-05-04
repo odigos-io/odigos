@@ -207,16 +207,7 @@ func handleError(err error) string {
 	msg := ""
 
 	if s, ok := status.FromError(err); ok {
-		// Optional: handle specific codes if needed
-		// switch s.Code() {
-		// case codes.InvalidArgument:
-		// 	msg = "Invalid argument error"
-		// }
-
-		// Get only the "desc"
-		if msg == "" {
-			msg = s.Message()
-		}
+		msg = s.Message()
 	} else {
 		// Not a gRPC status error
 		msg = err.Error()
