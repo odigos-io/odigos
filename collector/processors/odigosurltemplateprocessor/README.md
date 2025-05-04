@@ -82,8 +82,9 @@ processors:
     # but regexp like "^ap" is too permissive and will also catch "/api".
     # compatible with golang regexp module https://pkg.go.dev/regexp
     # for performance reasons, avoid using compute-intensive expressions or adding too many values here.
-    custom_ids_regexp:
-      - "^inc_\d+$"
+    custom_ids:
+      - regexp: "^inc_\d+$"
+        template_name: "incidentId"
 ```
 
 ## Include/Exclude Filters
@@ -120,7 +121,7 @@ The templatization process should be monitored and adjusted according to the val
 
 By default, the processor will split the path to segment (e.g. "/user/1234" -> ["user", "1234"]) and replace the segments with the following rules:
 
-- only digits - `^\d+$` -> `{id}` (`1234`, `328962358623904`, `0`)
+- only digits or special characters - ```^[\d_\-!@#$%^&*()=+{}\[\]:;"'<>,.?/\\|`~]+$``` -> `{id}` (`1234`, `123_456`, `0`)
 - uuids - `[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}` -> `{id}` (`123e4567-e89b-12d3-a456-426614174000`). They can appear as either prefix or suffix of the segment (for example `/process/PROCESS_123e4567-e89b-12d3-a456-42661bd74000`)
 - hex-encoded strings - `[0-9a-f]{2}([0-9a-f]{2})*` -> `{id}` (`6f2a9cdeab34f01e`)
 - long numbers anywhere - `\d{7,}` -> `{id}` (`1234567`, `INC328962358623904`, `sb_12345678901234567890_us`)
@@ -143,11 +144,9 @@ This rule, when applied to the path `/user/john/friends/1234`, will result in th
 
 To denote a template path segment, use `{}` brackets with name and optional regexp: `{name:regexp}`. name will be used to generate the templated path (e.g `/user/{foo})` will result in this template value when matched against `/user/john`).
 
-### Custom Ids Regexp
+### Custom Ids
 
-The default rule will match various common ids as described above. Systems can and do use a variety of ids conventions and formats. The processor allows you to set custom regexp for the id matching that will be used in addition to the default id templatization regexps.
-
-Custom Templatization takes precedence over the custom id regexp. If any custom custom rule matches a path, it will be taken the the custom ids regexp will not take effect for that path.
+The default rule will match various common ids as described above. Systems can and do use a variety of ids conventions and formats. if you system is using a custom id that is not matched by the default rules, you can set a custom regexp to match these ids.
 
 For example, if your system uses `id`s in format `id-1234`, you can set the regexp `^id-\d+$` to match this format, so that `/user/id-1234` will be templatized to `/user/{id}`.
 
@@ -160,7 +159,7 @@ Few more examples for ids that will not be catched by default but can be configu
 - `svc_auth_xyz123TOKEN` - `^svc_[a-z]+_[a-zA-Z0-9]+$` (Keys)
 - `svc-us-west-2-db12` - `^svc-[a-z]{2}-[a-z]+-\d-[a-z0-9]+$` (Multi-region Services)
 
-Few considerations for the custom regexp:
+Few considerations for the custom ids:
 
 - The regexp must match the entire segment value, not just part of it.
 - Keep regexp precise and correct so they don't match unrelated values from other endpoints in the same cluster. The value will be evaluated against all un-templated http spans in the pipeline.

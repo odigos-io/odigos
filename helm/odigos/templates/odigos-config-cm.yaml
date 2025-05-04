@@ -121,3 +121,7 @@ data:
     {{- if .Values.avoidInjectingJavaOptsEnvVar }}
     avoidInjectingJavaOptsEnvVar: {{ .Values.avoidInjectingJavaOptsEnvVar }}
     {{- end }}
+    {{- if .Values.nodeSelector }}
+    nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 6 }}
+    {{- end }}

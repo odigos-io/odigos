@@ -14,6 +14,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -136,6 +137,8 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 	if !exists {
 		return
 	}
+
+	envVarNames = append(envVarNames, consts.LdPreloadEnvVarName)
 
 	// Verify if environment variables already exist in the container manifest.
 	// If they exist, set the RuntimeUpdateState as ProcessingStateSkipped.

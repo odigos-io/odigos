@@ -4,6 +4,14 @@ description: This test checks if the context propagation is working correctly be
 query: |
   length(
     [?
+      span.resourceAttributes."telemetry.sdk.language" == 'php' && span.serviceName == 'currency' && span.kind == 'server'
+        && 
+      parent.span.serviceName == 'frontend' && parent.span.resourceAttributes."telemetry.sdk.language" == 'java'
+    ]
+  ) > `0` &&
+
+  length(
+    [?
       span.resourceAttributes."telemetry.sdk.language" == 'dotnet' && span.serviceName == 'pricing' && span.kind == 'server'
         && 
       parent.span.serviceName == 'frontend' && parent.span.resourceAttributes."telemetry.sdk.language" == 'java'
@@ -33,6 +41,6 @@ query: |
       parent.span.serviceName == 'coupon' && parent.span.resourceAttributes."telemetry.sdk.language" == 'nodejs'
     ]
   ) > `0`
-  
+
 expected:
   count: 1

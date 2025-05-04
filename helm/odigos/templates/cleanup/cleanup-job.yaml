@@ -1,3 +1,4 @@
+{{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -15,10 +16,6 @@ spec:
       serviceAccountName: cleanup-sa
       containers:
       - name: cleanup
-        {{- if .Values.imagePrefix }}
-        image: "{{ .Values.imagePrefix }}/{{ .Values.cli.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        {{- else }}
-        image: "{{ .Values.cli.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        {{- end }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "cli" "Tag" $imageTag) }}
         args: ["uninstall", "--yes"]
       restartPolicy: Never

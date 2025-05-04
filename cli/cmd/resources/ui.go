@@ -31,7 +31,10 @@ func (u *uiResourceManager) Name() string {
 	return "UI"
 }
 
-func NewUIDeployment(ns string, version string, imagePrefix string, imageName string) *appsv1.Deployment {
+func NewUIDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+	if nodeSelector == nil {
+		nodeSelector = make(map[string]string)
+	}
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -61,6 +64,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 					},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector: nodeSelector,
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.UIContainerName,
@@ -408,7 +412,7 @@ func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewUIRoleBinding(u.ns),
 		NewUIClusterRole(u.readonly),
 		NewUIClusterRoleBinding(u.ns),
-		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.managerOpts.ImageReferences.UIImage),
+		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.managerOpts.ImageReferences.UIImage, u.config.NodeSelector),
 		NewUIService(u.ns),
 	}
 	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources, u.managerOpts)
