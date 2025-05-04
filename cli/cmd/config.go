@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
@@ -38,6 +39,7 @@ var configCmd = &cobra.Command{
 	- "container-runtime-socket-path": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
 	- "avoid-java-opts-env-var": Avoid injecting the Odigos value in JAVA_OPTS environment variable into Java applications.
 	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., {"languages":{"go":{"enabled":true,"env":{"OTEL_GO_ENABLED":"true"}}}}
+	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
 	`,
 }
 
@@ -201,6 +203,18 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			return fmt.Errorf("invalid JSON for %s: %w", property, err)
 		}
 		config.UserInstrumentationEnvs = &uie
+    
+	case consts.NodeSelectorProperty:
+		nodeSelectorMap := make(map[string]string)
+		for _, v := range value {
+			label := strings.Split(v, "=")
+			if len(label) != 2 {
+				return fmt.Errorf("nodeselector must be a valid key=value, got %s", value)
+			}
+			nodeSelectorMap[label[0]] = label[1]
+		}
+		config.NodeSelector = nodeSelectorMap
+
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)

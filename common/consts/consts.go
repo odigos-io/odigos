@@ -71,6 +71,7 @@ const (
 	AvoidJavaOptsEnvVar               = "avoid-java-opts-env-var"
 	ClusterNameProperty               = "cluster-name"
 	UserInstrumentationEnvsProperty   = "user-instrumentation-envs"
+	NodeSelectorProperty              = "node-selector"
 )
 
 var (
