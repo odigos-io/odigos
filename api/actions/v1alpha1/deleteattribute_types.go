@@ -21,6 +21,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const ActionNameDeleteAttribute = "DeleteAttribute"
+
+type DeleteAttributeConfig struct {
+	AttributeNamesToDelete []string `json:"attributeNamesToDelete"`
+}
+
+func (DeleteAttributeConfig) ProcessorType() string {
+	return "transform"
+}
+
+func (DeleteAttributeConfig) OrderHint() int {
+	return -100
+}
+
 // DeleteAttributeSpec defines the desired state of DeleteAttribute action
 type DeleteAttributeSpec struct {
 	ActionName string                       `json:"actionName,omitempty"`

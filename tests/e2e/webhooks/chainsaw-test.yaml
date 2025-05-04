@@ -211,3 +211,46 @@ spec:
         - assert:
             timeout: 2m
             file: migration-02-assert-source-with-old-finalizer.yaml
+  
+    - name: "[Validating] - Action with no config is invalid"
+      try:
+        - apply:
+            file: validating-action-11-no-config.yaml
+            expect:
+              - check:
+                  ($error != null): true
+    - name: "[Validating] - Action with multiple configs is invalid"
+      try:
+        - apply:
+            file: validating-action-12-multi-config.yaml
+            expect:
+              - check:
+                  ($error != null): true
+    - name: "[Validating] - valid AddClusterInfo"
+      try:
+        - apply:
+            file: validating-action-13-addClusterInfo.yaml
+            expect:
+              - check:
+                  ($error == null): true
+    - name: "[Validating] - valid DeleteAttribute"
+      try:
+        - apply:
+            file: validating-action-14-deleteAttribute.yaml
+            expect:
+              - check:
+                  ($error == null): true
+    - name: "[Validating] - valid RenameAttribute"
+      try:
+        - apply:
+            file: validating-action-15-renameAttribute.yaml
+            expect:
+              - check:
+                  ($error == null): true
+    - name: "[Validating] - valid PiiMasking"
+      try:
+        - apply:
+            file: validating-action-16-piiMasking.yaml
+            expect:
+              - check:
+                  ($error == null): true
