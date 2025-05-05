@@ -97,6 +97,9 @@ odigos uninstall
 # Uninstall Odigos without confirmation
 odigos uninstall --yes
 
+# Uninstall Odigos without waiting for pods to rollout without instrumentation
+odigos uninstall --no-wait
+
 # Uninstall Odigos cloud from a specific cluster
 odigos uninstall --kubeconfig <path-to-kubeconfig>
 
@@ -159,7 +162,7 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 
 func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kube.Client) {
 	instrumentedPodReq, _ := k8slabels.NewRequirement(k8sconsts.OdigosAgentsMetaHashLabel, selection.Exists, []string{})
-	fmt.Printf("Waiting for pods to rollout without instrumentation...\n")
+	fmt.Printf("Waiting for pods to rollout without instrumentation... this might take a while\n")
 
 	pollErr := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, true, func(innerCtx context.Context) (bool, error) {
 		pods, err := client.CoreV1().Pods("").List(innerCtx, metav1.ListOptions{
@@ -179,10 +182,10 @@ func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kub
 
 	if pollErr != nil {
 		if errors.Is(pollErr, context.DeadlineExceeded) {
-			fmt.Printf("\033[33m!\tWARN\033[0m deadline exceeded for waiting pods to roll out cleanly\n")
+			fmt.Printf("\033[33m!\tWARN\033[0m deadline exceeded for waiting pods to roll out cleanly, consider re-running uninstall or rollout the un cleaned workloads\n")
 		}
 		if errors.Is(pollErr, context.Canceled) {
-			fmt.Printf("\033[33m!\tWARN\033[0m context canceled for waiting pods to roll out cleanly\n")
+			fmt.Printf("\033[33m!\tWARN\033[0m canceled while waiting pods to roll out cleanly\n")
 		}
 	}
 }
@@ -496,8 +499,10 @@ func removeAllSources(ctx context.Context, client *kube.Client) error {
 	// in order to make sure the Source CRD can be deleted later in the uninstall process.
 	// failing to remove all the sources may cause the Source CRD to not get removed - since kubernetes
 	// has a finalizer on a CRD, waiting for all the CR instances to be deleted before removing the CRD.
-	err = wait.PollUntilContextTimeout(ctx, 5*time.Second, 1*time.Minute, true, func(innerCtx context.Context) (bool, error) {
-		sources, err := client.OdigosClient.Sources("").List(innerCtx, metav1.ListOptions{})
+	pollErr := wait.PollUntilContextTimeout(ctx, 5*time.Second, 1*time.Minute, true, func(innerCtx context.Context) (bool, error) {
+		sources, err := client.OdigosClient.Sources("").List(innerCtx, metav1.ListOptions{
+			Limit: 1,
+		})
 		if err != nil {
 			return false, err
 		}
@@ -508,16 +513,17 @@ func removeAllSources(ctx context.Context, client *kube.Client) error {
 		return false, nil
 	})
 
-	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			fmt.Printf("\033[33m!\tWARN\033[0m deadline exceeded for waiting sources to be deleted\n")
-		} else if errors.Is(err, context.Canceled) {
-			fmt.Printf("\033[33m!\tWARN\033[0m context canceled for waiting sources to be deleted\n")
+	var returnErr error
+	if pollErr != nil {
+		if errors.Is(pollErr, context.DeadlineExceeded) {
+			returnErr = fmt.Errorf("deadline exceeded for waiting sources to be deleted\n")
+		} else if errors.Is(pollErr, context.Canceled) {
+			returnErr = fmt.Errorf("canceled while waiting sources to be deleted\n")
 		} else {
-			fmt.Printf("\033[33m!\tWARN\033[0m error while waiting for sources to be deleted: %s\n", err)
+			returnErr = fmt.Errorf("error while waiting for sources to be deleted: %s\n", err)
 		}
 	}
-	return nil
+	return returnErr
 }
 
 func uninstallCRDs(ctx context.Context, client *kube.Client, ns string, _ string) error {
