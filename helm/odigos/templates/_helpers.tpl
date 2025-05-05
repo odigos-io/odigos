@@ -18,12 +18,14 @@
 {{/*
 Returns "true" if any userInstrumentationEnvs.language is enabled or has env vars
 */}}
-{{- define "odigos.shouldRenderUserInstrumentationEnvs" -}}
+{{- define "utils.shouldRenderUserInstrumentationEnvs" -}}
   {{- $languages := .Values.userInstrumentationEnvs.languages | default dict }}
   {{- range $lang, $config := $languages }}
     {{- if or $config.enabled $config.env }}
-      true
+      {{- print "true" }}
+      {{- break }}
     {{- end }}
   {{- end }}
 {{- end }}
+
 
