@@ -22,6 +22,9 @@ odigos uninstall
 # Uninstall Odigos without confirmation
 odigos uninstall --yes
 
+# Uninstall Odigos without waiting for pods to rollout without instrumentation
+odigos uninstall --no-wait
+
 # Uninstall Odigos cloud from a specific cluster
 odigos uninstall --kubeconfig <path-to-kubeconfig>
 
