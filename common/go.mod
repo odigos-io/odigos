@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/common
 go 1.23.0
 
 require (
-	github.com/goccy/go-yaml v1.16.0
+	github.com/goccy/go-yaml v1.17.1
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/otel/trace v1.35.0
 	gopkg.in/yaml.v2 v2.4.0
