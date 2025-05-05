@@ -352,11 +352,10 @@ func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]st
 
 	var parsedUserJson *common.UserInstrumentationEnvs
 	if userInstrumentationEnvsRaw != "" {
-		var uie common.UserInstrumentationEnvs
-		if err := json.Unmarshal([]byte(userInstrumentationEnvsRaw), &uie); err != nil {
+		parsedUserJson = &common.UserInstrumentationEnvs{}
+		if err := json.Unmarshal([]byte(userInstrumentationEnvsRaw), &parsedUserJson); err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to parse --user-instrumentation-envs: %v\n", err)
 		}
-		parsedUserJson = &uie
 	}
 
 	return common.OdigosConfiguration{
