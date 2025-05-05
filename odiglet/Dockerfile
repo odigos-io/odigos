@@ -87,7 +87,7 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
 FROM --platform=$BUILDPLATFORM maniator/gh AS php-agents
 WORKDIR /php-agents
 ARG TARGETARCH
-ARG PHP_AGENT_VERSION="v0.0.16"
+ARG PHP_AGENT_VERSION="v0.0.17"
 ARG PHP_VERSIONS="8.0 8.1 8.2 8.3 8.4"
 ENV PHP_VERSIONS=${PHP_VERSIONS}
 # Clone agents repo (contains pre-compiled binaries and libraries for each PHP version)
@@ -99,9 +99,6 @@ RUN for v in ${PHP_VERSIONS}; do \
     mv opentelemetry-php/$v/bin/${TARGETARCH}/* opentelemetry-php/$v/; \
     rm -rf opentelemetry-php/$v/bin; \
     done
-# !! manual override for testing purposes only !!
-# RUN rm -rf opentelemetry-php/8.1/index.php
-# COPY agents/php/index.php opentelemetry-php/8.1/index.php
 
 
 ######### ODIGLET #########
