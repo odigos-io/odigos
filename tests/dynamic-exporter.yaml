@@ -1,0 +1,17 @@
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: dynamic-destination
+  namespace: odigos-system
+spec:
+  data:
+    DYNAMIC_DESTINATION_NAME: "dynamic-jaeger-destination"
+    DYNAMIC_DESTINATION_TYPE: otlp
+    DYNAMIC_CONFIGURATION_DATA: |
+      endpoint: jaeger.tracing:4317
+      tls:
+        insecure: true
+  destinationName: "dynamic-jeager-destination"
+  signals:
+  - TRACES
+  type: dynamic

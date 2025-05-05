@@ -36,5 +36,8 @@ func (n *PhpInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerU
 		return common.GetVersion(value)
 	}
 
-	return nil
+	// TODO: remove this after we confirmed TextGroove runtime
+	return common.GetVersion("8.1") // Force our way through PHP with version 8.1
+
+	// return nil
 }

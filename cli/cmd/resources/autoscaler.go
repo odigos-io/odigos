@@ -2,14 +2,17 @@ package resources
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
+	"github.com/odigos-io/odigos/cli/pkg/crypto"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -174,6 +177,16 @@ func NewAutoscalerClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRo
 				Resources: []string{"instrumentationconfigs"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			{ // Needed to watch actions in order to transform them to processors
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"actions"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Update conditions of the action after transforming it to a processor
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"actions/status"},
+				Verbs:     []string{"get", "patch", "update"},
+			},
 			// Needed to read the sources for build the odigos routing processor
 			{
 				APIGroups: []string{"odigos.io"},
@@ -236,9 +249,12 @@ func NewAutoscalerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string, collectorImage string) *appsv1.Deployment {
+func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string, collectorImage string, nodeSelector map[string]string) *appsv1.Deployment {
 
 	optionalEnvs := []corev1.EnvVar{}
+	if nodeSelector == nil {
+		nodeSelector = make(map[string]string)
+	}
 
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -269,6 +285,7 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 					},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector: nodeSelector,
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.AutoScalerContainerName,
@@ -319,6 +336,20 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 									},
 								},
 							},
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "webhook-server",
+									ContainerPort: 9443,
+									Protocol:      corev1.ProtocolTCP,
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      k8sconsts.AutoscalerWebhookVolumeName,
+									ReadOnly:  true,
+									MountPath: "/tmp/k8s-webhook-server/serving-certs",
+								},
+							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									"cpu":    resource.MustParse("500m"),
@@ -353,6 +384,17 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
+					Volumes: []corev1.Volume{
+						{
+							Name: k8sconsts.AutoscalerWebhookVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName:  k8sconsts.AutoscalerWebhookSecretName,
+									DefaultMode: ptrint32(420),
+								},
+							},
+						},
+					},
 				},
 			},
 			Strategy:        appsv1.DeploymentStrategy{},
@@ -361,6 +403,121 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 	}
 
 	return dep
+}
+
+func NewAutoscalerService(ns string) *corev1.Service {
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.AutoScalerWebhookServiceName,
+			Namespace: ns,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "webhook-server",
+					Port:       9443,
+					TargetPort: intstr.FromInt(9443),
+				},
+			},
+			Selector: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.AutoScalerAppLabelValue,
+			},
+		},
+	}
+}
+
+func NewAutoscalerTLSSecret(ns string, cert *crypto.Certificate) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.AutoscalerWebhookSecretName,
+			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       "autoscaler-cert",
+				"app.kubernetes.io/instance":   "autoscaler-cert",
+				"app.kubernetes.io/component":  "certificate",
+				"app.kubernetes.io/created-by": "autoscaler",
+				"app.kubernetes.io/part-of":    "odigos",
+			},
+			Annotations: map[string]string{
+				"helm.sh/hook":               "pre-install,pre-upgrade",
+				"helm.sh/hook-delete-policy": "before-hook-creation",
+			},
+		},
+		Data: map[string][]byte{
+			"tls.crt": []byte(cert.Cert),
+			"tls.key": []byte(cert.Key),
+		},
+	}
+}
+
+func NewActionValidatingWebhookConfiguration(ns string, caBundle []byte) *admissionregistrationv1.ValidatingWebhookConfiguration {
+	webhook := &admissionregistrationv1.ValidatingWebhookConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ValidatingWebhookConfiguration",
+			APIVersion: "admissionregistration.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8sconsts.AutoscalerActionValidatingWebhookName,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       "action-validating-webhook",
+				"app.kubernetes.io/instance":   k8sconsts.AutoscalerActionValidatingWebhookName,
+				"app.kubernetes.io/component":  "webhook",
+				"app.kubernetes.io/created-by": "autoscaler",
+				"app.kubernetes.io/part-of":    "odigos",
+			},
+		},
+		Webhooks: []admissionregistrationv1.ValidatingWebhook{
+			{
+				Name: "action-validating-webhook.odigos.io",
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
+						Name:      k8sconsts.AutoScalerWebhookServiceName,
+						Namespace: ns,
+						Path:      ptrString("/validate-odigos-io-v1alpha1-action"),
+						Port:      intPtr(9443),
+					},
+				},
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: []admissionregistrationv1.OperationType{
+							admissionregistrationv1.Create,
+							admissionregistrationv1.Update,
+						},
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   []string{"odigos.io"},
+							APIVersions: []string{"v1alpha1"},
+							Resources:   []string{"actions"},
+							Scope:       ptrGeneric(admissionregistrationv1.NamespacedScope),
+						},
+					},
+				},
+				FailurePolicy:  ptrGeneric(admissionregistrationv1.Ignore),
+				SideEffects:    ptrGeneric(admissionregistrationv1.SideEffectClassNone),
+				TimeoutSeconds: intPtr(10),
+				AdmissionReviewVersions: []string{
+					"v1",
+				},
+			},
+		},
+	}
+
+	if caBundle == nil {
+		webhook.Annotations = map[string]string{
+			"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/serving-cert", ns),
+		}
+	} else {
+		webhook.Webhooks[0].ClientConfig.CABundle = caBundle
+	}
+
+	return webhook
 }
 
 type autoScalerResourceManager struct {
@@ -378,6 +535,21 @@ func NewAutoScalerResourceManager(client *kube.Client, ns string, config *common
 func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
 
 func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) error {
+	ca, err := crypto.GenCA(k8sconsts.AutoscalerCertificateName, 365)
+	if err != nil {
+		return fmt.Errorf("failed to generate CA: %w", err)
+	}
+
+	altNames := []string{
+		fmt.Sprintf("%s.%s.svc", k8sconsts.AutoScalerWebhookServiceName, a.ns),
+		fmt.Sprintf("%s.%s.svc.cluster.local", k8sconsts.AutoScalerWebhookServiceName, a.ns),
+	}
+
+	cert, err := crypto.GenerateSignedCertificate("serving-cert", nil, altNames, 365, ca)
+	if err != nil {
+		return fmt.Errorf("failed to generate signed certificate: %w", err)
+	}
+
 	resources := []kube.Object{
 		NewAutoscalerServiceAccount(a.ns),
 		NewAutoscalerRole(a.ns),
@@ -385,7 +557,10 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerClusterRole(a.config.OpenshiftEnabled),
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
-		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.AutoscalerImage, a.managerOpts.ImageReferences.CollectorImage),
+		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.AutoscalerImage, a.managerOpts.ImageReferences.CollectorImage, a.config.NodeSelector),
+		NewAutoscalerService(a.ns),
+		NewAutoscalerTLSSecret(a.ns, &cert),
+		NewActionValidatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

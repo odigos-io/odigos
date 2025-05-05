@@ -49,6 +49,8 @@ const (
 	Destination             = "Destination"
 
 	GoOffsetsPublicURL = "https://storage.googleapis.com/odigos-cloud/offset_results_min.json"
+
+	LdPreloadEnvVarName = "LD_PRELOAD"
 )
 
 // Odigos config properties
@@ -68,6 +70,7 @@ const (
 	CustomContainerRunetimeSocketPath = "custom-container-runtime-socket-path"
 	AvoidJavaOptsEnvVar               = "avoid-java-opts-env-var"
 	ClusterNameProperty               = "cluster-name"
+	NodeSelectorProperty              = "node-selector"
 )
 
 var (
