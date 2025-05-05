@@ -263,7 +263,7 @@ status:
       (envFromContainerRuntime == null): true
       language: python
       runtimeVersion: 3.10.15
-      secureExecutionMode: false
+      secureExecutionMode: true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig

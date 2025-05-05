@@ -1,21 +1,42 @@
-# Dockerfile.alpine
 FROM python:3.10.15-alpine
+
+# we use this images as a test case for secure execution mode
+# this is the reason for running python as a non root user
+# and setting the capability to bind to privileged ports
+
+# Create non-root user and group
+RUN addgroup -S good-user && adduser -S good-user -G good-user
+
+# Set working directory
+RUN mkdir -p /app && chown -R good-user:good-user /app
 WORKDIR /app
-COPY . /app
-RUN pip install --no-cache-dir django
 
-# Install dependencies from requirements.txt
+# Copy application code with correct ownership
+COPY --chown=good-user:good-user . /app
+RUN touch /app/db.sqlite3 && chown good-user:good-user /app/db.sqlite3
+
+# Install system dependencies: SQLite + libcap (for setting capabilities)
+RUN apk add --no-cache sqlite libcap
+
+# Set capability so Python can bind to privileged ports (e.g., 80) without root
+RUN setcap cap_net_bind_service=+ep /usr/local/bin/python3.10 \
+    && getcap /usr/local/bin/python3.10 \
+    && apk del libcap
+
+# Install Python dependencies
 COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir django \
+    && pip install --no-cache-dir -r /app/requirements.txt
 
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Supress health check endpoint from tracing
+# Set OpenTelemetry Django config to exclude health check tracing
 ENV OTEL_PYTHON_DJANGO_EXCLUDED_URLS=health/
 
-RUN apk add sqlite
-
-COPY entrypoint.sh /entrypoint.sh
-
+# Entrypoint script
+COPY --chown=good-user:good-user entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# Drop privileges to non-root user
+USER good-user
+
+# Default entrypoint
 ENTRYPOINT ["/entrypoint.sh"]
