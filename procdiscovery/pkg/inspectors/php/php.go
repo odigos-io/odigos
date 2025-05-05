@@ -21,6 +21,8 @@ var processNames = []string{
 	"php-fpm",
 }
 
+var versionRegex = regexp.MustCompile(`X-Powered-By:\s*PHP/(\d+\.\d+\.\d+)`)
+
 func (n *PhpInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	baseExe := filepath.Base(pcx.ExePath)
 
@@ -55,8 +57,6 @@ func getVersionFromBinary(pid int) string {
 		fmt.Sprintf("/proc/%d/root/usr/local/sbin/php-fpm", pid),
 		fmt.Sprintf("/proc/%d/root/usr/sbin/php-fpm", pid),
 	}
-
-	versionRegex := regexp.MustCompile(`X-Powered-By:\s*PHP/(\d+\.\d+\.\d+)`)
 
 	for _, path := range paths {
 		data, err := os.ReadFile(path)
