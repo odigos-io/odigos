@@ -1,14 +1,14 @@
 package process
 
 import (
-	"os"
 	"os/exec"
+	"runtime"
 	"testing"
 	"time"
 )
 
 func TestIsSafeExecutionMode_NormalProcess(t *testing.T) {
-	if os.Getenv("GOOS") != "linux" {
+	if runtime.GOOS != "linux" {
 		t.Skip("Skipping test on non-Linux OS")
 	}
 

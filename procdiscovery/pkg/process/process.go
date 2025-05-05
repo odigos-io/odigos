@@ -286,7 +286,6 @@ func isSecureExecutionMode(pid int) (bool, error) {
 	// https://www.man7.org/linux/man-pages/man5/proc_pid_auxv.5.html
 	for i := 0; i+16 <= len(data); i += 16 {
 		typ := binary.NativeEndian.Uint64(data[i : i+8])
-		val := binary.NativeEndian.Uint64(data[i+8 : i+16])
 
 		if typ == 0 {
 			break
@@ -297,6 +296,7 @@ func isSecureExecutionMode(pid int) (bool, error) {
 		// entry in the auxiliary vector (see getauxval(3)) has a nonzero
 		// value.
 		if typ == AT_SECURE {
+			val := binary.NativeEndian.Uint64(data[i+8 : i+16])
 			return val != 0, nil
 		}
 	}
