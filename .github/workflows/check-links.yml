@@ -32,8 +32,9 @@ jobs:
             --exclude ".*qryn.local.*"
             --exclude "^https://d15jtxgb40qetw\\.cloudfront\\.net/.*"
             --exclude "https://github.com/odigos-io/ui-kit"
+            --max-concurrency 5 --retry-wait-time 5 --max-retries 1
             --cache --max-cache-age 1d
-            --max-concurrency 4 --retry-wait-time 5
+            --github-token ${{ secrets.GITHUB_TOKEN }}
           fail: true
 
       - name: Save lychee cache
