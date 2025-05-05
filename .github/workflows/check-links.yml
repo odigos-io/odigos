@@ -33,9 +33,8 @@ jobs:
             --exclude "^https://d15jtxgb40qetw\\.cloudfront\\.net/.*"
             --exclude "https://github.com/odigos-io/ui-kit"
             --cache --max-cache-age 1d
+            --max-concurrency 4 --retry-wait-time 5
           fail: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Save lychee cache
         uses: actions/cache/save@v4
