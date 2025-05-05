@@ -1,6 +1,10 @@
 package php
 
 import (
+	"fmt"
+	"os"
+	"regexp"
+
 	"path/filepath"
 
 	"github.com/hashicorp/go-version"
@@ -36,8 +40,57 @@ func (n *PhpInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerU
 		return common.GetVersion(value)
 	}
 
-	// TODO: remove this after we confirmed TextGroove runtime
-	return common.GetVersion("8.1") // Force our way through PHP with version 8.1
+	vers := getVersionFromBinary(pcx.Details.ProcessID)
+	if vers != "" {
+		return common.GetVersion(vers)
+	}
 
-	// return nil
+	return nil
+}
+
+func getVersionFromBinary(pid int) string {
+	paths := []string{
+		fmt.Sprintf("/proc/%d/root/usr/local/bin/php", pid),
+		fmt.Sprintf("/proc/%d/root/usr/bin/php", pid),
+		fmt.Sprintf("/proc/%d/root/usr/local/sbin/php-fpm", pid),
+		fmt.Sprintf("/proc/%d/root/usr/sbin/php-fpm", pid),
+	}
+
+	versionRegex := regexp.MustCompile(`X-Powered-By:\s*PHP/(\d+\.\d+\.\d+)`)
+
+	for _, path := range paths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+
+		for _, line := range extractStringFromBinary(data) {
+			if matches := versionRegex.FindStringSubmatch(line); matches != nil {
+				return matches[1]
+			}
+		}
+	}
+
+	return ""
+}
+
+func extractStringFromBinary(data []byte) []string {
+	var result []string
+	var current []byte
+
+	for _, b := range data {
+		if b >= 32 && b <= 126 {
+			current = append(current, b)
+		} else if len(current) >= 4 {
+			result = append(result, string(current))
+			current = nil
+		} else {
+			current = nil
+		}
+	}
+	if len(current) >= 4 {
+		result = append(result, string(current))
+	}
+
+	return result
 }
