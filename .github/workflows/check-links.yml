@@ -34,6 +34,8 @@ jobs:
             --exclude "https://github.com/odigos-io/ui-kit"
             --cache --max-cache-age 1d
           fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Save lychee cache
         uses: actions/cache/save@v4
