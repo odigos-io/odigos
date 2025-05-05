@@ -57,6 +57,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 			envs := make([]odigosv1.EnvVar, 0)
 			var detectedAgent *odigosv1.OtherAgent
 			var libcType *common.LibCType
+			var secureExecutionMode *bool
 
 			if inspectProc == nil {
 				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
@@ -95,6 +96,8 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 						log.Logger.Error(err, "error inspecting libc type", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 					}
 				}
+
+				secureExecutionMode = inspectProc.SecureExecutionMode
 			}
 
 			var runtimeVersion string
@@ -103,12 +106,13 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 			}
 
 			resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
-				ContainerName:  container.Name,
-				Language:       programLanguageDetails.Language,
-				RuntimeVersion: runtimeVersion,
-				EnvVars:        envs,
-				OtherAgent:     detectedAgent,
-				LibCType:       libcType,
+				ContainerName:       container.Name,
+				Language:            programLanguageDetails.Language,
+				RuntimeVersion:      runtimeVersion,
+				EnvVars:             envs,
+				OtherAgent:          detectedAgent,
+				LibCType:            libcType,
+				SecureExecutionMode: secureExecutionMode,
 			}
 
 			if inspectProc != nil {
