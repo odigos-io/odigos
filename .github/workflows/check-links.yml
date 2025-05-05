@@ -8,12 +8,25 @@ jobs:
   check-links:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: lycheeverse/lychee-action@v2.4.0
+
+      - name: Restore lychee cache
+        id: restore-cache
+        uses: actions/cache@v4
+        with:
+          path: .lycheecache
+          key: cache-lychee-${{ github.sha }}
+          restore-keys: cache-lychee-
+
+      - name: Link Checker
+        uses: lycheeverse/lychee-action@v2.4.0
         with:
           args: >-
+            --base .
+            --cache --max-cache-age 1d .
             -v -n "*.md" "**/*.md" "**/*.mdx"
             --exclude "http://localhost*"
             --exclude "^https://logs-prod.*"
@@ -22,3 +35,10 @@ jobs:
             --exclude "^https://d15jtxgb40qetw\\.cloudfront\\.net/.*"
             --exclude "https://github.com/odigos-io/ui-kit"
           fail: true
+
+      - name: Save lychee cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .lycheecache
+          key: ${{ steps.restore-cache.outputs.cache-primary-key }}
