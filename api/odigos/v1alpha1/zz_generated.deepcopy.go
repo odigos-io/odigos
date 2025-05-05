@@ -1280,6 +1280,11 @@ func (in *RuntimeDetailsByContainer) DeepCopyInto(out *RuntimeDetailsByContainer
 		*out = new(common.LibCType)
 		**out = **in
 	}
+	if in.SecureExecutionMode != nil {
+		in, out := &in.SecureExecutionMode, &out.SecureExecutionMode
+		*out = new(bool)
+		**out = **in
+	}
 	if in.CriErrorMessage != nil {
 		in, out := &in.CriErrorMessage, &out.CriErrorMessage
 		*out = new(string)
