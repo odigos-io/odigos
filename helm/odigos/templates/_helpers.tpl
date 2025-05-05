@@ -20,12 +20,13 @@ Returns "true" if any userInstrumentationEnvs.language is enabled or has env var
 */}}
 {{- define "utils.shouldRenderUserInstrumentationEnvs" -}}
   {{- $languages := .Values.userInstrumentationEnvs.languages | default dict }}
+  {{- $shouldRender := false }}
   {{- range $lang, $config := $languages }}
     {{- if or $config.enabled $config.env }}
-      {{- print "true" }}
-      {{- break }}
+      {{- $shouldRender = true }}
     {{- end }}
   {{- end }}
+  {{- print $shouldRender }}
 {{- end }}
 
 
