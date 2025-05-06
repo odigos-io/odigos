@@ -44,14 +44,6 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-      - destinations
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - odigos.io
-    resources:
       - instrumentationrules
       - processors
     verbs:

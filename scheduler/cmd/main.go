@@ -103,9 +103,6 @@ func main() {
 				&odigosv1.CollectorsGroup{}: {
 					Field: nsSelector,
 				},
-				&odigosv1.Destination{}: {
-					Field: nsSelector,
-				},
 				&odigosv1.Processor{}: {
 					Field: nsSelector,
 				},
