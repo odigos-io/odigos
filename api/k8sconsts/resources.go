@@ -21,5 +21,9 @@ const (
 
 	// for resources auto created by a profile, this annotation will record
 	// the name of the profile that created them.
-	OdigosProfileAnnotation = "odigos.io/profile"
+	OdigosProfileAnnotation = "odigos.io/profile-name"
+
+	OdigosProfileSourceAnnotation  = "odigos.io/profile-source"
+	OdigosProfileSourceConfig      = "config"
+	OdigosProfileSourceOnPremToken = "onprem-token"
 )
