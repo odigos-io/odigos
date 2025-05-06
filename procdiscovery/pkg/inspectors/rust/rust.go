@@ -31,7 +31,7 @@ func (n *RustInspector) QuickScan(pcx *process.ProcessContext) (common.Programmi
 	staticSyms, err := file.Symbols()
 	if err == nil {
 		for _, sym := range staticSyms {
-			if strings.Contains(sym.Name, "rust") {
+			if strings.Contains(sym.Name, "__rust_") {
 				return common.RustProgrammingLanguage, true
 			}
 		}
@@ -41,7 +41,7 @@ func (n *RustInspector) QuickScan(pcx *process.ProcessContext) (common.Programmi
 	dynSyms, err := file.DynamicSymbols()
 	if err == nil {
 		for _, sym := range dynSyms {
-			if strings.Contains(sym.Name, "rust") {
+			if strings.Contains(sym.Name, "__rust_") {
 				return common.RustProgrammingLanguage, true
 			}
 		}
