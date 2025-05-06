@@ -13,6 +13,10 @@ import (
 type RustInspector struct{}
 
 func (n *RustInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	return "", false
+}
+
+func (n *RustInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	exeFile, err := pcx.GetExeFile()
 	if err != nil {
 		return "", false
@@ -43,10 +47,6 @@ func (n *RustInspector) QuickScan(pcx *process.ProcessContext) (common.Programmi
 		}
 	}
 
-	return "", false
-}
-
-func (n *RustInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	return "", false
 }
 
