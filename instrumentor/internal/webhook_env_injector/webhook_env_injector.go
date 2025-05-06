@@ -53,9 +53,10 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 
 		manifestValExits := getContainerEnvVarPointer(&container.Env, commonconsts.LdPreloadEnvVarName) != nil
 		runtimeDetailsVal, foundInInspection := getEnvVarFromRuntimeDetails(runtimeDetails, commonconsts.LdPreloadEnvVarName)
-		runtimeUnsetOrExpected := !foundInInspection || runtimeDetailsVal == odigosLoaderPath
+		ldPreloadUnsetOrExpected := !foundInInspection || runtimeDetailsVal == odigosLoaderPath
+		notSecureExecution := runtimeDetails.SecureExecutionMode != nil && !*runtimeDetails.SecureExecutionMode
 
-		if !manifestValExits && runtimeUnsetOrExpected {
+		if !manifestValExits && ldPreloadUnsetOrExpected && notSecureExecution {
 			// adding to the pod manifest env var:
 			// if the env var is not already present in the manifest and the runtime details env var is not set or set to the odigos loader path.
 			// the odigos loader path may be detected in the runtime details from previous installations or from terminating pods.
@@ -74,7 +75,14 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 			return
 		}
 
-		logger.Info("LD_PRELOAD env var already exists, fallback to pod manifest env injection", "container", container.Name)
+		switch {
+		case manifestValExits:
+			logger.Info("LD_PRELOAD env var already exists in the pod manifest, fallback to pod manifest env injection", "container", container.Name)
+		case foundInInspection:
+			logger.Info("LD_PRELOAD env var already exists in the runtime details, fallback to pod manifest env injection", "container", container.Name, "found value", runtimeDetailsVal)
+		case !notSecureExecution:
+			logger.Info("Secure execution mode is enabled, fallback to pod manifest env injection", "container", container.Name)
+		}
 	}
 
 	// from this point on, we are using the pod manifest env var injection method
