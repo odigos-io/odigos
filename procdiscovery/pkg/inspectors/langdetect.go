@@ -14,7 +14,11 @@ import (
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/nginx"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/nodejs"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/php"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/postgres"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/python"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/redis"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/ruby"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/rust"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
@@ -46,8 +50,12 @@ var inspectorsByLanguage = map[common.ProgrammingLanguage]Inspector{
 	common.PythonProgrammingLanguage:     &python.PythonInspector{},
 	common.JavascriptProgrammingLanguage: &nodejs.NodejsInspector{},
 	common.PhpProgrammingLanguage:        &php.PhpInspector{},
+	common.RubyProgrammingLanguage:       &ruby.RubyInspector{},
+	common.RustProgrammingLanguage:       &rust.RustInspector{},
 	common.MySQLProgrammingLanguage:      &mysql.MySQLInspector{},
 	common.NginxProgrammingLanguage:      &nginx.NginxInspector{},
+	common.RedisProgrammingLanguage:      &redis.RedisInspector{},
+	common.PostgresProgrammingLanguage:   &postgres.PostgresInspector{},
 }
 
 func runInspectionStage(

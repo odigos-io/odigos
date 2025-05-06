@@ -3,7 +3,6 @@ package php
 import (
 	"bytes"
 	"debug/elf"
-	"io"
 	"regexp"
 
 	"path/filepath"
@@ -55,9 +54,6 @@ func getVersionFromExecutable(pcx *process.ProcessContext) string {
 	if err != nil {
 		return ""
 	}
-	defer func() {
-		_, _ = exeFile.Seek(0, io.SeekStart)
-	}()
 
 	file, err := elf.NewFile(exeFile)
 	if err != nil {
