@@ -24,9 +24,8 @@ var (
 )
 
 type CriClient struct {
-	conn        *grpc.ClientConn
-	imageClient criapi.ImageServiceClient
-	// runtimeClient used to validate CRI connectivity by checking the version
+	conn          *grpc.ClientConn
+	imageClient   criapi.ImageServiceClient
 	runtimeClient criapi.RuntimeServiceClient
 	Logger        logr.Logger
 }
