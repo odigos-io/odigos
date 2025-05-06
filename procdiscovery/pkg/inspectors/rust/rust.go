@@ -2,7 +2,6 @@ package rust
 
 import (
 	"debug/elf"
-	"io"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -18,9 +17,6 @@ func (n *RustInspector) QuickScan(pcx *process.ProcessContext) (common.Programmi
 	if err != nil {
 		return "", false
 	}
-	defer func() {
-		_, _ = exeFile.Seek(0, io.SeekStart)
-	}()
 
 	file, err := elf.NewFile(exeFile)
 	if err != nil {
