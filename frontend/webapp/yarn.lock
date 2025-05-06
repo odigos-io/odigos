@@ -18,10 +18,10 @@
     "@wry/equality" "^0.5.6"
     ts-invariant "^0.10.3"
 
-"@apollo/client@^3.13.7":
-  version "3.13.7"
-  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.13.7.tgz#ae569ff28de7cda13aee268734afc5454f206f80"
-  integrity sha512-jOp8EctxOirgg5BSV0hgpcUSprrW7b9pf4r8ybUcY6Z+0T+ja5W82kI/rJeLUHxhT3YOKBm+72hWUHfsNIa+Fg==
+"@apollo/client@^3.13.8":
+  version "3.13.8"
+  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.13.8.tgz#ef1d49a5b134c69a55e3f137164a8e323aef4e2a"
+  integrity sha512-YM9lQpm0VfVco4DSyKooHS/fDTiKQcCHfxr7i3iL6a0kP/jNO5+4NFK6vtRDxaYisd5BrwOZHLJpPBnvRVpKPg==
   dependencies:
     "@graphql-typed-document-node/core" "^3.1.1"
     "@wry/caches" "^1.0.0"
