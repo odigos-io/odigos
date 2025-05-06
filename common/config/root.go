@@ -33,6 +33,7 @@ var availableConfigers = []Configer{
 	&Dash0{},
 	&Datadog{},
 	&Debug{},
+	&Dynamic{},
 	&Dynatrace{},
 	&ElasticAPM{},
 	&Elasticsearch{},

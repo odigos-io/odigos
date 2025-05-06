@@ -49,6 +49,13 @@ type CollectorNodeConfiguration struct {
 	// this is when go runtime will start garbage collection.
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
+
+	// Odigos will by default attempt to collect logs from '/var/log' on each k8s node.
+	// Sometimes, this directory is actually a symlink to another directory.
+	// In this case, for logs collection to work, we need to add a mount to the target directory.
+	// This field is used to specify this target directory in these cases.
+	// A common target directory is '/mnt/var/log'.
+	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
 }
 
 type CollectorGatewayConfiguration struct {
@@ -131,4 +138,5 @@ type OdigosConfiguration struct {
 	// when false or not set the original behavior will be used and the JAVA_OPTS env var will be injected.
 	AvoidInjectingJavaOptsEnvVar *bool                    `json:"avoidInjectingJavaOptsEnvVar,omitempty"`
 	UserInstrumentationEnvs      *UserInstrumentationEnvs `json:"UserInstrumentationEnvs,omitempty"`
+	NodeSelector                 map[string]string        `json:"nodeSelector,omitempty"`
 }

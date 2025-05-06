@@ -137,6 +137,10 @@ collectorNode:
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
   goMemLimitMiB: 360
 
+  # this configuration is used for logs collection where '/var/log' in a k8s node is a symlink 
+  # to some other directory (for example, '/mnt/var/log')
+  k8sNodeLogsDirectory: ''
+
 autoscaler:
   nodeSelector:
     kubernetes.io/os: linux
@@ -217,10 +221,6 @@ centralProxy:
   tolerations: []
   affinity: {}
 
-cli:
-  image:
-    repository: registry.odigos.io/odigos-cli
-
 # Pod Security Policy
 psp:
   enabled: false
@@ -241,3 +241,6 @@ profiles: []
 # When this is true, we will not inject the JAVA_OPTS env var into the container.
 # when false or not set the original behavior will be used and the JAVA_OPTS env var will be injected.
 avoidInjectingJavaOptsEnvVar: null
+# Optional NodeSelector to apply to all Odigos components
+# Note: Odigos will only be able to instrument workloads on the same nodes.
+nodeSelector: {}

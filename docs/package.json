@@ -11,6 +11,6 @@
   "author": "Odigos",
   "license": "Apache-2.0",
   "dependencies": {
-    "mintlify": "^4.0.494"
+    "mintlify": "^4.0.518"
   }
 }
