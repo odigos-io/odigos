@@ -615,6 +615,11 @@ spec:
                       type: string
                     runtimeVersion:
                       type: string
+                    secureExecutionMode:
+                      description: |-
+                        Indicates whether the target process is running is secure-execution mode.
+                        nil means we were unable to determine the secure-execution mode.
+                      type: boolean
                   required:
                   - containerName
                   - language

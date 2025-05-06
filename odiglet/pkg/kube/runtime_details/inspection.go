@@ -5,12 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
-
-	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
-
-	"github.com/odigos-io/odigos/odiglet/pkg/process"
-
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -20,10 +14,15 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
+	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -58,6 +57,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 			envs := make([]odigosv1.EnvVar, 0)
 			var detectedAgent *odigosv1.OtherAgent
 			var libcType *common.LibCType
+			var secureExecutionMode *bool
 
 			if inspectProc == nil {
 				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
@@ -96,6 +96,8 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 						log.Logger.Error(err, "error inspecting libc type", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 					}
 				}
+
+				secureExecutionMode = inspectProc.SecureExecutionMode
 			}
 
 			var runtimeVersion string
@@ -104,12 +106,13 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 			}
 
 			resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
-				ContainerName:  container.Name,
-				Language:       programLanguageDetails.Language,
-				RuntimeVersion: runtimeVersion,
-				EnvVars:        envs,
-				OtherAgent:     detectedAgent,
-				LibCType:       libcType,
+				ContainerName:       container.Name,
+				Language:            programLanguageDetails.Language,
+				RuntimeVersion:      runtimeVersion,
+				EnvVars:             envs,
+				OtherAgent:          detectedAgent,
+				LibCType:            libcType,
+				SecureExecutionMode: secureExecutionMode,
 			}
 
 			if inspectProc != nil {
