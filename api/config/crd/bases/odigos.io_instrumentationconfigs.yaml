@@ -405,8 +405,12 @@ spec:
                       - dotnet
                       - javascript
                       - php
+                      - ruby
+                      - rust
                       - mysql
                       - nginx
+                      - redis
+                      - postgres
                       - unknown
                       - ignored
                       type: string
@@ -612,8 +616,12 @@ spec:
                       - dotnet
                       - javascript
                       - php
+                      - ruby
+                      - rust
                       - mysql
                       - nginx
+                      - redis
+                      - postgres
                       - unknown
                       - ignored
                       type: string
