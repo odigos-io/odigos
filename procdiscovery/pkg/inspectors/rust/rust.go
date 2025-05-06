@@ -30,18 +30,20 @@ func (n *RustInspector) QuickScan(pcx *process.ProcessContext) (common.Programmi
 	// Check static symbols (from .symtab)
 	staticSyms, err := file.Symbols()
 	if err == nil {
-		found := scanSymbols(staticSyms)
-		if found {
-			return common.RustProgrammingLanguage, true
+		for _, sym := range staticSyms {
+			if strings.Contains(sym.Name, "rust") {
+				return common.RustProgrammingLanguage, true
+			}
 		}
 	}
 
 	// Check dynamic symbols (from .dynsym)
 	dynSyms, err := file.DynamicSymbols()
 	if err == nil {
-		found := scanSymbols(dynSyms)
-		if found {
-			return common.RustProgrammingLanguage, true
+		for _, sym := range dynSyms {
+			if strings.Contains(sym.Name, "rust") {
+				return common.RustProgrammingLanguage, true
+			}
 		}
 	}
 
@@ -54,17 +56,5 @@ func (n *RustInspector) DeepScan(pcx *process.ProcessContext) (common.Programmin
 
 func (n *RustInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
 	// TODO: Implement this function to get the Rust runtime version
-
 	return nil
-}
-
-func scanSymbols(syms []elf.Symbol) bool {
-	for _, sym := range syms {
-		if strings.Contains(sym.Name, "rust") || strings.HasPrefix(sym.Name, "_RNv") ||
-			strings.Contains(sym.Name, "core::") || strings.Contains(sym.Name, "std::") {
-			return true
-		}
-	}
-
-	return false
 }
