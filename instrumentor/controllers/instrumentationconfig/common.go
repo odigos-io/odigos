@@ -138,14 +138,14 @@ func mergeHttpHeadersCollectionrules(rule1 *instrumentationrules.HttpHeadersColl
 	// Merge the headers collection rules
 	var mergedHeaders []string
 	if rule1.HeaderKeys != nil {
-		mergedHeaders = append(mergedHeaders, *rule1.HeaderKeys...)
+		mergedHeaders = append(mergedHeaders, rule1.HeaderKeys...)
 	}
 
 	if rule2.HeaderKeys != nil {
-		mergedHeaders = append(mergedHeaders, *rule2.HeaderKeys...)
+		mergedHeaders = append(mergedHeaders, rule2.HeaderKeys...)
 	}
 
-	mergedRules.HeaderKeys = &mergedHeaders
+	mergedRules.HeaderKeys = mergedHeaders
 	return &mergedRules
 }
 
