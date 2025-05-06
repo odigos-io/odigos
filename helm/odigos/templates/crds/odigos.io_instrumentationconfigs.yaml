@@ -386,6 +386,7 @@ spec:
                       - javascript
                       - php
                       - ruby
+                      - rust
                       - mysql
                       - nginx
                       - redis
@@ -596,6 +597,7 @@ spec:
                       - javascript
                       - php
                       - ruby
+                      - rust
                       - mysql
                       - nginx
                       - redis

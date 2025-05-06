@@ -137,6 +137,7 @@ spec:
                       - javascript
                       - php
                       - ruby
+                      - rust
                       - mysql
                       - nginx
                       - redis
