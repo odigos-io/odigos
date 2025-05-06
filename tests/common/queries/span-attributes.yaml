@@ -5,7 +5,6 @@ description: |
   TODO - JS, Python and DotNet SDK are not generating data in latest semconv. add additional checks when they are updated.
 query: |
   length([?(
-    span.resourceAttributes."odigos.version" == 'e2e-test' &&
     span.resourceAttributes."telemetry.sdk.language" == 'java' &&
     span.serviceName == 'frontend' &&
     span.kind == 'server' &&
@@ -18,7 +17,6 @@ query: |
   &&
 
   length([?(
-    span.resourceAttributes."odigos.version" == 'e2e-test' &&
     span.resourceAttributes."telemetry.sdk.language" == 'dotnet' &&
     span.serviceName == 'pricing' &&
     span.kind == 'server'
@@ -27,7 +25,6 @@ query: |
   &&
 
   length([?(
-    span.resourceAttributes."odigos.version" == 'e2e-test' &&
     span.resourceAttributes."telemetry.sdk.language" == 'python' &&
     span.serviceName == 'inventory' &&
     span.kind == 'server'
@@ -36,7 +33,6 @@ query: |
   &&
 
   length([?(
-    span.resourceAttributes."odigos.version" == 'e2e-test' &&
     span.resourceAttributes."telemetry.sdk.language" == 'nodejs' &&
     span.serviceName == 'coupon' &&
     span.kind == 'server'
@@ -45,7 +41,6 @@ query: |
   &&
 
   length([?(
-    span.resourceAttributes."odigos.version" == 'e2e-test' &&
     span.resourceAttributes."telemetry.sdk.language" == 'go' &&
     span.serviceName == 'membership' &&
     span.kind == 'server' &&
@@ -57,7 +52,6 @@ query: |
   &&
 
   length([?(
-    span.resourceAttributes."odigos.version" == 'e2e-test' &&
     span.resourceAttributes."telemetry.sdk.language" == 'php' &&
     span.serviceName == 'currency' &&
     span.kind == 'server' &&
