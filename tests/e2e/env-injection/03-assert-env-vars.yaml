@@ -55,9 +55,10 @@ spec:
   containers:
     - image: public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
       name: java-supported-docker-env
-      # LD_PRELOAD is declared in the Dockerfile, hence we fallback to adding it to the user defined env vars.
-      (env[?name=='JAVA_OPTS']):
-      - value: -Dthis.does.not.exist=true -javaagent:/var/odigos/java/javaagent.jar
+      # LD_PRELOAD is declared in the Dockerfile, hence we can't add the loader
+      # in this test the user specified the env var injection to be loader only,
+      # hence we assert here that nothing is added from our side.
+      (env[?name=='JAVA_OPTS']): []
       (env[?name=='JAVA_TOOL_OPTIONS']): []
       (env[?name=='LD_PRELOAD']): []
 ---
@@ -93,9 +94,10 @@ spec:
     - image: public.ecr.aws/odigos/python-alpine:v0.0.1
       name: python-alpine
       # the python-alpine container is running in secure-execution mode - hence we should avoid using the loader
-      # and fallback to the pod-manifest env vars.
+      # since in this test the user specified the env var injection to be loader only,
+      # hence we assert here that nothing is added from our side.
       (env[?name=='PYTHONPATH']):
-      - value: /app:/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - value: /app
       (env[?name=='LD_PRELOAD']): []
 ---
 apiVersion: v1

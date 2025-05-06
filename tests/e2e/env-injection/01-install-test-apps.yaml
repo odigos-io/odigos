@@ -211,6 +211,56 @@ spec:
       port: 8080
       targetPort: 8080
 ---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: python-alpine
+  namespace: default
+  labels:
+    app: python-alpine
+spec:
+  selector:
+    matchLabels:
+      app: python-alpine
+  template:
+    metadata:
+      labels:
+        app: python-alpine
+    spec:
+      containers:
+        - name: python-alpine
+          image: public.ecr.aws/odigos/python-alpine:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "myapp.settings"
+            - name: PYTHONPATH
+              value: "/app"
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-alpine
+  namespace: default
+spec:
+  selector:
+    app: python-alpine
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 8000
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:

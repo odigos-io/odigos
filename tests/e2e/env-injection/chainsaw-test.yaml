@@ -20,7 +20,7 @@ spec:
 
     # currently the default env injection method is pod-manifest
 
-    - name: Assert config set successfully
+    - name: Assert config set successfully to default
       try:
         - script:
             timeout: 30s
@@ -49,10 +49,6 @@ spec:
     - name: Instrument Namespace
       try:
         - apply:
-            # setting a timeout here since we used `odigos config` earlier which currently re-create the `webhook-cert` secret.
-            # this means there is a time period in which the certificate loaded into the instrumentor is not matching the once in the webhook.
-            # this time period depends on the kubelet sync period.
-            timeout: 150s
             file: ../../common/apply/instrument-default-ns.yaml
 
     - name: Assert Runtime Detected
@@ -106,3 +102,33 @@ spec:
         - assert:
             timeout: 1m
             file: 02-assert-env-vars.yaml
+
+    - name: Set Env injection method to loader
+      try:
+        - script:
+            timeout: 2m
+            # using an ugly sleep here since the config set command is going to re-create the instrumentor certificate.
+            # this means that there is going to be a time period in which the certificate loaded into the instrumentor is not matching the one in the webhook.
+            # this time period depends on the kubelet sync period.
+            # this is a workaround until we have a better solution for this.
+            content: |
+              ../../../cli/odigos config set agent-env-vars-injection-method loader
+              sleep 90
+
+    - name: Assert config set successfully
+      try:
+        - script:
+            timeout: 30s
+            content: ../../common/assert_config_value.sh -k agentEnvVarsInjectionMethod -v loader
+
+    - name: Rollout instrumented apps
+      try:
+        - script:
+            timeout: 1m
+            content: kubectl rollout restart deployment
+
+    - name: 03 - Assert Environment Variables
+      try:
+        - assert:
+            timeout: 1m
+            file: 03-assert-env-vars.yaml
