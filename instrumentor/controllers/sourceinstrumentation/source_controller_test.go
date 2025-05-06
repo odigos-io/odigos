@@ -28,12 +28,14 @@ var _ = Describe("Source controller", func() {
 			Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
 
 			instrumentationConfig = testutil.NewMockInstrumentationConfig(deployment)
+
+			source = testutil.NewMockSource(deployment, false)
+			Expect(k8sClient.Create(ctx, source)).Should(Succeed())
+			testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig)
 		})
 
 		When("Sources are instrumented", func() {
 			It("Creates an InstrumentationConfig for the instrumented workload", func() {
-				source = testutil.NewMockSource(deployment, false)
-				Expect(k8sClient.Create(ctx, source)).Should(Succeed())
 				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig)
 			})
 
@@ -46,10 +48,6 @@ var _ = Describe("Source controller", func() {
 			})
 
 			It("Deletes the InstrumentationConfig when a Workload Source is updated to disableInstrumentation=true", func() {
-				source = testutil.NewMockSource(deployment, false)
-				Expect(k8sClient.Create(ctx, source)).Should(Succeed())
-				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig)
-
 				source.Spec.DisableInstrumentation = true
 				Expect(k8sClient.Update(ctx, source)).Should(Succeed())
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
@@ -81,6 +79,8 @@ var _ = Describe("Source controller", func() {
 				Expect(k8sClient.Create(ctx, deployment2)).Should(Succeed())
 				source2 := testutil.NewMockSource(deployment2, false)
 				Expect(k8sClient.Create(ctx, source2)).Should(Succeed())
+				instrumentationConfig2 := testutil.NewMockInstrumentationConfig(deployment2)
+				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, instrumentationConfig2)
 
 				source = testutil.NewMockSource(namespace, false)
 				Expect(k8sClient.Create(ctx, source)).Should(Succeed())
