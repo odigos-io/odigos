@@ -145,9 +145,6 @@ func runWatcherLoop(ctx context.Context, w watchers, notifyChan chan<- notificat
 				if err != nil {
 					fmt.Printf("error getting workload info: %v\n", err)
 				}
-				if app.Spec.ServiceName != "" {
-					name = app.Spec.ServiceName
-				}
 				notifyChan <- notification{notificationType: source, sourceID: common.SourceID{Kind: kind, Name: name, Namespace: app.Namespace}, eventType: t}
 			}
 		}
