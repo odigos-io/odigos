@@ -201,7 +201,6 @@ func (rc *CriClient) GetImageEnvVarsFromCRI(ctx context.Context, imageRef string
 	}
 	envVars := make(map[string]string, len(infoJSON.ImageSpec.Config.Env))
 	for _, env := range infoJSON.ImageSpec.Config.Env {
-		// fmt.Println(env)
 		if parts := strings.SplitN(env, "=", 2); len(parts) == 2 {
 			envVars[parts[0]] = parts[1]
 		}
