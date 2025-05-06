@@ -926,6 +926,18 @@ This can be used to resolve conflicting ports when a collector is using the host
 </tr>
 <tr>
 <td>
+<code>k8sNodeLogsDirectory</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Additional directory to mount in the node collector pod for logs.
+This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>resourcesSettings</code> <B>[Required]</B>
 </td>
 <td>
