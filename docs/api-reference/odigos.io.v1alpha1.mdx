@@ -926,6 +926,18 @@ This can be used to resolve conflicting ports when a collector is using the host
 </tr>
 <tr>
 <td>
+<code>k8sNodeLogsDirectory</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Additional directory to mount in the node collector pod for logs.
+This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>resourcesSettings</code> <B>[Required]</B>
 </td>
 <td>
@@ -2385,6 +2397,18 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 <td>
    <span class="text-muted">No description provided.</span>
    </td>
+</tr>
+<tr>
+<td>
+<code>secureExecutionMode</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Indicates whether the target process is running is secure-execution mode.
+nil means we were unable to determine the secure-execution mode.</p>
+</td>
 </tr>
 <tr>
 <td>
