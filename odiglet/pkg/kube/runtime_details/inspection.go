@@ -146,7 +146,6 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 
 	// Verify if environment variables already exist in the container manifest.
 	// If they exist, set the RuntimeUpdateState as ProcessingStateSkipped.
-	// there's no need to fetch them from the Container Runtime, and we will just append our additions in the webhook.
 	if envsExistsInManifest := checkEnvVarsInContainerManifest(container, envVarNames); envsExistsInManifest {
 		runtimeDetailsByContainer := (*resultsMap)[container.Name]
 		state := odigosv1.ProcessingStateSkipped
@@ -154,11 +153,11 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 		(*resultsMap)[container.Name] = runtimeDetailsByContainer
 	}
 
-	// Environment variables do not exist in the manifest; fetch them from the container's Runtime
+	// Environment variables do not exist in the manifest; fetch them from the container's Image
 	fetchAndSetEnvFromContainerRuntime(ctx, criClient, pod, container, envVarNames, resultsMap, procEnvVars)
 }
 
-// fetchAndSetEnvFromContainerRuntime retrieves environment variables from the container's runtime and updates the runtime details.
+// fetchAndSetEnvFromContainerRuntime retrieves environment variables from the container's Image and updates the runtime details.
 func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
 	envVarKeys []string, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer, procEnvVars map[string]string) {
 	containerID := getContainerID(pod.Status.ContainerStatuses, container.Name)
