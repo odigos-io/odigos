@@ -5,6 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
+
+	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
+
+	"github.com/odigos-io/odigos/odiglet/pkg/process"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -14,15 +20,10 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
-	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
-	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -151,7 +152,6 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 		state := odigosv1.ProcessingStateSkipped
 		runtimeDetailsByContainer.RuntimeUpdateState = &state
 		(*resultsMap)[container.Name] = runtimeDetailsByContainer
-		return
 	}
 
 	// Environment variables do not exist in the manifest; fetch them from the container's Runtime
@@ -241,11 +241,32 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 
 	// Verify if the RuntimeDetailsByContainer already set.
 	// If it has, skip updating the RuntimeDetails to ensure the new runtime detection is performed only once.
+	// In some cases we would like to update the existing RuntimeDetailsByContainer:
+	// 1. LD_PRELOAD is identified in EnvVars [/proc/pid/environ]
+	// 2. LD_PRELOAD is identified in EnvFromContainerRuntime [DockerFile]
+	// 3. SecureExecutionMode is set to true.
+	// 4. RuntimeVersion changes
 	if len(currentConfig.Status.RuntimeDetailsByContainer) > 0 {
-		return nil
+		updated := false
+		for _, newDetail := range newRuntimeDetials {
+			for j := range currentConfig.Status.RuntimeDetailsByContainer {
+				existingDetail := &currentConfig.Status.RuntimeDetailsByContainer[j]
+				if newDetail.ContainerName == existingDetail.ContainerName {
+					if mergeRuntimeDetails(existingDetail, newDetail) {
+						updated = true
+					}
+				}
+			}
+		}
+		// Do not overwrite existing details if no updates are needed
+		if !updated {
+			return nil
+		}
+	} else {
+		// First time setting the values
+		currentConfig.Status.RuntimeDetailsByContainer = newRuntimeDetials
 	}
 
-	currentConfig.Status.RuntimeDetailsByContainer = newRuntimeDetials
 	meta.SetStatusCondition(&currentConfig.Status.Conditions, metav1.Condition{
 		Type:    odigosv1.RuntimeDetectionStatusConditionType,
 		Status:  metav1.ConditionTrue,
@@ -274,4 +295,58 @@ func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkloa
 	}
 
 	return &runtimeDetails, nil
+}
+
+func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigosv1.RuntimeDetailsByContainer) bool {
+	updated := false
+
+	// 1. Check for LD_PRELOAD in EnvVars [/proc/pid/environ]
+	for _, newEnv := range new.EnvVars {
+		if newEnv.Name == consts.LdPreloadEnvVarName {
+			found := false
+			for _, existingEnv := range existing.EnvVars {
+				if existingEnv.Name == consts.LdPreloadEnvVarName {
+					found = true
+					break
+				}
+			}
+			if !found {
+				existing.EnvVars = append(existing.EnvVars, newEnv)
+				updated = true
+			}
+		}
+	}
+
+	// 2. Check for new LD_PRELOAD in EnvFromContainerRuntime [DockerFile]
+	for _, newEnvFromContainerRunetime := range new.EnvFromContainerRuntime {
+		if newEnvFromContainerRunetime.Name == consts.LdPreloadEnvVarName {
+			found := false
+			for _, existingEnvFromContainerRunetime := range existing.EnvFromContainerRuntime {
+				if existingEnvFromContainerRunetime.Name == consts.LdPreloadEnvVarName {
+					found = true
+					break
+				}
+			}
+			if !found {
+				existing.EnvFromContainerRuntime = append(existing.EnvFromContainerRuntime, newEnvFromContainerRunetime)
+				updated = true
+			}
+		}
+	}
+
+	// 3. Update SecureExecutionMode if needed
+	if new.SecureExecutionMode != nil && *new.SecureExecutionMode {
+		if existing.SecureExecutionMode == nil || !*existing.SecureExecutionMode {
+			existing.SecureExecutionMode = new.SecureExecutionMode
+			updated = true
+		}
+	}
+
+	// 4. Update RuntimeVersion if different
+	if new.RuntimeVersion != "" && new.RuntimeVersion != existing.RuntimeVersion {
+		existing.RuntimeVersion = new.RuntimeVersion
+		updated = true
+	}
+
+	return updated
 }
