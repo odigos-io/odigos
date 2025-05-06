@@ -17,12 +17,11 @@ import (
 
 type PhpInspector struct{}
 
-var processNames = []string{
-	"php",
-	"php-fpm",
-}
-
-var versionRegex = regexp.MustCompile(`X-Powered-By:\s*PHP/(\d+\.\d+\.\d+)`)
+var (
+	processNames  = []string{"php", "php-fpm"}
+	versionRegex  = regexp.MustCompile(`X-Powered-By:\s*PHP/(\d+\.\d+\.\d+)`)
+	versionPrefix = "X-Powered-By: PHP/"
+)
 
 func (n *PhpInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	baseExe := filepath.Base(pcx.ExePath)
@@ -63,9 +62,7 @@ func getVersionFromExecutable(pcx *process.ProcessContext) string {
 		return ""
 	}
 
-	versionPrefix := "X-Powered-By: PHP/"
 	needle := []byte(versionPrefix)
-
 	for _, section := range file.Sections {
 		if section.Name != ".rodata" {
 			continue
