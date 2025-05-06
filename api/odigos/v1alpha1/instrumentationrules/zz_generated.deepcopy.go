@@ -99,12 +99,8 @@ func (in *HttpHeadersCollection) DeepCopyInto(out *HttpHeadersCollection) {
 	*out = *in
 	if in.HeaderKeys != nil {
 		in, out := &in.HeaderKeys, &out.HeaderKeys
-		*out = new([]string)
-		if **in != nil {
-			in, out := *in, *out
-			*out = make([]string, len(*in))
-			copy(*out, *in)
-		}
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 }
 

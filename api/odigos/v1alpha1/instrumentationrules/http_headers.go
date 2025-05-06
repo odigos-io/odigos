@@ -5,5 +5,5 @@ package instrumentationrules
 type HttpHeadersCollection struct {
 
 	// Limit payload collection to specific header keys.
-	HeaderKeys *[]string `json:"headerKeys,omitempty"`
+	HeaderKeys []string `json:"headerKeys,omitempty"`
 }
