@@ -1,8 +1,8 @@
 package php
 
 import (
-	"fmt"
-	"os"
+	"debug/elf"
+	"io"
 	"regexp"
 
 	"path/filepath"
@@ -42,7 +42,7 @@ func (n *PhpInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerU
 		return common.GetVersion(value)
 	}
 
-	vers := getVersionFromBinary(pcx.Details.ProcessID)
+	vers := getVersionFromExecutable(pcx)
 	if vers != "" {
 		return common.GetVersion(vers)
 	}
@@ -50,16 +50,26 @@ func (n *PhpInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerU
 	return nil
 }
 
-func getVersionFromBinary(pid int) string {
-	paths := []string{
-		fmt.Sprintf("/proc/%d/root/usr/local/bin/php", pid),
-		fmt.Sprintf("/proc/%d/root/usr/bin/php", pid),
-		fmt.Sprintf("/proc/%d/root/usr/local/sbin/php-fpm", pid),
-		fmt.Sprintf("/proc/%d/root/usr/sbin/php-fpm", pid),
+func getVersionFromExecutable(pcx *process.ProcessContext) string {
+	exeFile, err := pcx.GetExeFile()
+	if err != nil {
+		return ""
 	}
 
-	for _, path := range paths {
-		data, err := os.ReadFile(path)
+	file, err := elf.NewFile(exeFile)
+	if err != nil {
+		return ""
+	}
+	defer exeFile.Seek(0, io.SeekStart)
+
+	for _, section := range file.Sections {
+		// SHT_PROGBITS sections contain actual data: code (.text), read-only data (.rodata), writable data (.data), etc.
+		// We want to read these sections when scanning for strings embedded in the binary.
+		if section.Type != elf.SHT_PROGBITS {
+			continue
+		}
+
+		data, err := section.Data()
 		if err != nil {
 			continue
 		}
