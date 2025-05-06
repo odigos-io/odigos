@@ -5,12 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
-
-	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
-
-	"github.com/odigos-io/odigos/odiglet/pkg/process"
-
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -20,10 +14,15 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
+	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
