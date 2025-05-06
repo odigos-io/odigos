@@ -40,12 +40,6 @@ const (
 )
 
 const (
-	// Environment variables used by the Central UI
-	EnvNextPublicBackendHTTPURL = "NEXT_PUBLIC_BACKEND_URL"
-	EnvNextPublicBackendWSURL   = "NEXT_PUBLIC_BACKEND_WS_URL"
-)
-
-const (
 	RedisResourceManagerName = "Redis"
 	RedisAppName             = "redis"
 	RedisDeploymentName      = "redis"

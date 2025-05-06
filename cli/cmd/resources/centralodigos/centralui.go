@@ -2,7 +2,6 @@ package centralodigos
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -61,16 +60,6 @@ func NewCentralUIDeployment(ns, imagePrefix, imageName, version string) *appsv1.
 						{
 							Name:  k8sconsts.CentralUI,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
-							Env: []corev1.EnvVar{
-								{
-									Name:  k8sconsts.EnvNextPublicBackendHTTPURL,
-									Value: fmt.Sprintf("http://%s.%s.svc.cluster.local:8081/graphql", k8sconsts.CentralBackendName, ns),
-								},
-								{
-									Name:  k8sconsts.EnvNextPublicBackendWSURL,
-									Value: fmt.Sprintf("ws://%s.%s.svc.cluster.local:8081/graphql", k8sconsts.CentralBackendName, ns),
-								},
-							},
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse(k8sconsts.CentralCPURequest),
