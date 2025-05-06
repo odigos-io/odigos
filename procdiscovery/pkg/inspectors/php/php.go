@@ -1,6 +1,7 @@
 package php
 
 import (
+	"bytes"
 	"debug/elf"
 	"io"
 	"regexp"
@@ -55,52 +56,42 @@ func getVersionFromExecutable(pcx *process.ProcessContext) string {
 	if err != nil {
 		return ""
 	}
+	defer exeFile.Seek(0, io.SeekStart)
 
 	file, err := elf.NewFile(exeFile)
 	if err != nil {
 		return ""
 	}
-	defer exeFile.Seek(0, io.SeekStart)
+
+	versionPrefix := "X-Powered-By: PHP/"
+	needle := []byte(versionPrefix)
 
 	for _, section := range file.Sections {
-		// SHT_PROGBITS sections contain actual data: code (.text), read-only data (.rodata), writable data (.data), etc.
-		// We want to read these sections when scanning for strings embedded in the binary.
-		if section.Type != elf.SHT_PROGBITS {
+		if section.Name != ".rodata" {
 			continue
 		}
 
 		data, err := section.Data()
-		if err != nil {
+		if err != nil || len(data) == 0 {
 			continue
 		}
 
-		for _, line := range extractStringFromBinary(data) {
-			if matches := versionRegex.FindStringSubmatch(line); matches != nil {
-				return matches[1]
-			}
+		idx := bytes.Index(data, needle)
+		if idx < 0 {
+			continue
+		}
+		idx += len(needle)
+
+		zeroIdx := bytes.IndexByte(data[idx:], 0)
+		if zeroIdx < 0 {
+			continue
+		}
+
+		versionStr := string(data[idx : idx+zeroIdx])
+		if matches := versionRegex.FindStringSubmatch(versionPrefix + versionStr); matches != nil {
+			return versionStr
 		}
 	}
 
 	return ""
-}
-
-func extractStringFromBinary(data []byte) []string {
-	var result []string
-	var current []byte
-
-	for _, b := range data {
-		if b >= 32 && b <= 126 {
-			current = append(current, b)
-		} else if len(current) >= 4 {
-			result = append(result, string(current))
-			current = nil
-		} else {
-			current = nil
-		}
-	}
-	if len(current) >= 4 {
-		result = append(result, string(current))
-	}
-
-	return result
 }
