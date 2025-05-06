@@ -99,8 +99,11 @@ spec:
                       - dotnet
                       - javascript
                       - php
+                      - ruby
                       - mysql
                       - nginx
+                      - redis
+                      - postgres
                       - unknown
                       - ignored
                       type: string
