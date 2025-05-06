@@ -36,7 +36,8 @@ func (n *RubyInspector) GetRuntimeVersion(pcx *process.ProcessContext, container
 	}
 
 	// TODO: The env is not always exposed, check if we can get the version from the executable/memory
-	// Use OTel "determineRubyVersion" function as reference: https://github.com/open-telemetry/opentelemetry-ebpf-profiler/blob/4377c7485ec426eb1210098593e6175d2d53bcd8/interpreter/ruby/ruby.go
+	// Use OTel "determineRubyVersion" function as reference:
+	// https://github.com/open-telemetry/opentelemetry-ebpf-profiler/blob/4377c7485ec426eb1210098593e6175d2d53bcd8/interpreter/ruby/ruby.go
 
 	return nil
 }
