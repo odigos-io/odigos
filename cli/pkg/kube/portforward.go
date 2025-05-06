@@ -1,0 +1,78 @@
+package kube
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/httpstream"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/portforward"
+	"k8s.io/client-go/transport/spdy"
+)
+
+func PortForwardWithContext(ctx context.Context, pod *corev1.Pod, client *Client, localPort, localAddress string) error {
+	stopChannel := make(chan struct{}, 1)
+	readyChannel := make(chan struct{})
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt)
+	defer signal.Stop(signals)
+
+	returnCtx, returnCtxCancel := context.WithCancel(ctx)
+	defer returnCtxCancel()
+
+	go func() {
+		select {
+		case <-signals:
+		case <-returnCtx.Done():
+		}
+		close(stopChannel)
+	}()
+
+	fmt.Printf("Odigos UI is available at: http://%s:%s\n\n", localAddress, localPort)
+	fmt.Printf("Port-forwarding from %s/%s\n", pod.Namespace, pod.Name)
+	fmt.Printf("Press Ctrl+C to stop\n")
+
+	req := client.CoreV1().RESTClient().
+		Post().
+		Resource("pods").
+		Namespace(pod.Namespace).
+		Name(pod.Name).
+		SubResource("portforward")
+
+	return forwardPorts("POST", req.URL(), client.Config, stopChannel, readyChannel, localPort, localAddress)
+}
+
+func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dialer, error) {
+	transport, upgrader, err := spdy.RoundTripperFor(cfg)
+	if err != nil {
+		return nil, err
+	}
+	spdyDialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, method, url)
+
+	tunnelDialer, err := portforward.NewSPDYOverWebsocketDialer(url, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return portforward.NewFallbackDialer(tunnelDialer, spdyDialer, httpstream.IsUpgradeFailure), nil
+}
+
+func forwardPorts(method string, url *url.URL, cfg *rest.Config, stopCh chan struct{}, readyCh chan struct{}, localPort string, localAddress string) error {
+	dialer, err := createDialer(method, url, cfg)
+	if err != nil {
+		return err
+	}
+
+	ports := []string{fmt.Sprintf("%s:%s", localPort, localPort)}
+	fw, err := portforward.NewOnAddresses(dialer, []string{localAddress}, ports, stopCh, readyCh, os.Stdout, os.Stderr)
+	if err != nil {
+		return err
+	}
+
+	return fw.ForwardPorts()
+}

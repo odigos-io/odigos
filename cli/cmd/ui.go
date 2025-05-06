@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
 
 	"k8s.io/client-go/rest"
 
@@ -59,7 +58,7 @@ var uiCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if err := portForwardWithContext(ctx, uiPod, client, localPort, localAddress); err != nil {
+		if err := kube.PortForwardWithContext(ctx, uiPod, client, localPort, localAddress); err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot start port-forward: %s\n", err)
 			os.Exit(1)
 		}
@@ -74,39 +73,6 @@ odigos ui --port 3456
 # Start the Odigos UI and have it manage and configure a specific cluster
 odigos ui --kubeconfig <path-to-kubeconfig>
 `,
-}
-
-func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube.Client, localPort string, localAddress string) error {
-	stopChannel := make(chan struct{}, 1)
-	readyChannel := make(chan struct{})
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt)
-	defer signal.Stop(signals)
-
-	returnCtx, returnCtxCancel := context.WithCancel(ctx)
-	defer returnCtxCancel()
-
-	go func() {
-		// If closed either by client (Ctrl+C) or server - stop port-forward
-		select {
-		case <-signals:
-		case <-returnCtx.Done():
-		}
-		close(stopChannel)
-	}()
-
-	fmt.Printf("Odigos UI is available at: http://%s:%s\n\n", localAddress, localPort)
-	fmt.Printf("Port-forwarding from %s/%s\n", uiPod.Namespace, uiPod.Name)
-	fmt.Printf("Press Ctrl+C to stop\n")
-
-	req := client.CoreV1().RESTClient().
-		Post().
-		Resource("pods").
-		Namespace(uiPod.Namespace).
-		Name(uiPod.Name).
-		SubResource("portforward")
-
-	return forwardPorts("POST", req.URL(), client.Config, stopChannel, readyChannel, localPort, localAddress)
 }
 
 func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dialer, error) {
@@ -124,23 +90,6 @@ func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dia
 	// First attempt tunneling (websocket) dialer, then fallback to spdy dialer.
 	dialer = portforward.NewFallbackDialer(tunnelingDialer, dialer, httpstream.IsUpgradeFailure)
 	return dialer, nil
-}
-
-func forwardPorts(method string, url *url.URL, cfg *rest.Config, stopCh chan struct{}, readyCh chan struct{}, localPort string, localAddress string) error {
-	dialer, err := createDialer(method, url, cfg)
-	if err != nil {
-		return err
-	}
-
-	port := fmt.Sprintf("%s:%d", localPort, defaultPort)
-	fw, err := portforward.NewOnAddresses(dialer,
-		[]string{localAddress},
-		[]string{port}, stopCh, readyCh, nil, os.Stderr)
-
-	if err != nil {
-		return err
-	}
-	return fw.ForwardPorts()
 }
 
 func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*corev1.Pod, error) {
