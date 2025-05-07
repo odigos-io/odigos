@@ -37,6 +37,7 @@ var configCmd = &cobra.Command{
 	- "ignored-containers": List of containers to be ignored.
 	- "mount-method": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
 	- "container-runtime-socket-path": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
+	- "k8s-node-logs-directory": Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log).
 	- "avoid-java-opts-env-var": Avoid injecting the Odigos value in JAVA_OPTS environment variable into Java applications.
 	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., {"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}
 	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
@@ -169,11 +170,20 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 		}
 		config.IgnoredContainers = value
 
-	case consts.CustomContainerRunetimeSocketPath:
+	case consts.CustomContainerRuntimeSocketPath:
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects one value", property)
 		}
 		config.CustomContainerRuntimeSocketPath = value[0]
+
+	case consts.K8sNodeLogsDirectory:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects one value", property)
+		}
+		if config.CollectorNode == nil {
+			config.CollectorNode = &common.CollectorNodeConfiguration{}
+		}
+		config.CollectorNode.K8sNodeLogsDirectory = value[0]
 
 	case consts.MountMethodProperty:
 		if len(value) != 1 {

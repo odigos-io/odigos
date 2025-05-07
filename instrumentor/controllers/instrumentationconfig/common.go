@@ -55,6 +55,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 				if rule.Spec.CodeAttributes != nil {
 					sdkConfigs[i].DefaultCodeAttributes = mergeCodeAttributesRules(sdkConfigs[i].DefaultCodeAttributes, rule.Spec.CodeAttributes)
 				}
+				if rule.Spec.HeadersCollection != nil {
+					sdkConfigs[i].DefaultHeadersCollection = mergeHttpHeadersCollectionrules(sdkConfigs[i].DefaultHeadersCollection, rule.Spec.HeadersCollection)
+				}
 			} else {
 				for _, library := range *rule.Spec.InstrumentationLibraries {
 					libraryConfig := findOrCreateSdkLibraryConfig(&sdkConfigs[i], library)
@@ -70,6 +73,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 					}
 					if rule.Spec.CodeAttributes != nil {
 						libraryConfig.CodeAttributes = mergeCodeAttributesRules(libraryConfig.CodeAttributes, rule.Spec.CodeAttributes)
+					}
+					if rule.Spec.HeadersCollection != nil {
+						libraryConfig.HeadersCollection = mergeHttpHeadersCollectionrules(libraryConfig.HeadersCollection, rule.Spec.HeadersCollection)
 					}
 				}
 			}
@@ -118,6 +124,29 @@ func createDefaultSdkConfig(sdkConfigs []odigosv1alpha1.SdkConfig, containerLang
 		Language:                 containerLanguage,
 		DefaultPayloadCollection: &instrumentationrules.PayloadCollection{},
 	})
+}
+
+func mergeHttpHeadersCollectionrules(rule1 *instrumentationrules.HttpHeadersCollection, rule2 *instrumentationrules.HttpHeadersCollection) *instrumentationrules.HttpHeadersCollection {
+	if rule1 == nil {
+		return rule2
+	} else if rule2 == nil {
+		return rule1
+	}
+
+	mergedRules := instrumentationrules.HttpHeadersCollection{}
+
+	// Merge the headers collection rules
+	var mergedHeaders []string
+	if rule1.HeaderKeys != nil {
+		mergedHeaders = append(mergedHeaders, rule1.HeaderKeys...)
+	}
+
+	if rule2.HeaderKeys != nil {
+		mergedHeaders = append(mergedHeaders, rule2.HeaderKeys...)
+	}
+
+	mergedRules.HeaderKeys = mergedHeaders
+	return &mergedRules
 }
 
 func mergeHttpPayloadCollectionRules(rule1 *instrumentationrules.HttpPayloadCollection, rule2 *instrumentationrules.HttpPayloadCollection) *instrumentationrules.HttpPayloadCollection {
