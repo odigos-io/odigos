@@ -73,5 +73,5 @@ spec:
       componentProps:
         required: false
         tooltip: 'Skip TLS certificate verification'
-      renderCondition: ['OTLP_GRPC_TLS_ENABLED', '==', 'true']    
+      renderCondition: ['OTLP_GRPC_TLS_ENABLED', '==', 'true']
   testConnectionSupported: true
