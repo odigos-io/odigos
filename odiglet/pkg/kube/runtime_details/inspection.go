@@ -301,17 +301,15 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 
 	// 1. Merge LD_PRELOAD from EnvVars [/proc/pid/environ]
 	odigosStr := "odigos"
-	mergeLdPreloadEnvVars(new.EnvVars, &existing.EnvVars, &odigosStr, &updated)
+	updated = mergeLdPreloadEnvVars(new.EnvVars, &existing.EnvVars, &odigosStr)
 
 	// 2. Merge LD_PRELOAD from EnvFromContainerRuntime [DockerFile]
-	mergeLdPreloadEnvVars(new.EnvFromContainerRuntime, &existing.EnvFromContainerRuntime, nil, &updated)
+	updated = mergeLdPreloadEnvVars(new.EnvFromContainerRuntime, &existing.EnvFromContainerRuntime, nil)
 
 	// 3. Update SecureExecutionMode if needed
-	if new.SecureExecutionMode != nil && *new.SecureExecutionMode {
-		if existing.SecureExecutionMode == nil || !*existing.SecureExecutionMode {
-			existing.SecureExecutionMode = new.SecureExecutionMode
-			updated = true
-		}
+	if new.SecureExecutionMode != nil && existing.SecureExecutionMode != nil && *new.SecureExecutionMode != *existing.SecureExecutionMode {
+		existing.SecureExecutionMode = new.SecureExecutionMode
+		updated = true
 	}
 
 	// 4. Update RuntimeVersion if different
@@ -327,12 +325,11 @@ func mergeLdPreloadEnvVars(
 	newEnvs []odigosv1.EnvVar,
 	existingEnvs *[]odigosv1.EnvVar,
 	skipIfContains *string,
-	updated *bool,
-) {
+) bool {
 	// Step 1: Check if LD_PRELOAD already exists in the existing envs
 	for _, existingEnv := range *existingEnvs {
 		if existingEnv.Name == consts.LdPreloadEnvVarName {
-			return // Already present, nothing to do
+			return false // Already present, nothing to do
 		}
 	}
 
@@ -341,9 +338,9 @@ func mergeLdPreloadEnvVars(
 		if newEnv.Name == consts.LdPreloadEnvVarName {
 			if skipIfContains == nil || !strings.Contains(newEnv.Value, *skipIfContains) {
 				*existingEnvs = append(*existingEnvs, newEnv)
-				*updated = true
-				return // Add LD_PRELOAD and return
+				return true // Add LD_PRELOAD and return
 			}
 		}
 	}
+	return false // No LD_PRELOAD found, nothing to do
 }
