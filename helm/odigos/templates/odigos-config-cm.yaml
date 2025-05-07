@@ -83,6 +83,9 @@ data:
       {{- with .Values.collectorNode.goMemLimitMiB }}
       goMemLimitMiB: {{ . }}
       {{- end }}
+      {{- with .Values.collectorNode.k8sNodeLogsDirectory }}
+      k8sNodeLogsDirectory: {{ . }}
+      {{- end }}
     {{- end }}
     {{- if .Values.UserInstrumentationEnvs.languages }}
     UserInstrumentationEnvs:
@@ -120,4 +123,8 @@ data:
     {{- end }}
     {{- if .Values.avoidInjectingJavaOptsEnvVar }}
     avoidInjectingJavaOptsEnvVar: {{ .Values.avoidInjectingJavaOptsEnvVar }}
+    {{- end }}
+    {{- if .Values.nodeSelector }}
+    nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 6 }}
     {{- end }}

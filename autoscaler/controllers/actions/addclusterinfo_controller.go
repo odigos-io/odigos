@@ -113,16 +113,7 @@ func (r *AddClusterInfoReconciler) ReportReconciledToProcessor(ctx context.Conte
 
 func (r *AddClusterInfoReconciler) convertToProcessor(action *actionv1.AddClusterInfo) (*v1.Processor, error) {
 
-	config := addclusterinfoConfig{
-		Attributes: []addClusterInfoAttributeConfig{},
-	}
-	for _, attr := range action.Spec.ClusterAttributes {
-		config.Attributes = append(config.Attributes, addClusterInfoAttributeConfig{
-			Key:    attr.AttributeName,
-			Value:  attr.AttributeStringValue,
-			Action: "insert",
-		})
-	}
+	config := addClusterInfoConfig(action.Spec.ClusterAttributes)
 
 	configJson, err := json.Marshal(config)
 	if err != nil {
@@ -159,4 +150,18 @@ func (r *AddClusterInfoReconciler) convertToProcessor(action *actionv1.AddCluste
 	}
 
 	return &processor, nil
+}
+
+func addClusterInfoConfig(cfg []actionv1.OtelAttributeWithValue) addclusterinfoConfig {
+	config := addclusterinfoConfig{
+		Attributes: []addClusterInfoAttributeConfig{},
+	}
+	for _, attr := range cfg {
+		config.Attributes = append(config.Attributes, addClusterInfoAttributeConfig{
+			Key:    attr.AttributeName,
+			Value:  attr.AttributeStringValue,
+			Action: "insert",
+		})
+	}
+	return config
 }

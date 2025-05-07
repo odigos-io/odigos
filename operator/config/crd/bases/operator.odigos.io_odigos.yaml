@@ -66,6 +66,13 @@ spec:
                 - k8s-virtual-device
                 - k8s-host-path
                 type: string
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: |-
+                  (Optional) NodeSelector is a map of key-value Kubernetes NodeSelector labels to apply to all Odigos components.
+                  Note that Odigos will only be able to instrument applications on the same node.
+                type: object
               onPremToken:
                 description: (Optional) OnPremToken is an enterprise token for Odigos
                   Enterprise.
