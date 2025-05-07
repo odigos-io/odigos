@@ -307,7 +307,7 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 	updated = mergeLdPreloadEnvVars(new.EnvFromContainerRuntime, &existing.EnvFromContainerRuntime, nil)
 
 	// 3. Update SecureExecutionMode if needed
-	if new.SecureExecutionMode != nil && existing.SecureExecutionMode != nil && *new.SecureExecutionMode != *existing.SecureExecutionMode {
+	if existing.SecureExecutionMode == nil && new.SecureExecutionMode != nil {
 		existing.SecureExecutionMode = new.SecureExecutionMode
 		updated = true
 	}
