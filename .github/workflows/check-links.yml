@@ -18,8 +18,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .lycheecache
-          key: cache-lychee-${{ github.repository_id }}
-          restore-keys: cache-lychee-${{ github.repository_id }}
+          key: cache-lychee-${{ github.event.pull_request.number }}
+          restore-keys: cache-lychee-${{ github.event.pull_request.number }}
 
       - name: Link Checker
         uses: lycheeverse/lychee-action@v2.4.0
@@ -42,4 +42,4 @@ jobs:
         if: always()
         with:
           path: .lycheecache
-          key: cache-lychee-${{ github.repository_id }}
+          key: cache-lychee-${{ github.event.pull_request.number }}
