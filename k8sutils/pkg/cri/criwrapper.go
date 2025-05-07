@@ -96,7 +96,7 @@ func (rc *CriClient) Connect(ctx context.Context) error {
 }
 
 func (rc *CriClient) GetContainerEnvVarsList(ctx context.Context, envVarKeys []string, containerID string) ([]odigosv1.EnvVar, error) {
-	envVars, err := rc.GetDockerfileEnvVarsFromContainer(ctx, containerID)
+	envVars, err := rc.GetContainerImageEnvVars(ctx, containerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get container environment variables: %v", err)
 	}
@@ -105,7 +105,6 @@ func (rc *CriClient) GetContainerEnvVarsList(ctx context.Context, envVarKeys []s
 	result := make([]odigosv1.EnvVar, 0, len(envVarKeys))
 	for _, key := range envVarKeys {
 		if value, exists := envVars[key]; exists {
-
 			result = append(result, odigosv1.EnvVar{Name: key, Value: value})
 		}
 	}
@@ -137,14 +136,14 @@ func extractContainerID(containerUri string) string {
 	return parts[1]
 }
 
-func (rc *CriClient) GetDockerfileEnvVarsFromContainer(ctx context.Context, containerID string) (map[string]string, error) {
+func (rc *CriClient) GetContainerImageEnvVars(ctx context.Context, containerID string) (map[string]string, error) {
 	containerID = extractContainerID(containerID)
 	if containerID == "" {
-		return nil, fmt.Errorf("invalid container ID")
+		return nil, errors.New("invalid container ID")
 	}
 
 	if rc.runtimeClient == nil || rc.imageClient == nil {
-		return nil, fmt.Errorf("runtime or image client is not connected")
+		return nil, errors.New("runtime or image client is not connected")
 	}
 	// Set a timeout for the request
 	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -167,11 +166,11 @@ func (rc *CriClient) GetDockerfileEnvVarsFromContainer(ctx context.Context, cont
 
 func (rc *CriClient) GetImageEnvVarsFromCRI(ctx context.Context, imageRef string) (map[string]string, error) {
 	if imageRef == "" {
-		return nil, fmt.Errorf("invalid image ref")
+		return nil, errors.New("invalid image ref")
 	}
 
 	if rc.imageClient == nil {
-		return nil, fmt.Errorf("image client not initialized")
+		return nil, errors.New("image client not initialized")
 	}
 
 	resp, err := rc.imageClient.ImageStatus(ctx, &criapi.ImageStatusRequest{
@@ -185,7 +184,7 @@ func (rc *CriClient) GetImageEnvVarsFromCRI(ctx context.Context, imageRef string
 	infoMap := resp.GetInfo()
 	infoRaw, ok := infoMap["info"]
 	if !ok {
-		return nil, fmt.Errorf("image info not found in response")
+		return nil, errors.New("image info not found in response")
 	}
 
 	var infoJSON struct {

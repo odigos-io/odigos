@@ -299,39 +299,12 @@ func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkloa
 func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigosv1.RuntimeDetailsByContainer) bool {
 	updated := false
 
-	// 1. Check for LD_PRELOAD in EnvVars [/proc/pid/environ]
-	for _, newEnv := range new.EnvVars {
-		if newEnv.Name == consts.LdPreloadEnvVarName {
-			found := false
-			for _, existingEnv := range existing.EnvVars {
-				if existingEnv.Name == consts.LdPreloadEnvVarName {
-					found = true
-					break
-				}
-			}
-			if !found {
-				existing.EnvVars = append(existing.EnvVars, newEnv)
-				updated = true
-			}
-		}
-	}
+	// 1. Merge LD_PRELOAD from EnvVars [/proc/pid/environ]
+	odigosStr := "odigos"
+	mergeLdPreloadEnvVars(new.EnvVars, &existing.EnvVars, &odigosStr, &updated)
 
-	// 2. Check for new LD_PRELOAD in EnvFromContainerRuntime [DockerFile]
-	for _, newEnvFromContainerRunetime := range new.EnvFromContainerRuntime {
-		if newEnvFromContainerRunetime.Name == consts.LdPreloadEnvVarName {
-			found := false
-			for _, existingEnvFromContainerRunetime := range existing.EnvFromContainerRuntime {
-				if existingEnvFromContainerRunetime.Name == consts.LdPreloadEnvVarName {
-					found = true
-					break
-				}
-			}
-			if !found {
-				existing.EnvFromContainerRuntime = append(existing.EnvFromContainerRuntime, newEnvFromContainerRunetime)
-				updated = true
-			}
-		}
-	}
+	// 2. Merge LD_PRELOAD from EnvFromContainerRuntime [DockerFile]
+	mergeLdPreloadEnvVars(new.EnvFromContainerRuntime, &existing.EnvFromContainerRuntime, nil, &updated)
 
 	// 3. Update SecureExecutionMode if needed
 	if new.SecureExecutionMode != nil && *new.SecureExecutionMode {
@@ -348,4 +321,29 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 	}
 
 	return updated
+}
+
+func mergeLdPreloadEnvVars(
+	newEnvs []odigosv1.EnvVar,
+	existingEnvs *[]odigosv1.EnvVar,
+	skipIfContains *string,
+	updated *bool,
+) {
+	// Step 1: Check if LD_PRELOAD already exists in the existing envs
+	for _, existingEnv := range *existingEnvs {
+		if existingEnv.Name == consts.LdPreloadEnvVarName {
+			return // Already present, nothing to do
+		}
+	}
+
+	// Step 2: Try to add it from new envs
+	for _, newEnv := range newEnvs {
+		if newEnv.Name == consts.LdPreloadEnvVarName {
+			if skipIfContains == nil || !strings.Contains(newEnv.Value, *skipIfContains) {
+				*existingEnvs = append(*existingEnvs, newEnv)
+				*updated = true
+				return // Add LD_PRELOAD and return
+			}
+		}
+	}
 }
