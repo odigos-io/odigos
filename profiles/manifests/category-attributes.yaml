@@ -181,7 +181,7 @@ spec:
             - new_attribute: "odigos.sub_category"
               from_field: "db.system"
             - new_attribute: "odigos.transaction.type"
-              value: "non-web"              
+              value: "non-web"
           # Messaging Queues
           "odigos.io/ebpf/instrumentation-amqplib":
             - new_attribute: "odigos.category"
@@ -343,7 +343,7 @@ spec:
             - new_attribute: "odigos.sub_category"
               from_field: "messaging.system"
             - new_attribute: "odigos.transaction.type"
-              value: "non-web"           
+              value: "non-web"
           # RPC Systems
           "go.opentelemetry.io/auto/google.golang.org/grpc":
             - new_attribute: "odigos.category"
@@ -351,7 +351,7 @@ spec:
             - new_attribute: "odigos.sub_category"
               from_field: "rpc.system"
             - new_attribute: "odigos.transaction.type"
-              value: "web"                               
+              value: "web"
           # Python
           # HTTP
           "instrumentation.odigos.io/ebpf/aiohttp_client":
@@ -406,6 +406,8 @@ spec:
               from_field: "http.method"
             - new_attribute: "odigos.sub_category"
               from_field: "http.request.method"
+            - new_attribute: "odigos.sub_category"
+              value: "http.framework.fastapi"
             - new_attribute: "odigos.transaction.type"
               value: "web"
           "instrumentation.odigos.io/ebpf/flask":
@@ -876,8 +878,8 @@ spec:
             - new_attribute: "odigos.sub_category"
               from_field: "http.request.method"
             - new_attribute: "odigos.transaction.type"
-              value: "web"              
-        
+              value: "web"
+
           "io.opentelemetry.apache-dubbo-2.7":
             - new_attribute: "odigos.category"
               value: "RPC Systems"
@@ -1583,4 +1585,3 @@ spec:
     - TRACES
   collectorRoles:
     - CLUSTER_GATEWAY
-    
