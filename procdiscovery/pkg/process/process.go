@@ -18,6 +18,7 @@ const (
 	PythonVersionConst = "PYTHON_VERSION"
 	JavaVersionConst   = "JAVA_VERSION"
 	PhpVersionConst    = "PHP_VERSION"
+	RubyVersionConst   = "RUBY_VERSION"
 )
 
 const (
@@ -31,6 +32,7 @@ var LangsVersionEnvs = map[string]struct{}{
 	PythonVersionConst: {},
 	JavaVersionConst:   {},
 	PhpVersionConst:    {},
+	RubyVersionConst:   {},
 }
 
 const (

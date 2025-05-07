@@ -137,6 +137,10 @@ collectorNode:
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
   goMemLimitMiB: 360
 
+  # this configuration is used for logs collection where '/var/log' in a k8s node is a symlink 
+  # to some other directory (for example, '/mnt/var/log')
+  k8sNodeLogsDirectory: ''
+
 autoscaler:
   nodeSelector:
     kubernetes.io/os: linux

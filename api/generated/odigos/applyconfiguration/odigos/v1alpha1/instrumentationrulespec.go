@@ -34,6 +34,7 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	OtelSdks                 *instrumentationrules.OtelSdks                      `json:"otelSdks,omitempty"`
 	OtelDistros              *instrumentationrules.OtelDistros                   `json:"otelDistros,omitempty"`
 	CodeAttributes           *instrumentationrules.CodeAttributes                `json:"codeAttributes,omitempty"`
+	HeadersCollection        *instrumentationrules.HttpHeadersCollection         `json:"headersCollection,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -123,5 +124,13 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithOtelDistros(value instru
 // If called multiple times, the CodeAttributes field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithCodeAttributes(value instrumentationrules.CodeAttributes) *InstrumentationRuleSpecApplyConfiguration {
 	b.CodeAttributes = &value
+	return b
+}
+
+// WithHeadersCollection sets the HeadersCollection field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HeadersCollection field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithHeadersCollection(value instrumentationrules.HttpHeadersCollection) *InstrumentationRuleSpecApplyConfiguration {
+	b.HeadersCollection = &value
 	return b
 }

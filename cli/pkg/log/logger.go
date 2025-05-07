@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	symbolPos = 50
+	symbolPos = 55
 )
 
 type Line interface {

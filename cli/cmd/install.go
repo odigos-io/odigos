@@ -44,6 +44,7 @@ var (
 	userInputInstallProfiles         []string
 	uiMode                           string
 	customContainerRuntimeSocketPath string
+	k8sNodeLogsDirectory             string
 	instrumentorImage                string
 	odigletImage                     string
 	autoScalerImage                  string
@@ -353,15 +354,18 @@ func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]st
 		OpenshiftEnabled:                 openshiftEnabled,
 		IgnoredNamespaces:                userInputIgnoredNamespaces,
 		CustomContainerRuntimeSocketPath: customContainerRuntimeSocketPath,
-		IgnoredContainers:                userInputIgnoredContainers,
-		SkipWebhookIssuerCreation:        skipWebhookIssuerCreation,
-		Psp:                              psp,
-		ImagePrefix:                      imagePrefix,
-		Profiles:                         selectedProfiles,
-		UiMode:                           common.UiMode(uiMode),
-		ClusterName:                      clusterName,
-		CentralBackendURL:                centralBackendURL,
-		NodeSelector:                     nodeSelector,
+		CollectorNode: &common.CollectorNodeConfiguration{
+			K8sNodeLogsDirectory: k8sNodeLogsDirectory,
+		},
+		IgnoredContainers:         userInputIgnoredContainers,
+		SkipWebhookIssuerCreation: skipWebhookIssuerCreation,
+		Psp:                       psp,
+		ImagePrefix:               imagePrefix,
+		Profiles:                  selectedProfiles,
+		UiMode:                    common.UiMode(uiMode),
+		ClusterName:               clusterName,
+		CentralBackendURL:         centralBackendURL,
+		NodeSelector:              nodeSelector,
 	}
 
 }
@@ -389,6 +393,7 @@ func init() {
 	installCmd.Flags().BoolVar(&psp, consts.PspProperty, false, "enable pod security policy")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", k8sconsts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
 	installCmd.Flags().StringVar(&customContainerRuntimeSocketPath, "container-runtime-socket-path", "", "custom configuration of a path to the container runtime socket path (e.g. /var/lib/rancher/rke2/agent/containerd/containerd.sock)")
+	installCmd.Flags().StringVar(&k8sNodeLogsDirectory, consts.K8sNodeLogsDirectory, "", "custom configuration of a path to the directory where Kubernetes logs are symlinked in a node (e.g. /mnt/var/log)")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")

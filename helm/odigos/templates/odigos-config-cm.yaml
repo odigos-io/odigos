@@ -83,6 +83,9 @@ data:
       {{- with .Values.collectorNode.goMemLimitMiB }}
       goMemLimitMiB: {{ . }}
       {{- end }}
+      {{- with .Values.collectorNode.k8sNodeLogsDirectory }}
+      k8sNodeLogsDirectory: {{ . }}
+      {{- end }}
     {{- end }}
     {{- if .Values.UserInstrumentationEnvs.languages }}
     UserInstrumentationEnvs:
