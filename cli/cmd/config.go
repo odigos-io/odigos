@@ -38,7 +38,7 @@ var configCmd = &cobra.Command{
 	- "mount-method": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
 	- "container-runtime-socket-path": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
 	- "avoid-java-opts-env-var": Avoid injecting the Odigos value in JAVA_OPTS environment variable into Java applications.
-	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., {"languages":{"go":{"enabled":true,"env":{"OTEL_GO_ENABLED":"true"}}}}
+	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., {"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}
 	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
 	`,
 }
