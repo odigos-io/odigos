@@ -22,6 +22,12 @@ spec:
               fi
         - assert:
             file: ../../common/assert/odigos-installed.yaml
+
+    - name: '[1 - Setup] Verify Node Odiglet label has been added'
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
     - name: '[1 - Setup]Assert Trace DB is up'
       try:
         - assert:
@@ -138,6 +144,19 @@ spec:
         - podLogs:
             name: odiglet
             namespace: odigos-test
+
+    - name: '[2 - Workload Instrumentation] Verify collector metrics are collected by the UI'
+      try:
+        - script:
+            timeout: 5m
+            content: |
+              while true; do
+                ../../common/assert_collector_metrics_from_ui.sh odigos-test
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 5
+              done
 
     - name: '[3 - Workload Uninstrumentation] Uninstrument individual deployments'
       try:
