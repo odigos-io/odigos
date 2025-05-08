@@ -18,8 +18,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .lycheecache
-          key: cache-lychee-${{ github.sha }}
-          restore-keys: cache-lychee-
+          key: cache-lychee-pr-${{ github.event.pull_request.number }}
+          restore-keys: cache-lychee-pr-
 
       - name: Link Checker
         uses: lycheeverse/lychee-action@v2.4.0
@@ -32,14 +32,18 @@ jobs:
             --exclude ".*qryn.local.*"
             --exclude "^https://d15jtxgb40qetw\\.cloudfront\\.net/.*"
             --exclude "https://github.com/odigos-io/ui-kit"
-            --max-concurrency 5 --retry-wait-time 5 --max-retries 1
+            --timeout 30
+            --max-concurrency 2
+            --retry-wait-time 15
+            --max-retries 5
             --cache --max-cache-age 1d
+            --cache-exclude-status 400..600
             --github-token ${{ secrets.GITHUB_TOKEN }}
           fail: true
 
       - name: Save lychee cache
+        if: ${{ steps.restore-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@v4
-        if: always()
         with:
           path: .lycheecache
-          key: ${{ steps.restore-cache.outputs.cache-primary-key }}
+          key: cache-lychee-pr-${{ github.event.pull_request.number }}
