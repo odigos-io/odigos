@@ -179,3 +179,18 @@ To debug the `cli install` command in Visual Studio Code, use the following conf
 
 Note that OTel frequently makes breaking changes upstream, deprecating and removing packages that will cause breaks.
 Search the upstream OTel collector and collector-contrib repos for package deprecations if you get an error that a package isn't found.
+
+In addition, upstream packages often move from unstable versioning (`v0.xxx`) to stable (`v1.xxx`), and this could be the reason.
+Check the tags in the upstream repo to see if the missing package actually exists for the current tag as defined in `Makefile`
+for that package under the `update-otel` target.
+
+It can also be helpful to run a `go clean -modcache` if you hit errors like these when running `make update-otel`:
+
+```
+$ make update-otel
+/Library/Developer/CommandLineTools/usr/bin/make update-dep MODULE=go.opentelemetry.io/collector/cmd/mdatagen VERSION=v0.125.0
+cd ./api && go get go.opentelemetry.io/collector/cmd/mdatagen@v0.125.0
+go: module go.opentelemetry.io/collector@v0.125.0 found, but does not contain package go.opentelemetry.io/collector/cmd/mdatagen
+make[1]: *** [update-dep/./api] Error 1
+make: *** [update-otel] Error 2
+```
