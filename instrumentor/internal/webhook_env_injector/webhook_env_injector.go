@@ -23,7 +23,7 @@ import (
 )
 
 func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
-	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, client client.Client, config *common.OdigosConfiguration) {
+	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, client client.Client, config *common.OdigosConfiguration) error {
 
 	otelSignalExporterLanguages := []common.ProgrammingLanguage{
 		common.JavaProgrammingLanguage,
@@ -37,14 +37,14 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 
 	envVarsPerLanguage := getEnvVarNamesForLanguage(runtimeDetails.Language)
 	if envVarsPerLanguage == nil {
-		return
+		// no env vars to inject for this language
+		return nil
 	}
 
 	injectionMethod := config.AgentEnvVarsInjectionMethod
 	if injectionMethod == nil {
 		// we are reading the effective config which should already have the env injection method resolved or defaulted
-		logger.Error(errors.New("env injection method is not set in ODIGOS config"), "Skipping Injection of ODIGOS agent")
-		return
+		return errors.New("env injection method is not set in ODIGOS config")
 	}
 
 	// check if odigos loader should be used
@@ -64,7 +64,7 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 				Name:  commonconsts.LdPreloadEnvVarName,
 				Value: odigosLoaderPath,
 			})
-			return
+			return nil
 		}
 
 		// the LD_PRELOAD env var is preset. for now, we don't attempt to append our value to the user defined one.
@@ -72,7 +72,7 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 			// we're specifically requested to use the loader env var injection method
 			// and the user defined LD_PRELOAD env var is already present or running in a secure execution mode.
 			// so we avoid the fallback to pod manifest env var injection method
-			return
+			return errors.New("loader env var injection method is requested but the LD_PRELOAD env var is already present or running in a secure execution mode")
 		}
 
 		switch {
@@ -121,6 +121,8 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 	if !isOdigosAgentEnvAppended {
 		applyOdigosEnvDefaults(container, envVarsPerLanguage, otelsdk, avoidAddingJavaOpts)
 	}
+
+	return nil
 }
 
 func getEnvVarFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContainer, envVarName string) (string, bool) {
