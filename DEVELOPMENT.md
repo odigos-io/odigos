@@ -176,3 +176,6 @@ To debug the `cli install` command in Visual Studio Code, use the following conf
 5. Update `OTEL_*` versions in `Makefile`
 6. Run `make update-otel`
 7. Run `make go-mod-tidy`
+
+Note that OTel frequently makes breaking changes upstream, deprecating and removing packages that will cause breaks.
+Search the upstream OTel collector and collector-contrib repos for package deprecations if you get an error that a package isn't found.
