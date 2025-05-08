@@ -173,7 +173,7 @@ instrumentor:
   # which mount method to use for odigos agent directory
   # k8s-virtual-device: default method using a virtual device
   # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
-  mountMethod: 'k8s-virtual-device'
+  mountMethod: ''
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
