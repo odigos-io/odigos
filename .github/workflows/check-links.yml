@@ -25,7 +25,7 @@ jobs:
         uses: lycheeverse/lychee-action@v2.4.0
         with:
           args: >-
-            -v -n "*.md" "**/*.mdx"
+            -v -n "*.md" "**/*.md" "**/*.mdx"
             --exclude "http://localhost*"
             --exclude "^https://logs-prod.*"
             --exclude ".*your-account.*"
