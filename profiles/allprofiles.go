@@ -23,6 +23,7 @@ var AllProfiles = []profile.Profile{
 	attributes.DbPayloadCollectionProfile,
 	attributes.QueryOperationDetector,
 	attributes.SemconvUpgraderProfile,
+	attributes.ReduceSpanNameCardinalityProfile,
 
 	instrumentation.AllowConcurrentAgents,
 	instrumentation.JavaEbpfInstrumentationsProfile,
