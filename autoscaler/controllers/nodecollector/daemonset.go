@@ -274,9 +274,14 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					}, additionalVolumes...),
 					Containers: []corev1.Container{
 						{
-							Name:    containerName,
-							Image:   common.ControllerConfig.CollectorImage,
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosNodeCollectorConfigMapKey)},
+							Name:  containerName,
+							Image: common.ControllerConfig.CollectorImage,
+							Command: []string{containerCommand, fmt.Sprintf("--config=%s:%s/%s/%s",
+								k8sconsts.OdigosCollectorConfigMapProviderScheme,
+								datacollection.Namespace,
+								datacollection.Name,
+								k8sconsts.OdigosNodeCollectorConfigMapKey),
+							},
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
 									Name:      k8sconsts.OdigosNodeCollectorConfigMapKey,

@@ -95,6 +95,51 @@ func NewDataCollectionClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
+func NewDataCollectionRole(ns string) *rbacv1.Role {
+	return &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Role",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-data-collection",
+			Namespace: ns,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{ // Needed to manage the configmaps of the data-collector and gateway-collector
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+		},
+	}
+}
+
+func NewDataCollectionRoleBinding(ns string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-data-collection",
+			Namespace: ns,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      "odigos-data-collection",
+				Namespace: ns,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     "odigos-data-collection",
+		},
+	}
+}
+
 type dataCollectionResourceManager struct {
 	client      *kube.Client
 	ns          string
@@ -111,6 +156,8 @@ func (a *dataCollectionResourceManager) Name() string { return "DataCollection" 
 func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
 		NewDataCollectionServiceAccount(a.ns),
+		NewDataCollectionRole(a.ns),
+		NewDataCollectionRoleBinding(a.ns),
 		NewDataCollectionClusterRole(a.config.Psp),
 		NewDataCollectionClusterRoleBinding(a.ns),
 	}

@@ -133,6 +133,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 				},
 				Spec: corev1.PodSpec{
 					NodeSelector: nodeSelector,
+					ServiceAccountName: k8sconsts.OdigosClusterCollectorDeploymentName,
 					Volumes: []corev1.Volume{
 						{
 							Name: k8sconsts.OdigosClusterCollectorConfigMapKey,
@@ -153,9 +154,14 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 					},
 					Containers: []corev1.Container{
 						{
-							Name:    containerName,
-							Image:   commonconfig.ControllerConfig.CollectorImage,
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosClusterCollectorConfigMapKey)},
+							Name:  containerName,
+							Image: commonconfig.ControllerConfig.CollectorImage,
+							Command: []string{containerCommand, fmt.Sprintf("--config=%s:%s/%s/%s",
+								k8sconsts.OdigosCollectorConfigMapProviderScheme,
+								gateway.Namespace,
+								gateway.Name,
+								k8sconsts.OdigosClusterCollectorConfigMapKey),
+							},
 							EnvFrom: getSecretsFromDests(dests),
 							// Add the ODIGOS_VERSION environment variable from the ConfigMap
 							Env: []corev1.EnvVar{
