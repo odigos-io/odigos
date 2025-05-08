@@ -15,6 +15,7 @@ It has the following phases:
     6. Context propagation works across deployments (service name is identical to the one configured by the Source)
     7. Resource attributes are present
     8. Span attributes are present
+    9. Collector metrics are collected by UI
 
 3. **Workload uninstrumentation** - Delete all Source objects for deployments. Verify:
     1. Workloads roll out a new (uninstrumented) revision

@@ -246,6 +246,7 @@
             "backends/coralogix",
             "backends/dash0",
             "backends/datadog",
+            "backends/dynamic",
             "backends/dynatrace",
             "backends/elasticapm",
             "backends/elasticsearch",
