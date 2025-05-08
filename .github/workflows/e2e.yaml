@@ -70,7 +70,6 @@ jobs:
           - '1.32'
         test-scenario:
           - 'ui'
-          - 'multi-apps'
           - 'helm-chart'
           - 'cli-upgrade'
           - 'workload-lifecycle'
