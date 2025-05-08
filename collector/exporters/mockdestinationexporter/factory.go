@@ -10,7 +10,6 @@ import (
 	"go.opentelemetry.io/collector/exporter"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/exporter/exporterbatcher"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 )
 
@@ -31,7 +30,6 @@ func createDefaultConfig() component.Config {
 		TimeoutConfig:    exporterhelper.NewDefaultTimeoutConfig(),
 		RetryConfig:      configretry.NewDefaultBackOffConfig(),
 		QueueConfig:      exporterhelper.NewDefaultQueueConfig(),
-		BatcherConfig:    exporterbatcher.NewDefaultConfig(),
 	}
 }
 
@@ -54,8 +52,7 @@ func createLogsExporter(
 		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
-		exporterhelper.WithQueue(pCfg.QueueConfig),
-		exporterhelper.WithBatcher(pCfg.BatcherConfig),
+		exporterhelper.WithQueueBatch(pCfg.QueueConfig, exporterhelper.NewLogsQueueBatchSettings()),
 	)
 }
 
@@ -78,8 +75,7 @@ func createTracesExporter(
 		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
-		exporterhelper.WithQueue(pCfg.QueueConfig),
-		exporterhelper.WithBatcher(pCfg.BatcherConfig),
+		exporterhelper.WithQueueBatch(pCfg.QueueConfig, exporterhelper.NewTracesQueueBatchSettings()),
 	)
 }
 
@@ -102,7 +98,6 @@ func createMetricsExporter(
 		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
-		exporterhelper.WithQueue(pCfg.QueueConfig),
-		exporterhelper.WithBatcher(pCfg.BatcherConfig),
+		exporterhelper.WithQueueBatch(pCfg.QueueConfig, exporterhelper.NewMetricsQueueBatchSettings()),
 	)
 }
