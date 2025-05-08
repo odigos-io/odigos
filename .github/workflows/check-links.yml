@@ -38,7 +38,7 @@ jobs:
             --retry-wait-time 15
             --max-retries 5
             --cache --max-cache-age 1d
-            --retry
+            --cache-exclude-status 400..600
             --github-token ${{ secrets.GITHUB_TOKEN }}
           fail: true
 
