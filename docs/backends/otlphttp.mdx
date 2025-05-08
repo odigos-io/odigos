@@ -66,6 +66,13 @@ To configure basic authentication, use the optional config options `Basic Auth U
   - This field is optional and defaults to `none`
 - **OTLP_HTTP_HEADERS** `{ key: string; value: string; }[]` : Headers. Headers is the option to set custom HTTP headers for OTLP HTTP destination. If specified, please provide each header in the format: key:value. Multiple headers can be added. Keys must be non-empty strings and follow standard HTTP header conventions. Values must be non-empty strings and may include alphanumerics, whitespace, and standard punctuation.
   - This field is optional
+- **OTLP_HTTP_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
+  - This field is optional and defaults to `False`
+- **OTLP_HTTP_CA_PEM** `string` : Certificate Authority. When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
+- **OTLP_HTTP_INSECURE_SKIP_VERIFY** `boolean` : Insecure Skip Verify. Skip TLS certificate verification
+  - This field is optional and defaults to `False`
 
 ### Adding Destination to Odigos
 
@@ -103,6 +110,9 @@ There are two primary methods for configuring destinations in Odigos:
         # OTLP_HTTP_BASIC_AUTH_USERNAME: <Basic Auth Username>
         # OTLP_HTTP_COMPRESSION: <Destination Compression Type (default: none) (options: [none, gzip, snappy, lz4, zlib, deflate, zstd])>
         # OTLP_HTTP_HEADERS: <Headers>
+        # OTLP_HTTP_TLS_ENABLED: <Enable TLS>
+        # OTLP_HTTP_CA_PEM: <Certificate Authority>
+        # OTLP_HTTP_INSECURE_SKIP_VERIFY: <Insecure Skip Verify>
       destinationName: otlphttp
       # Uncomment the 'secretRef' below if you are using the optional Secret.
       # secretRef:
