@@ -4,7 +4,7 @@ module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
 go 1.23.7
 
-toolchain go1.24.0
+toolchain go1.23.9
 
 require (
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.125.0
@@ -695,7 +695,7 @@ require (
 	gonum.org/v1/gonum v0.16.0 // indirect
 	google.golang.org/api v0.230.0 // indirect
 	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250505200425-f936aa4a68b2 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250313205543-e70fdf4c4cb4 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250428153025-10db94c68c34 // indirect
 	google.golang.org/grpc v1.72.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
