@@ -15,15 +15,15 @@ const (
 	splunkOtlpCompression        = "SPLUNK_OTLP_COMPRESSION"
 )
 
-// SplunkSAPM configures the SAPM collector exporter.
+// Splunk configures the SAPM collector exporter.
 // Deprecated: This exporter is deprecated upstream in favor of the OTLPHTTP exporter.
-type SplunkSAPM struct{}
+type Splunk struct{}
 
-func (s *SplunkSAPM) DestType() common.DestinationType {
+func (s *Splunk) DestType() common.DestinationType {
 	return common.SplunkSAPMDestinationType
 }
 
-func (s *SplunkSAPM) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
+func (s *Splunk) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	realm, exists := dest.GetConfig()[splunkRealm]
 	if !exists {
 		return nil, errors.New("Splunk realm not specified, gateway will not be configured for Splunk")
