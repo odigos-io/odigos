@@ -202,9 +202,7 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	// executing selinux commands to make agents readable by pods.
 	if err := fs.ApplyOpenShiftSELinuxSettings(); err != nil {
 		log.Logger.Error(err, "Failed to apply SELinux settings on RHEL host")
-		// TODO: semanage can sometimes return an error that's non-fatal, need to find a better way to handle all scenarios
-		// For now, allow it through (as the only errors we have seen in practice have been non-fatal so far)
-		//os.Exit(-1)
+		os.Exit(-1)
 	}
 
 	os.Exit(0)
