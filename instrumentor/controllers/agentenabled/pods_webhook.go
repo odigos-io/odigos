@@ -188,7 +188,11 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 		if !found {
 			continue
 		}
-		webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, *pw, container, otelSdk, runtimeDetails, p.Client, config)
+
+		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, *pw, container, otelSdk, runtimeDetails, p.Client, config)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

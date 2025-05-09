@@ -32,6 +32,7 @@ var AllProfiles = []profile.Profile{
 	instrumentation.MountMethodK8sHostPathProfile,
 	instrumentation.MountMethodK8sVirtualDevice,
 	instrumentation.AvoidInjectingJavaOptsEnvVar,
+	instrumentation.LoaderFallbackToPodManifestEnvVarInjection,
 
 	pipeline.SmallBatchesProfile,
 
