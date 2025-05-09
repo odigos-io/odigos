@@ -148,6 +148,10 @@ COPY --from=php-agents /php-agents/opentelemetry-php/8.2 /instrumentations/php/8
 COPY --from=php-agents /php-agents/opentelemetry-php/8.3 /instrumentations/php/8.3
 COPY --from=php-agents /php-agents/opentelemetry-php/8.4 /instrumentations/php/8.4
 
+# loader
+ARG ODIGOS_LOADER_VERSION=v0.0.3
+RUN wget https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
+
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest
 ARG VERSION
 ARG RELEASE

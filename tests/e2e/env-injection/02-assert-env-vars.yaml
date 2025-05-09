@@ -8,13 +8,10 @@ spec:
   containers:
     - image: public.ecr.aws/odigos/java-latest-version:v0.0.1
       name: java-latest-version
-      # nor JAVA_OPTS or JAVA_TOOL_OPTIONS are set in the manifest or Dockerfile of java-latest-version,
-      # In this case we need to ensure that they are both exists in the pod spec.
-      (env[?name=='JAVA_OPTS']):
-       - value: "-javaagent:/var/odigos/java/javaagent.jar"
-      (env[?name=='JAVA_TOOL_OPTIONS']):
-       - value: "-javaagent:/var/odigos/java/javaagent.jar"
-      (env[?name=='LD_PRELOAD']): []
+      (env[?name=='JAVA_OPTS']): []
+      (env[?name=='JAVA_TOOL_OPTIONS']): []
+      (env[?name=='LD_PRELOAD']):
+       - value: "/var/odigos/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -27,11 +24,10 @@ spec:
     - image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
       name: java-supported-manifest-env
       (env[?name=='JAVA_TOOL_OPTIONS']):
-      - value: "-Dnot.work=true -javaagent:/var/odigos/java/javaagent.jar"
-    # JAVA_OPTS is not set in the manifest of java-supported-manifest-env,
-    # so we need to ensure it is also not set in the pod spec.
+      - value: "-Dnot.work=true"
       (env[?name=='JAVA_OPTS']): []
-      (env[?name=='LD_PRELOAD']): []
+      (env[?name=='LD_PRELOAD']):
+       - value: "/var/odigos/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -42,13 +38,12 @@ metadata:
 spec:
   containers:
     - image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
-      # JAVA_OPTS is defined in the manifest but it is empty,
-      # so we expect here to have our value in both env vars.
+      (env[?name=='JAVA_TOOL_OPTIONS']): []
+      # user defined JAVA_OPTS in the manifest but it is empty,
       (env[?name=='JAVA_OPTS']):
-       - value: "-javaagent:/var/odigos/java/javaagent.jar"
-      (env[?name=='JAVA_TOOL_OPTIONS']):
-       - value: "-javaagent:/var/odigos/java/javaagent.jar"
-      (env[?name=='LD_PRELOAD']): []
+        - name: JAVA_OPTS
+      (env[?name=='LD_PRELOAD']):
+       - value: "/var/odigos/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -60,10 +55,9 @@ spec:
   containers:
     - image: public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
       name: java-supported-docker-env
+      # LD_PRELOAD is declared in the Dockerfile, hence we fallback to adding it to the user defined env vars.
       (env[?name=='JAVA_OPTS']):
       - value: -Dthis.does.not.exist=true -javaagent:/var/odigos/java/javaagent.jar
-    # JAVA_TOOL_OPTIONS is not set in the Dockerfile of java-supported-docker-env,
-    # so we need to ensure it is also not set in the pod spec.
       (env[?name=='JAVA_TOOL_OPTIONS']): []
       (env[?name=='LD_PRELOAD']): []
 ---
@@ -76,16 +70,17 @@ metadata:
 spec:
   containers:
     - image: registry.odigos.io/odigos-demo-inventory:v0.1.14
+      # the user defined PYTHONPATH remains unchanged
+      # and we add the loader.
       name: inventory
-      # We are checking that in case valueFrom exists we're appending Odigos additions to the ORIGINAL_{envar}
       (env[?name=='PYTHONPATH']):
-      - value: $(ORIGINAL_PYTHONPATH):/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
-      (env[?name=='ORIGINAL_PYTHONPATH']):
-      - valueFrom:
+       - valueFrom:
           configMapKeyRef:
             key: PYTHONPATH
             name: env-configmap
-      (env[?name=='LD_PRELOAD']): []
+      (env[?name=='ORIGINAL_PYTHONPATH']): []
+      (env[?name=='LD_PRELOAD']):
+       - value: "/var/odigos/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -97,6 +92,8 @@ spec:
   containers:
     - image: public.ecr.aws/odigos/python-alpine:v0.0.1
       name: python-alpine
+      # the python-alpine container is running in secure-execution mode - hence we should avoid using the loader
+      # and fallback to the pod-manifest env vars.
       (env[?name=='PYTHONPATH']):
       - value: /app:/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
       (env[?name=='LD_PRELOAD']): []
@@ -111,12 +108,13 @@ spec:
   containers:
     - image: registry.odigos.io/odigos-demo-frontend:v0.1.14
       name: frontend
-      # We are checking that in case valueFrom exists we're appending Odigos additions to the ORIGINAL_{envar}
+      # the user defined PYTHONPATH remains unchanged
+      # and we add the loader.
       (env[?name=='JAVA_TOOL_OPTIONS']):
-      - value: $(ORIGINAL_JAVA_TOOL_OPTIONS) -javaagent:/var/odigos/java/javaagent.jar
-      (env[?name=='ORIGINAL_JAVA_TOOL_OPTIONS']):
-      - valueFrom:
+       - valueFrom:
           configMapKeyRef:
             key: JAVA_TOOL_OPTIONS
             name: env-configmap
-      (env[?name=='LD_PRELOAD']): []
+      (env[?name=='ORIGINAL_JAVA_TOOL_OPTIONS']): []
+      (env[?name=='LD_PRELOAD']):
+       - value: "/var/odigos/loader.so"

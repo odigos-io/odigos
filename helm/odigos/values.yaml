@@ -189,6 +189,11 @@ instrumentor:
   #   - If cert-manager is not installed or detected, no Issuer or Certificate will be created
   #     regardless of this flag.
   skipWebhookIssuerCreation: false
+  # how to add the required environment variables for instrumentation to a container
+  # loader: only try using the odigos loader which requires setting the LD_PRELOAD env var in the container manifest.
+  # pod-manifest: add the environment variables to the container manifest.
+  # loader-fallback-to-pod-manifest: try using the odigos loader first, and if it fails, fallback to adding the environment variables to the container manifest.
+  agentEnvVarsInjectionMethod: ''
 
 odiglet:
   nodeSelector:
