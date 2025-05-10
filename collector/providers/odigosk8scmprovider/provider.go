@@ -31,7 +31,7 @@ type provider struct {
 	key                 string
 	informer            cache.SharedIndexInformer
 	informerStopCh      chan struct{}
-    providerStopCh      chan struct{}
+	providerStopCh      chan struct{}
 	running             bool
 	logger              *zap.Logger
 	lastResourceVersion string
@@ -56,7 +56,7 @@ func (p *provider) Retrieve(ctx context.Context, uri string, wf confmap.WatcherF
 	}
 
 	p.namespace = parts[0]
-	p.cmName = parts[1] 
+	p.cmName = parts[1]
 	p.key = parts[2]
 
 	// Initialize k8s client if not already done
@@ -81,7 +81,7 @@ func (p *provider) Retrieve(ctx context.Context, uri string, wf confmap.WatcherF
 	if !p.running {
 		p.running = true
 		p.informerStopCh = make(chan struct{})
-        p.providerStopCh = make(chan struct{})
+		p.providerStopCh = make(chan struct{})
 		go p.runInformer(wf)
 	}
 
@@ -90,7 +90,7 @@ func (p *provider) Retrieve(ctx context.Context, uri string, wf confmap.WatcherF
 		return nil, fmt.Errorf("key %q not found in configmap", p.key)
 	}
 
-    p.logger.Info("configuration retrieved from ConfigMap", zap.String("name", cm.Name), zap.String("namespace", cm.Namespace))
+	p.logger.Info("configuration retrieved from ConfigMap", zap.String("name", cm.Name), zap.String("namespace", cm.Namespace))
 
 	return confmap.NewRetrievedFromYAML([]byte(content))
 }
@@ -138,7 +138,7 @@ func (p *provider) runInformer(wf confmap.WatcherFunc) {
 	})
 
 	p.informer.Run(p.informerStopCh)
-    close(p.providerStopCh)
+	close(p.providerStopCh)
 }
 
 func (p *provider) Scheme() string {
@@ -149,7 +149,7 @@ func (p *provider) Shutdown(ctx context.Context) error {
 	p.logger.Info("shutting down k8s config map provider")
 	if p.running {
 		close(p.informerStopCh)
-        <- p.providerStopCh
+		<-p.providerStopCh
 		p.running = false
 	}
 	p.logger.Info("k8s config map provider shut down successfully")
