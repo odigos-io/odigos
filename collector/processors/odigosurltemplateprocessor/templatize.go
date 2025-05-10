@@ -25,7 +25,7 @@ var (
 	// These are common as ids in cloud systems.
 	//
 	// To enforce the following conditions in a single Go regular expression:
-	// - Only lowercase hexadecimal characters (0-9 and a-f),
+	// - Only hexadecimal characters (lower or higher case) (0-9, a-f, A-F),
 	// - More than 16 characters,
 	// - An even number of characters
 	//
