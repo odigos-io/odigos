@@ -10,6 +10,10 @@ formatters:
   enable:
     - gofmt
     - goimports
+  settings:
+    goimports:
+      local-prefixes:
+      - github.com/odigos-io
 
 linters:
   default: none
@@ -49,8 +53,6 @@ linters:
       locale: US
     lll:
       line-length: 150
-    goimports:
-      local-prefixes: github.com/odigos-io
     staticcheck:
       checks: ["all", "-ST1005", "-ST1003", "-ST1021", "-ST1022", "-ST1000", "-ST1008", "-ST1020"]
     gocritic:
@@ -84,10 +86,3 @@ linters:
       excludes:
         - G204
         - G101
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - unparam
-        - funlen
