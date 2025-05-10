@@ -101,7 +101,6 @@ require (
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.121.0
 	go.opentelemetry.io/collector/extension v1.27.0
 	go.opentelemetry.io/collector/extension/zpagesextension v0.121.0
-	go.opentelemetry.io/collector/odigos/providers/odigosfileprovider v0.121.0
 	go.opentelemetry.io/collector/otelcol v0.121.0
 	go.opentelemetry.io/collector/processor v0.121.0
 	go.opentelemetry.io/collector/processor/batchprocessor v0.121.0
@@ -686,8 +685,6 @@ replace github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor => ..
 
 replace github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
 
-replace go.opentelemetry.io/collector/odigos/providers/odigosfileprovider => ../providers/odigosfileprovider
-
-replace go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider v0.121.0 => ../providers/odigosk8scmprovider
+replace go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
 
 exclude github.com/knadh/koanf v1.5.0

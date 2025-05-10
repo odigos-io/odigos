@@ -134,24 +134,6 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 				Spec: corev1.PodSpec{
 					NodeSelector: nodeSelector,
 					ServiceAccountName: k8sconsts.OdigosClusterCollectorDeploymentName,
-					Volumes: []corev1.Volume{
-						{
-							Name: k8sconsts.OdigosClusterCollectorConfigMapKey,
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: gateway.Name,
-									},
-									Items: []corev1.KeyToPath{
-										{
-											Key:  k8sconsts.OdigosClusterCollectorConfigMapKey,
-											Path: fmt.Sprintf("%s.yaml", k8sconsts.OdigosClusterCollectorConfigMapKey),
-										},
-									},
-								},
-							},
-						},
-					},
 					Containers: []corev1.Container{
 						{
 							Name:  containerName,
@@ -204,12 +186,6 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 							},
 							SecurityContext: &corev1.SecurityContext{
 								AllowPrivilegeEscalation: boolPtr(false),
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      k8sconsts.OdigosClusterCollectorConfigMapKey,
-									MountPath: confDir,
-								},
 							},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{

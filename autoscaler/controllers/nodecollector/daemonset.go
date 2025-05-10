@@ -232,22 +232,6 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					ServiceAccountName: k8sconsts.OdigosNodeCollectorDaemonSetName,
 					Volumes: append([]corev1.Volume{
 						{
-							Name: k8sconsts.OdigosNodeCollectorConfigMapKey,
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: datacollection.Name,
-									},
-									Items: []corev1.KeyToPath{
-										{
-											Key:  k8sconsts.OdigosNodeCollectorConfigMapKey,
-											Path: fmt.Sprintf("%s.yaml", k8sconsts.OdigosNodeCollectorConfigMapKey),
-										},
-									},
-								},
-							},
-						},
-						{
 							Name: "varlog",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
@@ -283,10 +267,6 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 								k8sconsts.OdigosNodeCollectorConfigMapKey),
 							},
 							VolumeMounts: append([]corev1.VolumeMount{
-								{
-									Name:      k8sconsts.OdigosNodeCollectorConfigMapKey,
-									MountPath: confDir,
-								},
 								{
 									Name:      "varlibdockercontainers",
 									MountPath: "/var/lib/docker/containers",
