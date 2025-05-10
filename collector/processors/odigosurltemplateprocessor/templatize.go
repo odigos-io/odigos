@@ -36,11 +36,11 @@ var (
 	//
 	// Explanation (ChatGPT):
 	// - (?:...) — A non-capturing group.
-	// - [0-9a-f]{2} — Matches exactly two hexadecimal characters.
+	// - [0-9a-fA-F]{2} — Matches exactly two hexadecimal characters.
 	// - {8,} — Repeats that group 8 or more times, ensuring:
 	// 	 - 8 × 2 = 16 characters minimum
 	// 	 - Each repetition is of 2 characters → ensures even length.
-	hexEncodedRegex = regexp.MustCompile(`^(?:[0-9a-f]{2}){8,}$`)
+	hexEncodedRegex = regexp.MustCompile(`^(?:[0-9a-fA-F]{2}){8,}$`)
 
 	// assume that long numbers (7 continues digits or more) are ids.
 	// even if they are found with some text (for example "INC0012686") they are treated as ids
