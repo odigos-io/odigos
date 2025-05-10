@@ -1,17 +1,19 @@
 # UrlTemplate Processor
 
+> ⚠️ **Warning**: Improper configuration of this processor can result in high cardinality values in span names and attributes.
+> This can lead to performance degradation and excessive costs in telemetry backends.
+> It is highly recommended to test and monitor templatization results in staging before deploying to production. Use `include`/`exclude` filters and custom regex rules judiciously.
+
 This processor fills a gap between semantic conventions and real users needs.
 
-According to http semantic conventions for span names: 
+According to http semantic conventions for span names:
 
-```
-HTTP span names SHOULD be {method} {target} if there is a (low-cardinality) target available. If there is no (low-cardinality) {target} available, HTTP span names SHOULD be {method}.
-```
+> HTTP span names SHOULD be {method} {target} if there is a (low-cardinality) target available. If there is no (low-cardinality) {target} available, HTTP span names SHOULD be {method}.
 
-The target should be a templated string (e.g. not `/user/1234` but `/user/{id}`).
-The templated value is sometimes available to instrumentations in server spans where the framework and instrumentation supports such feature, but it is almost never available in client spans.
+The target should be a templated string (e.g. `/user/{id}`, not `/user/1234`).
+Templated value is **sometimes** available in server spans where the framework and instrumentation library supports such feature, but it is almost **never** available in client spans.
 
-To work around this, this processor will attempt to heuristically "guess" a templated value, and fill it in the span name and relevant attribute.
+When the templated path is not collected at instrumentation level, this processor will attempt to heuristically "guess" a templated value, and update span names and relevant attribute accordingly, enhancing the usability of the data for humans and machines.
 
 ## Mechanism
 
@@ -27,7 +29,7 @@ The following conditions must be met for a span to be considered relevant for th
 
 ### Templated Route Attribute
 
-For spans that match the above constraints, the processor will calculate the templated url and set it in the relevant attributes:
+For spans that match the above constraints, the processor will calculate the templated url and set it in the relevant semconv attributes:
 
 - `url.template` - for client spans.
 - `http.route` - for server spans.
@@ -72,7 +74,7 @@ processors:
     # Example: "/v1/{foo:\d+}" will match "/v1/123" producing "/v1/{foo}", but not with "/v1/abc".
     # compatible with golang regexp module https://pkg.go.dev/regexp
     # for performance reasons, avoid using compute-intensive expressions or adding too many values here.
-    custom_templatization_rules:
+    templatization_rules:
       - "/user/{user-name}/friends/{friend-id:\d+}"
 
     # list of additional regex patterns that will be used to match and templated matching path segment.
@@ -91,7 +93,7 @@ processors:
 
 This processor is powerful and well polished based on real world usage. However, it is not hermetic, and the consequences of a false positive can be high cardinality values in span names and attributes which can lead to performance issues in some backends and is generally not recommended.
 
-To work around this, the processor supports include/exclude configuration options which limit which spans will be enriched with url templatization values.
+To work around this, the processor supports include/exclude configuration options that limit which spans will be enriched with url templatization values.
 
 ### Default Mode
 
@@ -109,7 +111,7 @@ If exclude filters are also set, and the span matches with any of the exclude fi
 
 Less manual mode where all spans are processed by default, and users can exclude specific sources if they found that the processor is causing high cardinality values later on.
 
-This gives users less chore in reviewing each and every source, and only react when there is a problem. But it means that high cardinality values can be introduced to the system and be in effect until someone notices it and add the problematic source to the exclude filters.
+This reduce the chore in reviewing each and every source upfront, and allows a more "reactive" approach where issues are addressed as the are found. It will also automatically include future sources and opt them in without reviewing them, potentially introducing high cardinality values.
 
 ## Templatization
 
@@ -123,7 +125,7 @@ By default, the processor will split the path to segment (e.g. "/user/1234" -> [
 
 - only digits or special characters - ```^[\d_\-!@#$%^&*()=+{}\[\]:;"'<>,.?/\\|`~]+$``` -> `{id}` (`1234`, `123_456`, `0`)
 - uuids - `[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}` -> `{id}` (`123e4567-e89b-12d3-a456-426614174000`). They can appear as either prefix or suffix of the segment (for example `/process/PROCESS_123e4567-e89b-12d3-a456-42661bd74000`)
-- hex-encoded strings - `[0-9a-f]{2}([0-9a-f]{2})*` -> `{id}` (`6f2a9cdeab34f01e`)
+- hex-encoded strings - `^(?:[0-9a-fA-F]{2}){8,}$` -> `{id}` (`6f2a9cdeab34f01e`, `6F2A9CDEAB34F01E`)
 - long numbers anywhere - `\d{7,}` -> `{id}` (`1234567`, `INC328962358623904`, `sb_12345678901234567890_us`)
 - common [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) date-time formats - `^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?(?:Z|[+-]\d{4})?$` -> `{date}` (`2023-10-01T12:00:00+0000`)
 - emails - `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$` like `foo@bar.io` -> `{email}`
@@ -152,7 +154,7 @@ For example, if your system uses `id`s in format `id-1234`, you can set the rege
 
 Few more examples for ids that will not be catched by default but can be configured with custom regexp:
 
-- `SA_8856_BH` - `^SA_\d{4}_\w{2}$` ("SA_" then 4 digits then "_" then 2 word characters ([a-zA-Z0-9_]))
+- `SA_8856_BH` - `^SA_\d{4}_\w{2}$` ("SA_" then 4 digits then "_" then 2 "word characters" ([a-zA-Z0-9_]))
 - `prod-api-001` - `^(dev|staging|prod)-[a-z]+-\d{3}$` (limit the first part to dev/staging/prod)
 - `backup_20250416_073045` - `^backup_\d{8}_\d{6}$` (Timestamped IDs)
 - `v2.3.4-beta` - `^v\d+\.\d+\.\d+(-[a-z]+)?$` (Application Release Tags)
