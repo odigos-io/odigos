@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor
 
-go 1.23.0
+go 1.24.0
 
 require (
 	go.opentelemetry.io/collector/component v1.27.0

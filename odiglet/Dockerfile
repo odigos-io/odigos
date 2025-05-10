@@ -102,7 +102,7 @@ RUN for v in ${PHP_VERSIONS}; do \
 
 
 ######### ODIGLET #########
-FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.7 AS builder
+FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
