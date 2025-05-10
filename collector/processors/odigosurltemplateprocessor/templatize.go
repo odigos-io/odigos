@@ -30,7 +30,7 @@ var (
 	// - An even number of characters
 	//
 	// It is considered safe as:
-	// - letters are only limited to lowercase a-f, which any real word with 16 chars or more will fail.
+	// - letters are only limited to a-f (or upper case A-F), which any real word with 16 chars or more will fail.
 	// - the regex will not match if the string is less than 16 chars, so things like "feed12" (all letters a-f) will not match.
 	// - the regex will not match if the string is odd length (indicating it's not hex encoded) so another filter for extreme corner cases.
 	//
