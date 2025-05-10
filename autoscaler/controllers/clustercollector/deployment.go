@@ -159,7 +159,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s:%s/%s/%s",
 								k8sconsts.OdigosCollectorConfigMapProviderScheme,
 								gateway.Namespace,
-								gateway.Name,
+								k8sconsts.OdigosClusterCollectorConfigMapName,
 								k8sconsts.OdigosClusterCollectorConfigMapKey),
 							},
 							EnvFrom: getSecretsFromDests(dests),

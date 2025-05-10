@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
@@ -18,7 +19,7 @@ func NewDataCollectionServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-data-collection",
+			Name:      k8sconsts.OdigosNodeCollectorServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -31,7 +32,7 @@ func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-data-collection",
+			Name: k8sconsts.OdigosNodeCollectorClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{ // TODO: remove this after we remove honeycomb custom exporter config
@@ -83,14 +84,14 @@ func NewDataCollectionClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "odigos-data-collection",
+				Name:      k8sconsts.OdigosNodeCollectorServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     "odigos-data-collection",
+			Name:     k8sconsts.OdigosNodeCollectorClusterRoleName,
 		},
 	}
 }
@@ -102,14 +103,15 @@ func NewDataCollectionRole(ns string) *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-data-collection",
+			Name:      k8sconsts.OdigosNodeCollectorRoleName,
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{ // Needed to manage the configmaps of the data-collector and gateway-collector
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-				Verbs:     []string{"get", "list", "watch"},
+			{ // Needed for configmap provider to watch for config updates inside the collector
+				APIGroups:     []string{""},
+				Resources:     []string{"configmaps"},
+				ResourceNames: []string{k8sconsts.OdigosNodeCollectorConfigMapName},
+				Verbs:         []string{"get", "list", "watch"},
 			},
 		},
 	}
@@ -128,14 +130,14 @@ func NewDataCollectionRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "odigos-data-collection",
+				Name:      k8sconsts.OdigosNodeCollectorServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     "odigos-data-collection",
+			Name:     k8sconsts.OdigosNodeCollectorRoleName,
 		},
 	}
 }

@@ -279,7 +279,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 							Command: []string{containerCommand, fmt.Sprintf("--config=%s:%s/%s/%s",
 								k8sconsts.OdigosCollectorConfigMapProviderScheme,
 								datacollection.Namespace,
-								datacollection.Name,
+								k8sconsts.OdigosNodeCollectorConfigMapName,
 								k8sconsts.OdigosNodeCollectorConfigMapKey),
 							},
 							VolumeMounts: append([]corev1.VolumeMount{

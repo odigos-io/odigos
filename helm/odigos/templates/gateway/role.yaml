@@ -8,6 +8,8 @@ rules:
       - ''
     resources:
       - configmaps
+    resourceNames:
+      - odigos-gateway
     verbs:
       - get
       - list

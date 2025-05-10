@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
@@ -18,7 +19,7 @@ func NewGatewayServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-gateway",
+			Name:      k8sconsts.OdigosClusterCollectorServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -31,14 +32,15 @@ func NewGatewayRole(ns string) *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-gateway",
+			Name:      k8sconsts.OdigosClusterCollectorRoleName,
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{ // Needed to watch and retrieve configmaps that hold the collector config
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-				Verbs:     []string{"get", "list", "watch"},
+				APIGroups:     []string{""},
+				ResourceNames: []string{k8sconsts.OdigosClusterCollectorConfigMapName},
+				Resources:     []string{"configmaps"},
+				Verbs:         []string{"get", "list", "watch"},
 			},
 		},
 	}
@@ -57,14 +59,14 @@ func NewGatewayRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "odigos-gateway",
+				Name:      k8sconsts.OdigosClusterCollectorServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     "odigos-gateway",
+			Name:     k8sconsts.OdigosClusterCollectorRoleName,
 		},
 	}
 }

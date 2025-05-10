@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	"go.opentelemetry.io/collector/confmap"
 	"go.uber.org/zap"
@@ -34,7 +33,6 @@ type provider struct {
 	informerStopCh      chan struct{}
     providerStopCh      chan struct{}
 	running             bool
-	mu                  sync.Mutex
 	logger              *zap.Logger
 	lastResourceVersion string
 }
@@ -46,9 +44,6 @@ func newProvider(set confmap.ProviderSettings) confmap.Provider {
 }
 
 func (p *provider) Retrieve(ctx context.Context, uri string, wf confmap.WatcherFunc) (*confmap.Retrieved, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	// Parse URI: k8scm:namespace/name/key
 	if !strings.HasPrefix(uri, schemeName+":") {
 		return nil, fmt.Errorf("%q uri is not supported by %q provider", uri, schemeName)
@@ -152,8 +147,6 @@ func (p *provider) Scheme() string {
 
 func (p *provider) Shutdown(ctx context.Context) error {
 	p.logger.Info("shutting down k8s config map provider")
-	p.mu.Lock()
-	defer p.mu.Unlock()
 	if p.running {
 		close(p.informerStopCh)
         <- p.providerStopCh
