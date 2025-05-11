@@ -37,7 +37,7 @@ type odigosConfigController struct {
 
 func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 
-	odigosConfig, err := r.getOdigosConfigUserObject(ctx)
+	odigosConfig, odigosConfigMap, err := r.getOdigosConfigUserObject(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -90,7 +90,7 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	resolveMountMethod(odigosConfig)
 	resolveEnvInjectionMethod(odigosConfig)
 
-	err = r.persistEffectiveConfig(ctx, odigosConfig)
+	err = r.persistEffectiveConfig(ctx, odigosConfig, odigosConfigMap)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -98,7 +98,7 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	return ctrl.Result{}, nil
 }
 
-func (r *odigosConfigController) getOdigosConfigUserObject(ctx context.Context) (*common.OdigosConfiguration, error) {
+func (r *odigosConfigController) getOdigosConfigUserObject(ctx context.Context) (*common.OdigosConfiguration, *corev1.ConfigMap, error) {
 	var configMap corev1.ConfigMap
 	var odigosConfig common.OdigosConfiguration
 	odigosNs := env.GetCurrentNamespace()
@@ -107,17 +107,17 @@ func (r *odigosConfigController) getOdigosConfigUserObject(ctx context.Context) 
 	// this is the baseline for reconciling, without defaults and profiles applied.
 	err := r.Client.Get(ctx, types.NamespacedName{Namespace: odigosNs, Name: consts.OdigosConfigurationName}, &configMap)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return &odigosConfig, nil
+	return &odigosConfig, &configMap, nil
 }
 
-func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, effectiveConfig *common.OdigosConfiguration) error {
+func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, effectiveConfig *common.OdigosConfiguration, owner *corev1.ConfigMap) error {
 	odigosNs := env.GetCurrentNamespace()
 
 	// apply patch the OdigosEffectiveConfigName configmap with the effective configuration
@@ -140,6 +140,16 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 		Data: map[string]string{
 			consts.OdigosConfigurationFileName: string(effectiveConfigYamlText),
 		},
+	}
+
+	// the effective configuration is owned by the odigos config.
+	// odigos config is a user facing object and is created upon installation.
+	// the effective config is managed by this controller.
+	// setting this owner reference makes sure the effective config is cleaned up
+	// when the odigos config is deleted.
+	err = ctrl.SetControllerReference(owner, &effectiveConfigMap, r.Scheme)
+	if err != nil {
+		return err
 	}
 
 	objApplyBytes, err := yaml.Marshal(effectiveConfigMap)
