@@ -2,7 +2,7 @@
 
 module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.121.0
