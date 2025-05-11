@@ -3,16 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
-
-	"k8s.io/client-go/rest"
-
-	"k8s.io/apimachinery/pkg/util/httpstream"
-	"k8s.io/client-go/transport/spdy"
-
-	"k8s.io/client-go/tools/portforward"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,11 +48,15 @@ var uiCmd = &cobra.Command{
 			fmt.Printf("\033[31mERROR\033[0m Cannot find odigos-ui pod: %s\n", err)
 			os.Exit(1)
 		}
+		fmt.Printf("Odigos UI is available at: http://%s:%s\n", localAddress, localPort)
+		fmt.Printf("Port-forwarding from %s/%s\n", uiPod.Namespace, uiPod.Name)
+		fmt.Printf("Press Ctrl+C to stop\n")
 
 		if err := kube.PortForwardWithContext(ctx, uiPod, client, localPort, localAddress); err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot start port-forward: %s\n", err)
 			os.Exit(1)
 		}
+
 	},
 	Example: `
 # Start the Odigos UI on http://localhost:3000
@@ -73,23 +68,6 @@ odigos ui --port 3456
 # Start the Odigos UI and have it manage and configure a specific cluster
 odigos ui --kubeconfig <path-to-kubeconfig>
 `,
-}
-
-func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dialer, error) {
-	transport, upgrader, err := spdy.RoundTripperFor(cfg)
-	if err != nil {
-		return nil, err
-	}
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, method, url)
-
-	tunnelingDialer, err := portforward.NewSPDYOverWebsocketDialer(url, cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	// First attempt tunneling (websocket) dialer, then fallback to spdy dialer.
-	dialer = portforward.NewFallbackDialer(tunnelingDialer, dialer, httpstream.IsUpgradeFailure)
-	return dialer, nil
 }
 
 func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*corev1.Pod, error) {

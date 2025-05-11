@@ -8,6 +8,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -29,11 +32,6 @@ var (
 	updateRemoteFlag bool
 	proNamespaceFlag string
 	useDefault       bool
-)
-
-const (
-	CentralBackendPort = "8081"
-	CentralUIPort      = "3000"
 )
 
 var proCmd = &cobra.Command{
@@ -281,8 +279,15 @@ var portForwardCentralCmd = &cobra.Command{
 	Short: "Port-forward Odigos Central UI and Backend to localhost",
 	Long:  "Port-forward the Central UI (port 3000) and Central Backend (port 8081) to localhost to enable local access to Odigos UI.",
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := cmd.Context()
+		ctx, cancel := context.WithCancel(cmd.Context())
+		defer cancel()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		var wg sync.WaitGroup
+		wg.Add(2)
+
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 		backendPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralBackendAppName)
 		if err != nil {
@@ -290,7 +295,8 @@ var portForwardCentralCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		go func() {
-			err := kube.PortForwardWithContext(ctx, backendPod, client, CentralBackendPort, "localhost")
+			defer wg.Done()
+			err := kube.PortForwardWithContext(ctx, backendPod, client, k8sconsts.CentralBackendPort, "localhost")
 			if err != nil {
 				fmt.Printf("\033[31mERROR\033[0m Backend port-forward failed: %v\n", err)
 			}
@@ -299,14 +305,25 @@ var portForwardCentralCmd = &cobra.Command{
 		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUILabelAppValue)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find UI pod: %v\n", err)
+			cancel()
+			wg.Wait()
 			os.Exit(1)
 		}
 
-		err = kube.PortForwardWithContext(ctx, uiPod, client, CentralUIPort, "localhost")
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m UI port-forward failed: %v\n", err)
-			os.Exit(1)
-		}
+		go func() {
+			defer wg.Done()
+			if err := kube.PortForwardWithContext(ctx, uiPod, client, k8sconsts.CentralUIPort, "localhost"); err != nil {
+				fmt.Printf("\033[31mERROR\033[0m UI port-forward failed: %v\n", err)
+			}
+		}()
+
+		fmt.Printf("Odigos Central UI is available at: http://localhost:%s\n", k8sconsts.CentralUIPort)
+		fmt.Printf("Press Ctrl+C to stop\n")
+
+		<-sigCh
+		fmt.Println("\nReceived interrupt. Stopping port forwarding...")
+		cancel()
+		wg.Wait()
 	},
 }
 

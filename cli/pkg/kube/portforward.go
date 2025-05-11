@@ -33,10 +33,6 @@ func PortForwardWithContext(ctx context.Context, pod *corev1.Pod, client *Client
 		close(stopChannel)
 	}()
 
-	fmt.Printf("Odigos UI is available at: http://%s:%s\n\n", localAddress, localPort)
-	fmt.Printf("Port-forwarding from %s/%s\n", pod.Namespace, pod.Name)
-	fmt.Printf("Press Ctrl+C to stop\n")
-
 	req := client.CoreV1().RESTClient().
 		Post().
 		Resource("pods").
