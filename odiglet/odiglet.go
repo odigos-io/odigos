@@ -2,6 +2,7 @@ package odiglet
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -13,6 +14,7 @@ import (
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
@@ -189,13 +191,37 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		os.Exit(-1)
 	}
 
-	odigletInstalledLabel := k8snode.DetermineNodeOdigletInstalledLabelByTier()
+	ctx := context.Background()
 
-	log.Logger.V(0).Info("Adding Label to Node", "odigletLabel", odigletInstalledLabel)
+	// Get Odigos configuration to check if Karpenter is enabled
+	odigosConfig, err := k8sutils.GetCurrentOdigosConfigWithClientset(ctx, clientset)
+	if err != nil {
+		if errors.Is(err, k8sutils.ErrOdigosEffectiveConfigNotFound) {
+			log.Logger.Info("Odigos effective config not found, skipping taint removal")
+		} else {
+			log.Logger.Error(err, "Failed to fetch Odigos configuration")
+			os.Exit(-1)
+		}
+	}
 
-	if err := k8snode.AddLabelToNode(clientset, nn, odigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
-		log.Logger.Error(err, "Failed to add Odiglet installed label to the node")
-		os.Exit(-1)
+	// If Karpenter is enabled, remove the startup taint from the node
+	if odigosConfig.KarpenterEnabled != nil && *odigosConfig.KarpenterEnabled {
+		log.Logger.Info("KarpenterEnabled is true, attempting to remove startup taint")
+		if err := k8snode.RemoveStartupTaint(clientset, nn); err != nil {
+			log.Logger.Error(err, "Failed to remove startup taint from node")
+			os.Exit(-1)
+		} else {
+			log.Logger.Info("Successfully removed startup taint from node")
+		}
+	} else {
+		// Karpenter is not enabled, add the odiglet installed label to the node <Default behavior>
+		odigletInstalledLabel := k8snode.DetermineNodeOdigletInstalledLabelByTier()
+		log.Logger.V(0).Info("Adding Label to Node", "odigletLabel", odigletInstalledLabel)
+
+		if err := k8snode.AddLabelToNode(clientset, nn, odigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
+			log.Logger.Error(err, "Failed to add Odiglet installed label to the node")
+			os.Exit(-1)
+		}
 	}
 
 	// SELinux settings should be applied last. This function chroot's to use the host's PATH for
