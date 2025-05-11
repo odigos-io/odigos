@@ -164,7 +164,12 @@ odigos pro update-offsets --default
 			cm.Data = make(map[string]string)
 		}
 
-		cm.Data[k8sconsts.GoOffsetsFileName] = string(data)
+		escaped, err := json.Marshal(string(data))
+		if err != nil {
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to encode json string: %s", err))
+			os.Exit(1)
+		}
+		cm.Data[k8sconsts.GoOffsetsFileName] = string(escaped)
 		_, err = client.Clientset.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
 		if err != nil {
 			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Go offsets ConfigMap: %s", err))

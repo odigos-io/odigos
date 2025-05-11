@@ -27,7 +27,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 
 	url, exists := config[genericOtlpUrlKey]
 	if !exists {
-		return nil, errors.New("Generic OTLP gRPC endpoint not specified, gateway will not be configured for otlp")
+		return nil, errors.New("generic OTLP gRPC endpoint not specified, gateway will not be configured for otlp")
 	}
 
 	tls := dest.GetConfig()[genericOtlpTlsKey]
