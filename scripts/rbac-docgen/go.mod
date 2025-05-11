@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/scripts/rbac-docgen
 
-go 1.23.5
+go 1.24.0
 
 require (
 	github.com/operator-framework/api v0.30.0
