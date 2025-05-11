@@ -57,6 +57,12 @@ func NewOdigletRole(ns string) *rbacv1.Role {
 				Resources: []string{"collectorsgroups", "collectorsgroups/status"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			{ // Needed to Check if karpenter is enabled
+				APIGroups:     []string{""},
+				Resources:     []string{"configmaps"},
+				ResourceNames: []string{consts.OdigosEffectiveConfigName},
+				Verbs:         []string{"get"},
+			},
 		},
 	}
 }
@@ -123,7 +129,7 @@ func NewOdigletClusterRole(psp, ownerPermissionEnforcement bool) *rbacv1.Cluster
 			{ // Needed for virtual device registration
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},
-				Verbs:     []string{"get", "list", "watch", "patch"},
+				Verbs:     []string{"get", "list", "watch", "patch", "update"},
 			},
 			{ // Needed for storage of the process instrumentation state
 				APIGroups: []string{"odigos.io"},
