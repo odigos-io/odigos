@@ -61,7 +61,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 
 	headers, exists := config[otlpGrpcHeaders]
-	if exists {
+	if exists && headers != "" {
 		var headersList []struct {
 			Key   string `json:"key"`
 			Value string `json:"value"`
