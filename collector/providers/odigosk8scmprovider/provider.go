@@ -2,6 +2,7 @@ package k8scmprovider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -15,6 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/retry"
 )
 
 const schemeName = "k8scm"
@@ -25,16 +27,16 @@ func NewFactory() confmap.ProviderFactory {
 }
 
 type provider struct {
-	clientset           *kubernetes.Clientset
-	namespace           string
-	cmName              string
-	key                 string
-	informer            cache.SharedIndexInformer
-	informerStopCh      chan struct{}
-	providerStopCh      chan struct{}
-	running             bool
-	logger              *zap.Logger
-	lastResourceVersion string
+	clientset                   *kubernetes.Clientset
+	namespace                   string
+	cmName                      string
+	key                         string
+	informer                    cache.SharedIndexInformer
+	informerStopCh              chan struct{}
+	providerStopCh              chan struct{}
+	running                     bool
+	logger                      *zap.Logger
+	lastReportedResourceVersion string
 }
 
 func newProvider(set confmap.ProviderSettings) confmap.Provider {
@@ -71,14 +73,25 @@ func (p *provider) Retrieve(ctx context.Context, uri string, wf confmap.WatcherF
 		}
 	}
 
-	cm, err := p.clientset.CoreV1().ConfigMaps(p.namespace).Get(ctx, p.cmName, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get configmap: %w", err)
+	var cm *corev1.ConfigMap
+	retryErr := retry.OnError(retry.DefaultRetry, func(err error) bool {
+		return true
+	}, func() error {
+		var err error
+		cm, err = p.clientset.CoreV1().ConfigMaps(p.namespace).Get(ctx, p.cmName, metav1.GetOptions{})
+		return err
+	})
+
+	if retryErr != nil {
+		return nil, fmt.Errorf("failed to get configmap: %w", retryErr)
 	}
-	p.lastResourceVersion = cm.ResourceVersion
+
+	if cm == nil {
+		return nil, errors.New("nil configmap returned")
+	}
 
 	// Start informer if not running
-	if !p.running {
+	if !p.running && wf != nil {
 		p.running = true
 		p.informerStopCh = make(chan struct{})
 		p.providerStopCh = make(chan struct{})
@@ -130,8 +143,8 @@ func (p *provider) runInformer(wf confmap.WatcherFunc) {
 				return
 			}
 
-			if cm.ResourceVersion != p.lastResourceVersion {
-				p.lastResourceVersion = cm.ResourceVersion
+			if cm.ResourceVersion != p.lastReportedResourceVersion {
+				p.lastReportedResourceVersion = cm.ResourceVersion
 				wf(&confmap.ChangeEvent{})
 			}
 		},
