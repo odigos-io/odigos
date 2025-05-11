@@ -229,7 +229,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					NodeSelector:       odigletDaemonsetPodSpec.NodeSelector,
 					Affinity:           odigletDaemonsetPodSpec.Affinity,
 					Tolerations:        odigletDaemonsetPodSpec.Tolerations,
-					ServiceAccountName: k8sconsts.OdigosNodeCollectorDaemonSetName,
+					ServiceAccountName: k8sconsts.OdigosNodeCollectorServiceAccountName,
 					Volumes: append([]corev1.Volume{
 						{
 							Name: "varlog",
