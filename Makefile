@@ -1,4 +1,6 @@
-# --- Core variables --- #
+# ──────────────────────────────────────────────
+# Core variables
+# ──────────────────────────────────────────────
 TAG ?= $(shell odigos version --cluster)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
@@ -23,7 +25,7 @@ BUILD_DIR  ?= .
 
 
 # ──────────────────────────────────────────────
-# Build / push helpers (docker-bake wrapper)
+# Build / push helpers
 # ──────────────────────────────────────────────
 define bake-load
 	@TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
@@ -51,7 +53,7 @@ push-images-rhel:   ; $(call bake-push,images-rhel)
 
 
 # ──────────────────────────────────────────────
-# Kind helpers (unchanged behaviour)
+# Kind helpers
 # ──────────────────────────────────────────────
 .PHONY: load-to-kind-% load-to-kind
 load-to-kind-%:
@@ -65,7 +67,7 @@ load-to-kind:
 
 
 # ──────────────────────────────────────────────
-# Lint / docs / misc sections (verbatim)
+# Lint / docs / misc sections
 # ──────────────────────────────────────────────
 .PHONY: install-golangci-lint
 install-golangci-lint:
@@ -127,7 +129,7 @@ check-clean-work-tree:
 
 # ──────────────────────────────────────────────
 # Custom image variations that still need
-# manual docker build commands (left intact)
+# manual docker build commands
 # ──────────────────────────────────────────────
 .PHONY: build-odiglet-with-agents
 build-odiglet-with-agents:
