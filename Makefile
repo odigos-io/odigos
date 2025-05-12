@@ -1,20 +1,72 @@
+# --- Core variables --- #
 TAG ?= $(shell odigos version --cluster)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
-CENTRAL_BACKEND_URL ?= 
+CENTRAL_BACKEND_URL ?=
 ORG ?= registry.odigos.io
+PARALLEL ?= $(shell nproc)
+PLATFORMS ?=
+
 GOLANGCI_LINT_VERSION ?= v2.1.6
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
 GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
+
 LINT_CMD = golangci-lint run -c ../.golangci.yml
 ifdef FIX_LINT
     LINT_CMD += --fix
 endif
-DOCKERFILE=Dockerfile
-IMG_PREFIX?=
-IMG_SUFFIX?=
-BUILD_DIR=.
 
+DOCKERFILE=Dockerfile
+IMG_PREFIX ?=
+IMG_SUFFIX ?=
+BUILD_DIR  ?= .
+
+
+# ──────────────────────────────────────────────
+# Build / push helpers (docker-bake wrapper)
+# ──────────────────────────────────────────────
+define bake-load
+	@TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
+	docker bake $(1) --load --pull \
+	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',)
+endef
+
+define bake-push
+	@TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
+	docker bake $(1) --push \
+	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',)
+endef
+
+# Pattern rules for every service image
+.PHONY: build-% push-%
+build-%: ; $(call bake-load,$*)
+push-%:  ; $(call bake-push,$*)
+
+# Convenience groups matching the HCL
+.PHONY: build-images push-images build-images-rhel push-images-rhel
+build-images:       ; $(call bake-load,images)
+push-images:        ; $(call bake-push,images)
+build-images-rhel:  ; $(call bake-load,images-rhel)
+push-images-rhel:   ; $(call bake-push,images-rhel)
+
+
+# ──────────────────────────────────────────────
+# Kind helpers (unchanged behaviour)
+# ──────────────────────────────────────────────
+.PHONY: load-to-kind-% load-to-kind
+load-to-kind-%:
+	kind load docker-image $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG)
+
+load-to-kind:
+	$(MAKE) -j $(nproc) load-to-kind-instrumentor load-to-kind-autoscaler \
+		load-to-kind-scheduler load-to-kind-odiglet \
+		load-to-kind-collector load-to-kind-ui \
+		ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
+
+
+# ──────────────────────────────────────────────
+# Lint / docs / misc sections (verbatim)
+# ──────────────────────────────────────────────
 .PHONY: install-golangci-lint
 install-golangci-lint:
 	@if ! which golangci-lint >/dev/null || [ "$$(golangci-lint version 2>&1 | head -n 1 | awk '{print "v"$$4}')" != "$(GOLANGCI_LINT_VERSION)" ]; then \
@@ -47,69 +99,41 @@ endif
 
 .PHONY: lint-fix
 lint-fix:
-	MODULE=common make lint FIX_LINT=true
-	MODULE=k8sutils make lint FIX_LINT=true
-	MODULE=profiles make lint FIX_LINT=true
-	MODULE=destinations make lint FIX_LINT=true
-	MODULE=procdiscovery make lint FIX_LINT=true
+	MODULE=common $(MAKE) lint FIX_LINT=true
+	MODULE=k8sutils $(MAKE) lint FIX_LINT=true
+	MODULE=profiles $(MAKE) lint FIX_LINT=true
+	MODULE=destinations $(MAKE) lint FIX_LINT=true
+	MODULE=procdiscovery $(MAKE) lint FIX_LINT=true
 
 .PHONY: cli-docs
 cli-docs:
 	rm -rf docs/cli/*
 	cd scripts/cli-docgen && KUBECONFIG=KUBECONFIG go run -tags embed_manifests main.go
-	for file in docs/cli/*; do \
-		mv $${file} $${file%.md}.mdx; \
-	done
+	for file in docs/cli/*; do mv $${file} $${file%.md}.mdx; done
 
 .PHONY: rbac-docs
 rbac-docs:
 	cd scripts/rbac-docgen && go run main.go
 
-build-image/%:
-	docker build -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
-	--build-arg SERVICE_NAME="$*" \
-	--build-arg ODIGOS_VERSION=$(TAG) \
-	--build-arg VERSION=$(TAG) \
-	--build-arg RELEASE=$(TAG) \
-	--build-arg SUMMARY="$(SUMMARY)" \
-	--build-arg DESCRIPTION="$(DESCRIPTION)" \
-	--build-arg LD_FLAGS="$(LD_FLAGS)"
+.PHONY: check-clean-work-tree
+check-clean-work-tree:
+	if [ -n "$$(git status --porcelain)" ]; then \
+		git status; \
+		git --no-pager diff; \
+		echo 'Working tree is not clean, did you forget to run "make go-mod-tidy"?'; \
+		exit 1; \
+	fi
 
-.PHONY: build-operator-index
-build-operator-index:
-	opm index add --bundles $(ORG)/odigos-bundle:$(TAG) --tag $(ORG)/odigos-index:$(TAG) --container-tool=docker
 
-.PHONY: build-operator
-build-operator:
-	$(MAKE) build-image/operator DOCKERFILE=operator/$(DOCKERFILE) SUMMARY="Odigos Operator" DESCRIPTION="Kubernetes Operator for Odigos installs Odigos" TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-odiglet
-build-odiglet:
-	$(MAKE) build-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-autoscaler
-build-autoscaler:
-	$(MAKE) build-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-instrumentor
-build-instrumentor:
-	$(MAKE) build-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-scheduler
-build-scheduler:
-	$(MAKE) build-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-collector
-build-collector:
-	$(MAKE) build-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-ui
-build-ui:
-	$(MAKE) build-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
+# ──────────────────────────────────────────────
+# Custom image variations that still need
+# manual docker build commands (left intact)
+# ──────────────────────────────────────────────
 .PHONY: build-odiglet-with-agents
 build-odiglet-with-agents:
-	docker build -t $(ORG)/odigos-odiglet$(IMG_SUFFIX):$(TAG) . -f odiglet/$(DOCKERFILE) --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-src=../opentelemetry-node \
+	docker build -t $(ORG)/odigos-odiglet$(IMG_SUFFIX):$(TAG) . -f odiglet/$(DOCKERFILE) \
+	--build-context nodejs-agent-src=../opentelemetry-node \
+	--build-arg ODIGOS_VERSION=$(TAG) \
 	--build-arg VERSION=$(TAG) \
 	--build-arg RELEASE=$(TAG) \
 	--build-arg SUMMARY="Odiglet for Odigos" \
@@ -122,105 +146,6 @@ verify-nodejs-agent:
 		exit 1; \
 	fi
 
-.PHONY: build-images
-build-images:
-	# prefer to build timeconsuimg images first to make better use of parallelism
-	make -j $(nproc) build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
-
-.PHONY: build-images-rhel
-build-images-rhel:
-	$(MAKE) build-images IMG_SUFFIX=-ubi9 DOCKERFILE=Dockerfile.rhel TAG=$(TAG) ORG=$(ORG)
-
-push-image/%:
-	docker buildx build --platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
-	--build-arg SERVICE_NAME="$*" \
-	--build-arg VERSION=$(TAG) \
-	--build-arg RELEASE=$(TAG) \
-	--build-arg SUMMARY="$(SUMMARY)" \
-	--build-arg DESCRIPTION="$(DESCRIPTION)"
-
-.PHONY: push-operator
-push-operator:
-	$(MAKE) push-image/operator DOCKERFILE=operator/$(DOCKERFILE) SUMMARY="Odigos Operator" DESCRIPTION="Kubernetes Operator for Odigos installs Odigos" TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-odiglet
-push-odiglet:
-	$(MAKE) push-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-autoscaler
-push-autoscaler:
-	$(MAKE) push-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-instrumentor
-push-instrumentor:
-	$(MAKE) push-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-scheduler
-push-scheduler:
-	$(MAKE) push-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-collector
-push-collector:
-	$(MAKE) push-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-ui
-push-ui:
-	$(MAKE) push-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-images
-push-images:
-	make push-autoscaler push-scheduler push-odiglet push-instrumentor push-collector push-ui TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
-
-.PHONY: push-images-rhel
-push-images-rhel:
-	$(MAKE) push-images IMG_SUFFIX=-ubi9 DOCKERFILE=Dockerfile.rhel TAG=$(TAG) ORG=$(ORG)
-
-load-to-kind-%:
-	kind load docker-image $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG)
-
-.PHONY: load-to-kind
-load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
-
-.PHONY: restart-ui
-restart-ui:
-	-kubectl rollout restart deployment odigos-ui -n odigos-system
-
-.PHONY: restart-odiglet
-restart-odiglet:
-	-kubectl rollout restart daemonset odiglet -n odigos-system
-
-.PHONY: restart-autoscaler
-restart-autoscaler:
-	-kubectl rollout restart deployment odigos-autoscaler -n odigos-system
-
-.PHONY: restart-instrumentor
-restart-instrumentor:
-	-kubectl rollout restart deployment odigos-instrumentor -n odigos-system
-
-.PHONY: restart-scheduler
-restart-scheduler:
-	-kubectl rollout restart deployment odigos-scheduler -n odigos-system
-
-.PHONY: restart-collector
-restart-collector:
-	-kubectl rollout restart deployment odigos-gateway -n odigos-system
-	# DaemonSets don't directly support the rollout restart command in the same way Deployments do. However, you can achieve the same result by updating an environment variable or any other field in the DaemonSet's pod template, triggering a rolling update of the pods managed by the DaemonSet
-	-kubectl -n odigos-system patch daemonset odigos-data-collection -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
-
-deploy-%:
-	make build-$* ORG=$(ORG) TAG=$(TAG) DOCKERFILE=$(DOCKERFILE) IMG_SUFFIX=$(IMG_SUFFIX) && make load-to-kind-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) && make restart-$*
-
-.PHONY: deploy
-deploy:
-	make deploy-odiglet && make deploy-autoscaler && make deploy-collector && make deploy-instrumentor && make deploy-scheduler && make deploy-ui
-
-# Use this target to deploy odiglet with local clones of the agents.
-# To work, the agents must be cloned in the same directory as the odigos (e.g. in '../opentelemetry-node')
-# There you can make code changes to the agents and deploy them with the odiglet.
-.PHONY: deploy-odiglet-with-agents
-deploy-odiglet-with-agents: verify-nodejs-agent build-odiglet-with-agents load-to-kind-odiglet restart-odiglet
-
 .PHONY: debug-odiglet
 debug-odiglet:
 	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/debug.Dockerfile
@@ -229,24 +154,142 @@ debug-odiglet:
 	kubectl wait --for=condition=ready pod -n odigos-system -l app.kubernetes.io/name=odiglet --timeout=180s
 	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
 
-,PHONY: e2e-test
-e2e-test:
-	./e2e-test.sh
+.PHONY: build-operator-index
+build-operator-index:
+	opm index add --bundles $(ORG)/odigos-bundle:$(TAG) --tag $(ORG)/odigos-index:$(TAG) --container-tool=docker
 
+
+# ──────────────────────────────────────────────
+# Deploy helpers
+# ──────────────────────────────────────────────
+.PHONY: deploy-% deploy
+deploy-%:
+	$(MAKE) build-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) load-to-kind-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) restart-$*
+
+deploy: deploy-odiglet deploy-autoscaler deploy-collector \
+        deploy-instrumentor deploy-scheduler deploy-ui
+
+# Use this target to deploy odiglet with local clones of the agents.
+# To work, the agents must be cloned in the same directory as the odigos (e.g. in '../opentelemetry-node')
+# There you can make code changes to the agents and deploy them with the odiglet.
+.PHONY: deploy-odiglet-with-agents
+deploy-odiglet-with-agents: verify-nodejs-agent build-odiglet-with-agents load-to-kind-odiglet restart-odiglet
+
+
+# ──────────────────────────────────────────────
+# Restart helpers
+# ──────────────────────────────────────────────
+.PHONY: restart-ui restart-odiglet restart-autoscaler restart-instrumentor restart-scheduler restart-collector
+restart-ui:          ; -kubectl rollout restart deployment  odigos-ui         	-n odigos-system
+restart-odiglet:     ; -kubectl rollout restart daemonset   odiglet           	-n odigos-system
+restart-autoscaler:  ; -kubectl rollout restart deployment  odigos-autoscaler 	-n odigos-system
+restart-instrumentor:; -kubectl rollout restart deployment  odigos-instrumentor -n odigos-system
+restart-scheduler:   ; -kubectl rollout restart deployment  odigos-scheduler  	-n odigos-system
+restart-collector:
+	-kubectl rollout restart deployment odigos-gateway -n odigos-system
+	# DaemonSets don't directly support the rollout restart command in the same way Deployments do.
+	# However, you can achieve the same result by updating an environment variable or any other field in the DaemonSet's pod template, triggering a rolling update of the pods managed by the DaemonSet
+	-kubectl -n odigos-system patch daemonset odigos-data-collection \
+	  -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(shell date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
+
+
+# ──────────────────────────────────────────────
+# CLI install / upgrade / diagnose targets
+# ──────────────────────────────────────────────
+.PHONY: cli-install cli-uninstall cli-upgrade cli-build cli-diagnose
+
+# installs odigos from the local source, with local changes to api and cli directorie reflected in the odigos deployment
+cli-install:
+	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
+	cd ./cli ; go run -tags=embed_manifests . install \
+		--version $(ODIGOS_CLI_VERSION) --nowait \
+		$(if $(CLUSTER_NAME),--cluster-name $(CLUSTER_NAME)) \
+		$(if $(CENTRAL_BACKEND_URL),--central-backend-url $(CENTRAL_BACKEND_URL)) \
+		$(FLAGS)
+
+cli-uninstall:
+	@echo "Uninstalling odigos from source. version: $(ODIGOS_CLI_VERSION)"
+	cd ./cli ; go run -tags=embed_manifests . uninstall
+
+cli-upgrade:
+	@echo "Upgrading odigos from source. version: $(ODIGOS_CLI_VERSION)"
+	cd ./cli ; go run -tags=embed_manifests . upgrade --version $(ODIGOS_CLI_VERSION) --yes
+
+cli-build:
+	@echo "Building the cli executable for tests"
+	cd cli && go build -tags=embed_manifests -o odigos .
+
+cli-diagnose:
+	@echo "Diagnosing cluster data for debugging"
+	cd ./cli ; go run -tags=embed_manifests . diagnose
+
+
+# ──────────────────────────────────────────────
+# Helm install helper
+# ──────────────────────────────────────────────
+.PHONY: helm-install
+helm-install:
+	@echo "Installing odigos using helm"
+	helm upgrade --install odigos ./helm/odigos \
+		--create-namespace --namespace odigos-system \
+		--set image.tag=$(ODIGOS_CLI_VERSION) \
+		--set clusterName=$(CLUSTER_NAME) \
+		--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL) \
+		--set onPremToken=$(ONPREM_TOKEN) \
+		--set centralProxy.enabled=$(if $(and $(CLUSTER_NAME),$(CENTRAL_BACKEND_URL)),true,false)
+	kubectl label namespace odigos-system odigos.io/system-object="true"
+
+
+# ──────────────────────────────────────────────
+# API / CRD helpers
+# ──────────────────────────────────────────────
+.PHONY: api-all crd-apply
+api-all:   ; $(MAKE) -C api all
+crd-apply: ; $(MAKE) api-all && $(MAKE) cli-upgrade && echo "Applying changes to CRDs in api directory"
+
+
+# ──────────────────────────────────────────────
+# Go module helpers
+# ──────────────────────────────────────────────
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -v "licenses")
 
 .PHONY: go-mod-tidy
 go-mod-tidy: $(ALL_GO_MOD_DIRS:%=go-mod-tidy/%)
 go-mod-tidy/%: DIR=$*
 go-mod-tidy/%:
-	@cd $(DIR) && go mod tidy -compat=1.21
+	@cd $* && go mod tidy -compat=1.21
 
 .PHONY: update-dep
 update-dep: $(ALL_GO_MOD_DIRS:%=update-dep/%)
 update-dep/%: DIR=$*
 update-dep/%:
-	cd $(DIR) && go get $(MODULE)@$(VERSION)
+	cd $* && go get $(MODULE)@$(VERSION)
 
+
+# ──────────────────────────────────────────────
+# End-to-end test helpers
+# ──────────────────────────────────────────────
+.PHONY: e2e-test
+e2e-test: ; ./e2e-test.sh
+
+.PHONY: dev-tests-kind-cluster dev-tests-setup dev-tests-setup-no-build
+dev-tests-kind-cluster:
+	kind delete cluster || true
+	kind create cluster --config=tests/common/apply/kind-config.yaml
+
+dev-tests-setup: TAG := e2e-test
+dev-tests-setup: dev-tests-kind-cluster cli-build build-images load-to-kind
+
+# Use this target to avoid rebuilding the images if all that changed is the e2e test code
+dev-tests-setup-no-build: TAG := e2e-test
+dev-tests-setup-no-build: dev-tests-kind-cluster load-to-kind
+
+
+# ──────────────────────────────────────────────
+# Update otel
+# ──────────────────────────────────────────────
 UNSTABLE_COLLECTOR_VERSION=v0.121.0
 STABLE_COLLECTOR_VERSION=v1.27.0
 STABLE_OTEL_GO_VERSION=v1.34.0
@@ -292,99 +335,17 @@ update-otel:
 	$(MAKE) update-dep MODULE=github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) go-mod-tidy
 
-.PHONY: check-clean-work-tree
-check-clean-work-tree:
-	if [ -n "$$(git status --porcelain)" ]; then \
-		git status; \
-		git --no-pager diff; \
-		echo 'Working tree is not clean, did you forget to run "make go-mod-tidy"?'; \
-		exit 1; \
-	fi
-
-# installs odigos from the local source, with local changes to api and cli directorie reflected in the odigos deployment
-.PHONY: cli-install
-cli-install:
-	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . install \
-		--version $(ODIGOS_CLI_VERSION) \
-		--nowait \
-		$(if $(CLUSTER_NAME),--cluster-name $(CLUSTER_NAME)) \
-		$(if $(CENTRAL_BACKEND_URL),--central-backend-url $(CENTRAL_BACKEND_URL)) \
-		$(FLAGS)
 
 
-.PHONY: cli-uninstall
-cli-uninstall:
-	@echo "Uninstalling odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . uninstall
+# ──────────────────────────────────────────────
+# Debug & test destinations
+# ──────────────────────────────────────────────
+.PHONY: dev-debug-destination dev-nop-destination dev-dynamic-destination dev-backpressue-destination
+dev-debug-destination:       ; kubectl apply -f ./tests/debug-exporter.yaml
+dev-nop-destination:         ; kubectl apply -f ./tests/nop-exporter.yaml
+dev-dynamic-destination:     ; kubectl apply -f ./tests/dynamic-exporter.yaml
+dev-backpressue-destination: ; kubectl apply -f ./tests/backpressure-exporter.yaml
 
-.PHONY: cli-upgrade
-cli-upgrade:
-	@echo "Upgrading odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . upgrade --version $(ODIGOS_CLI_VERSION) --yes
-
-.PHONY: cli-build
-cli-build:
-	@echo "Building the cli executable for tests"
-	cd cli && go build -tags=embed_manifests -o odigos .
-
-.PHONY: cli-diagnose
-cli-diagnose:
-	@echo "Diagnosing cluster data for debugging"
-	cd ./cli ; go run -tags=embed_manifests . diagnose
-
-.PHONY: helm-install
-helm-install:
-	@echo "Installing odigos using helm"
-	helm upgrade --install odigos ./helm/odigos \
-		--create-namespace \
-		--namespace odigos-system \
-		--set image.tag=$(ODIGOS_CLI_VERSION) \
-		--set clusterName=$(CLUSTER_NAME) \
-		--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL) \
-		--set onPremToken=$(ONPREM_TOKEN) \
-		--set centralProxy.enabled=$(if $(and $(CLUSTER_NAME),$(CENTRAL_BACKEND_URL)),true,false)
-	kubectl label namespace odigos-system odigos.io/system-object="true"
-
-.PHONY: api-all
-api-all:
-	make -C api all
-
-.PHONY: crd-apply
-crd-apply: api-all cli-upgrade
-	@echo "Applying changes to CRDs in api directory"
-
-.PHONY: dev-tests-kind-cluster
-dev-tests-kind-cluster:
-	@echo "Creating a kind cluster for development"
-	kind delete cluster
-	kind create cluster --config=tests/common/apply/kind-config.yaml
-
-.PHONY: dev-tests-setup
-dev-tests-setup: TAG := e2e-test
-dev-tests-setup: dev-tests-kind-cluster cli-build build-images load-to-kind
-
-# Use this target to avoid rebuilding the images if all that changed is the e2e test code
-.PHONY: dev-tests-setup-no-build
-dev-tests-setup-no-build: TAG := e2e-test
-dev-tests-setup-no-build: dev-tests-kind-cluster load-to-kind
-
-# Use this for debug to add a destination which only prints samples of telemetry items to the cluster gateway collector logs
-.PHONY: dev-debug-destination
-dev-debug-destination:
-	kubectl apply -f ./tests/debug-exporter.yaml
-
-.PHONY: dev-add-nop-destination
-dev-nop-destination:
-	kubectl apply -f ./tests/nop-exporter.yaml
-
-.PHONY: dev-add-dynamic-destination
-dev-dynamic-destination:
-	kubectl apply -f ./tests/dynamic-exporter.yaml	
-
-.PHONY: dev-add-backpressue-destination
-dev-backpressue-destination:
-	kubectl apply -f ./tests/backpressure-exporter.yaml
 
 .PHONY: push-workload-lifecycle-images
 push-workload-lifecycle-images:
@@ -413,8 +374,9 @@ push-workload-lifecycle-images:
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet6-glibc:v0.0.1 -f tests/e2e/workload-lifecycle/services/dotnet-http-server/net6-glibc.Dockerfile tests/e2e/workload-lifecycle/services/dotnet-http-server
 
 
-# Use these to deploy Odigos into an EKS cluster
-
+# ──────────────────────────────────────────────
+# ECR & EKS Helpers
+# ──────────────────────────────────────────────
 .PHONY: ecr-login
 ecr-login:
 	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
@@ -437,10 +399,10 @@ publish-to-ecr:
 		exit 1; \
 	fi
 	make ecr-login
-	make -j 3 build-tag-push-ecr-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j $(nproc) build-tag-push-ecr-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j $(nproc) build-tag-push-ecr-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j $(nproc) build-tag-push-ecr-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j $(nproc) build-tag-push-ecr-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j $(nproc) build-tag-push-ecr-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j $(nproc) build-tag-push-ecr-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	echo "✅ Deployed Odigos to EKS, now install the CLI"
