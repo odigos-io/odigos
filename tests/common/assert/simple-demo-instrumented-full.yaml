@@ -403,13 +403,14 @@ metadata:
       kind: Deployment
       name: currency
 status:
-  runtimeDetailsByContainer:
-    - containerName: currency
-      language: php
+  (runtimeDetailsByContainer[?containerName=='currency']):
+    - language: php
       runtimeVersion: 8.2.28
-    - containerName: nginx
-      language: nginx
+      secureExecutionMode: false
+  (runtimeDetailsByContainer[?containerName=='nginx']):
+    - language: nginx
       runtimeVersion: 1.27.5
+      secureExecutionMode: false
 ---
 ### Instrumentation Instances ###
 apiVersion: odigos.io/v1alpha1

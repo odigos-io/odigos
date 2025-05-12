@@ -262,12 +262,13 @@ spec:
         - script:
             timeout: 3m
             content: |
-              for i in {1..12}; do
+              for i in $(seq 1 12); do
                 if ../../common/assert_odigos_uninstalled.sh; then
                   exit 0
                 fi
-                echo "Attempt $i: Odigos uninstallation verification failed, retrying in 15 seconds..."
+                echo "Attempt $i: Odigos uninstallation verification failed, retrying in 5 seconds..."
                 sleep 5
               done
+
               echo "Failed to verify Odigos uninstallation after 12 attempts"
               exit 1
