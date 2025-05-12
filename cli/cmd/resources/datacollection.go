@@ -79,7 +79,7 @@ func NewDataCollectionClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "odigos-data-collection",
+			Name: k8sconsts.OdigosNodeCollectorClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -124,7 +124,7 @@ func NewDataCollectionRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-data-collection",
+			Name:      k8sconsts.OdigosNodeCollectorRoleBindingName,
 			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{

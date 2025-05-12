@@ -53,7 +53,7 @@ func NewGatewayRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-gateway",
+			Name:      k8sconsts.OdigosClusterCollectorRoleBindingName,
 			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{

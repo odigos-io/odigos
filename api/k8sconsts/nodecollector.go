@@ -10,7 +10,9 @@ const (
 
 	OdigosNodeCollectorConfigMapKey = "conf" // this key is different than the cluster collector value. not sure why
 
-	OdigosNodeCollectorServiceAccountName = "odigos-data-collection"
-	OdigosNodeCollectorRoleName           = "odigos-data-collection"
-	OdigosNodeCollectorClusterRoleName    = "odigos-data-collection"
+	OdigosNodeCollectorServiceAccountName     = "odigos-data-collection"
+	OdigosNodeCollectorRoleName               = "odigos-data-collection"
+	OdigosNodeCollectorRoleBindingName        = "odigos-data-collection"
+	OdigosNodeCollectorClusterRoleName        = "odigos-data-collection"
+	OdigosNodeCollectorClusterRoleBindingName = "odigos-data-collection"
 )
