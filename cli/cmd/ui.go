@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +27,17 @@ var uiCmd = &cobra.Command{
 	Short: "Start the Odigos UI",
 	Long:  `Start the Odigos UI. This will start a web server that you can access in your browser and enables you to manage and configure Odigos.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := cmd.Context()
+		ctx, cancel := context.WithCancel(cmd.Context())
+		defer cancel()
+
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt)
+		go func() {
+			<-sigCh
+			fmt.Println("\nReceived interrupt. Stopping UI port forwarding...")
+			cancel()
+		}()
+
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)

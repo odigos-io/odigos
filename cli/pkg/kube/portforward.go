@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/httpstream"
@@ -18,18 +17,9 @@ import (
 func PortForwardWithContext(ctx context.Context, pod *corev1.Pod, client *Client, localPort, localAddress string) error {
 	stopChannel := make(chan struct{}, 1)
 	readyChannel := make(chan struct{})
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt)
-	defer signal.Stop(signals)
-
-	returnCtx, returnCtxCancel := context.WithCancel(ctx)
-	defer returnCtxCancel()
 
 	go func() {
-		select {
-		case <-signals:
-		case <-returnCtx.Done():
-		}
+		<-ctx.Done()
 		close(stopChannel)
 	}()
 
