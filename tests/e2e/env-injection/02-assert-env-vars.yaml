@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-latest-version
+  namespace: default
+spec:
+  containers:
+    - image: public.ecr.aws/odigos/java-latest-version:v0.0.1
+      name: java-latest-version
+      (env[?name=='JAVA_OPTS']): []
+      (env[?name=='JAVA_TOOL_OPTIONS']): []
+      (env[?name=='LD_PRELOAD']):
+       - value: "/var/odigos/loader.so"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-supported-manifest-env
+  namespace: default
+spec:
+  containers:
+    - image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
+      name: java-supported-manifest-env
+      (env[?name=='JAVA_TOOL_OPTIONS']):
+      - value: "-Dnot.work=true"
+      (env[?name=='JAVA_OPTS']): []
+      (env[?name=='LD_PRELOAD']):
+       - value: "/var/odigos/loader.so"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-supported-empty-manifest-env
+  namespace: default
+spec:
+  containers:
+    - image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
+      (env[?name=='JAVA_TOOL_OPTIONS']): []
+      # user defined JAVA_OPTS in the manifest but it is empty,
+      (env[?name=='JAVA_OPTS']):
+        - name: JAVA_OPTS
+      (env[?name=='LD_PRELOAD']):
+       - value: "/var/odigos/loader.so"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-supported-docker-env
+  namespace: default
+spec:
+  containers:
+    - image: public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
+      name: java-supported-docker-env
+      # LD_PRELOAD is declared in the Dockerfile, hence we fallback to adding it to the user defined env vars.
+      (env[?name=='JAVA_OPTS']):
+      - value: -Dthis.does.not.exist=true -javaagent:/var/odigos/java/javaagent.jar
+      (env[?name=='JAVA_TOOL_OPTIONS']): []
+      (env[?name=='LD_PRELOAD']): []
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: inventory
+  namespace: default
+spec:
+  containers:
+    - image: registry.odigos.io/odigos-demo-inventory:v0.1.14
+      # the user defined PYTHONPATH remains unchanged
+      # and we add the loader.
+      name: inventory
+      (env[?name=='PYTHONPATH']):
+       - valueFrom:
+          configMapKeyRef:
+            key: PYTHONPATH
+            name: env-configmap
+      (env[?name=='ORIGINAL_PYTHONPATH']): []
+      (env[?name=='LD_PRELOAD']):
+       - value: "/var/odigos/loader.so"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: python-alpine
+  namespace: default
+spec:
+  containers:
+    - image: public.ecr.aws/odigos/python-alpine:v0.0.1
+      name: python-alpine
+      # the python-alpine container is running in secure-execution mode - hence we should avoid using the loader
+      # and fallback to the pod-manifest env vars.
+      (env[?name=='PYTHONPATH']):
+      - value: /app:/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      (env[?name=='LD_PRELOAD']): []
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: frontend
+  namespace: default
+spec:
+  containers:
+    - image: registry.odigos.io/odigos-demo-frontend:v0.1.14
+      name: frontend
+      # the user defined PYTHONPATH remains unchanged
+      # and we add the loader.
+      (env[?name=='JAVA_TOOL_OPTIONS']):
+       - valueFrom:
+          configMapKeyRef:
+            key: JAVA_TOOL_OPTIONS
+            name: env-configmap
+      (env[?name=='ORIGINAL_JAVA_TOOL_OPTIONS']): []
+      (env[?name=='LD_PRELOAD']):
+       - value: "/var/odigos/loader.so"

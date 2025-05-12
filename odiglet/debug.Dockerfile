@@ -87,7 +87,7 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
 FROM --platform=$BUILDPLATFORM maniator/gh AS php-agents
 WORKDIR /php-agents
 ARG TARGETARCH
-ARG PHP_AGENT_VERSION="v0.0.17"
+ARG PHP_AGENT_VERSION="v0.1.18"
 ARG PHP_VERSIONS="8.0 8.1 8.2 8.3 8.4"
 ENV PHP_VERSIONS=${PHP_VERSIONS}
 # Clone agents repo (contains pre-compiled binaries and libraries for each PHP version)
@@ -102,7 +102,7 @@ RUN for v in ${PHP_VERSIONS}; do \
 
 
 ######### ODIGLET #########
-FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.7 AS builder
+FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
@@ -145,6 +145,10 @@ COPY --from=php-agents /php-agents/opentelemetry-php/8.1 /instrumentations/php/8
 COPY --from=php-agents /php-agents/opentelemetry-php/8.2 /instrumentations/php/8.2
 COPY --from=php-agents /php-agents/opentelemetry-php/8.3 /instrumentations/php/8.3
 COPY --from=php-agents /php-agents/opentelemetry-php/8.4 /instrumentations/php/8.4
+
+# loader
+ARG ODIGOS_LOADER_VERSION=v0.0.3
+RUN wget https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
 FROM registry.fedoraproject.org/fedora-minimal:38
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet

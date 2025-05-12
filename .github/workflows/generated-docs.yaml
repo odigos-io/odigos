@@ -13,12 +13,12 @@ jobs:
         uses: actions/checkout@v4
       - name: Generate CRD API docs
         run: |
-          go work init && go work use operator
+          go work init && go work use -r .
           cd api
           make docgen
       - name: Check for changes in CRD API docs
         run: |
-          if [[ $(git diff --exit-code) ]]; then
+          if [[ -n $(git status --porcelain) ]]; then
             git diff
             echo "CRD API docs need to be updated. Please run 'cd api && make docgen', then commit the changes."
             exit 1
@@ -34,7 +34,7 @@ jobs:
           make cli-docs
       - name: Check for changes in CLI docs
         run: |
-          if [[ $(git diff --exit-code) ]]; then
+          if [[ -n $(git status --porcelain) ]]; then
             git diff
             echo "CLI docs need to be updated. Please run 'make cli-docs', then commit the changes."
             exit 1
@@ -52,7 +52,7 @@ jobs:
           make rbac-docs
       - name: Check for changes in RBAC docs
         run: |
-          if [[ $(git diff --exit-code) ]]; then
+          if [[ -n $(git status --porcelain) ]]; then
             git diff
             echo "RBAC docs need to be updated. Please run 'make rbac-docs', then commit the changes."
             exit 1
@@ -77,7 +77,7 @@ jobs:
           python sync-dest-doc.py
       - name: Check for changes in Destinations docs
         run: |
-          if [[ $(git diff --exit-code) ]]; then
+          if [[ -n $(git status --porcelain) ]]; then
             git diff
             echo "Destinations docs need to be updated. Please run 'cd docs && python sync-dest-doc.py', then commit the changes."
             exit 1
@@ -104,7 +104,7 @@ jobs:
           python sync-instru-doc.py
       - name: Check for changes in Instrumentation docs
         run: |
-          if [[ $(git diff --exit-code) ]]; then
+          if [[ -n $(git status --porcelain) ]]; then
             git diff
             echo "Instrumentation docs need to be updated. Pleaserun 'cd docs && python sync-instru-doc.py', then commit the changes."
             exit 1

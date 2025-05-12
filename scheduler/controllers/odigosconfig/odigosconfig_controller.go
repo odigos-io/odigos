@@ -88,6 +88,7 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	// and have it on the config object itself.
 	// I want to preserve that user input (specific request or empty), and persist the resolved value in effective config.
 	resolveMountMethod(odigosConfig)
+	resolveEnvInjectionMethod(odigosConfig)
 
 	err = r.persistEffectiveConfig(ctx, odigosConfig)
 	if err != nil {
@@ -283,5 +284,26 @@ func resolveMountMethod(odigosConfig *common.OdigosConfiguration) {
 		// any illegal value will be defaulted to host-path
 		// TODO: emit some error here and think how to handle it
 		odigosConfig.MountMethod = &defaultMountMethod
+	}
+}
+
+func resolveEnvInjectionMethod(odigosConfig *common.OdigosConfiguration) {
+	defaultInjectionMethod := common.PodManifestEnvInjectionMethod
+
+	if odigosConfig.AgentEnvVarsInjectionMethod == nil {
+		odigosConfig.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
+		return
+	}
+
+	switch *odigosConfig.AgentEnvVarsInjectionMethod {
+	case common.LoaderFallbackToPodManifestInjectionMethod:
+		return
+	case common.LoaderEnvInjectionMethod:
+		return
+	case common.PodManifestEnvInjectionMethod:
+		return
+	default:
+		// any illegal value will be defaulted to pod-manifest
+		odigosConfig.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
 	}
 }
