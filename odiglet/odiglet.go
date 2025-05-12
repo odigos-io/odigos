@@ -24,6 +24,7 @@ import (
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/retry"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
@@ -193,11 +194,19 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 
 	ctx := context.Background()
 
-	// Get Odigos configuration to check if Karpenter is enabled
-	odigosConfig, err := k8sutils.GetCurrentOdigosConfigWithClientset(ctx, clientset)
+	// Get the Odigos configuration, retry on odigos effective config not found error
+	var odigosConfig common.OdigosConfiguration
+	err = retry.OnError(retry.DefaultBackoff, func(err error) bool {
+		return errors.Is(err, k8sutils.ErrOdigosEffectiveConfigNotFound)
+	}, func() error {
+		var fetchErr error
+		odigosConfig, fetchErr = k8sutils.GetCurrentOdigosConfigWithClientset(ctx, clientset)
+		return fetchErr
+	})
+
 	if err != nil {
 		if errors.Is(err, k8sutils.ErrOdigosEffectiveConfigNotFound) {
-			log.Logger.Info("Odigos effective config not found, skipping taint removal")
+			log.Logger.Info("Odigos effective config not found after retries, skipping taint removal")
 		} else {
 			log.Logger.Error(err, "Failed to fetch Odigos configuration")
 			os.Exit(-1)
