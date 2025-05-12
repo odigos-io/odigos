@@ -284,7 +284,6 @@ var portForwardCentralCmd = &cobra.Command{
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		var wg sync.WaitGroup
-		wg.Add(2)
 
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
@@ -294,14 +293,7 @@ var portForwardCentralCmd = &cobra.Command{
 			fmt.Printf("\033[31mERROR\033[0m Cannot find backend pod: %v\n", err)
 			os.Exit(1)
 		}
-		go func() {
-			defer wg.Done()
-			err := kube.PortForwardWithContext(ctx, backendPod, client, k8sconsts.CentralBackendPort, "localhost")
-			if err != nil {
-				fmt.Printf("\033[31mERROR\033[0m Backend port-forward failed: %v\n", err)
-			}
-		}()
-
+		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend")
 		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUILabelAppValue)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find UI pod: %v\n", err)
@@ -310,12 +302,7 @@ var portForwardCentralCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		go func() {
-			defer wg.Done()
-			if err := kube.PortForwardWithContext(ctx, uiPod, client, k8sconsts.CentralUIPort, "localhost"); err != nil {
-				fmt.Printf("\033[31mERROR\033[0m UI port-forward failed: %v\n", err)
-			}
-		}()
+		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI")
 
 		fmt.Printf("Odigos Central UI is available at: http://localhost:%s\n", k8sconsts.CentralUIPort)
 		fmt.Printf("Press Ctrl+C to stop\n")
@@ -325,6 +312,16 @@ var portForwardCentralCmd = &cobra.Command{
 		cancel()
 		wg.Wait()
 	},
+}
+
+func startPortForward(wg *sync.WaitGroup, ctx context.Context, pod *corev1.Pod, client *kube.Client, port string, name string) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := kube.PortForwardWithContext(ctx, pod, client, port, "localhost"); err != nil {
+			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
+		}
+	}()
 }
 
 func findPodWithAppLabel(ctx context.Context, client *kube.Client, ns, appLabel string) (*corev1.Pod, error) {
