@@ -473,14 +473,14 @@ func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace stri
 		return false, services.ErrorIsReadonly
 	}
 
-	// var persistObjects []model.PersistNamespaceSourceInput
-	// for _, source := range sources {
-	// 	persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
-	// 		Name:     source.Name,
-	// 		Kind:     source.Kind,
-	// 		Selected: source.Selected,
-	// 	})
-	// }
+	var persistObjects []model.PersistNamespaceSourceInput
+	for _, source := range sources {
+		persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
+			Name:     source.Name,
+			Kind:     source.Kind,
+			Selected: source.Selected,
+		})
+	}
 
 	err := services.SyncWorkloadsInNamespace(ctx, namespace, sources)
 	if err != nil {
@@ -1046,13 +1046,13 @@ func (r *queryResolver) DataStreams(ctx context.Context) ([]*model.DataStream, e
 	seen["default"] = true
 
 	for _, dest := range destinations.Items {
-			for _, streamName := range dest.Spec.SourceSelector.Groups {
-				if _, exists := seen[streamName]; !exists {
-					seen[streamName] = true
-					dataStreams = append(dataStreams, &model.DataStream{
-						Name: streamName,
-					})
-				}
+		for _, streamName := range dest.Spec.SourceSelector.Groups {
+			if _, exists := seen[streamName]; !exists {
+				seen[streamName] = true
+				dataStreams = append(dataStreams, &model.DataStream{
+					Name: streamName,
+				})
+			}
 		}
 	}
 
