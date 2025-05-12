@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { GET_DATA_STREAMS } from '@/graphql';
 import { useLazyQuery } from '@apollo/client';
-import { useNotificationStore } from '@odigos/ui-kit/store';
 import { Crud, type DataStream, StatusType } from '@odigos/ui-kit/types';
+import { useDataStreamStore, useNotificationStore } from '@odigos/ui-kit/store';
 
 interface UseDataStreamsCrud {
   dataStreamsLoading: boolean;
@@ -12,11 +12,12 @@ interface UseDataStreamsCrud {
 
 export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
   const { addNotification } = useNotificationStore();
+  const { dataStreams, setDataStreams, selectedStreamName, setSelectedStreamName } = useDataStreamStore();
 
-  const [fetchDataStreamsQuery, { loading, data, called }] = useLazyQuery<{ dataStreams?: DataStream[] }>(GET_DATA_STREAMS);
+  const [fetchDataStreamsQuery, { loading, data }] = useLazyQuery<{ dataStreams?: DataStream[] }>(GET_DATA_STREAMS);
 
   const fetchDataStreams = async () => {
-    const { error } = await fetchDataStreamsQuery();
+    const { error, data } = await fetchDataStreamsQuery();
 
     if (error) {
       addNotification({
@@ -24,11 +25,14 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
         title: error.name || Crud.Read,
         message: error.cause?.message || error.message,
       });
+    } else if (data?.dataStreams) {
+      setDataStreams(data.dataStreams);
+      if (!selectedStreamName) setSelectedStreamName('default');
     }
   };
 
   useEffect(() => {
-    if (!called) fetchDataStreams();
+    if (!dataStreams.length && !loading) fetchDataStreams();
   }, []);
 
   return {

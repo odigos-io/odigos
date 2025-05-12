@@ -5,17 +5,17 @@ import { mapFetchedDestinations } from '@/utils';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import { useDataStreamStore, useEntityStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
+import { useDataStreamStore, useEntityStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 import { Crud, EntityTypes, StatusType, type Destination, type DestinationFormData } from '@odigos/ui-kit/types';
 
 interface UseDestinationCrud {
   destinations: Destination[];
   destinationsLoading: boolean;
   fetchDestinations: () => void;
-  createDestination: (destination: DestinationFormData) => void;
-  updateDestination: (id: string, destination: DestinationFormData) => void;
-  deleteDestination: (id: string) => void;
+  createDestination: (destination: DestinationFormData) => Promise<void>;
+  updateDestination: (id: string, destination: DestinationFormData) => Promise<void>;
+  deleteDestination: (id: string) => Promise<void>;
 }
 
 export const useDestinationCRUD = (): UseDestinationCrud => {
@@ -76,35 +76,35 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     },
   });
 
-  const createDestination: UseDestinationCrud['createDestination'] = (destination) => {
+  const createDestination: UseDestinationCrud['createDestination'] = async (destination) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
-      mutateCreate({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+      await mutateCreate({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
     }
   };
 
-  const updateDestination: UseDestinationCrud['updateDestination'] = (id, destination) => {
+  const updateDestination: UseDestinationCrud['updateDestination'] = async (id, destination) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       notifyUser(StatusType.Default, 'Pending', 'Updating destination...', undefined, true);
       addPendingItems([{ entityType: EntityTypes.Destination, entityId: id }]);
-      mutateUpdate({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+      await mutateUpdate({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
     }
   };
 
-  const deleteDestination: UseDestinationCrud['deleteDestination'] = (id) => {
+  const deleteDestination: UseDestinationCrud['deleteDestination'] = async (id) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
-      mutateDelete({ variables: { id } });
+      await mutateDelete({ variables: { id } });
     }
   };
 
   useEffect(() => {
-    if (!destinations.length && !destinationsLoading) fetchDestinations();
-  }, []);
+    if (selectedStreamName && !destinations.length && !destinationsLoading) fetchDestinations();
+  }, [selectedStreamName]);
 
   return {
     destinations,

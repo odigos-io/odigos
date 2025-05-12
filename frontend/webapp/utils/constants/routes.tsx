@@ -1,7 +1,9 @@
 export const ROUTES = {
   ROOT: '/',
+  CHOOSE_STREAM: '/choose-stream',
   CHOOSE_SOURCES: '/choose-sources',
   CHOOSE_DESTINATION: '/choose-destination',
+  SETUP_SUMMARY: '/setup-summary',
   OVERVIEW: '/overview',
   SOURCES: '/sources',
   DESTINATIONS: '/destinations',

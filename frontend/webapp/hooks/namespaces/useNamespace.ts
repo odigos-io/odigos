@@ -55,11 +55,11 @@ export const useNamespace = () => {
   };
 
   useEffect(() => {
-    if (!namespaces.length) fetchNamespaces();
+    if (!namespaces.length && !namespacesLoading) fetchNamespaces();
   }, []);
 
   return {
-    loading: namespacesLoading,
+    namespacesLoading,
     namespaces,
     fetchNamespaces,
     fetchNamespace: querySingleNs,

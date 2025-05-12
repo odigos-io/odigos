@@ -152,7 +152,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
       await Promise.all(persistNamespacesPayloads.map(persistNamespace));
       setConfiguredFutureApps({});
 
-      // !! no "fetch" and no "setInstrumentAwait(false)""
+      // !! no "fetch" and no "setInstrumentAwait(false)"
       // !! we should wait for SSE to handle that
     }
   };
@@ -176,8 +176,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
   };
 
   useEffect(() => {
-    if (!sources.length && !sourcesLoading) fetchSourcesPaginated();
-  }, []);
+    if (selectedStreamName && !sources.length && !sourcesLoading) fetchSourcesPaginated();
+  }, [selectedStreamName]);
 
   return {
     sources,

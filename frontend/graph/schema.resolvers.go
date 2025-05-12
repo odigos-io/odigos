@@ -473,16 +473,16 @@ func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace stri
 		return false, services.ErrorIsReadonly
 	}
 
-	var persistObjects []model.PersistNamespaceSourceInput
-	for _, source := range sources {
-		persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
-			Name:     source.Name,
-			Kind:     source.Kind,
-			Selected: source.Selected,
-		})
-	}
+	// var persistObjects []model.PersistNamespaceSourceInput
+	// for _, source := range sources {
+	// 	persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
+	// 		Name:     source.Name,
+	// 		Kind:     source.Kind,
+	// 		Selected: source.Selected,
+	// 	})
+	// }
 
-	err := services.SyncWorkloadsInNamespace(ctx, namespace, persistObjects)
+	err := services.SyncWorkloadsInNamespace(ctx, namespace, sources)
 	if err != nil {
 		return false, fmt.Errorf("failed to sync workloads: %v", err)
 	}
@@ -1039,17 +1039,20 @@ func (r *queryResolver) DataStreams(ctx context.Context) ([]*model.DataStream, e
 	}
 
 	var dataStreams []*model.DataStream
+	dataStreams = append(dataStreams, &model.DataStream{Name: "default"})
+
 	// Collect stream names without duplicates
 	seen := make(map[string]bool)
+	seen["default"] = true
 
 	for _, dest := range destinations.Items {
-		for _, streamName := range dest.Spec.SourceSelector.Groups {
-			if _, exists := seen[streamName]; !exists {
-				seen[streamName] = true
-				dataStreams = append(dataStreams, &model.DataStream{
-					Name: streamName,
-				})
-			}
+			for _, streamName := range dest.Spec.SourceSelector.Groups {
+				if _, exists := seen[streamName]; !exists {
+					seen[streamName] = true
+					dataStreams = append(dataStreams, &model.DataStream{
+						Name: streamName,
+					})
+				}
 		}
 	}
 

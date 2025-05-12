@@ -4,7 +4,6 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import { SetupHeader } from '@/components';
-import { EntityTypes } from '@odigos/ui-kit/types';
 import { useSetupStore } from '@odigos/ui-kit/store';
 import { DestinationSelectionForm } from '@odigos/ui-kit/containers';
 import { useDestinationCategories, useDestinationCRUD, usePotentialDestinations, useTestConnection } from '@/hooks';
@@ -20,7 +19,7 @@ export default function Page() {
 
   return (
     <>
-      <SetupHeader entityType={EntityTypes.Destination} />
+      <SetupHeader step={4} />
       <DestinationSelectionForm
         categories={categories}
         potentialDestinations={potentialDestinations}
