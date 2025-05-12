@@ -1,9 +1,9 @@
 package k8sconsts
 
 const (
-         // OdigosAgentsMetaHashLabel is used to label pods being instrumented.
-         // It can be used to count the number of instrumented pods for a workload and whether they are up to date
-         // with the expected agents.
+	// OdigosAgentsMetaHashLabel is used to label pods being instrumented.
+	// It can be used to count the number of instrumented pods for a workload and whether they are up to date
+	// with the expected agents.
 	OdigosAgentsMetaHashLabel = "odigos.io/agents-meta-hash"
 
 	// OdigosCollectorRoleLabel is the label used to identify the role of the Odigos collector.

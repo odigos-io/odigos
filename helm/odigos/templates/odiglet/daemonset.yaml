@@ -94,7 +94,7 @@ spec:
               value: info
             {{- if .Values.onPremToken }}
             - name: OTEL_GO_OFFSETS_FILE
-              value: /offsets/offset_results.json
+              value: /offsets/go_offset_results.json
             - name: ODIGOS_ONPREM_TOKEN
               valueFrom:
                 secretKeyRef:

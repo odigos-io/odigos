@@ -78,6 +78,16 @@ spec:
                 description: A boolean field allowing to temporarily disable the rule,
                   but keep it around for future use
                 type: boolean
+              headersCollection:
+                description: Allows to configure the collection of http headers for
+                  different types of payloads.
+                properties:
+                  headerKeys:
+                    description: Limit payload collection to specific header keys.
+                    items:
+                      type: string
+                    type: array
+                type: object
               instrumentationLibraries:
                 description: |-
                   For fine grained control, the user can specify the instrumentation library to use.
@@ -99,8 +109,12 @@ spec:
                       - dotnet
                       - javascript
                       - php
+                      - ruby
+                      - rust
                       - mysql
                       - nginx
+                      - redis
+                      - postgres
                       - unknown
                       - ignored
                       type: string

@@ -51,6 +51,7 @@ const (
 	GoOffsetsPublicURL = "https://storage.googleapis.com/odigos-cloud/offset_results_min.json"
 
 	LdPreloadEnvVarName = "LD_PRELOAD"
+	OdigosLoaderName    = "loader.so"
 )
 
 // Odigos config properties
@@ -67,8 +68,10 @@ const (
 	IgnoredContainersProperty         = "ignored-containers"
 	MountMethodProperty               = "mount-method"
 	CentralBackendURLProperty         = "central-backend-url"
-	CustomContainerRunetimeSocketPath = "custom-container-runtime-socket-path"
+	CustomContainerRuntimeSocketPath  = "custom-container-runtime-socket-path"
+	K8sNodeLogsDirectory              = "k8s-node-logs-directory"
 	AvoidJavaOptsEnvVar               = "avoid-java-opts-env-var"
+	AgentEnvVarsInjectionMethod       = "agent-env-vars-injection-method"
 	ClusterNameProperty               = "cluster-name"
 	NodeSelectorProperty              = "node-selector"
 )
