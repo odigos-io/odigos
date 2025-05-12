@@ -454,6 +454,14 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 										},
 									},
 								},
+								{
+									Name: "CURRENT_NS",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
+										},
+									},
+								},
 							},
 							Resources: corev1.ResourceRequirements{},
 							VolumeMounts: append([]corev1.VolumeMount{
