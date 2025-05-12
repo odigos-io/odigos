@@ -1,5 +1,5 @@
 certifi==2025.1.31
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
 idna==3.10
 numpy==2.2.3
 packaging==25.0
