@@ -2,6 +2,7 @@ package centralodigos
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -90,6 +91,10 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string) *ap
 }
 
 func NewCentralBackendService(ns string) *corev1.Service {
+	portInt, err := strconv.Atoi(k8sconsts.CentralBackendPort)
+	if err != nil {
+		portInt = 8081
+	}
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -109,7 +114,7 @@ func NewCentralBackendService(ns string) *corev1.Service {
 			},
 			Ports: []corev1.ServicePort{
 				{
-					Port:       8081,
+					Port:       int32(portInt),
 					TargetPort: intstrFromInt(8081),
 				},
 			},
