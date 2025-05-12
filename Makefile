@@ -27,13 +27,13 @@ BUILD_DIR  ?= .
 # ──────────────────────────────────────────────
 define bake-load
 	@TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
-	docker bake $(1) --load --pull \
+	docker buildx bake $(1) --load --pull \
 	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',)
 endef
 
 define bake-push
 	@TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
-	docker bake $(1) --push \
+	docker buildx bake $(1) --push \
 	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',)
 endef
 
