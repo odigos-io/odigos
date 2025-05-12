@@ -76,7 +76,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	headers, exists := config[otlpHttpHeaders]
-	if exists {
+	if exists && headers != "" {
 		var headersList []struct {
 			Key   string `json:"key"`
 			Value string `json:"value"`
