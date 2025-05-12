@@ -3,13 +3,13 @@ package node
 import (
 	"context"
 	"fmt"
-	"time"
 
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/retry"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
@@ -43,13 +43,11 @@ func RemoveStartupTaint(clientset *kubernetes.Clientset, nodeName string) error 
 	const (
 		startupTaintKey    = consts.KarpenterStartupTaintKey
 		startupTaintEffect = v1.TaintEffectNoSchedule
-		maxRetries         = 5
-		retryInterval      = 1 * time.Second
 	)
 
 	ctx := context.Background()
 
-	for attempt := 1; attempt <= maxRetries; attempt++ {
+	err := retry.OnError(retry.DefaultBackoff, apierrors.IsConflict, func() error {
 		node, err := clientset.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to get node %s: %w", nodeName, err)
@@ -72,23 +70,15 @@ func RemoveStartupTaint(clientset *kubernetes.Clientset, nodeName string) error 
 			return nil
 		}
 
-		// Set updated taints
 		node.Spec.Taints = newTaints
 
-		// Attempt update
 		_, err = clientset.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
-		if err == nil {
-			return nil
-		}
+		return err
+	})
 
-		// If conflict, retry
-		if apierrors.IsConflict(err) {
-			time.Sleep(retryInterval)
-			continue
-		}
-
-		return fmt.Errorf("failed to update node %s: %w", nodeName, err)
+	if err != nil {
+		return fmt.Errorf("failed to remove startup taint from node %s: %w", nodeName, err)
 	}
 
-	return fmt.Errorf("failed to remove startup taint after %d retries due to persistent conflicts", maxRetries)
+	return nil
 }
