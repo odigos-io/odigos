@@ -1,14 +1,15 @@
 import { gql } from '@apollo/client';
 
 export const GET_SOURCES = gql`
-  query GetSources($nextPage: String!, $groupName: String!) {
+  query GetSources($nextPage: String!, $streamName: String!) {
     computePlatform {
-      sources(nextPage: $nextPage, groupName: $groupName) {
+      sources(nextPage: $nextPage, streamName: $streamName) {
         nextPage
         items {
           namespace
           name
           kind
+          streamNames
           selected
           otelServiceName
           containers {
@@ -33,12 +34,13 @@ export const GET_SOURCES = gql`
 `;
 
 export const GET_SOURCE = gql`
-  query GetSource($sourceId: K8sSourceId!, $groupName: String!) {
+  query GetSource($sourceId: K8sSourceId!, $streamName: String!) {
     computePlatform {
-      source(sourceId: $sourceId, groupName: $groupName) {
+      source(sourceId: $sourceId, streamName: $streamName) {
         namespace
         name
         kind
+        streamNames
         selected
         otelServiceName
         containers {

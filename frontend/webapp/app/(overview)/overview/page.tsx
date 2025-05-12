@@ -2,16 +2,16 @@
 
 import React from 'react';
 import { OVERVIEW_HEIGHT_WITHOUT_DATA_FLOW } from '@/utils';
-import { useGroupsCRUD, useMetrics, useSourceCRUD } from '@/hooks';
+import { useDataStreamsCRUD, useMetrics, useSourceCRUD } from '@/hooks';
 import { DataFlow, MultiSourceControl } from '@odigos/ui-kit/containers';
 
 export default function Page() {
   const { metrics } = useMetrics();
-  const { groupNames } = useGroupsCRUD();
+  const { dataStreams } = useDataStreamsCRUD();
   const { sources, persistSources } = useSourceCRUD();
 
   // TODO: pass this to DataFlow as prop
-  console.log('groupNames', groupNames);
+  console.log('dataStreams', dataStreams);
 
   return (
     <>

@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, type FC, type RefObject } from 'react';
+import React, { useState, type FC, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import { EntityTypes } from '@odigos/ui-kit/types';
@@ -11,16 +11,16 @@ import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos
 interface SetupHeaderProps {
   entityType: EntityTypes;
   formRef?: RefObject<SourceSelectionFormRef | null>; // in sources
-  isLoading?: boolean; // in destinations
-  setIsLoading?: Dispatch<SetStateAction<boolean>>; // in destinations
 }
 
-const SetupHeader: FC<SetupHeaderProps> = ({ formRef, entityType, isLoading, setIsLoading }) => {
+const SetupHeader: FC<SetupHeaderProps> = ({ formRef, entityType }) => {
   const router = useRouter();
 
   const { persistSources } = useSourceCRUD();
   const { createDestination } = useDestinationCRUD();
   const { configuredSources, configuredFutureApps, configuredDestinations, setAvailableSources, setConfiguredSources, setConfiguredFutureApps, resetState } = useSetupStore();
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const onNext = () => {
     if (formRef?.current) {

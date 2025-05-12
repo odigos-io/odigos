@@ -5,7 +5,7 @@ import { mapFetchedDestinations } from '@/utils';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import { useEntityStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
+import { useDataStreamStore, useEntityStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
 import { Crud, EntityTypes, StatusType, type Destination, type DestinationFormData } from '@odigos/ui-kit/types';
 
@@ -21,6 +21,7 @@ interface UseDestinationCrud {
 export const useDestinationCRUD = (): UseDestinationCrud => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
+  const { selectedStreamName } = useDataStreamStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { destinationsLoading, setEntitiesLoading, destinations, addEntities, removeEntities } = useEntityStore();
 
@@ -28,12 +29,11 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     addNotification({ type, title, message, crdType: EntityTypes.Destination, target: id ? getSseTargetFromId(id, EntityTypes.Destination) : undefined, hideFromHistory });
   };
 
-  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }, { groupName: string }>(GET_DESTINATIONS);
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }, { streamName: string }>(GET_DESTINATIONS);
 
   const fetchDestinations = async () => {
     setEntitiesLoading(EntityTypes.Destination, true);
-    // TODO: actual group name from current selection
-    const { error, data } = await fetchAll({ variables: { groupName: '' } });
+    const { error, data } = await fetchAll({ variables: { streamName: selectedStreamName } });
 
     if (error) {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);

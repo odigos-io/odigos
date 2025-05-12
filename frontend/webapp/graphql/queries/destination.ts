@@ -53,11 +53,12 @@ export const GET_POTENTIAL_DESTINATIONS = gql`
 `;
 
 export const GET_DESTINATIONS = gql`
-  query GetDestinations($groupName: String!) {
+  query GetDestinations($streamName: String!) {
     computePlatform {
-      destinations(groupName: $groupName) {
+      destinations(streamName: $streamName) {
         id
         name
+        streamNames
         fields
         exportedSignals {
           logs

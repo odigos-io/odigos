@@ -89,7 +89,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
         <OverviewHeader />
 
         <ContentWithActions>
-          <DataFlowActionsMenu addEntity={entityType} />
+          <DataFlowActionsMenu addEntity={entityType} onClickNewStream={() => {}} />
           <ContentUnderActions>
             <SideNav defaultSelectedId={selectedId} onClickId={onClickId} />
             {children}
