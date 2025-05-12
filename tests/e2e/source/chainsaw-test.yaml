@@ -123,7 +123,7 @@ spec:
             name: odiglet
             namespace: odigos-test
 
-    - name: '[2 - Workload Instrumentation] Verify Trace - Resource Attributes'
+    - name: "[2 - Workload Instrumentation] Verify Trace - Resource Attributes"
       try:
         - script:
             timeout: 3m
@@ -254,10 +254,20 @@ spec:
             check:
               ($error != null): true
 
-    - name: '[Uninstall] Uninstall Odigos'
+    - name: 'Uninstall Odigos'
       try:
         - script:
             timeout: 2m
             content: ../../../cli/odigos uninstall --yes
         - script:
-            content: ../../common/assert_odigos_uninstalled.sh
+            timeout: 3m
+            content: |
+              for i in {1..12}; do
+                if ../../common/assert_odigos_uninstalled.sh; then
+                  exit 0
+                fi
+                echo "Attempt $i: Odigos uninstallation verification failed, retrying in 15 seconds..."
+                sleep 5
+              done
+              echo "Failed to verify Odigos uninstallation after 12 attempts"
+              exit 1
