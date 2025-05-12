@@ -10,6 +10,9 @@ import (
 
 const (
 	otlpHttpEndpointKey          = "OTLP_HTTP_ENDPOINT"
+	otlpHttpTlsKey               = "OTLP_HTTP_TLS_ENABLED"
+	otlpHttpCaPemKey             = "OTLP_HTTP_CA_PEM"
+	otlpHttpInsecureSkipVerify   = "OTLP_HTTP_INSECURE_SKIP_VERIFY"
 	otlpHttpBasicAuthUsernameKey = "OTLP_HTTP_BASIC_AUTH_USERNAME"
 	otlpHttpBasicAuthPasswordKey = "OTLP_HTTP_BASIC_AUTH_PASSWORD"
 	otlpHttpCompression          = "OTLP_HTTP_COMPRESSION"
@@ -30,9 +33,24 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		return nil, errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
 	}
 
+	tls := dest.GetConfig()[otlpHttpTlsKey]
+	tlsEnabled := tls == "true"
+
 	parsedUrl, err := parseOtlpHttpEndpoint(url, "", "")
 	if err != nil {
 		return nil, errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
+	}
+
+	tlsConfig := GenericMap{
+		"insecure": !tlsEnabled,
+	}
+	caPem, caExists := config[otlpHttpCaPemKey]
+	if caExists && caPem != "" {
+		tlsConfig["ca_pem"] = caPem
+	}
+	insecureSkipVerify, skipExists := config[otlpHttpInsecureSkipVerify]
+	if skipExists && insecureSkipVerify != "" {
+		tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
 	}
 
 	basicAuthExtensionName, basicAuthExtensionConf := applyBasicAuth(dest)
@@ -46,6 +64,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	otlpHttpExporterName := "otlphttp/generic-" + dest.GetID()
 	exporterConf := GenericMap{
 		"endpoint": parsedUrl,
+		"tls":      tlsConfig,
 	}
 	if basicAuthExtensionName != "" {
 		exporterConf["auth"] = GenericMap{
@@ -57,7 +76,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	headers, exists := config[otlpHttpHeaders]
-	if exists {
+	if exists && headers != "" {
 		var headersList []struct {
 			Key   string `json:"key"`
 			Value string `json:"value"`

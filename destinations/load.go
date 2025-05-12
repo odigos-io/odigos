@@ -42,7 +42,7 @@ func load(fs embed.FS) error {
 		fileName := file.Name()
 
 		// check if fileName ends with .yaml or .yml
-		if !(strings.HasSuffix(fileName, ".yaml") || strings.HasSuffix(fileName, ".yml")) {
+		if !strings.HasSuffix(fileName, ".yaml") && !strings.HasSuffix(fileName, ".yml") {
 			continue
 		}
 
