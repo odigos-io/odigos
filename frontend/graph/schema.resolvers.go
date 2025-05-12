@@ -23,9 +23,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-
 	"golang.org/x/sync/errgroup"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -118,7 +116,7 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 }
 
 // Sources is the resolver for the sources field.
-func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string, groupName string) (*model.PaginatedSources, error) {
+func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string, streamName string) (*model.PaginatedSources, error) {
 	limit, _ := services.GetPageLimit(ctx)
 	icList, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
 		Limit:    int64(limit),
@@ -140,7 +138,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 		}
 	}
 
-	// Get Source objects to compare with groupName
+	// Get Source objects to compare with streamName
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(len(icList.Items))
 
@@ -164,8 +162,8 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 
 	var actualSources []*model.K8sActualSource
 	for idx, ic := range icList.Items {
-		// If matches groupName, return the source
-		if groupName == "" || srcList[idx].Labels[k8sconsts.SourceGroupLabelPrefix+groupName] == "true" {
+		// If matches streamName, return the source
+		if streamName == "" || srcList[idx].Labels[k8sconsts.SourceGroupLabelPrefix+streamName] == "true" {
 			actualSources = append(actualSources, instrumentationConfigToActualSource(ic))
 		}
 	}
@@ -177,7 +175,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 }
 
 // Source is the resolver for the source field.
-func (r *computePlatformResolver) Source(ctx context.Context, obj *model.ComputePlatform, sourceID model.K8sSourceID, groupName string) (*model.K8sActualSource, error) {
+func (r *computePlatformResolver) Source(ctx context.Context, obj *model.ComputePlatform, sourceID model.K8sSourceID, streamName string) (*model.K8sActualSource, error) {
 	ns := sourceID.Namespace
 	kind := sourceID.Kind
 	name := sourceID.Name
@@ -190,14 +188,14 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 		return nil, fmt.Errorf("InstrumentationConfig not found for %s/%s in namespace %s", kind, name, ns)
 	}
 
-	// Get Source object to compare with groupName
+	// Get Source object to compare with streamName
 	src, err := services.GetSourceCRD(ctx, ns, name, services.WorkloadKind(kind))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
 
-	// If matches groupName, return the source
-	if groupName == "" || src.Labels[k8sconsts.SourceGroupLabelPrefix+groupName] == "true" {
+	// If matches streamName, return the source
+	if streamName == "" || src.Labels[k8sconsts.SourceGroupLabelPrefix+streamName] == "true" {
 		payload := instrumentationConfigToActualSource(*ic)
 		condition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
 		if condition.Status != "" {
@@ -206,11 +204,11 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 
 		return payload, nil
 	}
-	return nil, fmt.Errorf("Source found but not included in group %s", groupName)
+	return nil, fmt.Errorf("Source found but not included in group %s", streamName)
 }
 
 // Destinations is the resolver for the destinations field.
-func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.ComputePlatform, groupName string) ([]*model.Destination, error) {
+func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.ComputePlatform, streamName string) ([]*model.Destination, error) {
 	ns := env.GetCurrentNamespace()
 
 	dests, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
@@ -220,8 +218,8 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 
 	var destinations []*model.Destination
 	for _, dest := range dests.Items {
-		// If matches groupName, return the destination
-		if groupName == "" || services.ArrayContains(dest.Spec.SourceSelector.Groups, groupName) {
+		// If matches streamName, return the destination
+		if streamName == "" || services.ArrayContains(dest.Spec.SourceSelector.Groups, streamName) {
 			secretFields, err := services.GetDestinationSecretFields(ctx, ns, &dest)
 			if err != nil {
 				return nil, err
@@ -1026,8 +1024,8 @@ func (r *queryResolver) InstrumentationInstancesHealth(ctx context.Context) ([]*
 	return services.GetInstrumentationInstancesHealthConditions(ctx)
 }
 
-// GroupNames is the resolver for the groupNames field.
-func (r *queryResolver) GroupNames(ctx context.Context) ([]string, error) {
+// DataStreams is the resolver for the dataStreams field.
+func (r *queryResolver) DataStreams(ctx context.Context) ([]*model.DataStream, error) {
 	ns := env.GetCurrentNamespace()
 
 	destinations, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
@@ -1040,36 +1038,40 @@ func (r *queryResolver) GroupNames(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	var groupNames []string
-	// Collect group names without duplicates
+	var dataStreams []*model.DataStream
+	// Collect stream names without duplicates
 	seen := make(map[string]bool)
 
 	for _, dest := range destinations.Items {
-		for _, group := range dest.Spec.SourceSelector.Groups {
-			if _, exists := seen[group]; !exists {
-				seen[group] = true
-				groupNames = append(groupNames, group)
+		for _, streamName := range dest.Spec.SourceSelector.Groups {
+			if _, exists := seen[streamName]; !exists {
+				seen[streamName] = true
+				dataStreams = append(dataStreams, &model.DataStream{
+					Name: streamName,
+				})
 			}
 		}
 	}
 
 	for _, src := range sources.Items {
-		var groups []string
+		var sourceStreamNames []string
 		for key := range src.Labels {
 			if strings.Contains(key, k8sconsts.SourceGroupLabelPrefix) {
-				groups = append(groups, strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix))
+				sourceStreamNames = append(sourceStreamNames, strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix))
 			}
 		}
 
-		for _, group := range groups {
-			if _, exists := seen[group]; !exists {
-				seen[group] = true
-				groupNames = append(groupNames, group)
+		for _, streamName := range sourceStreamNames {
+			if _, exists := seen[streamName]; !exists {
+				seen[streamName] = true
+				dataStreams = append(dataStreams, &model.DataStream{
+					Name: streamName,
+				})
 			}
 		}
 	}
 
-	return groupNames, nil
+	return dataStreams, nil
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.

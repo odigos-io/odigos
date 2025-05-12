@@ -138,6 +138,10 @@ type CustomReadDataLabel struct {
 	Value     string `json:"value"`
 }
 
+type DataStream struct {
+	Name string `json:"name"`
+}
+
 type DbQueryPayloadCollection struct {
 	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
@@ -177,8 +181,9 @@ func (this DeleteAttributeAction) GetSignals() []SignalType {
 
 type Destination struct {
 	ID              string                        `json:"id"`
-	Name            string                        `json:"name"`
 	Type            string                        `json:"type"`
+	Name            string                        `json:"name"`
+	StreamNames     []*string                     `json:"streamNames"`
 	ExportedSignals *ExportedSignals              `json:"exportedSignals"`
 	Fields          string                        `json:"fields"`
 	DestinationType *DestinationTypesCategoryItem `json:"destinationType"`
@@ -366,6 +371,7 @@ type K8sActualSource struct {
 	Namespace         string             `json:"namespace"`
 	Name              string             `json:"name"`
 	Kind              K8sResourceKind    `json:"kind"`
+	StreamNames       []*string          `json:"streamNames"`
 	NumberOfInstances *int               `json:"numberOfInstances,omitempty"`
 	Selected          *bool              `json:"selected,omitempty"`
 	OtelServiceName   *string            `json:"otelServiceName,omitempty"`

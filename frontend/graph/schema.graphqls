@@ -92,6 +92,7 @@ type K8sActualSource {
   namespace: String!
   name: String!
   kind: K8sResourceKind!
+  streamNames: [String]!
   numberOfInstances: Int
   selected: Boolean
   otelServiceName: String
@@ -239,9 +240,9 @@ type ComputePlatform {
   apiTokens: [ApiToken]!
   k8sActualNamespaces: [K8sActualNamespace]!
   k8sActualNamespace(name: String!): K8sActualNamespace
-  sources(nextPage: String!, groupName: String!): PaginatedSources!
-  source(sourceId: K8sSourceId!, groupName: String!): K8sActualSource!
-  destinations(groupName: String!): [Destination!]!
+  sources(nextPage: String!, streamName: String!): PaginatedSources!
+  source(sourceId: K8sSourceId!, streamName: String!): K8sActualSource!
+  destinations(streamName: String!): [Destination!]!
   actions: [PipelineAction!]!
   instrumentationRules: [InstrumentationRule!]!
 }
@@ -301,8 +302,9 @@ type ExportedSignals {
 
 type Destination {
   id: ID!
-  name: String!
   type: String!
+  name: String!
+  streamNames: [String]!
   exportedSignals: ExportedSignals!
   fields: String!
   destinationType: DestinationTypesCategoryItem!
@@ -632,6 +634,10 @@ type InstrumentationInstanceHealth {
   condition: Condition
 }
 
+type DataStream {
+  name: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -641,7 +647,7 @@ type Query {
   describeOdigos: OdigosAnalyze!
   describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
   instrumentationInstancesHealth: [InstrumentationInstanceHealth!]!
-  groupNames: [String!]!
+  dataStreams: [DataStream!]!
 }
 
 type Mutation {
