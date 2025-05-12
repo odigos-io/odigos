@@ -482,7 +482,7 @@ func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace stri
 		})
 	}
 
-	err := services.SyncWorkloadsInNamespace(ctx, namespace, sources)
+	err := services.SyncWorkloadsInNamespace(ctx, namespace, persistObjects)
 	if err != nil {
 		return false, fmt.Errorf("failed to sync workloads: %v", err)
 	}
