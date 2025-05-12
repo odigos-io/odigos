@@ -34,7 +34,7 @@ func TestFeatureSupport(t *testing.T) {
 		assert.True(t, fs1.isEnabled(Alpha))
 		assert.True(t, fs1.isEnabled(Beta))
 		assert.False(t, fs1.isEnabled(GA))
-	
+
 		assert.False(t, fs2.isEnabled(Alpha))
 		assert.False(t, fs2.isEnabled(Beta))
 		assert.False(t, fs2.isEnabled(GA))
@@ -69,4 +69,3 @@ func TestFeatureSupport(t *testing.T) {
 		assert.False(t, fs2.isEnabled(GA))
 	})
 }
-
