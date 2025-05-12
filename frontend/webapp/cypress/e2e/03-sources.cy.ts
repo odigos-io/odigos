@@ -65,8 +65,7 @@ describe('Sources CRUD', () => {
             fieldValue: TEXTS.UPDATED_NAME,
           },
           () => {
-            // TODO: uncomment when the UI-Kit fixes "duplicate toast check"
-            // awaitToast({ message: TEXTS.NOTIF_SOURCE_UPDATING });
+            awaitToast({ message: TEXTS.NOTIF_SOURCE_UPDATING });
             // Wait for the source to update
             cy.wait('@gql').then(() => {
               awaitToast({ message: TEXTS.NOTIF_UPDATED });
@@ -100,7 +99,7 @@ describe('Sources CRUD', () => {
       cy.get(DATA_IDS.SOURCE_NODE_HEADER).find(DATA_IDS.CHECKBOX).click();
       cy.get(DATA_IDS.MULTI_SOURCE_CONTROL).contains(totalEntities).should('exist');
       cy.get(DATA_IDS.MULTI_SOURCE_CONTROL).find('button').contains(BUTTONS.UNINSTRUMENT).click();
-      cy.get(DATA_IDS.MODAL).contains(TEXTS.SOURCE_WARN_MODAL_TITLE).should('exist');
+      cy.get(DATA_IDS.MODAL).contains(TEXTS.SOURCE_WARN_MODAL_TITLE(totalEntities)).should('exist');
       cy.get(DATA_IDS.MODAL).contains(TEXTS.SOURCE_WARN_MODAL_NOTE).should('exist');
       cy.get(DATA_IDS.APPROVE).click();
 

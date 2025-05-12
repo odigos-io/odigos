@@ -379,11 +379,12 @@ type K8sAnnotationAttribute struct {
 }
 
 type K8sAttributes struct {
-	CollectContainerAttributes bool                      `json:"collectContainerAttributes"`
-	CollectWorkloadID          bool                      `json:"collectWorkloadId"`
-	CollectClusterID           bool                      `json:"collectClusterId"`
-	LabelsAttributes           []*K8sLabelAttribute      `json:"labelsAttributes"`
-	AnnotationsAttributes      []*K8sAnnotationAttribute `json:"annotationsAttributes"`
+	CollectContainerAttributes  bool                      `json:"collectContainerAttributes"`
+	CollectReplicaSetAttributes bool                      `json:"collectReplicaSetAttributes"`
+	CollectWorkloadID           bool                      `json:"collectWorkloadId"`
+	CollectClusterID            bool                      `json:"collectClusterId"`
+	LabelsAttributes            []*K8sLabelAttribute      `json:"labelsAttributes"`
+	AnnotationsAttributes       []*K8sAnnotationAttribute `json:"annotationsAttributes"`
 }
 
 type K8sAttributesAction struct {

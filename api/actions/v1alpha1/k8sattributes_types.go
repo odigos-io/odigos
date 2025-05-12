@@ -56,6 +56,12 @@ type K8sAttributesSpec struct {
 	// container.image.tag
 	CollectContainerAttributes bool `json:"collectContainerAttributes,omitempty"`
 
+	// collect replicaset related attributes (when relevant, e.g. for deployments):
+	// k8s.replicaset.name
+	// if CollectWorkloadUID is set, also collect:
+	// k8s.replicaset.uid
+	CollectReplicaSetAttributes bool `json:"collectReplicaSetAttributes,omitempty"`
+
 	// Collect the following workload UID attributes:
 	// k8s.deployment.uid
 	// k8s.daemonset.uid
@@ -89,8 +95,7 @@ type K8sAttributesStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=k8sattributesresolvers,scope=Namespaced
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // K8sAttributesResolver allows adding an action to collect k8s attributes.
 type K8sAttributesResolver struct {

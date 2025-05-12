@@ -390,6 +390,7 @@ type K8sAnnotationAttribute {
 
 type K8sAttributes {
   collectContainerAttributes: Boolean!
+  collectReplicaSetAttributes: Boolean!
   collectWorkloadId: Boolean!
   collectClusterId: Boolean!
   labelsAttributes: [K8sLabelAttribute!]!

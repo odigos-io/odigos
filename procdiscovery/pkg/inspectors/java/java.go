@@ -19,21 +19,15 @@ const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
 
 var versionRegex = regexp.MustCompile(JavaVersionRegex)
 
+var processNames = []string{
+	"java",
+}
+
 func (j *JavaInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	baseExe := filepath.Base(pcx.ExePath)
 
-	// Check if baseExe starts with "java"
-	if len(baseExe) >= 4 && baseExe[:4] == "java" {
-		// If it's exactly "java", return true
-		if len(baseExe) == 4 {
-			return common.JavaProgrammingLanguage, true
-		}
-
-		// Use IsDigitsOnly from utils to ensure all remaining characters are digits
-		if utils.IsDigitsOnly(baseExe[4:]) {
-			return common.JavaProgrammingLanguage, true
-		}
-		return "", false
+	if utils.IsBaseExeContainsProcessName(baseExe, processNames) {
+		return common.JavaProgrammingLanguage, true
 	}
 
 	return "", false
@@ -56,7 +50,7 @@ func (j *JavaInspector) DeepScan(pcx *process.ProcessContext) (common.Programmin
 }
 
 func (j *JavaInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
-	if value, exists := pcx.Details.GetDetailedEnvsValue(process.JavaVersionConst); exists {
+	if value, exists := pcx.GetDetailedEnvsValue(process.JavaVersionConst); exists {
 		javaVersion := versionRegex.FindString(value)
 		return common.GetVersion(javaVersion)
 	}

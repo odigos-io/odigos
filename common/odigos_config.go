@@ -1,6 +1,8 @@
 package common
 
 type ProfileName string
+
+// +kubebuilder:validation:Enum=normal;readonly
 type UiMode string
 
 const (
@@ -47,6 +49,13 @@ type CollectorNodeConfiguration struct {
 	// this is when go runtime will start garbage collection.
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
+
+	// Odigos will by default attempt to collect logs from '/var/log' on each k8s node.
+	// Sometimes, this directory is actually a symlink to another directory.
+	// In this case, for logs collection to work, we need to add a mount to the target directory.
+	// This field is used to specify this target directory in these cases.
+	// A common target directory is '/mnt/var/log'.
+	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
 }
 
 type CollectorGatewayConfiguration struct {
@@ -92,23 +101,43 @@ type CollectorGatewayConfiguration struct {
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 }
+type UserInstrumentationEnvs struct {
+	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
+}
+
+// Struct to represent configuration for each language
+type LanguageConfig struct {
+	Enabled bool              `json:"enabled"`
+	EnvVars map[string]string `json:"env,omitempty"`
+}
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
-	ConfigVersion             int                            `json:"configVersion"`
-	TelemetryEnabled          bool                           `json:"telemetryEnabled,omitempty"`
-	OpenshiftEnabled          bool                           `json:"openshiftEnabled,omitempty"`
-	IgnoredNamespaces         []string                       `json:"ignoredNamespaces,omitempty"`
-	IgnoredContainers         []string                       `json:"ignoredContainers,omitempty"`
-	Psp                       bool                           `json:"psp,omitempty"`
-	ImagePrefix               string                         `json:"imagePrefix,omitempty"`
-	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty"`
-	CollectorGateway          *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
-	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
-	Profiles                  []ProfileName                  `json:"profiles,omitempty"`
-	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty"`
-	UiMode                    UiMode                         `json:"uiMode,omitempty"`
-	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty"`
-	CentralBackendURL         string                         `json:"centralBackendURL,omitempty"`
-	MountMethod               *MountMethod                   `json:"mountMethod,omitempty"`
+	ConfigVersion                    int                            `json:"configVersion"`
+	TelemetryEnabled                 bool                           `json:"telemetryEnabled,omitempty"`
+	OpenshiftEnabled                 bool                           `json:"openshiftEnabled,omitempty"`
+	IgnoredNamespaces                []string                       `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers                []string                       `json:"ignoredContainers,omitempty"`
+	Psp                              bool                           `json:"psp,omitempty"`
+	ImagePrefix                      string                         `json:"imagePrefix,omitempty"`
+	SkipWebhookIssuerCreation        bool                           `json:"skipWebhookIssuerCreation,omitempty"`
+	CollectorGateway                 *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
+	CollectorNode                    *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
+	Profiles                         []ProfileName                  `json:"profiles,omitempty"`
+	AllowConcurrentAgents            *bool                          `json:"allowConcurrentAgents,omitempty"`
+	UiMode                           UiMode                         `json:"uiMode,omitempty"`
+	UiPaginationLimit                int                            `json:"uiPaginationLimit,omitempty"`
+	CentralBackendURL                string                         `json:"centralBackendURL,omitempty"`
+	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
+	ClusterName                      string                         `json:"clusterName,omitempty"`
+	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
+
+	// Used for migration - we are migrating away from using the JAVA_OPTS env var
+	// to only using the JAVA_TOOL_OPTIONS env var.
+	// When this is true, we will not inject the JAVA_OPTS env var into the container.
+	// when false or not set the original behavior will be used and the JAVA_OPTS env var will be injected.
+	AvoidInjectingJavaOptsEnvVar *bool                    `json:"avoidInjectingJavaOptsEnvVar,omitempty"`
+	AgentEnvVarsInjectionMethod  *EnvInjectionMethod      `json:"agentEnvVarsInjectionMethod,omitempty"`
+	UserInstrumentationEnvs      *UserInstrumentationEnvs `json:"UserInstrumentationEnvs,omitempty"`
+	NodeSelector                 map[string]string        `json:"nodeSelector,omitempty"`
 }

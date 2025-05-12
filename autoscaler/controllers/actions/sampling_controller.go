@@ -80,6 +80,7 @@ func (r *OdigosSamplingReconciler) syncOdigosSamplingProcessor(ctx context.Conte
 	var (
 		actionsReferences    []metav1.OwnerReference
 		globalActionsRules   []sampling.Rule
+		serviceActionsRules  []sampling.Rule
 		endpointActionsRules []sampling.Rule
 	)
 
@@ -91,10 +92,12 @@ func (r *OdigosSamplingReconciler) syncOdigosSamplingProcessor(ctx context.Conte
 			actionsReferences = append(actionsReferences, handler.GetActionReference(action))
 
 			actionScope := handler.GetActionScope(action)
-			if actionScope == "global" {
+			switch actionScope {
+			case "global":
 				globalActionsRules = append(globalActionsRules, handler.GetRuleConfig(action)...)
-			}
-			if actionScope == "endpoint" {
+			case "service":
+				serviceActionsRules = append(endpointActionsRules, handler.GetRuleConfig(action)...)
+			case "endpoint":
 				endpointActionsRules = append(endpointActionsRules, handler.GetRuleConfig(action)...)
 			}
 
@@ -104,6 +107,7 @@ func (r *OdigosSamplingReconciler) syncOdigosSamplingProcessor(ctx context.Conte
 
 	samplingConf := sampling.SamplingConfig{
 		EndpointRules: endpointActionsRules,
+		ServiceRules:  serviceActionsRules,
 		GlobalRules:   globalActionsRules,
 	}
 

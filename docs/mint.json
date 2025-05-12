@@ -95,7 +95,8 @@
           "group": "API Reference",
           "pages": [
             "api-reference/odigos.io.v1alpha1",
-            "api-reference/actions.odigos.io.v1alpha1"
+            "api-reference/actions.odigos.io.v1alpha1",
+            "api-reference/operator.odigos.io.v1alpha1"
           ]
         }
       ]
@@ -144,6 +145,14 @@
           "pages": [
             "instrumentations/dotnet/native",
             "instrumentations/dotnet/enrichment"
+          ]
+        },
+        {
+          "group": "PHP",
+          "icon": "php",
+          "pages": [
+            "instrumentations/php/native",
+            "instrumentations/php/enrichment"
           ]
         },
         {
@@ -202,7 +211,9 @@
               "pages": [
                 "pipeline/actions/sampling/errorsampler",
                 "pipeline/actions/sampling/latencysampler",
-                "pipeline/actions/sampling/probabilisticsampler"
+                "pipeline/actions/sampling/probabilisticsampler",
+                "pipeline/actions/sampling/servicenamesampler",
+                "pipeline/actions/sampling/spanattributesampler"
               ]
             },
             "pipeline/actions/crd",
@@ -235,6 +246,7 @@
             "backends/coralogix",
             "backends/dash0",
             "backends/datadog",
+            "backends/dynamic",
             "backends/dynatrace",
             "backends/elasticapm",
             "backends/elasticsearch",
@@ -290,7 +302,8 @@
         "telemetry-types",
         "custom-resources",
         "usage-reports",
-        "benchmarks"
+        "benchmarks",
+        "permissions"
       ]
     },
     {

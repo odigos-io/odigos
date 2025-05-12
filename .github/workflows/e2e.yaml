@@ -22,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '~1.23'
+          go-version: "~1.24"
           check-latest: true
           cache: true
           cache-dependency-path: |
@@ -70,12 +70,11 @@ jobs:
           - '1.32'
         test-scenario:
           - 'ui'
-          - 'multi-apps'
           - 'helm-chart'
           - 'cli-upgrade'
           - 'workload-lifecycle'
           - 'source'
-          - 'source-webhooks'
+          - 'webhooks'
           - 'env-injection'
         include:
           - kube-version: '1.20.15'
@@ -91,7 +90,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '~1.23'
+          go-version: '~1.24'
           check-latest: true
           cache: true
           cache-dependency-path: |

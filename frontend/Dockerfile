@@ -9,13 +9,14 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY frontend/webapp .
 RUN yarn build
 
-FROM --platform=$BUILDPLATFORM golang:1.23 AS backend
+FROM --platform=$BUILDPLATFORM golang:1.24 AS backend
 WORKDIR /app
 COPY . .
 COPY --from=builder /webapp/out frontend/webapp/out
 WORKDIR /app/frontend
 ARG TARGETARCH
-RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o odigos-ui
+ARG LD_FLAGS
+RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -ldflags="${LD_FLAGS}" -o odigos-ui
 
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /app

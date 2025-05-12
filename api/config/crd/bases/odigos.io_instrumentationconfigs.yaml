@@ -4,6 +4,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
+  labels:
+    odigos.io/system-object: "true"
   name: instrumentationconfigs.odigos.io
 spec:
   group: odigos.io
@@ -212,6 +214,17 @@ spec:
                       - attributesAndSamplerRules
                       - fallbackFraction
                       type: object
+                    headersCollection:
+                      description: default configuration for collecting http headers,
+                        in case the instrumentation library does not provide a configuration.
+                      properties:
+                        headerKeys:
+                          description: Limit payload collection to specific header
+                            keys.
+                          items:
+                            type: string
+                          type: array
+                      type: object
                     instrumentationLibraryConfigs:
                       description: configurations for the instrumentation libraries
                         the the SDK should use
@@ -253,6 +266,15 @@ spec:
                                   Should record the `code.stacktrace` attribute.
                                   if unset, the value will resolve from other relevant rules, or fallback to false
                                 type: boolean
+                            type: object
+                          headersCollection:
+                            properties:
+                              headerKeys:
+                                description: Limit payload collection to specific
+                                  header keys.
+                                items:
+                                  type: string
+                                type: array
                             type: object
                           libraryId:
                             properties:
@@ -382,8 +404,13 @@ spec:
                       - go
                       - dotnet
                       - javascript
+                      - php
+                      - ruby
+                      - rust
                       - mysql
                       - nginx
+                      - redis
+                      - postgres
                       - unknown
                       - ignored
                       type: string
@@ -588,8 +615,13 @@ spec:
                       - go
                       - dotnet
                       - javascript
+                      - php
+                      - ruby
+                      - rust
                       - mysql
                       - nginx
+                      - redis
+                      - postgres
                       - unknown
                       - ignored
                       type: string
@@ -611,6 +643,11 @@ spec:
                       type: string
                     runtimeVersion:
                       type: string
+                    secureExecutionMode:
+                      description: |-
+                        Indicates whether the target process is running is secure-execution mode.
+                        nil means we were unable to determine the secure-execution mode.
+                      type: boolean
                   required:
                   - containerName
                   - language

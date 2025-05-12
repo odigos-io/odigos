@@ -1,0 +1,47 @@
+{{- if .Values.onPremToken  }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: central-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: central-backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: central-backend
+    spec:
+      containers:
+        - name: central-backend
+          {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "central-backend" "Tag" $imageTag) }}
+          env:
+            - name: ODIGOS_ONPREM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-central
+                  key: ODIGOS_ONPREM_TOKEN
+          resources:
+            requests:
+              cpu: {{ .Values.centralBackend.resources.requests.cpu }}
+              memory: {{ .Values.centralBackend.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.centralBackend.resources.limits.cpu }}
+              memory: {{ .Values.centralBackend.resources.limits.memory }}
+      {{- with .Values.centralBackend.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.centralBackend.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.centralBackend.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

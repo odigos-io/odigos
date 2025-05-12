@@ -21,6 +21,10 @@ spec:
       labels:
         app.kubernetes.io/name: odiglet
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       initContainers:
         - name: init
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
@@ -74,6 +78,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}       
+            - name: CONTAINER_RUNTIME_SOCK
+              value: {{ .Values.odiglet.customContainerRuntimeSocketPath }}
+            {{- end }}                  
             - name: NODE_IP
               valueFrom:
                 fieldRef:
@@ -85,6 +93,8 @@ spec:
             - name: OTEL_LOG_LEVEL
               value: info
             {{- if .Values.onPremToken }}
+            - name: OTEL_GO_OFFSETS_FILE
+              value: /offsets/go_offset_results.json
             - name: ODIGOS_ONPREM_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -104,6 +114,10 @@ spec:
           volumeMounts:
             - name: run-dir
               mountPath: /run
+            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}              
+            - name: custom-container-runtime-socket
+              mountPath: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
+            {{- end }}
             {{- if .Values.openshift.enabled }}
             - name: host
               mountPath: /host
@@ -119,6 +133,10 @@ spec:
               readOnly: true
             - name: kernel-debug
               mountPath: /sys/kernel/debug
+            {{- if .Values.onPremToken }}
+            - name: odigos-go-offsets
+              mountPath: /offsets
+            {{- end }}
       hostNetwork: true
       hostPID: true
       dnsPolicy: ClusterFirstWithHostNet
@@ -128,6 +146,11 @@ spec:
         - name: run-dir
           hostPath:
             path: /run
+        {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
+        - name: custom-container-runtime-socket
+          hostPath:
+            path: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
+        {{- end }}
         {{- if .Values.openshift.enabled }}
         - name: host
           hostPath:
@@ -145,6 +168,11 @@ spec:
         - name: kernel-debug
           hostPath:
             path: /sys/kernel/debug
+        {{- if .Values.onPremToken }}
+        - name: odigos-go-offsets
+          configMap:
+            name: odigos-go-offsets
+        {{- end }}
 {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 6 }}

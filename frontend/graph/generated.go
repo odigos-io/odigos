@@ -296,11 +296,12 @@ type ComplexityRoot struct {
 	}
 
 	K8sAttributes struct {
-		AnnotationsAttributes      func(childComplexity int) int
-		CollectClusterID           func(childComplexity int) int
-		CollectContainerAttributes func(childComplexity int) int
-		CollectWorkloadID          func(childComplexity int) int
-		LabelsAttributes           func(childComplexity int) int
+		AnnotationsAttributes       func(childComplexity int) int
+		CollectClusterID            func(childComplexity int) int
+		CollectContainerAttributes  func(childComplexity int) int
+		CollectReplicaSetAttributes func(childComplexity int) int
+		CollectWorkloadID           func(childComplexity int) int
+		LabelsAttributes            func(childComplexity int) int
 	}
 
 	K8sAttributesAction struct {
@@ -1698,6 +1699,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sAttributes.CollectContainerAttributes(childComplexity), true
 
+	case "K8sAttributes.collectReplicaSetAttributes":
+		if e.complexity.K8sAttributes.CollectReplicaSetAttributes == nil {
+			break
+		}
+
+		return e.complexity.K8sAttributes.CollectReplicaSetAttributes(childComplexity), true
+
 	case "K8sAttributes.collectWorkloadId":
 		if e.complexity.K8sAttributes.CollectWorkloadID == nil {
 			break
@@ -2917,34 +2925,6 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_ComputePlatform_destinations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := ec.field_ComputePlatform_destinations_argsGroupName(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["groupName"] = arg0
-	return args, nil
-}
-func (ec *executionContext) field_ComputePlatform_destinations_argsGroupName(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (string, error) {
-	if _, ok := rawArgs["groupName"]; !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("groupName"))
-	if tmp, ok := rawArgs["groupName"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
 func (ec *executionContext) field_ComputePlatform_k8sActualNamespace_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3006,24 +2986,6 @@ func (ec *executionContext) field_ComputePlatform_source_argsSourceID(
 	return zeroVal, nil
 }
 
-func (ec *executionContext) field_ComputePlatform_source_argsGroupName(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (string, error) {
-	if _, ok := rawArgs["groupName"]; !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("groupName"))
-	if tmp, ok := rawArgs["groupName"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
 func (ec *executionContext) field_ComputePlatform_sources_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3050,24 +3012,6 @@ func (ec *executionContext) field_ComputePlatform_sources_argsNextPage(
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("nextPage"))
 	if tmp, ok := rawArgs["nextPage"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_ComputePlatform_sources_argsGroupName(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (string, error) {
-	if _, ok := rawArgs["groupName"]; !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("groupName"))
-	if tmp, ok := rawArgs["groupName"]; ok {
 		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
@@ -11039,6 +10983,50 @@ func (ec *executionContext) fieldContext_K8sAttributes_collectContainerAttribute
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sAttributes_collectReplicaSetAttributes(ctx context.Context, field graphql.CollectedField, obj *model.K8sAttributes) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sAttributes_collectReplicaSetAttributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CollectReplicaSetAttributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sAttributes_collectReplicaSetAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sAttributes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sAttributes_collectWorkloadId(ctx context.Context, field graphql.CollectedField, obj *model.K8sAttributes) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sAttributes_collectWorkloadId(ctx, field)
 	if err != nil {
@@ -11526,6 +11514,8 @@ func (ec *executionContext) fieldContext_K8sAttributesAction_details(_ context.C
 			switch field.Name {
 			case "collectContainerAttributes":
 				return ec.fieldContext_K8sAttributes_collectContainerAttributes(ctx, field)
+			case "collectReplicaSetAttributes":
+				return ec.fieldContext_K8sAttributes_collectReplicaSetAttributes(ctx, field)
 			case "collectWorkloadId":
 				return ec.fieldContext_K8sAttributes_collectWorkloadId(ctx, field)
 			case "collectClusterId":
@@ -23049,6 +23039,11 @@ func (ec *executionContext) _K8sAttributes(ctx context.Context, sel ast.Selectio
 			out.Values[i] = graphql.MarshalString("K8sAttributes")
 		case "collectContainerAttributes":
 			out.Values[i] = ec._K8sAttributes_collectContainerAttributes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "collectReplicaSetAttributes":
+			out.Values[i] = ec._K8sAttributes_collectReplicaSetAttributes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

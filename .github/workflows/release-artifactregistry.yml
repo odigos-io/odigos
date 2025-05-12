@@ -61,12 +61,14 @@ jobs:
 
           for REPO in "${REPOS[@]}"; do
             echo "Checking tag $TAG_TO_CHECK in $REPO..."
-            TAGS_JSON=$(curl -s "https://artifactregistry.us-central1.rep.googleapis.com/v1/projects/odigos-cloud/locations/us-central1/repositories/components/packages/$REPO/tags")
-            if echo "$TAGS_JSON" | grep -q "\"name\": \"projects/odigos-cloud/locations/us-central1/repositories/components/packages/$REPO/tags/$TAG_TO_CHECK"; then
-                echo "Tag $TAG_TO_CHECK exists in Docker Hub repository $REPO."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://artifactregistry.us-central1.rep.googleapis.com/v1/projects/odigos-cloud/locations/us-central1/repositories/components/packages/$REPO/tags/$TAG_TO_CHECK")
+
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "Tag $TAG_TO_CHECK exists in $REPO."
             else
-                echo "Tag $TAG_TO_CHECK does not exist in Docker Hub repository $REPO."
-                exit 1
+              echo "Tag $TAG_TO_CHECK does NOT exist in $REPO. HTTP status: $HTTP_STATUS"
+              exit 1
             fi
           done
 
@@ -78,7 +80,7 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           access_token_lifetime: 1200s
-        
+
       - name: Login to Artifact Registry
         uses: docker/login-action@v3
         with:
@@ -88,7 +90,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.24"
 
       - uses: actions/setup-node@v4
         with:
@@ -98,12 +100,12 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --rm-dist
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
 
-      - uses: ko-build/setup-ko@v0.8
+      - uses: ko-build/setup-ko@v0.9
 
       - name: publish cli image to docker registries
         working-directory: ./cli

@@ -243,7 +243,10 @@ func NewKeyvalProxyClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *appsv1.Deployment {
+func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string, nodeSelector map[string]string) *appsv1.Deployment {
+	if nodeSelector == nil {
+		nodeSelector = make(map[string]string)
+	}
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -273,6 +276,7 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 					},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector: nodeSelector,
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.KeyvalProxyAppName,
@@ -375,7 +379,7 @@ func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) err
 		NewKeyvalProxyRoleBinding(a.ns),
 		NewKeyvalProxyClusterRole(),
 		NewKeyvalProxyClusterRoleBinding(a.ns),
-		NewKeyvalProxyDeployment(k8sconsts.OdigosCloudProxyVersion, a.ns, a.config.ImagePrefix),
+		NewKeyvalProxyDeployment(k8sconsts.OdigosCloudProxyVersion, a.ns, a.config.ImagePrefix, a.config.NodeSelector),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

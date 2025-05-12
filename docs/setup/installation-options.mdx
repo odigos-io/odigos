@@ -29,15 +29,46 @@ This option is useful for excluding specific sidecar containers from being instr
 
 Default values: `istio-proxy`
 
-Add additional containers to ignore with **cli**:
-```shell
-odigos install --ignore-container <container1> --ignore-container <container2>
-```
+<Tabs>
+  <Tab title="Odigos CLI">
+     ```shell
+     odigos install --ignore-container <container1> --ignore-container <container2>
+     ```
+  </Tab>
+  <Tab title="Helm Chart">
+     ```shell
+     helm install odigos odigos/odigos --set ignoreContainer=<container1>,<container2>
+     ```
+  </Tab>  
+</Tabs>
 
-List all containers to be ignored with **helm chart**:
-```shell
-helm install odigos odigos/odigos --set ignoreContainer=<container1>,<container2>
-```
+
+## Custom Container Runtime Socket Path
+Odigos uses the container runtime socket to query for application environment variables info, and distinguish between those injected by the runtime (via Dockerfile for example) and those defined in Kubernetes manifests.
+
+To perform this analysis, Odiglet requires access to the container runtime’s Unix socket (e.g., `containerd.sock`). However, in certain environments—such as Rancher—the socket may not be located in a default path.
+
+To address this, Odigos provides a configuration option to mount a custom container runtime socket path into the Odiglet. This path can be specified either during installation or afterwards.
+### Usage
+<Tabs>
+  <Tab title="Odigos CLI">
+     1. During installation:
+     ```shell
+     odigos install --container-runtime-socket-path <unix socket path>
+     ```
+     2. Post installation using [config set command](/cli/odigos_config):
+     ```shell
+     odigos config set custom-container-runtime-socket-path <unix socket path>
+     ```
+  </Tab>
+  <Tab title="Helm Chart">
+     1. During installation:
+     ```shell
+     helm install odigos odigos/odigos --set odiglet.customContainerRuntimeSocketPath=<unix socket path>
+     ```
+  </Tab>  
+</Tabs>
+
 
 ## OpenShift Installation
 
@@ -91,7 +122,7 @@ configured based on your installation mode:
         <img src="/images/operator/operator-6.png" />
        </Frame>
 
-       Fill out any necessary fields, for example your **On Prem Token** (for Odigos Enterprise), and check **openshiftEnabled**:
+       Fill out any necessary fields, for example your **On Prem Token** (for Odigos Enterprise):
 
        <Frame>
         <img src="/images/operator/operator-7.png" />

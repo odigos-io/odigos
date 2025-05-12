@@ -3,10 +3,10 @@ kind: ClusterServiceVersion
 metadata:
   annotations:
     alm-examples: '[{"apiVersion":"operator.odigos.io/v1alpha1", "kind":"Odigos",
-      "metadata":{"name":"odigos","namespace":"odigos-operator-system"}, "spec":{"version":"v1.0.164"}}]'
+      "metadata":{"name":"odigos","namespace":"odigos-operator-system"}, "spec":{"version":"v1.0.185"}}]'
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.0.164
+    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.0.185
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -19,7 +19,7 @@ metadata:
     operators.openshift.io/valid-subscription: Odigos Enterprise subscription (for
       enterprise features)
     support: Odigos
-  name: odigos-operator.v1.0.154
+  name: odigos-operator.v1.0.185
   namespace: odigos-operator-system
 spec:
   apiservicedefinitions: {}
@@ -30,45 +30,66 @@ spec:
       kind: Odigos
       name: odigos.operator.odigos.io
       specDescriptors:
-      - description: IgnoredContainers is a list of container names to exclude from
-          instrumentation (useful for sidecars)
+      - description: (Optional) OnPremToken is an enterprise token for Odigos Enterprise.
+        displayName: On-Prem Token
+        path: onPremToken
+      - description: (Optional) IgnoredContainers is a list of container names to
+          exclude from instrumentation (useful for ignoring sidecars).
         displayName: Ignored Containers
         path: ignoredContainers
-      - description: IgnoredNamespaces is a list of namespaces to not show in the
-          Odigos UI
+      - description: (Optional) IgnoredNamespaces is a list of namespaces to not show
+          in the Odigos UI.
         displayName: Ignored Namespaces
         path: ignoredNamespaces
-      - description: ImagePrefix is the prefix for all container images. used when
-          your cluster doesn't have access to docker hub
+      - description: |-
+          (Optional) TelemetryEnabled records general telemetry regarding Odigos usage.
+          Default=false
+        displayName: Telemetry Enabled
+        path: telemetryEnabled
+      - description: |-
+          (Optional) UIMode sets the UI mode to either "normal" or "readonly".
+          In "normal" mode the UI is fully interactive, allowing users to view and edit
+          Odigos configuration and settings. In "readonly" mode, the UI can only be
+          used to view current Odigos configuration and is not interactive.
+          Default=normal
+        displayName: UI Mode
+        path: uiMode
+      - description: |-
+          (Optional) NodeSelector is a map of key-value Kubernetes NodeSelector labels to apply to all Odigos components.
+          Note that Odigos will only be able to instrument applications on the same node.
+        displayName: Node Selector
+        path: nodeSelector
+      - description: (Optional) Profiles is a list of preset profiles with a specific
+          configuration.
+        displayName: Profiles
+        path: profiles
+      - description: |-
+          (Optional) ImagePrefix is a prefix for all container images.
+          This should only be used if you are pulling Odigos images from the non-default registry.
+          Default: registry.odigos.io
+          Default (OpenShift): registry.connect.redhat.com
         displayName: Image Prefix
         path: imagePrefix
       - description: |-
-          MountMethod defines the mechanism for mounting Odigos files into instrumented pods.
-          Must be one of: (k8s-virtual-device, k8s-host-path)
+          (Optional) MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.
+          One of "k8s-virtual-device" (default) or "k8s-host-path".
         displayName: Mount Method
         path: mountMethod
-      - description: OnPremToken is an optional enterprise token for Odigos Enterprise.
-        displayName: On-Prem Token
-        path: onPremToken
-      - description: OpenShiftEnabled configures selinux on OpenShift nodes.
+      - description: |-
+          (Optional) OpenShiftEnabled configures selinux on OpenShift nodes.
+          DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
         displayName: OpenShift Enabled
         path: openshiftEnabled
-      - description: PodSecurityPolicy enables the pod security policy.
+      - description: |-
+          (Optional) PodSecurityPolicy allows Odigos pods to use a privileged pod security policy.
+          Default=false
         displayName: Pod Security Policy
         path: podSecurityPolicy
-      - description: Profiles is a list of preset profiles with a specific configuration.
-        displayName: Profiles
-        path: profiles
-      - description: SkipWebhookIssuerCreation skips creating the Issuer and Certificate
-          for the Instrumentor pod webhook if cert-manager is installed.
+      - description: |-
+          (Optional) SkipWebhookIssuerCreation skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
+          Default=false
         displayName: Skip Webhook Issuer Creation
         path: skipWebhookIssuerCreation
-      - description: TelemetryEnabled records general telemetry regarding Odigos usage.
-        displayName: Telemetry Enabled
-        path: telemetryEnabled
-      - description: 'UIMode sets the UI mode (one-of: normal, readonly)'
-        displayName: UI Mode
-        path: uiMode
       statusDescriptors:
       - description: Conditions store the status conditions of the Odigos instances
         displayName: Conditions
@@ -86,12 +107,10 @@ spec:
     - Frontend UI
 
     With Odigos installed, follow the Odigos docs at docs.odigos.io for instructions on instrumenting applications and configuring destinations.
-
-    (OpenShift clusters): Set `spec.openshiftEnabled: true` in your `Odigos` CRD to install required functionality for OpenShift.
   displayName: Odigos Operator
   icon:
-  - base64data: data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1NTIiIGhlaWdodD0iNDMxIiB2aWV3Qm94PSIwIDAgNTUyIDQzMSIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0zMDguNDkxIDgzLjMwOTFWMC4wNzY1MzgxSDQ3Mi41NzNDNDkzLjc4NSAwLjA3NjUzODEgNTExIDE2LjQ0NjQgNTExIDM2LjY1ODlWMzc0LjUwOEM1MTEgMzk0LjcyIDQ5My43ODUgNDExLjA5IDQ3Mi41NzMgNDExLjA5SDMwOC40OTFWMzI4LjM5Nkw0NTQuNjY2IDI2My43NjJDNDc4LjcyMSAyNTMuMDc5IDQ5My43MDggMjMwLjc5MSA0OTMuNzA4IDIwNS41ODNDNDkzLjcwOCAxODAuMzc1IDQ3OC43MjEgMTU4LjAxMSA0NTQuNjY2IDE0Ny40MDVMMzA4LjQxNCA4My4zODU5TDMwOC40OTEgODMuMzA5MVoiIGZpbGw9IiNGOUY5RjkiLz4KPHBhdGggZD0iTTIwMi41MSAzMjcuNzgxVjQxMS4wMTRIMzguNDI2OUMxNy4yMTUyIDQxMS4wMTQgMCAzOTQuNjQ0IDAgMzc0LjQzMVYzNi41ODI0QzAgMTYuMzY5OCAxNy4yMTUyIDAgMzguNDI2OSAwSDIwMi41MVY4Mi42OTQ2TDU2LjMzMzggMTQ3LjMyOUMzMi4yNzg2IDE1OC4wMTEgMTcuMjkyMSAxODAuMjk5IDE3LjI5MjEgMjA1LjUwN0MxNy4yOTIxIDIzMC43MTUgMzIuMjc4NiAyNTMuMDc5IDU2LjMzMzggMjYzLjY4NUwyMDIuNTg2IDMyNy43MDRMMjAyLjUxIDMyNy43ODFaIiBmaWxsPSIjRjlGOUY5Ii8+CjxwYXRoIGQ9Ik0yNTUuNDYyIDI5MC41MDdDMzAyLjM2MyAyOTAuNTA3IDM0MC4zODUgMjUyLjQ4NSAzNDAuMzg1IDIwNS41ODRDMzQwLjM4NSAxNTguNjgyIDMwMi4zNjMgMTIwLjY2IDI1NS40NjIgMTIwLjY2QzIwOC41NiAxMjAuNjYgMTcwLjUzOCAxNTguNjgyIDE3MC41MzggMjA1LjU4NEMxNzAuNTM4IDI1Mi40ODUgMjA4LjU2IDI5MC41MDcgMjU1LjQ2MiAyOTAuNTA3WiIgZmlsbD0iI0Y5RjlGOSIvPgo8L3N2Zz4=
-    mediatype: image/png
+  - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAtMiAxNiAxNiIgZmlsbD0iIzE1MTUxNSI+CiAgPHBhdGgKICAgIGQ9Ik01LjE3MjE1IDkuMDE4ODRMMi4xODM3NyA3LjY5ODEzQzEuNDgxNTkgNy4zODczMiAxLjA0NDggNi43MzY3NyAxLjA0NDggNS45OTk0OEMxLjA0NDggNS4yNjIyIDEuNDgwNTYgNC42MTE2NSAyLjE4Mzc3IDQuMzAwODNMNi4zNjE3MiAyLjQ1MzQ5TDYuNDUxNTYgMi40MTQyNVYwSDEuNjYxMjdDMS4wNDE3IDAgMC41Mzg4MTggMC40NzgxIDAuNTM4ODE4IDEuMDY3NzJWMTAuOTMxMkMwLjUzODgxOCAxMS41MjA5IDEuMDQxNyAxMS45OTkgMS42NjEyNyAxMS45OTlINS44MzMwM0g2LjQ1MjU5VjkuNTY4Mkw1LjE3MzE5IDkuMDE3ODFINS4xNzIxNVY5LjAxODg0WiIgLz4KICA8cGF0aAogICAgZD0iTTE0LjMzOTcgMEg5LjU0ODRWMi40NDExTDEwLjgwNDEgMi45ODExNUwxMC44MDEgMi45Njk4TDEzLjgxNjIgNC4zMDI5QzE0LjUxODQgNC42MTM3MiAxNC45NTUyIDUuMjY0MjYgMTQuOTU1MiA2LjAwMTU1QzE0Ljk1NTIgNi43Mzg4MyAxNC41MTk0IDcuMzg5MzggMTMuODE2MiA3LjcwMDJMMTAuMTY0OSA5LjMxNDE3TDkuNTQ3MzYgOS41NzY0NlYxMkgxNC4zMzg3QzE0Ljk1ODMgMTIgMTUuNDYxMSAxMS41MjE5IDE1LjQ2MTEgMTAuOTMyM1YxLjA2NzcyQzE1LjQ2MTEgMC40NzgxIDE0Ljk1ODMgMCAxNC4zMzg3IDBIMTQuMzM5N1oiIC8+CiAgPHBhdGgKICAgIGQ9Ik04LjAwMDQ4IDguNDc5NzJDOS4zNjk3MiA4LjQ3OTcyIDEwLjQ4MDggNy4zNjk2NiAxMC40ODA4IDUuOTk5MzhDMTAuNDgwOCA0LjYyOTEgOS4zNzA3NiAzLjUxOTA0IDguMDAwNDggMy41MTkwNEM2LjYzMDIgMy41MTkwNCA1LjUyMDE0IDQuNjI5MSA1LjUyMDE0IDUuOTk5MzhDNS41MjAxNCA3LjM2OTY2IDYuNjMwMiA4LjQ3OTcyIDguMDAwNDggOC40Nzk3MloiIC8+Cjwvc3ZnPg==
+    mediatype: image/svg+xml
   install:
     spec:
       deployments: null
@@ -128,4 +147,4 @@ spec:
   provider:
     name: Odigos
     url: https://odigos.io
-  version: 1.0.164
+  version: 1.0.185

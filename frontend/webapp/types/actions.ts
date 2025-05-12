@@ -15,6 +15,7 @@ export interface ParsedActionSpec {
   disabled?: boolean;
 
   collectContainerAttributes?: boolean | null;
+  collectReplicaSetAttributes?: boolean | null;
   collectWorkloadUID?: boolean | null;
   collectClusterUID?: boolean | null;
   labelsAttributes?: { labelKey: string; attributeKey: string }[] | null;

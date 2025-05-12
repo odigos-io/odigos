@@ -5,7 +5,6 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
   labels:
-    odigos.io/config: "1"
     odigos.io/system-object: "true"
   name: latencysamplers.actions.odigos.io
 spec:
@@ -22,8 +21,10 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: LatencySampler is the Schema for the LatencySampler odigos action
-          API
+        description: |-
+          LatencySampler is the Schema for defining latency-based trace sampling rules.
+          It supports targeting specific services and HTTP routes and applying latency thresholds
+          to determine sampling eligibility.
         properties:
           apiVersion:
             description: |-
@@ -43,33 +44,47 @@ spec:
           metadata:
             type: object
           spec:
-            description: LatencySamplerSpec defines the desired state of LatencySampler
-              action
+            description: |-
+              LatencySamplerSpec defines the desired state of a LatencySampler.
+              This sampler filters traces based on HTTP route and latency thresholds.
+              Traces with spans whose latency exceeds the specified threshold will be considered for sampling.
             properties:
               actionName:
+                description: |-
+                  ActionName is a user-defined identifier for this sampling action.
+                  It can be used to reference this policy in UIs or configuration tools.
                 type: string
               disabled:
+                description: |-
+                  Disabled indicates whether the sampler is currently active.
+                  When true, this sampler will not be applied.
                 type: boolean
               endpoints_filters:
-                description: Specifies the list of endpoint filters to be applied
-                  for sampling
+                description: |-
+                  EndpointsFilters defines the list of route-based latency sampling filters.
+                  Each filter targets a specific service and HTTP route with a latency threshold.
                 items:
+                  description: HttpRouteFilter defines a single latency-based sampling
+                    rule for an HTTP route.
                   properties:
                     fallback_sampling_ratio:
-                      description: Specifies the fallback sampling ratio to be applied
-                        in case service and endpoint filter match but the latency
-                        threshold is not met.
+                      description: |-
+                        FallbackSamplingRatio is the percentage (0–100) of traces to sample if the route
+                        and service match but the span latency is below the threshold.
                       type: number
                     http_route:
-                      description: Specifies the http.route to be sampled
+                      description: HttpRoute is the route name (from span attribute
+                        "http.route") that this rule applies to.
                       type: string
                     minimum_latency_threshold:
-                      description: Specifies the lower latency threshold in milliseconds;
-                        traces with latency equal to or exceeding this value will
-                        be considered for sampling.
+                      description: |-
+                        MinimumLatencyThreshold is the latency in milliseconds that spans must exceed
+                        to be considered for sampling. Spans with latency >= this value are eligible.
                       type: integer
                     service_name:
-                      description: Specifies the service to be sampled
+                      description: |-
+                        ServiceName specifies the service that must emit the span for this rule to apply.
+                        Matches the value of the "service.name" attribute in the span.
                       type: string
                   required:
                   - fallback_sampling_ratio
@@ -79,8 +94,13 @@ spec:
                   type: object
                 type: array
               notes:
+                description: Notes is an optional field for storing human-readable
+                  documentation or context for this sampler.
                 type: string
               signals:
+                description: |-
+                  Signals lists the observability signal types (e.g., traces, metrics, logs)
+                  that this sampler applies to.
                 items:
                   enum:
                   - LOGS
@@ -93,13 +113,14 @@ spec:
             - signals
             type: object
           status:
-            description: LatencySamplerStatus defines the observed state of LatencySampler
-              action
+            description: |-
+              LatencySamplerStatus defines the observed state of a LatencySampler.
+              It captures runtime status such as readiness or deployment progress.
             properties:
               conditions:
                 description: |-
-                  Represents the observations of a LatencySampler's current state.
-                  Known .status.conditions.type are: "Available", "Progressing"
+                  Conditions contains the current status conditions for this sampler.
+                  Typical types include "Available" and "Progressing".
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
