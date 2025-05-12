@@ -402,6 +402,9 @@ status:
     - containerName: currency
       language: php
       runtimeVersion: 8.2.28
+    - containerName: nginx
+      language: nginx
+      runtimeVersion: 1.27.5
 ---
 ### Instrumentation Instances ###
 apiVersion: odigos.io/v1alpha1

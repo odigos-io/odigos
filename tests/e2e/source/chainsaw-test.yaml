@@ -253,3 +253,11 @@ spec:
             content: kubectl get instrumentationconfigs/deployment-inventory
             check:
               ($error != null): true
+
+    - name: '[Uninstall] Uninstall Odigos'
+      try:
+        - script:
+            timeout: 2m
+            content: ../../../cli/odigos uninstall --yes
+        - script:
+            content: ../../common/assert_odigos_uninstalled.sh

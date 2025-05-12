@@ -518,11 +518,21 @@ func removeAllSources(ctx context.Context, client *kube.Client) error {
 			Limit: 1,
 		})
 		if err != nil {
+			if apierrors.IsNotFound(err) {
+				l.Success()
+				return true, nil
+			}
 			return false, err
 		}
 		if len(sources.Items) == 0 {
 			l.Success()
 			return true, nil
+		}
+		// if the source is not marked for deletion, delete it
+		// this can happen in race conditions where the initial list operation does not include freshly created sources
+		// but we do see them here in the poll
+		if sources.Items[0].DeletionTimestamp.IsZero() {
+			client.OdigosClient.Sources(sources.Items[0].Namespace).Delete(innerCtx, sources.Items[0].Name, metav1.DeleteOptions{})
 		}
 		return false, nil
 	})

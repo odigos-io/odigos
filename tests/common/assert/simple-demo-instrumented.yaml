@@ -173,9 +173,14 @@ spec:
           instrumentation.odigos.io/generic: '1'
         requests:
           instrumentation.odigos.io/generic: '1'
+    - name: nginx
 status:
   containerStatuses:
     - name: currency
+      ready: true
+      restartCount: 0
+      started: true
+    - name: nginx
       ready: true
       restartCount: 0
       started: true
@@ -271,6 +276,7 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: currency
+    - containerName: nginx
 ---
 ### Instrumentation Instances ###
 apiVersion: odigos.io/v1alpha1
