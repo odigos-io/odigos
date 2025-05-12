@@ -468,10 +468,6 @@ func uninstallConfigMaps(ctx context.Context, client *kube.Client, ns, _ string)
 	}
 
 	for _, i := range list.Items {
-		// Skip kube-root-ca.crt ConfigMap as it's a system-level resource
-		if i.Name == "kube-root-ca.crt" {
-			continue
-		}
 		err = client.CoreV1().ConfigMaps(ns).Delete(ctx, i.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
