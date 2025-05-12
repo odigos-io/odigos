@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "back:build": "cd .. && go build -o odigos-backend",
     "back:start": "cd .. && ./odigos-backend --port 8085 --debug --address 0.0.0.0",
