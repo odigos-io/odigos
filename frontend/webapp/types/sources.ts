@@ -6,10 +6,6 @@ export interface SourceInstrumentInput {
   sources: Omit<SelectedSource, 'numberOfInstances'>[];
 }
 
-export interface SourceUpdateInput {
-  otelServiceName: string;
-}
-
 export type InstrumentationInstancesHealth = WorkloadId & {
   condition: Condition;
 };

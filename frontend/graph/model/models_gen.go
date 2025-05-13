@@ -209,10 +209,11 @@ type DestinationFieldYamlProperties struct {
 }
 
 type DestinationInput struct {
-	Name            string                `json:"name"`
-	Type            string                `json:"type"`
-	ExportedSignals *ExportedSignalsInput `json:"exportedSignals"`
-	Fields          []*FieldInput         `json:"fields"`
+	Name              string                `json:"name"`
+	Type              string                `json:"type"`
+	CurrentStreamName string                `json:"currentStreamName"`
+	ExportedSignals   *ExportedSignalsInput `json:"exportedSignals"`
+	Fields            []*FieldInput         `json:"fields"`
 }
 
 type DestinationTypesCategoryItem struct {
@@ -531,7 +532,8 @@ type PaginatedSources struct {
 }
 
 type PatchSourceRequestInput struct {
-	OtelServiceName string `json:"otelServiceName"`
+	OtelServiceName   string `json:"otelServiceName"`
+	CurrentStreamName string `json:"currentStreamName"`
 }
 
 type PayloadCollection struct {
@@ -554,9 +556,10 @@ type PersistNamespaceItemInput struct {
 }
 
 type PersistNamespaceSourceInput struct {
-	Name     string          `json:"name"`
-	Kind     K8sResourceKind `json:"kind"`
-	Selected bool            `json:"selected"`
+	Name              string          `json:"name"`
+	Kind              K8sResourceKind `json:"kind"`
+	Selected          bool            `json:"selected"`
+	CurrentStreamName string          `json:"currentStreamName"`
 }
 
 type PiiMaskingAction struct {

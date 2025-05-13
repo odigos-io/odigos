@@ -480,9 +480,10 @@ func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace stri
 	var persistObjects []model.PersistNamespaceSourceInput
 	for _, source := range sources {
 		persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
-			Name:     source.Name,
-			Kind:     source.Kind,
-			Selected: source.Selected,
+			Name:              source.Name,
+			Kind:              source.Kind,
+			Selected:          source.Selected,
+			CurrentStreamName: source.CurrentStreamName,
 		})
 	}
 
@@ -505,6 +506,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 	workloadName := sourceID.Name
 	workloadKind := services.WorkloadKind(sourceID.Kind)
 	otelServiceName := patchSourceRequest.OtelServiceName
+	streamName := patchSourceRequest.CurrentStreamName
 
 	source, err := services.GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
@@ -513,7 +515,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 			return false, err
 		}
 
-		source, err = services.CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
+		source, err = services.CreateSourceCRD(ctx, nsName, workloadName, workloadKind, streamName)
 		if err != nil {
 			// unexpected error occurred while trying to create the source
 			return false, err
@@ -568,6 +570,9 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 			DestinationName: destName,
 			Data:            dataField,
 			Signals:         services.ExportedSignalsObjectToSlice(destination.ExportedSignals),
+			SourceSelector: &v1alpha1.SourceSelector{
+				Groups: []string{destination.CurrentStreamName},
+			},
 		},
 	}
 
@@ -694,6 +699,11 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	dest.Spec.DestinationName = destName
 	dest.Spec.Data = dataFields
 	dest.Spec.Signals = services.ExportedSignalsObjectToSlice(destination.ExportedSignals)
+
+	if dest.Spec.SourceSelector == nil {
+		dest.Spec.SourceSelector = &v1alpha1.SourceSelector{Groups: make([]string, 0)}
+	}
+	dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName)
 
 	// Update the destination in Kubernetes
 	updatedDest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Update(ctx, dest, metav1.UpdateOptions{})

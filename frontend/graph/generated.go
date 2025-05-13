@@ -20635,7 +20635,7 @@ func (ec *executionContext) unmarshalInputDestinationInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "type", "exportedSignals", "fields"}
+	fieldsInOrder := [...]string{"name", "type", "currentStreamName", "exportedSignals", "fields"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -20656,6 +20656,13 @@ func (ec *executionContext) unmarshalInputDestinationInput(ctx context.Context, 
 				return it, err
 			}
 			it.Type = data
+		case "currentStreamName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("currentStreamName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CurrentStreamName = data
 		case "exportedSignals":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("exportedSignals"))
 			data, err := ec.unmarshalNExportedSignalsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExportedSignalsInput(ctx, v)
@@ -21072,7 +21079,7 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"otelServiceName"}
+	fieldsInOrder := [...]string{"otelServiceName", "currentStreamName"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -21086,6 +21093,13 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 				return it, err
 			}
 			it.OtelServiceName = data
+		case "currentStreamName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("currentStreamName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CurrentStreamName = data
 		}
 	}
 
@@ -21181,7 +21195,7 @@ func (ec *executionContext) unmarshalInputPersistNamespaceSourceInput(ctx contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "kind", "selected"}
+	fieldsInOrder := [...]string{"name", "kind", "selected", "currentStreamName"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -21209,6 +21223,13 @@ func (ec *executionContext) unmarshalInputPersistNamespaceSourceInput(ctx contex
 				return it, err
 			}
 			it.Selected = data
+		case "currentStreamName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("currentStreamName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CurrentStreamName = data
 		}
 	}
 

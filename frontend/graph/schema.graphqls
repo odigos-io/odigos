@@ -320,6 +320,7 @@ type GetConfigResponse {
 input DestinationInput {
   name: String!
   type: String!
+  currentStreamName: String!
   exportedSignals: ExportedSignalsInput!
   fields: [FieldInput!]!
 }
@@ -344,6 +345,7 @@ input PersistNamespaceSourceInput {
   name: String!
   kind: K8sResourceKind!
   selected: Boolean!
+  currentStreamName: String!
 }
 
 type TestConnectionResponse {
@@ -369,6 +371,7 @@ type PipelineAction {
 
 input PatchSourceRequestInput {
   otelServiceName: String!
+  currentStreamName: String!
 }
 
 interface Action {

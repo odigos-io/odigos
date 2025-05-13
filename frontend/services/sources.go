@@ -224,7 +224,7 @@ func toggleSourceWithAPI(c *gin.Context, enabled bool) {
 		return
 	}
 
-	err := ToggleSourceCRD(ctx, ns, name, wk, enabled)
+	err := ToggleSourceCRD(ctx, ns, name, wk, enabled, "default")
 	if err != nil {
 		c.JSON(500, gin.H{
 			"message": err.Error(),
@@ -252,7 +252,9 @@ func stringToWorkloadKind(workloadKind string) (WorkloadKind, bool) {
 	return "", false
 }
 
-func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {
+func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, currentStreamName string) (*v1alpha1.Source, error) {
+	streamLabel := k8sconsts.SourceGroupLabelPrefix + currentStreamName
+
 	switch workloadKind {
 	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
 	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
@@ -269,12 +271,23 @@ func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	if source != nil {
 		// source already exists, do not create a new one, instead update so it's not disabled anymore
-		return UpdateSourceCRDSpec(ctx, nsName, source.Name, "disableInstrumentation", false)
+		source, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, "disableInstrumentation", false)
+		if err != nil {
+			return nil, err
+		}
+		source, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, streamLabel, "true")
+		if err != nil {
+			return nil, err
+		}
+		return source, nil
 	}
 
 	newSource := &v1alpha1.Source{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "source-",
+			Labels: map[string]string{
+				streamLabel: "true",
+			},
 		},
 		Spec: v1alpha1.SourceSpec{
 			Workload: k8sconsts.PodWorkload{
@@ -289,7 +302,7 @@ func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	return source, err
 }
 
-func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) error {
+func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, currentStreamName string) error {
 	if workloadKind != WorkloadKindNamespace {
 		// if is a regular workload, then check for namespace source first
 		nsSource, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
@@ -300,7 +313,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 		if nsSource != nil {
 			// note: create will return an existing crd without throwing an error
-			source, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
+			source, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
 			if err != nil {
 				return err
 			}
@@ -328,12 +341,19 @@ func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, spe
 	return source, err
 }
 
-func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled bool) error {
+func UpdateSourceCRDLabel(ctx context.Context, nsName string, crdName string, specField string, newValue any) (*v1alpha1.Source, error) {
+	patch := fmt.Sprintf(`[{"op": "replace", "path": "/labels/%s", "value": %v}]`, specField, newValue)
+	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{})
+
+	return source, err
+}
+
+func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled bool, currentStreamName string) error {
 	if enabled {
-		_, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind)
+		_, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
 		return err
 	} else {
-		return deleteSourceCRD(ctx, nsName, workloadName, workloadKind)
+		return deleteSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
 	}
 }
 

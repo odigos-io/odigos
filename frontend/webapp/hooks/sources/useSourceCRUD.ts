@@ -5,8 +5,8 @@ import { useLazyQuery, useMutation } from '@apollo/client';
 import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
+import type { InstrumentationInstancesHealth, PaginatedData, SourceInstrumentInput } from '@/types';
 import { GET_INSTANCES, GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import type { InstrumentationInstancesHealth, PaginatedData, SourceInstrumentInput, SourceUpdateInput } from '@/types';
 import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud } from '@odigos/ui-kit/types';
 import {
   type NamespaceSelectionFormData,
@@ -55,7 +55,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     },
   });
 
-  const [mutateUpdate] = useMutation<{ updateK8sActualSource: boolean }, { sourceId: WorkloadId; patchSourceRequest: SourceUpdateInput }>(UPDATE_K8S_ACTUAL_SOURCE, {
+  const [mutateUpdate] = useMutation<{ updateK8sActualSource: boolean }, { sourceId: WorkloadId; patchSourceRequest: SourceFormData }>(UPDATE_K8S_ACTUAL_SOURCE, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
   });
 
@@ -164,8 +164,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
       notifyUser(StatusType.Default, 'Pending', 'Updating source...', undefined, true);
       addPendingItems([{ entityType: EntityTypes.Source, entityId: sourceId }]);
 
-      const patchSourceRequest: SourceUpdateInput = payload;
-      const { errors } = await mutateUpdate({ variables: { sourceId, patchSourceRequest } });
+      const { errors } = await mutateUpdate({ variables: { sourceId, patchSourceRequest: payload } });
 
       if (!errors?.length) notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${sourceId.name}" source`, sourceId);
       removePendingItems([{ entityType: EntityTypes.Source, entityId: sourceId }]);
