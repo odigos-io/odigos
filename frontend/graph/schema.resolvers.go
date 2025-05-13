@@ -728,11 +728,6 @@ func (r *mutationResolver) DeleteDestination(ctx context.Context, id string) (bo
 
 // TestConnectionForDestination is the resolver for the testConnectionForDestination field.
 func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, destination model.DestinationInput) (*model.TestConnectionResponse, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
-		return nil, services.ErrorIsReadonly
-	}
-
 	destType := common.DestinationType(destination.Type)
 
 	destConfig, err := services.GetDestinationTypeConfig(destType)
