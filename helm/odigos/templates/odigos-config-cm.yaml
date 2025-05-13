@@ -102,7 +102,7 @@ data:
         {{- end }}
     {{- end }}
     {{- if .Values.profiles }}
-    profiles: 
+    profiles:
       {{- toYaml .Values.profiles | nindent 6 }}
     {{- end }}
     telemetryEnabled: {{ .Values.telemetry.enabled }}
@@ -135,4 +135,7 @@ data:
     {{- if .Values.nodeSelector }}
     nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 6 }}
+    {{- if .Values.karpenter.enabled }}
+    karpenterEnabled: {{ .Values.karpenter.enabled }}
+    {{- end }}
     {{- end }}
