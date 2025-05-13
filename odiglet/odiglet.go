@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
@@ -168,7 +168,7 @@ func runDeviceManager(clientset *kubernetes.Clientset, otelSdkLsf instrumentatio
 		return fmt.Errorf("failed to create device manager lister %w", err)
 	}
 
-	manager := dpm.NewManager(lister)
+	manager := dpm.NewManager(lister, log.Logger)
 	manager.Run()
 	return nil
 }
