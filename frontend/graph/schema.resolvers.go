@@ -218,7 +218,7 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 
 	var destinations []*model.Destination
 	for _, dest := range dests.Items {
-		// If matches streamName, return the destination
+		// Return the destination only if it matches the streamName, the streamName is empty, or the destination has no source selector
 		if streamName == "" || dest.Spec.SourceSelector == nil || services.ArrayContains(dest.Spec.SourceSelector.Groups, streamName) {
 			secretFields, err := services.GetDestinationSecretFields(ctx, ns, &dest)
 			if err != nil {
