@@ -114,7 +114,8 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 		config.CentralBackendURL = value[0]
 
 	case consts.TelemetryEnabledProperty, consts.OpenshiftEnabledProperty, consts.PspProperty,
-		consts.SkipWebhookIssuerCreationProperty, consts.AllowConcurrentAgentsProperty, consts.AvoidJavaOptsEnvVar:
+		consts.SkipWebhookIssuerCreationProperty, consts.AllowConcurrentAgentsProperty, consts.AvoidJavaOptsEnvVar,
+		consts.KarpenterEnabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value (true/false)", property)
@@ -137,6 +138,8 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			config.AllowConcurrentAgents = &boolValue
 		case consts.AvoidJavaOptsEnvVar:
 			config.AvoidInjectingJavaOptsEnvVar = &boolValue
+		case consts.KarpenterEnabledProperty:
+			config.KarpenterEnabled = &boolValue
 		}
 
 	case consts.ImagePrefixProperty, consts.UiModeProperty, consts.UiPaginationLimit:

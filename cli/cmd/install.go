@@ -50,6 +50,7 @@ var (
 	autoScalerImage                  string
 	imagePrefix                      string
 	nodeSelectorFlag                 string
+	karpenterEnabled                 bool
 
 	clusterName       string
 	centralBackendURL string
