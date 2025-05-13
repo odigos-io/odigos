@@ -115,7 +115,7 @@ func NewCentralBackendService(ns string) *corev1.Service {
 			Ports: []corev1.ServicePort{
 				{
 					Port:       int32(portInt),
-					TargetPort: intstrFromInt(8081),
+					TargetPort: intstrFromInt(portInt),
 				},
 			},
 		},
