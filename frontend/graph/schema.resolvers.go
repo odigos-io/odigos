@@ -145,13 +145,17 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 	// Keep order based on idx
 	srcList := make([]*v1alpha1.Source, len(icList.Items))
 	for idx, ic := range icList.Items {
+		// Copy to avoid potential race conditions from capturing loop variables in the goroutines
+		idxCopy := idx
+		icCopy := ic
+
 		g.Go(func() error {
-			src, err := services.GetSourceCRD(ctx, ic.Namespace, ic.OwnerReferences[0].Name, services.WorkloadKind(ic.OwnerReferences[0].Kind))
+			src, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, services.WorkloadKind(icCopy.OwnerReferences[0].Kind))
 			if err != nil {
 				return err
 			}
 
-			srcList[idx] = src
+			srcList[idxCopy] = src
 			return nil
 		})
 	}
