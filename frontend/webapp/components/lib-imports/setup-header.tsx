@@ -119,6 +119,8 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
     disabled: isLoading,
   };
 
+  const buttons = step === 2 ? [nextBtn] : step === 5 ? [backBtn, doneBtn] : [backBtn, nextBtn];
+
   return (
     <Header
       left={[<OdigosLogoText key='logo' size={100} />]}
@@ -127,7 +129,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
           START WITH ODIGOS
         </Text>,
       ]}
-      right={[<ToggleDarkMode key='toggle-theme' />, <NavigationButtons key='nav-buttons' buttons={step === 2 ? [nextBtn] : step === 5 ? [backBtn, doneBtn] : [backBtn, nextBtn]} />]}
+      right={[<ToggleDarkMode key='toggle-theme' />, <NavigationButtons key='nav-buttons' buttons={buttons} />]}
     />
   );
 };
