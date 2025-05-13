@@ -5,6 +5,7 @@ TAG ?= $(shell odigos version --cluster 2>/dev/null || echo 0.0.1)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
+ONPREM_TOKEN ?=
 ORG ?= registry.odigos.io
 SHORT_COMMIT := $(shell git rev-parse --short HEAD)
 DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
