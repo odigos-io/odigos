@@ -6,6 +6,7 @@ ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
 ONPREM_TOKEN ?=
+ODIGOS_NAMESPACE ?= odigos-system
 ORG ?= registry.odigos.io
 SHORT_COMMIT := $(shell git rev-parse --short HEAD)
 DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -166,9 +167,9 @@ verify-nodejs-agent:
 debug-odiglet:
 	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/debug.Dockerfile
 	kind load docker-image $(ORG)/odigos-odiglet:$(TAG)
-	kubectl delete pod -n odigos-system -l app.kubernetes.io/name=odiglet
-	kubectl wait --for=condition=ready pod -n odigos-system -l app.kubernetes.io/name=odiglet --timeout=180s
-	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
+	kubectl delete pod -n $(ODIGOS_NAMESPACE) -l app.kubernetes.io/name=odiglet
+	kubectl wait --for=condition=ready pod -n $(ODIGOS_NAMESPACE) -l app.kubernetes.io/name=odiglet --timeout=180s
+	kubectl port-forward -n $(ODIGOS_NAMESPACE) daemonset/odiglet 2345:2345
 
 .PHONY: build-operator-index
 build-operator-index:
@@ -198,16 +199,16 @@ deploy-odiglet-with-agents: verify-nodejs-agent build-odiglet-with-agents load-t
 # Restart helpers
 # ──────────────────────────────────────────────
 .PHONY: restart-ui restart-odiglet restart-autoscaler restart-instrumentor restart-scheduler restart-collector
-restart-ui:          ; -kubectl rollout restart deployment  odigos-ui         	-n odigos-system
-restart-odiglet:     ; -kubectl rollout restart daemonset   odiglet           	-n odigos-system
-restart-autoscaler:  ; -kubectl rollout restart deployment  odigos-autoscaler 	-n odigos-system
-restart-instrumentor:; -kubectl rollout restart deployment  odigos-instrumentor -n odigos-system
-restart-scheduler:   ; -kubectl rollout restart deployment  odigos-scheduler  	-n odigos-system
+restart-ui:          ; -kubectl rollout restart deployment  odigos-ui         	-n $(ODIGOS_NAMESPACE)
+restart-odiglet:     ; -kubectl rollout restart daemonset   odiglet           	-n $(ODIGOS_NAMESPACE)
+restart-autoscaler:  ; -kubectl rollout restart deployment  odigos-autoscaler 	-n $(ODIGOS_NAMESPACE)
+restart-instrumentor:; -kubectl rollout restart deployment  odigos-instrumentor -n $(ODIGOS_NAMESPACE)
+restart-scheduler:   ; -kubectl rollout restart deployment  odigos-scheduler  	-n $(ODIGOS_NAMESPACE)
 restart-collector:
-	-kubectl rollout restart deployment odigos-gateway -n odigos-system
+	-kubectl rollout restart deployment odigos-gateway -n $(ODIGOS_NAMESPACE)
 	# DaemonSets don't directly support the rollout restart command in the same way Deployments do.
 	# However, you can achieve the same result by updating an environment variable or any other field in the DaemonSet's pod template, triggering a rolling update of the pods managed by the DaemonSet
-	-kubectl -n odigos-system patch daemonset odigos-data-collection \
+	-kubectl -n $(ODIGOS_NAMESPACE) patch daemonset odigos-data-collection \
 	  -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(shell date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
 
 
@@ -249,13 +250,17 @@ cli-diagnose:
 helm-install:
 	@echo "Installing odigos using helm"
 	helm upgrade --install odigos ./helm/odigos \
-		--create-namespace --namespace odigos-system \
+		--create-namespace --namespace $(ODIGOS_NAMESPACE) \
 		--set image.tag=$(ODIGOS_CLI_VERSION) \
 		--set clusterName=$(CLUSTER_NAME) \
 		--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL) \
 		--set onPremToken=$(ONPREM_TOKEN) \
 		--set centralProxy.enabled=$(if $(and $(CLUSTER_NAME),$(CENTRAL_BACKEND_URL)),true,false)
-	kubectl label namespace odigos-system odigos.io/system-object="true"
+	kubectl label namespace $(ODIGOS_NAMESPACE) odigos.io/system-object="true"
+
+helm-uninstall:
+	@echo "Uninstalling odigos using helm"
+	helm uninstall odigos --namespace $(ODIGOS_NAMESPACE)
 
 
 # ──────────────────────────────────────────────
