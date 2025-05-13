@@ -29,7 +29,6 @@ func DetermineNodeOdigletInstalledLabelByTier() string {
 }
 
 func PrepareNodeForOdigosInstallation(clientset *kubernetes.Clientset, nodeName string) error {
-
 	ctx := context.Background()
 
 	// Determine Odigos Installed label [OSS/Enterprise]
