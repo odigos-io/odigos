@@ -12,7 +12,7 @@ export default function Page() {
   return (
     <>
       <SetupHeader step={5} />
-      <SetupSummary onEditSources={() => router.push(ROUTES.CHOOSE_SOURCES)} onEditDestinations={() => router.push(ROUTES.CHOOSE_DESTINATION)} />
+      <SetupSummary onEditSources={() => router.push(ROUTES.CHOOSE_SOURCES + '?skipToSummary=true')} onEditDestinations={() => router.push(ROUTES.CHOOSE_DESTINATION + '?skipToSummary=true')} />
     </>
   );
 }

@@ -32,7 +32,7 @@ export const prepareSourcePayloads = (
       isEmpty = false;
 
       // this is to map selected=undefined to selected=false
-      const mappedItems = items.map(({ name, kind, selected }) => ({ name, kind, selected: !selected ? false : true }));
+      const mappedItems = items.map(({ name, kind, selected, currentStreamName }) => ({ name, kind, selected: !selected ? false : true, currentStreamName }));
       // this is to map delete-items from "SourceSelectionFormData" to "WorkloadId"
       const toDelete = mappedItems.filter((src) => !src.selected).map(({ name, kind }) => ({ namespace: ns, name, kind }));
 

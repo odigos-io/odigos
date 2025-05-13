@@ -80,7 +80,14 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
-      await mutateCreate({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+      await mutateCreate({
+        variables: {
+          destination: {
+            ...destination,
+            fields: destination.fields.filter(({ value }) => value !== undefined),
+          },
+        },
+      });
     }
   };
 
@@ -90,7 +97,15 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     } else {
       notifyUser(StatusType.Default, 'Pending', 'Updating destination...', undefined, true);
       addPendingItems([{ entityType: EntityTypes.Destination, entityId: id }]);
-      await mutateUpdate({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+      await mutateUpdate({
+        variables: {
+          id,
+          destination: {
+            ...destination,
+            fields: destination.fields.filter(({ value }) => value !== undefined),
+          },
+        },
+      });
     }
   };
 

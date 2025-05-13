@@ -64,6 +64,9 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
       case 4:
         router.push(ROUTES.CHOOSE_SOURCES);
         break;
+      case 5:
+        router.push(ROUTES.CHOOSE_DESTINATION);
+        break;
       default:
         break;
     }
@@ -81,7 +84,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
         const payload: DestinationFormData = {
           type: dest.destinationType.type,
           name: dest.destinationType.displayName,
-          streamNames: (dest.streamNames || []).concat([selectedStreamName]),
+          currentStreamName: selectedStreamName,
           exportedSignals: dest.exportedSignals,
           fields: fieldsArray,
         };

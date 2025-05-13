@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import { SetupHeader } from '@/components';
 import { useSetupStore } from '@odigos/ui-kit/store';
@@ -10,8 +10,10 @@ import { useDestinationCategories, useDestinationCRUD, usePotentialDestinations,
 
 export default function Page() {
   const router = useRouter();
-  const { configuredSources } = useSetupStore();
+  const params = useSearchParams();
+  const skipToSummary = !!params.get('skipToSummary');
 
+  const { configuredSources } = useSetupStore();
   const { testConnection } = useTestConnection();
   const { categories } = useDestinationCategories();
   const { updateDestination } = useDestinationCRUD();
@@ -26,7 +28,8 @@ export default function Page() {
         updateDestination={updateDestination}
         testConnection={testConnection}
         isSourcesListEmpty={!Object.values(configuredSources).some((sources) => sources.length)}
-        goToSources={() => router.push(ROUTES.CHOOSE_SOURCES)}
+        goToSources={() => router.push(ROUTES.CHOOSE_SOURCES + (skipToSummary ? '?skipToSummary=true' : ''))}
+        onClickSummary={skipToSummary ? () => router.push(ROUTES.SETUP_SUMMARY) : undefined}
       />
     </>
   );

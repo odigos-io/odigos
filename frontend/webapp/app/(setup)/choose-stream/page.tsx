@@ -9,18 +9,14 @@ import { DataStreamSelectionForm, type DataStreamSelectionFormRef } from '@odigo
 export default function Page() {
   const router = useRouter();
   const params = useSearchParams();
-  const skipToSummary = params.get('skipToSummary');
+  const skipToSummary = !!params.get('skipToSummary');
 
   const formRef = useRef<DataStreamSelectionFormRef>(null);
 
   return (
     <>
       <SetupHeader step={2} streamFormRef={formRef} />
-      <DataStreamSelectionForm
-        ref={formRef}
-        isModal={false}
-        onClickSummary={skipToSummary && skipToSummary !== 'false' && skipToSummary !== '0' ? () => router.push(ROUTES.SETUP_SUMMARY) : undefined}
-      />
+      <DataStreamSelectionForm ref={formRef} isModal={false} onClickSummary={skipToSummary ? () => router.push(ROUTES.SETUP_SUMMARY) : undefined} />
     </>
   );
 }
