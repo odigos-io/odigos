@@ -2,7 +2,6 @@ package odiglet
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -14,7 +13,6 @@ import (
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
@@ -24,7 +22,6 @@ import (
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/util/retry"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
@@ -192,45 +189,11 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		os.Exit(-1)
 	}
 
-	ctx := context.Background()
-
-	// Get the Odigos configuration, retry on odigos effective config not found error
-	var odigosConfig common.OdigosConfiguration
-	err = retry.OnError(retry.DefaultBackoff, func(err error) bool {
-		return errors.Is(err, k8sutils.ErrOdigosEffectiveConfigNotFound)
-	}, func() error {
-		var fetchErr error
-		odigosConfig, fetchErr = k8sutils.GetCurrentOdigosConfigWithClientset(ctx, clientset)
-		return fetchErr
-	})
-
-	if err != nil {
-		if errors.Is(err, k8sutils.ErrOdigosEffectiveConfigNotFound) {
-			log.Logger.Info("Odigos effective config not found after retries, skipping taint removal")
-		} else {
-			log.Logger.Error(err, "Failed to fetch Odigos configuration")
-			os.Exit(-1)
-		}
-	}
-
-	// If Karpenter is enabled, remove the startup taint from the node
-	if odigosConfig.KarpenterEnabled != nil && *odigosConfig.KarpenterEnabled {
-		log.Logger.Info("KarpenterEnabled is true, attempting to remove startup taint")
-		if err := k8snode.RemoveStartupTaint(clientset, nn); err != nil {
-			log.Logger.Error(err, "Failed to remove startup taint from node")
-			os.Exit(-1)
-		} else {
-			log.Logger.Info("Successfully removed startup taint from node")
-		}
+	if err := k8snode.PrepareNodeForOdigosInstallation(clientset, nn); err != nil {
+		log.Logger.Error(err, "Failed to prepare node for Odigos installation")
+		os.Exit(-1)
 	} else {
-		// Karpenter is not enabled, add the odiglet installed label to the node <Default behavior>
-		odigletInstalledLabel := k8snode.DetermineNodeOdigletInstalledLabelByTier()
-		log.Logger.V(0).Info("Adding Label to Node", "odigletLabel", odigletInstalledLabel)
-
-		if err := k8snode.AddLabelToNode(clientset, nn, odigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
-			log.Logger.Error(err, "Failed to add Odiglet installed label to the node")
-			os.Exit(-1)
-		}
+		log.Logger.Info("Successfully prepared node for Odigos installation")
 	}
 
 	// SELinux settings should be applied last. This function chroot's to use the host's PATH for

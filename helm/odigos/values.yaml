@@ -253,6 +253,6 @@ nodeSelector: {}
 
 # Karpenter settings, before changing to true please modify the karpenter-node-template.yaml file
 # to add the odigos-agent startupTaints configuration.
-# https://karpenter.sh/docs/concepts/nodepools/
+# https://docs.odigos.io/setup/odigos-with-karpenter
 karpenter:
   enabled: false
