@@ -39,6 +39,14 @@ spec:
           spec:
             description: OdigosSpec defines the desired state of Odigos
             properties:
+              centralBackendURL:
+                description: (Optional) CentralBackendURL is the URL for the Odigos
+                  Central Backend, if configured.
+                type: string
+              clusterName:
+                description: (Optional) ClusterName is the name of this cluster for
+                  the Odigos Central Backend, if configured.
+                type: string
               ignoredContainers:
                 description: (Optional) IgnoredContainers is a list of container names
                   to exclude from instrumentation (useful for ignoring sidecars).
