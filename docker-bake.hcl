@@ -5,6 +5,8 @@
 variable "TAG"        { default = "latest" }
 variable "ORG"        { default = "registry.odigos.io" }
 variable "IMG_SUFFIX" { default = "" }
+variable "SHORT_COMMIT" { default = "" }
+variable "DATE"         { default = "" }
 
 # ── Shared metadata (was “template common”) ───
 target "common" {
@@ -103,6 +105,13 @@ target "ui" {
   tags = ["${ORG}/odigos-ui${IMG_SUFFIX}:${TAG}"]
 }
 
+target "cli" {
+  inherits = ["common"]
+  context  = "."
+  dockerfile = "cli/Dockerfile"
+  tags = ["${ORG}/odigos-cli${IMG_SUFFIX}:${TAG}"]
+}
+
 # ── UBI-9 / RHEL image variants ───────────────
 target "operator-rhel" {
   inherits   = ["operator", "rhel"]
@@ -128,11 +137,17 @@ target "ui-rhel" {
   dockerfile = "frontend/Dockerfile.rhel"
 }
 
+target "cli-rhel" {
+  inherits   = ["cli", "rhel"]
+}
+
+
 # ── Convenience groups ───────────────────────
 group "images" {
   targets = [
     "operator","odiglet","autoscaler",
-    "instrumentor","scheduler","collector","ui"
+    "instrumentor","scheduler","collector","ui",
+    "cli"
   ]
 }
 
@@ -140,6 +155,7 @@ group "images-rhel" {
   targets = [
     "operator-rhel","odiglet-rhel","autoscaler-rhel",
     "instrumentor-rhel","scheduler-rhel",
-    "collector-rhel","ui-rhel"
+    "collector-rhel","ui-rhel",
+    "cli-rhel"
   ]
 }

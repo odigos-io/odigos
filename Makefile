@@ -1,11 +1,13 @@
 # ──────────────────────────────────────────────
 # Core variables
 # ──────────────────────────────────────────────
-TAG ?= $(shell odigos version --cluster)
+TAG ?= $(shell odigos version --cluster 2>/dev/null || echo 0.0.1)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
 ORG ?= registry.odigos.io
+SHORT_COMMIT := $(shell git rev-parse --short HEAD)
+DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 PARALLEL ?= $(shell nproc)
 PLATFORMS ?=
 
@@ -29,13 +31,13 @@ BUILD_DIR  ?= .
 # ──────────────────────────────────────────────
 define bake-load
 	@TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
-	docker buildx bake $(1) --load --pull \
+	docker buildx bake $(1) --pull --load \
 	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',)
 endef
 
 define bake-push
 	@TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
-	docker buildx bake $(1) --push \
+	docker buildx bake $(1) --pull --push \
 	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',)
 endef
 
@@ -45,12 +47,23 @@ build-%: ; $(call bake-load,$*)
 push-%:  ; $(call bake-push,$*)
 
 # Convenience groups matching the HCL
-.PHONY: build-images push-images build-images-rhel push-images-rhel
+.PHONY: build-images push-images build-images-rhel push-images-rhel build-cli build-cli-rhel
 build-images:       ; $(call bake-load,images)
 push-images:        ; $(call bake-push,images)
 build-images-rhel:  ; $(call bake-load,images-rhel)
 push-images-rhel:   ; $(call bake-push,images-rhel)
 
+build-cli:
+	$(call bake-load,cli \
+	  --set cli.args.SHORT_COMMIT=$(SHORT_COMMIT) \
+	  --set cli.args.DATE=$(DATE))
+build-cli-rhel: build-cli
+
+push-cli:
+	$(call bake-load,cli \
+	  --set cli.args.SHORT_COMMIT=$(SHORT_COMMIT) \
+	  --set cli.args.DATE=$(DATE))
+push-cli-rhel: push-cli
 
 # ──────────────────────────────────────────────
 # Kind helpers
@@ -62,7 +75,7 @@ load-to-kind-%:
 load-to-kind:
 	$(MAKE) -j $(nproc) load-to-kind-instrumentor load-to-kind-autoscaler \
 		load-to-kind-scheduler load-to-kind-odiglet \
-		load-to-kind-collector load-to-kind-ui \
+		load-to-kind-collector load-to-kind-ui load-to-kind-cli \
 		ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 
