@@ -274,9 +274,10 @@ metadata:
       kind: Deployment
       name: currency
 status:
-  runtimeDetailsByContainer:
-    - containerName: currency
-    - containerName: nginx
+  (runtimeDetailsByContainer[?containerName=='currency']):
+    - language: php
+  (runtimeDetailsByContainer[?containerName=='nginx']):
+    - language: nginx
 ---
 ### Instrumentation Instances ###
 apiVersion: odigos.io/v1alpha1
