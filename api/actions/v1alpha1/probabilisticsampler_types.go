@@ -47,7 +47,6 @@ type ProbabilisticSamplerStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=probabilisticsamplers,scope=Namespaced,shortName=ps
-//+kubebuilder:metadata:labels=odigos.io/config=1
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // ProbabilisticSampler is the Schema for the ProbabilisticSampler odigos action API

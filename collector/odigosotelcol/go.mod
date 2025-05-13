@@ -2,7 +2,7 @@
 
 module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.121.0
@@ -89,8 +89,9 @@ require (
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/component v1.27.0
 	go.opentelemetry.io/collector/component/componenttest v0.121.0
-	go.opentelemetry.io/collector/confmap v1.27.0
+	go.opentelemetry.io/collector/confmap v1.31.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.27.0
+	go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider v0.121.0
 	go.opentelemetry.io/collector/connector v0.121.0
 	go.opentelemetry.io/collector/connector/forwardconnector v0.121.0
 	go.opentelemetry.io/collector/exporter v0.121.0
@@ -100,7 +101,6 @@ require (
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.121.0
 	go.opentelemetry.io/collector/extension v1.27.0
 	go.opentelemetry.io/collector/extension/zpagesextension v0.121.0
-	go.opentelemetry.io/collector/odigos/providers/odigosfileprovider v0.121.0
 	go.opentelemetry.io/collector/otelcol v0.121.0
 	go.opentelemetry.io/collector/processor v0.121.0
 	go.opentelemetry.io/collector/processor/batchprocessor v0.121.0
@@ -346,7 +346,7 @@ require (
 	github.com/golang/mock v1.7.0-rc.1 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/gnostic-models v0.6.8 // indirect
+	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
@@ -403,9 +403,9 @@ require (
 	github.com/karrick/godirwalk v1.17.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
-	github.com/knadh/koanf/maps v0.1.1 // indirect
-	github.com/knadh/koanf/providers/confmap v0.1.0 // indirect
-	github.com/knadh/koanf/v2 v2.1.2 // indirect
+	github.com/knadh/koanf/maps v0.1.2 // indirect
+	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
+	github.com/knadh/koanf/v2 v2.2.0 // indirect
 	github.com/kolo/xmlrpc v0.0.0-20220921171641-a4b6fa1dd06b // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/leodido/go-syslog/v4 v4.2.0 // indirect
@@ -574,7 +574,7 @@ require (
 	go.opentelemetry.io/collector/extension/extensioncapabilities v0.121.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.121.0 // indirect
 	go.opentelemetry.io/collector/extension/xextension v0.121.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.27.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.31.0 // indirect
 	go.opentelemetry.io/collector/filter v0.121.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.121.0 // indirect
 	go.opentelemetry.io/collector/internal/memorylimiter v0.121.0 // indirect
@@ -632,7 +632,7 @@ require (
 	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
 	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/net v0.39.0 // indirect
-	golang.org/x/oauth2 v0.26.0 // indirect
+	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/term v0.31.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
@@ -653,16 +653,17 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gopkg.in/zorkian/go-datadog-api.v2 v2.30.0 // indirect
 	howett.net/plist v1.0.1 // indirect
-	k8s.io/api v0.32.2 // indirect
-	k8s.io/apimachinery v0.32.2 // indirect
-	k8s.io/client-go v0.32.2 // indirect
+	k8s.io/api v0.32.3 // indirect
+	k8s.io/apimachinery v0.32.3 // indirect
+	k8s.io/client-go v0.32.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
+	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	k8s.io/kubelet v0.32.2 // indirect
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738 // indirect
 	sigs.k8s.io/controller-runtime v0.20.2 // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.5.0 // indirect
+	sigs.k8s.io/randfill v1.0.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
@@ -684,6 +685,6 @@ replace github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor => ..
 
 replace github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
 
-replace go.opentelemetry.io/collector/odigos/providers/odigosfileprovider => ../providers/odigosfileprovider
+replace go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
 
 exclude github.com/knadh/koanf v1.5.0

@@ -69,6 +69,9 @@ type InstrumentationRuleSpec struct {
 
 	// Configure which code attributes should be recorded as span attributes.
 	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	// Allows to configure the collection of http headers for different types of payloads.
+	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
 type InstrumentationRuleStatus struct {
@@ -84,8 +87,7 @@ type InstrumentationRuleStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 type InstrumentationRule struct {
 	metav1.TypeMeta   `json:",inline"`

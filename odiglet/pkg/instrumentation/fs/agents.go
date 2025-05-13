@@ -1,12 +1,14 @@
 package fs
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -151,11 +153,29 @@ func ApplyOpenShiftSELinuxSettings() error {
 	log.Logger.Info("Applying selinux settings to host")
 	_, err := exec.LookPath(filepath.Join(chrootDir, semanagePath))
 	if err == nil {
+		syscall.Chroot(chrootDir)
+
+		// list existing semanage rules to check if Odigos has already been set
+		cmd := exec.Command(semanagePath, "fcontext", "-l")
+		var out bytes.Buffer
+		cmd.Stdout = &out
+
+		err := cmd.Run()
+		if err != nil {
+			log.Logger.Error(err, "Error executing semanage")
+			return err
+		}
+
+		pattern := regexp.MustCompile(`/var/odigos(\(/.\*\)\?)?\s+.*container_ro_file_t`)
+		if pattern.Match(out.Bytes()) {
+			log.Logger.Info("Rule for /var/odigos already exists with container_ro_file_t.")
+			return nil
+		}
+
 		// Run the semanage command to add the new directory to the container_ro_file_t context
 		// semanage writes SELinux config to host
-		syscall.Chroot(chrootDir)
-		cmd := exec.Command(semanagePath, "fcontext", "-a", "-t", "container_ro_file_t", "/var/odigos(/.*)?")
-		stdoutBytes, err := cmd.Output()
+		cmd = exec.Command(semanagePath, "fcontext", "-a", "-t", "container_ro_file_t", "/var/odigos(/.*)?")
+		stdoutBytes, err := cmd.CombinedOutput()
 		if err != nil {
 			log.Logger.Error(err, "Error running semanage command", "stdout", string(stdoutBytes))
 			if strings.Contains(string(stdoutBytes), "already defined") {

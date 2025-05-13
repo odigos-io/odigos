@@ -6,13 +6,15 @@ metadata:
 status:
   runtimeDetailsByContainer:
   - containerName: java-supported-docker-env
-    envFromContainerRuntime:
-    - name: JAVA_OPTS
-      value: -Dthis.does.not.exist=true
-    (envFromContainerRuntime[?name=='JAVA_TOOL_OPTIONS']): []           
-    envVars:
-    - name: JAVA_OPTS
-      value: -Dthis.does.not.exist=true
+    (envFromContainerRuntime[?name=='JAVA_OPTS']):
+      - value:  -Dthis.does.not.exist=true
+    (envFromContainerRuntime[?name=='LD_PRELOAD']):
+      - value: ""
+    (envFromContainerRuntime[?name=='JAVA_TOOL_OPTIONS']): []
+    (envVars[?name=='JAVA_OPTS']):
+      - value:  -Dthis.does.not.exist=true
+    (envVars[?name=='LD_PRELOAD']):
+      - value: ""
     (envVars[?name=='JAVA_TOOL_OPTIONS']): []           
     language: java
 ---
@@ -29,6 +31,21 @@ status:
     - name: JAVA_TOOL_OPTIONS
       value: "-Dnot.work=true"
     (envVars[?name=='JAVA_OPTS']): []      
+    language: java
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-java-supported-empty-manifest-env
+status:
+  runtimeDetailsByContainer:
+  - containerName: java-supported-empty-manifest-env
+    (!envFromContainerRuntime): true
+    envVars:
+    - name: JAVA_OPTS
+      value: ""
+    (envVars[?name=='JAVA_TOOL_OPTIONS']): []
     language: java
 ---
 apiVersion: odigos.io/v1alpha1

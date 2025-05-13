@@ -8,7 +8,7 @@ import (
 // DeletionPredicate only allows delete events.
 type DeletionPredicate struct{}
 
-func (o DeletionPredicate) Create(e event.CreateEvent) bool {
+func (i DeletionPredicate) Create(e event.CreateEvent) bool {
 	return false
 }
 

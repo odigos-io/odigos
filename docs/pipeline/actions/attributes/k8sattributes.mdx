@@ -46,6 +46,13 @@ Adding resource attributes based on custom kubernetes annotations/labels can enr
 
     This field is *optional* and defaults to `false`
   </Accordion>
+  <Accordion title="collectReplicaSetAttributes">
+    **collectReplicaSetAttributes** `boolean` : Collect the following replica set related attributes:
+        * `k8s.replicaset.name`
+    if CollectWorkloadUID is set to true, the following attribute will be collected as well:
+        * `k8s.replicaset.uid`
+        
+    This field is *optional* and defaults to `false`
   <Accordion title="CollectWorkloadUID">
     **CollectWorkloadUID** `boolean` : Collect the workload UID:
         * `k8s.deployment.uid`

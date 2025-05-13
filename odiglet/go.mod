@@ -1,13 +1,13 @@
 module github.com/odigos-io/odigos/odiglet
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/go-logr/logr v1.4.2
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.6.0
-	github.com/kubevirt/device-plugin-manager v1.19.5
 	github.com/moby/sys/mountinfo v0.7.2
+	github.com/odigos-io/odigos-device-plugin v1.19.6
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/distros v0.0.0
@@ -106,6 +106,7 @@ require (
 	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.32.3 // indirect
 	k8s.io/cri-api v0.32.3 // indirect

@@ -1,8 +1,6 @@
 module github.com/odigos-io/odigos/frontend
 
-go 1.23.0
-
-toolchain go1.24.1
+go 1.24.0
 
 require (
 	github.com/99designs/gqlgen v0.17.70
@@ -15,7 +13,7 @@ require (
 	github.com/odigos-io/odigos/destinations v0.0.0-20240223090638-df3328a088bc
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/stretchr/testify v1.10.0
-	github.com/vektah/gqlparser/v2 v2.5.23
+	github.com/vektah/gqlparser/v2 v2.5.25
 	go.opentelemetry.io/collector/component v1.28.1
 	go.opentelemetry.io/collector/component/componenttest v0.122.1
 	go.opentelemetry.io/collector/confmap v1.28.1
@@ -44,6 +42,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	go.opentelemetry.io/collector/receiver/receiverhelper v0.122.1 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	modernc.org/libc v1.22.5 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.5.0 // indirect
@@ -87,7 +86,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a // indirect
-	google.golang.org/grpc v1.71.0 // indirect
+	google.golang.org/grpc v1.71.0
 )
 
 require (

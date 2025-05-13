@@ -84,7 +84,6 @@ type ServiceNameSamplerStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=servicenamesamplers,scope=Namespaced,shortName=sns
-// +kubebuilder:metadata:labels=odigos.io/config=1
 // +kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // ServiceNameSampler is the Schema for the servicenamesamplers API.

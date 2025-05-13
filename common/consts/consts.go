@@ -47,6 +47,11 @@ const (
 	InstrumentationConfig   = "InstrumentationConfig"
 	InstrumentationInstance = "InstrumentationInstance"
 	Destination             = "Destination"
+
+	GoOffsetsPublicURL = "https://storage.googleapis.com/odigos-cloud/offset_results_min.json"
+
+	LdPreloadEnvVarName = "LD_PRELOAD"
+	OdigosLoaderName    = "loader.so"
 )
 
 // Odigos config properties
@@ -63,7 +68,13 @@ const (
 	IgnoredContainersProperty         = "ignored-containers"
 	MountMethodProperty               = "mount-method"
 	CentralBackendURLProperty         = "central-backend-url"
-	CustomContainerRunetimeSocketPath = "custom-container-runtime-socket-path"
+	CustomContainerRuntimeSocketPath  = "custom-container-runtime-socket-path"
+	K8sNodeLogsDirectory              = "k8s-node-logs-directory"
+	AvoidJavaOptsEnvVar               = "avoid-java-opts-env-var"
+	AgentEnvVarsInjectionMethod       = "agent-env-vars-injection-method"
+	ClusterNameProperty               = "cluster-name"
+	NodeSelectorProperty              = "node-selector"
+	KarpenterEnabledProperty          = "karpenter-enabled"
 )
 
 var (
@@ -79,4 +90,14 @@ var (
 	// Python related ones
 	OpampServerHostEnvName = "ODIGOS_OPAMP_SERVER_HOST"
 	OpAMPPort              = 4320
+)
+
+// Odigos Central related consts
+const (
+	DefaultOdigosCentralNamespace = "odigos-central"
+)
+
+// Karpenter related consts
+const (
+	KarpenterStartupTaintKey = "odigos.io/needs-init"
 )

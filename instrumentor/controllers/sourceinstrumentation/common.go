@@ -154,10 +154,7 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 	if err != nil {
 		return nil, err
 	}
-
-	if serviceName != "" {
-		instConfig.Spec.ServiceName = serviceName
-	}
+	instConfig.Spec.ServiceName = serviceName
 
 	if err := ctrl.SetControllerReference(obj, &instConfig, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference", "name", instConfigName, "namespace", namespace)

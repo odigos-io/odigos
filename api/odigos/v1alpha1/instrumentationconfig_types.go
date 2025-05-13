@@ -10,6 +10,7 @@ import (
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // InstrumentationConfig is the Schema for the instrumentationconfig API
 type InstrumentationConfig struct {
@@ -99,6 +100,9 @@ const (
 	AgentEnabledReasonUnsupportedRuntimeVersion      AgentEnabledReason = "UnsupportedRuntimeVersion"
 	AgentEnabledReasonMissingDistroParameter         AgentEnabledReason = "MissingDistroParameter"
 	AgentEnabledReasonOtherAgentDetected             AgentEnabledReason = "OtherAgentDetected"
+	// if the source cannot be instrumented because there are no running pods,
+	// we want to show this reason to the user so it's not a spinner
+	AgentEnabledReasonRuntimeDetailsUnavailable AgentEnabledReason = "RuntimeDetailsUnavailable"
 )
 
 // +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
@@ -116,24 +120,26 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 	switch reason {
 	case AgentEnabledReasonEnabledSuccessfully:
 		return 0
+	case AgentEnabledReasonRuntimeDetailsUnavailable:
+		return 10
 	case AgentEnabledReasonWaitingForRuntimeInspection:
-		return 1
+		return 20
 	case AgentEnabledReasonWaitingForNodeCollector:
-		return 2
+		return 30
 	case AgentEnabledReasonIgnoredContainer:
-		return 3
+		return 40
 	case AgentEnabledReasonUnsupportedProgrammingLanguage:
-		return 4
+		return 50
 	case AgentEnabledReasonUnsupportedRuntimeVersion:
-		return 5
+		return 60
 	case AgentEnabledReasonNoAvailableAgent:
-		return 6
+		return 70
 	case AgentEnabledReasonMissingDistroParameter:
-		return 7
+		return 80
 	case AgentEnabledReasonOtherAgentDetected:
-		return 8
+		return 90
 	default:
-		return 9
+		return 100
 	}
 }
 
@@ -146,7 +152,8 @@ func IsReasonStatusDisabled(reason string) bool {
 		string(RuntimeDetectionReasonNoRunningPods),
 		string(AgentEnabledReasonIgnoredContainer),
 		string(AgentEnabledReasonNoAvailableAgent),
-		string(AgentEnabledReasonOtherAgentDetected):
+		string(AgentEnabledReasonOtherAgentDetected),
+		string(AgentEnabledReasonRuntimeDetailsUnavailable):
 
 		return true
 	default:
@@ -174,12 +181,15 @@ const (
 
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
-	ContainerName  string                     `json:"containerName"`
-	Language       common.ProgrammingLanguage `json:"language"`
-	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
-	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+	ContainerName       string                     `json:"containerName"`
+	Language            common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion      string                     `json:"runtimeVersion,omitempty"`
+	EnvVars             []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent          *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType            *common.LibCType           `json:"libCType,omitempty"`
+	// Indicates whether the target process is running is secure-execution mode.
+	// nil means we were unable to determine the secure-execution mode.
+	SecureExecutionMode *bool                      `json:"secureExecutionMode,omitempty"`
 
 	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
@@ -285,6 +295,9 @@ type SdkConfig struct {
 
 	// default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.
 	DefaultCodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	// default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.
+	DefaultHeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
@@ -350,6 +363,8 @@ type InstrumentationLibraryConfig struct {
 	// if not set, the default code attributes configuration for the workload will be used.
 	// if set, but internal fields are empty, those fields will be used from the default configuration.
 	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
 type InstrumentationLibraryId struct {

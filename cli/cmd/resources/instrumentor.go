@@ -477,7 +477,10 @@ func NewInstrumentorTLSSecret(ns string, cert *crypto.Certificate) *corev1.Secre
 	}
 }
 
-func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, tier common.OdigosTier) *appsv1.Deployment {
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, tier common.OdigosTier, nodeSelector map[string]string) *appsv1.Deployment {
+	if nodeSelector == nil {
+		nodeSelector = make(map[string]string)
+	}
 	args := []string{
 		"--health-probe-bind-address=:8081",
 		"--metrics-bind-address=127.0.0.1:8080",
@@ -524,6 +527,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 					},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector: nodeSelector,
 					Affinity: &corev1.Affinity{
 						PodAntiAffinity: &corev1.PodAntiAffinity{
 							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
@@ -708,7 +712,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(a.config.OpenshiftEnabled),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.managerOpts.ImageReferences.InstrumentorImage, a.tier),
+		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.managerOpts.ImageReferences.InstrumentorImage, a.tier, a.config.NodeSelector),
 		NewInstrumentorService(a.ns),
 	}
 
