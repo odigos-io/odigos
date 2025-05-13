@@ -4,15 +4,21 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/report"
 	"github.com/odigos-io/odigos/instrumentor/runtimemigration"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
+	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"golang.org/x/sync/errgroup"
+	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
@@ -37,6 +43,19 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 	// This code can be removed once the migration is confirmed to be successful.
 	mgr.Add(&runtimemigration.MigrationRunnable{KubeClient: mgr.GetClient(), Logger: opts.Logger})
 
+	rotatorSetupFinished := make(chan struct{})
+	err = rotator.AddRotator(mgr, &rotator.CertRotator{
+		SecretKey: types.NamespacedName{
+			Namespace: env.GetCurrentNamespace(),
+			Name:      k8sconsts.InstrumentorWebhookSecretName,
+		},
+		CertDir: filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs"),
+		IsReady: rotatorSetupFinished,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to add cert rotator: %w", err)
+	}
+
 	// wire up the controllers and webhooks
 	err = controllers.SetupWithManager(mgr, dp)
 	if err != nil {
@@ -52,6 +71,17 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		return mgr.GetWebhookServer().StartedChecker()(req)
 	}); err != nil {
 		return nil, fmt.Errorf("unable to set up ready check: %w", err)
+	}
+
+	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error {
+		select {
+		case <-rotatorSetupFinished:
+			return nil
+		default:
+			return fmt.Errorf("cert rotator not ready")
+		}
+	}); err != nil {
+		return nil, fmt.Errorf("unable to set up cert rotator check: %w", err)
 	}
 
 	return &Instrumentor{

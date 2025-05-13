@@ -77,6 +77,11 @@ func NewInstrumentorRole(ns string) *rbacv1.Role {
 				Verbs:         []string{"get", "list", "watch"},
 			},
 			{
+				APIGroups:     []string{""},
+				Resources:     []string{"secrets"},
+				Verbs:         []string{"get", "list", "watch", "update"},
+			},
+			{
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups"},
 				Verbs:     []string{"get", "list", "watch"},
