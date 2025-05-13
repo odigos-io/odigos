@@ -219,7 +219,7 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 	var destinations []*model.Destination
 	for _, dest := range dests.Items {
 		// If matches streamName, return the destination
-		if streamName == "" || services.ArrayContains(dest.Spec.SourceSelector.Groups, streamName) {
+		if streamName == "" || dest.Spec.SourceSelector == nil || services.ArrayContains(dest.Spec.SourceSelector.Groups, streamName) {
 			secretFields, err := services.GetDestinationSecretFields(ctx, ns, &dest)
 			if err != nil {
 				return nil, err
@@ -1046,12 +1046,14 @@ func (r *queryResolver) DataStreams(ctx context.Context) ([]*model.DataStream, e
 	seen["default"] = true
 
 	for _, dest := range destinations.Items {
-		for _, streamName := range dest.Spec.SourceSelector.Groups {
-			if _, exists := seen[streamName]; !exists {
-				seen[streamName] = true
-				dataStreams = append(dataStreams, &model.DataStream{
-					Name: streamName,
-				})
+		if dest.Spec.SourceSelector != nil {
+			for _, streamName := range dest.Spec.SourceSelector.Groups {
+				if _, exists := seen[streamName]; !exists {
+					seen[streamName] = true
+					dataStreams = append(dataStreams, &model.DataStream{
+						Name: streamName,
+					})
+				}
 			}
 		}
 	}
