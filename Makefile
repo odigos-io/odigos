@@ -1,7 +1,9 @@
 # ──────────────────────────────────────────────
 # Core variables
 # ──────────────────────────────────────────────
-TAG ?= $(shell odigos version --cluster 2>/dev/null || echo 0.0.1)
+# TODO: Use installed version, if not applicatble, use latest git tag
+# LATEST_GIT_TAG = $(shell git tag --list 'v*' --sort=-v:refname | head -n1 2>/dev/null)
+TAG ?= $(shell odigos version --cluster 2>/dev/null)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
@@ -31,6 +33,9 @@ BUILD_DIR  ?= .
 # ──────────────────────────────────────────────
 # Build / push helpers
 # ──────────────────────────────────────────────
+.PHONY: print-tag
+print-tag:
+	@echo $(TAG)
 define bake-load
 	@TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
 	docker buildx bake $(1) --pull --load \
