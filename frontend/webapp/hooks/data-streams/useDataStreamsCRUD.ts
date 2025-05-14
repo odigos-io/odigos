@@ -27,9 +27,13 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
       });
     } else if (data?.dataStreams) {
       setDataStreams(data.dataStreams);
-      if (!selectedStreamName) setSelectedStreamName('default');
+      if (!selectedStreamName) setSelectedStreamName(sessionStorage.getItem('selectedStreamName') || 'default');
     }
   };
+
+  useEffect(() => {
+    if (selectedStreamName) sessionStorage.setItem('selectedStreamName', selectedStreamName);
+  }, [selectedStreamName]);
 
   useEffect(() => {
     if (!dataStreams.length && !loading) fetchDataStreams();
