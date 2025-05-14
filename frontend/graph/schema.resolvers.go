@@ -223,7 +223,7 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 	var destinations []*model.Destination
 	for _, dest := range dests.Items {
 		// Return the destination only if it matches the streamName, the streamName is empty, or the destination has no source selector
-		if streamName == "" || dest.Spec.SourceSelector == nil || services.ArrayContains(dest.Spec.SourceSelector.Groups, streamName) {
+		if streamName == "" || dest.Spec.SourceSelector == nil || dest.Spec.SourceSelector.Groups == nil || len(dest.Spec.SourceSelector.Groups) == 0 || services.ArrayContains(dest.Spec.SourceSelector.Groups, streamName) {
 			secretFields, err := services.GetDestinationSecretFields(ctx, ns, &dest)
 			if err != nil {
 				return nil, err
@@ -700,9 +700,15 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	dest.Spec.Data = dataFields
 	dest.Spec.Signals = services.ExportedSignalsObjectToSlice(destination.ExportedSignals)
 
+	// Init empty struct if nil
 	if dest.Spec.SourceSelector == nil {
 		dest.Spec.SourceSelector = &v1alpha1.SourceSelector{Groups: make([]string, 0)}
 	}
+	// Init empty slice if nil
+	if dest.Spec.SourceSelector.Groups == nil {
+		dest.Spec.SourceSelector.Groups = make([]string, 0)
+	}
+	// Add the current stream name to the source selector
 	dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName)
 
 	// Update the destination in Kubernetes
@@ -724,15 +730,15 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 }
 
 // DeleteDestination is the resolver for the deleteDestination field.
-func (r *mutationResolver) DeleteDestination(ctx context.Context, id string) (bool, error) {
+func (r *mutationResolver) DeleteDestination(ctx context.Context, id string, currentStreamName *string) (bool, error) {
 	isReadonly := services.IsReadonlyMode(ctx)
 	if isReadonly {
 		return false, services.ErrorIsReadonly
 	}
 
 	ns := env.GetCurrentNamespace()
-	err := kube.DefaultClient.OdigosClient.Destinations(ns).Delete(ctx, id, metav1.DeleteOptions{})
 
+	err := kube.DefaultClient.OdigosClient.Destinations(ns).Delete(ctx, id, metav1.DeleteOptions{})
 	if err != nil {
 		return false, fmt.Errorf("failed to delete destination: %w", err)
 	}
@@ -1055,7 +1061,7 @@ func (r *queryResolver) DataStreams(ctx context.Context) ([]*model.DataStream, e
 	seen["default"] = true
 
 	for _, dest := range destinations.Items {
-		if dest.Spec.SourceSelector != nil {
+		if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil {
 			for _, streamName := range dest.Spec.SourceSelector.Groups {
 				if _, exists := seen[streamName]; !exists {
 					seen[streamName] = true

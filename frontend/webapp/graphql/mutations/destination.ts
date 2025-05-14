@@ -5,6 +5,7 @@ export const CREATE_DESTINATION = gql`
     createNewDestination(destination: $destination) {
       id
       name
+      streamNames
       fields
       exportedSignals {
         logs
@@ -59,7 +60,7 @@ export const UPDATE_DESTINATION = gql`
 `;
 
 export const DELETE_DESTINATION = gql`
-  mutation DeleteDestination($id: ID!) {
-    deleteDestination(id: $id)
+  mutation DeleteDestination($id: ID!, $currentStreamName: String!) {
+    deleteDestination(id: $id, currentStreamName: $currentStreamName)
   }
 `;
