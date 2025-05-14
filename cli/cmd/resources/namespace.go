@@ -3,7 +3,6 @@ package resources
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/labels"
@@ -23,23 +22,19 @@ func NewNamespace(name string) *v1.Namespace {
 }
 
 func GetOdigosNamespace(client *kube.Client, ctx context.Context) (string, error) {
-	namespaces, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{
+	configMaps, err := client.CoreV1().ConfigMaps("").List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
 			MatchLabels: labels.OdigosSystem,
 		}),
 	})
-
 	if err != nil {
 		return "", err
 	}
 
-	if len(namespaces.Items) == 0 {
+	if len(configMaps.Items) == 0 {
 		return "", errNoOdigosNamespaceFound
-	} else if len(namespaces.Items) != 1 {
-		return "", fmt.Errorf("expected to get 1 namespace got %d", len(namespaces.Items))
-	}
-
-	return namespaces.Items[0].Name, nil
+	} 
+	return configMaps.Items[0].Namespace, nil
 }
 
 func IsErrNoOdigosNamespaceFound(err error) bool {
