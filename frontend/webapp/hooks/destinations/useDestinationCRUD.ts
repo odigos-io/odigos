@@ -71,7 +71,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     },
   });
 
-  const [mutateDelete] = useMutation<{ deleteDestination: boolean }, { id: string }>(DELETE_DESTINATION, {
+  const [mutateDelete] = useMutation<{ deleteDestination: boolean }, { id: string; currentStreamName: string }>(DELETE_DESTINATION, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Delete, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id as string;
@@ -103,7 +103,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
-      await mutateDelete({ variables: { id } });
+      await mutateDelete({ variables: { id, currentStreamName: selectedStreamName } });
     }
   };
 

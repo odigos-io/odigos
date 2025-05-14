@@ -97,3 +97,13 @@ func CheckWorkloadKind(kind WorkloadKind) error {
 func ArrayContains(arr []string, str string) bool {
 	return slices.Contains(arr, str)
 }
+
+func RemoveStringFromSlice(slice []string, target string) []string {
+	result := make([]string, 0, len(slice))
+	for _, s := range slice {
+		if s != target {
+			result = append(result, s)
+		}
+	}
+	return result
+}

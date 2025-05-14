@@ -345,7 +345,7 @@ type ComplexityRoot struct {
 		CreateInstrumentationRule    func(childComplexity int, instrumentationRule model.InstrumentationRuleInput) int
 		CreateNewDestination         func(childComplexity int, destination model.DestinationInput) int
 		DeleteAction                 func(childComplexity int, id string, actionType string) int
-		DeleteDestination            func(childComplexity int, id string) int
+		DeleteDestination            func(childComplexity int, id string, currentStreamName *string) int
 		DeleteInstrumentationRule    func(childComplexity int, ruleID string) int
 		PersistK8sNamespace          func(childComplexity int, namespace model.PersistNamespaceItemInput) int
 		PersistK8sSources            func(childComplexity int, namespace string, sources []*model.PersistNamespaceSourceInput) int
@@ -553,7 +553,7 @@ type MutationResolver interface {
 	UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error)
 	CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error)
 	UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error)
-	DeleteDestination(ctx context.Context, id string) (bool, error)
+	DeleteDestination(ctx context.Context, id string, currentStreamName *string) (bool, error)
 	TestConnectionForDestination(ctx context.Context, destination model.DestinationInput) (*model.TestConnectionResponse, error)
 	CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error)
 	UpdateAction(ctx context.Context, id string, action model.ActionInput) (model.Action, error)
@@ -1931,7 +1931,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteDestination(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.DeleteDestination(childComplexity, args["id"].(string), args["currentStreamName"].(*string)), true
 
 	case "Mutation.deleteInstrumentationRule":
 		if e.complexity.Mutation.DeleteInstrumentationRule == nil {
@@ -3253,6 +3253,11 @@ func (ec *executionContext) field_Mutation_deleteDestination_args(ctx context.Co
 		return nil, err
 	}
 	args["id"] = arg0
+	arg1, err := ec.field_Mutation_deleteDestination_argsCurrentStreamName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["currentStreamName"] = arg1
 	return args, nil
 }
 func (ec *executionContext) field_Mutation_deleteDestination_argsID(
@@ -3270,6 +3275,24 @@ func (ec *executionContext) field_Mutation_deleteDestination_argsID(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteDestination_argsCurrentStreamName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["currentStreamName"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("currentStreamName"))
+	if tmp, ok := rawArgs["currentStreamName"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
 	return zeroVal, nil
 }
 
@@ -12612,7 +12635,7 @@ func (ec *executionContext) _Mutation_deleteDestination(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteDestination(rctx, fc.Args["id"].(string))
+		return ec.resolvers.Mutation().DeleteDestination(rctx, fc.Args["id"].(string), fc.Args["currentStreamName"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
