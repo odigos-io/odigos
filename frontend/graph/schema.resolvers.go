@@ -696,7 +696,9 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 		dest.Spec.SourceSelector.Groups = make([]string, 0)
 	}
 	// Add the current stream name to the source selector
-	dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName)
+	if !services.ArrayContains(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName) {
+		dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName)
+	}
 
 	// Update the destination in Kubernetes
 	updatedDest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Update(ctx, dest, metav1.UpdateOptions{})
