@@ -224,6 +224,7 @@ func toggleSourceWithAPI(c *gin.Context, enabled bool) {
 		return
 	}
 
+	// TODO: check if we need to handle a stream name for remote API requests
 	err := ToggleSourceCRD(ctx, ns, name, wk, enabled, "default")
 	if err != nil {
 		c.JSON(500, gin.H{
