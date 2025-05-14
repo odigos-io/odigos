@@ -161,10 +161,10 @@ func (rc *CriClient) GetContainerImageEnvVars(ctx context.Context, containerID s
 	}
 
 	// Step 2: Use CRI image service to inspect image env vars
-	return rc.GetImageEnvVarsFromCRI(ctx, imageRef)
+	return rc.getImageEnvVarsFromCRI(ctx, imageRef)
 }
 
-func (rc *CriClient) GetImageEnvVarsFromCRI(ctx context.Context, imageRef string) (map[string]string, error) {
+func (rc *CriClient) getImageEnvVarsFromCRI(ctx context.Context, imageRef string) (map[string]string, error) {
 	if imageRef == "" {
 		return nil, errors.New("invalid image ref")
 	}

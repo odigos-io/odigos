@@ -40,6 +40,7 @@ var configCmd = &cobra.Command{
 	- "k8s-node-logs-directory": Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log).
 	- "avoid-java-opts-env-var": Avoid injecting the Odigos value in JAVA_OPTS environment variable into Java applications.
 	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., {"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}
+	- "agent-env-vars-injection-method": Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest.
 	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
 	`,
 }
@@ -115,7 +116,8 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 		config.CentralBackendURL = value[0]
 
 	case consts.TelemetryEnabledProperty, consts.OpenshiftEnabledProperty, consts.PspProperty,
-		consts.SkipWebhookIssuerCreationProperty, consts.AllowConcurrentAgentsProperty, consts.AvoidJavaOptsEnvVar:
+		consts.SkipWebhookIssuerCreationProperty, consts.AllowConcurrentAgentsProperty, consts.AvoidJavaOptsEnvVar,
+		consts.KarpenterEnabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value (true/false)", property)
@@ -138,6 +140,8 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			config.AllowConcurrentAgents = &boolValue
 		case consts.AvoidJavaOptsEnvVar:
 			config.AvoidInjectingJavaOptsEnvVar = &boolValue
+		case consts.KarpenterEnabledProperty:
+			config.KarpenterEnabled = &boolValue
 		}
 
 	case consts.ImagePrefixProperty, consts.UiModeProperty, consts.UiPaginationLimit:
@@ -214,6 +218,20 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 		}
 		config.UserInstrumentationEnvs = &uie
     
+	case consts.AgentEnvVarsInjectionMethod:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+
+		injectionMethod := common.EnvInjectionMethod(value[0])
+		switch injectionMethod {
+		case common.LoaderEnvInjectionMethod, common.PodManifestEnvInjectionMethod, common.LoaderFallbackToPodManifestInjectionMethod:
+			config.AgentEnvVarsInjectionMethod = &injectionMethod
+		default:
+			return fmt.Errorf("invalid agent env vars injection method: %s (valid values: %s, %s, %s)", value[0],
+				common.LoaderEnvInjectionMethod, common.PodManifestEnvInjectionMethod, common.LoaderFallbackToPodManifestInjectionMethod)
+		}
+
 	case consts.NodeSelectorProperty:
 		nodeSelectorMap := make(map[string]string)
 		for _, v := range value {
