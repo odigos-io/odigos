@@ -336,14 +336,21 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, specField string, newValue any) (*v1alpha1.Source, error) {
 	patch := fmt.Sprintf(`[{"op": "replace", "path": "/spec/%s", "value": %v}]`, specField, newValue)
-	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{})
+
+	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(
+		ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{},
+	)
 
 	return source, err
 }
 
-func UpdateSourceCRDLabel(ctx context.Context, nsName string, crdName string, specField string, newValue any) (*v1alpha1.Source, error) {
-	patch := fmt.Sprintf(`[{"op": "replace", "path": "/labels/%s", "value": %v}]`, specField, newValue)
-	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{})
+func UpdateSourceCRDLabel(ctx context.Context, nsName string, crdName string, labelKey string, newValue string) (*v1alpha1.Source, error) {
+	escapedLabel := strings.ReplaceAll(labelKey, "/", "~1")
+	patch := fmt.Sprintf(`[{"op": "replace", "path": "/metadata/labels/%s", "value": "%v"}]`, escapedLabel, newValue)
+
+	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(
+		ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{},
+	)
 
 	return source, err
 }
