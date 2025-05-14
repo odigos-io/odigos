@@ -3,13 +3,14 @@ import { useConfig } from '../config';
 import type { NamespaceInstrumentInput } from '@/types';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import { useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
 import { GET_NAMESPACE, GET_NAMESPACES, PERSIST_NAMESPACE } from '@/graphql';
 import { Crud, EntityTypes, Namespace, StatusType } from '@odigos/ui-kit/types';
+import { useDataStreamStore, useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
 
 export const useNamespace = () => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
+  const { selectedStreamName } = useDataStreamStore();
   const { namespacesLoading, setEntitiesLoading, namespaces, setEntities } = useEntityStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, hideFromHistory?: boolean) => {
@@ -55,8 +56,8 @@ export const useNamespace = () => {
   };
 
   useEffect(() => {
-    if (!namespaces.length && !namespacesLoading) fetchNamespaces();
-  }, []);
+    if (selectedStreamName && !namespaces.length && !namespacesLoading) fetchNamespaces();
+  }, [selectedStreamName]);
 
   return {
     namespacesLoading,
