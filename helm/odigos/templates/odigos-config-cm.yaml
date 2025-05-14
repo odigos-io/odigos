@@ -141,4 +141,3 @@ data:
     {{- if .Values.karpenter.enabled }}
     karpenterEnabled: {{ .Values.karpenter.enabled }}
     {{- end }}
-    {{- end }}
