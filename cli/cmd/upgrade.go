@@ -80,7 +80,7 @@ and apply any required migrations and adaptations.`,
 
 			if sourceVersion.LessThan(version.Must(version.NewVersion("1.0.0"))) {
 				fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0'. Current version is %s.\n", currOdigosVersion)
-				fmt.Println("To upgrade, please use 'odigos uninstall' and 'odigos install'.")
+				fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.")
 				os.Exit(1)
 			}
 
@@ -94,10 +94,10 @@ and apply any required migrations and adaptations.`,
 				fmt.Printf("Odigos version is already '%s', synching installation\n", versionFlag)
 				operation = "Synching"
 			} else if sourceVersion.GreaterThan(targetVersion) {
-				fmt.Printf("About to DOWNGRADE Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, targetVersion)
+				fmt.Printf("About to DOWNGRADE Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
 				operation = "Downgrading"
 			} else {
-				fmt.Printf("About to upgrade Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, targetVersion)
+				fmt.Printf("About to upgrade Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
 				operation = "Upgrading"
 			}
 
