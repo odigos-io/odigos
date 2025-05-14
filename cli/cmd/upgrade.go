@@ -80,7 +80,7 @@ and apply any required migrations and adaptations.`,
 
 			if sourceVersion.LessThan(version.Must(version.NewVersion("1.0.0"))) {
 				fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0'. Current version is %s.\n", currOdigosVersion)
-				fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.")
+				fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.\n")
 				os.Exit(1)
 			}
 
@@ -114,7 +114,6 @@ and apply any required migrations and adaptations.`,
 
 		onPremTokenSet := cmd.Flag("onprem-token").Changed
 		var currentTier common.OdigosTier
-		var managerOpts resourcemanager.ManagerOpts
 
 		if onPremTokenSet {
 			currentTier = common.OnPremOdigosTier
@@ -126,7 +125,7 @@ and apply any required migrations and adaptations.`,
 			}
 		}
 
-		managerOpts = resourcemanager.ManagerOpts{
+		managerOpts := resourcemanager.ManagerOpts{
 			ImageReferences: GetImageReferences(currentTier, openshiftEnabled),
 		}
 
