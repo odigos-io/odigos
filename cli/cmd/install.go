@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
@@ -43,16 +44,19 @@ var (
 	userInputInstallProfiles         []string
 	uiMode                           string
 	customContainerRuntimeSocketPath string
+	k8sNodeLogsDirectory             string
 	instrumentorImage                string
 	odigletImage                     string
 	autoScalerImage                  string
 	imagePrefix                      string
+	nodeSelectorFlag                 string
+	karpenterEnabled                 bool
 
 	clusterName       string
 	centralBackendURL string
 )
 
-type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string) error
+type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error
 
 // installCmd represents the install command
 var installCmd = &cobra.Command{
@@ -123,7 +127,13 @@ It will install k8s components that will auto-instrument your applications with 
 			os.Exit(1)
 		}
 
-		config := CreateOdigosConfig(odigosTier)
+		nodeSelector, err := parseNodeSelectorFlag()
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Unable to parse node-selector flag.\n")
+			os.Exit(1)
+		}
+
+		config := CreateOdigosConfig(odigosTier, nodeSelector)
 
 		err = installOdigos(ctx, client, ns, &config, &odigosProToken, odigosTier, "Creating")
 		if err != nil {
@@ -180,11 +190,27 @@ func installOdigos(ctx context.Context, client *kube.Client, ns string, config *
 		ImageReferences: GetImageReferences(odigosTier, openshiftEnabled),
 	}
 
-	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, createNamespace)
+	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, k8sconsts.OdigosSystemLabelKey, createNamespace)
 
 	resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, token, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 	return resources.ApplyResourceManagers(ctx, client, resourceManagers, label)
 
+}
+
+func parseNodeSelectorFlag() (map[string]string, error) {
+	nodeSelector := make(map[string]string)
+	if len(nodeSelectorFlag) == 0 {
+		return nodeSelector, nil
+	}
+	selectors := strings.Split(nodeSelectorFlag, ",")
+	for _, selector := range selectors {
+		s := strings.Split(selector, "=")
+		if len(s) != 2 {
+			return nodeSelector, errors.New(fmt.Sprintf("invalid node selector, must be in form 'key=value': %s", selector))
+		}
+		nodeSelector[s[0]] = s[1]
+	}
+	return nodeSelector, nil
 }
 
 func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (bool, error) {
@@ -223,22 +249,30 @@ func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (b
 	}
 }
 
-func createNamespace(ctx context.Context, client *kube.Client, ns string) error {
+func createNamespace(ctx context.Context, client *kube.Client, ns string, labelKey string) error {
 	nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			_, err := client.CoreV1().Namespaces().Create(ctx, resources.NewNamespace(ns), metav1.CreateOptions{})
-			return err
+	if err == nil {
+		val, exists := nsObj.Labels[labelKey]
+		if !exists || val != k8sconsts.OdigosSystemLabelValue {
+			return fmt.Errorf("namespace %s does not contain the expected label: %s", ns, labelKey)
 		}
+		return nil
+	}
+
+	if apierrors.IsNotFound(err) {
+		nsObj := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: ns,
+				Labels: map[string]string{
+					labelKey: k8sconsts.OdigosSystemLabelValue,
+				},
+			},
+		}
+		_, err := client.CoreV1().Namespaces().Create(ctx, nsObj, metav1.CreateOptions{})
 		return err
 	}
 
-	val, exists := nsObj.Labels[k8sconsts.OdigosSystemLabelKey]
-	if !exists || val != k8sconsts.OdigosSystemLabelValue {
-		return fmt.Errorf("namespace %s does not contain %s label", ns, k8sconsts.OdigosSystemLabelKey)
-	}
-
-	return nil
+	return err
 }
 
 func ValidateUserInputProfiles(tier common.OdigosTier) error {
@@ -293,12 +327,14 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcema
 			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImage
 			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageName
 			imageReferences.CentralProxyImage = k8sconsts.CentralProxyImage
+			imageReferences.CentralBackendImage = k8sconsts.CentralBackendImage
+			imageReferences.CentralUIImage = k8sconsts.CentralUIImage
 		}
 	}
 	return imageReferences
 }
 
-func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration {
+func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]string) common.OdigosConfiguration {
 	selectedProfiles := []common.ProfileName{}
 	for _, profile := range userInputInstallProfiles {
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))
@@ -319,21 +355,25 @@ func CreateOdigosConfig(odigosTier common.OdigosTier) common.OdigosConfiguration
 		OpenshiftEnabled:                 openshiftEnabled,
 		IgnoredNamespaces:                userInputIgnoredNamespaces,
 		CustomContainerRuntimeSocketPath: customContainerRuntimeSocketPath,
-		IgnoredContainers:                userInputIgnoredContainers,
-		SkipWebhookIssuerCreation:        skipWebhookIssuerCreation,
-		Psp:                              psp,
-		ImagePrefix:                      imagePrefix,
-		Profiles:                         selectedProfiles,
-		UiMode:                           common.UiMode(uiMode),
-		ClusterName:                      clusterName,
-		CentralBackendURL:                centralBackendURL,
+		CollectorNode: &common.CollectorNodeConfiguration{
+			K8sNodeLogsDirectory: k8sNodeLogsDirectory,
+		},
+		IgnoredContainers:         userInputIgnoredContainers,
+		SkipWebhookIssuerCreation: skipWebhookIssuerCreation,
+		Psp:                       psp,
+		ImagePrefix:               imagePrefix,
+		Profiles:                  selectedProfiles,
+		UiMode:                    common.UiMode(uiMode),
+		ClusterName:               clusterName,
+		CentralBackendURL:         centralBackendURL,
+		NodeSelector:              nodeSelector,
 	}
 
 }
 
-func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, ns string, create ResourceCreationFunc) {
+func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, ns string, labelScope string, create ResourceCreationFunc) {
 	l := log.Print(msg)
-	err := create(ctx, client, ns)
+	err := create(ctx, client, ns, labelScope)
 	if err != nil {
 		l.Error(err)
 	}
@@ -350,13 +390,15 @@ func init() {
 	installCmd.Flags().BoolVar(&telemetryEnabled, "telemetry", true, "send general telemetry regarding Odigos usage")
 	installCmd.Flags().BoolVar(&openshiftEnabled, "openshift", false, "configure requirements for OpenShift: required selinux settings, RBAC roles, and will use OpenShift certified images (if --image-prefix is not set)")
 	installCmd.Flags().BoolVar(&skipWebhookIssuerCreation, consts.SkipWebhookIssuerCreationProperty, false, "Skip creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.")
-	installCmd.Flags().StringVar(&imagePrefix, consts.ImagePrefixProperty, "registry.odigos.io", "prefix for all container images.")
+	installCmd.Flags().StringVar(&imagePrefix, consts.ImagePrefixProperty, k8sconsts.OdigosImagePrefix, "prefix for all container images.")
 	installCmd.Flags().BoolVar(&psp, consts.PspProperty, false, "enable pod security policy")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", k8sconsts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
 	installCmd.Flags().StringVar(&customContainerRuntimeSocketPath, "container-runtime-socket-path", "", "custom configuration of a path to the container runtime socket path (e.g. /var/lib/rancher/rke2/agent/containerd/containerd.sock)")
+	installCmd.Flags().StringVar(&k8sNodeLogsDirectory, consts.K8sNodeLogsDirectory, "", "custom configuration of a path to the directory where Kubernetes logs are symlinked in a node (e.g. /mnt/var/log)")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
+	installCmd.Flags().StringVar(&nodeSelectorFlag, "node-selector", "", "comma-separated key=value pair of Kubernetes NodeSelectors to set on Odigos components. Example: kubernetes.io/hostname=myhost")
 
 	installCmd.Flags().StringVar(&clusterName, "cluster-name", "", "name of the cluster to be used in the centralized backend")
 	installCmd.Flags().StringVar(&centralBackendURL, "central-backend-url", "", "use to connect this cluster to the centralized odigos cluster")

@@ -110,8 +110,8 @@ connectors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.121.0
 
 providers:
-  - gomod: go.opentelemetry.io/collector/odigos/providers/odigosfileprovider v0.121.0 # fork default file provider for config reloading
   - gomod: go.opentelemetry.io/collector/confmap/provider/envprovider v0.121.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider v0.121.0
 
 replaces:
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor => ../processors/odigossamplingprocessor
@@ -123,4 +123,4 @@ replaces:
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics => ../processors/odigostrafficmetrics
   - github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor => ../processors/odigossourcesfilterprocessor
   - github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
-  - go.opentelemetry.io/collector/odigos/providers/odigosfileprovider => ../providers/odigosfileprovider
+  - go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider

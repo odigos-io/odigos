@@ -66,7 +66,8 @@
                 "setup/installation",
                 "setup/installation-options",
                 "setup/docker-registry",
-                "setup/odigos-with-argocd"
+                "setup/odigos-with-argocd",
+                "setup/odigos-with-karpenter"
               ]
             },
             "setup/upgrade",
@@ -145,6 +146,14 @@
           "pages": [
             "instrumentations/dotnet/native",
             "instrumentations/dotnet/enrichment"
+          ]
+        },
+        {
+          "group": "PHP",
+          "icon": "php",
+          "pages": [
+            "instrumentations/php/native",
+            "instrumentations/php/enrichment"
           ]
         },
         {
@@ -238,6 +247,7 @@
             "backends/coralogix",
             "backends/dash0",
             "backends/datadog",
+            "backends/dynamic",
             "backends/dynatrace",
             "backends/elasticapm",
             "backends/elasticsearch",
@@ -293,7 +303,8 @@
         "telemetry-types",
         "custom-resources",
         "usage-reports",
-        "benchmarks"
+        "benchmarks",
+        "permissions"
       ]
     },
     {

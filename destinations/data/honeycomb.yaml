@@ -30,3 +30,5 @@ spec:
           - api.eu1.honeycomb.io
         required: true
         tooltip: Choose one of the endpoints in the dropdown (`api.honeycomb.io` is the US instance, `api.eu1.honeycomb.io` is EU instance)
+  testConnectionSupported: true
+  

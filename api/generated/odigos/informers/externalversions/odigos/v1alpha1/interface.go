@@ -23,6 +23,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// Actions returns a ActionInformer.
+	Actions() ActionInformer
 	// CollectorsGroups returns a CollectorsGroupInformer.
 	CollectorsGroups() CollectorsGroupInformer
 	// Destinations returns a DestinationInformer.
@@ -50,6 +52,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// Actions returns a ActionInformer.
+func (v *version) Actions() ActionInformer {
+	return &actionInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // CollectorsGroups returns a CollectorsGroupInformer.

@@ -514,6 +514,32 @@ as well as the sampler's current status.</p>
 </tbody>
 </table>
 
+## `AddClusterInfoConfig` <a id="AddClusterInfoConfig"></a>
+    
+
+**Appears in:**
+
+- [ActionSpec](#odigos-io-v1alpha1-ActionSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>clusterAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#OtelAttributeWithValue"><code>[]OtelAttributeWithValue</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
 ## `AddClusterInfoSpec` <a id="AddClusterInfoSpec"></a>
     
 
@@ -718,6 +744,32 @@ the attribute is expected to have.</p>
 <td>
    <p>ExpectedValue is only used if Operation == &quot;equals&quot;.</p>
 </td>
+</tr>
+</tbody>
+</table>
+
+## `DeleteAttributeConfig` <a id="DeleteAttributeConfig"></a>
+    
+
+**Appears in:**
+
+- [ActionSpec](#odigos-io-v1alpha1-ActionSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>attributeNamesToDelete</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 </tbody>
 </table>
@@ -1192,6 +1244,20 @@ container.image.tag</p>
 </tr>
 <tr>
 <td>
+<code>collectReplicaSetAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>collect replicaset related attributes (when relevant, e.g. for deployments):
+k8s.replicaset.name
+if CollectWorkloadUID is set, also collect:
+k8s.replicaset.uid</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>collectWorkloadUID</code> <B>[Required]</B>
 </td>
 <td>
@@ -1471,6 +1537,7 @@ Typical types include &quot;Available&quot; and &quot;Progressing&quot;.</p>
 
 **Appears in:**
 
+- [AddClusterInfoConfig](#AddClusterInfoConfig)
 - [AddClusterInfoSpec](#AddClusterInfoSpec)
 
 <table class="table">
@@ -1510,9 +1577,36 @@ empty string is a valid value</p>
 
 **Appears in:**
 
+- [PiiMaskingConfig](#PiiMaskingConfig)
 - [PiiMaskingSpec](#PiiMaskingSpec)
 
 
+
+## `PiiMaskingConfig` <a id="PiiMaskingConfig"></a>
+    
+
+**Appears in:**
+
+- [ActionSpec](#odigos-io-v1alpha1-ActionSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>piiCategories</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#PiiCategory"><code>[]PiiCategory</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
 
 ## `PiiMaskingSpec` <a id="PiiMaskingSpec"></a>
     
@@ -1712,6 +1806,32 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
    <p>Represents the observations of a ProbabilisticSampler's current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
 </td>
+</tr>
+</tbody>
+</table>
+
+## `RenameAttributeConfig` <a id="RenameAttributeConfig"></a>
+    
+
+**Appears in:**
+
+- [ActionSpec](#odigos-io-v1alpha1-ActionSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>renames</code> <B>[Required]</B>
+</td>
+<td>
+<code>map[string]string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 </tbody>
 </table>

@@ -20,6 +20,7 @@ const (
 	Dash0DestinationType                  DestinationType = "dash0"
 	DatadogDestinationType                DestinationType = "datadog"
 	DebugDestinationType                  DestinationType = "debug"
+	DynamicDestinationType                DestinationType = "dynamic"
 	DynatraceDestinationType              DestinationType = "dynatrace"
 	ElasticAPMDestinationType             DestinationType = "elasticapm"
 	ElasticsearchDestinationType          DestinationType = "elasticsearch"

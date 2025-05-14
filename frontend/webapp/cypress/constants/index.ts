@@ -29,7 +29,7 @@ export const NAMESPACES = {
 
 export const SELECTED_ENTITIES = {
   NAMESPACE: NAMESPACES.DEFAULT,
-  NAMESPACE_SOURCES: ['coupon', 'frontend', 'inventory', 'membership', 'pricing'],
+  NAMESPACE_SOURCES: ['coupon', 'currency', 'frontend', 'inventory', 'membership', 'pricing'],
   DESTINATION: {
     TYPE: 'jaeger',
     DISPLAY_NAME: 'Jaeger',
@@ -107,7 +107,7 @@ export const TEXTS = {
   NO_RESOURCES: (namespace: string) => `No resources found in ${namespace} namespace.`,
   NO_SOURCES_SELECTED: 'No sources selected. Please go back to select sources.',
 
-  SOURCE_WARN_MODAL_TITLE: 'Uninstrument 5 sources',
+  SOURCE_WARN_MODAL_TITLE: (count: number) => `Uninstrument ${count} sources`,
   SOURCE_WARN_MODAL_NOTE: "You're about to uninstrument the last Source",
   DESTINATION_WARN_MODAL_TITLE: `Delete Destination (${CYPRESS_TEST})`,
   DESTINATION_WARN_MODAL_NOTE: "You're about to delete the last Destination",

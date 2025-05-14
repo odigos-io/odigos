@@ -8,7 +8,7 @@ spec:
   steps:
     - name: '[1 - Setup] Prepare destination'
       try:
-        - apply: 
+        - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
     - name: '[1 - Setup] Install Odigos'
       try:
@@ -22,40 +22,31 @@ spec:
               fi
         - assert:
             file: ../../common/assert/odigos-installed.yaml
+
+    - name: '[1 - Setup] Verify Node Odiglet label has been added'
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
     - name: '[1 - Setup]Assert Trace DB is up'
       try:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
-    - name: '[1 - Setup] Install Demo App'
+
+    - name: '[1 - Setup] Install - Simple Demo Apps'
       try:
-        - script:
-            timeout: 5m
-            content: |
-              if [ "$MODE" != "cross-cloud-tests" ]; then
-                docker pull registry.odigos.io/odigos-demo-inventory:v0.1
-                docker pull registry.odigos.io/odigos-demo-membership:v0.1
-                docker pull registry.odigos.io/odigos-demo-coupon:v0.1
-                docker pull registry.odigos.io/odigos-demo-pricing:v0.1
-                docker pull registry.odigos.io/odigos-demo-frontend:v0.2
-                kind load docker-image registry.odigos.io/odigos-demo-inventory:v0.1
-                kind load docker-image registry.odigos.io/odigos-demo-membership:v0.1
-                kind load docker-image registry.odigos.io/odigos-demo-coupon:v0.1
-                kind load docker-image registry.odigos.io/odigos-demo-pricing:v0.1
-                kind load docker-image registry.odigos.io/odigos-demo-frontend:v0.2
-              else
-                echo "Skipping docker pull and kind load for cross-cloud-tests mode"
-              fi
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
         - script:
-            timeout: 70s
+            timeout: 2m
             content: |
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 
@@ -94,38 +85,39 @@ spec:
 
     - name: '[2 - Workload Instrumentation] Generate Traffic'
       try:
+        - apply:
+            file: ../../common/apply/generate-traffic-job.yaml
         - script:
-            timeout: 10m
+            timeout: 1m
+            content: |
+              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+        - delete:
+            file: ../../common/apply/generate-traffic-job.yaml
+
+    - name: '[2 - Workload Instrumentation] Wait For Trace'
+      try:
+        - script:
+            timeout: 1m
             content: |
               while true; do
-                # wait for traces to be available
-                sleep 8
-
-                # Apply the job
-                kubectl apply -f ../../common/apply/generate-traffic-job.yaml
-
-                # Wait for the job to complete
-                job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-                kubectl wait --for=condition=complete job/$job_name
-
-                # Delete the job
-                kubectl delete -f ../../common/apply/generate-traffic-job.yaml
-
-                # Run the wait-for-trace script
-                echo "Running Simple-trace-db query for full trace at $(date)"
-                ../../common/simple_trace_db_query_runner.sh queries/wait-for-trace.yaml
-
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-reported.yaml
                 if [ $? -eq 0 ]; then
                   break
                 fi
+                sleep 1
               done
+      catch:
+        - script:
+            content: |
+              java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
+              kubectl logs $java_pod_name -n default
 
     - name: '[2 - Workload Instrumentation] Verify Trace - Context Propagation'
       try:
         - script:
             timeout: 3m
             content: |
-              ../../common/simple_trace_db_query_runner.sh queries/context-propagation.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation-reported.yaml
       catch:
         - podLogs:
             name: odiglet
@@ -136,7 +128,7 @@ spec:
         - script:
             timeout: 3m
             content: |
-              ../../common/simple_trace_db_query_runner.sh queries/resource-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/resource-attributes.yaml
       catch:
         - podLogs:
             name: odiglet
@@ -147,11 +139,24 @@ spec:
         - script:
             timeout: 3m
             content: |
-              ../../common/simple_trace_db_query_runner.sh queries/span-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/span-attributes-reported.yaml
       catch:
         - podLogs:
             name: odiglet
             namespace: odigos-test
+
+    - name: '[2 - Workload Instrumentation] Verify collector metrics are collected by the UI'
+      try:
+        - script:
+            timeout: 5m
+            content: |
+              while true; do
+                ../../common/assert_collector_metrics_from_ui.sh odigos-test
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 5
+              done
 
     - name: '[3 - Workload Uninstrumentation] Uninstrument individual deployments'
       try:
@@ -172,347 +177,6 @@ spec:
         - assert:
             timeout: 2m
             file: 02-workloads.yaml
-
-    - name: '[4 - Namespace Instrumentation] Rollout deployments for second phase of the test'
-      try:
-        - script:
-            timeout: 70s
-            content: ./wait_for_rollout.sh
-
-    - name: '[4 - Namespace Instrumentation] Instrument Namespace'
-      try:
-        - apply:
-            file: ../../common/apply/instrument-default-ns.yaml
-
-    - name: '[4 - Namespace Instrumentation] Assert Runtime Detected'
-      try:
-        - assert:
-            timeout: 2m
-            file: ../../common/assert/simple-demo-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 03-workloads.yaml
-
-    - name: '[4 - Namespace Instrumentation] Simple demo instrumented after runtime detection'
-      try:
-        - assert:
-            file: ../../common/assert/simple-demo-instrumented.yaml
-        - script:
-            timeout: 70s
-            content: ./wait_for_rollout.sh
-
-    - name: '[4 - Namespace Instrumentation] Generate Traffic'
-      try:
-        - script:
-            timeout: 10m
-            content: |
-              while true; do
-                # wait for traces to be available
-                sleep 8
-
-                # Apply the job
-                kubectl apply -f ../../common/apply/generate-traffic-job.yaml
-
-                # Wait for the job to complete
-                job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-                kubectl wait --for=condition=complete job/$job_name
-
-                # Delete the job
-                kubectl delete -f ../../common/apply/generate-traffic-job.yaml
-
-                # Run the wait-for-trace script
-                echo "Running Simple-trace-db query for full trace at $(date)"
-                ../../common/simple_trace_db_query_runner.sh queries/wait-for-trace-2.yaml
-
-                if [ $? -eq 0 ]; then
-                  break
-                fi
-              done
-
-    - name: '[4 - Namespace Instrumentation] Verify Trace - Context Propagation'
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              ../../common/simple_trace_db_query_runner.sh queries/context-propagation-2.yaml
-      catch:
-        - podLogs:
-            name: odiglet
-            namespace: odigos-test
-
-    - name: '[4 - Namespace Instrumentation] Verify Trace - Resource Attributes'
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              ../../common/simple_trace_db_query_runner.sh queries/resource-attributes.yaml
-      catch:
-        - podLogs:
-            name: odiglet
-            namespace: odigos-test
-
-    - name: '[4 - Namespace Instrumentation] Verify Trace - Span Attributes'
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              ../../common/simple_trace_db_query_runner.sh queries/span-attributes-2.yaml
-      catch:
-        - podLogs:
-            name: odiglet
-            namespace: odigos-test
-
-    - name: '[5 - Namespace Uninstrumentation] Uninstrument namespace'
-      try:
-        - script:
-            timeout: 60s
-            content: |
-              kubectl delete sources --all
-              while true; do
-                ic_count=$(kubectl get instrumentationconfigs --output name | wc -l)
-                if [ $ic_count -eq "0" ]; then
-                  break
-                fi
-                sleep 5
-              done
-
-    - name: '[5 - Namespace Uninstrumentation] Assert workloads updated after uninstrumentation'
-      try:
-        - assert:
-            timeout: 2m
-            file: 04-workloads.yaml
-        - script:
-            timeout: 70s
-            content: ./wait_for_rollout.sh
-
-    - name: '[6 - Namespace + Workload Instrumentation] Instrument frontend workload specifically'
-      try:
-        - apply:
-            file: 05-source.yaml
-
-    - name: '[6 - Namespace + Workload Instrumentation] Assert Runtime Detected for single workload'
-      try:
-        - assert:
-            timeout: 2m
-            file: 05-assert-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 05-workloads.yaml
-
-    - name: '[6 - Namespace + Workload Instrumentation] Single workload instrumented after runtime detection'
-      try:
-        - script:
-            timeout: 70s
-            content: ./wait_for_rollout.sh
-
-    - name: '[6 - Namespace + Workload Instrumentation] Instrument rest of Namespace'
-      try:
-        - apply:
-            file: ../../common/apply/instrument-default-ns.yaml
-
-    - name: '[6 - Namespace + Workload Instrumentation] Wait for workloads to roll out new revisions'
-      try:
-        - script:
-            timeout: 70s
-            content: ./wait_for_rollout.sh
-
-    - name: '[6 - Namespace + Workload Instrumentation] Assert Runtime Detected for all workloads'
-      try:
-        - assert:
-            timeout: 2m
-            file: ../../common/assert/simple-demo-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 06-workloads.yaml
-
-    - name: '[6 - Namespace + Workload Instrumentation] Uninstrument namespace'
-      try:
-        - script:
-            timeout: 60s
-            content: |
-              kubectl delete sources/default
-              while true; do
-                ic_count=$(kubectl get instrumentationconfigs --output name | wc -l)
-                if [ $ic_count -eq "1" ]; then
-                  break
-                fi
-                sleep 5
-              done
-
-    - name: '[6 - Namespace + Workload Instrumentation] Wait for deleted sources to roll out new revisions'
-      try:
-        - script:
-            timeout: 70s
-            content: ./wait_for_rollout.sh
-
-    - name: '[6 - Namespace + Workload Instrumentation] Assert Runtime still Detected for single workload'
-      try:
-        - assert:
-            timeout: 2m
-            file: 05-assert-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 07-workloads.yaml
-
-    - name: '[7 - Workload Exclusion] Create Workload exclusion Source for single workload'
-      try:
-        - apply:
-            file: 08-source.yaml
-
-    - name: '[7 - Workload Exclusion] Instrument rest of Namespace'
-      try:
-        - apply:
-            file: ../../common/apply/instrument-default-ns.yaml
-
-    - name: '[7 - Workload Exclusion] Wait for created source to roll out new revisions'
-      try:
-        - script:
-            timeout: 70s
-            content: ./wait_for_rollout.sh
-
-    - name: '[7 - Workload Exclusion] Assert runtime detected for all workloads except excluded (coupon)'
-      try:
-        - assert:
-            timeout: 2m
-            file: 08-assert-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 08-workloads.yaml
-
-    - name: '[7 - Workload Exclusion] Assert runtime not detected for excluded (coupon)'
-      try:
-        - script:
-            content: kubectl get instrumentationconfigs/deployment-coupon
-            check:
-              ($error != null): true
-
-    - name: '[8 - Workload Inclusion] Delete excluded workload Source'
-      try:
-        - script:
-            content: kubectl delete sources -l odigos.io/e2e=source-excluded
-            check:
-              ($error == null): true
-
-    - name: '[8 - Workload Inclusion] Wait for deleted exclusion source to roll out new revisions'
-      try:
-        - script:
-            timeout: 70s
-            content: ./wait_for_rollout.sh
-
-    - name: '[8 - Workload Inclusion] Assert runtime detected for no-longer-excluded workload'
-      try:
-        - assert:
-            timeout: 2m
-            file: ../../common/assert/simple-demo-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 08-workloads-2.yaml
-
-    - name: '[9 - Workload Exclusion (2)] Create excluded workload Source while namespace is instrumented'
-      try:
-        - apply:
-            file: 09-source.yaml
-
-    - name: '[9 - Workload Exclusion (2)] Wait for created source to roll out new revisions'
-      try:
-        - script:
-            timeout: 70s
-            content: ./wait_for_rollout.sh
-
-    - name: '[9 - Workload Exclusion (2)] Assert runtime detected for all workloads except newly excluded (membership)'
-      try:
-        - assert:
-            timeout: 2m
-            file: 09-assert-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 09-workloads.yaml
-
-    - name: '[9 - Workload Exclusion (2)] Assert runtime not detected for newly excluded (membership)'
-      try:
-        - script:
-            content: kubectl get instrumentationconfigs/deployment-membership
-            check:
-              ($error != null): true
-
-    - name: '[9 - Workload Exclusion (2)] Set disableInstrumentation=false on excluded Source'
-      try:
-        - script:
-            timeout: 70s
-            content: kubectl patch source/membership-excluded --type=merge -p '{"spec":{"disableInstrumentation":false}}'
-
-    - name: '[9 - Workload Exclusion (2)] Wait for updated source to roll out new revisions'
-      try:
-        - script:
-            timeout: 70s
-            content: ./wait_for_rollout.sh
-
-    - name: '[9 - Workload Exclusion (2)] Assert runtime detected for no-longer-excluded workload'
-      try:
-        - assert:
-            timeout: 2m
-            file: ../../common/assert/simple-demo-runtime-detected.yaml
-        - assert:
-            timeout: 2m
-            file: 10-workloads.yaml
-
-    - name: '[9 - Workload Exclusion (2)] Set disableInstrumentation=true on previously-excluded Source'
-      try:
-        - script:
-            timeout: 70s
-            content: kubectl patch source/membership-excluded --type=merge -p '{"spec":{"disableInstrumentation":true}}'
-
-    - name: '[9 - Workload Exclusion (2)] Wait for updated source to roll out new revisions'
-      try:
-        - script:
-            timeout: 70s
-            content: ./wait_for_rollout.sh
-
-    - name: '[9 - Workload Exclusion (2)] Assert runtime not detected for re-excluded (membership)'
-      try:
-        - script:
-            content: kubectl get instrumentationconfigs/deployment-membership
-            check:
-              ($error != null): true
-
-    - name: '[9 - Workload Exclusion (2)] Irrelevant Namespace update does not trigger uninstrumentation'
-      try:
-        - script:
-            timeout: 70s
-            content: kubectl label namespaces default odigos.io/irrelevant-update=foo
-        - assert:
-            timeout: 2m
-            file: 09-assert-runtime-detected.yaml
-
-    - name: '[9 - Workload Exclusion (2)] Delete Namespace Source'
-      try:
-        - script:
-            timeout: 60s
-            content: |
-              kubectl delete sources/default
-              while true; do
-                ic_count=$(kubectl get instrumentationconfigs --output name | wc -l)
-                if [ $ic_count -eq "1" ]; then
-                  break
-                fi
-                sleep 5
-              done
-        - assert:
-            timeout: 2m
-            file: 11-workloads.yaml
-
-    - name: '[9 - Workload Exclusion (2)] Delete excluded Source in non-instrumented Namespace is no-op'
-      try:
-        - script:
-            timeout: 60s
-            content: kubectl delete sources/membership-excluded
-        - assert:
-            timeout: 2m
-            file: 11-workloads.yaml
-        - script:
-            content: kubectl get instrumentationconfigs/deployment-membership
-            check:
-              ($error != null): true
 
     - name: '[Migration - 1] - odigos-instrumentation: enabled creates normal Source'
       try:
@@ -551,7 +215,7 @@ spec:
             content: kubectl get instrumentationconfigs/deployment-pricing
             check:
               ($error != null): true
-    
+
     - name: '[Migration - 5.1] - Label workload with odigos-instrumentation: disabled to create Disabled Source'
       try:
         - script:

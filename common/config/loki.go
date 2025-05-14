@@ -28,7 +28,7 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 		return nil, errors.New("Loki endpoint not specified, gateway will not be configured for Loki")
 	}
 
-	url, err := lokiUrlFromInput(rawUrl)
+	lokiUrl, err := lokiUrlFromInput(rawUrl)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to parse loki endpoint, gateway will not be configured for Loki"))
 	}
@@ -41,7 +41,7 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 
 	lokiExporterName := "loki/loki-" + dest.GetID()
 	currentConfig.Exporters[lokiExporterName] = GenericMap{
-		"endpoint": url,
+		"endpoint": lokiUrl,
 	}
 
 	processorNames := []string{}

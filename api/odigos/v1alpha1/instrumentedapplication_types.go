@@ -64,7 +64,6 @@ type InstrumentedApplicationStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=odigos.io/config=1
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // InstrumentedApplication is the Schema for the instrumentedapplications API

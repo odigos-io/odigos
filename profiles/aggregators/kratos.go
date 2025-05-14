@@ -22,5 +22,7 @@ var KratosProfile = profile.Profile{
 		"size_m",
 		"allow_concurrent_agents",
 		"mount-method-k8s-host-path",
+		"avoid-java-opts-env-var",
+		"reduce-span-name-cardinality",
 	},
 }

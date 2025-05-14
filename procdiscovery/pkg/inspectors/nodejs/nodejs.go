@@ -12,21 +12,17 @@ import (
 
 type NodejsInspector struct{}
 
-var nodeExecutables = map[string]bool{
-	"npm":  true,
-	"npx":  true,
-	"yarn": true,
+var processNames = []string{
+	"node",
+	"npm",
+	"npx",
+	"yarn",
 }
 
 func (n *NodejsInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	baseExe := filepath.Base(pcx.ExePath)
 
-	if utils.IsBaseExeContainsProcessName(baseExe, "node") {
-		return common.JavascriptProgrammingLanguage, true
-	}
-
-	// Check if the executable is a recognized Node.js package manager (npm, yarn)
-	if nodeExecutables[baseExe] {
+	if utils.IsBaseExeContainsProcessName(baseExe, processNames) {
 		return common.JavascriptProgrammingLanguage, true
 	}
 
@@ -38,7 +34,7 @@ func (n *NodejsInspector) DeepScan(pcx *process.ProcessContext) (common.Programm
 }
 
 func (n *NodejsInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
-	if value, exists := pcx.Details.GetDetailedEnvsValue(process.NodeVersionConst); exists {
+	if value, exists := pcx.GetDetailedEnvsValue(process.NodeVersionConst); exists {
 		return common.GetVersion(value)
 	}
 

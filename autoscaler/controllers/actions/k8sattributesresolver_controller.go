@@ -197,6 +197,7 @@ func (r *K8sAttributesResolverReconciler) convertToUnifiedProcessor(actions *act
 	collectContainerAttributes := false
 	collectClusterUID := false
 	collectWorkloadNames := false
+	collectReplicaSetAttributes := false
 
 	// create a union of all the actions' configuration to one processor
 	for actionIndex := range actions.Items {
@@ -208,6 +209,7 @@ func (r *K8sAttributesResolverReconciler) convertToUnifiedProcessor(actions *act
 
 		collectContainerAttributes = (collectContainerAttributes || currentAction.Spec.CollectContainerAttributes)
 		collectWorkloadUID = (collectWorkloadUID || currentAction.Spec.CollectWorkloadUID)
+		collectReplicaSetAttributes = (collectReplicaSetAttributes || currentAction.Spec.CollectReplicaSetAttributes)
 		collectClusterUID = (collectClusterUID || currentAction.Spec.CollectClusterUID)
 		// traces should already contain workload name (if they originated from odigos)
 		// logs collected from filelog receiver will lack this info thus needs to be added
@@ -233,9 +235,15 @@ func (r *K8sAttributesResolverReconciler) convertToUnifiedProcessor(actions *act
 
 	if collectWorkloadUID {
 		config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, workloadUIDAttributes...)
+		if collectReplicaSetAttributes {
+			config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, string(semconv.K8SReplicaSetUIDKey))
+		}
 	}
 	if collectWorkloadNames {
 		config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, workloadNameAttributes...)
+	}
+	if collectReplicaSetAttributes {
+		config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, string(semconv.K8SReplicaSetNameKey))
 	}
 	if collectContainerAttributes {
 		config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, containerAttributes...)
