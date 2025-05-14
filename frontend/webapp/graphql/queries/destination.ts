@@ -53,9 +53,9 @@ export const GET_POTENTIAL_DESTINATIONS = gql`
 `;
 
 export const GET_DESTINATIONS = gql`
-  query GetDestinations($streamName: String!) {
+  query GetDestinations {
     computePlatform {
-      destinations(streamName: $streamName) {
+      destinations {
         id
         name
         streamNames

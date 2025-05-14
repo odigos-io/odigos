@@ -1,10 +1,13 @@
 package graph
 
 import (
+	"strings"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,7 +32,7 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	return &str
 }
 
-func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationConfig) *model.K8sActualSource {
+func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationConfig, source v1alpha1.Source) *model.K8sActualSource {
 	var containers []*model.SourceContainer
 
 	// Map the containers runtime details
@@ -59,13 +62,25 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 		})
 	}
 
+	streamNames := make([]*string, 0)
+	for labelKey, labelValue := range source.Labels {
+		if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
+			streamName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+			streamNames = append(streamNames, &streamName)
+		}
+	}
+
+	selected := true
+
 	// Return the converted K8sActualSource object
 	return &model.K8sActualSource{
 		Namespace:         instruConfig.Namespace,
 		Kind:              k8sKindToGql(instruConfig.OwnerReferences[0].Kind),
 		Name:              instruConfig.OwnerReferences[0].Name,
-		NumberOfInstances: nil,
+		Selected:          &selected,
+		StreamNames:       streamNames,
 		OtelServiceName:   &instruConfig.Spec.ServiceName,
+		NumberOfInstances: nil,
 		Containers:        containers,
 		Conditions:        convertConditions(instruConfig.Status.Conditions),
 	}

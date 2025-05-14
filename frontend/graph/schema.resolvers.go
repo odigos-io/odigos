@@ -116,7 +116,7 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 }
 
 // Sources is the resolver for the sources field.
-func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string, streamName string) (*model.PaginatedSources, error) {
+func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error) {
 	limit, _ := services.GetPageLimit(ctx)
 	icList, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
 		Limit:    int64(limit),
@@ -138,10 +138,9 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 		}
 	}
 
-	// Get Source objects to compare with streamName
+	// Get Source objects to extract stream names
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(len(icList.Items))
-
 	// Keep order based on idx
 	srcList := make([]*v1alpha1.Source, len(icList.Items))
 	for idx, ic := range icList.Items {
@@ -154,22 +153,17 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 			if err != nil {
 				return err
 			}
-
 			srcList[idxCopy] = src
 			return nil
 		})
 	}
-
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
 	var actualSources []*model.K8sActualSource
 	for idx, ic := range icList.Items {
-		// If matches streamName, return the source
-		if streamName == "" || srcList[idx].Labels[k8sconsts.SourceGroupLabelPrefix+streamName] == "true" {
-			actualSources = append(actualSources, instrumentationConfigToActualSource(ic))
-		}
+		actualSources = append(actualSources, instrumentationConfigToActualSource(ic, *srcList[idx]))
 	}
 
 	return &model.PaginatedSources{
@@ -179,7 +173,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 }
 
 // Source is the resolver for the source field.
-func (r *computePlatformResolver) Source(ctx context.Context, obj *model.ComputePlatform, sourceID model.K8sSourceID, streamName string) (*model.K8sActualSource, error) {
+func (r *computePlatformResolver) Source(ctx context.Context, obj *model.ComputePlatform, sourceID model.K8sSourceID) (*model.K8sActualSource, error) {
 	ns := sourceID.Namespace
 	kind := sourceID.Kind
 	name := sourceID.Name
@@ -192,27 +186,23 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 		return nil, fmt.Errorf("InstrumentationConfig not found for %s/%s in namespace %s", kind, name, ns)
 	}
 
-	// Get Source object to compare with streamName
+	// Get Source object to extract stream names
 	src, err := services.GetSourceCRD(ctx, ns, name, services.WorkloadKind(kind))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
 
-	// If matches streamName, return the source
-	if streamName == "" || src.Labels[k8sconsts.SourceGroupLabelPrefix+streamName] == "true" {
-		payload := instrumentationConfigToActualSource(*ic)
-		condition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
-		if condition.Status != "" {
-			payload.Conditions = append(payload.Conditions, &condition)
-		}
-
-		return payload, nil
+	payload := instrumentationConfigToActualSource(*ic, *src)
+	condition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
+	if condition.Status != "" {
+		payload.Conditions = append(payload.Conditions, &condition)
 	}
-	return nil, fmt.Errorf("Source found but not included in group %s", streamName)
+
+	return payload, nil
 }
 
 // Destinations is the resolver for the destinations field.
-func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.ComputePlatform, streamName string) ([]*model.Destination, error) {
+func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.ComputePlatform) ([]*model.Destination, error) {
 	ns := env.GetCurrentNamespace()
 
 	dests, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
@@ -222,17 +212,14 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 
 	var destinations []*model.Destination
 	for _, dest := range dests.Items {
-		// Return the destination only if it matches the streamName, the streamName is empty, or the destination has no source selector
-		if streamName == "" || dest.Spec.SourceSelector == nil || dest.Spec.SourceSelector.Groups == nil || len(dest.Spec.SourceSelector.Groups) == 0 || services.ArrayContains(dest.Spec.SourceSelector.Groups, streamName) {
-			secretFields, err := services.GetDestinationSecretFields(ctx, ns, &dest)
-			if err != nil {
-				return nil, err
-			}
-
-			// Convert the k8s destination format to the expected endpoint format
-			endpointDest := services.K8sDestinationToEndpointFormat(dest, secretFields)
-			destinations = append(destinations, &endpointDest)
+		secretFields, err := services.GetDestinationSecretFields(ctx, ns, &dest)
+		if err != nil {
+			return nil, err
 		}
+
+		// Convert the k8s destination format to the expected endpoint format
+		endpointDest := services.K8sDestinationToEndpointFormat(dest, secretFields)
+		destinations = append(destinations, &endpointDest)
 	}
 
 	return destinations, nil

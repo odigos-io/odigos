@@ -34,11 +34,11 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     addNotification({ type, title, message, crdType: EntityTypes.Destination, target: id ? getSseTargetFromId(id, EntityTypes.Destination) : undefined, hideFromHistory });
   };
 
-  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }, { streamName: string }>(GET_DESTINATIONS);
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }, {}>(GET_DESTINATIONS);
 
   const fetchDestinations = async () => {
     setEntitiesLoading(EntityTypes.Destination, true);
-    const { error, data } = await fetchAll({ variables: { streamName: selectedStreamName } });
+    const { error, data } = await fetchAll();
 
     if (error) {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
@@ -108,8 +108,8 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
   };
 
   useEffect(() => {
-    if (selectedStreamName && !destinations.length && !destinationsLoading) fetchDestinations();
-  }, [selectedStreamName]);
+    if (!destinations.length && !destinationsLoading) fetchDestinations();
+  }, []);
 
   return {
     destinations,
