@@ -4,7 +4,6 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
@@ -49,48 +47,19 @@ and apply any required migrations and adaptations.`,
 			os.Exit(1)
 		}
 
-		// update the config on upgrade
 		config.ConfigVersion += 1
 		if uiMode != "" {
 			config.UiMode = common.UiMode(uiMode)
 		}
 
-		// Migrate images from prior to registry.odigos.io
 		if config.ImagePrefix == "" {
 			config.ImagePrefix = k8sconsts.OdigosImagePrefix
 		}
 
-		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
-		if err != nil {
-			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
-			os.Exit(1)
-		}
-
-		managerOpts := resourcemanager.ManagerOpts{
-			ImageReferences: GetImageReferences(currentTier, openshiftEnabled),
-		}
-
-		onPremTokenSet := cmd.Flag("onprem-token").Changed
-		versionSet := cmd.Flag("version").Changed
-
-		// CASE 1: Only onprem-token set, not version -> just apply
-		if onPremTokenSet && !versionSet {
-			fmt.Println("Applying Odigos on-prem deployment (no version upgrade)...")
-
-			resourceManagers := resources.CreateResourceManagers(
-				client, ns, currentTier, &odigosOnPremToken, config, versionFlag,
-				installationmethod.K8sInstallationMethodOdigosCli, managerOpts,
-			)
-			applyAndClean(ctx, client, resourceManagers, config, ns, "Applying")
-			return
-		}
-
-		// CASE 2: apply with version (not handle onprem-token yet)
 		var operation string
+		skipVersionCheck := cmd.Flag("skip-version-check") == nil || !cmd.Flag("skip-version-check").Changed
 
-		skipVersionCheckFlag := cmd.Flag("skip-version-check")
-		if skipVersionCheckFlag == nil || !skipVersionCheckFlag.Changed {
-
+		if skipVersionCheck {
 			cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 			if err != nil {
 				fmt.Println("Odigos upgrade failed - unable to read the current Odigos version for migration")
@@ -108,11 +77,13 @@ and apply any required migrations and adaptations.`,
 				fmt.Println("Odigos upgrade failed - unable to parse the current Odigos version for migration")
 				os.Exit(1)
 			}
+
 			if sourceVersion.LessThan(version.Must(version.NewVersion("1.0.0"))) {
-				fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0' current version is %s.\n", currOdigosVersion)
-				fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.\n")
+				fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0'. Current version: %s\n", currOdigosVersion)
+				fmt.Println("To upgrade, please use 'odigos uninstall' and 'odigos install'.")
 				os.Exit(1)
 			}
+
 			targetVersion, err := version.NewVersion(versionFlag)
 			if err != nil {
 				fmt.Println("Odigos upgrade failed - unable to parse the target Odigos version for migration")
@@ -123,10 +94,10 @@ and apply any required migrations and adaptations.`,
 				fmt.Printf("Odigos version is already '%s', synching installation\n", versionFlag)
 				operation = "Synching"
 			} else if sourceVersion.GreaterThan(targetVersion) {
-				fmt.Printf("About to DOWNGRADE Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
+				fmt.Printf("About to DOWNGRADE Odigos from '%s' to '%s'\n", sourceVersion, targetVersion)
 				operation = "Downgrading"
 			} else {
-				fmt.Printf("About to upgrade Odigos version from '%s' (current) to '%s' (target)\n", currOdigosVersion, versionFlag)
+				fmt.Printf("About to upgrade Odigos from '%s' to '%s'\n", sourceVersion, targetVersion)
 				operation = "Upgrading"
 			}
 
@@ -141,18 +112,45 @@ and apply any required migrations and adaptations.`,
 			operation = "Forcefully upgrading"
 		}
 
-		// CASE 3: Upgrade flow with optional onprem-token
-		var tokenPtr *string
+		onPremTokenSet := cmd.Flag("onprem-token").Changed
+		var currentTier common.OdigosTier
+		var managerOpts resourcemanager.ManagerOpts
+
 		if onPremTokenSet {
-			tokenPtr = &odigosOnPremToken
+			currentTier = common.OnPremOdigosTier
+		} else {
+			currentTier, err = odigospro.GetCurrentOdigosTier(ctx, client, ns)
+			if err != nil {
+				fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
+				os.Exit(1)
+			}
 		}
 
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, tokenPtr, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
-		applyAndClean(ctx, client, resourceManagers, config, ns, operation)
+		managerOpts = resourcemanager.ManagerOpts{
+			ImageReferences: GetImageReferences(currentTier, openshiftEnabled),
+		}
+
+		resourceManagers := resources.CreateResourceManagers(
+			client, ns, currentTier, &odigosOnPremToken, config, versionFlag,
+			installationmethod.K8sInstallationMethodOdigosCli, managerOpts,
+		)
+
+		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
+		if err != nil {
+			fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")
+			os.Exit(1)
+		}
+
+		err = resources.DeleteOldOdigosSystemObjects(ctx, client, ns, config)
+		if err != nil {
+			fmt.Println("Odigos upgrade failed - unable to cleanup old Odigos resources.")
+			os.Exit(1)
+		}
 	},
 	Example: `
 # Upgrade Odigos version
-odigos upgrade
+odigos upgrade --version v1.0.123
+odigos upgrade --onprem-token <token> --version v1.0.123
 `,
 }
 
@@ -160,8 +158,7 @@ func init() {
 	rootCmd.AddCommand(upgradeCmd)
 	upgradeCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	updateCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", "", "set the UI mode (one-of: normal, readonly)")
-	upgradeCmd.Flags().StringVarP(&odigosOnPremToken, "onprem-token", "", "", "authentication token for odigos enterprise on-premises")
-	
+	upgradeCmd.Flags().StringVar(&odigosOnPremToken, "onprem-token", "", "authentication token for odigos enterprise on-premises")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
@@ -169,19 +166,5 @@ func init() {
 		upgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "for development purposes only")
 		upgradeCmd.Flags().Bool("skip-version-check", false, "skip the version check and install any version tag provided. used for tests")
 		updateCmd.Flags().MarkHidden("skip-version-check")
-	}
-}
-
-func applyAndClean(ctx context.Context, client *kube.Client, resourceManagers []resourcemanager.ResourceManager, config *common.OdigosConfiguration, ns, operation string) {
-	err := resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
-	if err != nil {
-		fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")
-		os.Exit(1)
-	}
-
-	err = resources.DeleteOldOdigosSystemObjects(ctx, client, ns, config)
-	if err != nil {
-		fmt.Println("Odigos upgrade failed - unable to cleanup old Odigos resources.")
-		os.Exit(1)
 	}
 }
