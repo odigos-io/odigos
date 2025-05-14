@@ -189,13 +189,11 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		os.Exit(-1)
 	}
 
-	odigletInstalledLabel := k8snode.DetermineNodeOdigletInstalledLabelByTier()
-
-	log.Logger.V(0).Info("Adding Label to Node", "odigletLabel", odigletInstalledLabel)
-
-	if err := k8snode.AddLabelToNode(clientset, nn, odigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
-		log.Logger.Error(err, "Failed to add Odiglet installed label to the node")
+	if err := k8snode.PrepareNodeForOdigosInstallation(clientset, nn); err != nil {
+		log.Logger.Error(err, "Failed to prepare node for Odigos installation")
 		os.Exit(-1)
+	} else {
+		log.Logger.Info("Successfully prepared node for Odigos installation")
 	}
 
 	// SELinux settings should be applied last. This function chroot's to use the host's PATH for
