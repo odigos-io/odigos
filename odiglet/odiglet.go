@@ -81,7 +81,6 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 
 // Run starts the Odiglet components and blocks until the context is cancelled, or a critical error occurs.
 func (o *Odiglet) Run(ctx context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
 	g, groupCtx := errgroup.WithContext(ctx)
 
 	if err := o.criClient.Connect(ctx); err != nil {
@@ -104,18 +103,15 @@ func (o *Odiglet) Run(ctx context.Context) {
 	})
 
 	// Start device manager
-	// the device manager library doesn't support passing a context,
-	// however, internally it uses a context to cancel the device manager once SIGTERM or SIGINT is received.
-	// We run it outside of the error group to avoid blocking on Wait() in case of a fatal error.
-	go func() {
-		err := runDeviceManager(o.clientset, o.deviceInjectionCallbacks)
+	g.Go(func() error {
+		err := runDeviceManager(groupCtx, o.clientset, o.deviceInjectionCallbacks)
 		if err != nil {
-			log.Logger.Error(err, "Device manager exited with error")
-			cancel()
-		} else {
-			log.Logger.V(0).Info("Device manager exited")
+			log.Logger.Error(err, "Failed to run device manager")
 		}
-	}()
+
+		log.Logger.V(0).Info("Device manager exited")
+		return err
+	})
 
 	g.Go(func() error {
 		err := o.ebpfManager.Run(groupCtx)
@@ -158,18 +154,15 @@ func (o *Odiglet) Run(ctx context.Context) {
 	}
 }
 
-func runDeviceManager(clientset *kubernetes.Clientset, otelSdkLsf instrumentation.OtelSdksLsf) error {
+func runDeviceManager(ctx context.Context, clientset *kubernetes.Clientset, otelSdkLsf instrumentation.OtelSdksLsf) error {
 	log.Logger.V(0).Info("Starting device manager")
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	lister, err := instrumentation.NewLister(ctx, clientset, otelSdkLsf)
 	if err != nil {
 		return fmt.Errorf("failed to create device manager lister %w", err)
 	}
 
 	manager := dpm.NewManager(lister, log.Logger)
-	manager.Run()
+	manager.Run(ctx)
 	return nil
 }
 
