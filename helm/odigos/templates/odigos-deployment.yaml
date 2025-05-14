@@ -3,6 +3,9 @@ kind: ConfigMap
 metadata:
   name: odigos-deployment
   namespace: '{{ .Release.Namespace }}'
+  labels:
+    odigos.io/config: '1'
+    odigos.io/system-object: 'true'
 data:
   ODIGOS_VERSION: '{{ .Values.image.tag | default .Chart.AppVersion }}'
   ODIGOS_TIER: '{{- if .Values.onPremToken }}onprem{{- else }}community{{- end }}'
