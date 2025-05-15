@@ -1,5 +1,5 @@
 image:
-  tag: 'v1.0.186'
+  tag: ''
 imagePullSecrets: []
 
 # By default, images are pulled from odigos registry at `registry.odigos.io`
