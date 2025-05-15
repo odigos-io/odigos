@@ -3,6 +3,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -10,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 func k8sKindToGql(k8sResourceKind string) model.K8sResourceKind {
@@ -69,6 +71,9 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 	}
 
 	conditions := append(instruConfig.Status.Conditions, workloadConditions...)
+	sort.Slice(conditions, func(i, j int) bool {
+		return conditions[i].LastTransitionTime.Before(&conditions[j].LastTransitionTime)
+	})
 
 	// Return the converted K8sActualSource object
 	return &model.K8sActualSource{
@@ -152,7 +157,12 @@ func convertConditions(conditions []v1.Condition) []*model.Condition {
 			case v1.ConditionUnknown:
 				status = model.ConditionStatusLoading
 			case v1.ConditionTrue:
-				status = model.ConditionStatusSuccess
+				if c.Type == string(appsv1.DeploymentReplicaFailure) {
+					status = model.ConditionStatusError
+				} else {
+					status = model.ConditionStatusSuccess
+				}
+				
 			case v1.ConditionFalse:
 				status = model.ConditionStatusError
 			}
