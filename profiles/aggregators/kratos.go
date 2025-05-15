@@ -12,13 +12,14 @@ var KratosProfile = profile.Profile{
 		"specific presets for on-premises installations.",
 	ManifestNames: []string{
 		"kratos-attr-replicaset.yaml",
+		"kratos-hostname-as-podname.yaml",
+		"kratos-reduce-span-name-cardinality.yaml",
+		"kratos-category-attributes.yaml",
 	},
 	Dependencies: []common.ProfileName{
 		"db-payload-collection",
 		"semconv",
-		"category-attributes",
 		"copy-scope",
-		"hostname-as-podname",
 		"code-attributes",
 		"query-operation-detector",
 		"small-batches",
@@ -26,6 +27,5 @@ var KratosProfile = profile.Profile{
 		"allow_concurrent_agents",
 		"mount-method-k8s-host-path",
 		"avoid-java-opts-env-var",
-		"reduce-span-name-cardinality",
 	},
 }

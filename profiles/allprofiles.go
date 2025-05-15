@@ -15,15 +15,12 @@ var AllProfiles = []profile.Profile{
 	aggregators.KratosProfile,
 	aggregators.GreatwallProfile,
 
-	attributes.CategoryAttributesProfile,
 	attributes.CodeAttributesProfile,
 	attributes.CopyScopeProfile,
-	attributes.HostnameAsPodNameProfile,
 	attributes.FullPayloadCollectionProfile,
 	attributes.DbPayloadCollectionProfile,
 	attributes.QueryOperationDetector,
 	attributes.SemconvUpgraderProfile,
-	attributes.ReduceSpanNameCardinalityProfile,
 
 	instrumentation.AllowConcurrentAgents,
 	instrumentation.JavaEbpfInstrumentationsProfile,

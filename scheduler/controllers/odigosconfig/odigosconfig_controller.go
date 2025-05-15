@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	odigosactionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -208,6 +209,18 @@ func (r *odigosConfigController) applyProfileManifests(ctx context.Context, effe
 	}
 	for i := range instrumentationRulesList.Items {
 		err = r.Client.Delete(ctx, &instrumentationRulesList.Items[i])
+		if err != nil {
+			return err
+		}
+	}
+
+	k8sAttributesList := odigosactionsv1alpha1.K8sAttributesResolverList{}
+	err = r.Client.List(ctx, &k8sAttributesList, listOptions)
+	if err != nil {
+		return err
+	}
+	for i := range k8sAttributesList.Items {
+		err = r.Client.Delete(ctx, &k8sAttributesList.Items[i])
 		if err != nil {
 			return err
 		}
