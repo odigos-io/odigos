@@ -92,7 +92,7 @@ type K8sActualSource {
   namespace: String!
   name: String!
   kind: K8sResourceKind!
-  streamNames: [String]!
+  dataStreamNames: [String]!
   numberOfInstances: Int
   selected: Boolean
   otelServiceName: String
@@ -305,7 +305,7 @@ type Destination {
   id: ID!
   type: String!
   name: String!
-  streamNames: [String]!
+  dataStreamNames: [String]!
   exportedSignals: ExportedSignals!
   fields: String!
   destinationType: DestinationTypesCategoryItem!

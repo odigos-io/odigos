@@ -184,7 +184,7 @@ type Destination struct {
 	ID              string                        `json:"id"`
 	Type            string                        `json:"type"`
 	Name            string                        `json:"name"`
-	StreamNames     []*string                     `json:"streamNames"`
+	DataStreamNames []*string                     `json:"dataStreamNames"`
 	ExportedSignals *ExportedSignals              `json:"exportedSignals"`
 	Fields          string                        `json:"fields"`
 	DestinationType *DestinationTypesCategoryItem `json:"destinationType"`
@@ -373,7 +373,7 @@ type K8sActualSource struct {
 	Namespace         string             `json:"namespace"`
 	Name              string             `json:"name"`
 	Kind              K8sResourceKind    `json:"kind"`
-	StreamNames       []*string          `json:"streamNames"`
+	DataStreamNames   []*string          `json:"dataStreamNames"`
 	NumberOfInstances *int               `json:"numberOfInstances,omitempty"`
 	Selected          *bool              `json:"selected,omitempty"`
 	OtelServiceName   *string            `json:"otelServiceName,omitempty"`

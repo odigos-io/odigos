@@ -5,7 +5,7 @@ export const CREATE_DESTINATION = gql`
     createNewDestination(destination: $destination) {
       id
       name
-      streamNames
+      dataStreamNames
       fields
       exportedSignals {
         logs

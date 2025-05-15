@@ -90,7 +90,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
         <OverviewHeader />
 
         <ContentWithActions>
-          <DataFlowActionsMenu addEntity={entityType} onClickNewStream={() => router.push(ROUTES.CHOOSE_STREAM)} />
+          <DataFlowActionsMenu addEntity={entityType} onClickNewDataStream={() => router.push(ROUTES.CHOOSE_STREAM)} />
           <ContentUnderActions>
             <SideNav defaultSelectedId={selectedId} onClickId={onClickId} />
             {children}

@@ -336,9 +336,9 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 			return err
 		}
 
-		streamNames := GetSourceStreamNames(source)
+		dataStreamNames := GetSourceDataStreamNames(source)
 
-		if len(streamNames) > 1 {
+		if len(dataStreamNames) > 1 {
 			_, err = RemoveSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName)
 			return err
 		}
@@ -350,9 +350,9 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		// we need to delete the workload source,
 		// or remove the relevant data-stream label (if source is in multiple streams)
 
-		streamNames := GetSourceStreamNames(source)
+		dataStreamNames := GetSourceDataStreamNames(source)
 
-		if len(streamNames) > 1 {
+		if len(dataStreamNames) > 1 {
 			_, err = RemoveSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName)
 			return err
 		}
@@ -531,15 +531,15 @@ func GetInstrumentationInstancesHealthConditions(ctx context.Context) ([]*model.
 	return result, nil
 }
 
-func GetSourceStreamNames(source *v1alpha1.Source) []*string {
-	streamNames := make([]*string, 0)
+func GetSourceDataStreamNames(source *v1alpha1.Source) []*string {
+	dataStreamNames := make([]*string, 0)
 
 	for labelKey, labelValue := range source.Labels {
 		if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
 			streamName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
-			streamNames = append(streamNames, &streamName)
+			dataStreamNames = append(dataStreamNames, &streamName)
 		}
 	}
 
-	return streamNames
+	return dataStreamNames
 }

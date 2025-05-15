@@ -156,12 +156,12 @@ type ComplexityRoot struct {
 
 	Destination struct {
 		Conditions      func(childComplexity int) int
+		DataStreamNames func(childComplexity int) int
 		DestinationType func(childComplexity int) int
 		ExportedSignals func(childComplexity int) int
 		Fields          func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Name            func(childComplexity int) int
-		StreamNames     func(childComplexity int) int
 		Type            func(childComplexity int) int
 	}
 
@@ -288,13 +288,13 @@ type ComplexityRoot struct {
 	K8sActualSource struct {
 		Conditions        func(childComplexity int) int
 		Containers        func(childComplexity int) int
+		DataStreamNames   func(childComplexity int) int
 		Kind              func(childComplexity int) int
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
 		NumberOfInstances func(childComplexity int) int
 		OtelServiceName   func(childComplexity int) int
 		Selected          func(childComplexity int) int
-		StreamNames       func(childComplexity int) int
 	}
 
 	K8sAnnotationAttribute struct {
@@ -1077,6 +1077,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Destination.Conditions(childComplexity), true
 
+	case "Destination.dataStreamNames":
+		if e.complexity.Destination.DataStreamNames == nil {
+			break
+		}
+
+		return e.complexity.Destination.DataStreamNames(childComplexity), true
+
 	case "Destination.destinationType":
 		if e.complexity.Destination.DestinationType == nil {
 			break
@@ -1111,13 +1118,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Destination.Name(childComplexity), true
-
-	case "Destination.streamNames":
-		if e.complexity.Destination.StreamNames == nil {
-			break
-		}
-
-		return e.complexity.Destination.StreamNames(childComplexity), true
 
 	case "Destination.type":
 		if e.complexity.Destination.Type == nil {
@@ -1644,6 +1644,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sActualSource.Containers(childComplexity), true
 
+	case "K8sActualSource.dataStreamNames":
+		if e.complexity.K8sActualSource.DataStreamNames == nil {
+			break
+		}
+
+		return e.complexity.K8sActualSource.DataStreamNames(childComplexity), true
+
 	case "K8sActualSource.kind":
 		if e.complexity.K8sActualSource.Kind == nil {
 			break
@@ -1685,13 +1692,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sActualSource.Selected(childComplexity), true
-
-	case "K8sActualSource.streamNames":
-		if e.complexity.K8sActualSource.StreamNames == nil {
-			break
-		}
-
-		return e.complexity.K8sActualSource.StreamNames(childComplexity), true
 
 	case "K8sAnnotationAttribute.annotationKey":
 		if e.complexity.K8sAnnotationAttribute.AnnotationKey == nil {
@@ -5456,8 +5456,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_source(ctx context.Cont
 				return ec.fieldContext_K8sActualSource_name(ctx, field)
 			case "kind":
 				return ec.fieldContext_K8sActualSource_kind(ctx, field)
-			case "streamNames":
-				return ec.fieldContext_K8sActualSource_streamNames(ctx, field)
+			case "dataStreamNames":
+				return ec.fieldContext_K8sActualSource_dataStreamNames(ctx, field)
 			case "numberOfInstances":
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 			case "selected":
@@ -5531,8 +5531,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_destinations(_ context.
 				return ec.fieldContext_Destination_type(ctx, field)
 			case "name":
 				return ec.fieldContext_Destination_name(ctx, field)
-			case "streamNames":
-				return ec.fieldContext_Destination_streamNames(ctx, field)
+			case "dataStreamNames":
+				return ec.fieldContext_Destination_dataStreamNames(ctx, field)
 			case "exportedSignals":
 				return ec.fieldContext_Destination_exportedSignals(ctx, field)
 			case "fields":
@@ -7098,8 +7098,8 @@ func (ec *executionContext) fieldContext_Destination_name(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Destination_streamNames(ctx context.Context, field graphql.CollectedField, obj *model.Destination) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Destination_streamNames(ctx, field)
+func (ec *executionContext) _Destination_dataStreamNames(ctx context.Context, field graphql.CollectedField, obj *model.Destination) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Destination_dataStreamNames(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -7112,7 +7112,7 @@ func (ec *executionContext) _Destination_streamNames(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.StreamNames, nil
+		return obj.DataStreamNames, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7129,7 +7129,7 @@ func (ec *executionContext) _Destination_streamNames(ctx context.Context, field 
 	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Destination_streamNames(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Destination_dataStreamNames(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Destination",
 		Field:      field,
@@ -10635,8 +10635,8 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_sources(_ context.Co
 				return ec.fieldContext_K8sActualSource_name(ctx, field)
 			case "kind":
 				return ec.fieldContext_K8sActualSource_kind(ctx, field)
-			case "streamNames":
-				return ec.fieldContext_K8sActualSource_streamNames(ctx, field)
+			case "dataStreamNames":
+				return ec.fieldContext_K8sActualSource_dataStreamNames(ctx, field)
 			case "numberOfInstances":
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 			case "selected":
@@ -10786,8 +10786,8 @@ func (ec *executionContext) fieldContext_K8sActualSource_kind(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sActualSource_streamNames(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sActualSource_streamNames(ctx, field)
+func (ec *executionContext) _K8sActualSource_dataStreamNames(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sActualSource_dataStreamNames(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10800,7 +10800,7 @@ func (ec *executionContext) _K8sActualSource_streamNames(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.StreamNames, nil
+		return obj.DataStreamNames, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10817,7 +10817,7 @@ func (ec *executionContext) _K8sActualSource_streamNames(ctx context.Context, fi
 	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sActualSource_streamNames(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sActualSource_dataStreamNames(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sActualSource",
 		Field:      field,
@@ -12478,8 +12478,8 @@ func (ec *executionContext) fieldContext_Mutation_createNewDestination(ctx conte
 				return ec.fieldContext_Destination_type(ctx, field)
 			case "name":
 				return ec.fieldContext_Destination_name(ctx, field)
-			case "streamNames":
-				return ec.fieldContext_Destination_streamNames(ctx, field)
+			case "dataStreamNames":
+				return ec.fieldContext_Destination_dataStreamNames(ctx, field)
 			case "exportedSignals":
 				return ec.fieldContext_Destination_exportedSignals(ctx, field)
 			case "fields":
@@ -12551,8 +12551,8 @@ func (ec *executionContext) fieldContext_Mutation_updateDestination(ctx context.
 				return ec.fieldContext_Destination_type(ctx, field)
 			case "name":
 				return ec.fieldContext_Destination_name(ctx, field)
-			case "streamNames":
-				return ec.fieldContext_Destination_streamNames(ctx, field)
+			case "dataStreamNames":
+				return ec.fieldContext_Destination_dataStreamNames(ctx, field)
 			case "exportedSignals":
 				return ec.fieldContext_Destination_exportedSignals(ctx, field)
 			case "fields":
@@ -14524,8 +14524,8 @@ func (ec *executionContext) fieldContext_PaginatedSources_items(_ context.Contex
 				return ec.fieldContext_K8sActualSource_name(ctx, field)
 			case "kind":
 				return ec.fieldContext_K8sActualSource_kind(ctx, field)
-			case "streamNames":
-				return ec.fieldContext_K8sActualSource_streamNames(ctx, field)
+			case "dataStreamNames":
+				return ec.fieldContext_K8sActualSource_dataStreamNames(ctx, field)
 			case "numberOfInstances":
 				return ec.fieldContext_K8sActualSource_numberOfInstances(ctx, field)
 			case "selected":
@@ -22281,8 +22281,8 @@ func (ec *executionContext) _Destination(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "streamNames":
-			out.Values[i] = ec._Destination_streamNames(ctx, field, obj)
+		case "dataStreamNames":
+			out.Values[i] = ec._Destination_dataStreamNames(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -23224,8 +23224,8 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "streamNames":
-			out.Values[i] = ec._K8sActualSource_streamNames(ctx, field, obj)
+		case "dataStreamNames":
+			out.Values[i] = ec._K8sActualSource_dataStreamNames(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

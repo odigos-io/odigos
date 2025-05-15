@@ -33,7 +33,7 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 
 func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationConfig, source v1alpha1.Source) *model.K8sActualSource {
 	selected := true
-	streamNames := services.GetSourceStreamNames(&source)
+	dataStreamNames := services.GetSourceDataStreamNames(&source)
 	var containers []*model.SourceContainer
 
 	// Map the containers runtime details
@@ -69,7 +69,7 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 		Kind:              k8sKindToGql(instruConfig.OwnerReferences[0].Kind),
 		Name:              instruConfig.OwnerReferences[0].Name,
 		Selected:          &selected,
-		StreamNames:       streamNames,
+		DataStreamNames:   dataStreamNames,
 		OtelServiceName:   &instruConfig.Spec.ServiceName,
 		NumberOfInstances: nil,
 		Containers:        containers,
