@@ -442,12 +442,12 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@^0.0.25":
-  version "0.0.25"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.25.tgz#8829e64262f2ceedc38e1618dcdcd5fba1860fb5"
-  integrity sha512-sdd8l0LSlsxpzLizR69ijlG37IDztszyaqSMRagnseR5tpK2bu8vc5itHAryGOsi2P9RLqyJafFdp+hH3ry5dw==
+"@odigos/ui-kit@^0.0.26":
+  version "0.0.26"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.26.tgz#64cfad6265cae8f69c8e669f380bef0297efdac1"
+  integrity sha512-tIuRUY0W0kN8lwr7NOvJcVg4YxxUb5txbq1T5ia5WjAD+UCwLbF9rsfi2c59wCmJ511dpkTJYFE9SZB8mWRZuw==
   dependencies:
-    "@xyflow/react" "^12.5.5"
+    "@xyflow/react" "^12.6.3"
     javascript-time-ago "^2.5.11"
     lottie-react "^2.4.1"
     prism-react-renderer "^2.4.1"
@@ -455,7 +455,7 @@
     react-dom "^19.1.0"
     react-error-boundary "^5.0.0"
     styled-components "6.1.15"
-    zustand "^5.0.3"
+    zustand "^5.0.4"
 
 "@rtsao/scc@^1.1.0":
   version "1.1.0"
@@ -784,19 +784,19 @@
   dependencies:
     tslib "^2.3.0"
 
-"@xyflow/react@^12.5.5":
-  version "12.5.5"
-  resolved "https://registry.yarnpkg.com/@xyflow/react/-/react-12.5.5.tgz#8533fdec4f178ff65a7d20d125abc4b5cef257d5"
-  integrity sha512-mAtHuS4ktYBL1ph5AJt7X/VmpzzlmQBN3+OXxyT/1PzxwrVto6AKc3caerfxzwBsg3cA4J8lB63F3WLAuPMmHw==
+"@xyflow/react@^12.6.3":
+  version "12.6.3"
+  resolved "https://registry.yarnpkg.com/@xyflow/react/-/react-12.6.3.tgz#befe0008aa53928bca3313ba6fc981f791c860a8"
+  integrity sha512-uZC/mkmNCPu6yJkgaxZQ939LRtUZSeB5yB7z1kkl/ivlYQp+bZnkNsE3CRsTSnWEj20Ic4r+FeIsmfnvSsDvZQ==
   dependencies:
-    "@xyflow/system" "0.0.55"
+    "@xyflow/system" "0.0.60"
     classcat "^5.0.3"
     zustand "^4.4.0"
 
-"@xyflow/system@0.0.55":
-  version "0.0.55"
-  resolved "https://registry.yarnpkg.com/@xyflow/system/-/system-0.0.55.tgz#fc02fb9a2f9b3de3b878b2fe9b02a0e7865f1819"
-  integrity sha512-6cngWlE4oMXm+zrsbJxerP3wUNUFJcv/cE5kDfu0qO55OWK3fAeSOLW9td3xEVQlomjIW5knds1MzeMnBeCfqw==
+"@xyflow/system@0.0.60":
+  version "0.0.60"
+  resolved "https://registry.yarnpkg.com/@xyflow/system/-/system-0.0.60.tgz#64a42a9476746986166797adb411cb0cb08bd4fb"
+  integrity sha512-vPewwUwxYfbt6+Q6uuWJAiJam6AfpqNEDsZVWZAH9XC4P644AIVlYbr/5OC6s6oQPvbGjCSTIksAuN+lBPHTgg==
   dependencies:
     "@types/d3-drag" "^3.0.7"
     "@types/d3-selection" "^3.0.10"
@@ -4435,11 +4435,6 @@ zustand@^4.4.0:
   integrity sha512-ibr/n1hBzLLj5Y+yUcU7dYw8p6WnIVzdJbnX+1YpaScvZVF2ziugqHs+LAmHw4lWO9c/zRj+K1ncgWDQuthEdQ==
   dependencies:
     use-sync-external-store "^1.2.2"
-
-zustand@^5.0.3:
-  version "5.0.3"
-  resolved "https://registry.yarnpkg.com/zustand/-/zustand-5.0.3.tgz#b323435b73d06b2512e93c77239634374b0e407f"
-  integrity sha512-14fwWQtU3pH4dE0dOpdMiWjddcH+QzKIgk1cl8epwSE7yag43k/AD/m4L6+K7DytAOr9gGBe3/EXj9g7cdostg==
 
 zustand@^5.0.4:
   version "5.0.4"
