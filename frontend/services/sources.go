@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -256,7 +257,7 @@ func stringToWorkloadKind(workloadKind string) (WorkloadKind, bool) {
 	return "", false
 }
 
-func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, currentStreamName string) (*v1alpha1.Source, error) {
+func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, currentStreamName string) (*v1alpha1.Source, error) {
 	streamLabel := k8sconsts.SourceGroupLabelPrefix + currentStreamName
 
 	switch workloadKind {
@@ -330,7 +331,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		// or remove the relevant data-stream label (if source is in multiple streams)
 
 		// note: create will also return an existing crd (if exists) without throwing an error
-		source, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
+		source, err := EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
 		if err != nil {
 			return err
 		}
@@ -373,11 +374,24 @@ func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, spe
 }
 
 func UpdateSourceCRDLabel(ctx context.Context, nsName string, crdName string, labelKey string, newValue string) (*v1alpha1.Source, error) {
-	escapedLabel := strings.ReplaceAll(labelKey, "/", "~1")
-	patch := fmt.Sprintf(`[{"op": "replace", "path": "/metadata/labels/%s", "value": "%v"}]`, escapedLabel, newValue)
+	escapedLabel := strings.ReplaceAll(labelKey, "/", "~1")   // replace "/" with "~1" to escape it for JSON patch
+	escapedLabel = strings.ReplaceAll(escapedLabel, "\"", "") // remove quotes to avoid JSON parsing issues
+
+	patchOps := []map[string]interface{}{
+		{
+			"op":    "replace",
+			"path":  fmt.Sprintf("/metadata/labels/%s", escapedLabel),
+			"value": newValue,
+		},
+	}
+
+	patchBytes, err := json.Marshal(patchOps)
+	if err != nil {
+		return nil, err
+	}
 
 	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(
-		ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{},
+		ctx, crdName, types.JSONPatchType, patchBytes, metav1.PatchOptions{},
 	)
 
 	return source, err
@@ -396,7 +410,7 @@ func RemoveSourceCRDLabel(ctx context.Context, nsName string, crdName string, la
 
 func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, enabled bool, currentStreamName string) error {
 	if enabled {
-		_, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
+		_, err := EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
 		return err
 	} else {
 		return deleteSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)

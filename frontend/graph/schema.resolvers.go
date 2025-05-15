@@ -150,6 +150,9 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 		icCopy := ic
 
 		g.Go(func() error {
+			if len(icCopy.OwnerReferences) == 0 {
+				return fmt.Errorf("no owner reference found for InstrumentationConfig %s", icCopy.Name)
+			}
 			src, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, services.WorkloadKind(icCopy.OwnerReferences[0].Kind))
 			if err != nil {
 				return err
@@ -558,7 +561,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 			return false, err
 		}
 
-		source, err = services.CreateSourceCRD(ctx, nsName, workloadName, workloadKind, streamName)
+		source, err = services.EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, streamName)
 		if err != nil {
 			// unexpected error occurred while trying to create the source
 			return false, err
