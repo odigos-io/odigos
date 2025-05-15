@@ -6,7 +6,7 @@ import { SetupHeader } from '@/components';
 import { useSetupStore } from '@odigos/ui-kit/store';
 import { ROUTES, SKIP_TO_SUMMERY_QUERY_PARAM } from '@/utils';
 import { DestinationSelectionForm } from '@odigos/ui-kit/containers';
-import { useDestinationCategories, useDestinationCRUD, usePotentialDestinations, useTestConnection } from '@/hooks';
+import { useDestinationCategories, usePotentialDestinations, useTestConnection } from '@/hooks';
 
 export default function Page() {
   const router = useRouter();
@@ -16,7 +16,6 @@ export default function Page() {
   const { configuredSources } = useSetupStore();
   const { testConnection } = useTestConnection();
   const { categories } = useDestinationCategories();
-  const { updateDestination } = useDestinationCRUD();
   const { potentialDestinations } = usePotentialDestinations();
 
   const isSourcesListEmpty = useMemo(() => {
@@ -41,7 +40,6 @@ export default function Page() {
       <DestinationSelectionForm
         categories={categories}
         potentialDestinations={potentialDestinations}
-        updateDestination={updateDestination}
         testConnection={testConnection}
         isSourcesListEmpty={isSourcesListEmpty}
         goToSources={goToSources}

@@ -31,14 +31,7 @@ const OverviewModalsAndDrawers = () => {
     <>
       {/* modals */}
       <SourceModal fetchSingleNamespace={fetchNamespace} persistSources={persistSources} />
-      <DestinationModal
-        isOnboarding={false}
-        categories={categories}
-        potentialDestinations={potentialDestinations}
-        createDestination={createDestination}
-        updateDestination={updateDestination}
-        testConnection={testConnection}
-      />
+      <DestinationModal isOnboarding={false} categories={categories} potentialDestinations={potentialDestinations} createDestination={createDestination} testConnection={testConnection} />
       <InstrumentationRuleModal isEnterprise={isEnterprise} createInstrumentationRule={createInstrumentationRule} />
       <ActionModal createAction={createAction} />
 

@@ -46,7 +46,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
 
   const { persistSources } = useSourceCRUD();
   const { fetchDataStreams } = useDataStreamsCRUD();
-  const { createDestination, updateDestination } = useDestinationCRUD();
+  const { createDestination } = useDestinationCRUD();
   const { setSelectedStreamName, selectedStreamName } = useDataStreamStore();
   const { configuredSources, configuredFutureApps, configuredDestinations, setAvailableSources, setConfiguredSources, setConfiguredFutureApps, resetState } = useSetupStore();
 
