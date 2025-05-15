@@ -10,6 +10,9 @@ var KratosProfile = profile.Profile{
 	MinimumTier: common.OnPremOdigosTier,
 	ShortDescription: "Bundle profile that includes " +
 		"specific presets for on-premises installations.",
+	ManifestNames: []string{
+		"kratos-attr-replicaset.yaml",
+	},
 	Dependencies: []common.ProfileName{
 		"db-payload-collection",
 		"semconv",

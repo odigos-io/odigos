@@ -9,4 +9,5 @@ var SmallBatchesProfile = profile.Profile{
 	ProfileName:      common.ProfileName("small-batches"),
 	MinimumTier:      common.OnPremOdigosTier,
 	ShortDescription: "Reduce the batch size for exports",
+	ManifestNames:    []string{"small-batches.yaml"},
 }

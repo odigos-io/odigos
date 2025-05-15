@@ -9,4 +9,5 @@ var ReduceSpanNameCardinalityProfile = profile.Profile{
 	ProfileName:      common.ProfileName("reduce-span-name-cardinality"),
 	MinimumTier:      common.OnPremOdigosTier,
 	ShortDescription: "Reduce the cardinality of the span name by replacing common scenarios observed",
+	ManifestNames:    []string{"reduce-span-name-cardinality.yaml"},
 }

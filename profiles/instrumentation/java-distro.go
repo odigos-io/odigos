@@ -14,4 +14,5 @@ var JavaEbpfInstrumentationsProfile = profile.Profile{
 	ProfileName:      common.ProfileName("java-ebpf-instrumentations"),
 	MinimumTier:      common.OnPremOdigosTier,
 	ShortDescription: "Instrument Java applications using eBPF instrumentation and eBPF enterprise processing",
+	ManifestNames:    []string{"java-ebpf-instrumentations.yaml"},
 }

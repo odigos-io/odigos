@@ -9,4 +9,5 @@ var CategoryAttributesProfile = profile.Profile{
 	ProfileName:      common.ProfileName("category-attributes"),
 	MinimumTier:      common.OnPremOdigosTier,
 	ShortDescription: "Add category attributes to the spans",
+	ManifestNames:    []string{"category-attributes.yaml"},
 }
