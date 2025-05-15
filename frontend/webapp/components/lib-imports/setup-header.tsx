@@ -46,9 +46,10 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
 
   const { persistSources } = useSourceCRUD();
   const { fetchDataStreams } = useDataStreamsCRUD();
-  const { createDestination } = useDestinationCRUD();
+  const { createDestination, updateDestination } = useDestinationCRUD();
   const { setSelectedStreamName, selectedStreamName } = useDataStreamStore();
-  const { configuredSources, configuredFutureApps, configuredDestinations, setAvailableSources, setConfiguredSources, setConfiguredFutureApps, resetState } = useSetupStore();
+  const { configuredSources, configuredFutureApps, configuredDestinations, configuredDestinationsUpdateOnly, setAvailableSources, setConfiguredSources, setConfiguredFutureApps, resetState } =
+    useSetupStore();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -87,12 +88,11 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
       }),
     );
 
-    // TODO: uncomment this when UI-Kit bumps to 0.0.26
-    // await Promise.all(
-    //   configuredDestinationsUpdateOnly.map((dest) => {
-    //     return updateDestination(dest.id, getFormDataFromDestination(dest, selectedStreamName));
-    //   }),
-    // );
+    await Promise.all(
+      configuredDestinationsUpdateOnly.map((dest) => {
+        return updateDestination(dest.id, getFormDataFromDestination(dest, selectedStreamName));
+      }),
+    );
 
     await fetchDataStreams();
     resetState();
