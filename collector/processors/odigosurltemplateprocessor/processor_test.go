@@ -335,6 +335,18 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrValue: "/user/inc_654321",
 		},
 		{
+			name:          "invalid utf-8 char",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/foo/this_text_includes_invalid_char�",
+			},
+			expectedSpanName:  "GET /foo/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/foo/{id}",
+		},
+		{
 			name:          "invalid full url",
 			spanKind:      ptrace.SpanKindServer,
 			inputSpanName: "GET",
