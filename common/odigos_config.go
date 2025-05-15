@@ -140,4 +140,5 @@ type OdigosConfiguration struct {
 	AgentEnvVarsInjectionMethod  *EnvInjectionMethod      `json:"agentEnvVarsInjectionMethod,omitempty"`
 	UserInstrumentationEnvs      *UserInstrumentationEnvs `json:"UserInstrumentationEnvs,omitempty"`
 	NodeSelector                 map[string]string        `json:"nodeSelector,omitempty"`
+	KarpenterEnabled             *bool                    `json:"karpenterEnabled,omitempty"`
 }
