@@ -11,6 +11,7 @@ query: |
   length([?span.serviceName == 'java-old-version']) > `0` ||
   length([?span.serviceName == 'java-supported-docker-env']) > `0` ||
   length([?span.serviceName == 'java-supported-manifest-env']) > `0` ||
+  length([?span.serviceName == 'java-unique-exec']) > `0` ||
   length([?span.serviceName == 'java-azul']) > `0` ||
   length([?span.serviceName == 'python-latest-version' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
   length([?span.serviceName == 'python-alpine' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
@@ -20,4 +21,4 @@ query: |
   length([?span.serviceName == 'dotnet6-glibc']) > `0` ||
   length([?span.serviceName == 'dotnet6-musl']) > `0`
 expected:
-  count: 17
+  count: 18
