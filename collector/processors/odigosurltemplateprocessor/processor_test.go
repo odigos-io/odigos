@@ -334,6 +334,18 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrKey:   "http.route",
 			expectedAttrValue: "/user/inc_654321",
 		},
+		{
+			name:          "invalid full url",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.full":            "invalidurl/#@%@##%$@%@",
+			},
+			expectedSpanName:  "GET",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "", // should not exist
+		},
 	}
 
 	runProcessorTests(t, tt, processor)
