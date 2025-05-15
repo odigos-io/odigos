@@ -30,7 +30,6 @@ helm repo add odigos https://odigos-io.github.io/odigos
 ```sh
 helm repo update
 helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace
-kubectl label namespace odigos-system odigos.io/system-object="true"
 ```
 
 - **Openshift Clusters** - Make sure to set `openshift.enabled=true` in the values file or pass it as a flag while installing the chart.
