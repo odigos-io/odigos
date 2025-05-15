@@ -304,35 +304,58 @@ func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 }
 
 func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, currentStreamName string) error {
-	if workloadKind != WorkloadKindNamespace {
-		// if is a regular workload, then check for namespace source first
-		nsSource, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
-		if err != nil && !strings.Contains(err.Error(), "not found") {
-			// unexpected error occurred while trying to get the namespace source
-			return err
-		}
-
-		if nsSource != nil {
-			// note: create will return an existing crd without throwing an error
-			source, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
-			if err != nil {
-				return err
-			}
-
-			// namespace source exists, we need to add "DisableInstrumentation" to the workload source
-			_, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, "disableInstrumentation", true)
-			return err
-		}
-	}
-
-	// namespace source does not exist, we need to delete the workload source
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
 		return err
 	}
 
-	err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
-	return err
+	if workloadKind == WorkloadKindNamespace {
+		// if is a namespace source, then proceed to delete it
+		return kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
+	}
+
+	// if is a regular workload, then check for namespace source first
+	nsSource, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		// unexpected error occurred while trying to get the namespace source
+		return err
+	}
+
+	if nsSource != nil {
+		// namespace source exists.
+		// we need to create a workload source and add "DisableInstrumentation" label,
+		// or remove the relevant data-stream label (if source is in multiple streams)
+
+		// note: create will also return an existing crd (if exists) without throwing an error
+		source, err := CreateSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
+		if err != nil {
+			return err
+		}
+
+		streamNames := GetSourceStreamNames(source)
+
+		if len(streamNames) > 1 {
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "false")
+		} else {
+			_, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, "disableInstrumentation", true)
+		}
+
+		return err
+	} else {
+		// namespace source does not exist.
+		// we need to delete the workload source,
+		// or remove the relevant data-stream label (if source is in multiple streams)
+
+		streamNames := GetSourceStreamNames(source)
+
+		if len(streamNames) > 1 {
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "false")
+		} else {
+			err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
+		}
+
+		return err
+	}
 }
 
 func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, specField string, newValue any) (*v1alpha1.Source, error) {
@@ -477,4 +500,17 @@ func GetInstrumentationInstancesHealthConditions(ctx context.Context) ([]*model.
 	}
 
 	return result, nil
+}
+
+func GetSourceStreamNames(source *v1alpha1.Source) []*string {
+	streamNames := make([]*string, 0)
+
+	for labelKey, labelValue := range source.Labels {
+		if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
+			streamName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+			streamNames = append(streamNames, &streamName)
+		}
+	}
+
+	return streamNames
 }
