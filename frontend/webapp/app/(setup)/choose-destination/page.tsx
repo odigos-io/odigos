@@ -1,39 +1,49 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ROUTES } from '@/utils';
+import React, { useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { SetupHeader } from '@/components';
-import { EntityTypes } from '@odigos/ui-kit/types';
 import { useSetupStore } from '@odigos/ui-kit/store';
+import { ROUTES, SKIP_TO_SUMMERY_QUERY_PARAM } from '@/utils';
 import { DestinationSelectionForm } from '@odigos/ui-kit/containers';
-import { useDestinationCategories, useDestinationCRUD, usePotentialDestinations, useTestConnection } from '@/hooks';
+import { useDestinationCategories, usePotentialDestinations, useTestConnection } from '@/hooks';
 
 export default function Page() {
   const router = useRouter();
+  const params = useSearchParams();
+  const skipToSummary = !!params.get(SKIP_TO_SUMMERY_QUERY_PARAM);
+
   const { configuredSources } = useSetupStore();
-
+  const { testConnection } = useTestConnection();
   const { categories } = useDestinationCategories();
-  const { createDestination } = useDestinationCRUD();
   const { potentialDestinations } = usePotentialDestinations();
-  const { testConnection, testConnectionResult, isTestConnectionLoading } = useTestConnection();
 
-  // we need this state, because "loading" from CRUD hooks is a bit delayed, and allows the user to double-click, as well as see elements render in the UI when they should not be rendered.
-  const [isLoading, setIsLoading] = useState(false);
+  const isSourcesListEmpty = useMemo(() => {
+    return !Object.values(configuredSources).some((sources) => sources.length);
+  }, [configuredSources]);
+
+  const goToSources = () => {
+    const querystring = skipToSummary ? `?${SKIP_TO_SUMMERY_QUERY_PARAM}=true` : '';
+    router.push(ROUTES.CHOOSE_SOURCES + querystring);
+  };
+
+  // If we do not want to show the "go to summary button", we have to pass undefined as prop
+  const onClickSummary = skipToSummary
+    ? () => {
+        router.push(ROUTES.SETUP_SUMMARY);
+      }
+    : undefined;
 
   return (
     <>
-      <SetupHeader entityType={EntityTypes.Destination} isLoading={isLoading} setIsLoading={setIsLoading} />
+      <SetupHeader step={4} />
       <DestinationSelectionForm
         categories={categories}
         potentialDestinations={potentialDestinations}
-        createDestination={createDestination}
-        isLoading={isLoading}
         testConnection={testConnection}
-        testResult={testConnectionResult}
-        testLoading={isTestConnectionLoading}
-        isSourcesListEmpty={!Object.values(configuredSources).some((sources) => sources.length)}
-        goToSources={() => router.push(ROUTES.CHOOSE_SOURCES)}
+        isSourcesListEmpty={isSourcesListEmpty}
+        goToSources={goToSources}
+        onClickSummary={onClickSummary}
       />
     </>
   );

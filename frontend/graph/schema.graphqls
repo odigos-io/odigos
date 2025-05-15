@@ -92,6 +92,7 @@ type K8sActualSource {
   namespace: String!
   name: String!
   kind: K8sResourceKind!
+  dataStreamNames: [String]!
   numberOfInstances: Int
   selected: Boolean
   otelServiceName: String
@@ -244,6 +245,7 @@ type ComputePlatform {
   destinations: [Destination!]!
   actions: [PipelineAction!]!
   instrumentationRules: [InstrumentationRule!]!
+  dataStreams: [DataStream!]!
 }
 
 type SupportedSignals {
@@ -301,8 +303,9 @@ type ExportedSignals {
 
 type Destination {
   id: ID!
-  name: String!
   type: String!
+  name: String!
+  dataStreamNames: [String]!
   exportedSignals: ExportedSignals!
   fields: String!
   destinationType: DestinationTypesCategoryItem!
@@ -318,6 +321,7 @@ type GetConfigResponse {
 input DestinationInput {
   name: String!
   type: String!
+  currentStreamName: String!
   exportedSignals: ExportedSignalsInput!
   fields: [FieldInput!]!
 }
@@ -342,6 +346,7 @@ input PersistNamespaceSourceInput {
   name: String!
   kind: K8sResourceKind!
   selected: Boolean!
+  currentStreamName: String!
 }
 
 type TestConnectionResponse {
@@ -367,6 +372,7 @@ type PipelineAction {
 
 input PatchSourceRequestInput {
   otelServiceName: String!
+  currentStreamName: String!
 }
 
 interface Action {
@@ -632,6 +638,10 @@ type InstrumentationInstanceHealth {
   condition: Condition
 }
 
+type DataStream {
+  name: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -650,7 +660,7 @@ type Mutation {
   updateK8sActualSource(sourceId: K8sSourceId!, patchSourceRequest: PatchSourceRequestInput!): Boolean!
   createNewDestination(destination: DestinationInput!): Destination!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
-  deleteDestination(id: ID!): Boolean!
+  deleteDestination(id: ID!, currentStreamName: String): Boolean!
   testConnectionForDestination(destination: DestinationInput!): TestConnectionResponse!
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!

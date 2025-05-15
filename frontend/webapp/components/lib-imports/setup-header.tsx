@@ -1,81 +1,126 @@
-import React, { Dispatch, SetStateAction, type FC, type RefObject } from 'react';
+import React, { useState, type FC, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
-import { EntityTypes } from '@odigos/ui-kit/types';
-import { useSetupStore } from '@odigos/ui-kit/store';
-import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
+import { safeJsonParse } from '@odigos/ui-kit/functions';
 import { ArrowIcon, OdigosLogoText } from '@odigos/ui-kit/icons';
-import { ToggleDarkMode, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
+import { Destination, DestinationFormData } from '@odigos/ui-kit/types';
+import { useDataStreamStore, useSetupStore } from '@odigos/ui-kit/store';
+import { useDataStreamsCRUD, useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos/ui-kit/components';
+import { type DataStreamSelectionFormRef, ToggleDarkMode, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
 
 interface SetupHeaderProps {
-  entityType: EntityTypes;
-  formRef?: RefObject<SourceSelectionFormRef | null>; // in sources
-  isLoading?: boolean; // in destinations
-  setIsLoading?: Dispatch<SetStateAction<boolean>>; // in destinations
+  step: number;
+  streamFormRef?: RefObject<DataStreamSelectionFormRef | null>;
+  sourceFormRef?: RefObject<SourceSelectionFormRef | null>;
 }
 
-const SetupHeader: FC<SetupHeaderProps> = ({ formRef, entityType, isLoading, setIsLoading }) => {
+const getFormDataFromDestination = (dest: Destination, selectedStreamName: string): DestinationFormData => {
+  const parsedFields = safeJsonParse(dest.fields, {});
+  const fieldsArray = Object.entries(parsedFields).map(([key, value]) => ({ key, value: String(value) }));
+
+  const payload: DestinationFormData = {
+    type: dest.destinationType.type,
+    name: dest.destinationType.displayName,
+    currentStreamName: selectedStreamName,
+    exportedSignals: dest.exportedSignals,
+    fields: fieldsArray,
+  };
+
+  return payload;
+};
+
+const backRoutes = {
+  3: ROUTES.CHOOSE_STREAM,
+  4: ROUTES.CHOOSE_SOURCES,
+  5: ROUTES.CHOOSE_DESTINATION,
+};
+const nextRoutes = {
+  2: ROUTES.CHOOSE_SOURCES,
+  3: ROUTES.CHOOSE_DESTINATION,
+  4: ROUTES.SETUP_SUMMARY,
+};
+
+const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef }) => {
   const router = useRouter();
 
   const { persistSources } = useSourceCRUD();
-  const { createDestination } = useDestinationCRUD();
-  const { configuredSources, configuredFutureApps, configuredDestinations, setAvailableSources, setConfiguredSources, setConfiguredFutureApps, resetState } = useSetupStore();
+  const { fetchDataStreams } = useDataStreamsCRUD();
+  const { createDestination, updateDestination } = useDestinationCRUD();
+  const { setSelectedStreamName, selectedStreamName } = useDataStreamStore();
+  const { configuredSources, configuredFutureApps, configuredDestinations, configuredDestinationsUpdateOnly, setAvailableSources, setConfiguredSources, setConfiguredFutureApps, resetState } =
+    useSetupStore();
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const onNext = () => {
-    if (formRef?.current) {
-      const { initial, apps, futureApps } = formRef.current.getFormValues();
+    if (streamFormRef?.current) {
+      const { name } = streamFormRef.current.getFormValues();
+
+      setSelectedStreamName(name || 'default');
+    }
+
+    if (sourceFormRef?.current) {
+      const { initial, apps, futureApps } = sourceFormRef.current.getFormValues();
 
       setAvailableSources(initial);
       setConfiguredSources(apps);
       setConfiguredFutureApps(futureApps);
-
-      router.push(ROUTES.CHOOSE_DESTINATION);
     }
+
+    const r = nextRoutes[step as keyof typeof nextRoutes];
+    if (r) router.push(r);
   };
 
   const onBack = () => {
-    router.push(ROUTES.CHOOSE_SOURCES);
+    const r = backRoutes[step as keyof typeof backRoutes];
+    if (r) router.push(r);
   };
 
   const onDone = async () => {
-    setIsLoading?.(true);
+    setIsLoading(true);
 
-    // configuredSources & configuredFutureApps are set in store from the previous step in onboarding flow
     await persistSources(configuredSources, configuredFutureApps);
-    await Promise.all(configuredDestinations.map(async ({ form }) => await createDestination(form)));
 
+    await Promise.all(
+      configuredDestinations.map((dest) => {
+        return createDestination(getFormDataFromDestination(dest, selectedStreamName));
+      }),
+    );
+
+    await Promise.all(
+      configuredDestinationsUpdateOnly.map((dest) => {
+        return updateDestination(dest.id, getFormDataFromDestination(dest, selectedStreamName));
+      }),
+    );
+
+    await fetchDataStreams();
     resetState();
     router.push(ROUTES.OVERVIEW);
   };
 
-  const navButtons: NavigationButtonsProps['buttons'] =
-    entityType === EntityTypes.Source
-      ? [
-          {
-            label: 'NEXT',
-            icon: ArrowIcon,
-            onClick: () => onNext(),
-            variant: 'primary',
-          },
-        ]
-      : entityType === EntityTypes.Destination
-      ? [
-          {
-            label: 'BACK',
-            icon: ArrowIcon,
-            variant: 'secondary',
-            onClick: onBack,
-            disabled: isLoading,
-          },
-          {
-            label: 'DONE',
-            variant: 'primary',
-            onClick: onDone,
-            disabled: isLoading,
-          },
-        ]
-      : [];
+  const nextBtn: NavigationButtonsProps['buttons'][0] = {
+    label: 'NEXT',
+    icon: ArrowIcon,
+    variant: 'primary',
+    onClick: onNext,
+    disabled: isLoading,
+  };
+  const backBtn: NavigationButtonsProps['buttons'][0] = {
+    label: 'BACK',
+    icon: ArrowIcon,
+    variant: 'secondary',
+    onClick: onBack,
+    disabled: isLoading,
+  };
+  const doneBtn: NavigationButtonsProps['buttons'][0] = {
+    label: 'DONE',
+    variant: 'primary',
+    onClick: onDone,
+    disabled: isLoading,
+  };
+
+  const buttons = step === 2 ? [nextBtn] : step === 5 ? [backBtn, doneBtn] : [backBtn, nextBtn];
 
   return (
     <Header
@@ -85,7 +130,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ formRef, entityType, isLoading, set
           START WITH ODIGOS
         </Text>,
       ]}
-      right={[<ToggleDarkMode key='toggle-theme' />, <NavigationButtons key='nav-buttons' buttons={navButtons} />]}
+      right={[<ToggleDarkMode key='toggle-theme' />, <NavigationButtons key='nav-buttons' buttons={buttons} />]}
     />
   );
 };
