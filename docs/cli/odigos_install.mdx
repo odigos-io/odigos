@@ -58,6 +58,7 @@ odigos install --cluster-name ${YOUR_CLUSTER_NAME} --central-backend-url ${YOUR_
       --skip-webhook-issuer-creation           Skip creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
       --telemetry                              send general telemetry regarding Odigos usage (default true)
       --ui-mode string                         set the UI mode (one-of: normal, readonly) (default "normal")
+      --user-instrumentation-envs string       JSON string to configure per-language instrumentation envs, e.g. '{"languages":{"go":{"enabled":true,"env":{"OTEL_GO_ENABLED":"true"}}}}'
       --version string                         for development purposes only
 ```
 
