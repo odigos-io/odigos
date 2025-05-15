@@ -117,7 +117,7 @@ require (
 )
 
 replace (
-	github.com/odigos-io/odigos-device-plugin => github.com/RonFed/odigos-device-plugin v0.0.0-20250514070149-1b2fa8f14ba9
+	github.com/odigos-io/odigos-device-plugin => github.com/AvihuHenya/odigos-device-plugin v0.0.0-20250515135501-cb87ce830afe
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/distros => ../distros

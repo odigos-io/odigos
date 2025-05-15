@@ -1,7 +1,7 @@
+github.com/AvihuHenya/odigos-device-plugin v0.0.0-20250515135501-cb87ce830afe h1:HIaX9ps+ILMM5RK3UHoYQO1BedO/Mbo8ZWorHaesV6g=
+github.com/AvihuHenya/odigos-device-plugin v0.0.0-20250515135501-cb87ce830afe/go.mod h1:hE6uBely/Hblo3G3PbkzMFq0/OUlvE8VEQxZAX+2fro=
 github.com/Masterminds/semver/v3 v3.3.1 h1:QtNSWtVZ3nBfk8mAOu/B6v7FMJ+NHTIgUPi7rj+4nv4=
 github.com/Masterminds/semver/v3 v3.3.1/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
-github.com/RonFed/odigos-device-plugin v0.0.0-20250514070149-1b2fa8f14ba9 h1:U/5adsqbCf6sFFr+F+to9KNxkKJwAampXtqf8jn/+Bs=
-github.com/RonFed/odigos-device-plugin v0.0.0-20250514070149-1b2fa8f14ba9/go.mod h1:hE6uBely/Hblo3G3PbkzMFq0/OUlvE8VEQxZAX+2fro=
 github.com/agoda-com/opentelemetry-logs-go v0.5.1 h1:6iQrLaY4M0glBZb/xVN559qQutK4V+HJ/mB1cbwaX3c=
 github.com/agoda-com/opentelemetry-logs-go v0.5.1/go.mod h1:35B5ypjX5pkVCPJR01i6owJSYWe8cnbWLpEyHgAGD/E=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=

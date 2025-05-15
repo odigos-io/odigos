@@ -3,7 +3,9 @@ package odiglet
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
+	"sync/atomic"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -32,6 +34,7 @@ type Odiglet struct {
 	configUpdates            chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
 	deviceInjectionCallbacks instrumentation.OtelSdksLsf
 	criClient                *criwrapper.CriClient
+	deviceManagerReady       atomic.Bool
 }
 
 const (
@@ -69,6 +72,13 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 		return nil, fmt.Errorf("failed to setup controller-runtime manager %w", err)
 	}
 
+	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error {
+		return mgr.GetWebhookServer().StartedChecker()(req)
+	}); err != nil {
+		return nil, fmt.Errorf("unable to set up ready check: %w", err)
+	}
+
+	// todo: add readyz check in the odiglet manifest etc
 	return &Odiglet{
 		clientset:                clientset,
 		mgr:                      mgr,
@@ -104,7 +114,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 
 	// Start device manager
 	g.Go(func() error {
-		err := runDeviceManager(groupCtx, o.clientset, o.deviceInjectionCallbacks)
+		err := runDeviceManager(groupCtx, o.clientset, o.deviceInjectionCallbacks, &o.deviceManagerReady)
 		if err != nil {
 			log.Logger.Error(err, "Failed to run device manager")
 		}
@@ -154,16 +164,35 @@ func (o *Odiglet) Run(ctx context.Context) {
 	}
 }
 
-func runDeviceManager(ctx context.Context, clientset *kubernetes.Clientset, otelSdkLsf instrumentation.OtelSdksLsf) error {
+func runDeviceManager(ctx context.Context, clientset *kubernetes.Clientset, otelSdkLsf instrumentation.OtelSdksLsf, readyFlag *atomic.Bool) error {
 	log.Logger.V(0).Info("Starting device manager")
 	lister, err := instrumentation.NewLister(ctx, clientset, otelSdkLsf)
 	if err != nil {
 		return fmt.Errorf("failed to create device manager lister %w", err)
 	}
 
-	manager := dpm.NewManager(lister, log.Logger)
-	manager.Run(ctx)
-	return nil
+	ready := make(chan struct{})
+	manager := dpm.NewManager(ctx, lister, ready, log.Logger)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- manager.Run()
+	}()
+
+	select {
+	case <-ready:
+		log.Logger.V(0).Info("Device manager ready")
+		readyFlag.Store(true)
+		return nil
+
+	case <-ctx.Done():
+		log.Logger.Error(ctx.Err(), "Device manager context done")
+		return ctx.Err()
+
+	case err := <-errCh:
+		log.Logger.Error(err, "Device manager exited with error")
+		return err
+	}
 }
 
 func OdigletInitPhase(clientset *kubernetes.Clientset) {
