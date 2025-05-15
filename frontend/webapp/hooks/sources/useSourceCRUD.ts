@@ -8,7 +8,16 @@ import { addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads 
 import type { InstrumentationInstancesHealth, PaginatedData, SourceInstrumentInput } from '@/types';
 import { GET_INSTANCES, GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud } from '@odigos/ui-kit/types';
-import { type NamespaceSelectionFormData, type SourceSelectionFormData, useEntityStore, useInstrumentStore, useNotificationStore, usePendingStore, useSetupStore } from '@odigos/ui-kit/store';
+import {
+  type NamespaceSelectionFormData,
+  type SourceSelectionFormData,
+  useDataStreamStore,
+  useEntityStore,
+  useInstrumentStore,
+  useNotificationStore,
+  usePendingStore,
+  useSetupStore,
+} from '@odigos/ui-kit/store';
 
 interface UseSourceCrud {
   sources: Source[];
@@ -23,6 +32,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const { isReadonly } = useConfig();
   const { persistNamespace } = useNamespace();
   const { addNotification } = useNotificationStore();
+  const { selectedStreamName } = useDataStreamStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
   const { setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
@@ -122,7 +132,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       let alreadyNotified = false;
-      const { payloads: persistSourcesPayloads, isEmpty: sourcesEmpty } = prepareSourcePayloads(selectAppsList, handleInstrumentationCount, removeEntities);
+      const { payloads: persistSourcesPayloads, isEmpty: sourcesEmpty } = prepareSourcePayloads(selectAppsList, handleInstrumentationCount, removeEntities, selectedStreamName);
       const { payloads: persistNamespacesPayloads, isEmpty: futueAppsEmpty } = prepareNamespacePayloads(futureSelectAppsList);
 
       if (!sourcesEmpty && !alreadyNotified) {
