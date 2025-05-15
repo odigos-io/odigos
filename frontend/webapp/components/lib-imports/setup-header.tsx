@@ -2,8 +2,8 @@ import React, { useState, type FC, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import { safeJsonParse } from '@odigos/ui-kit/functions';
-import { DestinationFormData } from '@odigos/ui-kit/types';
 import { ArrowIcon, OdigosLogoText } from '@odigos/ui-kit/icons';
+import { Destination, DestinationFormData } from '@odigos/ui-kit/types';
 import { useDataStreamStore, useSetupStore } from '@odigos/ui-kit/store';
 import { useDataStreamsCRUD, useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos/ui-kit/components';
@@ -15,12 +15,38 @@ interface SetupHeaderProps {
   sourceFormRef?: RefObject<SourceSelectionFormRef | null>;
 }
 
+const getFormDataFromDestination = (dest: Destination, selectedStreamName: string): DestinationFormData => {
+  const parsedFields = safeJsonParse(dest.fields, {});
+  const fieldsArray = Object.entries(parsedFields).map(([key, value]) => ({ key, value: String(value) }));
+
+  const payload: DestinationFormData = {
+    type: dest.destinationType.type,
+    name: dest.destinationType.displayName,
+    currentStreamName: selectedStreamName,
+    exportedSignals: dest.exportedSignals,
+    fields: fieldsArray,
+  };
+
+  return payload;
+};
+
+const backRoutes = {
+  3: ROUTES.CHOOSE_STREAM,
+  4: ROUTES.CHOOSE_SOURCES,
+  5: ROUTES.CHOOSE_DESTINATION,
+};
+const nextRoutes = {
+  2: ROUTES.CHOOSE_SOURCES,
+  3: ROUTES.CHOOSE_DESTINATION,
+  4: ROUTES.SETUP_SUMMARY,
+};
+
 const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef }) => {
   const router = useRouter();
 
   const { persistSources } = useSourceCRUD();
   const { fetchDataStreams } = useDataStreamsCRUD();
-  const { createDestination } = useDestinationCRUD();
+  const { createDestination, updateDestination } = useDestinationCRUD();
   const { setSelectedStreamName, selectedStreamName } = useDataStreamStore();
   const { configuredSources, configuredFutureApps, configuredDestinations, setAvailableSources, setConfiguredSources, setConfiguredFutureApps, resetState } = useSetupStore();
 
@@ -41,35 +67,13 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
       setConfiguredFutureApps(futureApps);
     }
 
-    switch (step) {
-      case 2:
-        router.push(ROUTES.CHOOSE_SOURCES);
-        break;
-      case 3:
-        router.push(ROUTES.CHOOSE_DESTINATION);
-        break;
-      case 4:
-        router.push(ROUTES.SETUP_SUMMARY);
-        break;
-      default:
-        break;
-    }
+    const r = nextRoutes[step as keyof typeof nextRoutes];
+    if (r) router.push(r);
   };
 
   const onBack = () => {
-    switch (step) {
-      case 3:
-        router.push(ROUTES.CHOOSE_STREAM);
-        break;
-      case 4:
-        router.push(ROUTES.CHOOSE_SOURCES);
-        break;
-      case 5:
-        router.push(ROUTES.CHOOSE_DESTINATION);
-        break;
-      default:
-        break;
-    }
+    const r = backRoutes[step as keyof typeof backRoutes];
+    if (r) router.push(r);
   };
 
   const onDone = async () => {
@@ -78,20 +82,17 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
     await persistSources(configuredSources, configuredFutureApps);
 
     await Promise.all(
-      configuredDestinations.map(async (dest) => {
-        const parsedFields = safeJsonParse(dest.fields, {});
-        const fieldsArray = Object.entries(parsedFields).map(([key, value]) => ({ key, value: String(value) }));
-        const payload: DestinationFormData = {
-          type: dest.destinationType.type,
-          name: dest.destinationType.displayName,
-          currentStreamName: selectedStreamName,
-          exportedSignals: dest.exportedSignals,
-          fields: fieldsArray,
-        };
-
-        return await createDestination(payload);
+      configuredDestinations.map((dest) => {
+        return createDestination(getFormDataFromDestination(dest, selectedStreamName));
       }),
     );
+
+    // TODO: uncomment this when UI-Kit bumps to 0.0.26
+    // await Promise.all(
+    //   configuredDestinationsUpdateOnly.map((dest) => {
+    //     return updateDestination(dest.id, getFormDataFromDestination(dest, selectedStreamName));
+    //   }),
+    // );
 
     await fetchDataStreams();
     resetState();
