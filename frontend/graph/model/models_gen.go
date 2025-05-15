@@ -107,6 +107,7 @@ type ComputePlatform struct {
 	Destinations         []*Destination         `json:"destinations"`
 	Actions              []*PipelineAction      `json:"actions"`
 	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
+	DataStreams          []*DataStream          `json:"dataStreams"`
 }
 
 type Condition struct {

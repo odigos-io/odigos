@@ -245,6 +245,7 @@ type ComputePlatform {
   destinations: [Destination!]!
   actions: [PipelineAction!]!
   instrumentationRules: [InstrumentationRule!]!
+  dataStreams: [DataStream!]!
 }
 
 type SupportedSignals {
@@ -650,7 +651,6 @@ type Query {
   describeOdigos: OdigosAnalyze!
   describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
   instrumentationInstancesHealth: [InstrumentationInstanceHealth!]!
-  dataStreams: [DataStream!]!
 }
 
 type Mutation {

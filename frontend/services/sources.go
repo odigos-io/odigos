@@ -14,13 +14,16 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
 	"golang.org/x/sync/errgroup"
@@ -194,7 +197,7 @@ func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 		return nil, err
 	}
 	if len(list.Items) == 0 {
-		return nil, fmt.Errorf(`source "%s" not found`, workloadName)
+		return nil, apierrors.NewNotFound(schema.GroupResource{Group: "", Resource: "source"}, workloadName)
 	}
 	if len(list.Items) > 1 {
 		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(list.Items))
@@ -265,14 +268,14 @@ func CreateSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	}
 
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
-	if err != nil && !strings.Contains(err.Error(), "not found") {
+	if err != nil && !apierrors.IsNotFound(err) {
 		// unexpected error occurred while trying to get the source
 		return nil, err
 	}
 
 	if source != nil {
 		// source already exists, do not create a new one, instead update so it's not disabled anymore
-		source, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, "disableInstrumentation", false)
+		source, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, common.DisableInstrumentationJsonKey, false)
 		if err != nil {
 			return nil, err
 		}
@@ -316,7 +319,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	// if is a regular workload, then check for namespace source first
 	nsSource, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
-	if err != nil && !strings.Contains(err.Error(), "not found") {
+	if err != nil && !apierrors.IsNotFound(err) {
 		// unexpected error occurred while trying to get the namespace source
 		return err
 	}
@@ -335,11 +338,11 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		streamNames := GetSourceStreamNames(source)
 
 		if len(streamNames) > 1 {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "false")
-		} else {
-			_, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, "disableInstrumentation", true)
+			_, err = RemoveSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName)
+			return err
 		}
 
+		_, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, common.DisableInstrumentationJsonKey, true)
 		return err
 	} else {
 		// namespace source does not exist.
@@ -349,12 +352,13 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		streamNames := GetSourceStreamNames(source)
 
 		if len(streamNames) > 1 {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "false")
-		} else {
-			err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
+			_, err = RemoveSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName)
+			return err
 		}
 
+		err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
 		return err
+
 	}
 }
 
@@ -371,6 +375,17 @@ func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, spe
 func UpdateSourceCRDLabel(ctx context.Context, nsName string, crdName string, labelKey string, newValue string) (*v1alpha1.Source, error) {
 	escapedLabel := strings.ReplaceAll(labelKey, "/", "~1")
 	patch := fmt.Sprintf(`[{"op": "replace", "path": "/metadata/labels/%s", "value": "%v"}]`, escapedLabel, newValue)
+
+	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(
+		ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{},
+	)
+
+	return source, err
+}
+
+func RemoveSourceCRDLabel(ctx context.Context, nsName string, crdName string, labelKey string) (*v1alpha1.Source, error) {
+	escapedLabel := strings.ReplaceAll(labelKey, "/", "~1")
+	patch := fmt.Sprintf(`[{"op": "remove", "path": "/metadata/labels/%s"}]`, escapedLabel)
 
 	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(
 		ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{},

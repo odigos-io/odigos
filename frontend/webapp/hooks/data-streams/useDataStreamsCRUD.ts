@@ -12,12 +12,14 @@ interface UseDataStreamsCrud {
 
 export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
   const { addNotification } = useNotificationStore();
-  const { dataStreams, setDataStreams, selectedStreamName, setSelectedStreamName } = useDataStreamStore();
+  const { dataStreams, setDataStreams, dataStreamsLoading, setDataStreamsLoading, selectedStreamName, setSelectedStreamName } = useDataStreamStore();
 
-  const [fetchDataStreamsQuery, { loading, data }] = useLazyQuery<{ dataStreams?: DataStream[] }>(GET_DATA_STREAMS);
+  const [fetchDataStreamsQuery] = useLazyQuery<{ computePlatform?: { dataStreams?: DataStream[] } }>(GET_DATA_STREAMS);
 
   const fetchDataStreams = async () => {
+    setDataStreamsLoading(true);
     const { error, data } = await fetchDataStreamsQuery();
+    setDataStreamsLoading(false);
 
     if (error) {
       addNotification({
@@ -25,12 +27,12 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
         title: error.name || Crud.Read,
         message: error.cause?.message || error.message,
       });
-    } else if (data?.dataStreams) {
-      setDataStreams(data.dataStreams);
+    } else if (data?.computePlatform?.dataStreams) {
+      setDataStreams(data.computePlatform.dataStreams);
 
       const streamNameFromStorage = sessionStorage.getItem('selectedStreamName');
 
-      if (streamNameFromStorage && data.dataStreams.some((stream) => stream.name === streamNameFromStorage)) {
+      if (streamNameFromStorage && data.computePlatform.dataStreams.some((stream) => stream.name === streamNameFromStorage)) {
         setSelectedStreamName(streamNameFromStorage);
       } else {
         setSelectedStreamName('default');
@@ -43,12 +45,12 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
   }, [selectedStreamName]);
 
   useEffect(() => {
-    if (!dataStreams.length && !loading) fetchDataStreams();
+    if (!dataStreams.length && !dataStreamsLoading) fetchDataStreams();
   }, []);
 
   return {
-    dataStreamsLoading: loading,
-    dataStreams: data?.dataStreams || [],
+    dataStreamsLoading,
+    dataStreams,
     fetchDataStreams,
   };
 };
