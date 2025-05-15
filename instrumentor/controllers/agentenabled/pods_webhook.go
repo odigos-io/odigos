@@ -86,8 +86,10 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
-	// Add odiglet installed node-affinity to the pod
-	podutils.AddOdigletInstalledAffinity(pod)
+	// Add odiglet installed node-affinity to the pod, for non Karpenter installations
+	if odigosConfig.KarpenterEnabled == nil || !*odigosConfig.KarpenterEnabled {
+		podutils.AddOdigletInstalledAffinity(pod)
+	}
 
 	volumeMounted := false
 	for i := range pod.Spec.Containers {
