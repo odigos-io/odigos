@@ -2,14 +2,14 @@
 
 import React, { useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ROUTES } from '@/utils';
 import { SetupHeader } from '@/components';
+import { ROUTES, SKIP_TO_SUMMERY_QUERY_PARAM } from '@/utils';
 import { DataStreamSelectionForm, type DataStreamSelectionFormRef } from '@odigos/ui-kit/containers';
 
 export default function Page() {
   const router = useRouter();
   const params = useSearchParams();
-  const skipToSummary = !!params.get('skipToSummary');
+  const skipToSummary = !!params.get(SKIP_TO_SUMMERY_QUERY_PARAM);
 
   const formRef = useRef<DataStreamSelectionFormRef>(null);
 

@@ -77,7 +77,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
   };
 
   const onDone = async () => {
-    setIsLoading?.(true);
+    setIsLoading(true);
 
     await persistSources(configuredSources, configuredFutureApps);
 
