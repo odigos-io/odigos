@@ -286,6 +286,8 @@
             "backends/seq",
             "backends/signoz",
             "backends/splunk",
+            "backends/splunkotlp",
+            "backends/splunksapm",
             "backends/sumologic",
             "backends/telemetryhub",
             "backends/tempo",
