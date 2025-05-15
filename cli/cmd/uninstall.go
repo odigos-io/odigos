@@ -481,8 +481,8 @@ func removeAllSources(ctx context.Context, client *kube.Client) error {
 	l := log.Print("Removing Odigos Sources...")
 	sources, err := client.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
-		// no sources found, nothing to do here
-		if apierrors.IsNotFound(err) || len(sources.Items) == 0 {
+		if sources != nil && len(sources.Items) == 0 {
+			// no sources found, nothing to do here
 			l.Success()
 			return nil
 		}
@@ -492,16 +492,12 @@ func removeAllSources(ctx context.Context, client *kube.Client) error {
 	var deleteErr error
 	for _, i := range sources.Items {
 		e := client.OdigosClient.Sources(i.Namespace).Delete(ctx, i.Name, metav1.DeleteOptions{})
-		if e != nil {
+		if e != nil && !apierrors.IsNotFound(e) {
 			deleteErr = errors.Join(deleteErr, e)
 		}
 	}
 
 	if deleteErr != nil {
-		if apierrors.IsNotFound(deleteErr) {
-			l.Success()
-			return nil
-		}
 		return deleteErr
 	}
 

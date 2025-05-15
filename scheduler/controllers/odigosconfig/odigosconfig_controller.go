@@ -36,14 +36,19 @@ type odigosConfigController struct {
 }
 
 func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
-
-	odigosConfig, odigosConfigMap, err := r.getOdigosConfigUserObject(ctx)
+	odigosConfigMap, err := r.getOdigosConfigMap(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	odigosDeployment := corev1.ConfigMap{}
 	err = r.Client.Get(ctx, types.NamespacedName{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosDeploymentConfigMapName}, &odigosDeployment)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	odigosConfig := common.OdigosConfiguration{}
+	err = yaml.Unmarshal([]byte(odigosConfigMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -77,20 +82,20 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	// make sure the default ignored containers are always present
 	odigosConfig.IgnoredContainers = mergeIgnoredItemLists(odigosConfig.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
 
-	modifyConfigWithEffectiveProfiles(effectiveProfiles, odigosConfig)
+	modifyConfigWithEffectiveProfiles(effectiveProfiles, &odigosConfig)
 	odigosConfig.Profiles = effectiveProfiles
 
 	// if none of the profiles set sizing for collectors, use size_s as default, so the values are never nil
 	// if the values were already set (by user or profile) this is a no-op
-	sizing.SizeSProfile.ModifyConfigFunc(odigosConfig)
+	sizing.SizeSProfile.ModifyConfigFunc(&odigosConfig)
 
 	// TODO: revisit doing this here, might be nicer to maintain in a more generic way
 	// and have it on the config object itself.
 	// I want to preserve that user input (specific request or empty), and persist the resolved value in effective config.
-	resolveMountMethod(odigosConfig)
-	resolveEnvInjectionMethod(odigosConfig)
+	resolveMountMethod(&odigosConfig)
+	resolveEnvInjectionMethod(&odigosConfig)
 
-	err = r.persistEffectiveConfig(ctx, odigosConfig, odigosConfigMap)
+	err = r.persistEffectiveConfig(ctx, &odigosConfig, odigosConfigMap)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -98,23 +103,18 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	return ctrl.Result{}, nil
 }
 
-func (r *odigosConfigController) getOdigosConfigUserObject(ctx context.Context) (*common.OdigosConfiguration, *corev1.ConfigMap, error) {
+func (r *odigosConfigController) getOdigosConfigMap(ctx context.Context) (*corev1.ConfigMap, error) {
 	var configMap corev1.ConfigMap
-	var odigosConfig common.OdigosConfiguration
 	odigosNs := env.GetCurrentNamespace()
 
 	// read current content in odigos-config, which is the content supplied by the user.
 	// this is the baseline for reconciling, without defaults and profiles applied.
 	err := r.Client.Get(ctx, types.NamespacedName{Namespace: odigosNs, Name: consts.OdigosConfigurationName}, &configMap)
 	if err != nil {
-		return nil, nil, err
-	}
-	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig)
-	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return &odigosConfig, &configMap, nil
+	return &configMap, nil
 }
 
 func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, effectiveConfig *common.OdigosConfiguration, owner *corev1.ConfigMap) error {

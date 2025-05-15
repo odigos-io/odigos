@@ -260,9 +260,9 @@ spec:
             timeout: 2m
             content: ../../../cli/odigos uninstall --yes
         - script:
-            timeout: 3m
+            timeout: 1m
             content: |
-              for i in $(seq 1 12); do
+              for i in $(seq 1 10); do
                 if ../../common/assert_odigos_uninstalled.sh; then
                   exit 0
                 fi
