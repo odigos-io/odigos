@@ -14,7 +14,7 @@ const (
 	InstrumentorRoleBindingName             = InstrumentorDeploymentName
 	InstrumentorClusterRoleName             = InstrumentorDeploymentName
 	InstrumentorClusterRoleBindingName      = InstrumentorDeploymentName
-	InstrumentorCertificateName             = InstrumentorDeploymentName
+	InstrumentorCAName                      = InstrumentorDeploymentName
 	InstrumentorMutatingWebhookName         = "mutating-webhook-configuration"
 	InstrumentorSourceMutatingWebhookName   = "source-mutating-webhook-configuration"
 	InstrumentorSourceValidatingWebhookName = "source-validating-webhook-configuration"

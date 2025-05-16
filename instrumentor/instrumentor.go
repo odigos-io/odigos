@@ -2,10 +2,13 @@ package instrumentor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync/atomic"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -24,8 +27,11 @@ import (
 )
 
 type Instrumentor struct {
-	mgr    controllerruntime.Manager
-	logger logr.Logger
+	mgr                controllerruntime.Manager
+	logger             logr.Logger
+	certReady          chan struct{}
+	dp                 *distros.Provider
+	webhooksRegistered *atomic.Bool
 }
 
 func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrumentor, error) {
@@ -43,6 +49,7 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 	// This code can be removed once the migration is confirmed to be successful.
 	mgr.Add(&runtimemigration.MigrationRunnable{KubeClient: mgr.GetClient(), Logger: opts.Logger})
 
+	// setup the certificate rotator
 	rotatorSetupFinished := make(chan struct{})
 	err = rotator.AddRotator(mgr, &rotator.CertRotator{
 		SecretKey: types.NamespacedName{
@@ -51,6 +58,27 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		},
 		CertDir: filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs"),
 		IsReady: rotatorSetupFinished,
+		CAName:  k8sconsts.InstrumentorCAName,
+		Webhooks: []rotator.WebhookInfo{
+			{Name: k8sconsts.InstrumentorMutatingWebhookName, Type: rotator.Mutating},
+			{Name: k8sconsts.InstrumentorSourceMutatingWebhookName, Type: rotator.Mutating},
+			{Name: k8sconsts.InstrumentorSourceValidatingWebhookName, Type: rotator.Validating},
+		},
+		DNSName: "serving-cert",
+		ExtraDNSNames: []string{
+			fmt.Sprintf("%s.%s.svc", k8sconsts.InstrumentorServiceName, env.GetCurrentNamespace()),
+			fmt.Sprintf("%s.%s.svc.cluster.local", k8sconsts.InstrumentorServiceName, env.GetCurrentNamespace()),
+		},
+		EnableReadinessCheck: true,
+
+		// we could set RequireLeaderElection to true here but that will make the readiness probe fail for non-leader
+		// instances (since the IsReady channel will not be closed in non-leader instances).
+
+		// these are the defaults, but we set them explicitly for clarity
+		CaCertDuration:         10 * 365 * 24 * time.Hour, // 10 years
+		ServerCertDuration:     1 * 365 * 24 * time.Hour,  // 1 year
+		RotationCheckFrequency: 12 * time.Hour,            // 12 hours
+		LookaheadInterval:      90 * 24 * time.Hour,       // 90 days
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to add cert rotator: %w", err)
@@ -73,20 +101,22 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		return nil, fmt.Errorf("unable to set up ready check: %w", err)
 	}
 
+	webhooksRegistered := &atomic.Bool{}
 	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error {
-		select {
-		case <-rotatorSetupFinished:
-			return nil
-		default:
-			return fmt.Errorf("cert rotator not ready")
+		if !webhooksRegistered.Load() {
+			return errors.New("webhooks not registered yet")
 		}
+		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("unable to set up cert rotator check: %w", err)
 	}
 
 	return &Instrumentor{
-		mgr:    mgr,
-		logger: opts.Logger,
+		mgr:                mgr,
+		logger:             opts.Logger,
+		certReady:          rotatorSetupFinished,
+		dp:                 dp,
+		webhooksRegistered: webhooksRegistered,
 	}, nil
 }
 
@@ -124,6 +154,23 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 			i.logger.V(0).Info("Kube manager exited")
 		}
 		return err
+	})
+
+	// register webhooks after the certificate is ready
+	g.Go(func() error {
+		select {
+		case <-i.certReady:
+		case <-groupCtx.Done():
+			return nil
+		}
+		i.logger.V(0).Info("Cert rotator is ready")
+		err := controllers.RegisterWebhooks(i.mgr, i.dp)
+		if err != nil {
+			return err
+		}
+		i.webhooksRegistered.Store(true)
+		i.logger.V(0).Info("Webhooks registered")
+		return nil
 	})
 
 	err := g.Wait()

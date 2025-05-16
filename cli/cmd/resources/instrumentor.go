@@ -2,13 +2,11 @@ package resources
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
-	"github.com/odigos-io/odigos/cli/pkg/crypto"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -21,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
 
 func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
@@ -77,9 +76,15 @@ func NewInstrumentorRole(ns string) *rbacv1.Role {
 				Verbs:         []string{"get", "list", "watch"},
 			},
 			{
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
 				APIGroups:     []string{""},
 				Resources:     []string{"secrets"},
-				Verbs:         []string{"get", "list", "watch", "update"},
+				ResourceNames: []string{k8sconsts.InstrumentorWebhookSecretName},
+				Verbs:         []string{"update"},
 			},
 			{
 				APIGroups: []string{"odigos.io"},
@@ -213,6 +218,28 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 				Resources: []string{"sources/finalizers"},
 				Verbs:     []string{"update"},
 			},
+			{
+				APIGroups: []string{"admissionregistration.k8s.io"},
+				Resources: []string{"mutatingwebhookconfigurations"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups:     []string{"admissionregistration.k8s.io"},
+				Resources:     []string{"mutatingwebhookconfigurations"},
+				ResourceNames: []string{k8sconsts.InstrumentorSourceMutatingWebhookName, k8sconsts.InstrumentorMutatingWebhookName},
+				Verbs:         []string{"update"},
+			},
+			{
+				APIGroups: []string{"admissionregistration.k8s.io"},
+				Resources: []string{"validatingwebhookconfigurations"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups:     []string{"admissionregistration.k8s.io"},
+				Resources:     []string{"validatingwebhookconfigurations"},
+				ResourceNames: []string{k8sconsts.InstrumentorSourceValidatingWebhookName},
+				Verbs:         []string{"update"},
+			},
 		}, finalizersUpdate...),
 	}
 }
@@ -266,7 +293,7 @@ func NewInstrumentorService(ns string) *corev1.Service {
 	}
 }
 
-func NewSourceValidatingWebhookConfiguration(ns string, caBundle []byte) *admissionregistrationv1.ValidatingWebhookConfiguration {
+func NewSourceValidatingWebhookConfiguration(ns string) *admissionregistrationv1.ValidatingWebhookConfiguration {
 	webhook := &admissionregistrationv1.ValidatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ValidatingWebhookConfiguration",
@@ -317,18 +344,10 @@ func NewSourceValidatingWebhookConfiguration(ns string, caBundle []byte) *admiss
 		},
 	}
 
-	if caBundle == nil {
-		webhook.Annotations = map[string]string{
-			"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/serving-cert", ns),
-		}
-	} else {
-		webhook.Webhooks[0].ClientConfig.CABundle = caBundle
-	}
-
 	return webhook
 }
 
-func NewSourceMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregistrationv1.MutatingWebhookConfiguration {
+func NewSourceMutatingWebhookConfiguration(ns string) *admissionregistrationv1.MutatingWebhookConfiguration {
 	webhook := &admissionregistrationv1.MutatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "MutatingWebhookConfiguration",
@@ -380,18 +399,10 @@ func NewSourceMutatingWebhookConfiguration(ns string, caBundle []byte) *admissio
 		},
 	}
 
-	if caBundle == nil {
-		webhook.Annotations = map[string]string{
-			"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/serving-cert", ns),
-		}
-	} else {
-		webhook.Webhooks[0].ClientConfig.CABundle = caBundle
-	}
-
 	return webhook
 }
 
-func NewPodMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionregistrationv1.MutatingWebhookConfiguration {
+func NewPodMutatingWebhookConfiguration(ns string) *admissionregistrationv1.MutatingWebhookConfiguration {
 	webhook := &admissionregistrationv1.MutatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "MutatingWebhookConfiguration",
@@ -443,18 +454,10 @@ func NewPodMutatingWebhookConfiguration(ns string, caBundle []byte) *admissionre
 		},
 	}
 
-	if caBundle == nil {
-		webhook.Annotations = map[string]string{
-			"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/serving-cert", ns),
-		}
-	} else {
-		webhook.Webhooks[0].ClientConfig.CABundle = caBundle
-	}
-
 	return webhook
 }
 
-func NewInstrumentorTLSSecret(ns string, cert *crypto.Certificate) *corev1.Secret {
+func NewInstrumentorTLSSecret(ns string) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
@@ -474,10 +477,6 @@ func NewInstrumentorTLSSecret(ns string, cert *crypto.Certificate) *corev1.Secre
 				"helm.sh/hook":               "pre-install,pre-upgrade",
 				"helm.sh/hook-delete-policy": "before-hook-creation",
 			},
-		},
-		Data: map[string][]byte{
-			"tls.crt": []byte(cert.Cert),
-			"tls.key": []byte(cert.Key),
 		},
 	}
 }
@@ -721,25 +720,10 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorService(a.ns),
 	}
 
-	ca, err := crypto.GenCA(k8sconsts.InstrumentorCertificateName, 365)
-	if err != nil {
-		return fmt.Errorf("failed to generate CA: %w", err)
-	}
-
-	altNames := []string{
-		fmt.Sprintf("%s.%s.svc", k8sconsts.InstrumentorServiceName, a.ns),
-		fmt.Sprintf("%s.%s.svc.cluster.local", k8sconsts.InstrumentorServiceName, a.ns),
-	}
-
-	cert, err := crypto.GenerateSignedCertificate("serving-cert", nil, altNames, 365, ca)
-	if err != nil {
-		return fmt.Errorf("failed to generate signed certificate: %w", err)
-	}
-
-	resources = append([]kube.Object{NewInstrumentorTLSSecret(a.ns, &cert),
-		NewPodMutatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
-		NewSourceMutatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
-		NewSourceValidatingWebhookConfiguration(a.ns, []byte(cert.Cert)),
+	resources = append([]kube.Object{NewInstrumentorTLSSecret(a.ns),
+		NewPodMutatingWebhookConfiguration(a.ns),
+		NewSourceMutatingWebhookConfiguration(a.ns),
+		NewSourceValidatingWebhookConfiguration(a.ns),
 	},
 		resources...)
 
