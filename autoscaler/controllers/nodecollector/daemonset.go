@@ -35,6 +35,7 @@ const (
 var (
 	NodeCollectorsLabels = map[string]string{
 		k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleNodeCollector),
+		k8sconsts.OdigosSystemLabelKey:     k8sconsts.OdigosSystemLabelValue,
 	}
 )
 
