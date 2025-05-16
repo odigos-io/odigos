@@ -18,6 +18,7 @@ import (
 var (
 	ClusterCollectorGateway = map[string]string{
 		k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
+		k8sconsts.OdigosSystemLabelKey:     k8sconsts.OdigosSystemLabelValue,
 	}
 )
 
