@@ -9,4 +9,5 @@ var CodeAttributesProfile = profile.Profile{
 	ProfileName:      common.ProfileName("code-attributes"),
 	MinimumTier:      common.OnPremOdigosTier,
 	ShortDescription: "Record span attributes in 'code' namespace where supported",
+	ManifestNames:    []string{"code-attributes.yaml"},
 }

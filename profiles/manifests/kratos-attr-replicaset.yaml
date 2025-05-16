@@ -1,0 +1,8 @@
+apiVersion: actions.odigos.io/v1alpha1
+kind: K8sAttributesResolver
+metadata:
+  name: kratos-collect-replicaset-attributes
+spec:
+  collectReplicaSetAttributes: true
+  signals:
+  - TRACES

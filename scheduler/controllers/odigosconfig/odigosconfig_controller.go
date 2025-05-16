@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	odigosactionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -12,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/profiles"
 	"github.com/odigos-io/odigos/profiles/manifests"
+	"github.com/odigos-io/odigos/profiles/profile"
 	"github.com/odigos-io/odigos/profiles/sizing"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -83,7 +85,10 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	odigosConfig.IgnoredContainers = mergeIgnoredItemLists(odigosConfig.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
 
 	modifyConfigWithEffectiveProfiles(effectiveProfiles, &odigosConfig)
-	odigosConfig.Profiles = effectiveProfiles
+	odigosConfig.Profiles = make([]common.ProfileName, 0, len(effectiveProfiles))
+	for _, profile := range effectiveProfiles {
+		odigosConfig.Profiles = append(odigosConfig.Profiles, profile.ProfileName)
+	}
 
 	// if none of the profiles set sizing for collectors, use size_s as default, so the values are never nil
 	// if the values were already set (by user or profile) this is a no-op
@@ -168,19 +173,18 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 	return nil
 }
 
-func (r *odigosConfigController) applyProfileManifests(ctx context.Context, effectiveProfiles []common.ProfileName) error {
+func (r *odigosConfigController) applyProfileManifests(ctx context.Context, effectiveProfiles []profile.Profile) error {
 
 	profileDeploymentHash := calculateProfilesDeploymentHash(effectiveProfiles, r.OdigosVersion)
 
-	for _, profileName := range effectiveProfiles {
+	for _, profile := range effectiveProfiles {
+		for _, manifestFileName := range profile.ManifestNames {
+			manifestYamlBytes, err := manifests.ReadProfileManifestFile(manifestFileName)
+			if err != nil {
+				return err
+			}
 
-		yamls, err := manifests.ReadProfileYamlManifests(profileName)
-		if err != nil {
-			return err
-		}
-
-		for _, yamlBytes := range yamls {
-			err = r.applySingleProfileManifest(ctx, profileName, yamlBytes, profileDeploymentHash)
+			err = r.applySingleProfileManifest(ctx, profile.ProfileName, manifestYamlBytes, profileDeploymentHash)
 			if err != nil {
 				return err
 			}
@@ -215,6 +219,18 @@ func (r *odigosConfigController) applyProfileManifests(ctx context.Context, effe
 	}
 	for i := range instrumentationRulesList.Items {
 		err = r.Client.Delete(ctx, &instrumentationRulesList.Items[i])
+		if err != nil {
+			return err
+		}
+	}
+
+	k8sAttributesList := odigosactionsv1alpha1.K8sAttributesResolverList{}
+	err = r.Client.List(ctx, &k8sAttributesList, listOptions)
+	if err != nil {
+		return err
+	}
+	for i := range k8sAttributesList.Items {
+		err = r.Client.Delete(ctx, &k8sAttributesList.Items[i])
 		if err != nil {
 			return err
 		}
@@ -268,9 +284,8 @@ func (r *odigosConfigController) applySingleProfileManifest(ctx context.Context,
 	return nil
 }
 
-func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, odigosConfig *common.OdigosConfiguration) {
-	for _, profileName := range effectiveProfiles {
-		p := profiles.ProfilesByName[profileName]
+func modifyConfigWithEffectiveProfiles(effectiveProfiles []profile.Profile, odigosConfig *common.OdigosConfiguration) {
+	for _, p := range effectiveProfiles {
 		if p.ModifyConfigFunc != nil {
 			p.ModifyConfigFunc(odigosConfig)
 		}

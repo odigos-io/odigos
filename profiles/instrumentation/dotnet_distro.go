@@ -9,4 +9,5 @@ var LegacyDotNetProfile = profile.Profile{
 	ProfileName:      common.ProfileName("legacy-dotnet-instrumentation"),
 	MinimumTier:      common.OnPremOdigosTier,
 	ShortDescription: "Instrument DotNet applications using legacy OpenTelemetry instrumentation (needed for 6.0 support)",
+	ManifestNames:    []string{"legacy-dotnet-instrumentation.yaml"},
 }

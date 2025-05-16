@@ -5,7 +5,7 @@ metadata:
 spec:
   type: odigosconditionalattributes
   processorName: "category attributes v2"
-  notes: "Auto generated rule from category-attributes profile. Do not edit."
+  notes: "Auto generated rule from kratos profile. Do not edit."
   processorConfig:
     global_default: "Unknown"
     rules:
