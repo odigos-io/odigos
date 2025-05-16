@@ -73,7 +73,7 @@ When reporting an issue:
 
 ## Pull Request Guidelines
 
-When submitt
+When submitting a pull request:
 
 1. Include a clear description of the change and its purpose.
 2. Link to any related issues or documentation.
