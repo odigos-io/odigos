@@ -391,6 +391,18 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 								SuccessThreshold:    0,
 								FailureThreshold:    0,
 							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/readyz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: 8081,
+										},
+									},
+								},
+								PeriodSeconds: 10,
+							},
 							SecurityContext: &corev1.SecurityContext{},
 						},
 					},
