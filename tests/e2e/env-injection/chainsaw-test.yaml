@@ -16,7 +16,7 @@ spec:
             timeout: 4m
             content: |
               ../../../cli/odigos install --namespace odigos-test --version e2e-test
-              kubectl wait --for=condition=ready pods --all -n odigos-test --timeout=4m
+              ../../common/verify_odigos_installation.sh odigos-test
         - assert:
             file: ../../common/assert/odigos-installed.yaml
 

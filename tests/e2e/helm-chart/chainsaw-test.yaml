@@ -47,7 +47,7 @@ spec:
                 fi
               fi
 
-              kubectl wait --for=condition=ready pods --all -n odigos-test --timeout=4m
+              ../../common/verify_odigos_installation.sh odigos-test
 
         - assert:
             timeout: 1m
