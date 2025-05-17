@@ -13,8 +13,10 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            timeout: 3m
-            content: ../../../cli/odigos install --namespace odigos-test --version e2e-test
+            timeout: 4m
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
         - assert:
             file: ../../common/assert/odigos-installed.yaml
 
@@ -76,14 +78,9 @@ spec:
     - name: Set Env injection method to loader-fallback-to-pod-manifest
       try:
         - script:
-            timeout: 2m
-            # using an ugly sleep here since the config set command is going to re-create the instrumentor certificate.
-            # this means that there is going to be a time period in which the certificate loaded into the instrumentor is not matching the one in the webhook.
-            # this time period depends on the kubelet sync period.
-            # this is a workaround until we have a better solution for this.
+            timeout: 30s
             content: |
               ../../../cli/odigos config set agent-env-vars-injection-method loader-fallback-to-pod-manifest
-              sleep 90
 
     - name: Assert config set successfully
       try:
@@ -106,14 +103,9 @@ spec:
     - name: Set Env injection method to loader
       try:
         - script:
-            timeout: 2m
-            # using an ugly sleep here since the config set command is going to re-create the instrumentor certificate.
-            # this means that there is going to be a time period in which the certificate loaded into the instrumentor is not matching the one in the webhook.
-            # this time period depends on the kubelet sync period.
-            # this is a workaround until we have a better solution for this.
+            timeout: 30s
             content: |
               ../../../cli/odigos config set agent-env-vars-injection-method loader
-              sleep 90
 
     - name: Assert config set successfully
       try:

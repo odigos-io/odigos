@@ -85,6 +85,14 @@ rules:
       - list
       - watch
   - apiGroups:
+      - ''
+    resources:
+      - secrets
+    resourceNames:
+      - autoscaler-webhook-cert
+    verbs:
+      - update
+  - apiGroups:
       - odigos.io
     resources:
       - destinations
