@@ -21,7 +21,6 @@ spec:
       openAPIV3Schema:
         description: |-
           InstrumentedApplication is the Schema for the instrumentedapplications API
-
           Deprecated: in favour of InstrumentationConfig
         properties:
           apiVersion:
@@ -44,7 +43,6 @@ spec:
           spec:
             description: |-
               InstrumentedApplicationSpec defines the desired state of InstrumentedApplication
-
               Deprecated: in favour of InstrumentationConfig
             properties:
               options:
@@ -177,7 +175,6 @@ spec:
           status:
             description: |-
               InstrumentedApplicationStatus defines the observed state of InstrumentedApplication
-
               Deprecated: in favour of InstrumentationConfig
             properties:
               conditions:

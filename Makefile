@@ -1,7 +1,7 @@
 TAG ?= $(shell odigos version --cluster)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
-CENTRAL_BACKEND_URL ?= 
+CENTRAL_BACKEND_URL ?=
 ORG ?= registry.odigos.io
 GOLANGCI_LINT_VERSION ?= v2.1.6
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
@@ -391,7 +391,7 @@ dev-nop-destination:
 
 .PHONY: dev-add-dynamic-destination
 dev-dynamic-destination:
-	kubectl apply -f ./tests/dynamic-exporter.yaml	
+	kubectl apply -f ./tests/dynamic-exporter.yaml
 
 .PHONY: dev-add-backpressue-destination
 dev-backpressue-destination:

@@ -39,7 +39,7 @@ func DeleteAttribute(name, namespace string) *DeleteAttributeApplyConfiguration 
 	b.WithName(name)
 	b.WithNamespace(namespace)
 	b.WithKind("DeleteAttribute")
-	b.WithAPIVersion("actions/v1alpha1")
+	b.WithAPIVersion("actions.odigos.io/v1alpha1")
 	return b
 }
 

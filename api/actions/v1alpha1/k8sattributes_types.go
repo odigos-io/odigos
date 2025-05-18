@@ -91,12 +91,12 @@ type K8sAttributesStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
-//+genclient
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:path=k8sattributesresolvers,scope=Namespaced
-//+kubebuilder:metadata:labels=odigos.io/system-object=true
-
+// +genclient
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:path=k8sattributesresolvers,scope=Namespaced
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
+// +kubebuilder:storageversion
 // K8sAttributesResolver allows adding an action to collect k8s attributes.
 type K8sAttributesResolver struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -106,15 +106,10 @@ type K8sAttributesResolver struct {
 	Status K8sAttributesStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
+// +kubebuilder:object:root=true
 // K8sAttributesResolverList contains a list of K8sAttributes
 type K8sAttributesResolverList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []K8sAttributesResolver `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&K8sAttributesResolver{}, &K8sAttributesResolverList{})
 }

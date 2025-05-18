@@ -220,7 +220,7 @@ type SpanAttributeSamplerStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=spanattributesamplers,scope=Namespaced,shortName=sas
 // +kubebuilder:metadata:labels=odigos.io/system-object=true
-
+// +kubebuilder:storageversion
 // SpanAttributeSampler is the Schema for the spanattributesamplers API.
 // It holds the specification for sampling spans based on attribute conditions,
 // as well as the sampler's current status.
@@ -233,14 +233,9 @@ type SpanAttributeSampler struct {
 }
 
 // +kubebuilder:object:root=true
-
 // SpanAttributeSamplerList contains a list of SpanAttributeSampler objects.
 type SpanAttributeSamplerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []SpanAttributeSampler `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&SpanAttributeSampler{}, &SpanAttributeSamplerList{})
 }

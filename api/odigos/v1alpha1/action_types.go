@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	actions_v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,10 +30,8 @@ const (
 	ActionTransformedToProcessorType = "TransformedToProcessor"
 )
 
-// +kubebuilder:validation:Enum=ProcessorCreated;FailedToCreateProcessor;FailedToTransformToProcessor
 type ActionTransformedToProcessorReason string
 
-// Reasons for action condition types
 const (
 	// ProcessorCreatedReason is added to the action when the processor CR is created.
 	ActionTransformedToProcessorReasonProcessorCreated ActionTransformedToProcessorReason = "ProcessorCreated"
@@ -57,16 +55,16 @@ type ActionSpec struct {
 	Signals []common.ObservabilitySignal `json:"signals"`
 
 	// AddClusterInfo is the config for the AddClusterInfo Action.
-	AddClusterInfo *actionsv1.AddClusterInfoConfig `json:"addClusterInfo,omitempty"`
+	AddClusterInfo *actions_v1alpha1.AddClusterInfoConfig `json:"addClusterInfo,omitempty"`
 
 	// DeleteAttribute is the config for the DeleteAttribute Action.
-	DeleteAttribute *actionsv1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
+	DeleteAttribute *actions_v1alpha1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
 
 	// RenameAttribute is the config for the RenameAttribute Action.
-	RenameAttribute *actionsv1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
+	RenameAttribute *actions_v1alpha1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
 
 	// PiiMasking is the config for the PiiMasking Action.
-	PiiMasking *actionsv1.PiiMaskingConfig `json:"piiMasking,omitempty"`
+	PiiMasking *actions_v1alpha1.PiiMaskingConfig `json:"piiMasking,omitempty"`
 }
 
 type ActionStatus struct {
@@ -79,11 +77,11 @@ type ActionStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
-//+genclient
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
-
+// +genclient
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:storageversion
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
 type Action struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -92,14 +90,9 @@ type Action struct {
 	Status ActionStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
+// +kubebuilder:object:root=true
 type ActionList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Action `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&Action{}, &ActionList{})
 }

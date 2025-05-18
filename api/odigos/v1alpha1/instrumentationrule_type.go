@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 package v1alpha1
 
 import (
@@ -39,7 +38,6 @@ type InstrumentationLibraryGlobalId struct {
 }
 
 type InstrumentationRuleSpec struct {
-
 	// Allows you to attach a meaningful name to the rule for convenience. Odigos does not use or assume any meaning from this field.
 	RuleName string `json:"ruleName,omitempty"`
 
@@ -84,11 +82,11 @@ type InstrumentationRuleStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
-//+genclient
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=odigos.io/system-object=true
-
+// +genclient
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:storageversion
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
 type InstrumentationRule struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -97,14 +95,9 @@ type InstrumentationRule struct {
 	Status InstrumentationRuleStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
+// +kubebuilder:object:root=true
 type InstrumentationRuleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []InstrumentationRule `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&InstrumentationRule{}, &InstrumentationRuleList{})
 }

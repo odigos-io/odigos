@@ -39,7 +39,7 @@ func PiiMasking(name, namespace string) *PiiMaskingApplyConfiguration {
 	b.WithName(name)
 	b.WithNamespace(namespace)
 	b.WithKind("PiiMasking")
-	b.WithAPIVersion("actions/v1alpha1")
+	b.WithAPIVersion("actions.odigos.io/v1alpha1")
 	return b
 }
 

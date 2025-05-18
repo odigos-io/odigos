@@ -85,7 +85,7 @@ type ServiceNameSamplerStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=servicenamesamplers,scope=Namespaced,shortName=sns
 // +kubebuilder:metadata:labels=odigos.io/system-object=true
-
+// +kubebuilder:storageversion
 // ServiceNameSampler is the Schema for the servicenamesamplers API.
 // It enables trace sampling based on whether specific services appear within a trace.
 type ServiceNameSampler struct {
@@ -97,14 +97,9 @@ type ServiceNameSampler struct {
 }
 
 // +kubebuilder:object:root=true
-
 // ServiceNameSamplerList contains a list of ServiceNameSampler resources.
 type ServiceNameSamplerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ServiceNameSampler `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&ServiceNameSampler{}, &ServiceNameSamplerList{})
 }

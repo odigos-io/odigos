@@ -30,7 +30,7 @@ import (
 // apply configuration type exists for the given GroupVersionKind.
 func ForKind(kind schema.GroupVersionKind) interface{} {
 	switch kind {
-	// Group=actions, Version=v1alpha1
+	// Group=actions.odigos.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithKind("AddClusterInfo"):
 		return &actionsv1alpha1.AddClusterInfoApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AddClusterInfoSpec"):

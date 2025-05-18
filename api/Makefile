@@ -19,8 +19,10 @@ SHELL = /usr/bin/env bash -o pipefail
 
 TOOLS := $(PWD)/../.tools
 
+CONVERSION_GEN ?= $(LOCALBIN)/conversion-gen
+
 .PHONY: all
-all: generate manifests generate-client sync-helm-crd docgen
+all: generate conversions manifests generate-client sync-helm-crd docgen
 
 ##@ General
 
@@ -118,3 +120,17 @@ sync-helm-crd:
 	@echo "Syncing CRD yamls to Helm repo"
 	@rm ../helm/odigos/templates/crds/* # remove existing files so we don't get leftovers
 	@cp -r config/crd/bases/* ../helm/odigos/templates/crds/
+
+$(CONVERSION_GEN): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install k8s.io/code-generator/cmd/conversion-gen@v0.33.0
+
+.PHONY: conversions
+conversions: $(CONVERSION_GEN)
+	@echo "Generating all conversions…"
+	@$(CONVERSION_GEN) \
+	  --go-header-file=hack/boilerplate.go.txt \
+	  --extra-peer-dirs=\
+github.com/odigos-io/odigos/api/hub/actions/v__internal,\
+github.com/odigos-io/odigos/api/hub/odigos/v__internal \
+	  github.com/odigos-io/odigos/api/actions/v1alpha1 \
+	  github.com/odigos-io/odigos/api/odigos/v1alpha1

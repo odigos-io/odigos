@@ -56,12 +56,12 @@ type DeleteAttributeStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
-//+genclient
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:path=deleteattributes,scope=Namespaced,shortName=da
-//+kubebuilder:metadata:labels=odigos.io/system-object=true
-
+// +genclient
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:path=deleteattributes,scope=Namespaced,shortName=da
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
+// +kubebuilder:storageversion
 // DeleteAttribute is the Schema for the DeleteAttribute odigos action API
 type DeleteAttribute struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -71,15 +71,10 @@ type DeleteAttribute struct {
 	Status DeleteAttributeStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
+// +kubebuilder:object:root=true
 // DeleteAttributeList contains a list of DeleteAttribute
 type DeleteAttributeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []DeleteAttribute `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&DeleteAttribute{}, &DeleteAttributeList{})
 }
