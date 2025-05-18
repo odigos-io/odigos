@@ -339,7 +339,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		dataStreamNames := GetSourceDataStreamNames(source)
 
 		if len(dataStreamNames) > 1 {
-			_, err = RemoveSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName)
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
 			return err
 		}
 
@@ -353,7 +353,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		dataStreamNames := GetSourceDataStreamNames(source)
 
 		if len(dataStreamNames) > 1 {
-			_, err = RemoveSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName)
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
 			return err
 		}
 
@@ -377,12 +377,21 @@ func UpdateSourceCRDLabel(ctx context.Context, nsName string, crdName string, la
 	escapedLabel := strings.ReplaceAll(labelKey, "/", "~1")   // replace "/" with "~1" to escape it for JSON patch
 	escapedLabel = strings.ReplaceAll(escapedLabel, "\"", "") // remove quotes to avoid JSON parsing issues
 
-	patchOps := []map[string]interface{}{
-		{
+	patchOps := []map[string]interface{}{}
+
+	if newValue == "" {
+		// if no value, remove the label
+		patchOps = append(patchOps, map[string]interface{}{
+			"op":   "remove",
+			"path": fmt.Sprintf("/metadata/labels/%s", escapedLabel),
+		})
+	} else {
+		// if value is provided, replace the label
+		patchOps = append(patchOps, map[string]interface{}{
 			"op":    "replace",
 			"path":  fmt.Sprintf("/metadata/labels/%s", escapedLabel),
 			"value": newValue,
-		},
+		})
 	}
 
 	patchBytes, err := json.Marshal(patchOps)
@@ -392,17 +401,6 @@ func UpdateSourceCRDLabel(ctx context.Context, nsName string, crdName string, la
 
 	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(
 		ctx, crdName, types.JSONPatchType, patchBytes, metav1.PatchOptions{},
-	)
-
-	return source, err
-}
-
-func RemoveSourceCRDLabel(ctx context.Context, nsName string, crdName string, labelKey string) (*v1alpha1.Source, error) {
-	escapedLabel := strings.ReplaceAll(labelKey, "/", "~1")
-	patch := fmt.Sprintf(`[{"op": "remove", "path": "/metadata/labels/%s"}]`, escapedLabel)
-
-	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(
-		ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{},
 	)
 
 	return source, err
