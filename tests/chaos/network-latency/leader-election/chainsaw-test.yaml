@@ -20,7 +20,7 @@ spec:
             content: |
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../../.."
-              helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
+              helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --wait --timeout 5m
               kubectl label namespace odigos-test odigos.io/system-object="true"
 
     - name: Verify Odigos Installation

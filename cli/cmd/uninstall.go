@@ -24,11 +24,12 @@ import (
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"go.uber.org/multierr"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	k8slabels "k8s.io/apimachinery/pkg/labels"
 
 	"github.com/spf13/cobra"
 )
@@ -480,13 +481,18 @@ func removeAllSources(ctx context.Context, client *kube.Client) error {
 	l := log.Print("Removing Odigos Sources...")
 	sources, err := client.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
+		if sources != nil && len(sources.Items) == 0 {
+			// no sources found, nothing to do here
+			l.Success()
+			return nil
+		}
 		return err
 	}
 
 	var deleteErr error
 	for _, i := range sources.Items {
 		e := client.OdigosClient.Sources(i.Namespace).Delete(ctx, i.Name, metav1.DeleteOptions{})
-		if e != nil {
+		if e != nil && !apierrors.IsNotFound(e) {
 			deleteErr = errors.Join(deleteErr, e)
 		}
 	}
@@ -504,11 +510,21 @@ func removeAllSources(ctx context.Context, client *kube.Client) error {
 			Limit: 1,
 		})
 		if err != nil {
+			if apierrors.IsNotFound(err) {
+				l.Success()
+				return true, nil
+			}
 			return false, err
 		}
 		if len(sources.Items) == 0 {
 			l.Success()
 			return true, nil
+		}
+		// if the source is not marked for deletion, delete it
+		// this can happen in race conditions where the initial list operation does not include freshly created sources
+		// but we do see them here in the poll
+		if sources.Items[0].DeletionTimestamp.IsZero() {
+			client.OdigosClient.Sources(sources.Items[0].Namespace).Delete(innerCtx, sources.Items[0].Name, metav1.DeleteOptions{})
 		}
 		return false, nil
 	})

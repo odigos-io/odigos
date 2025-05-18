@@ -87,10 +87,11 @@ data:
       k8sNodeLogsDirectory: {{ . }}
       {{- end }}
     {{- end }}
-    {{- if .Values.UserInstrumentationEnvs.languages }}
-    UserInstrumentationEnvs:
+    {{- if include "utils.shouldRenderUserInstrumentationEnvs" . | eq "true" }}
+    userInstrumentationEnvs:
       languages:
-        {{- range $lang, $config := .Values.UserInstrumentationEnvs.languages }}
+        {{- range $lang, $config := .Values.userInstrumentationEnvs.languages }}
+        {{- if or $config.enabled $config.env }}
         {{ $lang }}:
           enabled: {{ $config.enabled }}
           {{- if $config.env }}
@@ -100,9 +101,10 @@ data:
             {{- end }}
           {{- end }}
         {{- end }}
+        {{- end }}
     {{- end }}
     {{- if .Values.profiles }}
-    profiles: 
+    profiles:
       {{- toYaml .Values.profiles | nindent 6 }}
     {{- end }}
     telemetryEnabled: {{ .Values.telemetry.enabled }}
@@ -135,4 +137,7 @@ data:
     {{- if .Values.nodeSelector }}
     nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 6 }}
+    {{- end }}
+    {{- if .Values.karpenter.enabled }}
+    karpenterEnabled: {{ .Values.karpenter.enabled }}
     {{- end }}

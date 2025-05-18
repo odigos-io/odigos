@@ -6,6 +6,6 @@ packaging==25.0
 PyYAML==6.0.2
 requests==2.32.3
 scipy==1.15.2
-svgpathtools==1.6.1
+svgpathtools==1.7.0
 svgwrite==1.4.3
 urllib3==2.4.0
