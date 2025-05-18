@@ -27,9 +27,9 @@ require (
 	go.opentelemetry.io/collector/receiver/receivertest v0.122.1
 	go.opentelemetry.io/otel v1.35.0
 	golang.org/x/sync v0.12.0
-	k8s.io/api v0.33.0
-	k8s.io/apimachinery v0.33.0
-	k8s.io/client-go v0.33.0
+	k8s.io/api v0.33.1
+	k8s.io/apimachinery v0.33.1
+	k8s.io/client-go v0.33.1
 	sigs.k8s.io/yaml v1.4.0
 )
 
