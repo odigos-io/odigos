@@ -38,16 +38,6 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/java-ebpf/tracing_probes.so":                                                      {},
 		"/var/odigos/java-ext-ebpf/end_span_usdt.so":                                                   {},
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
-
-		// the following paths are temporary...
-		// we removed the index files from all PHP agents (after PHP agents v0.1.21),
-		// but we need to keep them during CLI upgrades, prior to Odigos v1.0.188 (not including),
-		// once the CLI is upgraded, and the PHP pods were restarted, we no longer need to keep them.
-		"/var/odigos/php/8.0/index.php": {},
-		"/var/odigos/php/8.1/index.php": {},
-		"/var/odigos/php/8.2/index.php": {},
-		"/var/odigos/php/8.3/index.php": {},
-		"/var/odigos/php/8.4/index.php": {},
 	}
 
 	updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
