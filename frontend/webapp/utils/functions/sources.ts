@@ -23,6 +23,7 @@ export const prepareSourcePayloads = (
   selectAppsList: SourceSelectionFormData,
   handleInstrumentationCount: (toAddCount: number, toDeleteCount: number) => void,
   removeEntities: (entityType: EntityTypes, entityIds: WorkloadId[]) => void,
+  selectedStreamName: string,
 ) => {
   let isEmpty = true;
   const payloads: SourceInstrumentInput[] = [];
@@ -31,11 +32,21 @@ export const prepareSourcePayloads = (
     if (items.length) {
       isEmpty = false;
 
-      // this is to map selected=undefined to selected=false
-      const mappedItems = items.map(({ name, kind, selected }) => ({ name, kind, selected: !selected ? false : true }));
+      const mappedItems = items.map(({ name, kind, selected, currentStreamName }) => ({
+        name,
+        kind,
+        // this is to map selected=undefined to selected=false
+        selected: selected === undefined ? false : selected,
+        // currentStreamName comes from the UI Kit, if it's missing we use selectedStreamName is a fallback,
+        // we could rely on only the selectedStreamName, but if we want to override the selected then we need to use the currentStreamName
+        // (for example - if we want to have a single page to manage all groups, then we need to override the selected)
+        currentStreamName: currentStreamName || selectedStreamName,
+      }));
+
       // this is to map delete-items from "SourceSelectionFormData" to "WorkloadId"
       const toDelete = mappedItems.filter((src) => !src.selected).map(({ name, kind }) => ({ namespace: ns, name, kind }));
 
+      // TODO: fix expected instrumentation count for already-instrumented sources (e.g. when user selects instrumented source for othe data stream)
       const toDeleteCount = toDelete.length;
       const toAddCount = mappedItems.length - toDeleteCount;
 

@@ -107,6 +107,7 @@ type ComputePlatform struct {
 	Destinations         []*Destination         `json:"destinations"`
 	Actions              []*PipelineAction      `json:"actions"`
 	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
+	DataStreams          []*DataStream          `json:"dataStreams"`
 }
 
 type Condition struct {
@@ -136,6 +137,10 @@ type CustomReadDataLabel struct {
 	Condition string `json:"condition"`
 	Title     string `json:"title"`
 	Value     string `json:"value"`
+}
+
+type DataStream struct {
+	Name string `json:"name"`
 }
 
 type DbQueryPayloadCollection struct {
@@ -177,8 +182,9 @@ func (this DeleteAttributeAction) GetSignals() []SignalType {
 
 type Destination struct {
 	ID              string                        `json:"id"`
-	Name            string                        `json:"name"`
 	Type            string                        `json:"type"`
+	Name            string                        `json:"name"`
+	DataStreamNames []*string                     `json:"dataStreamNames"`
 	ExportedSignals *ExportedSignals              `json:"exportedSignals"`
 	Fields          string                        `json:"fields"`
 	DestinationType *DestinationTypesCategoryItem `json:"destinationType"`
@@ -204,10 +210,11 @@ type DestinationFieldYamlProperties struct {
 }
 
 type DestinationInput struct {
-	Name            string                `json:"name"`
-	Type            string                `json:"type"`
-	ExportedSignals *ExportedSignalsInput `json:"exportedSignals"`
-	Fields          []*FieldInput         `json:"fields"`
+	Name              string                `json:"name"`
+	Type              string                `json:"type"`
+	CurrentStreamName string                `json:"currentStreamName"`
+	ExportedSignals   *ExportedSignalsInput `json:"exportedSignals"`
+	Fields            []*FieldInput         `json:"fields"`
 }
 
 type DestinationTypesCategoryItem struct {
@@ -366,6 +373,7 @@ type K8sActualSource struct {
 	Namespace         string             `json:"namespace"`
 	Name              string             `json:"name"`
 	Kind              K8sResourceKind    `json:"kind"`
+	DataStreamNames   []*string          `json:"dataStreamNames"`
 	NumberOfInstances *int               `json:"numberOfInstances,omitempty"`
 	Selected          *bool              `json:"selected,omitempty"`
 	OtelServiceName   *string            `json:"otelServiceName,omitempty"`
@@ -525,7 +533,8 @@ type PaginatedSources struct {
 }
 
 type PatchSourceRequestInput struct {
-	OtelServiceName string `json:"otelServiceName"`
+	OtelServiceName   string `json:"otelServiceName"`
+	CurrentStreamName string `json:"currentStreamName"`
 }
 
 type PayloadCollection struct {
@@ -548,9 +557,10 @@ type PersistNamespaceItemInput struct {
 }
 
 type PersistNamespaceSourceInput struct {
-	Name     string          `json:"name"`
-	Kind     K8sResourceKind `json:"kind"`
-	Selected bool            `json:"selected"`
+	Name              string          `json:"name"`
+	Kind              K8sResourceKind `json:"kind"`
+	Selected          bool            `json:"selected"`
+	CurrentStreamName string          `json:"currentStreamName"`
 }
 
 type PiiMaskingAction struct {
