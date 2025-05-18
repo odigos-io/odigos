@@ -19,11 +19,11 @@ spec:
       - envName: PHP_INI_SCAN_DIR
         envValue: ':/var/odigos/php/{{RUNTIME_VERSION_MAJOR_MINOR}}'
       - envName: OTEL_PHP_AUTOLOAD_ENABLED
-        envValue: true
+        envValue: 'true'
       - envName: OTEL_EXPORTER_OTLP_PROTOCOL
-        envValue: http/protobuf
+        envValue: 'http/protobuf'
       - envName: OTEL_PROPAGATORS
-        envValue: tracecontext,baggage
+        envValue: 'tracecontext,baggage'
   runtimeAgent:
     directoryNames:
       - '{{ODIGOS_AGENTS_DIR}}/php'
