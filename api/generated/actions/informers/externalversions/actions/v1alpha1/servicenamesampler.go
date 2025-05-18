@@ -61,13 +61,25 @@ func NewFilteredServiceNameSamplerInformer(client versioned.Interface, namespace
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ActionsV1alpha1().ServiceNameSamplers(namespace).List(context.TODO(), options)
+				return client.ActionsV1alpha1().ServiceNameSamplers(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ActionsV1alpha1().ServiceNameSamplers(namespace).Watch(context.TODO(), options)
+				return client.ActionsV1alpha1().ServiceNameSamplers(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.ActionsV1alpha1().ServiceNameSamplers(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.ActionsV1alpha1().ServiceNameSamplers(namespace).Watch(ctx, options)
 			},
 		},
 		&apiactionsv1alpha1.ServiceNameSampler{},

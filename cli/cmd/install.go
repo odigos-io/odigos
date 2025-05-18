@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -54,6 +55,8 @@ var (
 
 	clusterName       string
 	centralBackendURL string
+
+	userInstrumentationEnvsRaw string
 )
 
 type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error
@@ -349,6 +352,14 @@ func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]st
 		autoScalerImage = k8sconsts.AutoScalerImageUBI9
 	}
 
+	var parsedUserJson *common.UserInstrumentationEnvs
+	if userInstrumentationEnvsRaw != "" {
+		parsedUserJson = &common.UserInstrumentationEnvs{}
+		if err := json.Unmarshal([]byte(userInstrumentationEnvsRaw), &parsedUserJson); err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to parse --user-instrumentation-envs: %v\n", err)
+		}
+	}
+
 	return common.OdigosConfiguration{
 		ConfigVersion:                    1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:                 telemetryEnabled,
@@ -366,6 +377,7 @@ func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]st
 		UiMode:                    common.UiMode(uiMode),
 		ClusterName:               clusterName,
 		CentralBackendURL:         centralBackendURL,
+		UserInstrumentationEnvs:   parsedUserJson,
 		NodeSelector:              nodeSelector,
 	}
 
@@ -402,6 +414,12 @@ func init() {
 
 	installCmd.Flags().StringVar(&clusterName, "cluster-name", "", "name of the cluster to be used in the centralized backend")
 	installCmd.Flags().StringVar(&centralBackendURL, "central-backend-url", "", "use to connect this cluster to the centralized odigos cluster")
+	installCmd.Flags().StringVar(
+		&userInstrumentationEnvsRaw,
+		"user-instrumentation-envs",
+		"",
+		"JSON string to configure per-language instrumentation envs, e.g. '{\"languages\":{\"go\":{\"enabled\":true,\"env\":{\"OTEL_GO_ENABLED\":\"true\"}}}}'",
+	)
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion

@@ -166,7 +166,11 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 
 	var actualSources []*model.K8sActualSource
 	for idx, ic := range icList.Items {
-		actualSources = append(actualSources, instrumentationConfigToActualSource(ic, *srcList[idx]))
+		actualSource, err := instrumentationConfigToActualSource(ctx, ic, *srcList[idx])
+		if err != nil {
+			return nil, err
+		}
+		actualSources = append(actualSources, actualSource)
 	}
 
 	return &model.PaginatedSources{
@@ -195,7 +199,11 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
 
-	payload := instrumentationConfigToActualSource(*ic, *src)
+	payload, err := instrumentationConfigToActualSource(ctx, *ic, *src)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Source: %w", err)
+	}
+
 	condition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
 	if condition.Status != "" {
 		payload.Conditions = append(payload.Conditions, &condition)
