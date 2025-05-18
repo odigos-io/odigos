@@ -67,6 +67,7 @@ func CreateManager() (ctrl.Manager, error) {
 		Metrics: metricsserver.Options{
 			BindAddress: "0",
 		},
+		HealthProbeBindAddress: ":8081",
 	})
 }
 

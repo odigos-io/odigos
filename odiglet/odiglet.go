@@ -3,7 +3,9 @@ package odiglet
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
+	"sync/atomic"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -32,6 +34,7 @@ type Odiglet struct {
 	configUpdates            chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
 	deviceInjectionCallbacks instrumentation.OtelSdksLsf
 	criClient                *criwrapper.CriClient
+	devicePluginRegistered   *atomic.Bool
 }
 
 const (
@@ -48,6 +51,16 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 	mgr, err := kube.CreateManager()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create controller-runtime manager %w", err)
+	}
+
+	devicePluginRegistered := &atomic.Bool{}
+	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error {
+		if !devicePluginRegistered.Load() {
+			return fmt.Errorf("device plugin not registered yet")
+		}
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("unable to set up device plugin registration check: %w", err)
 	}
 
 	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
@@ -76,12 +89,12 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 		configUpdates:            configUpdates,
 		deviceInjectionCallbacks: deviceInjectionCallbacks,
 		criClient:                &criWrapper,
+		devicePluginRegistered:   devicePluginRegistered,
 	}, nil
 }
 
 // Run starts the Odiglet components and blocks until the context is cancelled, or a critical error occurs.
 func (o *Odiglet) Run(ctx context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
 	g, groupCtx := errgroup.WithContext(ctx)
 
 	if err := o.criClient.Connect(ctx); err != nil {
@@ -104,18 +117,15 @@ func (o *Odiglet) Run(ctx context.Context) {
 	})
 
 	// Start device manager
-	// the device manager library doesn't support passing a context,
-	// however, internally it uses a context to cancel the device manager once SIGTERM or SIGINT is received.
-	// We run it outside of the error group to avoid blocking on Wait() in case of a fatal error.
-	go func() {
-		err := runDeviceManager(o.clientset, o.deviceInjectionCallbacks)
+	g.Go(func() error {
+		err := runDeviceManager(groupCtx, o.clientset, o.deviceInjectionCallbacks, o.devicePluginRegistered)
 		if err != nil {
-			log.Logger.Error(err, "Device manager exited with error")
-			cancel()
-		} else {
-			log.Logger.V(0).Info("Device manager exited")
+			log.Logger.Error(err, "Failed to run device manager")
 		}
-	}()
+
+		log.Logger.V(0).Info("Device manager exited")
+		return err
+	})
 
 	g.Go(func() error {
 		err := o.ebpfManager.Run(groupCtx)
@@ -158,19 +168,25 @@ func (o *Odiglet) Run(ctx context.Context) {
 	}
 }
 
-func runDeviceManager(clientset *kubernetes.Clientset, otelSdkLsf instrumentation.OtelSdksLsf) error {
+func runDeviceManager(ctx context.Context, clientset *kubernetes.Clientset, otelSdkLsf instrumentation.OtelSdksLsf, devicePluginRegistered *atomic.Bool) error {
 	log.Logger.V(0).Info("Starting device manager")
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	lister, err := instrumentation.NewLister(ctx, clientset, otelSdkLsf)
 	if err != nil {
 		return fmt.Errorf("failed to create device manager lister %w", err)
 	}
 
-	manager := dpm.NewManager(lister, log.Logger)
-	manager.Run()
-	return nil
+	readinessChan := make(chan struct{})
+	manager := dpm.NewManager(ctx, lister, readinessChan, devicePluginRegistered, log.Logger)
+	go func() {
+		select {
+		case <-readinessChan:
+			devicePluginRegistered.Store(true)
+			log.Logger.V(0).Info("All device plugins are registered")
+		case <-ctx.Done():
+			log.Logger.V(0).Info("Device manager context cancelled")
+		}
+	}()
+	return manager.Run()
 }
 
 func OdigletInitPhase(clientset *kubernetes.Clientset) {
