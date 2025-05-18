@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: coupon
-          image: registry.odigos.io/odigos-demo-coupon:v0.1.15
+          image: registry.odigos.io/odigos-demo-coupon:v0.1.18
           imagePullPolicy: IfNotPresent
           env:
             - name: MEMBERSHIP_SERVICE_HOST
@@ -55,7 +55,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: registry.odigos.io/odigos-demo-frontend:v0.1.15
+          image: registry.odigos.io/odigos-demo-frontend:v0.1.18
           imagePullPolicy: IfNotPresent
           env:
             - name: INVENTORY_SERVICE_HOST
@@ -100,7 +100,7 @@ spec:
     spec:
       containers:
         - name: inventory
-          image: registry.odigos.io/odigos-demo-inventory:v0.1.15
+          image: registry.odigos.io/odigos-demo-inventory:v0.1.18
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -136,7 +136,7 @@ spec:
     spec:
       containers:
         - name: membership
-          image: registry.odigos.io/odigos-demo-membership:v0.1.15
+          image: registry.odigos.io/odigos-demo-membership:v0.1.18
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -172,7 +172,7 @@ spec:
     spec:
       containers:
         - name: pricing
-          image: registry.odigos.io/odigos-demo-pricing:v0.1.15
+          image: registry.odigos.io/odigos-demo-pricing:v0.1.18
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -208,10 +208,39 @@ spec:
     spec:
       containers:
         - name: currency
-          image: registry.odigos.io/odigos-demo-currency:v0.1.15
-          imagePullPolicy: IfNotPresent
+          image: registry.odigos.io/odigos-demo-currency:v0.1.18
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9000
+        - name: nginx
+          image: nginx:1.27.5
           ports:
             - containerPort: 8080
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: currency-nginx-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: currency-nginx-config
+  namespace: default
+data:
+  nginx.conf: |
+    server {
+        listen 8080;
+        server_name localhost;
+
+        location / {
+            include fastcgi_params;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_param SCRIPT_FILENAME /app/index.php;
+        }
+    }
 ---
 kind: Service
 apiVersion: v1

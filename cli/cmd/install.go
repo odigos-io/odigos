@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -44,14 +45,18 @@ var (
 	userInputInstallProfiles         []string
 	uiMode                           string
 	customContainerRuntimeSocketPath string
+	k8sNodeLogsDirectory             string
 	instrumentorImage                string
 	odigletImage                     string
 	autoScalerImage                  string
 	imagePrefix                      string
 	nodeSelectorFlag                 string
+	karpenterEnabled                 bool
 
 	clusterName       string
 	centralBackendURL string
+
+	userInstrumentationEnvsRaw string
 )
 
 type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error
@@ -347,21 +352,33 @@ func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]st
 		autoScalerImage = k8sconsts.AutoScalerImageUBI9
 	}
 
+	var parsedUserJson *common.UserInstrumentationEnvs
+	if userInstrumentationEnvsRaw != "" {
+		parsedUserJson = &common.UserInstrumentationEnvs{}
+		if err := json.Unmarshal([]byte(userInstrumentationEnvsRaw), &parsedUserJson); err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to parse --user-instrumentation-envs: %v\n", err)
+		}
+	}
+
 	return common.OdigosConfiguration{
 		ConfigVersion:                    1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:                 telemetryEnabled,
 		OpenshiftEnabled:                 openshiftEnabled,
 		IgnoredNamespaces:                userInputIgnoredNamespaces,
 		CustomContainerRuntimeSocketPath: customContainerRuntimeSocketPath,
-		IgnoredContainers:                userInputIgnoredContainers,
-		SkipWebhookIssuerCreation:        skipWebhookIssuerCreation,
-		Psp:                              psp,
-		ImagePrefix:                      imagePrefix,
-		Profiles:                         selectedProfiles,
-		UiMode:                           common.UiMode(uiMode),
-		ClusterName:                      clusterName,
-		CentralBackendURL:                centralBackendURL,
-		NodeSelector:                     nodeSelector,
+		CollectorNode: &common.CollectorNodeConfiguration{
+			K8sNodeLogsDirectory: k8sNodeLogsDirectory,
+		},
+		IgnoredContainers:         userInputIgnoredContainers,
+		SkipWebhookIssuerCreation: skipWebhookIssuerCreation,
+		Psp:                       psp,
+		ImagePrefix:               imagePrefix,
+		Profiles:                  selectedProfiles,
+		UiMode:                    common.UiMode(uiMode),
+		ClusterName:               clusterName,
+		CentralBackendURL:         centralBackendURL,
+		UserInstrumentationEnvs:          parsedUserJson,
+		NodeSelector:              nodeSelector,
 	}
 
 }
@@ -389,6 +406,7 @@ func init() {
 	installCmd.Flags().BoolVar(&psp, consts.PspProperty, false, "enable pod security policy")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredNamespaces, "ignore-namespace", k8sconsts.DefaultIgnoredNamespaces, "namespaces not to show in odigos ui")
 	installCmd.Flags().StringVar(&customContainerRuntimeSocketPath, "container-runtime-socket-path", "", "custom configuration of a path to the container runtime socket path (e.g. /var/lib/rancher/rke2/agent/containerd/containerd.sock)")
+	installCmd.Flags().StringVar(&k8sNodeLogsDirectory, consts.K8sNodeLogsDirectory, "", "custom configuration of a path to the directory where Kubernetes logs are symlinked in a node (e.g. /mnt/var/log)")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
 	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
@@ -396,6 +414,12 @@ func init() {
 
 	installCmd.Flags().StringVar(&clusterName, "cluster-name", "", "name of the cluster to be used in the centralized backend")
 	installCmd.Flags().StringVar(&centralBackendURL, "central-backend-url", "", "use to connect this cluster to the centralized odigos cluster")
+	installCmd.Flags().StringVar(
+		&userInstrumentationEnvsRaw,
+		"user-instrumentation-envs",
+		"",
+		"JSON string to configure per-language instrumentation envs, e.g. '{\"languages\":{\"go\":{\"enabled\":true,\"env\":{\"OTEL_GO_ENABLED\":\"true\"}}}}'",
+	)
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion

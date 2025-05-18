@@ -7,9 +7,8 @@ import (
 )
 
 const (
-	destinationName   = "DYNAMIC_DESTINATION_NAME"
-	destinationType   = "DYNAMIC_DESTINATION_TYPE"
-	configurationData = "DYNAMIC_CONFIGURATION_DATA"
+	destinationTypeKey   = "DYNAMIC_DESTINATION_TYPE"
+	configurationDataKey = "DYNAMIC_CONFIGURATION_DATA"
 )
 
 type Dynamic struct{}
@@ -24,9 +23,9 @@ func (g *Dynamic) DestType() common.DestinationType {
 func (g *Dynamic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 
-	dynamicConfData, exists := config[configurationData]
+	dynamicConfData, exists := config[configurationDataKey]
 	if !exists {
-		return nil, errorMissingKey(configurationData)
+		return nil, errorMissingKey(configurationDataKey)
 	}
 
 	var parsedConfig map[string]interface{}
@@ -35,12 +34,12 @@ func (g *Dynamic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 		return nil, err
 	}
 
-	destinationType, exists := config[destinationType]
+	destinationType, exists := config[destinationTypeKey]
 	if !exists {
 		return nil, errorMissingKey(destinationType)
 	}
 
-	exporterName := config[destinationType] + "/" + dest.GetID()
+	exporterName := destinationType + "/" + dest.GetID()
 	currentConfig.Exporters[exporterName] = parsedConfig
 
 	var pipelineNames []string

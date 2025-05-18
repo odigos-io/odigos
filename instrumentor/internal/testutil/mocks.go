@@ -19,7 +19,6 @@ import (
 
 const (
 	mockNamespaceBase   = "test-namespace"
-	mockDeploymentName  = "test-deployment"
 	mockDaemonSetName   = "test-daemonset"
 	mockStatefulSetName = "test-statefulset"
 )
@@ -54,19 +53,19 @@ func NewMockOdigosConfig() *corev1.ConfigMap {
 	}
 }
 
-func NewMockTestDeployment(ns *corev1.Namespace) *appsv1.Deployment {
+func NewMockTestDeployment(ns *corev1.Namespace, name string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      mockDeploymentName,
+			Name:      name,
 			Namespace: ns.GetName(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": "test-dep"},
+				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app.kubernetes.io/name": "test-dep"},
+					Labels: map[string]string{"app.kubernetes.io/name": name},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -136,7 +135,7 @@ func NewMockTestStatefulSet(ns *corev1.Namespace) *appsv1.StatefulSet {
 }
 
 // NewMockSource returns a single source for a workload (deployment, daemonset, statefulset)
-func NewMockSource(workloadObject client.Object) *odigosv1.Source {
+func NewMockSource(workloadObject client.Object, disabled bool) *odigosv1.Source {
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
 	namespace := workloadObject.GetNamespace()
 	if gvk.Kind == string(k8sconsts.WorkloadKindNamespace) && len(namespace) == 0 {
@@ -159,6 +158,7 @@ func NewMockSource(workloadObject client.Object) *odigosv1.Source {
 				Namespace: namespace,
 				Kind:      k8sconsts.WorkloadKind(gvk.Kind),
 			},
+			DisableInstrumentation: disabled,
 		},
 	}
 }

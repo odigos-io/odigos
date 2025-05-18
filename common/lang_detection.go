@@ -12,7 +12,7 @@ type ProgramLanguageDetails struct {
 	RuntimeVersion *version.Version
 }
 
-// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;mysql;nginx;unknown;ignored
+// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;ruby;rust;mysql;nginx;redis;postgres;unknown;ignored
 type ProgrammingLanguage string
 
 const (
@@ -22,10 +22,14 @@ const (
 	DotNetProgrammingLanguage     ProgrammingLanguage = "dotnet"
 	JavascriptProgrammingLanguage ProgrammingLanguage = "javascript"
 	PhpProgrammingLanguage        ProgrammingLanguage = "php"
+	RubyProgrammingLanguage       ProgrammingLanguage = "ruby"
+	RustProgrammingLanguage       ProgrammingLanguage = "rust"
 	// This is an experimental feature, It is not a language
 	// but in order to avoid huge refactoring we are adding it here for now
-	MySQLProgrammingLanguage ProgrammingLanguage = "mysql"
-	NginxProgrammingLanguage ProgrammingLanguage = "nginx"
+	MySQLProgrammingLanguage    ProgrammingLanguage = "mysql"
+	NginxProgrammingLanguage    ProgrammingLanguage = "nginx"
+	RedisProgrammingLanguage    ProgrammingLanguage = "redis"
+	PostgresProgrammingLanguage ProgrammingLanguage = "postgres"
 	// Used when the language detection is not successful for all the available inspectors
 	UnknownProgrammingLanguage ProgrammingLanguage = "unknown"
 	// Deprecated: This is no longer supported and will not be set be odiglet

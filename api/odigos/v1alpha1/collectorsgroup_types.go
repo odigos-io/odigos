@@ -87,6 +87,10 @@ type CollectorsGroupSpec struct {
 	// This can be used to resolve conflicting ports when a collector is using the host network.
 	CollectorOwnMetricsPort int32 `json:"collectorOwnMetricsPort"`
 
+	// Additional directory to mount in the node collector pod for logs.
+	// This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.
+	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
+
 	// Resources [memory/cpu] settings for the collectors group.
 	// these settings are used to protect the collectors instances from:
 	// - running out of memory and being killed by the k8s OOM killer

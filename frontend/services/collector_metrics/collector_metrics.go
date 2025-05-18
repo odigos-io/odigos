@@ -72,7 +72,6 @@ type OdigosMetricsConsumer struct {
 }
 
 var (
-	ServiceNameKey        = string(semconv.ServiceNameKey)
 	K8SNamespaceNameKey   = string(semconv.K8SNamespaceNameKey)
 	K8SDeploymentNameKey  = string(semconv.K8SDeploymentNameKey)
 	K8SStatefulSetNameKey = string(semconv.K8SStatefulSetNameKey)

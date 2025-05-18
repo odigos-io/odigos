@@ -1,0 +1,18 @@
+apiVersion: odigos.io/v1alpha1
+kind: Processor
+metadata:
+  name: reduce-span-name-cardinality
+  namespace: odigos-system
+spec:
+  type: transform
+  processorName: "Reduce Span Name Cardinality"
+  notes: "Auto generated rule from span-name-cardinality-reduction profile. Do not edit."
+  processorConfig:
+    trace_statements:
+      - context: span
+        statements:
+        - replace_pattern(name, "uid:[^\\s]+", "uid:{uid}") where instrumentation_scope.name == "io.opentelemetry.quartz-2.0"
+  signals:
+    - TRACES
+  collectorRoles:
+    - CLUSTER_GATEWAY

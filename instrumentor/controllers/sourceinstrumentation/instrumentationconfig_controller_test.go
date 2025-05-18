@@ -25,7 +25,7 @@ var _ = Describe("deleteInstrumentationConfig InstrumentationConfig controller",
 				namespace = testutil.NewMockNamespace()
 				Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
 
-				deployment = testutil.SetOdigosInstrumentationDisabled(testutil.NewMockTestDeployment(namespace))
+				deployment = testutil.SetOdigosInstrumentationDisabled(testutil.NewMockTestDeployment(namespace, "test-deployment"))
 				Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
 			})
 
