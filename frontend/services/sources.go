@@ -529,6 +529,62 @@ func GetInstrumentationInstancesHealthConditions(ctx context.Context) ([]*model.
 	return result, nil
 }
 
+func GetInstrumentationConfigConditionsForWorkload(ctx context.Context, ic v1alpha1.InstrumentationConfig) ([]metav1.Condition, error) {
+	conditions := make([]metav1.Condition, 0)
+	kind := k8sKindToGql(ic.OwnerReferences[0].Kind)
+	ns := ic.Namespace
+	name := ic.OwnerReferences[0].Name
+
+	switch kind {
+	case model.K8sResourceKindDeployment:
+		dep, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get Deployment: %w", err)
+		}
+		for _, c := range dep.Status.Conditions {
+			conditions = append(conditions, metav1.Condition{
+				Type:               string(c.Type),
+				Status:             metav1.ConditionStatus(c.Status),
+				Reason:             c.Reason,
+				Message:            c.Message,
+				LastTransitionTime: c.LastTransitionTime,
+			})
+		}
+	case model.K8sResourceKindDaemonSet:
+		ds, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get DaemonSet: %w", err)
+		}
+		for _, c := range ds.Status.Conditions {
+			conditions = append(conditions, metav1.Condition{
+				Type:               string(c.Type),
+				Status:             metav1.ConditionStatus(c.Status),
+				Reason:             c.Reason,
+				Message:            c.Message,
+				LastTransitionTime: c.LastTransitionTime,
+			})
+		}
+	case model.K8sResourceKindStatefulSet:
+		ss, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get StatefulSet: %w", err)
+		}
+		for _, c := range ss.Status.Conditions {
+			conditions = append(conditions, metav1.Condition{
+				Type:               string(c.Type),
+				Status:             metav1.ConditionStatus(c.Status),
+				Reason:             c.Reason,
+				Message:            c.Message,
+				LastTransitionTime: c.LastTransitionTime,
+			})
+		}
+	default:
+		return nil, fmt.Errorf("unknown workload kind: %+v", kind)
+	}
+
+	return conditions, nil
+}
+
 func GetSourceDataStreamNames(source *v1alpha1.Source) []*string {
 	dataStreamNames := make([]*string, 0)
 

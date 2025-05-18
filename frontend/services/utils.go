@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"sort"
 	"time"
 
 	"github.com/odigos-io/odigos/common"
@@ -106,4 +107,27 @@ func RemoveStringFromSlice(slice []string, target string) []string {
 		}
 	}
 	return result
+}
+
+func SortConditions(conditions []*model.Condition) {
+	sort.Slice(conditions, func(i, j int) bool {
+		if conditions[i].LastTransitionTime == nil {
+			return false
+		}
+		if conditions[j].LastTransitionTime == nil {
+			return true
+		}
+
+		timeI, errI := time.Parse(time.RFC3339, *conditions[i].LastTransitionTime)
+		timeJ, errJ := time.Parse(time.RFC3339, *conditions[j].LastTransitionTime)
+
+		if errI != nil {
+			return false
+		}
+		if errJ != nil {
+			return true
+		}
+
+		return timeI.Before(timeJ)
+	})
 }

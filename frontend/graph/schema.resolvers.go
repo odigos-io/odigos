@@ -204,10 +204,18 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
 
-	condition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
-	if condition.Status != "" {
-		payload.Conditions = append(payload.Conditions, &condition)
+	instanceHealthCondition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
+	if instanceHealthCondition.Status != "" {
+		payload.Conditions = append(payload.Conditions, &instanceHealthCondition)
 	}
+
+	workloadConditions, err := services.GetInstrumentationConfigConditionsForWorkload(ctx, *ic)
+	if err != nil {
+		return nil, err
+	}
+	payload.Conditions = append(payload.Conditions, convertConditions(workloadConditions)...)
+
+	services.SortConditions(payload.Conditions)
 
 	return payload, nil
 }
