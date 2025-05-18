@@ -1,6 +1,6 @@
 module github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
@@ -20,7 +20,10 @@ require (
 	go.uber.org/zap v1.27.0
 )
 
+require github.com/PaesslerAG/gval v1.0.0 // indirect
+
 require (
+	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

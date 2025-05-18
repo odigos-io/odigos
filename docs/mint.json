@@ -66,7 +66,8 @@
                 "setup/installation",
                 "setup/installation-options",
                 "setup/docker-registry",
-                "setup/odigos-with-argocd"
+                "setup/odigos-with-argocd",
+                "setup/odigos-with-karpenter"
               ]
             },
             "setup/upgrade",
@@ -95,7 +96,8 @@
           "group": "API Reference",
           "pages": [
             "api-reference/odigos.io.v1alpha1",
-            "api-reference/actions.odigos.io.v1alpha1"
+            "api-reference/actions.odigos.io.v1alpha1",
+            "api-reference/operator.odigos.io.v1alpha1"
           ]
         }
       ]
@@ -144,6 +146,14 @@
           "pages": [
             "instrumentations/dotnet/native",
             "instrumentations/dotnet/enrichment"
+          ]
+        },
+        {
+          "group": "PHP",
+          "icon": "php",
+          "pages": [
+            "instrumentations/php/native",
+            "instrumentations/php/enrichment"
           ]
         },
         {
@@ -202,7 +212,9 @@
               "pages": [
                 "pipeline/actions/sampling/errorsampler",
                 "pipeline/actions/sampling/latencysampler",
-                "pipeline/actions/sampling/probabilisticsampler"
+                "pipeline/actions/sampling/probabilisticsampler",
+                "pipeline/actions/sampling/servicenamesampler",
+                "pipeline/actions/sampling/spanattributesampler"
               ]
             },
             "pipeline/actions/crd",
@@ -219,6 +231,7 @@
           "group": "Supported Backends",
           "icon": "folder-tree",
           "pages": [
+            "backends/alibabacloud",
             "backends/appdynamics",
             "backends/awscloudwatch",
             "backends/awss3",
@@ -226,12 +239,15 @@
             "backends/axiom",
             "backends/azureblob",
             "backends/betterstack",
+            "backends/bonree",
             "backends/causely",
+            "backends/checkly",
             "backends/chronosphere",
             "backends/clickhouse",
             "backends/coralogix",
             "backends/dash0",
             "backends/datadog",
+            "backends/dynamic",
             "backends/dynatrace",
             "backends/elasticapm",
             "backends/elasticsearch",
@@ -241,6 +257,7 @@
             "backends/grafanacloudloki",
             "backends/grafanacloudprometheus",
             "backends/grafanacloudtempo",
+            "backends/greptime",
             "backends/groundcover",
             "backends/honeycomb",
             "backends/hyperdx",
@@ -255,19 +272,27 @@
             "backends/lumigo",
             "backends/middleware",
             "backends/newrelic",
+            "backends/observe",
+            "backends/oneuptime",
+            "backends/openobserve",
             "backends/opsverse",
+            "backends/oracle",
             "backends/otlp",
             "backends/otlphttp",
             "backends/prometheus",
             "backends/qryn",
             "backends/quickwit",
             "backends/sentry",
+            "backends/seq",
             "backends/signoz",
             "backends/splunk",
             "backends/sumologic",
+            "backends/telemetryhub",
             "backends/tempo",
+            "backends/tingyun",
             "backends/traceloop",
-            "backends/uptrace"
+            "backends/uptrace",
+            "backends/victoriametricscloud"
           ]
         }
       ]
@@ -278,11 +303,12 @@
         "telemetry-types",
         "custom-resources",
         "usage-reports",
-        "benchmarks"
+        "benchmarks",
+        "permissions"
       ]
     },
     {
-      "group": "Contibution Guidelines",
+      "group": "Contribution Guidelines",
       "pages": [
         "adding-new-dest",
         "debugging"

@@ -1,0 +1,24 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: |
+  This test check the following resource attributes:
+  A. odigos.version attribute exists on all spans
+  B. Kubernetes attributes are correctly set on all spans
+query: |
+  length([?(
+    !span.resourceAttributes."odigos.version" ||
+    !span.resourceAttributes."k8s.deployment.name" ||
+    !span.resourceAttributes."k8s.pod.name" ||
+    !span.resourceAttributes."k8s.namespace.name" ||
+    !span.resourceAttributes."k8s.container.name" ||
+    !(
+      starts_with(span.resourceAttributes."k8s.node.name", 'kind-') ||
+      starts_with(span.resourceAttributes."k8s.node.name", 'aks-') ||
+      (
+        starts_with(span.resourceAttributes."k8s.node.name", 'ip-') &&
+        ends_with(span.resourceAttributes."k8s.node.name", '.ec2.internal')
+      )
+    )
+  )]) > `0`
+expected:
+  count: 0

@@ -1,0 +1,11 @@
+{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName .Values.onPremToken}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: central-proxy
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get"]
+{{- end }}

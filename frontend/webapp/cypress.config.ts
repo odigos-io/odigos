@@ -5,7 +5,7 @@ const PORT = 3000;
 const BASE_URL = `http://localhost:${PORT}`;
 
 const config: Cypress.ConfigOptions = {
-  trashAssetsBeforeRuns: false,
+  trashAssetsBeforeRuns: true,
   screenshotOnRunFailure: true,
   video: true,
 

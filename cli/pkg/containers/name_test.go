@@ -59,13 +59,20 @@ func TestGetName(t *testing.T) {
 			version:  "v1.0.0",
 			expected: "docker.io/keyval/test-component:v1.0.0",
 		},
+		{
+			testName: "image name with tag isn't overwritten",
+			prefix:   "",
+			name:     "docker.io/keyval/test-component:v1.0.0",
+			version:  "v1.0.1",
+			expected: "docker.io/keyval/test-component:v1.0.0",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
 			got := GetImageName(tt.prefix, tt.name, tt.version)
 			if got != tt.expected {
-				t.Errorf("Test '%s' failed: input=%+v, expected=%d, actual=%d", tt.name, tt, tt.expected, got)
+				t.Errorf("Test '%s' failed: input=%+v, expected=%s, actual=%s", tt.name, tt, tt.expected, got)
 			}
 		})
 	}

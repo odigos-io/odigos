@@ -1,18 +1,22 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
-	"strings"
 
 	"github.com/odigos-io/odigos/common"
 )
 
 const (
 	otlpHttpEndpointKey          = "OTLP_HTTP_ENDPOINT"
+	otlpHttpTlsKey               = "OTLP_HTTP_TLS_ENABLED"
+	otlpHttpCaPemKey             = "OTLP_HTTP_CA_PEM"
+	otlpHttpInsecureSkipVerify   = "OTLP_HTTP_INSECURE_SKIP_VERIFY"
 	otlpHttpBasicAuthUsernameKey = "OTLP_HTTP_BASIC_AUTH_USERNAME"
 	otlpHttpBasicAuthPasswordKey = "OTLP_HTTP_BASIC_AUTH_PASSWORD"
+	otlpHttpCompression          = "OTLP_HTTP_COMPRESSION"
+	otlpHttpHeaders              = "OTLP_HTTP_HEADERS"
 )
 
 type OTLPHttp struct{}
@@ -22,14 +26,31 @@ func (g *OTLPHttp) DestType() common.DestinationType {
 }
 
 func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	url, exists := dest.GetConfig()[otlpHttpEndpointKey]
+	config := dest.GetConfig()
+
+	url, exists := config[otlpHttpEndpointKey]
 	if !exists {
 		return nil, errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
 	}
 
-	parsedUrl, err := parseOtlpHttpEndpoint(url)
+	tls := dest.GetConfig()[otlpHttpTlsKey]
+	tlsEnabled := tls == "true"
+
+	parsedUrl, err := parseOtlpHttpEndpoint(url, "", "")
 	if err != nil {
 		return nil, errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
+	}
+
+	tlsConfig := GenericMap{
+		"insecure": !tlsEnabled,
+	}
+	caPem, caExists := config[otlpHttpCaPemKey]
+	if caExists && caPem != "" {
+		tlsConfig["ca_pem"] = caPem
+	}
+	insecureSkipVerify, skipExists := config[otlpHttpInsecureSkipVerify]
+	if skipExists && insecureSkipVerify != "" {
+		tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
 	}
 
 	basicAuthExtensionName, basicAuthExtensionConf := applyBasicAuth(dest)
@@ -43,13 +64,37 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	otlpHttpExporterName := "otlphttp/generic-" + dest.GetID()
 	exporterConf := GenericMap{
 		"endpoint": parsedUrl,
+		"tls":      tlsConfig,
 	}
 	if basicAuthExtensionName != "" {
 		exporterConf["auth"] = GenericMap{
 			"authenticator": basicAuthExtensionName,
 		}
 	}
+	if compression, ok := config[otlpHttpCompression]; ok {
+		exporterConf["compression"] = compression
+	}
+
+	headers, exists := config[otlpHttpHeaders]
+	if exists && headers != "" {
+		var headersList []struct {
+			Key   string `json:"key"`
+			Value string `json:"value"`
+		}
+		err := json.Unmarshal([]byte(headers), &headersList)
+		if err != nil {
+			return nil, errors.Join(err, errors.New(
+				"failed to parse otlphttp destination OTLP_HTTP_HEADERS parameter as json string in the form {key: string, value: string}[]",
+			))
+		}
+		mappedHeaders := map[string]string{}
+		for _, header := range headersList {
+			mappedHeaders[header.Key] = header.Value
+		}
+		exporterConf["headers"] = mappedHeaders
+	}
 	currentConfig.Exporters[otlpHttpExporterName] = exporterConf
+
 	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/otlphttp-" + dest.GetID()
@@ -76,20 +121,6 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	return pipelineNames, nil
-}
-
-func parseOtlpHttpEndpoint(rawUrl string) (string, error) {
-	noWhiteSpaces := strings.TrimSpace(rawUrl)
-	parsedUrl, err := url.Parse(noWhiteSpaces)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse otlp http endpoint: %w", err)
-	}
-
-	if parsedUrl.Scheme != "http" && parsedUrl.Scheme != "https" {
-		return "", fmt.Errorf("invalid otlp http endpoint scheme: %s", parsedUrl.Scheme)
-	}
-
-	return noWhiteSpaces, nil
 }
 
 func applyBasicAuth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap) {

@@ -15,11 +15,12 @@ import (
 )
 
 type K8sAttributesDetails struct {
-	CollectContainerAttributes bool                              `json:"collectContainerAttributes"`
-	CollectWorkloadUID         bool                              `json:"collectWorkloadId"`
-	CollectClusterUID          bool                              `json:"collectClusterId"`
-	LabelsAttributes           []v1alpha1.K8sLabelAttribute      `json:"labelsAttributes,omitempty"`
-	AnnotationsAttributes      []v1alpha1.K8sAnnotationAttribute `json:"annotationsAttributes,omitempty"`
+	CollectContainerAttributes  bool                              `json:"collectContainerAttributes"`
+	CollectReplicaSetAttributes bool                              `json:"collectReplicaSetAttributes"`
+	CollectWorkloadUID          bool                              `json:"collectWorkloadId"`
+	CollectClusterUID           bool                              `json:"collectClusterId"`
+	LabelsAttributes            []v1alpha1.K8sLabelAttribute      `json:"labelsAttributes,omitempty"`
+	AnnotationsAttributes       []v1alpha1.K8sAnnotationAttribute `json:"annotationsAttributes,omitempty"`
 }
 
 func CreateK8sAttributes(ctx context.Context, action model.ActionInput) (model.Action, error) {
@@ -39,15 +40,16 @@ func CreateK8sAttributes(ctx context.Context, action model.ActionInput) (model.A
 			GenerateName: "ka-",
 		},
 		Spec: v1alpha1.K8sAttributesSpec{
-			ActionName:                 services.DerefString(action.Name),
-			Notes:                      services.DerefString(action.Notes),
-			Disabled:                   action.Disable,
-			Signals:                    signals,
-			CollectContainerAttributes: details.CollectContainerAttributes,
-			CollectWorkloadUID:         details.CollectWorkloadUID,
-			CollectClusterUID:          details.CollectClusterUID,
-			LabelsAttributes:           details.LabelsAttributes,
-			AnnotationsAttributes:      details.AnnotationsAttributes,
+			ActionName:                  services.DerefString(action.Name),
+			Notes:                       services.DerefString(action.Notes),
+			Disabled:                    action.Disable,
+			Signals:                     signals,
+			CollectContainerAttributes:  details.CollectContainerAttributes,
+			CollectReplicaSetAttributes: details.CollectReplicaSetAttributes,
+			CollectWorkloadUID:          details.CollectWorkloadUID,
+			CollectClusterUID:           details.CollectClusterUID,
+			LabelsAttributes:            details.LabelsAttributes,
+			AnnotationsAttributes:       details.AnnotationsAttributes,
 		},
 	}
 
@@ -121,6 +123,7 @@ func UpdateK8sAttributes(ctx context.Context, id string, action model.ActionInpu
 	existingAction.Spec.Disabled = action.Disable
 	existingAction.Spec.Signals = signals
 	existingAction.Spec.CollectContainerAttributes = details.CollectContainerAttributes
+	existingAction.Spec.CollectReplicaSetAttributes = details.CollectReplicaSetAttributes
 	existingAction.Spec.CollectWorkloadUID = details.CollectWorkloadUID
 	existingAction.Spec.CollectClusterUID = details.CollectClusterUID
 	existingAction.Spec.LabelsAttributes = details.LabelsAttributes

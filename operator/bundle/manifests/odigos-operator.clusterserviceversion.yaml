@@ -19,8 +19,8 @@ metadata:
       ]
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:5e5d0d43080c2402504ecb2227feaa8f6210f77d60c6b846657857fe4967d188
-    createdAt: "2025-03-13T21:55:51Z"
+    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:e569024aadc119ac39929e93a3eb0def7221c8baad5fbd12b26fda2ccbcace6d
+    createdAt: "2025-05-08T16:35:04Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and eBPF.
     features.operators.openshift.io/disconnected: "false"
     features.operators.openshift.io/fips-compliant: "true"
@@ -30,10 +30,10 @@ metadata:
     features.operators.openshift.io/token-auth-azure: "false"
     features.operators.openshift.io/token-auth-gcp: "false"
     operators.openshift.io/valid-subscription: Odigos Enterprise subscription (for enterprise features)
-    operators.operatorframework.io/builder: operator-sdk-v1.39.1
+    operators.operatorframework.io/builder: operator-sdk-v1.39.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     support: Odigos
-  name: odigos-operator.v1.0.159
+  name: odigos-operator.v1.0.185
   namespace: odigos-operator-system
 spec:
   apiservicedefinitions: {}
@@ -44,41 +44,63 @@ spec:
         kind: Odigos
         name: odigos.operator.odigos.io
         specDescriptors:
-          - description: IgnoredContainers is a list of container names to exclude from instrumentation (useful for sidecars)
+          - description: (Optional) OnPremToken is an enterprise token for Odigos Enterprise.
+            displayName: On-Prem Token
+            path: onPremToken
+          - description: (Optional) IgnoredContainers is a list of container names to exclude from instrumentation (useful for ignoring sidecars).
             displayName: Ignored Containers
             path: ignoredContainers
-          - description: IgnoredNamespaces is a list of namespaces to not show in the Odigos UI
+          - description: (Optional) IgnoredNamespaces is a list of namespaces to not show in the Odigos UI.
             displayName: Ignored Namespaces
             path: ignoredNamespaces
-          - description: ImagePrefix is the prefix for all container images. used when your cluster doesn't have access to docker hub
+          - description: |-
+              (Optional) TelemetryEnabled records general telemetry regarding Odigos usage.
+              Default=false
+            displayName: Telemetry Enabled
+            path: telemetryEnabled
+          - description: |-
+              (Optional) UIMode sets the UI mode to either "normal" or "readonly".
+              In "normal" mode the UI is fully interactive, allowing users to view and edit
+              Odigos configuration and settings. In "readonly" mode, the UI can only be
+              used to view current Odigos configuration and is not interactive.
+              Default=normal
+            displayName: UI Mode
+            path: uiMode
+          - description: |-
+              (Optional) NodeSelector is a map of key-value Kubernetes NodeSelector labels to apply to all Odigos components.
+              Note that Odigos will only be able to instrument applications on the same node.
+            displayName: Node Selector
+            path: nodeSelector
+          - description: (Optional) Profiles is a list of preset profiles with a specific configuration.
+            displayName: Profiles
+            path: profiles
+          - description: |-
+              (Optional) ImagePrefix is a prefix for all container images.
+              This should only be used if you are pulling Odigos images from the non-default registry.
+              Default: registry.odigos.io
+              Default (OpenShift): registry.connect.redhat.com
             displayName: Image Prefix
             path: imagePrefix
           - description: |-
-              MountMethod defines the mechanism for mounting Odigos files into instrumented pods.
-              Must be one of: (k8s-virtual-device, k8s-host-path)
+              (Optional) MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.
+              One of "k8s-virtual-device" (default) or "k8s-host-path".
             displayName: Mount Method
             path: mountMethod
-          - description: OnPremToken is an optional enterprise token for Odigos Enterprise.
-            displayName: On-Prem Token
-            path: onPremToken
-          - description: OpenShiftEnabled configures selinux on OpenShift nodes.
+          - description: |-
+              (Optional) OpenShiftEnabled configures selinux on OpenShift nodes.
+              DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
             displayName: OpenShift Enabled
             path: openshiftEnabled
-          - description: PodSecurityPolicy enables the pod security policy.
+          - description: |-
+              (Optional) PodSecurityPolicy allows Odigos pods to use a privileged pod security policy.
+              Default=false
             displayName: Pod Security Policy
             path: podSecurityPolicy
-          - description: Profiles is a list of preset profiles with a specific configuration.
-            displayName: Profiles
-            path: profiles
-          - description: SkipWebhookIssuerCreation skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
+          - description: |-
+              (Optional) SkipWebhookIssuerCreation skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
+              Default=false
             displayName: Skip Webhook Issuer Creation
             path: skipWebhookIssuerCreation
-          - description: TelemetryEnabled records general telemetry regarding Odigos usage.
-            displayName: Telemetry Enabled
-            path: telemetryEnabled
-          - description: 'UIMode sets the UI mode (one-of: normal, readonly)'
-            displayName: UI Mode
-            path: uiMode
         statusDescriptors:
           - description: Conditions store the status conditions of the Odigos instances
             displayName: Conditions
@@ -98,8 +120,8 @@ spec:
     With Odigos installed, follow the Odigos docs at docs.odigos.io for instructions on instrumenting applications and configuring destinations.
   displayName: Odigos Operator
   icon:
-    - base64data: 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
-      mediatype: image/png
+    - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAtMiAxNiAxNiIgZmlsbD0iIzE1MTUxNSI+CiAgPHBhdGgKICAgIGQ9Ik01LjE3MjE1IDkuMDE4ODRMMi4xODM3NyA3LjY5ODEzQzEuNDgxNTkgNy4zODczMiAxLjA0NDggNi43MzY3NyAxLjA0NDggNS45OTk0OEMxLjA0NDggNS4yNjIyIDEuNDgwNTYgNC42MTE2NSAyLjE4Mzc3IDQuMzAwODNMNi4zNjE3MiAyLjQ1MzQ5TDYuNDUxNTYgMi40MTQyNVYwSDEuNjYxMjdDMS4wNDE3IDAgMC41Mzg4MTggMC40NzgxIDAuNTM4ODE4IDEuMDY3NzJWMTAuOTMxMkMwLjUzODgxOCAxMS41MjA5IDEuMDQxNyAxMS45OTkgMS42NjEyNyAxMS45OTlINS44MzMwM0g2LjQ1MjU5VjkuNTY4Mkw1LjE3MzE5IDkuMDE3ODFINS4xNzIxNVY5LjAxODg0WiIgLz4KICA8cGF0aAogICAgZD0iTTE0LjMzOTcgMEg5LjU0ODRWMi40NDExTDEwLjgwNDEgMi45ODExNUwxMC44MDEgMi45Njk4TDEzLjgxNjIgNC4zMDI5QzE0LjUxODQgNC42MTM3MiAxNC45NTUyIDUuMjY0MjYgMTQuOTU1MiA2LjAwMTU1QzE0Ljk1NTIgNi43Mzg4MyAxNC41MTk0IDcuMzg5MzggMTMuODE2MiA3LjcwMDJMMTAuMTY0OSA5LjMxNDE3TDkuNTQ3MzYgOS41NzY0NlYxMkgxNC4zMzg3QzE0Ljk1ODMgMTIgMTUuNDYxMSAxMS41MjE5IDE1LjQ2MTEgMTAuOTMyM1YxLjA2NzcyQzE1LjQ2MTEgMC40NzgxIDE0Ljk1ODMgMCAxNC4zMzg3IDBIMTQuMzM5N1oiIC8+CiAgPHBhdGgKICAgIGQ9Ik04LjAwMDQ4IDguNDc5NzJDOS4zNjk3MiA4LjQ3OTcyIDEwLjQ4MDggNy4zNjk2NiAxMC40ODA4IDUuOTk5MzhDMTAuNDgwOCA0LjYyOTEgOS4zNzA3NiAzLjUxOTA0IDguMDAwNDggMy41MTkwNEM2LjYzMDIgMy41MTkwNCA1LjUyMDE0IDQuNjI5MSA1LjUyMDE0IDUuOTk5MzhDNS41MjAxNCA3LjM2OTY2IDYuNjMwMiA4LjQ3OTcyIDguMDAwNDggOC40Nzk3MloiIC8+Cjwvc3ZnPg==
+      mediatype: image/svg+xml
   install:
     spec:
       clusterPermissions:
@@ -416,24 +438,24 @@ spec:
                         valueFrom:
                           configMapKeyRef:
                             key: ODIGOS_VERSION
-                            name: odigos-operator-odigos-version-55dgk4kht7
+                            name: odigos-operator-odigos-version-db9k7g76mc
                       - name: RELATED_IMAGE_AUTOSCALER
-                        value: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:28acf3b915126c3263db2087f4a2afd25d06d6e24dc67d75e882003ee2772418
+                        value: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:9e4a27b31c11bebd43f0ae26b7f700f9174bb56b3f57012f1bebea13b80ffc30
                       - name: RELATED_IMAGE_COLLECTOR
-                        value: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:7577ad63feef1bb6447807c111d92a4a14963f25c0189a5cc267eb8470663560
+                        value: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:10034cd8c672bcf99815440d85e54141874ee9ee68c017d879900dbe067b9d39
                       - name: RELATED_IMAGE_FRONTEND
-                        value: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:73eafbb34d498a73a094079d4496285377c13850bf120a30c7365988c9f125dd
+                        value: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:9167e933e2ba026d8c296ae3161fe17bfe795a8328344dd12830eb9e947eb6ea
                       - name: RELATED_IMAGE_INSTRUMENTOR
-                        value: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:90302ff03e9852c72469e622f2614af5278efc5aa4a21474a17a205206b82468
+                        value: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:8e13d7b35cf8cc228ba5eb51b5c1bf1fa3e2aaba44c86a1b28fa91d49c45960d
                       - name: RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR
-                        value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:d944665b1d3d626816096f8e248e49a3016a01edfebd9d1bda2dd34ac30a41d0
+                        value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:d1f5e1e9f2f2ba9fdb18759ae484d09aab5e97b76ec823c2165c7d716eed49da
                       - name: RELATED_IMAGE_ODIGLET
-                        value: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9@sha256:dad9287d1ad6efd424f33f81f06a93cb6e22e4f317e8877115a585e1e9ffa84e
+                        value: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9@sha256:cd0152c0a89e772bd460badf5ac6277858f1c4b192dce07385328c6c8cac2545
                       - name: RELATED_IMAGE_ENTERPRISE_ODIGLET
-                        value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:ad7ae34b66033fa97a050b2aa7bd924c25f305d954d6ffab0964b1b6f20ede8f
+                        value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:46b4d84aa9ec2cc7af93176fe8ffb6d0e1f42b3010f7b79325d356b91b487e8b
                       - name: RELATED_IMAGE_SCHEDULER
-                        value: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9@sha256:1dd9cb48520b2a46cd2636852431f9018c0ca12aebfee8a58f8bae8e39279e4d
-                    image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:5e5d0d43080c2402504ecb2227feaa8f6210f77d60c6b846657857fe4967d188
+                        value: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9@sha256:73870de80bac73b9e1d0cb4898ad82391583ac57464830bc0f8a547d57f8905c
+                    image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:e569024aadc119ac39929e93a3eb0def7221c8baad5fbd12b26fda2ccbcace6d
                     livenessProbe:
                       httpGet:
                         path: /healthz
@@ -531,28 +553,28 @@ spec:
     name: Odigos
     url: https://odigos.io
   relatedImages:
-    - image: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:28acf3b915126c3263db2087f4a2afd25d06d6e24dc67d75e882003ee2772418
-      name: autoscaler
-    - image: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:73eafbb34d498a73a094079d4496285377c13850bf120a30c7365988c9f125dd
-      name: frontend
-    - image: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:90302ff03e9852c72469e622f2614af5278efc5aa4a21474a17a205206b82468
-      name: instrumentor
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:ad7ae34b66033fa97a050b2aa7bd924c25f305d954d6ffab0964b1b6f20ede8f
-      name: enterprise-odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:5e5d0d43080c2402504ecb2227feaa8f6210f77d60c6b846657857fe4967d188
-      name: manager
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:d944665b1d3d626816096f8e248e49a3016a01edfebd9d1bda2dd34ac30a41d0
-      name: enterprise_instrumentor
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:ad7ae34b66033fa97a050b2aa7bd924c25f305d954d6ffab0964b1b6f20ede8f
-      name: enterprise_odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:5e5d0d43080c2402504ecb2227feaa8f6210f77d60c6b846657857fe4967d188
-      name: odigos-certified-operator-ubi9-5e5d0d43080c2402504ecb2227feaa8f6210f77d60c6b846657857fe4967d188-annotation
-    - image: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:7577ad63feef1bb6447807c111d92a4a14963f25c0189a5cc267eb8470663560
+    - image: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:10034cd8c672bcf99815440d85e54141874ee9ee68c017d879900dbe067b9d39
       name: collector
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:d944665b1d3d626816096f8e248e49a3016a01edfebd9d1bda2dd34ac30a41d0
+    - image: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:8e13d7b35cf8cc228ba5eb51b5c1bf1fa3e2aaba44c86a1b28fa91d49c45960d
+      name: instrumentor
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:d1f5e1e9f2f2ba9fdb18759ae484d09aab5e97b76ec823c2165c7d716eed49da
       name: enterprise-instrumentor
-    - image: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9@sha256:dad9287d1ad6efd424f33f81f06a93cb6e22e4f317e8877115a585e1e9ffa84e
+    - image: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9@sha256:cd0152c0a89e772bd460badf5ac6277858f1c4b192dce07385328c6c8cac2545
       name: odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9@sha256:1dd9cb48520b2a46cd2636852431f9018c0ca12aebfee8a58f8bae8e39279e4d
+    - image: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9@sha256:73870de80bac73b9e1d0cb4898ad82391583ac57464830bc0f8a547d57f8905c
       name: scheduler
-  version: 1.0.159
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:d1f5e1e9f2f2ba9fdb18759ae484d09aab5e97b76ec823c2165c7d716eed49da
+      name: enterprise_instrumentor
+    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:e569024aadc119ac39929e93a3eb0def7221c8baad5fbd12b26fda2ccbcace6d
+      name: odigos-certified-operator-ubi9-e569024aadc119ac39929e93a3eb0def7221c8baad5fbd12b26fda2ccbcace6d-annotation
+    - image: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:9e4a27b31c11bebd43f0ae26b7f700f9174bb56b3f57012f1bebea13b80ffc30
+      name: autoscaler
+    - image: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:9167e933e2ba026d8c296ae3161fe17bfe795a8328344dd12830eb9e947eb6ea
+      name: frontend
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:46b4d84aa9ec2cc7af93176fe8ffb6d0e1f42b3010f7b79325d356b91b487e8b
+      name: enterprise-odiglet
+    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:e569024aadc119ac39929e93a3eb0def7221c8baad5fbd12b26fda2ccbcace6d
+      name: manager
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:46b4d84aa9ec2cc7af93176fe8ffb6d0e1f42b3010f7b79325d356b91b487e8b
+      name: enterprise_odiglet
+  version: 1.0.185

@@ -14,7 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
+var _ = Describe("Namespace controller", func() {
 
 	ctx := context.Background()
 	var namespace *corev1.Namespace
@@ -34,7 +34,7 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 		BeforeEach(func() {
 			namespace = testutil.NewMockNamespace()
 			Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
-			sourceNamespace = testutil.NewMockSource(namespace)
+			sourceNamespace = testutil.NewMockSource(namespace, false)
 			sourceNamespace.Spec.DisableInstrumentation = false
 			sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
 			Expect(k8sClient.Create(ctx, sourceNamespace)).Should(Succeed())
@@ -43,7 +43,7 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 		Context("workloads instrumentation source is not set (inherit from namespace)", func() {
 
 			BeforeEach(func() {
-				deployment = testutil.SetReportedNameAnnotation(testutil.NewMockTestDeployment(namespace), "foo")
+				deployment = testutil.SetReportedNameAnnotation(testutil.NewMockTestDeployment(namespace, "test-deployment"), "foo")
 				Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
 				daemonSet = testutil.SetReportedNameAnnotation(testutil.NewMockTestDaemonSet(namespace), "foo")
 				Expect(k8sClient.Create(ctx, daemonSet)).Should(Succeed())
@@ -56,7 +56,7 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 				instrumentationConfigStatefulSet = testutil.NewMockInstrumentationConfig(statefulSet)
 			})
 
-			It("should delete instrumented application", func() {
+			It("should delete InstrumentationConfig", func() {
 				sourceNamespace.Spec.DisableInstrumentation = true
 				sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
 				Expect(k8sClient.Update(ctx, sourceNamespace)).Should(Succeed())
@@ -71,18 +71,18 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 		Context("workloads instrumentation source enabled (override namespace)", func() {
 
 			BeforeEach(func() {
-				deployment = testutil.NewMockTestDeployment(namespace)
+				deployment = testutil.NewMockTestDeployment(namespace, "test-deployment")
 				Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
 				daemonSet = testutil.NewMockTestDaemonSet(namespace)
 				Expect(k8sClient.Create(ctx, daemonSet)).Should(Succeed())
 				statefulSet = testutil.NewMockTestStatefulSet(namespace)
 				Expect(k8sClient.Create(ctx, statefulSet)).Should(Succeed())
 
-				sourceDeployment = testutil.NewMockSource(deployment)
+				sourceDeployment = testutil.NewMockSource(deployment, false)
 				Expect(k8sClient.Create(ctx, sourceDeployment)).Should(Succeed())
-				sourceDaemonSet = testutil.NewMockSource(daemonSet)
+				sourceDaemonSet = testutil.NewMockSource(daemonSet, false)
 				Expect(k8sClient.Create(ctx, sourceDaemonSet)).Should(Succeed())
-				sourceStatefulSet = testutil.NewMockSource(statefulSet)
+				sourceStatefulSet = testutil.NewMockSource(statefulSet, false)
 				Expect(k8sClient.Create(ctx, sourceStatefulSet)).Should(Succeed())
 
 				instrumentationConfigDeployment = testutil.NewMockInstrumentationConfig(deployment)
@@ -90,7 +90,7 @@ var _ = Describe("DeleteInstrumentationConfig Namespace controller", func() {
 				instrumentationConfigStatefulSet = testutil.NewMockInstrumentationConfig(statefulSet)
 			})
 
-			It("should retain instrumented application", func() {
+			It("should retain InstrumentationConfig", func() {
 				sourceNamespace.Spec.DisableInstrumentation = true
 				sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
 				Expect(k8sClient.Update(ctx, sourceNamespace)).Should(Succeed())

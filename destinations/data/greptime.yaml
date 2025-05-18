@@ -1,0 +1,44 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: greptime
+  displayName: GreptimeDB
+  category: managed
+spec:
+  image: greptime.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: GREPTIME_ENDPOINT
+      displayName: OTLP HTTP Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: https://<unique_id>.<aws_region>.aws.greptime.cloud
+    - name: GREPTIME_DB_NAME
+      displayName: Database Name
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+    - name: GREPTIME_BASIC_USERNAME
+      displayName: Basic Auth Username
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: The left part (from ":") of the Basic Auth Token.
+    - name: GREPTIME_BASIC_PASSWORD
+      displayName: Basic Auth Password
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: true
+        tooltip: The right part (from ":") of the Basic Auth Token.

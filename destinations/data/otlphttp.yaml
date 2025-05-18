@@ -21,7 +21,7 @@ spec:
         type: text
         required: true
         placeholder: 'http://host:port'
-        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`.
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`.
 
     - name: OTLP_HTTP_BASIC_AUTH_USERNAME
       displayName: Basic Auth Username
@@ -41,3 +41,58 @@ spec:
         placeholder: 'password'
         tooltip: in case the otlp receiver requires basic auth, this is the password
       secret: true
+
+    - name: OTLP_HTTP_COMPRESSION
+      displayName: Destination Compression Type
+      componentType: dropdown
+      componentProps:
+        values:
+          - none
+          - gzip
+          - snappy
+          - lz4
+          - zlib
+          - deflate
+          - zstd
+        required: false
+        tooltip: 'Compression type to use for the destination. The default is `none`. The compression type must be supported by the destination.'
+      initialValue: 'none'
+    - name: OTLP_HTTP_HEADERS
+      displayName: Headers
+      componentType: keyValuePairs
+      componentProps:
+        required: false
+        tooltip: 'Headers is the option to set custom HTTP headers for OTLP HTTP destination. If specified, please provide each header in the format: key:value. Multiple headers can be added. Keys must be non-empty strings and follow standard HTTP header conventions. Values must be non-empty strings and may include alphanumerics, whitespace, and standard punctuation.'
+
+    - name: OTLP_HTTP_TLS_ENABLED
+      displayName: Enable TLS
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Secure connection'
+      customReadDataLabels:
+        - condition: 'true'
+          title: 'TLS'
+          value: 'Encrypted'
+        - condition: 'false'
+          title: 'TLS'
+          value: 'Unencrypted'
+    - name: OTLP_HTTP_CA_PEM
+      displayName: Certificate Authority
+      componentType: textarea
+      componentProps:
+        required: false
+        placeholder: '-----BEGIN CERTIFICATE-----'
+        tooltip: 'When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA'
+      renderCondition: ['OTLP_HTTP_TLS_ENABLED', '==', 'true']
+      hideFromReadData: ['true']
+    - name: OTLP_HTTP_INSECURE_SKIP_VERIFY
+      displayName: Insecure Skip Verify
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Skip TLS certificate verification'
+      renderCondition: ['OTLP_HTTP_TLS_ENABLED', '==', 'true']
+  testConnectionSupported: true

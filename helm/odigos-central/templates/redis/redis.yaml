@@ -1,0 +1,27 @@
+{{- if .Values.onPremToken }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image | quote }}
+          command: ["redis-server"]
+          args: ["--port", "{{ .Values.redis.port }}"]
+          ports:
+            - containerPort: {{ .Values.redis.port }}
+              name: {{ .Values.redis.portName }}
+{{- end }}

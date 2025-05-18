@@ -5,8 +5,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
   labels:
-    metadata.labels.odigos.io/config: "1"
-    metadata.labels.odigos.io/system-object: "true"
+    odigos.io/system-object: "true"
   name: k8sattributesresolvers.actions.odigos.io
 spec:
   group: actions.odigos.io
@@ -76,6 +75,13 @@ spec:
                   container.id
                   container.image.name
                   container.image.tag
+                type: boolean
+              collectReplicaSetAttributes:
+                description: |-
+                  collect replicaset related attributes (when relevant, e.g. for deployments):
+                  k8s.replicaset.name
+                  if CollectWorkloadUID is set, also collect:
+                  k8s.replicaset.uid
                 type: boolean
               collectWorkloadUID:
                 description: |-

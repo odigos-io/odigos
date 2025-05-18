@@ -247,12 +247,10 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		return ctrl.Result{}, r.Status().Update(ctx, odigos)
 	}
 
-	// Check if the cluster meets the minimum requirements
-	clusterKind := cmdcontext.ClusterKindFromContext(ctx)
-	if clusterKind == autodetect.KindUnknown {
-		logger.Info("Unknown Kubernetes cluster detected, proceeding with installation")
-	} else {
-		logger.Info(fmt.Sprintf("Detected cluster: Kubernetes kind: %s\n", clusterKind))
+	details := autodetect.GetK8SClusterDetails(ctx, "", "", kubeClient)
+	if details.Kind == autodetect.KindOpenShift {
+		logger.Info("Detected OpenShift cluster, enabling required configuration")
+		odigos.Spec.OpenShiftEnabled = true
 	}
 
 	k8sVersion := cmdcontext.K8SVersionFromContext(ctx)
@@ -322,6 +320,11 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		upgrade = true
 	}
 
+	nodeSelector := make(map[string]string)
+	if odigos.Spec.NodeSelector != nil {
+		nodeSelector = odigos.Spec.NodeSelector
+	}
+
 	odigosConfig.TelemetryEnabled = odigos.Spec.TelemetryEnabled
 	odigosConfig.OpenshiftEnabled = odigos.Spec.OpenShiftEnabled
 	odigosConfig.IgnoredNamespaces = odigos.Spec.IgnoredNamespaces
@@ -331,6 +334,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	odigosConfig.ImagePrefix = odigos.Spec.ImagePrefix
 	odigosConfig.Profiles = odigos.Spec.Profiles
 	odigosConfig.UiMode = common.UiMode(odigos.Spec.UIMode)
+	odigosConfig.NodeSelector = nodeSelector
 
 	ownerReference := metav1.OwnerReference{
 		APIVersion: odigos.APIVersion,

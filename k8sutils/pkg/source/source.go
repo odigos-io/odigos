@@ -82,18 +82,22 @@ func IsObjectInstrumentedBySource(ctx context.Context,
 
 // OtelServiceNameBySource returns the ReportedName for the given workload object.
 // OTel service name is only valid for workload sources (not namespace sources).
-// If none is configured, an empty string is returned.
+// If none is configured, it returns the default name which is the k8s workload resource name.
 func OtelServiceNameBySource(ctx context.Context, k8sClient client.Client, obj client.Object) (string, error) {
 	sources, err := odigosv1.GetSources(ctx, k8sClient, obj)
 	if err != nil {
 		return "", err
 	}
 
+	// use the otel service name attribute on the source if it exists
 	if sources.Workload != nil {
-		return sources.Workload.Spec.OtelServiceName, nil
+		if sources.Workload.Spec.OtelServiceName != "" {
+			return sources.Workload.Spec.OtelServiceName, nil
+		}
 	}
 
-	return "", nil
+	// otherwise, fallback to the name of the workload (deployment/ds/sst name)
+	return obj.GetName(), nil
 }
 
 // GetClientObjectFromSource returns the client.Object reference by the Source's spec.workload

@@ -18,6 +18,24 @@ const (
 	interval = time.Millisecond * 250
 )
 
+func AssertInstrumentationConfigCreated(ctx context.Context, k8sClient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig) {
+	key := client.ObjectKey{Namespace: instrumentationConfig.GetNamespace(), Name: instrumentationConfig.GetName()}
+	Eventually(func() bool {
+		var ic odigosv1.InstrumentationConfig
+		err := k8sClient.Get(ctx, key, &ic)
+		return err == nil
+	}, duration, interval).Should(BeTrue())
+}
+
+func AssertInstrumentationConfigNotCreated(ctx context.Context, k8sClient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig) {
+	key := client.ObjectKey{Namespace: instrumentationConfig.GetNamespace(), Name: instrumentationConfig.GetName()}
+	Consistently(func() bool {
+		var ic odigosv1.InstrumentationConfig
+		err := k8sClient.Get(ctx, key, &ic)
+		return err == nil
+	}, duration, interval).Should(BeFalse())
+}
+
 func AssertInstrumentationConfigDeleted(ctx context.Context, k8sClient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig) {
 	key := client.ObjectKey{Namespace: instrumentationConfig.GetNamespace(), Name: instrumentationConfig.GetName()}
 	Eventually(func() bool {

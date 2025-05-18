@@ -35,6 +35,8 @@ type ActionsV1alpha1Interface interface {
 	PiiMaskingsGetter
 	ProbabilisticSamplersGetter
 	RenameAttributesGetter
+	ServiceNameSamplersGetter
+	SpanAttributeSamplersGetter
 }
 
 // ActionsV1alpha1Client is used to interact with features provided by the actions group.
@@ -74,14 +76,20 @@ func (c *ActionsV1alpha1Client) RenameAttributes(namespace string) RenameAttribu
 	return newRenameAttributes(c, namespace)
 }
 
+func (c *ActionsV1alpha1Client) ServiceNameSamplers(namespace string) ServiceNameSamplerInterface {
+	return newServiceNameSamplers(c, namespace)
+}
+
+func (c *ActionsV1alpha1Client) SpanAttributeSamplers(namespace string) SpanAttributeSamplerInterface {
+	return newSpanAttributeSamplers(c, namespace)
+}
+
 // NewForConfig creates a new ActionsV1alpha1Client for the given config.
 // NewForConfig is equivalent to NewForConfigAndClient(c, httpClient),
 // where httpClient was generated with rest.HTTPClientFor(c).
 func NewForConfig(c *rest.Config) (*ActionsV1alpha1Client, error) {
 	config := *c
-	if err := setConfigDefaults(&config); err != nil {
-		return nil, err
-	}
+	setConfigDefaults(&config)
 	httpClient, err := rest.HTTPClientFor(&config)
 	if err != nil {
 		return nil, err
@@ -93,9 +101,7 @@ func NewForConfig(c *rest.Config) (*ActionsV1alpha1Client, error) {
 // Note the http client provided takes precedence over the configured transport values.
 func NewForConfigAndClient(c *rest.Config, h *http.Client) (*ActionsV1alpha1Client, error) {
 	config := *c
-	if err := setConfigDefaults(&config); err != nil {
-		return nil, err
-	}
+	setConfigDefaults(&config)
 	client, err := rest.RESTClientForConfigAndClient(&config, h)
 	if err != nil {
 		return nil, err
@@ -118,7 +124,7 @@ func New(c rest.Interface) *ActionsV1alpha1Client {
 	return &ActionsV1alpha1Client{c}
 }
 
-func setConfigDefaults(config *rest.Config) error {
+func setConfigDefaults(config *rest.Config) {
 	gv := actionsv1alpha1.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
@@ -127,8 +133,6 @@ func setConfigDefaults(config *rest.Config) error {
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
 	}
-
-	return nil
 }
 
 // RESTClient returns a RESTClient that is used to communicate

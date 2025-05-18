@@ -3,6 +3,7 @@ package distro
 import "github.com/odigos-io/odigos/common"
 
 const AgentPlaceholderDirectory = "{{ODIGOS_AGENTS_DIR}}"
+const RuntimeVersionPlaceholderMajorMinor = "{{RUNTIME_VERSION_MAJOR_MINOR}}"
 
 type RuntimeEnvironment struct {
 	// the runtime environment this distribution targets.

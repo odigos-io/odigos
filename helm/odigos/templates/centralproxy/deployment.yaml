@@ -1,0 +1,53 @@
+{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName .Values.onPremToken}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-proxy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: central-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: central-proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: central-proxy
+    spec:
+      serviceAccountName: central-proxy
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: central-proxy
+          {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "central-proxy" "Tag" $imageTag) }}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CLUSTER_NAME
+              value: {{ .Values.clusterName | quote }}
+            - name: CENTRAL_BACKEND_URL
+              value: {{ .Values.centralProxy.centralBackendURL | quote }}
+          resources:
+            requests:
+              cpu: {{ .Values.centralProxy.resources.requests.cpu }}
+              memory: {{ .Values.centralProxy.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.centralProxy.resources.limits.cpu }}
+              memory: {{ .Values.centralProxy.resources.limits.memory }}
+      {{- with .Values.centralProxy.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.centralProxy.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.centralProxy.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+
+{{- end }}
