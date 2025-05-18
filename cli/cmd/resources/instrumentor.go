@@ -334,7 +334,7 @@ func NewSourceValidatingWebhookConfiguration(ns string) *admissionregistrationv1
 						},
 					},
 				},
-				FailurePolicy:  ptrGeneric(admissionregistrationv1.Ignore),
+				FailurePolicy:  ptrGeneric(admissionregistrationv1.Fail),
 				SideEffects:    ptrGeneric(admissionregistrationv1.SideEffectClassNone),
 				TimeoutSeconds: intPtr(10),
 				AdmissionReviewVersions: []string{

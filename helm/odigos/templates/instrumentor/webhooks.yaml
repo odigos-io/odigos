@@ -88,7 +88,7 @@ webhooks:
         apiVersions: ["v1alpha1"]
         resources: ["sources"]
         scope: Namespaced
-    failurePolicy: Ignore
+    failurePolicy: Fail
     sideEffects: None
     timeoutSeconds: 10
     admissionReviewVersions: ["v1"]
