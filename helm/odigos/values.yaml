@@ -21,7 +21,7 @@ ignoredContainers:
 # Name of the cluster, will be used to identify this cluster in the centralized backend
 clusterName: ''
 
-UserInstrumentationEnvs:
+userInstrumentationEnvs:
   # Configuration for OpenTelemetry (OTEL) agents instrumentation.
   # These settings enable and configure OTEL agents for programming languages supported by Odigos.
   # See the official OTEL documentation for language-specific configuration details:
@@ -47,7 +47,7 @@ UserInstrumentationEnvs:
     go:
       enabled: false
       env: {}
-    dotnet: 
+    dotnet:
       enabled: false
       env: {}
     php:
@@ -137,7 +137,7 @@ collectorNode:
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
   goMemLimitMiB: 360
 
-  # this configuration is used for logs collection where '/var/log' in a k8s node is a symlink 
+  # this configuration is used for logs collection where '/var/log' in a k8s node is a symlink
   # to some other directory (for example, '/mnt/var/log')
   k8sNodeLogsDirectory: ''
 
@@ -249,3 +249,10 @@ avoidInjectingJavaOptsEnvVar: null
 # Optional NodeSelector to apply to all Odigos components
 # Note: Odigos will only be able to instrument workloads on the same nodes.
 nodeSelector: {}
+
+
+# Karpenter settings, before changing to true please modify the karpenter-node-template.yaml file
+# to add the odigos-agent startupTaints configuration.
+# https://docs.odigos.io/setup/odigos-with-karpenter
+karpenter:
+  enabled: false

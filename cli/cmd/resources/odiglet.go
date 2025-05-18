@@ -120,10 +120,10 @@ func NewOdigletClusterRole(psp, ownerPermissionEnforcement bool) *rbacv1.Cluster
 				Resources: []string{"pods/status"},
 				Verbs:     []string{"get"},
 			},
-			{ // Needed for virtual device registration
+			{ // Needed for virtual device registration + taint removal in case of Karpenter
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},
-				Verbs:     []string{"get", "list", "watch", "patch"},
+				Verbs:     []string{"get", "list", "watch", "patch", "update"},
 			},
 			{ // Needed for storage of the process instrumentation state
 				APIGroups: []string{"odigos.io"},
@@ -445,6 +445,14 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 												Name: k8sconsts.OdigosDeploymentConfigMapName,
 											},
 											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
+										},
+									},
+								},
+								{
+									Name: "CURRENT_NS",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
 										},
 									},
 								},
