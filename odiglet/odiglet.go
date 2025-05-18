@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
@@ -168,7 +168,7 @@ func runDeviceManager(clientset *kubernetes.Clientset, otelSdkLsf instrumentatio
 		return fmt.Errorf("failed to create device manager lister %w", err)
 	}
 
-	manager := dpm.NewManager(lister)
+	manager := dpm.NewManager(lister, log.Logger)
 	manager.Run()
 	return nil
 }
@@ -189,22 +189,18 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		os.Exit(-1)
 	}
 
-	odigletInstalledLabel := k8snode.DetermineNodeOdigletInstalledLabelByTier()
-
-	log.Logger.V(0).Info("Adding Label to Node", "odigletLabel", odigletInstalledLabel)
-
-	if err := k8snode.AddLabelToNode(clientset, nn, odigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
-		log.Logger.Error(err, "Failed to add Odiglet installed label to the node")
+	if err := k8snode.PrepareNodeForOdigosInstallation(clientset, nn); err != nil {
+		log.Logger.Error(err, "Failed to prepare node for Odigos installation")
 		os.Exit(-1)
+	} else {
+		log.Logger.Info("Successfully prepared node for Odigos installation")
 	}
 
 	// SELinux settings should be applied last. This function chroot's to use the host's PATH for
 	// executing selinux commands to make agents readable by pods.
 	if err := fs.ApplyOpenShiftSELinuxSettings(); err != nil {
 		log.Logger.Error(err, "Failed to apply SELinux settings on RHEL host")
-		// TODO: semanage can sometimes return an error that's non-fatal, need to find a better way to handle all scenarios
-		// For now, allow it through (as the only errors we have seen in practice have been non-fatal so far)
-		//os.Exit(-1)
+		os.Exit(-1)
 	}
 
 	os.Exit(0)

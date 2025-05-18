@@ -65,8 +65,63 @@ jobs:
             \"tag\": \"verify-offsets-failure\"
           }" $SLACK_WEBHOOK_URL      
 
-  print-tag:
+  verify-dependencies-sync:
     needs: verify-offsets
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ['odigos-enterprise']
+    steps:
+      - name: Verify no open dependencies-syncer-bot PRs
+        id: verify
+        run: |
+          # Fetch open PRs and filter by "dependencies-syncer-bot" label
+          result=$(curl -s -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100")
+
+          pr_links=$(echo "$result" \
+            | jq -r '[.[] | select(.labels | any(.name == "dependencies-syncer-bot")) | .html_url] | join(" ")')
+
+          count=$(echo "$pr_links" | wc -w)
+          if [ "$count" -gt 0 ]; then
+            # Write outputs to GITHUB_OUTPUT instead of using ::set-output
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "links=$pr_links" >> $GITHUB_OUTPUT
+            echo "❌ Error: Open PRs with label \"dependencies-syncer-bot\" found!" >&2
+            exit 1
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "✅ No open PRs with label \"dependencies-syncer-bot\"."
+          fi
+          
+      - name: Notify Slack on Success
+        if: ${{ steps.verify.outputs.status == 'success' }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "description": "✅ No open dependencies-syncer-bot PRs in `${{ matrix.repo }}`",
+            "tag": "verify-dependencies-sync-success"
+          }' $SLACK_WEBHOOK_URL
+  
+      - name: Notify Slack on Failure
+        if: ${{ failure() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          pr_links=${{ steps.verify.outputs.links }}
+          pr_links_formatted=$(echo "$pr_links" | jq -r '.[]' | awk '{print "- " $0}' | tr '\n' '\n')
+          curl -X POST -H 'Content-type: application/json' --data "{
+            \"description\": \"❌ ERROR: Open depenencies-syncer-bot PRs found in \`${{ matrix.repo }}\`\n\n$pr_links_formatted\",
+            \"link\": \"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}\",
+            \"tag\": \"verify-dependencies-sync-failure\"
+          }" $SLACK_WEBHOOK_URL  
+
+  print-tag:
+    needs: verify-dependencies-sync
     runs-on: ubuntu-latest
     steps:
       - name: Extract Tag
@@ -80,7 +135,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Detected new git tag. initializing a release", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   tag-modules:
-    needs: verify-offsets
+    needs: verify-dependencies-sync
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -136,7 +191,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: Odigos go modules release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   publish-images:
-    needs: verify-offsets
+    needs: verify-dependencies-sync
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -223,7 +278,7 @@ jobs:
         with:
           push: true
           provenance: false
-          tags : |
+          tags: |
             us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
             keyval/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
           build-args: |
@@ -263,7 +318,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: odigos component ${{ matrix.service }} release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   publish-collector-linux-packages:
-    needs: verify-offsets
+    needs: verify-dependencies-sync
     runs-on: ubuntu-latest
     steps:
       - name: Extract Tag
@@ -291,7 +346,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.24'
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5

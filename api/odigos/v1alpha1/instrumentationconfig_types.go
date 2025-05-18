@@ -181,12 +181,15 @@ const (
 
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
-	ContainerName  string                     `json:"containerName"`
-	Language       common.ProgrammingLanguage `json:"language"`
-	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
-	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+	ContainerName       string                     `json:"containerName"`
+	Language            common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion      string                     `json:"runtimeVersion,omitempty"`
+	EnvVars             []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent          *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType            *common.LibCType           `json:"libCType,omitempty"`
+	// Indicates whether the target process is running is secure-execution mode.
+	// nil means we were unable to determine the secure-execution mode.
+	SecureExecutionMode *bool                      `json:"secureExecutionMode,omitempty"`
 
 	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
@@ -292,6 +295,9 @@ type SdkConfig struct {
 
 	// default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.
 	DefaultCodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	// default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.
+	DefaultHeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
@@ -357,6 +363,8 @@ type InstrumentationLibraryConfig struct {
 	// if not set, the default code attributes configuration for the workload will be used.
 	// if set, but internal fields are empty, those fields will be used from the default configuration.
 	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
 type InstrumentationLibraryId struct {

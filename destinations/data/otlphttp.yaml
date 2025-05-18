@@ -63,4 +63,36 @@ spec:
       componentProps:
         required: false
         tooltip: 'Headers is the option to set custom HTTP headers for OTLP HTTP destination. If specified, please provide each header in the format: key:value. Multiple headers can be added. Keys must be non-empty strings and follow standard HTTP header conventions. Values must be non-empty strings and may include alphanumerics, whitespace, and standard punctuation.'
+
+    - name: OTLP_HTTP_TLS_ENABLED
+      displayName: Enable TLS
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Secure connection'
+      customReadDataLabels:
+        - condition: 'true'
+          title: 'TLS'
+          value: 'Encrypted'
+        - condition: 'false'
+          title: 'TLS'
+          value: 'Unencrypted'
+    - name: OTLP_HTTP_CA_PEM
+      displayName: Certificate Authority
+      componentType: textarea
+      componentProps:
+        required: false
+        placeholder: '-----BEGIN CERTIFICATE-----'
+        tooltip: 'When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA'
+      renderCondition: ['OTLP_HTTP_TLS_ENABLED', '==', 'true']
+      hideFromReadData: ['true']
+    - name: OTLP_HTTP_INSECURE_SKIP_VERIFY
+      displayName: Insecure Skip Verify
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Skip TLS certificate verification'
+      renderCondition: ['OTLP_HTTP_TLS_ENABLED', '==', 'true']
   testConnectionSupported: true

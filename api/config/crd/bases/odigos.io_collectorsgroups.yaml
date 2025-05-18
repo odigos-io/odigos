@@ -47,6 +47,11 @@ spec:
                   This can be used to resolve conflicting ports when a collector is using the host network.
                 format: int32
                 type: integer
+              k8sNodeLogsDirectory:
+                description: |-
+                  Additional directory to mount in the node collector pod for logs.
+                  This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.
+                type: string
               resourcesSettings:
                 description: |-
                   Resources [memory/cpu] settings for the collectors group.

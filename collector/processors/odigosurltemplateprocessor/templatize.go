@@ -25,22 +25,22 @@ var (
 	// These are common as ids in cloud systems.
 	//
 	// To enforce the following conditions in a single Go regular expression:
-	// - Only lowercase hexadecimal characters (0-9 and a-f),
+	// - Only hexadecimal characters (lower or higher case) (0-9, a-f, A-F),
 	// - More than 16 characters,
 	// - An even number of characters
 	//
 	// It is considered safe as:
-	// - letters are only limited to lowercase a-f, which any real word with 16 chars or more will fail.
+	// - letters are only limited to a-f (or upper case A-F), which any real word with 16 chars or more will fail.
 	// - the regex will not match if the string is less than 16 chars, so things like "feed12" (all letters a-f) will not match.
 	// - the regex will not match if the string is odd length (indicating it's not hex encoded) so another filter for extreme corner cases.
 	//
 	// Explanation (ChatGPT):
 	// - (?:...) — A non-capturing group.
-	// - [0-9a-f]{2} — Matches exactly two hexadecimal characters.
+	// - [0-9a-fA-F]{2} — Matches exactly two hexadecimal characters.
 	// - {8,} — Repeats that group 8 or more times, ensuring:
 	// 	 - 8 × 2 = 16 characters minimum
 	// 	 - Each repetition is of 2 characters → ensures even length.
-	hexEncodedRegex = regexp.MustCompile(`^(?:[0-9a-f]{2}){8,}$`)
+	hexEncodedRegex = regexp.MustCompile(`^(?:[0-9a-fA-F]{2}){8,}$`)
 
 	// assume that long numbers (7 continues digits or more) are ids.
 	// even if they are found with some text (for example "INC0012686") they are treated as ids
@@ -68,6 +68,9 @@ var (
 
 	// matches email addresses
 	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+
+	// assume any invalid unicode character is not a static path segment
+	replacementChar = regexp.MustCompile(`�`)
 )
 
 type RulePathSegment struct {
@@ -208,7 +211,8 @@ func getSegmentTemplatizationString(segment string, customIds []internalCustomId
 	if noLettersRegex.MatchString(segment) ||
 		longNumberAnywhereRegex.MatchString(segment) ||
 		uuidRegex.MatchString(segment) ||
-		hexEncodedRegex.MatchString(segment) {
+		hexEncodedRegex.MatchString(segment) ||
+		replacementChar.MatchString(segment) {
 		return "id"
 	}
 

@@ -15,7 +15,7 @@ const (
 
 var (
 	ErrDynatraceURLNotSpecified      = fmt.Errorf("Dynatrace url  not specified")
-	ErrDynatraceAPITOKENNotSpecified = fmt.Errorf("Api token not specified")
+	ErrDynatraceAPITOKENNotSpecified = fmt.Errorf("api token not specified")
 )
 
 type Dynatrace struct{}
@@ -69,7 +69,7 @@ func (n *Dynatrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	return pipelineNames, nil
 }
 
-func (g *Dynatrace) requiredVarsExists(dest ExporterConfigurer) bool {
+func (n *Dynatrace) requiredVarsExists(dest ExporterConfigurer) bool {
 	if _, ok := dest.GetConfig()[dynatraceURLKey]; !ok {
 		return false
 	}
