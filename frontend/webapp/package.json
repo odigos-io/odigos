@@ -12,11 +12,11 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@apollo/client": "^3.13.7",
+    "@apollo/client": "^3.13.8",
     "@apollo/experimental-nextjs-app-support": "^0.12.1",
     "@odigos/ui-kit": "^0.0.24",
     "graphql": "^16.10.0",
-    "next": "15.3.0",
+    "next": "15.3.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-error-boundary": "^5.0.0",
