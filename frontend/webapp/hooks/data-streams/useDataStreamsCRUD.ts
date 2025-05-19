@@ -31,11 +31,10 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
       setDataStreams(data.computePlatform.dataStreams);
 
       const streamNameFromStorage = sessionStorage.getItem('selectedStreamName');
+      const storedSteamNameExistsInCP = data.computePlatform.dataStreams.some((stream) => stream.name === streamNameFromStorage);
 
-      if (streamNameFromStorage && data.computePlatform.dataStreams.some((stream) => stream.name === streamNameFromStorage)) {
+      if (streamNameFromStorage && storedSteamNameExistsInCP) {
         setSelectedStreamName(streamNameFromStorage);
-      } else {
-        setSelectedStreamName('default');
       }
     }
   };

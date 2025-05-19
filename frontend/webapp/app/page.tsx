@@ -16,7 +16,7 @@ export default function App() {
       const { installation, readonly } = config;
 
       if (installation === ConfigInstallation.New && !readonly) {
-        router.push(ROUTES.CHOOSE_STREAM);
+        router.push(ROUTES.CHOOSE_SOURCES);
       } else {
         router.push(ROUTES.OVERVIEW);
       }
