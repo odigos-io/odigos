@@ -13,7 +13,7 @@ require (
 	github.com/odigos-io/odigos/destinations v0.0.0-20240223090638-df3328a088bc
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/stretchr/testify v1.10.0
-	github.com/vektah/gqlparser/v2 v2.5.25
+	github.com/vektah/gqlparser/v2 v2.5.27
 	go.opentelemetry.io/collector/component v1.32.0
 	go.opentelemetry.io/collector/component/componenttest v0.126.0
 	go.opentelemetry.io/collector/confmap v1.32.0
