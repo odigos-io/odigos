@@ -38,20 +38,21 @@ print-tag:
 	@echo $(TAG)
 define bake-load
 	@TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
-	docker buildx bake $(1) --pull --load \
+	docker buildx bake $(1) --load \
 	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',)
 endef
 
 define bake-push
 	@TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
-	docker buildx bake $(1) --pull --push \
+	docker buildx bake $(1) --push \
 	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',)
 endef
 
 # Pattern rules for every service image
-.PHONY: build-% push-%
-build-%: ; $(call bake-load,$*)
-push-%:  ; $(call bake-push,$*)
+build-%: FORCE ; $(call bake-load,$*)
+push-%: FORCE ; $(call bake-push,$*)
+
+FORCE:
 
 # Convenience groups matching the HCL
 .PHONY: build-images push-images build-images-rhel push-images-rhel build-cli build-cli-rhel
@@ -75,11 +76,11 @@ push-cli-rhel: push-cli
 # ──────────────────────────────────────────────
 # Kind helpers
 # ──────────────────────────────────────────────
-.PHONY: load-to-kind-% load-to-kind
-load-to-kind-%:
+.PHONY:
+load-to-kind-%: FORCE
 	kind load docker-image $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG)
 
-load-to-kind:
+load-to-kind: FORCE
 	$(MAKE) -j $(nproc) load-to-kind-instrumentor load-to-kind-autoscaler \
 		load-to-kind-scheduler load-to-kind-odiglet \
 		load-to-kind-collector load-to-kind-ui load-to-kind-cli \
@@ -263,8 +264,8 @@ restart-collector:
 # ──────────────────────────────────────────────
 # Deploy helpers
 # ──────────────────────────────────────────────
-.PHONY: deploy-% deploy
-deploy-%:
+.PHONY: deploy
+deploy-%: FORCE
 	$(MAKE) build-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
 	$(MAKE) load-to-kind-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
 	$(MAKE) restart-$*
