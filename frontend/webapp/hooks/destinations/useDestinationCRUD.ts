@@ -95,7 +95,8 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     } else {
       notifyUser(StatusType.Default, 'Pending', 'Updating destination...', undefined, true);
       addPendingItems([{ entityType: EntityTypes.Destination, entityId: id }]);
-      await mutateUpdate({ variables: { id, destination: mapNoUndefinedFields(destination) } });
+      // The "currentStreamName" is empty string just to satisfy the backend, in theory we shouldn't update the naem here to not patch destinations that were unnasigned to a stream
+      await mutateUpdate({ variables: { id, destination: { ...mapNoUndefinedFields(destination), currentStreamName: '' } } });
     }
   };
 

@@ -31,13 +31,23 @@ describe('Onboarding', () => {
   });
 
   it('Should allow the user to pass every step, and end-up on the "overview" page.', () => {
-    visitPage(ROUTES.CHOOSE_SOURCES, () => {
+    visitPage(ROUTES.CHOOSE_STREAM, () => {
       cy.contains('button', BUTTONS.BACK).should('not.exist');
-      cy.contains('button', BUTTONS.NEXT).click();
+      cy.contains('button', BUTTONS.NEXT).should('exist').click();
+
+      cy.location('pathname').should('eq', ROUTES.CHOOSE_SOURCES);
+      cy.contains('button', BUTTONS.BACK).should('exist');
+      cy.contains('button', BUTTONS.NEXT).should('exist').click();
+
       cy.location('pathname').should('eq', ROUTES.CHOOSE_DESTINATION);
       cy.contains(TEXTS.NO_SOURCES_SELECTED).should('exist');
       cy.contains('button', BUTTONS.BACK).should('exist');
-      cy.contains('button', BUTTONS.DONE).click();
+      cy.contains('button', BUTTONS.NEXT).should('exist').click();
+
+      cy.location('pathname').should('eq', ROUTES.SETUP_SUMMARY);
+      cy.contains('button', BUTTONS.BACK).should('exist');
+      cy.contains('button', BUTTONS.DONE).should('exist').click();
+
       cy.location('pathname').should('eq', ROUTES.OVERVIEW);
     });
   });

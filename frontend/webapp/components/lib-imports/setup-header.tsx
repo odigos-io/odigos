@@ -55,9 +55,11 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
 
   const onNext = () => {
     if (streamFormRef?.current) {
-      const { name } = streamFormRef.current.getFormValues();
+      // const ok = streamFormRef.current.validateForm();
+      // if (!ok) return;
 
-      setSelectedStreamName(name || 'default');
+      const { name } = streamFormRef.current.getFormValues();
+      setSelectedStreamName(name);
     }
 
     if (sourceFormRef?.current) {

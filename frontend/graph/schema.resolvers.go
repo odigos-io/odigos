@@ -761,17 +761,19 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	dest.Spec.Data = dataFields
 	dest.Spec.Signals = services.ExportedSignalsObjectToSlice(destination.ExportedSignals)
 
-	// Init empty struct if nil
-	if dest.Spec.SourceSelector == nil {
-		dest.Spec.SourceSelector = &v1alpha1.SourceSelector{Groups: make([]string, 0)}
-	}
-	// Init empty slice if nil
-	if dest.Spec.SourceSelector.Groups == nil {
-		dest.Spec.SourceSelector.Groups = make([]string, 0)
-	}
-	// Add the current stream name to the source selector
-	if !services.ArrayContains(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName) {
-		dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName)
+	if destination.CurrentStreamName != "" {
+		// Init empty struct if nil
+		if dest.Spec.SourceSelector == nil {
+			dest.Spec.SourceSelector = &v1alpha1.SourceSelector{Groups: make([]string, 0)}
+		}
+		// Init empty slice if nil
+		if dest.Spec.SourceSelector.Groups == nil {
+			dest.Spec.SourceSelector.Groups = make([]string, 0)
+		}
+		// Add the current stream name to the source selector
+		if !services.ArrayContains(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName) {
+			dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName)
+		}
 	}
 
 	// Update the destination in Kubernetes
@@ -793,7 +795,7 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 }
 
 // DeleteDestination is the resolver for the deleteDestination field.
-func (r *mutationResolver) DeleteDestination(ctx context.Context, id string, currentStreamName *string) (bool, error) {
+func (r *mutationResolver) DeleteDestination(ctx context.Context, id string, currentStreamName string) (bool, error) {
 	isReadonly := services.IsReadonlyMode(ctx)
 	if isReadonly {
 		return false, services.ErrorIsReadonly
@@ -810,7 +812,7 @@ func (r *mutationResolver) DeleteDestination(ctx context.Context, id string, cur
 
 	if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil {
 		// Remove the current stream name from the source selector
-		dest.Spec.SourceSelector.Groups = services.RemoveStringFromSlice(dest.Spec.SourceSelector.Groups, *currentStreamName)
+		dest.Spec.SourceSelector.Groups = services.RemoveStringFromSlice(dest.Spec.SourceSelector.Groups, currentStreamName)
 		// If the source selector is not empty after removing the current stream name, we should not delete the destination
 		if len(dest.Spec.SourceSelector.Groups) > 0 {
 			shouldDelete = false
