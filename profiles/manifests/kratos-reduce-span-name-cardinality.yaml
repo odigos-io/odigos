@@ -6,7 +6,7 @@ metadata:
 spec:
   type: transform
   processorName: "Reduce Span Name Cardinality"
-  notes: "Auto generated rule from span-name-cardinality-reduction profile. Do not edit."
+  notes: "Auto generated rule from kratos profile. Do not edit."
   processorConfig:
     trace_statements:
       - context: span

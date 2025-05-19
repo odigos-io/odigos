@@ -11,19 +11,20 @@ import (
 )
 
 var supportedKindToResource = map[string]string{
-	"Processor":           "processors",
-	"InstrumentationRule": "instrumentationrules",
+	"Processor":             "processors",
+	"InstrumentationRule":   "instrumentationrules",
+	"K8sAttributesResolver": "k8sattributesresolvers",
 }
 
 // when applying the manifests, we need to mark the new resources so we know to cleanup
 // previous resources which are not relevant after the new profiles are applied.
 // this hash is used to mark the resources.
-func calculateProfilesDeploymentHash(profiles []common.ProfileName, odigosVersion string) string {
+func calculateProfilesDeploymentHash(profiles []profile.Profile, odigosVersion string) string {
 
 	// convert profiles to a list of strings and sort it for consistency
 	sortedProfiles := make([]string, len(profiles)+1)
 	for i, p := range profiles {
-		sortedProfiles[i] = string(p)
+		sortedProfiles[i] = string(p.ProfileName)
 	}
 	sortedProfiles[len(profiles)] = odigosVersion
 	sort.Strings(sortedProfiles)
@@ -39,9 +40,9 @@ func calculateProfilesDeploymentHash(profiles []common.ProfileName, odigosVersio
 // from the list of input profiles, calculate the effective profiles:
 // - check the dependencies of each profile and add them to the list
 // - remove profiles which are not present in the profiles list
-func calculateEffectiveProfiles(configProfiles []common.ProfileName, availableProfiles []profile.Profile) []common.ProfileName {
+func calculateEffectiveProfiles(configProfiles []common.ProfileName, availableProfiles []profile.Profile) []profile.Profile {
 
-	effectiveProfiles := []common.ProfileName{}
+	effectiveProfiles := []profile.Profile{}
 	for _, profileName := range configProfiles {
 
 		// ignored missing profiles (either not available for tier or typos)
@@ -50,7 +51,7 @@ func calculateEffectiveProfiles(configProfiles []common.ProfileName, availablePr
 			continue
 		}
 
-		effectiveProfiles = append(effectiveProfiles, profileName)
+		effectiveProfiles = append(effectiveProfiles, *p)
 
 		// if this profile has dependencies, add them to the list
 		if p.Dependencies != nil {

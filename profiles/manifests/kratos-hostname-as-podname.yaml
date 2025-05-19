@@ -6,7 +6,7 @@ metadata:
 spec:
   type: resource
   processorName: "host.name as pod.name"
-  notes: "Auto generated rule from hostname-as-podname profile. Do not edit."
+  notes: "Auto generated rule from kratos profile. Do not edit."
   processorConfig:
     attributes:
       - key: host.name

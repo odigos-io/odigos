@@ -62,6 +62,17 @@ rules:
       - delete
       - create
   - apiGroups:
+      - actions.odigos.io
+    resources:
+      - k8sattributesresolvers
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - delete
+      - create
+  - apiGroups:
       - ''
     resources:
       - secrets
