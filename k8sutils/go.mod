@@ -7,9 +7,9 @@ require (
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/stretchr/testify v1.10.0
 	github.com/tj/assert v0.0.3
-	k8s.io/api v0.33.0
-	k8s.io/apimachinery v0.33.0
-	k8s.io/client-go v0.33.0
+	k8s.io/api v0.33.1
+	k8s.io/apimachinery v0.33.1
+	k8s.io/client-go v0.33.1
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -59,7 +59,7 @@ require (
 	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/grpc v1.70.0
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	k8s.io/cri-api v0.32.3
+	k8s.io/cri-api v0.33.1
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738 // indirect
 	sigs.k8s.io/controller-runtime v0.20.4
