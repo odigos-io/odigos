@@ -23,10 +23,10 @@ type Config struct {
 
 	// these configs controls configures the various export options.
 	// default values (when not set) are used just like the otlp exporter.
-	TimeoutConfig exporterhelper.TimeoutConfig    `mapstructure:",squash"` // squash ensures fields are correctly decoded in embedded struct.
-	QueueConfig   exporterhelper.QueueConfig      `mapstructure:"sending_queue"`
-	RetryConfig   configretry.BackOffConfig       `mapstructure:"retry_on_failure"`
-	BatcherConfig exporterhelper.QueueBatchConfig `mapstructure:"batcher"`
+	TimeoutConfig exporterhelper.TimeoutConfig `mapstructure:",squash"` // squash ensures fields are correctly decoded in embedded struct.
+	QueueConfig   exporterhelper.QueueConfig   `mapstructure:"sending_queue"`
+	RetryConfig   configretry.BackOffConfig    `mapstructure:"retry_on_failure"`
+	BatcherConfig exporterhelper.BatcherConfig `mapstructure:"batcher"`
 }
 
 func (c *Config) Validate() error {
