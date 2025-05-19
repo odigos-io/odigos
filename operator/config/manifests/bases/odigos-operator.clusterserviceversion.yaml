@@ -3,10 +3,10 @@ kind: ClusterServiceVersion
 metadata:
   annotations:
     alm-examples: '[{"apiVersion":"operator.odigos.io/v1alpha1", "kind":"Odigos",
-      "metadata":{"name":"odigos","namespace":"odigos-operator-system"}, "spec":{"version":"v1.0.177"}}]'
+      "metadata":{"name":"odigos","namespace":"odigos-operator-system"}, "spec":{"version":"v1.0.185"}}]'
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.0.177
+    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.0.185
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -19,7 +19,7 @@ metadata:
     operators.openshift.io/valid-subscription: Odigos Enterprise subscription (for
       enterprise features)
     support: Odigos
-  name: odigos-operator.v1.0.177
+  name: odigos-operator.v1.0.185
   namespace: odigos-operator-system
 spec:
   apiservicedefinitions: {}
@@ -54,6 +54,11 @@ spec:
           Default=normal
         displayName: UI Mode
         path: uiMode
+      - description: |-
+          (Optional) NodeSelector is a map of key-value Kubernetes NodeSelector labels to apply to all Odigos components.
+          Note that Odigos will only be able to instrument applications on the same node.
+        displayName: Node Selector
+        path: nodeSelector
       - description: (Optional) Profiles is a list of preset profiles with a specific
           configuration.
         displayName: Profiles
@@ -142,4 +147,4 @@ spec:
   provider:
     name: Odigos
     url: https://odigos.io
-  version: 1.0.177
+  version: 1.0.185

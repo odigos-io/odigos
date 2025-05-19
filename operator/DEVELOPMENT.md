@@ -61,14 +61,24 @@ make bundle-build IMAGE_TAG_BASE=mikeodigos/odigos-operator VERSION=dev
 
 This will build a new docker image for the bundle containing all the generated manifests.
 
+### Building with custom component images
+
+If you are testing custom components (eg, Odiglet, Instrumentor, etc), do the following:
+
+1. Build and push your custom images to your Docker registry
+2. Update each `RELATED_IMAGE_*` environment variable in `config/manager/manager.yaml`
+3. Run `make generate manifests bundle`
+4. Run `make bundle-build IMAGE_TAG_BASE=<your-registry>/odigos-operator VERSION=dev` to build a new bundle image
+5. Push the bundle image to your registry and run it with `operator-sdk run bundle` (see below)
+
 ### Running in OpenShift
 
 To test in an OpenShift cluster, push the operator image and bundle image to your registry.
 
-Connect to the cluster with `oc login` and run:
+Connect to the cluster with `oc login` (copy login command from OpenShift console) and run:
 
 ```
-operator-sdk run bundle <path to bundle image:tag>
+operator-sdk run bundle <path to bundle image:tag> -n odigos-operator-system
 ```
 
 Clean up with:
@@ -76,6 +86,10 @@ Clean up with:
 ```
 operator-sdk cleanup odigos-operator  --delete-all
 ```
+
+### ImagePull error on OpenShift
+
+To authenticate with your DockerHub account on OpenShift, follow [this OpenShift support page](https://access.redhat.com/solutions/6159832).
 
 ## Preparing a new release
 

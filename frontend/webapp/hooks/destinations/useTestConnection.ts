@@ -29,11 +29,13 @@ export const useTestConnection = () => {
     },
   );
 
-  const testConnection = (destination: DestinationFormData) => {
+  const testConnection = async (destination: DestinationFormData) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, true);
     } else {
-      testConnectionMutation({ variables: { destination: { ...destination, fields: destination.fields.map((f) => ({ ...f, value: f.value || '' })) } } });
+      const { data } = await testConnectionMutation({ variables: { destination: { ...destination, fields: destination.fields.map((f) => ({ ...f, value: f.value || '' })) } } });
+
+      return data?.testConnectionForDestination;
     }
   };
 

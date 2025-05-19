@@ -8,6 +8,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -164,7 +167,12 @@ odigos pro update-offsets --default
 			cm.Data = make(map[string]string)
 		}
 
-		cm.Data[k8sconsts.GoOffsetsFileName] = string(data)
+		escaped, err := json.Marshal(string(data))
+		if err != nil {
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to encode json string: %s", err))
+			os.Exit(1)
+		}
+		cm.Data[k8sconsts.GoOffsetsFileName] = string(escaped)
 		_, err = client.Clientset.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
 		if err != nil {
 			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Go offsets ConfigMap: %s", err))
@@ -262,13 +270,80 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 	if err := createOdigosCentralSecret(ctx, client, ns, onPremToken); err != nil {
 		return err
 	}
-	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, OdigosVersion)
+	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag)
 	if err := resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating"); err != nil {
 		return fmt.Errorf("failed to install Odigos central: %w", err)
 	}
 
 	fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos central installed.\n")
 	return nil
+}
+
+var portForwardCentralCmd = &cobra.Command{
+	Use:   "ui",
+	Short: "Port-forward Odigos Central UI and Backend to localhost",
+	Long:  "Port-forward the Central UI (port 3000) and Central Backend (port 8081) to localhost to enable local access to Odigos UI.",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx, cancel := context.WithCancel(cmd.Context())
+		defer cancel()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		var wg sync.WaitGroup
+
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+		backendPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralBackendAppName)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot find backend pod: %v\n", err)
+			os.Exit(1)
+		}
+		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend")
+		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUILabelAppValue)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot find UI pod: %v\n", err)
+			cancel()
+			wg.Wait()
+			os.Exit(1)
+		}
+
+		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI")
+
+		fmt.Printf("Odigos Central UI is available at: http://localhost:%s\n", k8sconsts.CentralUIPort)
+		fmt.Printf("Press Ctrl+C to stop\n")
+
+		<-sigCh
+		fmt.Println("\nReceived interrupt. Stopping port forwarding...")
+		cancel()
+		wg.Wait()
+	},
+}
+
+func startPortForward(wg *sync.WaitGroup, ctx context.Context, pod *corev1.Pod, client *kube.Client, port string, name string) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := kube.PortForwardWithContext(ctx, pod, client, port, "localhost"); err != nil {
+			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
+		}
+	}()
+}
+
+func findPodWithAppLabel(ctx context.Context, client *kube.Client, ns, appLabel string) (*corev1.Pod, error) {
+	pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("app=%s", appLabel),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(pods.Items) != 1 {
+		return nil, fmt.Errorf("expected 1 pod for app=%s, got %d", appLabel, len(pods.Items))
+	}
+	pod := &pods.Items[0]
+	if pod.Status.Phase != corev1.PodRunning {
+		return nil, fmt.Errorf("pod %s is not running", pod.Name)
+	}
+	return pod, nil
 }
 
 func init() {
@@ -285,6 +360,8 @@ func init() {
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
 	centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
+	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
+	centralCmd.AddCommand(portForwardCentralCmd)
 }

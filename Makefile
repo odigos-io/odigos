@@ -3,7 +3,7 @@ ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?= 
 ORG ?= registry.odigos.io
-GOLANGCI_LINT_VERSION ?= v1.63.4
+GOLANGCI_LINT_VERSION ?= v2.1.6
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
 GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
 LINT_CMD = golangci-lint run -c ../.golangci.yml
@@ -345,6 +345,17 @@ helm-install:
 		--set onPremToken=$(ONPREM_TOKEN) \
 		--set centralProxy.enabled=$(if $(and $(CLUSTER_NAME),$(CENTRAL_BACKEND_URL)),true,false)
 	kubectl label namespace odigos-system odigos.io/system-object="true"
+
+.PHONY: helm-install-central
+helm-install-central:
+	@echo "Installing Odigos Central using Helm..."
+	helm upgrade --install odigos-central ./helm/odigos-central \
+		--create-namespace \
+		--namespace odigos-central \
+		--set image.tag=$(ODIGOS_CLI_VERSION) \
+		--set onPremToken=$(ONPREM_TOKEN) \
+	kubectl label namespace odigos-central odigos.io/central-system-object="true" --overwrite
+
 
 .PHONY: api-all
 api-all:

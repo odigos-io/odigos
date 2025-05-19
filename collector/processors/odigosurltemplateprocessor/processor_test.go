@@ -10,17 +10,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-func addSpanToTraces(traces ptrace.Traces, serviceName, spanName string, kind ptrace.SpanKind, spanAttrs map[string]any) {
-	rs := traces.ResourceSpans().AppendEmpty()
-	if serviceName != "" {
-		rs.Resource().Attributes().PutStr(string(semconv.ServiceNameKey), serviceName)
-	}
-	span := rs.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
-	span.Attributes().FromRaw(spanAttrs)
-	span.SetName(spanName)
-	span.SetKind(kind)
-}
-
 func generateTraceData(serviceName, spanName string, kind ptrace.SpanKind, spanAttrs map[string]any) ptrace.Traces {
 	td := ptrace.NewTraces()
 	rs := td.ResourceSpans().AppendEmpty()
@@ -296,42 +285,6 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrValue: "/api/v1",
 		},
 		{
-			name:          "hexencoded id",
-			spanKind:      ptrace.SpanKindServer,
-			inputSpanName: "GET",
-			inputSpanAttrs: map[string]any{
-				"http.request.method": "GET",
-				"url.path":            "/user/6f2a9cdeab34f01e",
-			},
-			expectedSpanName:  "GET /user/{id}",
-			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/{id}",
-		},
-		{
-			name:          "long hexencoded id",
-			spanKind:      ptrace.SpanKindServer,
-			inputSpanName: "GET",
-			inputSpanAttrs: map[string]any{
-				"http.request.method": "GET",
-				"url.path":            "/user/6f2a9cdeab34f01e1234567890abcdef", // 32 chars
-			},
-			expectedSpanName:  "GET /user/{id}",
-			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/{id}",
-		},
-		{
-			name:          "short looking like hexencoded id",
-			spanKind:      ptrace.SpanKindServer,
-			inputSpanName: "GET",
-			inputSpanAttrs: map[string]any{
-				"http.request.method": "GET",
-				"url.path":            "/user/feed12",
-			},
-			expectedSpanName:  "GET /user/feed12", // should not be templated as the string contains hex chars, but it's too short
-			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/feed12",
-		},
-		{
 			name:          "long text",
 			spanKind:      ptrace.SpanKindServer,
 			inputSpanName: "GET",
@@ -342,18 +295,6 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedSpanName:  "GET /user/CamelCaseLongTextThatShouldNotBeTemplated", // should not be templated as chars are not hex
 			expectedAttrKey:   "http.route",
 			expectedAttrValue: "/user/CamelCaseLongTextThatShouldNotBeTemplated",
-		},
-		{
-			name:          "non-even length hex",
-			spanKind:      ptrace.SpanKindServer,
-			inputSpanName: "GET",
-			inputSpanAttrs: map[string]any{
-				"http.request.method": "GET",
-				"url.path":            "/user/abcdefabcdefabcde", // contains 17 chars
-			},
-			expectedSpanName:  "GET /user/abcdefabcdefabcde", // should not be templated as the string contains hex chars, but it's too short
-			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/abcdefabcdefabcde",
 		},
 		{
 			name:          "long number with text",
@@ -393,7 +334,157 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrKey:   "http.route",
 			expectedAttrValue: "/user/inc_654321",
 		},
+		{
+			name:          "invalid utf-8 char",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/foo/this_text_includes_invalid_char�",
+			},
+			expectedSpanName:  "GET /foo/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/foo/{id}",
+		},
+		{
+			name:          "invalid full url",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.full":            "invalidurl/#@%@##%$@%@",
+			},
+			expectedSpanName:  "GET",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "", // should not exist
+		},
 	}
+
+	runProcessorTests(t, tt, processor)
+}
+
+func TestProcessor_EmptyPath(t *testing.T) {
+	tt := []processorTestManifest{
+		{
+			name:          "empty path",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "",
+			},
+			expectedSpanName:  "GET /",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/",
+		},
+		{
+			name:          "path is only slash",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/",
+			},
+			expectedSpanName:  "GET /",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/",
+		},
+		{
+			name:          "route exists and is empty",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"http.route":          "",
+			},
+			expectedSpanName: "GET /",
+		},
+		{
+			name:          "client span with empty template",
+			spanKind:      ptrace.SpanKindClient,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.template":        "",
+			},
+			expectedSpanName: "GET /",
+		},
+	}
+
+	set := processortest.NewNopSettings(processortest.NopType)
+	processor, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
+
+	runProcessorTests(t, tt, processor)
+}
+
+func TestProcessor_HexEncoded(t *testing.T) {
+	tt := []processorTestManifest{
+		{
+			name:          "hexencoded id",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/6f2a9cdeab34f01e",
+			},
+			expectedSpanName:  "GET /user/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name:          "long hexencoded id",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/6f2a9cdeab34f01e1234567890abcdef", // 32 chars
+			},
+			expectedSpanName:  "GET /user/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name:          "short looking like hexencoded id",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/feed12",
+			},
+			expectedSpanName:  "GET /user/feed12", // should not be templated as the string contains hex chars, but it's too short
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/feed12",
+		},
+		{
+			name:          "hex encoded capital letters",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/6F2A9CDEAB34F01E",
+			},
+			expectedSpanName:  "GET /user/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name:          "non-even length hex",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/abcdefabcdefabcde", // contains 17 chars
+			},
+			expectedSpanName:  "GET /user/abcdefabcdefabcde", // should not be templated as the string contains hex chars, but it's too short
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/abcdefabcdefabcde",
+		},
+	}
+
+	set := processortest.NewNopSettings(processortest.NopType)
+	processor, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
 
 	runProcessorTests(t, tt, processor)
 }
@@ -553,9 +644,9 @@ func TestDefaultDateTemplatization(t *testing.T) {
 				"http.request.method": "GET",
 				"url.path":            "04-12-2025T14:15:16",
 			},
-			expectedSpanName:  "GET 04-12-2025T14:15:16",
+			expectedSpanName:  "GET /04-12-2025T14:15:16",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "04-12-2025T14:15:16",
+			expectedAttrValue: "/04-12-2025T14:15:16",
 		},
 	}
 

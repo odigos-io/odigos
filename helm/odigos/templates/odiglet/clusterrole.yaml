@@ -34,6 +34,7 @@ rules:
       - list
       - watch
       - patch
+      - update
   - apiGroups:
       - odigos.io
     resources:
