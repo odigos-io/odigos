@@ -13,8 +13,10 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            content: ../../../cli/odigos install --namespace odigos-test --version e2e-test
-            timeout: 2m
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+            timeout: 4m
         - assert:
             file: ../../common/assert/odigos-installed.yaml
     - name: Verify Node Odiglet label has been added

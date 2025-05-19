@@ -10,7 +10,7 @@ const (
 	AutoScalerRoleBindingName             = AutoScalerDeploymentName
 	AutoScalerClusterRoleName             = AutoScalerDeploymentName
 	AutoScalerClusterRoleBindingName      = AutoScalerDeploymentName
-	AutoscalerCertificateName             = AutoScalerDeploymentName
+	AutoscalerCAName                      = AutoScalerDeploymentName
 	AutoScalerServiceName                 = "auto-scaler"
 	AutoScalerContainerName               = "manager"
 	AutoscalerActionValidatingWebhookName = "action-validating-webhook-configuration"
