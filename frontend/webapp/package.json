@@ -25,8 +25,8 @@
   },
   "devDependencies": {
     "@types/node": "22.14.1",
-    "@types/react": "19.1.1",
-    "@types/react-dom": "19.1.2",
+    "@types/react": "19.1.4",
+    "@types/react-dom": "19.1.5",
     "autoprefixer": "^10.4.21",
     "cypress": "^14.3.0",
     "eslint": "9.24.0",
