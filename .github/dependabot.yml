@@ -44,7 +44,6 @@ updates:
     directories:
       - /docs
       - /agents/python
-      - /tests/e2e/workload-lifecycle/services/python-http-server
     schedule:
       day: sunday
       interval: weekly
@@ -54,10 +53,16 @@ updates:
       - /frontend/webapp
       - /docs
       - /agents/nodejs-native-community
-      - /tests/e2e/workload-lifecycle/services/nodejs-http-server
     schedule:
       day: sunday
       interval: weekly
+    groups:
+      react-dependencies:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - '@types/react'
+          - '@types/react-dom'
 
   - package-ecosystem: docker
     directories:
