@@ -14,6 +14,7 @@ spec:
        - value: "-javaagent:/var/odigos/java/javaagent.jar"
       (env[?name=='JAVA_TOOL_OPTIONS']):
        - value: "-javaagent:/var/odigos/java/javaagent.jar"
+      (env[?name=='LD_PRELOAD']): []
 ---
 apiVersion: v1
 kind: Pod
@@ -30,6 +31,7 @@ spec:
     # JAVA_OPTS is not set in the manifest of java-supported-manifest-env,
     # so we need to ensure it is also not set in the pod spec.
       (env[?name=='JAVA_OPTS']): []
+      (env[?name=='LD_PRELOAD']): []
 ---
 apiVersion: v1
 kind: Pod
@@ -46,6 +48,7 @@ spec:
        - value: "-javaagent:/var/odigos/java/javaagent.jar"
       (env[?name=='JAVA_TOOL_OPTIONS']):
        - value: "-javaagent:/var/odigos/java/javaagent.jar"
+      (env[?name=='LD_PRELOAD']): []
 ---
 apiVersion: v1
 kind: Pod
@@ -62,6 +65,7 @@ spec:
     # JAVA_TOOL_OPTIONS is not set in the Dockerfile of java-supported-docker-env,
     # so we need to ensure it is also not set in the pod spec.
       (env[?name=='JAVA_TOOL_OPTIONS']): []
+      (env[?name=='LD_PRELOAD']): []
 ---
 apiVersion: v1
 kind: Pod
@@ -81,6 +85,21 @@ spec:
           configMapKeyRef:
             key: PYTHONPATH
             name: env-configmap
+      (env[?name=='LD_PRELOAD']): []
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: python-alpine
+  namespace: default
+spec:
+  containers:
+    - image: public.ecr.aws/odigos/python-alpine:v0.0.1
+      name: python-alpine
+      (env[?name=='PYTHONPATH']):
+      - value: /app:/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      (env[?name=='LD_PRELOAD']): []
 ---
 apiVersion: v1
 kind: Pod
@@ -100,3 +119,4 @@ spec:
           configMapKeyRef:
             key: JAVA_TOOL_OPTIONS
             name: env-configmap
+      (env[?name=='LD_PRELOAD']): []

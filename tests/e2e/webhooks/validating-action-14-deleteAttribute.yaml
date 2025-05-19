@@ -1,0 +1,11 @@
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: 04-action-deleteattribute
+  namespace: default
+spec:
+  signals:
+  - TRACES
+  deleteAttribute:
+    attributeNamesToDelete:
+    - baz

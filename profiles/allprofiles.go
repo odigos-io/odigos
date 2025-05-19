@@ -23,6 +23,7 @@ var AllProfiles = []profile.Profile{
 	attributes.DbPayloadCollectionProfile,
 	attributes.QueryOperationDetector,
 	attributes.SemconvUpgraderProfile,
+	attributes.ReduceSpanNameCardinalityProfile,
 
 	instrumentation.AllowConcurrentAgents,
 	instrumentation.JavaEbpfInstrumentationsProfile,
@@ -31,6 +32,7 @@ var AllProfiles = []profile.Profile{
 	instrumentation.MountMethodK8sHostPathProfile,
 	instrumentation.MountMethodK8sVirtualDevice,
 	instrumentation.AvoidInjectingJavaOptsEnvVar,
+	instrumentation.LoaderFallbackToPodManifestEnvVarInjection,
 
 	pipeline.SmallBatchesProfile,
 
@@ -48,11 +50,12 @@ func init() {
 		ProfilesByName[p.ProfileName] = p
 	}
 	for _, p := range AllProfiles {
-		if p.MinimumTier == common.CommunityOdigosTier {
+		switch p.MinimumTier {
+		case common.CommunityOdigosTier:
 			// community profiles are also on-prem profiles
 			CommunityProfiles = append(CommunityProfiles, p)
 			OnPremProfiles = append(OnPremProfiles, p)
-		} else if p.MinimumTier == common.OnPremOdigosTier {
+		case common.OnPremOdigosTier:
 			OnPremProfiles = append(OnPremProfiles, p)
 		}
 	}

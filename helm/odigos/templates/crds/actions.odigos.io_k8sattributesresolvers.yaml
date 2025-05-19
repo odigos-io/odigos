@@ -76,6 +76,13 @@ spec:
                   container.image.name
                   container.image.tag
                 type: boolean
+              collectReplicaSetAttributes:
+                description: |-
+                  collect replicaset related attributes (when relevant, e.g. for deployments):
+                  k8s.replicaset.name
+                  if CollectWorkloadUID is set, also collect:
+                  k8s.replicaset.uid
+                type: boolean
               collectWorkloadUID:
                 description: |-
                   Collect the following workload UID attributes:

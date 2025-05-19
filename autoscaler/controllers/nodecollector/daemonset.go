@@ -25,11 +25,11 @@ import (
 )
 
 const (
-	containerName        = "data-collection"
-	containerCommand     = "/odigosotelcol"
-	confDir              = "/conf"
-	configHashAnnotation = "odigos.io/config-hash"
-	odigletDaemonSetName = "odiglet"
+	containerName                    = "data-collection"
+	containerCommand                 = "/odigosotelcol"
+	confDir                          = "/conf"
+	configHashAnnotation             = "odigos.io/config-hash"
+	logsSymlinkTargetMountVolumeName = "logs-symlink-target"
 )
 
 var (
@@ -155,7 +155,7 @@ func syncDaemonSet(ctx context.Context, datacollection *odigosv1.CollectorsGroup
 func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace string) (*corev1.PodSpec, error) {
 	odigletDaemonset := &appsv1.DaemonSet{}
 
-	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: odigletDaemonSetName}, odigletDaemonset); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: k8sconsts.OdigletDaemonSetName}, odigletDaemonset); err != nil {
 		return nil, err
 	}
 
@@ -189,6 +189,24 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 	resourceCpuRequestQuantity := resource.MustParse(fmt.Sprintf("%dm", datacollection.Spec.ResourcesSettings.CpuRequestMillicores))
 	resourceCpuLimitQuantity := resource.MustParse(fmt.Sprintf("%dm", datacollection.Spec.ResourcesSettings.CpuLimitMillicores))
 
+	additionalVolumes := []corev1.Volume{}
+	additionalContainerVolumeMounts := []corev1.VolumeMount{}
+	if datacollection.Spec.K8sNodeLogsDirectory != "" {
+		additionalVolumes = append(additionalVolumes, corev1.Volume{
+			Name: logsSymlinkTargetMountVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: datacollection.Spec.K8sNodeLogsDirectory,
+				},
+			},
+		})
+		additionalContainerVolumeMounts = append(additionalContainerVolumeMounts, corev1.VolumeMount{
+			Name:      logsSymlinkTargetMountVolumeName,
+			MountPath: datacollection.Spec.K8sNodeLogsDirectory,
+			ReadOnly:  true,
+		})
+	}
+
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
@@ -211,37 +229,13 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					NodeSelector:       odigletDaemonsetPodSpec.NodeSelector,
 					Affinity:           odigletDaemonsetPodSpec.Affinity,
 					Tolerations:        odigletDaemonsetPodSpec.Tolerations,
-					ServiceAccountName: k8sconsts.OdigosNodeCollectorDaemonSetName,
-					Volumes: []corev1.Volume{
-						{
-							Name: k8sconsts.OdigosNodeCollectorConfigMapKey,
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: datacollection.Name,
-									},
-									Items: []corev1.KeyToPath{
-										{
-											Key:  k8sconsts.OdigosNodeCollectorConfigMapKey,
-											Path: fmt.Sprintf("%s.yaml", k8sconsts.OdigosNodeCollectorConfigMapKey),
-										},
-									},
-								},
-							},
-						},
+					ServiceAccountName: k8sconsts.OdigosNodeCollectorServiceAccountName,
+					Volumes: append([]corev1.Volume{
 						{
 							Name: "varlog",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/var/log",
-								},
-							},
-						},
-						{
-							Name: "mntvarlog",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/mnt/var/log",
 								},
 							},
 						},
@@ -261,17 +255,18 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 								},
 							},
 						},
-					},
+					}, additionalVolumes...),
 					Containers: []corev1.Container{
 						{
-							Name:    containerName,
-							Image:   common.ControllerConfig.CollectorImage,
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosNodeCollectorConfigMapKey)},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      k8sconsts.OdigosNodeCollectorConfigMapKey,
-									MountPath: confDir,
-								},
+							Name:  containerName,
+							Image: common.ControllerConfig.CollectorImage,
+							Command: []string{containerCommand, fmt.Sprintf("--config=%s:%s/%s/%s",
+								k8sconsts.OdigosCollectorConfigMapProviderScheme,
+								datacollection.Namespace,
+								k8sconsts.OdigosNodeCollectorConfigMapName,
+								k8sconsts.OdigosNodeCollectorConfigMapKey),
+							},
+							VolumeMounts: append([]corev1.VolumeMount{
 								{
 									Name:      "varlibdockercontainers",
 									MountPath: "/var/lib/docker/containers",
@@ -282,17 +277,12 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 									MountPath: "/var/log",
 									ReadOnly:  true,
 								},
-								{ // for clusters where /var/log is not a symlink to /mnt/var/log
-									Name:      "mntvarlog",
-									MountPath: "/mnt/var/log",
-									ReadOnly:  true,
-								},
 								{
 									Name:      "hostfs",
 									MountPath: "/hostfs",
 									ReadOnly:  true,
 								},
-							},
+							}, additionalContainerVolumeMounts...),
 							Env: []corev1.EnvVar{
 								{
 									Name: k8sconsts.NodeNameEnvVar,

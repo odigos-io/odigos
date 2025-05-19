@@ -21,7 +21,7 @@ ignoredContainers:
 # Name of the cluster, will be used to identify this cluster in the centralized backend
 clusterName: ''
 
-UserInstrumentationEnvs:
+userInstrumentationEnvs:
   # Configuration for OpenTelemetry (OTEL) agents instrumentation.
   # These settings enable and configure OTEL agents for programming languages supported by Odigos.
   # See the official OTEL documentation for language-specific configuration details:
@@ -47,7 +47,7 @@ UserInstrumentationEnvs:
     go:
       enabled: false
       env: {}
-    dotnet: 
+    dotnet:
       enabled: false
       env: {}
     php:
@@ -137,6 +137,10 @@ collectorNode:
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
   goMemLimitMiB: 360
 
+  # this configuration is used for logs collection where '/var/log' in a k8s node is a symlink
+  # to some other directory (for example, '/mnt/var/log')
+  k8sNodeLogsDirectory: ''
+
 autoscaler:
   nodeSelector:
     kubernetes.io/os: linux
@@ -169,7 +173,7 @@ instrumentor:
   # which mount method to use for odigos agent directory
   # k8s-virtual-device: default method using a virtual device
   # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
-  mountMethod: 'k8s-virtual-device'
+  mountMethod: ''
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
@@ -185,6 +189,11 @@ instrumentor:
   #   - If cert-manager is not installed or detected, no Issuer or Certificate will be created
   #     regardless of this flag.
   skipWebhookIssuerCreation: false
+  # how to add the required environment variables for instrumentation to a container
+  # loader: only try using the odigos loader which requires setting the LD_PRELOAD env var in the container manifest.
+  # pod-manifest: add the environment variables to the container manifest.
+  # loader-fallback-to-pod-manifest: try using the odigos loader first, and if it fails, fallback to adding the environment variables to the container manifest.
+  agentEnvVarsInjectionMethod: ''
 
 odiglet:
   nodeSelector:
@@ -217,10 +226,6 @@ centralProxy:
   tolerations: []
   affinity: {}
 
-cli:
-  image:
-    repository: registry.odigos.io/odigos-cli
-
 # Pod Security Policy
 psp:
   enabled: false
@@ -241,3 +246,13 @@ profiles: []
 # When this is true, we will not inject the JAVA_OPTS env var into the container.
 # when false or not set the original behavior will be used and the JAVA_OPTS env var will be injected.
 avoidInjectingJavaOptsEnvVar: null
+# Optional NodeSelector to apply to all Odigos components
+# Note: Odigos will only be able to instrument workloads on the same nodes.
+nodeSelector: {}
+
+
+# Karpenter settings, before changing to true please modify the karpenter-node-template.yaml file
+# to add the odigos-agent startupTaints configuration.
+# https://docs.odigos.io/setup/odigos-with-karpenter
+karpenter:
+  enabled: false

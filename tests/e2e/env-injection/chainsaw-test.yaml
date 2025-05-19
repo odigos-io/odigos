@@ -1,7 +1,7 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: multi-apps
+  name: env-injection
 spec:
   description: This e2e test runs a multi-apps scenario
   skipDelete: true
@@ -17,6 +17,15 @@ spec:
             content: ../../../cli/odigos install --namespace odigos-test --version e2e-test
         - assert:
             file: ../../common/assert/odigos-installed.yaml
+
+    # currently the default env injection method is pod-manifest
+
+    - name: Assert config set successfully to default
+      try:
+        - script:
+            timeout: 30s
+            content: ../../common/assert_config_value.sh -k agentEnvVarsInjectionMethod -v pod-manifest
+
     - name: Verify Node Odiglet label has been added
       try:
         - assert:
@@ -59,9 +68,67 @@ spec:
             timeout: 1m
             file:  ../../common/assert/pipeline-ready.yaml
 
-    - name: Assert Environment Variables
+    - name: 01 - Assert Environment Variables
       try:
         - assert:
             file: 01-assert-env-vars.yaml
 
-    
+    - name: Set Env injection method to loader-fallback-to-pod-manifest
+      try:
+        - script:
+            timeout: 2m
+            # using an ugly sleep here since the config set command is going to re-create the instrumentor certificate.
+            # this means that there is going to be a time period in which the certificate loaded into the instrumentor is not matching the one in the webhook.
+            # this time period depends on the kubelet sync period.
+            # this is a workaround until we have a better solution for this.
+            content: |
+              ../../../cli/odigos config set agent-env-vars-injection-method loader-fallback-to-pod-manifest
+              sleep 90
+
+    - name: Assert config set successfully
+      try:
+        - script:
+            timeout: 30s
+            content: ../../common/assert_config_value.sh -k agentEnvVarsInjectionMethod -v loader-fallback-to-pod-manifest
+
+    - name: Rollout instrumented apps
+      try:
+        - script:
+            timeout: 1m
+            content: kubectl rollout restart deployment
+
+    - name: 02 - Assert Environment Variables
+      try:
+        - assert:
+            timeout: 1m
+            file: 02-assert-env-vars.yaml
+
+    - name: Set Env injection method to loader
+      try:
+        - script:
+            timeout: 2m
+            # using an ugly sleep here since the config set command is going to re-create the instrumentor certificate.
+            # this means that there is going to be a time period in which the certificate loaded into the instrumentor is not matching the one in the webhook.
+            # this time period depends on the kubelet sync period.
+            # this is a workaround until we have a better solution for this.
+            content: |
+              ../../../cli/odigos config set agent-env-vars-injection-method loader
+              sleep 90
+
+    - name: Assert config set successfully
+      try:
+        - script:
+            timeout: 30s
+            content: ../../common/assert_config_value.sh -k agentEnvVarsInjectionMethod -v loader
+
+    - name: Rollout instrumented apps
+      try:
+        - script:
+            timeout: 1m
+            content: kubectl rollout restart deployment
+
+    - name: 03 - Assert Environment Variables
+      try:
+        - assert:
+            timeout: 1m
+            file: 03-assert-env-vars.yaml

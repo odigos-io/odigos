@@ -10,22 +10,13 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-func addSpanToTraces(traces ptrace.Traces, serviceName, spanName string, kind ptrace.SpanKind, spanAttrs map[string]any) {
-	rs := traces.ResourceSpans().AppendEmpty()
-	if serviceName != "" {
-		rs.Resource().Attributes().PutStr(string(semconv.ServiceNameKey), serviceName)
-	}
-	span := rs.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
-	span.Attributes().FromRaw(spanAttrs)
-	span.SetName(spanName)
-	span.SetKind(kind)
-}
-
 func generateTraceData(serviceName, spanName string, kind ptrace.SpanKind, spanAttrs map[string]any) ptrace.Traces {
 	td := ptrace.NewTraces()
 	rs := td.ResourceSpans().AppendEmpty()
 	if serviceName != "" {
 		rs.Resource().Attributes().PutStr(string(semconv.ServiceNameKey), serviceName)
+		rs.Resource().Attributes().PutStr(string(semconv.K8SNamespaceNameKey), "default")
+		rs.Resource().Attributes().PutStr(string(semconv.K8SDeploymentNameKey), serviceName)
 	}
 	span := rs.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
 	span.Attributes().FromRaw(spanAttrs)
@@ -77,18 +68,6 @@ func TestProcessor_Traces(t *testing.T) {
 	require.NoError(t, err)
 
 	tt := []processorTestManifest{
-		{
-			name:          "numeric id in url path",
-			spanKind:      ptrace.SpanKindServer,
-			inputSpanName: "GET",
-			inputSpanAttrs: map[string]any{
-				"http.request.method": "GET",
-				"url.path":            "/user/1234",
-			},
-			expectedSpanName:  "GET /user/{id}",
-			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/{id}",
-		},
 		{
 			name:          "uuid in url path",
 			spanKind:      ptrace.SpanKindServer,
@@ -306,6 +285,142 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrValue: "/api/v1",
 		},
 		{
+			name:          "long text",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/CamelCaseLongTextThatShouldNotBeTemplated",
+			},
+			expectedSpanName:  "GET /user/CamelCaseLongTextThatShouldNotBeTemplated", // should not be templated as chars are not hex
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/CamelCaseLongTextThatShouldNotBeTemplated",
+		},
+		{
+			name:          "long number with text",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/INC0012686", // contains 7 digits number
+			},
+			expectedSpanName:  "GET /user/{id}", // should be templated as the number is long
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name: "long number in middle of text",
+			// this is a corner case where the number is long, but it is not at the beginning or end of the string
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/INC0012637US", // contains 7 digits number
+			},
+			expectedSpanName:  "GET /user/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name: "6 digits number should not be templated",
+			// this is a corner case where the number is under the limit of digits (7)
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/inc_654321", // contains 6 digits number twice
+			},
+			expectedSpanName:  "GET /user/inc_654321", // should not be templated as the number is under the limit
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/inc_654321",
+		},
+		{
+			name:          "invalid utf-8 char",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/foo/this_text_includes_invalid_char�",
+			},
+			expectedSpanName:  "GET /foo/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/foo/{id}",
+		},
+		{
+			name:          "invalid full url",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.full":            "invalidurl/#@%@##%$@%@",
+			},
+			expectedSpanName:  "GET",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "", // should not exist
+		},
+	}
+
+	runProcessorTests(t, tt, processor)
+}
+
+func TestProcessor_EmptyPath(t *testing.T) {
+	tt := []processorTestManifest{
+		{
+			name:          "empty path",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "",
+			},
+			expectedSpanName:  "GET /",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/",
+		},
+		{
+			name:          "path is only slash",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/",
+			},
+			expectedSpanName:  "GET /",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/",
+		},
+		{
+			name:          "route exists and is empty",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"http.route":          "",
+			},
+			expectedSpanName: "GET /",
+		},
+		{
+			name:          "client span with empty template",
+			spanKind:      ptrace.SpanKindClient,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.template":        "",
+			},
+			expectedSpanName: "GET /",
+		},
+	}
+
+	set := processortest.NewNopSettings(processortest.NopType)
+	processor, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
+
+	runProcessorTests(t, tt, processor)
+}
+
+func TestProcessor_HexEncoded(t *testing.T) {
+	tt := []processorTestManifest{
+		{
 			name:          "hexencoded id",
 			spanKind:      ptrace.SpanKindServer,
 			inputSpanName: "GET",
@@ -342,16 +457,16 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrValue: "/user/feed12",
 		},
 		{
-			name:          "long text",
+			name:          "hex encoded capital letters",
 			spanKind:      ptrace.SpanKindServer,
 			inputSpanName: "GET",
 			inputSpanAttrs: map[string]any{
 				"http.request.method": "GET",
-				"url.path":            "/user/CamelCaseLongTextThatShouldNotBeTemplated",
+				"url.path":            "/user/6F2A9CDEAB34F01E",
 			},
-			expectedSpanName:  "GET /user/CamelCaseLongTextThatShouldNotBeTemplated", // should not be templated as chars are not hex
+			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/CamelCaseLongTextThatShouldNotBeTemplated",
+			expectedAttrValue: "/user/{id}",
 		},
 		{
 			name:          "non-even length hex",
@@ -365,45 +480,58 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrKey:   "http.route",
 			expectedAttrValue: "/user/abcdefabcdefabcde",
 		},
+	}
+
+	set := processortest.NewNopSettings(processortest.NopType)
+	processor, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
+
+	runProcessorTests(t, tt, processor)
+}
+
+func TestProcessor_NoLetters(t *testing.T) {
+	tt := []processorTestManifest{
 		{
-			name:          "long number with text",
+			name:          "numeric id in url path",
 			spanKind:      ptrace.SpanKindServer,
 			inputSpanName: "GET",
 			inputSpanAttrs: map[string]any{
 				"http.request.method": "GET",
-				"url.path":            "/user/INC0012686", // contains 7 digits number
-			},
-			expectedSpanName:  "GET /user/{id}", // should be templated as the number is long
-			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/{id}",
-		},
-		{
-			name: "long number in middle of text",
-			// this is a corner case where the number is long, but it is not at the beginning or end of the string
-			spanKind:      ptrace.SpanKindServer,
-			inputSpanName: "GET",
-			inputSpanAttrs: map[string]any{
-				"http.request.method": "GET",
-				"url.path":            "/user/INC0012637US", // contains 7 digits number
+				"url.path":            "/user/1234",
 			},
 			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "http.route",
 			expectedAttrValue: "/user/{id}",
 		},
 		{
-			name: "6 digits number should not be templated",
-			// this is a corner case where the number is under the limit of digits (7)
+			name:          "id with special chars",
 			spanKind:      ptrace.SpanKindServer,
 			inputSpanName: "GET",
 			inputSpanAttrs: map[string]any{
 				"http.request.method": "GET",
-				"url.path":            "/user/123456_654321", // contains 6 digits number twice
+				"url.path":            "/user/1234-5678",
 			},
-			expectedSpanName:  "GET /user/123456_654321", // should not be templated as the number is under the limit
+			expectedSpanName:  "GET /user/{id}",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/user/123456_654321",
+			expectedAttrValue: "/user/{id}",
+		},
+		{
+			name:          "id with special chars and text",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/v1234-5678",
+			},
+			expectedSpanName:  "GET /user/v1234-5678",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/v1234-5678",
 		},
 	}
+
+	set := processortest.NewNopSettings(processortest.NopType)
+	processor, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
 
 	runProcessorTests(t, tt, processor)
 }
@@ -514,11 +642,11 @@ func TestDefaultDateTemplatization(t *testing.T) {
 			inputSpanName: "GET",
 			inputSpanAttrs: map[string]any{
 				"http.request.method": "GET",
-				"url.path":            "04-12-2025",
+				"url.path":            "04-12-2025T14:15:16",
 			},
-			expectedSpanName:  "GET 04-12-2025",
+			expectedSpanName:  "GET /04-12-2025T14:15:16",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "04-12-2025",
+			expectedAttrValue: "/04-12-2025T14:15:16",
 		},
 	}
 
@@ -727,7 +855,11 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 			}
 			traces := generateTraceData("test-service-name", "GET", ptrace.SpanKindServer, spanAttr)
 			// Add the templated rule to the processor
-			processor, err := newUrlTemplateProcessor(processortest.NewNopSettings(processortest.NopType), &Config{TemplatizationRules: tc.rules})
+			processor, err := newUrlTemplateProcessor(processortest.NewNopSettings(processortest.NopType), &Config{
+				TemplatizationConfig: TemplatizationConfig{
+					TemplatizationRules: tc.rules,
+				},
+			})
 			require.NoError(t, err)
 			// Process the traces
 			ctx := context.Background()
@@ -744,24 +876,36 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 func TestProcessor_CustomIdsRegexp(t *testing.T) {
 	tt := []struct {
 		name              string
-		customIds         []string
+		customIds         []CustomIdConfig
 		path              string
 		expectedName      string
 		expectedHttpRoute string
 	}{
 		{
 			name:              "custom id",
-			customIds:         []string{"^in_[0-9]+$"},
+			customIds:         []CustomIdConfig{{Regexp: "^in_[0-9]+$"}},
 			path:              "/product/in_005",
 			expectedName:      "GET /product/{id}",
 			expectedHttpRoute: "/product/{id}",
 		},
 		{
 			name:              "multiple custom ids",
-			customIds:         []string{"^in_[0-9]+$", "^out_[0-9]+$"},
+			customIds:         []CustomIdConfig{{Regexp: "^in_[0-9]+$"}, {Regexp: "^out_[0-9]+$"}},
 			path:              "/foo/out_005/bar/in_123",
 			expectedName:      "GET /foo/{id}/bar/{id}",
 			expectedHttpRoute: "/foo/{id}/bar/{id}",
+		},
+		{
+			name: "custom id with template name",
+			customIds: []CustomIdConfig{
+				{
+					Regexp:       "^in_[0-9]+$",
+					TemplateName: "custom-id",
+				},
+			},
+			path:              "/product/in_005",
+			expectedName:      "GET /product/{custom-id}",
+			expectedHttpRoute: "/product/{custom-id}",
 		},
 	}
 
@@ -773,7 +917,11 @@ func TestProcessor_CustomIdsRegexp(t *testing.T) {
 			}
 			traces := generateTraceData("test-service-name", "GET", ptrace.SpanKindServer, spanAttr)
 			// Add the templated rule to the processor
-			processor, err := newUrlTemplateProcessor(processortest.NewNopSettings(processortest.NopType), &Config{CustomIdsRegexp: tc.customIds})
+			processor, err := newUrlTemplateProcessor(processortest.NewNopSettings(processortest.NopType), &Config{
+				TemplatizationConfig: TemplatizationConfig{
+					CustomIds: tc.customIds,
+				},
+			})
 			require.NoError(t, err)
 			// Process the traces
 			ctx := context.Background()
@@ -783,6 +931,105 @@ func TestProcessor_CustomIdsRegexp(t *testing.T) {
 			processedSpan := processedTraces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
 			// Assert the span name and http.route attribute
 			assertSpanNameAndAttribute(t, processedSpan, tc.expectedName, "http.route", tc.expectedHttpRoute)
+		})
+	}
+}
+
+func TestProcessor_IncludeExclude(t *testing.T) {
+	tt := []struct {
+		name                   string
+		serviceName            string
+		include                *[]K8sWorkload
+		exclude                *[]K8sWorkload
+		expectedTemplatization bool
+	}{
+		{
+			name:                   "included rule in include list",
+			serviceName:            "test-service-name",
+			include:                &[]K8sWorkload{{Namespace: "default", Kind: "Deployment", Name: "test-service-name"}},
+			expectedTemplatization: true,
+		},
+		{
+			name:                   "not included rule in include list",
+			serviceName:            "test-service-name",
+			include:                &[]K8sWorkload{{Namespace: "default", Kind: "Deployment", Name: "other-service-name"}},
+			expectedTemplatization: false,
+		},
+		{
+			name:                   "in exclude list",
+			serviceName:            "test-service-name",
+			exclude:                &[]K8sWorkload{{Namespace: "default", Kind: "Deployment", Name: "test-service-name"}},
+			expectedTemplatization: false,
+		},
+		{
+			name:                   "not in exclude list",
+			serviceName:            "test-service-name",
+			exclude:                &[]K8sWorkload{{Namespace: "default", Kind: "Deployment", Name: "other-service-name"}},
+			expectedTemplatization: true,
+		},
+		{
+			name:                   "included rule in include list and excluded in exclude list",
+			serviceName:            "test-service-name",
+			include:                &[]K8sWorkload{{Namespace: "default", Kind: "Deployment", Name: "test-service-name"}},
+			exclude:                &[]K8sWorkload{{Namespace: "default", Kind: "Deployment", Name: "test-service-name"}},
+			expectedTemplatization: false, // since it's excluded, it should not be templated
+		},
+		{
+			name:                   "no include or exclude rules",
+			serviceName:            "test-service-name",
+			expectedTemplatization: true, // since there are no rules, it should be templated (no exclude and all included)
+		},
+		{
+			name:                   "included rule exists and workload list is empty",
+			serviceName:            "test-service-name",
+			include:                &[]K8sWorkload{},
+			expectedTemplatization: false, // include section exists but the workload list is empty, so it doesn't match any workload
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			spanAttr := map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/1234",
+			}
+			traces := generateTraceData("test-service-name", "GET", ptrace.SpanKindServer, spanAttr)
+
+			var include *MatchProperties
+			if tc.include != nil {
+				include = &MatchProperties{
+					K8sWorkloads: *tc.include,
+				}
+			}
+			var exclude *MatchProperties
+			if tc.exclude != nil {
+				exclude = &MatchProperties{
+					K8sWorkloads: *tc.exclude,
+				}
+			}
+
+			// Add the templated rule to the processor
+			processor, err := newUrlTemplateProcessor(processortest.NewNopSettings(processortest.NopType), &Config{
+				MatchConfig: MatchConfig{
+					Include: include,
+					Exclude: exclude,
+				}})
+			require.NoError(t, err)
+			// Process the traces
+			ctx := context.Background()
+			processedTraces, err := processor.processTraces(ctx, traces)
+			require.NoError(t, err)
+			// Get the processed span
+			processedSpan := processedTraces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+			if tc.expectedTemplatization {
+				// Assert the span name and http.route attribute
+				tamplatizedName := "GET /user/{id}"
+				httpRoute := "/user/{id}"
+				assertSpanNameAndAttribute(t, processedSpan, tamplatizedName, "http.route", httpRoute)
+			} else {
+				// Should not modify the span name or add the http.route attribute
+				assertSpanNameAndAttribute(t, processedSpan, "GET", "http.route", "")
+			}
 		})
 	}
 }

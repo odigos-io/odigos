@@ -8,7 +8,7 @@ spec:
   steps:
     - name: Prepare destination
       try:
-        - apply: 
+        - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
     - name: Install Odigos
       try:
@@ -18,9 +18,9 @@ spec:
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../.."
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set nodeSelector."kubernetes\.io/os"=linux
               else
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test  --set nodeSelector."kubernetes\.io/os"=linux
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
 
@@ -51,7 +51,7 @@ spec:
 
         - assert:
             timeout: 1m
-            file: ../../common/assert/odigos-installed.yaml  # ✅ Moved outside `catch`
+            file: ../../common/assert/odigos-installed.yaml # ✅ Moved outside `catch`
 
       catch:
         - script:
@@ -71,36 +71,20 @@ spec:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
-    - name: Install Demo App
+
+    - name: Install - Simple Demo Apps
       try:
-        - script:
-            timeout: 3m
-            content: |
-              if [ "$MODE" != "cross-cloud-tests" ]; then
-                docker pull registry.odigos.io/odigos-demo-inventory:v0.1
-                docker pull registry.odigos.io/odigos-demo-membership:v0.1
-                docker pull registry.odigos.io/odigos-demo-coupon:v0.1
-                docker pull registry.odigos.io/odigos-demo-pricing:v0.1
-                docker pull registry.odigos.io/odigos-demo-frontend:v0.2
-                kind load docker-image registry.odigos.io/odigos-demo-inventory:v0.1
-                kind load docker-image registry.odigos.io/odigos-demo-membership:v0.1
-                kind load docker-image registry.odigos.io/odigos-demo-coupon:v0.1
-                kind load docker-image registry.odigos.io/odigos-demo-pricing:v0.1
-                kind load docker-image registry.odigos.io/odigos-demo-frontend:v0.2
-              else
-                echo "Skipping docker pull and kind load for cross-cloud-tests mode"
-              fi
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
         - script:
-            timeout: 70s
+            timeout: 2m
             content: |
-              # Wait for the pods to be ready
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=60s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=60s
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 
@@ -124,7 +108,7 @@ spec:
       try:
         - assert:
             timeout: 1m
-            file:  ../../common/assert/pipeline-ready.yaml
+            file: ../../common/assert/pipeline-ready.yaml
 
     - name: Simple-demo instrumented after destination added
       try:
@@ -133,37 +117,38 @@ spec:
 
     - name: Generate Traffic
       try:
+        - apply:
+            file: ../../common/apply/generate-traffic-job.yaml
         - script:
             timeout: 1m
             content: |
-              # Apply the job
-              kubectl apply -f ../../common/apply/generate-traffic-job.yaml
+              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+        - delete:
+            file: ../../common/apply/generate-traffic-job.yaml
 
-              # Wait for the job to complete
-              job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-              kubectl wait --for=condition=complete job/$job_name
-
-              # Delete the job
-              kubectl delete -f ../../common/apply/generate-traffic-job.yaml
-
+    - name: Wait For Trace
+      try:
+        - script:
+            timeout: 1m
+            content: |
               while true; do
-                # wait for traces to be available
-                sleep 1
-
-                # Run the wait-for-trace script
-                echo "Running Simple-trace-db query for full trace at $(date)"
-                ../../common/simple_trace_db_query_runner.sh queries/wait-for-trace.yaml
-
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
                 if [ $? -eq 0 ]; then
                   break
                 fi
+                sleep 1
               done
+      catch:
+        - script:
+            content: |
+              java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
+              kubectl logs $java_pod_name -n default
 
     - name: Verify Trace - Context Propagation
       try:
         - script:
             content: |
-              ../../common/simple_trace_db_query_runner.sh queries/context-propagation.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation.yaml
       catch:
         - podLogs:
             name: odiglet
@@ -173,7 +158,7 @@ spec:
       try:
         - script:
             content: |
-              ../../common/simple_trace_db_query_runner.sh queries/resource-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/resource-attributes.yaml
       catch:
         - podLogs:
             name: odiglet
@@ -183,7 +168,7 @@ spec:
       try:
         - script:
             content: |
-              ../../common/simple_trace_db_query_runner.sh queries/span-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/span-attributes.yaml
       catch:
         - podLogs:
             name: odiglet

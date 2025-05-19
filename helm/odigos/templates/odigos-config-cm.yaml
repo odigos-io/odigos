@@ -17,9 +17,7 @@ data:
     {{- if .Values.centralProxy.centralBackendURL }}
     centralBackendURL: {{ .Values.centralProxy.centralBackendURL }}
     {{- end }}
-    {{- if .Values.imagePrefix }}
-    imagePrefix: {{ .Values.imagePrefix }}
-    {{- end }}
+    imagePrefix: {{ template "utils.imagePrefix" (dict "Values" .Values) }}
     {{- if .Values.ui.uiMode }}
     uiMode: {{ .Values.ui.uiMode }}
     {{- end }}
@@ -85,11 +83,15 @@ data:
       {{- with .Values.collectorNode.goMemLimitMiB }}
       goMemLimitMiB: {{ . }}
       {{- end }}
+      {{- with .Values.collectorNode.k8sNodeLogsDirectory }}
+      k8sNodeLogsDirectory: {{ . }}
+      {{- end }}
     {{- end }}
-    {{- if .Values.UserInstrumentationEnvs.languages }}
-    UserInstrumentationEnvs:
+    {{- if include "utils.shouldRenderUserInstrumentationEnvs" . | eq "true" }}
+    userInstrumentationEnvs:
       languages:
-        {{- range $lang, $config := .Values.UserInstrumentationEnvs.languages }}
+        {{- range $lang, $config := .Values.userInstrumentationEnvs.languages }}
+        {{- if or $config.enabled $config.env }}
         {{ $lang }}:
           enabled: {{ $config.enabled }}
           {{- if $config.env }}
@@ -99,9 +101,10 @@ data:
             {{- end }}
           {{- end }}
         {{- end }}
+        {{- end }}
     {{- end }}
     {{- if .Values.profiles }}
-    profiles: 
+    profiles:
       {{- toYaml .Values.profiles | nindent 6 }}
     {{- end }}
     telemetryEnabled: {{ .Values.telemetry.enabled }}
@@ -115,11 +118,26 @@ data:
     ignoredContainers:
       {{- toYaml .Values.ignoredContainers | nindent 6 }}
     {{- end }}
-    {{- if and .Values.instrumentor.mountMethod (has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device")) }}
+    {{- if .Values.instrumentor.mountMethod }}
+      {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device") }}
     mountMethod: {{ .Values.instrumentor.mountMethod }}
-    {{- else }}
-    {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path' and 'k8s-virtual-device'." }}
+      {{- else }}
+        {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path' and 'k8s-virtual-device'." }}
+      {{- end }}
     {{- end }}
     {{- if .Values.avoidInjectingJavaOptsEnvVar }}
     avoidInjectingJavaOptsEnvVar: {{ .Values.avoidInjectingJavaOptsEnvVar }}
+    {{- end }}
+    {{- $envMethod := .Values.instrumentor.agentEnvVarsInjectionMethod }}
+    {{- if and $envMethod (not (has $envMethod (list "loader" "pod-manifest" "loader-fallback-to-pod-manifest"))) }}
+    {{- fail "Error: Invalid agentEnvVarsInjectionMethod. Supported values are 'loader', 'pod-manifest', and 'loader-fallback-to-pod-manifest'." }}
+    {{- else if $envMethod }}
+    agentEnvVarsInjectionMethod: {{ $envMethod }}
+    {{- end }}
+    {{- if .Values.nodeSelector }}
+    nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 6 }}
+    {{- end }}
+    {{- if .Values.karpenter.enabled }}
+    karpenterEnabled: {{ .Values.karpenter.enabled }}
     {{- end }}

@@ -8,7 +8,10 @@ import (
 )
 
 var (
-	onlyDigitsRegex = regexp.MustCompile(`^\d+$`)
+
+	// matches any string that contains only digits or special characters
+	// will catch things like "1234_567" but not anything that contains a letter
+	noLettersRegex = regexp.MustCompile(`^[\d_\-!@#$%^&*()=+{}\[\]:;"'<>,.?/\\|` + "`" + `~]+$`)
 
 	// matches UUIDs in the format 123e4567-e89b-12d3-a456-426614174000
 	// these UUIDs are common in cloud systems and are often used as ids
@@ -22,22 +25,22 @@ var (
 	// These are common as ids in cloud systems.
 	//
 	// To enforce the following conditions in a single Go regular expression:
-	// - Only lowercase hexadecimal characters (0-9 and a-f),
+	// - Only hexadecimal characters (lower or higher case) (0-9, a-f, A-F),
 	// - More than 16 characters,
 	// - An even number of characters
 	//
 	// It is considered safe as:
-	// - letters are only limited to lowercase a-f, which any real word with 16 chars or more will fail.
+	// - letters are only limited to a-f (or upper case A-F), which any real word with 16 chars or more will fail.
 	// - the regex will not match if the string is less than 16 chars, so things like "feed12" (all letters a-f) will not match.
 	// - the regex will not match if the string is odd length (indicating it's not hex encoded) so another filter for extreme corner cases.
 	//
 	// Explanation (ChatGPT):
 	// - (?:...) — A non-capturing group.
-	// - [0-9a-f]{2} — Matches exactly two hexadecimal characters.
+	// - [0-9a-fA-F]{2} — Matches exactly two hexadecimal characters.
 	// - {8,} — Repeats that group 8 or more times, ensuring:
 	// 	 - 8 × 2 = 16 characters minimum
 	// 	 - Each repetition is of 2 characters → ensures even length.
-	hexEncodedRegex = regexp.MustCompile(`^(?:[0-9a-f]{2}){8,}$`)
+	hexEncodedRegex = regexp.MustCompile(`^(?:[0-9a-fA-F]{2}){8,}$`)
 
 	// assume that long numbers (7 continues digits or more) are ids.
 	// even if they are found with some text (for example "INC0012686") they are treated as ids
@@ -65,6 +68,9 @@ var (
 
 	// matches email addresses
 	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+
+	// assume any invalid unicode character is not a static path segment
+	replacementChar = regexp.MustCompile(`�`)
 )
 
 type RulePathSegment struct {
@@ -184,13 +190,13 @@ func attemptTemplateWithRule(pathSegments []string, ruleSegments TemplatizationR
 // return the name to use for templatization "id" / "date" etc which will be embedded in the template
 // as {id} / {date} etc
 // empty string as return value means that the segment is not a templated id
-func getSegmentTemplatizationString(segment string, customIdsRegexp []regexp.Regexp) string {
-	// check if the segment is a number or uuid
-	if onlyDigitsRegex.MatchString(segment) ||
-		longNumberAnywhereRegex.MatchString(segment) ||
-		uuidRegex.MatchString(segment) ||
-		hexEncodedRegex.MatchString(segment) {
-		return "id"
+func getSegmentTemplatizationString(segment string, customIds []internalCustomIdConfig) string {
+
+	// check if the segment matches any of the custom ids regexp
+	for _, customRegexp := range customIds {
+		if customRegexp.Regexp.MatchString(segment) {
+			return customRegexp.Name
+		}
 	}
 
 	if datesRegex.MatchString(segment) {
@@ -201,18 +207,20 @@ func getSegmentTemplatizationString(segment string, customIdsRegexp []regexp.Reg
 		return "email"
 	}
 
-	// check if the segment matches any of the custom ids regexp
-	for _, customRegexp := range customIdsRegexp {
-		if customRegexp.MatchString(segment) {
-			return "id"
-		}
+	// check if the segment is a number or uuid
+	if noLettersRegex.MatchString(segment) ||
+		longNumberAnywhereRegex.MatchString(segment) ||
+		uuidRegex.MatchString(segment) ||
+		hexEncodedRegex.MatchString(segment) ||
+		replacementChar.MatchString(segment) {
+		return "id"
 	}
 
 	return ""
 }
 
 // This function will replace all segments that matches a number or uuid with "{id}"
-func defaultTemplatizeURLPath(pathSegments []string, customIdsRegexp []regexp.Regexp) (string, bool) {
+func defaultTemplatizeURLPath(pathSegments []string, customIdsRegexp []internalCustomIdConfig) (string, bool) {
 	templated := false
 	// avoid modifying the original segments slice
 	templatizedSegments := make([]string, len(pathSegments))

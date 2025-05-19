@@ -60,7 +60,7 @@ func GetNginxVersion(containerURL string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to execute request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // nolint:errcheck // we can't do anything if it fails
 
 	serverHeader := resp.Header.Get("Server")
 	if serverHeader == "" {

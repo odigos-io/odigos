@@ -14,6 +14,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -57,6 +58,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 			envs := make([]odigosv1.EnvVar, 0)
 			var detectedAgent *odigosv1.OtherAgent
 			var libcType *common.LibCType
+			var secureExecutionMode *bool
 
 			if inspectProc == nil {
 				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
@@ -95,6 +97,8 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 						log.Logger.Error(err, "error inspecting libc type", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 					}
 				}
+
+				secureExecutionMode = inspectProc.SecureExecutionMode
 			}
 
 			var runtimeVersion string
@@ -103,12 +107,13 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 			}
 
 			resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
-				ContainerName:  container.Name,
-				Language:       programLanguageDetails.Language,
-				RuntimeVersion: runtimeVersion,
-				EnvVars:        envs,
-				OtherAgent:     detectedAgent,
-				LibCType:       libcType,
+				ContainerName:       container.Name,
+				Language:            programLanguageDetails.Language,
+				RuntimeVersion:      runtimeVersion,
+				EnvVars:             envs,
+				OtherAgent:          detectedAgent,
+				LibCType:            libcType,
+				SecureExecutionMode: secureExecutionMode,
 			}
 
 			if inspectProc != nil {
@@ -137,22 +142,22 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 		return
 	}
 
+	envVarNames = append(envVarNames, consts.LdPreloadEnvVarName)
+
 	// Verify if environment variables already exist in the container manifest.
 	// If they exist, set the RuntimeUpdateState as ProcessingStateSkipped.
-	// there's no need to fetch them from the Container Runtime, and we will just append our additions in the webhook.
 	if envsExistsInManifest := checkEnvVarsInContainerManifest(container, envVarNames); envsExistsInManifest {
 		runtimeDetailsByContainer := (*resultsMap)[container.Name]
 		state := odigosv1.ProcessingStateSkipped
 		runtimeDetailsByContainer.RuntimeUpdateState = &state
 		(*resultsMap)[container.Name] = runtimeDetailsByContainer
-		return
 	}
 
-	// Environment variables do not exist in the manifest; fetch them from the container's Runtime
+	// Environment variables do not exist in the manifest; fetch them from the container's Image
 	fetchAndSetEnvFromContainerRuntime(ctx, criClient, pod, container, envVarNames, resultsMap, procEnvVars)
 }
 
-// fetchAndSetEnvFromContainerRuntime retrieves environment variables from the container's runtime and updates the runtime details.
+// fetchAndSetEnvFromContainerRuntime retrieves environment variables from the container's Image and updates the runtime details.
 func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
 	envVarKeys []string, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer, procEnvVars map[string]string) {
 	containerID := getContainerID(pod.Status.ContainerStatuses, container.Name)
@@ -235,11 +240,32 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 
 	// Verify if the RuntimeDetailsByContainer already set.
 	// If it has, skip updating the RuntimeDetails to ensure the new runtime detection is performed only once.
+	// In some cases we would like to update the existing RuntimeDetailsByContainer:
+	// 1. LD_PRELOAD is identified in EnvVars [/proc/pid/environ]
+	// 2. LD_PRELOAD is identified in EnvFromContainerRuntime [DockerFile]
+	// 3. SecureExecutionMode is set to true.
+	// 4. RuntimeVersion changes
 	if len(currentConfig.Status.RuntimeDetailsByContainer) > 0 {
-		return nil
+		updated := false
+		for _, newDetail := range newRuntimeDetials {
+			for j := range currentConfig.Status.RuntimeDetailsByContainer {
+				existingDetail := &currentConfig.Status.RuntimeDetailsByContainer[j]
+				if newDetail.ContainerName == existingDetail.ContainerName {
+					if mergeRuntimeDetails(existingDetail, newDetail) {
+						updated = true
+					}
+				}
+			}
+		}
+		// Do not overwrite existing details if no updates are needed
+		if !updated {
+			return nil
+		}
+	} else {
+		// First time setting the values
+		currentConfig.Status.RuntimeDetailsByContainer = newRuntimeDetials
 	}
 
-	currentConfig.Status.RuntimeDetailsByContainer = newRuntimeDetials
 	meta.SetStatusCondition(&currentConfig.Status.Conditions, metav1.Condition{
 		Type:    odigosv1.RuntimeDetectionStatusConditionType,
 		Status:  metav1.ConditionTrue,
@@ -268,4 +294,53 @@ func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkloa
 	}
 
 	return &runtimeDetails, nil
+}
+
+func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigosv1.RuntimeDetailsByContainer) bool {
+	updated := false
+
+	// 1. Merge LD_PRELOAD from EnvVars [/proc/pid/environ]
+	odigosStr := "odigos"
+	updated = mergeLdPreloadEnvVars(new.EnvVars, &existing.EnvVars, &odigosStr)
+
+	// 2. Merge LD_PRELOAD from EnvFromContainerRuntime [DockerFile]
+	updated = mergeLdPreloadEnvVars(new.EnvFromContainerRuntime, &existing.EnvFromContainerRuntime, nil)
+
+	// 3. Update SecureExecutionMode if needed
+	if existing.SecureExecutionMode == nil && new.SecureExecutionMode != nil {
+		existing.SecureExecutionMode = new.SecureExecutionMode
+		updated = true
+	}
+
+	// 4. Update RuntimeVersion if different
+	if new.RuntimeVersion != "" && new.RuntimeVersion != existing.RuntimeVersion {
+		existing.RuntimeVersion = new.RuntimeVersion
+		updated = true
+	}
+
+	return updated
+}
+
+func mergeLdPreloadEnvVars(
+	newEnvs []odigosv1.EnvVar,
+	existingEnvs *[]odigosv1.EnvVar,
+	skipIfContains *string,
+) bool {
+	// Step 1: Check if LD_PRELOAD already exists in the existing envs
+	for _, existingEnv := range *existingEnvs {
+		if existingEnv.Name == consts.LdPreloadEnvVarName {
+			return false // Already present, nothing to do
+		}
+	}
+
+	// Step 2: Try to add it from new envs
+	for _, newEnv := range newEnvs {
+		if newEnv.Name == consts.LdPreloadEnvVarName {
+			if skipIfContains == nil || !strings.Contains(newEnv.Value, *skipIfContains) {
+				*existingEnvs = append(*existingEnvs, newEnv)
+				return true // Add LD_PRELOAD and return
+			}
+		}
+	}
+	return false // No LD_PRELOAD found, nothing to do
 }
