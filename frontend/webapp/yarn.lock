@@ -2,17 +2,17 @@
 # yarn lockfile v1
 
 
-"@apollo/client-integration-nextjs@0.12.1":
-  version "0.12.1"
-  resolved "https://registry.yarnpkg.com/@apollo/client-integration-nextjs/-/client-integration-nextjs-0.12.1.tgz#7d38bd7d3480c1b511ff529dfb492b0c6d3f42ac"
-  integrity sha512-QZCSxiBOTgiWBsdLrxZs1G31E/bO/n3mCq1X3Aw7T/szVTvzZ961uT9e3VGkFmF8EdGDl/q+FV3smja/Np0aog==
+"@apollo/client-integration-nextjs@0.12.2":
+  version "0.12.2"
+  resolved "https://registry.yarnpkg.com/@apollo/client-integration-nextjs/-/client-integration-nextjs-0.12.2.tgz#26c4f544c4a2ff91bdffeeaeac2289e514741234"
+  integrity sha512-Nsoe/onkEqCfIcQfoklnimRGibtaYXmkst6moXJw9Jl0sFqxpEyNMv3xvdPXItN6lZABBeKM8N+u+/7iqyZDig==
   dependencies:
-    "@apollo/client-react-streaming" "0.12.1"
+    "@apollo/client-react-streaming" "0.12.2"
 
-"@apollo/client-react-streaming@0.12.1":
-  version "0.12.1"
-  resolved "https://registry.yarnpkg.com/@apollo/client-react-streaming/-/client-react-streaming-0.12.1.tgz#197f4f2b3696fa03ac1bd1889a9c2a1dc08cd516"
-  integrity sha512-KOfx16GLodZxKtoyh+C5eOp6bYPthBl21J5qeIRF6K7a2a2qzY6JwWnf0rgiCPgp/uiM15LCTAIwGdEIy0Z0SA==
+"@apollo/client-react-streaming@0.12.2":
+  version "0.12.2"
+  resolved "https://registry.yarnpkg.com/@apollo/client-react-streaming/-/client-react-streaming-0.12.2.tgz#c4436ab00be1f8012d2b6a0307f28187ab7a3458"
+  integrity sha512-zVc6QmvvR+9DZaLPUES1Rp63MC2VAnvHJC7gNVagH5kI3IZgeJGNgxKX/RMpYJ2+a2EclOG50czFCD7XkXe24w==
   dependencies:
     "@types/react-dom" "^19.0.0"
     "@wry/equality" "^0.5.6"
@@ -37,12 +37,12 @@
     tslib "^2.3.0"
     zen-observable-ts "^1.2.5"
 
-"@apollo/experimental-nextjs-app-support@^0.12.1":
-  version "0.12.1"
-  resolved "https://registry.yarnpkg.com/@apollo/experimental-nextjs-app-support/-/experimental-nextjs-app-support-0.12.1.tgz#cd2ba5c751ddacea86c02bdad99e277c30a6cdfe"
-  integrity sha512-RTDtSuOhJzHbH2gXUO1g8b+X7pCwZ/Ta3rQUQ/nlmUMmhLevHCPM3avPRMqEIZ3XOhaJdu1yt2XhDWA6QETFeA==
+"@apollo/experimental-nextjs-app-support@^0.12.2":
+  version "0.12.2"
+  resolved "https://registry.yarnpkg.com/@apollo/experimental-nextjs-app-support/-/experimental-nextjs-app-support-0.12.2.tgz#accc6f481fe81bd50799c188d5c5f568ea4d0698"
+  integrity sha512-a+WpKGuabj1rAgDCSwaAt8LYitusVcTm/W2jGNFqTz4nerJ0XeWaN1JTmJI8uoCWMyXdRIa2ZzUjX3UcDKsBeQ==
   dependencies:
-    "@apollo/client-integration-nextjs" "0.12.1"
+    "@apollo/client-integration-nextjs" "0.12.2"
 
 "@babel/runtime@^7.12.5":
   version "7.27.0"
