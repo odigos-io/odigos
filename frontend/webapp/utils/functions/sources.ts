@@ -1,3 +1,4 @@
+import { getWorkloadId } from '@odigos/ui-kit/functions';
 import { EntityTypes, type WorkloadId, type Source } from '@odigos/ui-kit/types';
 import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigos/ui-kit/store';
 import type { InstrumentationInstancesHealth, NamespaceInstrumentInput, SourceInstrumentInput } from '@/types';
@@ -21,9 +22,11 @@ export const addConditionToSources = ({ namespace, name, kind, condition }: Inst
 
 export const prepareSourcePayloads = (
   selectAppsList: SourceSelectionFormData,
+  existingSources: Source[],
+  selectedStreamName: string,
   handleInstrumentationCount: (toAddCount: number, toDeleteCount: number) => void,
   removeEntities: (entityType: EntityTypes, entityIds: WorkloadId[]) => void,
-  selectedStreamName: string,
+  addEntities: (entityType: EntityTypes, entities: Source[]) => void,
 ) => {
   let isEmpty = true;
   const payloads: SourceInstrumentInput[] = [];
@@ -43,15 +46,38 @@ export const prepareSourcePayloads = (
         currentStreamName: currentStreamName || selectedStreamName,
       }));
 
-      // this is to map delete-items from "SourceSelectionFormData" to "WorkloadId"
-      const toDelete = mappedItems.filter((src) => !src.selected).map(({ name, kind }) => ({ namespace: ns, name, kind }));
+      const toDeleteFromStore: WorkloadId[] = [];
+      const toUpdateInStore: Source[] = [];
 
-      // TODO: fix expected instrumentation count for already-instrumented sources (e.g. when user selects instrumented source for othe data stream)
-      const toDeleteCount = toDelete.length;
-      const toAddCount = mappedItems.length - toDeleteCount;
+      let toDeleteCount = 0;
+      let toAddCount = 0;
+
+      for (const item of mappedItems) {
+        const foundExisting = existingSources.find((src) => src.namespace === ns && src.name === item.name && src.kind === item.kind);
+
+        // Check if the instrumenting-source does not exist, this confirms an expected creation of the CRD
+        if (item.selected && !foundExisting) {
+          toAddCount++;
+        }
+        // Else the instrumenting-source should be updated in store to include the selected stream name
+        else if (item.selected && foundExisting) {
+          toUpdateInStore.push({ ...foundExisting, dataStreamNames: foundExisting.dataStreamNames.concat([selectedStreamName]) });
+        }
+
+        // Check if the uninstrumenting-source has 1 or none data streams, this confirms an expected deletion of the CRD
+        else if (!item.selected && foundExisting && foundExisting.dataStreamNames.length <= 1) {
+          toDeleteCount++;
+          toDeleteFromStore.push(getWorkloadId(foundExisting));
+        }
+        // Else the uninstrumenting-source should be updated in store to exclude the selected stream name
+        else if (!item.selected && foundExisting) {
+          toUpdateInStore.push({ ...foundExisting, dataStreamNames: foundExisting.dataStreamNames.filter((name) => name !== selectedStreamName) });
+        }
+      }
 
       handleInstrumentationCount(toAddCount, toDeleteCount);
-      removeEntities(EntityTypes.Source, toDelete);
+      removeEntities(EntityTypes.Source, toDeleteFromStore);
+      addEntities(EntityTypes.Source, toUpdateInStore);
 
       payloads.push({ namespace: ns, sources: mappedItems });
     }

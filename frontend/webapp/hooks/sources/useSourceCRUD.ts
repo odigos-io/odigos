@@ -71,8 +71,12 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const handleInstrumentationCount = (toAddCount: number, toDeleteCount: number) => {
     const { sourcesToCreate, sourcesToDelete } = useInstrumentStore.getState();
 
-    setInstrumentCount('sourcesToDelete', sourcesToDelete + toDeleteCount);
-    setInstrumentCount('sourcesToCreate', sourcesToCreate + toAddCount);
+    // TODO: estimate the number of instrumentationConfigs to create for future-apps
+
+    if (toDeleteCount > 0) setInstrumentCount('sourcesToDelete', sourcesToDelete + toDeleteCount);
+    if (toAddCount > 0) setInstrumentCount('sourcesToCreate', sourcesToCreate + toAddCount);
+
+    if (toDeleteCount > 0 || toAddCount > 0) setInstrumentAwait(true);
   };
 
   const fetchAllInstances = async () => {
@@ -132,19 +136,16 @@ export const useSourceCRUD = (): UseSourceCrud => {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       let alreadyNotified = false;
-      const { payloads: persistSourcesPayloads, isEmpty: sourcesEmpty } = prepareSourcePayloads(selectAppsList, handleInstrumentationCount, removeEntities, selectedStreamName);
+      const { payloads: persistSourcesPayloads, isEmpty: sourcesEmpty } = prepareSourcePayloads(selectAppsList, sources, selectedStreamName, handleInstrumentationCount, removeEntities, addEntities);
       const { payloads: persistNamespacesPayloads, isEmpty: futueAppsEmpty } = prepareNamespacePayloads(futureSelectAppsList);
 
       if (!sourcesEmpty && !alreadyNotified) {
         alreadyNotified = true;
         notifyUser(StatusType.Default, 'Pending', 'Persisting sources...', undefined, true);
-        setInstrumentAwait(true);
       }
       if (!futueAppsEmpty && !alreadyNotified) {
         alreadyNotified = true;
         notifyUser(StatusType.Default, 'Pending', 'Persisting namespaces...', undefined, true);
-        // TODO: estimate the number of instrumentationConfigs to create for future apps in "handleInstrumentationCount", then uncomment the below
-        // setInstrumentAwait(true);
       }
 
       await Promise.all(persistSourcesPayloads.map((payload) => mutatePersistSources({ variables: payload })));

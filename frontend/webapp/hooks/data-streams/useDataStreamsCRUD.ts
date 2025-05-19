@@ -35,6 +35,8 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
 
       if (streamNameFromStorage && storedSteamNameExistsInCP) {
         setSelectedStreamName(streamNameFromStorage);
+      } else {
+        setSelectedStreamName('default')
       }
     }
   };
