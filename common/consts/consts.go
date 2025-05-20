@@ -73,6 +73,7 @@ const (
 	AvoidJavaOptsEnvVar               = "avoid-java-opts-env-var"
 	AgentEnvVarsInjectionMethod       = "agent-env-vars-injection-method"
 	ClusterNameProperty               = "cluster-name"
+	UserInstrumentationEnvsProperty   = "user-instrumentation-envs"
 	NodeSelectorProperty              = "node-selector"
 	KarpenterEnabledProperty          = "karpenter-enabled"
 )
