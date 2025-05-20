@@ -344,7 +344,6 @@ helm-install:
 		--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL) \
 		--set onPremToken=$(ONPREM_TOKEN) \
 		--set centralProxy.enabled=$(if $(and $(CLUSTER_NAME),$(CENTRAL_BACKEND_URL)),true,false)
-	kubectl label namespace odigos-system odigos.io/system-object="true"
 
 .PHONY: helm-install-central
 helm-install-central:
