@@ -18,9 +18,10 @@ interface UseDestinationCrud {
   deleteDestination: (id: string) => Promise<void>;
 }
 
-const mapNoUndefinedFields = (destination: DestinationFormData) => ({
+const mapNoUndefinedFields = (destination: DestinationFormData, selectedStreamName: string) => ({
   ...destination,
   fields: destination.fields.filter(({ value }) => value !== undefined),
+  currentStreamName: selectedStreamName,
 });
 
 export const useDestinationCRUD = (): UseDestinationCrud => {
@@ -85,7 +86,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
-      await mutateCreate({ variables: { destination: mapNoUndefinedFields(destination) } });
+      await mutateCreate({ variables: { destination: mapNoUndefinedFields(destination, selectedStreamName) } });
     }
   };
 
@@ -95,8 +96,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     } else {
       notifyUser(StatusType.Default, 'Pending', 'Updating destination...', undefined, true);
       addPendingItems([{ entityType: EntityTypes.Destination, entityId: id }]);
-      // The "currentStreamName" is empty string just to satisfy the backend, in theory we shouldn't update the naem here to not patch destinations that were unnasigned to a stream
-      await mutateUpdate({ variables: { id, destination: { ...mapNoUndefinedFields(destination), currentStreamName: '' } } });
+      await mutateUpdate({ variables: { id, destination: mapNoUndefinedFields(destination, selectedStreamName) } });
     }
   };
 
