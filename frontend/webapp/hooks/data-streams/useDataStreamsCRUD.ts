@@ -7,6 +7,7 @@ import { useDataStreamStore, useNotificationStore } from '@odigos/ui-kit/store';
 interface UseDataStreamsCrud {
   dataStreamsLoading: boolean;
   dataStreams: DataStream[];
+  selectedStreamName: string;
   fetchDataStreams: () => Promise<void>;
 }
 
@@ -36,7 +37,7 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
       if (streamNameFromStorage && storedSteamNameExistsInCP) {
         setSelectedStreamName(streamNameFromStorage);
       } else {
-        setSelectedStreamName('default')
+        setSelectedStreamName('default');
       }
     }
   };
@@ -52,6 +53,7 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
   return {
     dataStreamsLoading,
     dataStreams,
+    selectedStreamName,
     fetchDataStreams,
   };
 };

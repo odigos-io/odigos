@@ -1,14 +1,15 @@
 'use client';
 
-import React, { type PropsWithChildren } from 'react';
+import React, { useMemo, type PropsWithChildren } from 'react';
 import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import styled from 'styled-components';
+import { useSetupStore } from '@odigos/ui-kit/store';
 import { ToastList } from '@odigos/ui-kit/containers';
 import { OnboardingStepperWrapper } from '@/components';
 import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';
 import { useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
-import { ErrorBoundary, FlexColumn, Stepper } from '@odigos/ui-kit/components';
+import { ErrorBoundary, FlexColumn, Stepper, StepperProps } from '@odigos/ui-kit/components';
 
 const PageContent = styled(FlexColumn)`
   width: 100%;
@@ -28,24 +29,30 @@ function SetupLayout({ children }: PropsWithChildren) {
   // call important hooks that should run on page-mount
   useSSE();
   useTokenTracker();
-  useDataStreamsCRUD();
+  const { selectedStreamName } = useDataStreamsCRUD();
+  const { configuredSources, configuredDestinations, configuredDestinationsUpdateOnly } = useSetupStore();
 
   const pathname = usePathname();
+
+  const sourceCount = useMemo(() => Object.values(configuredSources).reduce((total, sourceList) => total + sourceList.filter((s) => s.selected).length, 0), [configuredSources]);
+  const destCount = useMemo(() => configuredDestinations.length + configuredDestinationsUpdateOnly.length, [configuredDestinations, configuredDestinationsUpdateOnly]);
+
+  const stepsData: StepperProps['data'] = useMemo(
+    () => [
+      { stepNumber: 1, title: DISPLAY_TITLES.INSTALLATION },
+      { stepNumber: 2, title: DISPLAY_TITLES.DATA_STREAM, subtitle: selectedStreamName },
+      { stepNumber: 3, title: DISPLAY_TITLES.SOURCES, subtitle: `${sourceCount} ${DISPLAY_TITLES.SOURCES}` },
+      { stepNumber: 4, title: DISPLAY_TITLES.DESTINATIONS, subtitle: `${destCount} ${DISPLAY_TITLES.DESTINATIONS}` },
+      { stepNumber: 5, title: DISPLAY_TITLES.SUMMARY },
+    ],
+    [selectedStreamName, sourceCount, destCount],
+  );
 
   return (
     <ErrorBoundary>
       <PageContent>
         <OnboardingStepperWrapper>
-          <Stepper
-            currentStep={steps[pathname] || 1}
-            data={[
-              { stepNumber: 1, title: DISPLAY_TITLES.INSTALLATION },
-              { stepNumber: 2, title: DISPLAY_TITLES.DATA_STREAM },
-              { stepNumber: 3, title: DISPLAY_TITLES.SOURCES },
-              { stepNumber: 4, title: DISPLAY_TITLES.DESTINATIONS },
-              { stepNumber: 5, title: DISPLAY_TITLES.SUMMARY },
-            ]}
-          />
+          <Stepper currentStep={steps[pathname] || 1} data={stepsData} />
         </OnboardingStepperWrapper>
 
         {children}
