@@ -117,10 +117,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 
 	// Add the odigostrafficmetrics processor to both root and destination pipelines to track telemetry data flow
 	for pipelineName, pipeline := range c.Service.Pipelines {
-		if !slices.Contains(signalsRootPipelines, pipelineName) && !slices.Contains(destinationPipelineNames, pipelineName) {
-			continue
-		}
-		if pipelineName == "metrics/otelcol" {
+		if !isOdigosTrafficMetricsProcessorRelevant(pipelineName, signalsRootPipelines, destinationPipelineNames) {
 			continue
 		}
 		pipeline.Processors = append(pipeline.Processors, "odigostrafficmetrics")
@@ -356,4 +353,19 @@ func destinationExists(list []string, item string) bool {
 		}
 	}
 	return false
+}
+
+func isOdigosTrafficMetricsProcessorRelevant(name string, rootPipelines []string, destinationPipelines []string) bool {
+	// we should not add the odigostrafficmetrics processor to the metrics/otelcol pipeline
+	if name == "metrics/otelcol" {
+		return false
+	}
+	// we should add the odigostrafficmetrics processor to all root pipelines
+	if slices.Contains(rootPipelines, name) {
+		return true
+	}
+	// we should add the odigostrafficmetrics processor to all destination pipelines
+	if slices.Contains(destinationPipelines, name) {
+		return true
+	}
 }
