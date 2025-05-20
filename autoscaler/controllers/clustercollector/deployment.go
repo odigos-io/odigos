@@ -132,7 +132,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 					},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: nodeSelector,
+					NodeSelector:       nodeSelector,
 					ServiceAccountName: k8sconsts.OdigosClusterCollectorDeploymentName,
 					Containers: []corev1.Container{
 						{

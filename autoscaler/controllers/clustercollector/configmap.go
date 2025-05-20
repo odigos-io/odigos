@@ -5,18 +5,22 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
+	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,7 +37,7 @@ var (
 	errNoExportersConfigured = errors.New("no exporters were configured, cannot add self telemetry pipeline")
 )
 
-func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32) error {
+func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinationPipelineNames []string, signalsRootPipelines []string) error {
 	if c.Service.Pipelines == nil {
 		return errNoPipelineConfigured
 	}
@@ -111,7 +115,11 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32) error {
 		},
 	}
 
+	// Add the odigostrafficmetrics processor to both root and destination pipelines to track telemetry data flow
 	for pipelineName, pipeline := range c.Service.Pipelines {
+		if !slices.Contains(signalsRootPipelines, pipelineName) && !slices.Contains(destinationPipelineNames, pipelineName) {
+			continue
+		}
 		if pipelineName == "metrics/otelcol" {
 			continue
 		}
@@ -126,22 +134,22 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
-	sourcesFilterProcessors, err := common.GenerateSourcesFilterProcessors(ctx, c, dests)
+	groupDetails, err := GetGroupDetailsWithDestinations(ctx, c, dests, logger)
 	if err != nil {
-		logger.Error(err, "Failed to generate sources filter processors")
+		logger.Error(err, "Failed to build group details")
 		return nil, err
 	}
 
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
-	desiredData, err, status, signals := config.Calculate(
+	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		common.ToExporterConfigurerArray(dests),
 		common.ToProcessorConfigurerArray(processors),
 		memoryLimiterConfiguration,
-		func(c *config.Config) error {
-			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort)
+		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
+			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines)
 		},
-		sourcesFilterProcessors,
+		groupDetails,
 	)
 
 	if err != nil {
@@ -241,4 +249,122 @@ func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.C
 	}
 
 	return updated, nil
+}
+
+// func GetGatewayConfig(
+// 	dests []config.ExporterConfigurer,
+// 	processors []config.ProcessorConfigurer,
+// 	memoryLimiterConfig config.GenericMap,
+// 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
+// 	groupDetails map[string]*pipelinegen.GroupDetails,
+// ) (string, error, *config.ResourceStatuses, []odigoscommon.ObservabilitySignal) {
+// 	currentConfig := config.GetBasicConfig(memoryLimiterConfig)
+// 	return pipelinegen.CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, groupDetails)
+// }
+
+// GetGroupDetailsWithDestinations generates a mapping from group names to the sources and destinations associated with them.
+//
+// Example return structure:
+//
+//	map[string]*GroupDetails{
+//	    "groupA": {
+//	        Name: "groupA",
+//	        Sources: []SourceFilter{
+//	            {Namespace: "ns1", Kind: "Deployment", Name: "frontend"},
+//	            {Namespace: "ns1", Kind: "DaemonSet", Name: "log-agent"},
+//	        },
+//	        Destinations: []string{"coralogix", "jaeger"},
+//	    },
+//	    "groupB": {
+//	        Name: "groupB",
+//	        Sources: []SourceFilter{
+//	            {Namespace: "ns2", Kind: "StatefulSet", Name: "db"},
+//	        },
+//	        Destinations: []string{"jaeger"},
+//	    },
+//	}
+func GetGroupDetailsWithDestinations(
+	ctx context.Context,
+	kubeClient client.Client,
+	dests *odigosv1.DestinationList,
+	logger logr.Logger,
+) (map[string]*pipelinegen.GroupDetails, error) {
+
+	groupMap := make(map[string]*pipelinegen.GroupDetails)
+	seenGroups := make(map[string]struct{})
+
+	for _, dest := range dests.Items {
+		if dest.Spec.SourceSelector == nil {
+			continue
+		}
+
+		for _, group := range dest.Spec.SourceSelector.Groups {
+			// Initialize group if not seen
+			if _, exists := groupMap[group]; !exists {
+				groupMap[group] = &pipelinegen.GroupDetails{
+					Name:         group,
+					Sources:      []pipelinegen.SourceFilter{},
+					Destinations: []string{},
+				}
+			}
+
+			// Attach destination
+			if !containsString(groupMap[group].Destinations, dest.Name) {
+				groupMap[group].Destinations = append(groupMap[group].Destinations, dest.Name)
+			}
+
+			// Fetch sources only once
+			if _, alreadySeen := seenGroups[group]; alreadySeen {
+				continue
+			}
+			seenGroups[group] = struct{}{}
+
+			sources, err := getSourcesForGroup(ctx, kubeClient, group, logger)
+			if err != nil {
+				return nil, err
+			}
+			groupMap[group].Sources = sources
+		}
+	}
+
+	return groupMap, nil
+}
+
+// getSourcesForGroup fetches all sources that are labeled with the given group name.
+func getSourcesForGroup(
+	ctx context.Context,
+	kubeClient client.Client,
+	group string,
+	logger logr.Logger,
+) ([]pipelinegen.SourceFilter, error) {
+
+	labelSelector := labels.Set{fmt.Sprintf("odigos.io/group-%s", group): "true"}.AsSelector()
+	sourceList := &odigosv1.SourceList{}
+	err := kubeClient.List(ctx, sourceList, &client.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		logger.Error(err, "Failed to fetch sources for group", "group", group)
+		return nil, err
+	}
+
+	sources := make([]pipelinegen.SourceFilter, 0, len(sourceList.Items))
+	for _, source := range sourceList.Items {
+		sources = append(sources, pipelinegen.SourceFilter{
+			Namespace: source.Spec.Workload.Namespace,
+			Kind:      string(source.Spec.Workload.Kind),
+			Name:      source.Spec.Workload.Name,
+		})
+	}
+
+	return sources, nil
+}
+
+func containsString(list []string, item string) bool {
+	for _, v := range list {
+		if v == item {
+			return true
+		}
+	}
+	return false
 }

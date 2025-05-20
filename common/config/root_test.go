@@ -6,6 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/common/pipelinegen"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,7 +41,7 @@ func openTestData(t *testing.T, path string) string {
 func TestCalculateMinimal(t *testing.T) {
 	want := openTestData(t, "testdata/minimal.yaml")
 
-	config, err, statuses, signals := config.Calculate(
+	config, err, statuses, signals := pipelinegen.GetGatewayConfig(
 		make([]config.ExporterConfigurer, 0),
 		make([]config.ProcessorConfigurer, 0),
 		make(config.GenericMap),
@@ -57,7 +58,7 @@ func TestCalculateMinimal(t *testing.T) {
 func TestCalculate(t *testing.T) {
 	want := openTestData(t, "testdata/debugexporter.yaml")
 
-	config, err, statuses, signals := config.Calculate(
+	config, err, statuses, signals := pipelinegen.GetGatewayConfig(
 		[]config.ExporterConfigurer{
 			DummyDestination{
 				ID: "d1",
@@ -79,7 +80,7 @@ func TestCalculate(t *testing.T) {
 func TestCalculateWithBaseMinimal(t *testing.T) {
 	want := openTestData(t, "testdata/withbaseminimal.yaml")
 
-	config, err, statuses, signals := config.CalculateWithBase(
+	config, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
 		&config.Config{
 			Receivers: config.GenericMap{
 				"otlp": config.GenericMap{
@@ -99,7 +100,6 @@ func TestCalculateWithBaseMinimal(t *testing.T) {
 				Extensions: []string{},
 			},
 		},
-		[]string{"batch"},
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
 		nil,
@@ -113,7 +113,7 @@ func TestCalculateWithBaseMinimal(t *testing.T) {
 }
 
 func TestCalculateWithBaseMissingProcessor(t *testing.T) {
-	_, err, statuses, signals := config.CalculateWithBase(
+	_, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
 		&config.Config{
 			Receivers: config.GenericMap{
 				"otlp": config.GenericMap{
@@ -133,7 +133,6 @@ func TestCalculateWithBaseMissingProcessor(t *testing.T) {
 				Extensions: []string{},
 			},
 		},
-		[]string{"missing"},
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
 		nil, nil,
@@ -145,7 +144,7 @@ func TestCalculateWithBaseMissingProcessor(t *testing.T) {
 }
 
 func TestCalculateWithBaseNoOTLP(t *testing.T) {
-	_, err, statuses, signals := config.CalculateWithBase(
+	_, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
 		&config.Config{
 			Receivers:  config.GenericMap{},
 			Processors: config.GenericMap{},
@@ -156,7 +155,6 @@ func TestCalculateWithBaseNoOTLP(t *testing.T) {
 				Extensions: []string{},
 			},
 		},
-		[]string{},
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
 		nil, nil,

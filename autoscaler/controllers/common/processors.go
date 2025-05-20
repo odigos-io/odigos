@@ -119,6 +119,45 @@ func GenerateSourcesFilterProcessors(
 	return sourcesFilterProcessors, nil
 }
 
+// Example Return Format:
+// map[string][]string{
+//     "groupA": {"namespace1/Deployment/source1", "namespace2/DaemonSet/source2"},
+//     "groupB": {"namespace1/Deployment/source3"},
+// }
+
+func GetGroupsDetailsFromDestinations(
+	ctx context.Context,
+	kubeClient client.Client,
+	dests *odigosv1.DestinationList,
+	logger logr.Logger,
+) (map[string][]string, error) {
+
+	groupSources := make(map[string][]string)
+	seenGroups := make(map[string]struct{})
+
+	for _, dest := range dests.Items {
+		if dest.Spec.SourceSelector == nil {
+			continue
+		}
+
+		for _, group := range dest.Spec.SourceSelector.Groups {
+			if _, alreadySeen := seenGroups[group]; alreadySeen {
+				continue
+			}
+			seenGroups[group] = struct{}{}
+
+			sourceKeys, err := fetchSourceKeysByGroups(ctx, kubeClient, []string{group}, logger)
+			if err != nil {
+				return nil, fmt.Errorf("error fetching sources for group %s: %w", group, err)
+			}
+
+			groupSources[group] = sourceKeys
+		}
+	}
+
+	return groupSources, nil
+}
+
 func fetchSourceKeysByGroups(ctx context.Context, kubeClient client.Client, groups []string, logger logr.Logger) ([]string, error) {
 	sourceKeys := []string{}
 
