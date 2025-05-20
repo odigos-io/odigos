@@ -346,7 +346,7 @@ type ComplexityRoot struct {
 		CreateInstrumentationRule    func(childComplexity int, instrumentationRule model.InstrumentationRuleInput) int
 		CreateNewDestination         func(childComplexity int, destination model.DestinationInput) int
 		DeleteAction                 func(childComplexity int, id string, actionType string) int
-		DeleteDataStream             func(childComplexity int, dataStreamName string) int
+		DeleteDataStream             func(childComplexity int, id string) int
 		DeleteDestination            func(childComplexity int, id string, currentStreamName string) int
 		DeleteInstrumentationRule    func(childComplexity int, ruleID string) int
 		PersistK8sNamespace          func(childComplexity int, namespace model.PersistNamespaceItemInput) int
@@ -354,7 +354,7 @@ type ComplexityRoot struct {
 		TestConnectionForDestination func(childComplexity int, destination model.DestinationInput) int
 		UpdateAPIToken               func(childComplexity int, token string) int
 		UpdateAction                 func(childComplexity int, id string, action model.ActionInput) int
-		UpdateDataStream             func(childComplexity int, dataStreamName string, dataStream model.DataStreamInput) int
+		UpdateDataStream             func(childComplexity int, id string, dataStream model.DataStreamInput) int
 		UpdateDestination            func(childComplexity int, id string, destination model.DestinationInput) int
 		UpdateInstrumentationRule    func(childComplexity int, ruleID string, instrumentationRule model.InstrumentationRuleInput) int
 		UpdateK8sActualSource        func(childComplexity int, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) int
@@ -564,8 +564,8 @@ type MutationResolver interface {
 	CreateInstrumentationRule(ctx context.Context, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error)
 	UpdateInstrumentationRule(ctx context.Context, ruleID string, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error)
 	DeleteInstrumentationRule(ctx context.Context, ruleID string) (bool, error)
-	UpdateDataStream(ctx context.Context, dataStreamName string, dataStream model.DataStreamInput) (*model.DataStream, error)
-	DeleteDataStream(ctx context.Context, dataStreamName string) (bool, error)
+	UpdateDataStream(ctx context.Context, id string, dataStream model.DataStreamInput) (*model.DataStream, error)
+	DeleteDataStream(ctx context.Context, id string) (bool, error)
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
@@ -1937,7 +1937,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteDataStream(childComplexity, args["dataStreamName"].(string)), true
+		return e.complexity.Mutation.DeleteDataStream(childComplexity, args["id"].(string)), true
 
 	case "Mutation.deleteDestination":
 		if e.complexity.Mutation.DeleteDestination == nil {
@@ -2033,7 +2033,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateDataStream(childComplexity, args["dataStreamName"].(string), args["dataStream"].(model.DataStreamInput)), true
+		return e.complexity.Mutation.UpdateDataStream(childComplexity, args["id"].(string), args["dataStream"].(model.DataStreamInput)), true
 
 	case "Mutation.updateDestination":
 		if e.complexity.Mutation.UpdateDestination == nil {
@@ -3198,25 +3198,25 @@ func (ec *executionContext) field_Mutation_deleteAction_argsActionType(
 func (ec *executionContext) field_Mutation_deleteDataStream_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_deleteDataStream_argsDataStreamName(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_deleteDataStream_argsID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["dataStreamName"] = arg0
+	args["id"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Mutation_deleteDataStream_argsDataStreamName(
+func (ec *executionContext) field_Mutation_deleteDataStream_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	if _, ok := rawArgs["dataStreamName"]; !ok {
+	if _, ok := rawArgs["id"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
 
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("dataStreamName"))
-	if tmp, ok := rawArgs["dataStreamName"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
 	}
 
 	var zeroVal string
@@ -3491,11 +3491,11 @@ func (ec *executionContext) field_Mutation_updateApiToken_argsToken(
 func (ec *executionContext) field_Mutation_updateDataStream_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_updateDataStream_argsDataStreamName(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_updateDataStream_argsID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["dataStreamName"] = arg0
+	args["id"] = arg0
 	arg1, err := ec.field_Mutation_updateDataStream_argsDataStream(ctx, rawArgs)
 	if err != nil {
 		return nil, err
@@ -3503,18 +3503,18 @@ func (ec *executionContext) field_Mutation_updateDataStream_args(ctx context.Con
 	args["dataStream"] = arg1
 	return args, nil
 }
-func (ec *executionContext) field_Mutation_updateDataStream_argsDataStreamName(
+func (ec *executionContext) field_Mutation_updateDataStream_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	if _, ok := rawArgs["dataStreamName"]; !ok {
+	if _, ok := rawArgs["id"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
 
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("dataStreamName"))
-	if tmp, ok := rawArgs["dataStreamName"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
 	}
 
 	var zeroVal string
@@ -13201,7 +13201,7 @@ func (ec *executionContext) _Mutation_updateDataStream(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateDataStream(rctx, fc.Args["dataStreamName"].(string), fc.Args["dataStream"].(model.DataStreamInput))
+		return ec.resolvers.Mutation().UpdateDataStream(rctx, fc.Args["id"].(string), fc.Args["dataStream"].(model.DataStreamInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13260,7 +13260,7 @@ func (ec *executionContext) _Mutation_deleteDataStream(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteDataStream(rctx, fc.Args["dataStreamName"].(string))
+		return ec.resolvers.Mutation().DeleteDataStream(rctx, fc.Args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

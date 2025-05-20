@@ -2,10 +2,10 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { useSourceCRUD } from '../sources';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { Crud, type DataStream, StatusType } from '@odigos/ui-kit/types';
 import { useDataStreamStore, useNotificationStore } from '@odigos/ui-kit/store';
 import { DELETE_DATA_STREAM, GET_DATA_STREAMS, UPDATE_DATA_STREAM } from '@/graphql';
+import { DEFAULT_DATA_STREAM_NAME, DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 
 interface UseDataStreamsCrud {
   dataStreamsLoading: boolean;
@@ -53,16 +53,16 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
     }
   };
 
-  const [mutateUpdate] = useMutation<{ updateDataStream: { name: string } }, { dataStreamName: string; dataStream: DataStream }>(UPDATE_DATA_STREAM, {
+  const [mutateUpdate] = useMutation<{ updateDataStream: { name: string } }, { id: string; dataStream: DataStream }>(UPDATE_DATA_STREAM, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
     onCompleted: async (res, req) => {
-      const oldStream = dataStreams.find((x) => x.name === req?.variables?.dataStreamName);
+      const oldStream = dataStreams.find((x) => x.name === req?.variables?.id);
       if (oldStream) removeDataStreams([oldStream]);
       const newStream = res.updateDataStream;
       addDataStreams([newStream]);
-      notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${oldStream.name}" data stream`);
+      notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${oldStream?.name}" data stream`);
 
-      const switchToStream = selectedStreamName === oldStream.name ? newStream.name : selectedStreamName;
+      const switchToStream = selectedStreamName === oldStream?.name ? newStream.name : selectedStreamName;
       await fetchDataStreams(switchToStream);
       await fetchSourcesPaginated();
       // We don't need to refetch destinations, because it's refetched with SSE for modified events.
@@ -70,14 +70,14 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
     },
   });
 
-  const [mutateDelete] = useMutation<{ deleteDataStream: boolean }, { dataStreamName: string }>(DELETE_DATA_STREAM, {
+  const [mutateDelete] = useMutation<{ deleteDataStream: boolean }, { id: string }>(DELETE_DATA_STREAM, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Delete, error.cause?.message || error.message),
     onCompleted: async (res, req) => {
-      const oldStream = dataStreams.find((x) => x.name === req?.variables?.dataStreamName);
-      removeDataStreams([oldStream]);
-      notifyUser(StatusType.Success, Crud.Delete, `Successfully deleted "${oldStream.name}" data stream`);
+      const oldStream = dataStreams.find((x) => x.name === req?.variables?.id);
+      if (oldStream) removeDataStreams([oldStream]);
+      notifyUser(StatusType.Success, Crud.Delete, `Successfully deleted "${oldStream?.name}" data stream`);
 
-      const switchToStream = selectedStreamName === oldStream.name ? 'default' : selectedStreamName;
+      const switchToStream = selectedStreamName === oldStream?.name ? DEFAULT_DATA_STREAM_NAME : selectedStreamName;
       await fetchDataStreams(switchToStream);
       await fetchSourcesPaginated();
       // We don't need to refetch destinations, because it's refetched with SSE for modified events.
@@ -90,7 +90,7 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       notifyUser(StatusType.Default, 'Pending', 'Updating data stream...', undefined, true);
-      await mutateUpdate({ variables: { dataStreamName, dataStream } });
+      await mutateUpdate({ variables: { id: dataStreamName, dataStream } });
     }
   };
 
@@ -99,7 +99,7 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       notifyUser(StatusType.Default, 'Pending', 'Deleting data stream...', undefined, true);
-      await mutateDelete({ variables: { dataStreamName } });
+      await mutateDelete({ variables: { id: dataStreamName } });
     }
   };
 

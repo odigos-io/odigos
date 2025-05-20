@@ -672,6 +672,6 @@ type Mutation {
   createInstrumentationRule(instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
   updateInstrumentationRule(ruleId: ID!, instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
   deleteInstrumentationRule(ruleId: ID!): Boolean!
-  updateDataStream(dataStreamName: String!, dataStream: DataStreamInput!): DataStream!
-  deleteDataStream(dataStreamName: String!): Boolean!
+  updateDataStream(id: ID!, dataStream: DataStreamInput!): DataStream!
+  deleteDataStream(id: ID!): Boolean!
 }
