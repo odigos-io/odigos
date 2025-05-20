@@ -1,7 +1,8 @@
-import { useRouter, useSearchParams } from 'next/navigation';
-import { ROUTES, SKIP_TO_SUMMERY_QUERY_PARAM } from '@/utils';
-import { useDataStreamStore } from '@odigos/ui-kit/store';
 import { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useDataStreamStore } from '@odigos/ui-kit/store';
+import { ROUTES, SKIP_TO_SUMMERY_QUERY_PARAM } from '@/utils';
+import { DEFAULT_DATA_STREAM_NAME } from '@odigos/ui-kit/constants';
 
 export const useSetupHelpers = () => {
   const router = useRouter();
@@ -17,7 +18,7 @@ export const useSetupHelpers = () => {
   const { selectedStreamName, setSelectedStreamName } = useDataStreamStore();
 
   useEffect(() => {
-    if (!selectedStreamName) setSelectedStreamName('default');
+    if (!selectedStreamName) setSelectedStreamName(DEFAULT_DATA_STREAM_NAME);
   }, [selectedStreamName]);
 
   return { onClickSummary, onClickRouteFromSummary };
