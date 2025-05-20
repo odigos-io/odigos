@@ -57,7 +57,7 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
     onCompleted: async (res, req) => {
       const oldStream = dataStreams.find((x) => x.name === req?.variables?.dataStreamName);
-      removeDataStreams([oldStream]);
+      if (oldStream) removeDataStreams([oldStream]);
       const newStream = res.updateDataStream;
       addDataStreams([newStream]);
       notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${oldStream.name}" data stream`);

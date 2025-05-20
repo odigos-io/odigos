@@ -1023,7 +1023,10 @@ func (r *mutationResolver) UpdateDataStream(ctx context.Context, dataStreamName 
 	}
 	for _, dest := range destinations.Items {
 		if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil && services.ArrayContains(dest.Spec.SourceSelector.Groups, dataStreamName) {
-			services.UpdateDestinationStreamName(ctx, &dest, dataStreamName, dataStream.Name)
+			success, err := services.UpdateDestinationStreamName(ctx, &dest, dataStreamName, dataStream.Name)
+			if !success || err != nil {
+				fmt.Printf("Error updating destination stream name for %s: %v\n", dest.Name, err)
+			}
 		}
 	}
 
@@ -1031,21 +1034,30 @@ func (r *mutationResolver) UpdateDataStream(ctx context.Context, dataStreamName 
 	if err != nil {
 		return nil, err
 	}
+	var g errgroup.Group
 	for _, source := range sources.Items {
-		for key := range source.Labels {
-			if strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix) == dataStreamName {
-				// Remove the old label
-				_, err := services.UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+dataStreamName, "")
-				if err != nil {
-					return nil, fmt.Errorf("failed to update source label: %v", err)
-				}
-				// Add the new label
-				_, err = services.UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+dataStream.Name, "true")
-				if err != nil {
-					return nil, fmt.Errorf("failed to update source label: %v", err)
+		source := source // capture range variable
+		g.Go(func() error {
+			for key := range source.Labels {
+				if strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix) == dataStreamName {
+					// Remove the old label
+					_, err := services.UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+dataStreamName, "")
+					if err != nil {
+						return fmt.Errorf("failed to update source label: %v", err)
+					}
+					// Add the new label
+					_, err = services.UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+dataStream.Name, "true")
+					if err != nil {
+						return fmt.Errorf("failed to update source label: %v", err)
+					}
 				}
 			}
-		}
+			return nil
+		})
+	}
+	// Wait for all goroutines to complete
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
 	return &model.DataStream{Name: dataStream.Name}, nil
@@ -1066,7 +1078,10 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, dataStreamName 
 	}
 	for _, dest := range destinations.Items {
 		if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil && services.ArrayContains(dest.Spec.SourceSelector.Groups, dataStreamName) {
-			services.DeleteDestinationOrRemoveStreamName(ctx, &dest, dataStreamName)
+			success, err := services.DeleteDestinationOrRemoveStreamName(ctx, &dest, dataStreamName)
+			if !success || err != nil {
+				fmt.Printf("Error deleting destination stream name for %s: %v\n", dest.Name, err)
+			}
 		}
 	}
 

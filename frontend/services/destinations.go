@@ -398,12 +398,14 @@ func DeleteDestinationOrRemoveStreamName(ctx context.Context, dest *v1alpha1.Des
 func UpdateDestinationStreamName(ctx context.Context, dest *v1alpha1.Destination, currentStreamName string, newStreamName string) (bool, error) {
 	odigosNs := env.GetCurrentNamespace()
 
-	// Remove the current stream name from the source selector
-	dest.Spec.SourceSelector.Groups = RemoveStringFromSlice(dest.Spec.SourceSelector.Groups, currentStreamName)
+	if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil {
+		// Remove the current stream name from the source selector
+		dest.Spec.SourceSelector.Groups = RemoveStringFromSlice(dest.Spec.SourceSelector.Groups, currentStreamName)
 
-	// Add the new stream name to the source selector
-	if !ArrayContains(dest.Spec.SourceSelector.Groups, newStreamName) {
-		dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, newStreamName)
+		// Add the new stream name to the source selector
+		if !ArrayContains(dest.Spec.SourceSelector.Groups, newStreamName) {
+			dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, newStreamName)
+		}
 	}
 
 	// Update the destination
