@@ -642,6 +642,10 @@ type DataStream {
   name: String!
 }
 
+input DataStreamInput {
+  name: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -668,4 +672,6 @@ type Mutation {
   createInstrumentationRule(instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
   updateInstrumentationRule(ruleId: ID!, instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
   deleteInstrumentationRule(ruleId: ID!): Boolean!
+  updateDataStream(dataStreamName: String!, dataStream: DataStreamInput!): DataStream!
+  deleteDataStream(dataStreamName: String!): Boolean!
 }

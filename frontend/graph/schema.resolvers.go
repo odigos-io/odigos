@@ -801,46 +801,14 @@ func (r *mutationResolver) DeleteDestination(ctx context.Context, id string, cur
 		return false, services.ErrorIsReadonly
 	}
 
-	ns := env.GetCurrentNamespace()
+	odigosNs := env.GetCurrentNamespace()
 
-	dest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Get(ctx, id, metav1.GetOptions{})
+	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosNs).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return false, fmt.Errorf("failed to get destination: %v", err)
 	}
 
-	shouldDelete := true
-
-	if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil {
-		// Remove the current stream name from the source selector
-		dest.Spec.SourceSelector.Groups = services.RemoveStringFromSlice(dest.Spec.SourceSelector.Groups, currentStreamName)
-		// If the source selector is not empty after removing the current stream name, we should not delete the destination
-		if len(dest.Spec.SourceSelector.Groups) > 0 {
-			shouldDelete = false
-		}
-	}
-
-	if shouldDelete {
-		// Delete the destination
-		err = kube.DefaultClient.OdigosClient.Destinations(ns).Delete(ctx, id, metav1.DeleteOptions{})
-		if err != nil {
-			return false, fmt.Errorf("failed to delete destination: %w", err)
-		}
-		// If the destination has a secret, delete it as well
-		if dest.Spec.SecretRef != nil {
-			err = kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, dest.Spec.SecretRef.Name, metav1.DeleteOptions{})
-			if err != nil {
-				return false, fmt.Errorf("failed to delete secret: %w", err)
-			}
-		}
-	} else {
-		// Update the destination stream names
-		_, err = kube.DefaultClient.OdigosClient.Destinations(ns).Update(ctx, dest, metav1.UpdateOptions{})
-		if err != nil {
-			return false, fmt.Errorf("failed to update destination: %w", err)
-		}
-	}
-
-	return true, nil
+	return services.DeleteDestinationOrRemoveStreamName(ctx, dest, currentStreamName)
 }
 
 // TestConnectionForDestination is the resolver for the testConnectionForDestination field.
@@ -1035,6 +1003,92 @@ func (r *mutationResolver) DeleteInstrumentationRule(ctx context.Context, ruleID
 	_, err := services.DeleteInstrumentationRule(ctx, ruleID)
 	if err != nil {
 		return false, err
+	}
+
+	return true, nil
+}
+
+// UpdateDataStream is the resolver for the updateDataStream field.
+func (r *mutationResolver) UpdateDataStream(ctx context.Context, dataStreamName string, dataStream model.DataStreamInput) (*model.DataStream, error) {
+	isReadonly := services.IsReadonlyMode(ctx)
+	if isReadonly {
+		return nil, services.ErrorIsReadonly
+	}
+
+	odigosNs := env.GetCurrentNamespace()
+
+	destinations, err := kube.DefaultClient.OdigosClient.Destinations(odigosNs).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, dest := range destinations.Items {
+		if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil && services.ArrayContains(dest.Spec.SourceSelector.Groups, dataStreamName) {
+			services.UpdateDestinationStreamName(ctx, &dest, dataStreamName, dataStream.Name)
+		}
+	}
+
+	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, source := range sources.Items {
+		for key := range source.Labels {
+			if strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix) == dataStreamName {
+				// Remove the old label
+				_, err := services.UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+dataStreamName, "")
+				if err != nil {
+					return nil, fmt.Errorf("failed to update source label: %v", err)
+				}
+				// Add the new label
+				_, err = services.UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+dataStream.Name, "true")
+				if err != nil {
+					return nil, fmt.Errorf("failed to update source label: %v", err)
+				}
+			}
+		}
+	}
+
+	return &model.DataStream{Name: dataStream.Name}, nil
+}
+
+// DeleteDataStream is the resolver for the deleteDataStream field.
+func (r *mutationResolver) DeleteDataStream(ctx context.Context, dataStreamName string) (bool, error) {
+	isReadonly := services.IsReadonlyMode(ctx)
+	if isReadonly {
+		return false, services.ErrorIsReadonly
+	}
+
+	odigosNs := env.GetCurrentNamespace()
+
+	destinations, err := kube.DefaultClient.OdigosClient.Destinations(odigosNs).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+	for _, dest := range destinations.Items {
+		if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil && services.ArrayContains(dest.Spec.SourceSelector.Groups, dataStreamName) {
+			services.DeleteDestinationOrRemoveStreamName(ctx, &dest, dataStreamName)
+		}
+	}
+
+	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+	for _, source := range sources.Items {
+		for key := range source.Labels {
+			if strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix) == dataStreamName {
+				toPersist := []model.PersistNamespaceSourceInput{{
+					Name:              source.Spec.Workload.Name,
+					Kind:              model.K8sResourceKind(source.Spec.Workload.Kind),
+					Selected:          false, // to remove label, or delete entirely
+					CurrentStreamName: dataStreamName,
+				}}
+				err := services.SyncWorkloadsInNamespace(ctx, source.Namespace, toPersist)
+				if err != nil {
+					return false, fmt.Errorf("failed to sync workloads: %v", err)
+				}
+			}
+		}
 	}
 
 	return true, nil

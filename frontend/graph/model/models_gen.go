@@ -143,6 +143,10 @@ type DataStream struct {
 	Name string `json:"name"`
 }
 
+type DataStreamInput struct {
+	Name string `json:"name"`
+}
+
 type DbQueryPayloadCollection struct {
 	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
