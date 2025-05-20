@@ -33,9 +33,13 @@ func GetOdigosNamespace(client *kube.Client, ctx context.Context) (string, error
 	if err != nil {
 		return "", err
 	}
+
 	if len(configMap.Items) == 0 {
 		return "", errNoOdigosNamespaceFound
+	} else if len(configMap.Items) != 1 {
+		return "", fmt.Errorf("expected to get 1 namespace got %d", len(configMap.Items))
 	}
+
 	return configMap.Items[0].Namespace, nil
 }
 
