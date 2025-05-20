@@ -251,17 +251,6 @@ func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.C
 	return updated, nil
 }
 
-// func GetGatewayConfig(
-// 	dests []config.ExporterConfigurer,
-// 	processors []config.ProcessorConfigurer,
-// 	memoryLimiterConfig config.GenericMap,
-// 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
-// 	groupDetails map[string]*pipelinegen.GroupDetails,
-// ) (string, error, *config.ResourceStatuses, []odigoscommon.ObservabilitySignal) {
-// 	currentConfig := config.GetBasicConfig(memoryLimiterConfig)
-// 	return pipelinegen.CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, groupDetails)
-// }
-
 // GetGroupDetailsWithDestinations generates a mapping from group names to the sources and destinations associated with them.
 //
 // Example return structure:
@@ -309,7 +298,7 @@ func GetGroupDetailsWithDestinations(
 			}
 
 			// Attach destination
-			if !containsString(groupMap[group].Destinations, dest.Name) {
+			if !destinationExists(groupMap[group].Destinations, dest.Name) {
 				groupMap[group].Destinations = append(groupMap[group].Destinations, dest.Name)
 			}
 
@@ -360,7 +349,7 @@ func getSourcesForGroup(
 	return sources, nil
 }
 
-func containsString(list []string, item string) bool {
+func destinationExists(list []string, item string) bool {
 	for _, v := range list {
 		if v == item {
 			return true
