@@ -374,8 +374,8 @@ func convertHeadersCollection(headers *instrumentationrules.HttpHeadersCollectio
 	}
 
 	headerKeys := make([]*string, len(headers.HeaderKeys))
-	for i, key := range headers.HeaderKeys {
-		headerKeys[i] = &key
+	for i := range headers.HeaderKeys {
+		headerKeys[i] = &headers.HeaderKeys[i]
 	}
 
 	return &model.HeadersCollection{
