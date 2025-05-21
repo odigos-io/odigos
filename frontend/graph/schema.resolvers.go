@@ -499,8 +499,7 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 
 // UpdateAPIToken is the resolver for the updateApiToken field.
 func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
@@ -511,8 +510,7 @@ func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bo
 
 // PersistK8sNamespace is the resolver for the persistK8sNamespace field.
 func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
@@ -533,8 +531,7 @@ func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace mo
 
 // PersistK8sSources is the resolver for the persistK8sSources field.
 func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace string, sources []*model.PersistNamespaceSourceInput) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
@@ -558,8 +555,7 @@ func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace stri
 
 // UpdateK8sActualSource is the resolver for the updateK8sActualSource field.
 func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
@@ -594,8 +590,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 
 // CreateNewDestination is the resolver for the createNewDestination field.
 func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
@@ -672,8 +667,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 // UpdateDestination is the resolver for the updateDestination field.
 func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
@@ -796,8 +790,7 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 
 // DeleteDestination is the resolver for the deleteDestination field.
 func (r *mutationResolver) DeleteDestination(ctx context.Context, id string, currentStreamName string) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
@@ -808,36 +801,9 @@ func (r *mutationResolver) DeleteDestination(ctx context.Context, id string, cur
 		return false, fmt.Errorf("failed to get destination: %v", err)
 	}
 
-	shouldDelete := true
-
-	if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil {
-		// Remove the current stream name from the source selector
-		dest.Spec.SourceSelector.Groups = services.RemoveStringFromSlice(dest.Spec.SourceSelector.Groups, currentStreamName)
-		// If the source selector is not empty after removing the current stream name, we should not delete the destination
-		if len(dest.Spec.SourceSelector.Groups) > 0 {
-			shouldDelete = false
-		}
-	}
-
-	if shouldDelete {
-		// Delete the destination
-		err = kube.DefaultClient.OdigosClient.Destinations(ns).Delete(ctx, id, metav1.DeleteOptions{})
-		if err != nil {
-			return false, fmt.Errorf("failed to delete destination: %w", err)
-		}
-		// If the destination has a secret, delete it as well
-		if dest.Spec.SecretRef != nil {
-			err = kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, dest.Spec.SecretRef.Name, metav1.DeleteOptions{})
-			if err != nil {
-				return false, fmt.Errorf("failed to delete secret: %w", err)
-			}
-		}
-	} else {
-		// Update the destination stream names
-		_, err = kube.DefaultClient.OdigosClient.Destinations(ns).Update(ctx, dest, metav1.UpdateOptions{})
-		if err != nil {
-			return false, fmt.Errorf("failed to update destination: %w", err)
-		}
+	err = services.DeleteDestinationOrRemoveStreamName(ctx, dest, currentStreamName)
+	if err != nil {
+		return false, fmt.Errorf("failed to delete destination or remove stream name: %v", err)
 	}
 
 	return true, nil
@@ -891,8 +857,7 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 
 // CreateAction is the resolver for the createAction field.
 func (r *mutationResolver) CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
@@ -920,8 +885,7 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 
 // UpdateAction is the resolver for the updateAction field.
 func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action model.ActionInput) (model.Action, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
@@ -949,8 +913,7 @@ func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action m
 
 // DeleteAction is the resolver for the deleteAction field.
 func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionType string) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
@@ -1007,8 +970,7 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 
 // CreateInstrumentationRule is the resolver for the createInstrumentationRule field.
 func (r *mutationResolver) CreateInstrumentationRule(ctx context.Context, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
@@ -1017,8 +979,7 @@ func (r *mutationResolver) CreateInstrumentationRule(ctx context.Context, instru
 
 // UpdateInstrumentationRule is the resolver for the updateInstrumentationRule field.
 func (r *mutationResolver) UpdateInstrumentationRule(ctx context.Context, ruleID string, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
@@ -1027,14 +988,73 @@ func (r *mutationResolver) UpdateInstrumentationRule(ctx context.Context, ruleID
 
 // DeleteInstrumentationRule is the resolver for the deleteInstrumentationRule field.
 func (r *mutationResolver) DeleteInstrumentationRule(ctx context.Context, ruleID string) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
 	_, err := services.DeleteInstrumentationRule(ctx, ruleID)
 	if err != nil {
 		return false, err
+	}
+
+	return true, nil
+}
+
+// UpdateDataStream is the resolver for the updateDataStream field.
+func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, dataStream model.DataStreamInput) (*model.DataStream, error) {
+	if services.IsReadonlyMode(ctx) {
+		return nil, services.ErrorIsReadonly
+	}
+
+	ns := env.GetCurrentNamespace()
+	kubeClient := kube.DefaultClient.OdigosClient
+
+	destinations, err := kubeClient.Destinations(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	err = services.UpdateDestinationsCurrentStreamName(ctx, destinations, id, dataStream.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update destinations: %v", err)
+	}
+
+	sources, err := kubeClient.Sources("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	err = services.UpdateSourcesCurrentStreamName(ctx, sources, id, dataStream.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update sources: %v", err)
+	}
+
+	return &model.DataStream{Name: dataStream.Name}, nil
+}
+
+// DeleteDataStream is the resolver for the deleteDataStream field.
+func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (bool, error) {
+	if services.IsReadonlyMode(ctx) {
+		return false, services.ErrorIsReadonly
+	}
+
+	ns := env.GetCurrentNamespace()
+	kubeClient := kube.DefaultClient.OdigosClient
+
+	destinations, err := kubeClient.Destinations(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+	err = services.DeleteDestinationsOrRemoveStreamName(ctx, destinations, id)
+	if err != nil {
+		return false, fmt.Errorf("failed to delete destinations or remove stream name: %v", err)
+	}
+
+	sources, err := kubeClient.Sources("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+	err = services.DeleteSourcesOrRemoveStreamName(ctx, sources, id)
+	if err != nil {
+		return false, fmt.Errorf("failed to delete sources or remove stream name: %v", err)
 	}
 
 	return true, nil

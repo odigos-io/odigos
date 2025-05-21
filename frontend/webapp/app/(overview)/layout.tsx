@@ -68,7 +68,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
   // call important hooks that should run on page-mount
   useSSE();
   useTokenTracker();
-  useDataStreamsCRUD();
+  const { updateDataStream, deleteDataStream } = useDataStreamsCRUD();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -90,7 +90,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
         <OverviewHeader />
 
         <ContentWithActions>
-          <DataFlowActionsMenu addEntity={entityType} onClickNewDataStream={() => router.push(ROUTES.CHOOSE_STREAM)} />
+          <DataFlowActionsMenu addEntity={entityType} onClickNewDataStream={() => router.push(ROUTES.CHOOSE_STREAM)} updateDataStream={updateDataStream} deleteDataStream={deleteDataStream} />
           <ContentUnderActions>
             <SideNav defaultSelectedId={selectedId} onClickId={onClickId} />
             {children}

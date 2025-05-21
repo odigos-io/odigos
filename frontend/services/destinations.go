@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services/destination_recognition"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
 	k8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -356,4 +357,36 @@ func PotentialDestinations(ctx context.Context) []destination_recognition.Destin
 	}
 
 	return destinationDetails
+}
+
+func deleteDestinationAndSecret(ctx context.Context, destination *v1alpha1.Destination) error {
+	ns := env.GetCurrentNamespace()
+
+	// Delete the destination
+	err := kube.DefaultClient.OdigosClient.Destinations(ns).Delete(ctx, destination.Name, metav1.DeleteOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to delete destination: %w", err)
+	}
+
+	// If the destination has a secret, delete it as well
+	if destination.Spec.SecretRef != nil {
+		err = kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, destination.Spec.SecretRef.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to delete secret: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func UpdateDestination(ctx context.Context, destination *v1alpha1.Destination) error {
+	ns := env.GetCurrentNamespace()
+
+	// Update the destination
+	_, err := kube.DefaultClient.OdigosClient.Destinations(ns).Update(ctx, destination, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to update destination: %w", err)
+	}
+
+	return nil
 }
