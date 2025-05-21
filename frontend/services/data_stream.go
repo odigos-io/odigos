@@ -120,6 +120,7 @@ func DeleteSourcesOrRemoveStreamName(ctx context.Context, sources *v1alpha1.Sour
 						Selected:          false, // to remove label, or delete entirely
 						CurrentStreamName: currentStreamName,
 					}}
+
 					err := SyncWorkloadsInNamespace(ctx, source.Namespace, toPersist)
 					if err != nil {
 						return fmt.Errorf("failed to sync workload %s: %v", source.Name, err)
@@ -156,6 +157,8 @@ func UpdateSourcesCurrentStreamName(ctx context.Context, sources *v1alpha1.Sourc
 					if err != nil {
 						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
 					}
+
+					return nil
 				}
 			}
 			return nil
