@@ -16,15 +16,21 @@ import (
 )
 
 func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRuleType {
-	if rule.PayloadCollection != nil {
-		if rule.PayloadCollection.HTTPRequest != nil || rule.PayloadCollection.HTTPResponse != nil || rule.PayloadCollection.DbQuery != nil || rule.PayloadCollection.Messaging != nil {
-			return model.InstrumentationRuleTypePayloadCollection
-		}
-	}
-
 	if rule.CodeAttributes != nil {
 		if rule.CodeAttributes.Column != nil || rule.CodeAttributes.FilePath != nil || rule.CodeAttributes.Function != nil || rule.CodeAttributes.LineNumber != nil || rule.CodeAttributes.Namespace != nil || rule.CodeAttributes.Stacktrace != nil {
 			return model.InstrumentationRuleTypeCodeAttributes
+		}
+	}
+
+	if rule.HeadersCollection != nil {
+		if rule.HeadersCollection.HeaderKeys != nil {
+			return model.InstrumentationRuleTypeHeadersCollection
+		}
+	}
+
+	if rule.PayloadCollection != nil {
+		if rule.PayloadCollection.HTTPRequest != nil || rule.PayloadCollection.HTTPResponse != nil || rule.PayloadCollection.DbQuery != nil || rule.PayloadCollection.Messaging != nil {
+			return model.InstrumentationRuleTypePayloadCollection
 		}
 	}
 
