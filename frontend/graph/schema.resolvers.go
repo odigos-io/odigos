@@ -1112,6 +1112,7 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 	}
 	var sourceGroup errgroup.Group
 	for _, source := range sources.Items {
+		source := source // capture range variable
 
 		sourceGroup.Go(func() error {
 			for key := range source.Labels {
