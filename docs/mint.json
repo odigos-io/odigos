@@ -94,11 +94,7 @@
         },
         {
           "group": "API Reference",
-          "pages": [
-            "api-reference/odigos.io.v1alpha1",
-            "api-reference/actions.odigos.io.v1alpha1",
-            "api-reference/operator.odigos.io.v1alpha1"
-          ]
+          "pages": ["api-reference/odigos.io.v1alpha1", "api-reference/actions.odigos.io.v1alpha1", "api-reference/operator.odigos.io.v1alpha1"]
         }
       ]
     },
@@ -109,59 +105,37 @@
         {
           "group": "Go",
           "icon": "golang",
-          "pages": [
-            "instrumentations/golang/ebpf",
-            "instrumentations/golang/enrichment"
-          ]
+          "pages": ["instrumentations/golang/ebpf", "instrumentations/golang/enrichment"]
         },
         {
           "group": "Node.js",
           "icon": "node-js",
-          "pages": [
-            "instrumentations/nodejs/native",
-            "instrumentations/nodejs/ebpf",
-            "instrumentations/nodejs/enrichment"
-          ]
+          "pages": ["instrumentations/nodejs/native", "instrumentations/nodejs/ebpf", "instrumentations/nodejs/enrichment"]
         },
         {
           "group": "Python",
           "icon": "python",
-          "pages": [
-            "instrumentations/python/native",
-            "instrumentations/python/enrichment"
-          ]
+          "pages": ["instrumentations/python/native", "instrumentations/python/enrichment"]
         },
         {
           "group": "Java",
           "icon": "java",
-          "pages": [
-            "instrumentations/java/native",
-            "instrumentations/java/ebpf",
-            "instrumentations/java/enrichment"
-          ]
+          "pages": ["instrumentations/java/native", "instrumentations/java/ebpf", "instrumentations/java/enrichment"]
         },
         {
           "group": ".NET",
           "icon": "code",
-          "pages": [
-            "instrumentations/dotnet/native",
-            "instrumentations/dotnet/enrichment"
-          ]
+          "pages": ["instrumentations/dotnet/native", "instrumentations/dotnet/enrichment"]
         },
         {
           "group": "PHP",
           "icon": "php",
-          "pages": [
-            "instrumentations/php/native",
-            "instrumentations/php/enrichment"
-          ]
+          "pages": ["instrumentations/php/native", "instrumentations/php/enrichment"]
         },
         {
           "group": "Advanced",
           "icon": "gear",
-          "pages": [
-            "instrumentations/configuration/mount-method"
-          ]
+          "pages": ["instrumentations/configuration/mount-method"]
         }
       ]
     },
@@ -186,8 +160,9 @@
           "icon": "microchip",
           "pages": [
             "pipeline/rules/introduction",
-            "pipeline/rules/payloadcollection",
-            "pipeline/rules/codeattributes"
+            "pipeline/rules/codeattributes",
+            "pipeline/rules/headerscollection",
+            "pipeline/rules/payloadcollection"
           ]
         },
         {
@@ -299,20 +274,11 @@
     },
     {
       "group": "Concepts",
-      "pages": [
-        "telemetry-types",
-        "custom-resources",
-        "usage-reports",
-        "benchmarks",
-        "permissions"
-      ]
+      "pages": ["telemetry-types", "custom-resources", "usage-reports", "benchmarks", "permissions"]
     },
     {
       "group": "Contribution Guidelines",
-      "pages": [
-        "adding-new-dest",
-        "debugging"
-      ]
+      "pages": ["adding-new-dest", "debugging"]
     },
     {
       "group": "VM Agent",
@@ -336,20 +302,14 @@
             "vmagent/setup/installation",
             {
               "group": "Configuration",
-              "pages": [
-                "vmagent/setup/configuration/service",
-                "vmagent/setup/configuration/agent"
-              ]
+              "pages": ["vmagent/setup/configuration/service", "vmagent/setup/configuration/agent"]
             },
             "vmagent/setup/uninstall"
           ]
         },
         {
           "group": "Configuration",
-          "pages": [
-            "vmagent/configuration/reference",
-            "vmagent/configuration/updating"
-          ]
+          "pages": ["vmagent/configuration/reference", "vmagent/configuration/updating"]
         }
       ]
     }
