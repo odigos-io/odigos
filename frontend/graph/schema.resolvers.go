@@ -1087,34 +1087,53 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 	if err != nil {
 		return false, err
 	}
+	var destinationGroup errgroup.Group
 	for _, dest := range destinations.Items {
-		if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil && services.ArrayContains(dest.Spec.SourceSelector.Groups, id) {
-			success, err := services.DeleteDestinationOrRemoveStreamName(ctx, &dest, id)
-			if !success || err != nil {
-				fmt.Printf("Error deleting destination stream name for %s: %v\n", dest.Name, err)
+		dest := dest // capture range variable
+
+		destinationGroup.Go(func() error {
+			if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil && services.ArrayContains(dest.Spec.SourceSelector.Groups, id) {
+				success, err := services.DeleteDestinationOrRemoveStreamName(ctx, &dest, id)
+				if !success || err != nil {
+					return fmt.Errorf("failed to delete destination %s, or it's stream name %s: %v", dest.Name, id, err)
+				}
 			}
-		}
+			return nil
+		})
+	}
+	// wait for goroutines to complete
+	if err := destinationGroup.Wait(); err != nil {
+		return false, err
 	}
 
 	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return false, err
 	}
+	var sourceGroup errgroup.Group
 	for _, source := range sources.Items {
-		for key := range source.Labels {
-			if strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix) == id {
-				toPersist := []model.PersistNamespaceSourceInput{{
-					Name:              source.Spec.Workload.Name,
-					Kind:              model.K8sResourceKind(source.Spec.Workload.Kind),
-					Selected:          false, // to remove label, or delete entirely
-					CurrentStreamName: id,
-				}}
-				err := services.SyncWorkloadsInNamespace(ctx, source.Namespace, toPersist)
-				if err != nil {
-					return false, fmt.Errorf("failed to sync workloads: %v", err)
+
+		sourceGroup.Go(func() error {
+			for key := range source.Labels {
+				if strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix) == id {
+					toPersist := []model.PersistNamespaceSourceInput{{
+						Name:              source.Spec.Workload.Name,
+						Kind:              model.K8sResourceKind(source.Spec.Workload.Kind),
+						Selected:          false, // to remove label, or delete entirely
+						CurrentStreamName: id,
+					}}
+					err := services.SyncWorkloadsInNamespace(ctx, source.Namespace, toPersist)
+					if err != nil {
+						return fmt.Errorf("failed to sync workload %s: %v", source.Name, err)
+					}
 				}
 			}
-		}
+			return nil
+		})
+	}
+	// wait for goroutines to complete
+	if err := sourceGroup.Wait(); err != nil {
+		return false, err
 	}
 
 	return true, nil
