@@ -128,7 +128,7 @@ func getHeadersCollectionInput(input model.InstrumentationRuleInput) *instrument
 
 	if input.HeadersCollection.HeaderKeys != nil {
 		headersCollection.HeaderKeys = make([]string, 0, len(input.HeadersCollection.HeaderKeys))
-		for i, key := range input.HeadersCollection.HeaderKeys {
+		for _, key := range input.HeadersCollection.HeaderKeys {
 			headersCollection.HeaderKeys = append(headersCollection.HeaderKeys, *key)
 		}
 	}
