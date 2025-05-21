@@ -73,7 +73,9 @@ const (
 	AvoidJavaOptsEnvVar               = "avoid-java-opts-env-var"
 	AgentEnvVarsInjectionMethod       = "agent-env-vars-injection-method"
 	ClusterNameProperty               = "cluster-name"
+	UserInstrumentationEnvsProperty   = "user-instrumentation-envs"
 	NodeSelectorProperty              = "node-selector"
+	KarpenterEnabledProperty          = "karpenter-enabled"
 )
 
 var (
@@ -94,4 +96,9 @@ var (
 // Odigos Central related consts
 const (
 	DefaultOdigosCentralNamespace = "odigos-central"
+)
+
+// Karpenter related consts
+const (
+	KarpenterStartupTaintKey = "odigos.io/needs-init"
 )
