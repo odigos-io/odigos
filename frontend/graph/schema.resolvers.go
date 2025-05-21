@@ -1021,42 +1021,53 @@ func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, data
 	if err != nil {
 		return nil, err
 	}
+	var destinationGroup errgroup.Group
 	for _, dest := range destinations.Items {
-		if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil && services.ArrayContains(dest.Spec.SourceSelector.Groups, id) {
-			success, err := services.UpdateDestinationStreamName(ctx, &dest, id, dataStream.Name)
-			if !success || err != nil {
-				fmt.Printf("Error updating destination stream name for %s: %v\n", dest.Name, err)
+		dest := dest // capture range variable
+
+		destinationGroup.Go(func() error {
+			if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil && services.ArrayContains(dest.Spec.SourceSelector.Groups, id) {
+				success, err := services.UpdateDestinationStreamName(ctx, &dest, id, dataStream.Name)
+				if !success || err != nil {
+					return fmt.Errorf("failed to update destination %s: %v", dest.Name, err)
+				}
 			}
-		}
+			return nil
+		})
+	}
+	// wait for goroutines to complete
+	if err := destinationGroup.Wait(); err != nil {
+		return nil, err
 	}
 
 	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	var g errgroup.Group
+	var sourceGroup errgroup.Group
 	for _, source := range sources.Items {
 		source := source // capture range variable
-		g.Go(func() error {
+
+		sourceGroup.Go(func() error {
 			for key := range source.Labels {
 				if strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix) == id {
-					// Remove the old label
+					// remove the old label
 					_, err := services.UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+id, "")
 					if err != nil {
-						return fmt.Errorf("failed to update source label: %v", err)
+						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
 					}
-					// Add the new label
+					// add the new label
 					_, err = services.UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+dataStream.Name, "true")
 					if err != nil {
-						return fmt.Errorf("failed to update source label: %v", err)
+						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
 					}
 				}
 			}
 			return nil
 		})
 	}
-	// Wait for all goroutines to complete
-	if err := g.Wait(); err != nil {
+	// wait for goroutines to complete
+	if err := sourceGroup.Wait(); err != nil {
 		return nil, err
 	}
 
