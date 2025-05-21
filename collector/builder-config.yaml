@@ -124,3 +124,5 @@ replaces:
   - github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor => ../processors/odigossourcesfilterprocessor
   - github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
   - go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
+  - github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
+  - github.com/odigos-io/odigos/common => ../../common

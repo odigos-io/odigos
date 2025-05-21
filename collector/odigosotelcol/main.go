@@ -35,7 +35,6 @@ func main() {
 			envprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme():         "go.opentelemetry.io/collector/confmap/provider/envprovider v0.126.0",
 			odigosk8scmprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider v0.126.0",
 		},
-		ConverterModules: []string{},
 	}
 
 	if err := run(set); err != nil {
