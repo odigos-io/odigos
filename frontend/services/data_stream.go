@@ -82,7 +82,7 @@ func UpdateDestinationsCurrentStreamName(ctx context.Context, destinations *v1al
 		dest := dest // capture range variable
 
 		g.Go(func() error {
-			if DestinationGroupsNotNull(&dest) && ArrayContains(dest.Spec.SourceSelector.Groups, dest.Name) {
+			if DestinationGroupsNotNull(&dest) && ArrayContains(dest.Spec.SourceSelector.Groups, currentStreamName) {
 				// Remove the current stream name from the source selector
 				dest.Spec.SourceSelector.Groups = RemoveStringFromSlice(dest.Spec.SourceSelector.Groups, currentStreamName)
 
