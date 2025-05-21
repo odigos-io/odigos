@@ -6,24 +6,18 @@ import (
 	"github.com/odigos-io/odigos/common/pipelinegen"
 )
 
-type SourceKey struct {
-	Namespace string
-	Kind      string
-	Name      string
-}
-
 // RoutingIndex maps signals (logs/metrics/traces) to group pipelines
 type RoutingIndex map[string][]string // signal -> []pipeline names
 
 // SignalRoutingMap indexes all sources by SourceKey and provides routing per signal
 //
 //	 SignalRoutingMap{
-//	    {Namespace: "ns1", Kind: "deployment", Name: "frontend"}: {
+//	    {ns1/deployment/frontend}: {
 //	        "logs":    {"logs/groupA"},
 //	        "traces":  {"traces/groupA", "traces/groupB"},
 //	        "metrics": {"metrics/groupB"},
 //	    },
-//	    {Namespace: "ns2", Kind: "statefulset", Name: "db"}: {
+//	    {ns2/statefulset/db}: {
 //	        "traces": {"traces/groupB"},
 //	    },
 //	}
@@ -34,8 +28,11 @@ type SignalRoutingMap map[string]RoutingIndex
 func BuildSignalRoutingMap(groups []pipelinegen.GroupDetails) SignalRoutingMap {
 	result := make(SignalRoutingMap)
 
+	fmt.Println("groups", groups)
 	for _, group := range groups {
+		fmt.Println("iterating groups in BuildSignalRoutingMap is", group)
 		for _, source := range group.Sources {
+			fmt.Println("source in BuildSignalRoutingMap is", source)
 			key := fmt.Sprintf("%s/%s/%s", source.Namespace, NormalizeKind(source.Kind), source.Name)
 
 			if _, exists := result[key]; !exists {
