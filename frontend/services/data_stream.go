@@ -12,22 +12,22 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func DestinationGroupsNotNull(destination *v1alpha1.Destination) bool {
+func destinationGroupsNotNull(destination *v1alpha1.Destination) bool {
 	if destination.Spec.SourceSelector != nil && destination.Spec.SourceSelector.Groups != nil {
 		return true
 	}
 	return false
 }
 
-func RemoveStreamNameFromDestination(destination *v1alpha1.Destination, dataStreamName string) {
-	if DestinationGroupsNotNull(destination) {
+func removeStreamNameFromDestination(destination *v1alpha1.Destination, dataStreamName string) {
+	if destinationGroupsNotNull(destination) {
 		// Remove the current stream name from the source selector
 		destination.Spec.SourceSelector.Groups = RemoveStringFromSlice(destination.Spec.SourceSelector.Groups, dataStreamName)
 	}
 }
 
-func ShouldDeleteDestination(destination *v1alpha1.Destination) bool {
-	if DestinationGroupsNotNull(destination) {
+func shouldDeleteDestination(destination *v1alpha1.Destination) bool {
+	if destinationGroupsNotNull(destination) {
 		// If the source selector is not empty after removing the current stream name, we should not delete the destination
 		return len(destination.Spec.SourceSelector.Groups) == 0
 	}
@@ -35,10 +35,10 @@ func ShouldDeleteDestination(destination *v1alpha1.Destination) bool {
 }
 
 func DeleteDestinationOrRemoveStreamName(ctx context.Context, dest *v1alpha1.Destination, currentStreamName string) error {
-	RemoveStreamNameFromDestination(dest, currentStreamName)
+	removeStreamNameFromDestination(dest, currentStreamName)
 
-	if ShouldDeleteDestination(dest) {
-		if err := DeleteDestinationAndSecret(ctx, dest); err != nil {
+	if shouldDeleteDestination(dest) {
+		if err := deleteDestinationAndSecret(ctx, dest); err != nil {
 			return err
 		}
 	} else {
@@ -57,7 +57,7 @@ func DeleteDestinationsOrRemoveStreamName(ctx context.Context, destinations *v1a
 		dest := dest // capture range variable
 
 		g.Go(func() error {
-			if DestinationGroupsNotNull(&dest) && ArrayContains(dest.Spec.SourceSelector.Groups, currentStreamName) {
+			if destinationGroupsNotNull(&dest) && ArrayContains(dest.Spec.SourceSelector.Groups, currentStreamName) {
 				err := DeleteDestinationOrRemoveStreamName(ctx, &dest, currentStreamName)
 				if err != nil {
 					return fmt.Errorf("failed to delete destination or remove stream name: %v", err)
@@ -67,7 +67,6 @@ func DeleteDestinationsOrRemoveStreamName(ctx context.Context, destinations *v1a
 		})
 	}
 
-	// wait for goroutines to complete
 	if err := g.Wait(); err != nil {
 		return err
 	}
@@ -82,7 +81,7 @@ func UpdateDestinationsCurrentStreamName(ctx context.Context, destinations *v1al
 		dest := dest // capture range variable
 
 		g.Go(func() error {
-			if DestinationGroupsNotNull(&dest) && ArrayContains(dest.Spec.SourceSelector.Groups, currentStreamName) {
+			if destinationGroupsNotNull(&dest) && ArrayContains(dest.Spec.SourceSelector.Groups, currentStreamName) {
 				// Remove the current stream name from the source selector
 				dest.Spec.SourceSelector.Groups = RemoveStringFromSlice(dest.Spec.SourceSelector.Groups, currentStreamName)
 
@@ -100,7 +99,6 @@ func UpdateDestinationsCurrentStreamName(ctx context.Context, destinations *v1al
 		})
 	}
 
-	// wait for goroutines to complete
 	if err := g.Wait(); err != nil {
 		return err
 	}
@@ -132,7 +130,6 @@ func DeleteSourcesOrRemoveStreamName(ctx context.Context, sources *v1alpha1.Sour
 		})
 	}
 
-	// wait for goroutines to complete
 	if err := g.Wait(); err != nil {
 		return err
 	}
@@ -165,7 +162,6 @@ func UpdateSourcesCurrentStreamName(ctx context.Context, sources *v1alpha1.Sourc
 		})
 	}
 
-	// wait for goroutines to complete
 	if err := g.Wait(); err != nil {
 		return err
 	}

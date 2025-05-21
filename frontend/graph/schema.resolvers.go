@@ -1007,8 +1007,9 @@ func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, data
 	}
 
 	ns := env.GetCurrentNamespace()
+	kubeClient := kube.DefaultClient.OdigosClient
 
-	destinations, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
+	destinations, err := kubeClient.Destinations(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -1017,7 +1018,7 @@ func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, data
 		return nil, fmt.Errorf("failed to update destinations: %v", err)
 	}
 
-	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+	sources, err := kubeClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -1036,8 +1037,9 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 	}
 
 	ns := env.GetCurrentNamespace()
+	kubeClient := kube.DefaultClient.OdigosClient
 
-	destinations, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
+	destinations, err := kubeClient.Destinations(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return false, err
 	}
@@ -1046,7 +1048,7 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 		return false, fmt.Errorf("failed to delete destinations or remove stream name: %v", err)
 	}
 
-	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+	sources, err := kubeClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return false, err
 	}

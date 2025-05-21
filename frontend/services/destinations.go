@@ -359,7 +359,7 @@ func PotentialDestinations(ctx context.Context) []destination_recognition.Destin
 	return destinationDetails
 }
 
-func DeleteDestinationAndSecret(ctx context.Context, destination *v1alpha1.Destination) error {
+func deleteDestinationAndSecret(ctx context.Context, destination *v1alpha1.Destination) error {
 	ns := env.GetCurrentNamespace()
 
 	// Delete the destination
