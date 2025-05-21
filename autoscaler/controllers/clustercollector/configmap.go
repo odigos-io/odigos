@@ -360,10 +360,6 @@ func isOdigosTrafficMetricsProcessorRelevant(name string, rootPipelines []string
 	if name == "metrics/otelcol" {
 		return false
 	}
-	// we should add the odigostrafficmetrics processor to all root pipelines
-	if slices.Contains(rootPipelines, name) {
-		return true
-	}
 	// we should add the odigostrafficmetrics processor to all destination pipelines
 	if slices.Contains(destinationPipelines, name) {
 		return true
