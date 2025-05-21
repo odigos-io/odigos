@@ -499,8 +499,7 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 
 // UpdateAPIToken is the resolver for the updateApiToken field.
 func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
@@ -511,8 +510,7 @@ func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bo
 
 // PersistK8sNamespace is the resolver for the persistK8sNamespace field.
 func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
@@ -533,8 +531,7 @@ func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace mo
 
 // PersistK8sSources is the resolver for the persistK8sSources field.
 func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace string, sources []*model.PersistNamespaceSourceInput) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
@@ -558,8 +555,7 @@ func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace stri
 
 // UpdateK8sActualSource is the resolver for the updateK8sActualSource field.
 func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
@@ -594,8 +590,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 
 // CreateNewDestination is the resolver for the createNewDestination field.
 func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
@@ -672,8 +667,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 // UpdateDestination is the resolver for the updateDestination field.
 func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
@@ -796,19 +790,23 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 
 // DeleteDestination is the resolver for the deleteDestination field.
 func (r *mutationResolver) DeleteDestination(ctx context.Context, id string, currentStreamName string) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
-	odigosNs := env.GetCurrentNamespace()
+	ns := env.GetCurrentNamespace()
 
-	dest, err := kube.DefaultClient.OdigosClient.Destinations(odigosNs).Get(ctx, id, metav1.GetOptions{})
+	dest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return false, fmt.Errorf("failed to get destination: %v", err)
 	}
 
-	return services.DeleteDestinationOrRemoveStreamName(ctx, dest, currentStreamName)
+	err = services.DeleteDestinationOrRemoveStreamName(ctx, dest, currentStreamName)
+	if err != nil {
+		return false, fmt.Errorf("failed to delete destination or remove stream name: %v", err)
+	}
+
+	return true, nil
 }
 
 // TestConnectionForDestination is the resolver for the testConnectionForDestination field.
@@ -859,8 +857,7 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 
 // CreateAction is the resolver for the createAction field.
 func (r *mutationResolver) CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
@@ -888,8 +885,7 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 
 // UpdateAction is the resolver for the updateAction field.
 func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action model.ActionInput) (model.Action, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
@@ -917,8 +913,7 @@ func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action m
 
 // DeleteAction is the resolver for the deleteAction field.
 func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionType string) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
@@ -975,8 +970,7 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 
 // CreateInstrumentationRule is the resolver for the createInstrumentationRule field.
 func (r *mutationResolver) CreateInstrumentationRule(ctx context.Context, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
@@ -985,8 +979,7 @@ func (r *mutationResolver) CreateInstrumentationRule(ctx context.Context, instru
 
 // UpdateInstrumentationRule is the resolver for the updateInstrumentationRule field.
 func (r *mutationResolver) UpdateInstrumentationRule(ctx context.Context, ruleID string, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
@@ -995,8 +988,7 @@ func (r *mutationResolver) UpdateInstrumentationRule(ctx context.Context, ruleID
 
 // DeleteInstrumentationRule is the resolver for the deleteInstrumentationRule field.
 func (r *mutationResolver) DeleteInstrumentationRule(ctx context.Context, ruleID string) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
@@ -1010,65 +1002,28 @@ func (r *mutationResolver) DeleteInstrumentationRule(ctx context.Context, ruleID
 
 // UpdateDataStream is the resolver for the updateDataStream field.
 func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, dataStream model.DataStreamInput) (*model.DataStream, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return nil, services.ErrorIsReadonly
 	}
 
-	odigosNs := env.GetCurrentNamespace()
+	ns := env.GetCurrentNamespace()
 
-	destinations, err := kube.DefaultClient.OdigosClient.Destinations(odigosNs).List(ctx, metav1.ListOptions{})
+	destinations, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	var destinationGroup errgroup.Group
-	for _, dest := range destinations.Items {
-		dest := dest // capture range variable
-
-		destinationGroup.Go(func() error {
-			if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil && services.ArrayContains(dest.Spec.SourceSelector.Groups, id) {
-				success, err := services.UpdateDestinationStreamName(ctx, &dest, id, dataStream.Name)
-				if !success || err != nil {
-					return fmt.Errorf("failed to update destination %s: %v", dest.Name, err)
-				}
-			}
-			return nil
-		})
-	}
-	// wait for goroutines to complete
-	if err := destinationGroup.Wait(); err != nil {
-		return nil, err
+	err = services.UpdateDestinationsCurrentStreamName(ctx, destinations, id, dataStream.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update destinations: %v", err)
 	}
 
 	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	var sourceGroup errgroup.Group
-	for _, source := range sources.Items {
-		source := source // capture range variable
-
-		sourceGroup.Go(func() error {
-			for key := range source.Labels {
-				if strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix) == id {
-					// remove the old label
-					_, err := services.UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+id, "")
-					if err != nil {
-						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
-					}
-					// add the new label
-					_, err = services.UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+dataStream.Name, "true")
-					if err != nil {
-						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
-					}
-				}
-			}
-			return nil
-		})
-	}
-	// wait for goroutines to complete
-	if err := sourceGroup.Wait(); err != nil {
-		return nil, err
+	err = services.UpdateSourcesCurrentStreamName(ctx, sources, id, dataStream.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update sources: %v", err)
 	}
 
 	return &model.DataStream{Name: dataStream.Name}, nil
@@ -1076,65 +1031,28 @@ func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, data
 
 // DeleteDataStream is the resolver for the deleteDataStream field.
 func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (bool, error) {
-	isReadonly := services.IsReadonlyMode(ctx)
-	if isReadonly {
+	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
-	odigosNs := env.GetCurrentNamespace()
+	ns := env.GetCurrentNamespace()
 
-	destinations, err := kube.DefaultClient.OdigosClient.Destinations(odigosNs).List(ctx, metav1.ListOptions{})
+	destinations, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return false, err
 	}
-	var destinationGroup errgroup.Group
-	for _, dest := range destinations.Items {
-		dest := dest // capture range variable
-
-		destinationGroup.Go(func() error {
-			if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil && services.ArrayContains(dest.Spec.SourceSelector.Groups, id) {
-				success, err := services.DeleteDestinationOrRemoveStreamName(ctx, &dest, id)
-				if !success || err != nil {
-					return fmt.Errorf("failed to delete destination %s, or it's stream name %s: %v", dest.Name, id, err)
-				}
-			}
-			return nil
-		})
-	}
-	// wait for goroutines to complete
-	if err := destinationGroup.Wait(); err != nil {
-		return false, err
+	err = services.DeleteDestinationsOrRemoveStreamName(ctx, destinations, id)
+	if err != nil {
+		return false, fmt.Errorf("failed to delete destinations or remove stream name: %v", err)
 	}
 
 	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return false, err
 	}
-	var sourceGroup errgroup.Group
-	for _, source := range sources.Items {
-		source := source // capture range variable
-
-		sourceGroup.Go(func() error {
-			for key := range source.Labels {
-				if strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix) == id {
-					toPersist := []model.PersistNamespaceSourceInput{{
-						Name:              source.Spec.Workload.Name,
-						Kind:              model.K8sResourceKind(source.Spec.Workload.Kind),
-						Selected:          false, // to remove label, or delete entirely
-						CurrentStreamName: id,
-					}}
-					err := services.SyncWorkloadsInNamespace(ctx, source.Namespace, toPersist)
-					if err != nil {
-						return fmt.Errorf("failed to sync workload %s: %v", source.Name, err)
-					}
-				}
-			}
-			return nil
-		})
-	}
-	// wait for goroutines to complete
-	if err := sourceGroup.Wait(); err != nil {
-		return false, err
+	err = services.DeleteSourcesOrRemoveStreamName(ctx, sources, id)
+	if err != nil {
+		return false, fmt.Errorf("failed to delete sources or remove stream name: %v", err)
 	}
 
 	return true, nil

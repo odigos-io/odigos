@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useConfig } from '../config';
+import { STORAGE_KEYS } from '@/utils';
 import { useSourceCRUD } from '../sources';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { Crud, type DataStream, StatusType } from '@odigos/ui-kit/types';
@@ -41,7 +42,7 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
       if (overrideStreamNameSelection) {
         setSelectedStreamName(overrideStreamNameSelection);
       } else {
-        const streamNameFromStorage = sessionStorage.getItem('selectedStreamName');
+        const streamNameFromStorage = sessionStorage.getItem(STORAGE_KEYS.SELECTED_DATA_STREAM);
         const storedSteamNameExistsInCP = data.computePlatform.dataStreams.some((stream) => stream.name === streamNameFromStorage);
 
         if (streamNameFromStorage && storedSteamNameExistsInCP) {
@@ -104,7 +105,7 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
   };
 
   useEffect(() => {
-    if (selectedStreamName) sessionStorage.setItem('selectedStreamName', selectedStreamName);
+    if (selectedStreamName) sessionStorage.setItem(STORAGE_KEYS.SELECTED_DATA_STREAM, selectedStreamName);
   }, [selectedStreamName]);
 
   useEffect(() => {

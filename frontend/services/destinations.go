@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services/destination_recognition"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
 	k8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -358,61 +359,34 @@ func PotentialDestinations(ctx context.Context) []destination_recognition.Destin
 	return destinationDetails
 }
 
-func DeleteDestinationOrRemoveStreamName(ctx context.Context, dest *v1alpha1.Destination, currentStreamName string) (bool, error) {
-	odigosNs := env.GetCurrentNamespace()
-	shouldDelete := true
+func DeleteDestinationAndSecret(ctx context.Context, destination *v1alpha1.Destination) error {
+	ns := env.GetCurrentNamespace()
 
-	if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil {
-		// Remove the current stream name from the source selector
-		dest.Spec.SourceSelector.Groups = RemoveStringFromSlice(dest.Spec.SourceSelector.Groups, currentStreamName)
-		// If the source selector is not empty after removing the current stream name, we should not delete the destination
-		if len(dest.Spec.SourceSelector.Groups) > 0 {
-			shouldDelete = false
+	// Delete the destination
+	err := kube.DefaultClient.OdigosClient.Destinations(ns).Delete(ctx, destination.Name, metav1.DeleteOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to delete destination: %w", err)
+	}
+
+	// If the destination has a secret, delete it as well
+	if destination.Spec.SecretRef != nil {
+		err = kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, destination.Spec.SecretRef.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to delete secret: %w", err)
 		}
 	}
 
-	if !shouldDelete {
-		// Update the destination stream names
-		_, err := kube.DefaultClient.OdigosClient.Destinations(odigosNs).Update(ctx, dest, metav1.UpdateOptions{})
-		if err != nil {
-			return false, fmt.Errorf("failed to update destination: %w", err)
-		}
-	} else {
-		// Delete the destination
-		err := kube.DefaultClient.OdigosClient.Destinations(odigosNs).Delete(ctx, dest.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return false, fmt.Errorf("failed to delete destination: %w", err)
-		}
-		// If the destination has a secret, delete it as well
-		if dest.Spec.SecretRef != nil {
-			err = kube.DefaultClient.CoreV1().Secrets(odigosNs).Delete(ctx, dest.Spec.SecretRef.Name, metav1.DeleteOptions{})
-			if err != nil {
-				return false, fmt.Errorf("failed to delete secret: %w", err)
-			}
-		}
-	}
-
-	return true, nil
+	return nil
 }
 
-func UpdateDestinationStreamName(ctx context.Context, dest *v1alpha1.Destination, currentStreamName string, newStreamName string) (bool, error) {
-	odigosNs := env.GetCurrentNamespace()
-
-	if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil {
-		// Remove the current stream name from the source selector
-		dest.Spec.SourceSelector.Groups = RemoveStringFromSlice(dest.Spec.SourceSelector.Groups, currentStreamName)
-
-		// Add the new stream name to the source selector
-		if !ArrayContains(dest.Spec.SourceSelector.Groups, newStreamName) {
-			dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, newStreamName)
-		}
-	}
+func UpdateDestination(ctx context.Context, destination *v1alpha1.Destination) error {
+	ns := env.GetCurrentNamespace()
 
 	// Update the destination
-	_, err := kube.DefaultClient.OdigosClient.Destinations(odigosNs).Update(ctx, dest, metav1.UpdateOptions{})
+	_, err := kube.DefaultClient.OdigosClient.Destinations(ns).Update(ctx, destination, metav1.UpdateOptions{})
 	if err != nil {
-		return false, fmt.Errorf("failed to update destination: %w", err)
+		return fmt.Errorf("failed to update destination: %w", err)
 	}
 
-	return true, nil
+	return nil
 }
