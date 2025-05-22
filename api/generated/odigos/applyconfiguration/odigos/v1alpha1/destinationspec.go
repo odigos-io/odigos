@@ -25,12 +25,14 @@ import (
 // DestinationSpecApplyConfiguration represents a declarative configuration of the DestinationSpec type for use
 // with apply.
 type DestinationSpecApplyConfiguration struct {
-	Type            *common.DestinationType           `json:"type,omitempty"`
-	DestinationName *string                           `json:"destinationName,omitempty"`
-	Data            map[string]string                 `json:"data,omitempty"`
-	SecretRef       *v1.LocalObjectReference          `json:"secretRef,omitempty"`
-	Signals         []common.ObservabilitySignal      `json:"signals,omitempty"`
-	SourceSelector  *SourceSelectorApplyConfiguration `json:"sourceSelector,omitempty"`
+	Type            *common.DestinationType              `json:"type,omitempty"`
+	DestinationName *string                              `json:"destinationName,omitempty"`
+	Data            map[string]string                    `json:"data,omitempty"`
+	SecretRef       *v1.LocalObjectReference             `json:"secretRef,omitempty"`
+	Signals         []common.ObservabilitySignal         `json:"signals,omitempty"`
+	SourceSelector  *SourceSelectorApplyConfiguration    `json:"sourceSelector,omitempty"`
+	SecretFiles     []SecretFileConfigApplyConfiguration `json:"secretFiles,omitempty"`
+	EnvVars         map[string]string                    `json:"envVars,omitempty"`
 }
 
 // DestinationSpecApplyConfiguration constructs a declarative configuration of the DestinationSpec type for use with
@@ -92,5 +94,32 @@ func (b *DestinationSpecApplyConfiguration) WithSignals(values ...common.Observa
 // If called multiple times, the SourceSelector field is set to the value of the last call.
 func (b *DestinationSpecApplyConfiguration) WithSourceSelector(value *SourceSelectorApplyConfiguration) *DestinationSpecApplyConfiguration {
 	b.SourceSelector = value
+	return b
+}
+
+// WithSecretFiles adds the given value to the SecretFiles field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the SecretFiles field.
+func (b *DestinationSpecApplyConfiguration) WithSecretFiles(values ...*SecretFileConfigApplyConfiguration) *DestinationSpecApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithSecretFiles")
+		}
+		b.SecretFiles = append(b.SecretFiles, *values[i])
+	}
+	return b
+}
+
+// WithEnvVars puts the entries into the EnvVars field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the EnvVars field,
+// overwriting an existing map entries in EnvVars field with the same key.
+func (b *DestinationSpecApplyConfiguration) WithEnvVars(entries map[string]string) *DestinationSpecApplyConfiguration {
+	if b.EnvVars == nil && len(entries) > 0 {
+		b.EnvVars = make(map[string]string, len(entries))
+	}
+	for k, v := range entries {
+		b.EnvVars[k] = v
+	}
 	return b
 }
