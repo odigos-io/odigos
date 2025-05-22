@@ -164,11 +164,11 @@ func main() {
 	database, err := db.NewSQLiteDB("/data/data.db")
 	if err != nil {
 		log.Println(err, "Failed to connect to DB") // TODO: Move to fatal once db required
+	} else {
+		defer database.Close()
+		// InitializeDatabaseSchema sets up the initial database schema.
+		db.InitializeDatabaseSchema(database.GetDB())
 	}
-	defer database.Close()
-
-	// InitializeDatabaseSchema sets up the initial database schema.
-	db.InitializeDatabaseSchema(database.GetDB())
 
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := parseFlags()

@@ -1,12 +1,9 @@
-import type { Source, Condition, WorkloadId } from '@odigos/ui-kit/types';
+import type { SelectedSource } from '@odigos/ui-kit/store';
+import type { Condition, WorkloadId } from '@odigos/ui-kit/types';
 
 export interface SourceInstrumentInput {
   namespace: string;
-  sources: Pick<Source, 'name' | 'kind' | 'selected'>[];
-}
-
-export interface SourceUpdateInput {
-  otelServiceName: string;
+  sources: Omit<SelectedSource, 'numberOfInstances'>[];
 }
 
 export type InstrumentationInstancesHealth = WorkloadId & {

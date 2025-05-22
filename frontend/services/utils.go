@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"sort"
 	"time"
 
 	"github.com/odigos-io/odigos/common"
@@ -13,6 +14,8 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"slices"
 
 	"sigs.k8s.io/yaml"
 )
@@ -90,4 +93,41 @@ func CheckWorkloadKind(kind WorkloadKind) error {
 	default:
 		return errors.New("unsupported workload kind: " + string(kind))
 	}
+}
+
+func ArrayContains(arr []string, str string) bool {
+	return slices.Contains(arr, str)
+}
+
+func RemoveStringFromSlice(slice []string, target string) []string {
+	result := make([]string, 0, len(slice))
+	for _, s := range slice {
+		if s != target {
+			result = append(result, s)
+		}
+	}
+	return result
+}
+
+func SortConditions(conditions []*model.Condition) {
+	sort.Slice(conditions, func(i, j int) bool {
+		if conditions[i].LastTransitionTime == nil {
+			return false
+		}
+		if conditions[j].LastTransitionTime == nil {
+			return true
+		}
+
+		timeI, errI := time.Parse(time.RFC3339, *conditions[i].LastTransitionTime)
+		timeJ, errJ := time.Parse(time.RFC3339, *conditions[j].LastTransitionTime)
+
+		if errI != nil {
+			return false
+		}
+		if errJ != nil {
+			return true
+		}
+
+		return timeI.Before(timeJ)
+	})
 }
