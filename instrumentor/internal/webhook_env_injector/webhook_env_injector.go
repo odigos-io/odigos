@@ -87,8 +87,6 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 
 	// from this point on, we are using the pod manifest env var injection method
 
-	avoidAddingJavaOpts := config != nil && config.AvoidInjectingJavaOptsEnvVar != nil && *config.AvoidInjectingJavaOptsEnvVar
-
 	// Odigos appends necessary environment variables to enable its agent.
 	// It handles this in the following ways:
 	// 1. Appends Odigos-specific values to environment variables already defined by the user in the manifest.
@@ -97,13 +95,6 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 
 	isOdigosAgentEnvAppended := false
 	for _, envVarName := range envVarsPerLanguage {
-		// Skip JAVA_OPTS env var if avoidAddingJavaOpts is true
-		// this is a migration path - we should eventually remove this and the avoidAddingJavaOpts config
-		// and never add the JAVA_OPTS env var
-		if avoidAddingJavaOpts && envVarName == "JAVA_OPTS" {
-			continue
-		}
-
 		// 1.
 		if handleManifestEnvVar(container, envVarName, otelsdk, logger) {
 			isOdigosAgentEnvAppended = true
@@ -119,7 +110,7 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 
 	// 3.
 	if !isOdigosAgentEnvAppended {
-		applyOdigosEnvDefaults(container, envVarsPerLanguage, otelsdk, avoidAddingJavaOpts)
+		applyOdigosEnvDefaults(container, envVarsPerLanguage, otelsdk)
 	}
 
 	return nil
@@ -224,12 +215,8 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByC
 	return envVars
 }
 
-func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []string, otelsdk common.OtelSdk, avoidAddingJavaOpts bool) {
+func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []string, otelsdk common.OtelSdk) {
 	for _, envVarName := range envVarsPerLanguage {
-		if avoidAddingJavaOpts && envVarName == "JAVA_OPTS" {
-			continue
-		}
-
 		odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
 		if odigosValueForOtelSdk == nil { // No Odigos values for this env var
 			continue
