@@ -4,4 +4,4 @@ description: This test waits for a trace that is generated from the successful i
 query: |
   length([?span.resourceAttributes."k8s.cluster.name" == 'e2e-test-cluster']) > `0`
 expected:
-  count: 17
+  count: 18
