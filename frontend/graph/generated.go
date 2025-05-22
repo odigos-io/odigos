@@ -195,11 +195,13 @@ type ComplexityRoot struct {
 		ComponentType        func(childComplexity int) int
 		CustomReadDataLabels func(childComplexity int) int
 		DisplayName          func(childComplexity int) int
+		EnvVars              func(childComplexity int) int
 		HideFromReadData     func(childComplexity int) int
 		InitialValue         func(childComplexity int) int
 		Name                 func(childComplexity int) int
 		RenderCondition      func(childComplexity int) int
 		Secret               func(childComplexity int) int
+		SecretFile           func(childComplexity int) int
 	}
 
 	DestinationTypesCategoryItem struct {
@@ -1313,6 +1315,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DestinationFieldYamlProperties.DisplayName(childComplexity), true
 
+	case "DestinationFieldYamlProperties.envVars":
+		if e.complexity.DestinationFieldYamlProperties.EnvVars == nil {
+			break
+		}
+
+		return e.complexity.DestinationFieldYamlProperties.EnvVars(childComplexity), true
+
 	case "DestinationFieldYamlProperties.hideFromReadData":
 		if e.complexity.DestinationFieldYamlProperties.HideFromReadData == nil {
 			break
@@ -1347,6 +1356,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DestinationFieldYamlProperties.Secret(childComplexity), true
+
+	case "DestinationFieldYamlProperties.secretFile":
+		if e.complexity.DestinationFieldYamlProperties.SecretFile == nil {
+			break
+		}
+
+		return e.complexity.DestinationFieldYamlProperties.SecretFile(childComplexity), true
 
 	case "DestinationTypesCategoryItem.displayName":
 		if e.complexity.DestinationTypesCategoryItem.DisplayName == nil {
@@ -8578,6 +8594,50 @@ func (ec *executionContext) fieldContext_DestinationFieldYamlProperties_secret(_
 	return fc, nil
 }
 
+func (ec *executionContext) _DestinationFieldYamlProperties_secretFile(ctx context.Context, field graphql.CollectedField, obj *model.DestinationFieldYamlProperties) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DestinationFieldYamlProperties_secretFile(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SecretFile, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DestinationFieldYamlProperties_secretFile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DestinationFieldYamlProperties",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DestinationFieldYamlProperties_initialValue(ctx context.Context, field graphql.CollectedField, obj *model.DestinationFieldYamlProperties) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DestinationFieldYamlProperties_initialValue(ctx, field)
 	if err != nil {
@@ -8757,6 +8817,50 @@ func (ec *executionContext) fieldContext_DestinationFieldYamlProperties_customRe
 				return ec.fieldContext_CustomReadDataLabel_value(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CustomReadDataLabel", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DestinationFieldYamlProperties_envVars(ctx context.Context, field graphql.CollectedField, obj *model.DestinationFieldYamlProperties) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DestinationFieldYamlProperties_envVars(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnvVars, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DestinationFieldYamlProperties_envVars(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DestinationFieldYamlProperties",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -9039,6 +9143,8 @@ func (ec *executionContext) fieldContext_DestinationTypesCategoryItem_fields(_ c
 				return ec.fieldContext_DestinationFieldYamlProperties_componentProperties(ctx, field)
 			case "secret":
 				return ec.fieldContext_DestinationFieldYamlProperties_secret(ctx, field)
+			case "secretFile":
+				return ec.fieldContext_DestinationFieldYamlProperties_secretFile(ctx, field)
 			case "initialValue":
 				return ec.fieldContext_DestinationFieldYamlProperties_initialValue(ctx, field)
 			case "renderCondition":
@@ -9047,6 +9153,8 @@ func (ec *executionContext) fieldContext_DestinationTypesCategoryItem_fields(_ c
 				return ec.fieldContext_DestinationFieldYamlProperties_hideFromReadData(ctx, field)
 			case "customReadDataLabels":
 				return ec.fieldContext_DestinationFieldYamlProperties_customReadDataLabels(ctx, field)
+			case "envVars":
+				return ec.fieldContext_DestinationFieldYamlProperties_envVars(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DestinationFieldYamlProperties", field.Name)
 		},
@@ -24671,6 +24779,11 @@ func (ec *executionContext) _DestinationFieldYamlProperties(ctx context.Context,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "secretFile":
+			out.Values[i] = ec._DestinationFieldYamlProperties_secretFile(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "initialValue":
 			out.Values[i] = ec._DestinationFieldYamlProperties_initialValue(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -24688,6 +24801,11 @@ func (ec *executionContext) _DestinationFieldYamlProperties(ctx context.Context,
 			}
 		case "customReadDataLabels":
 			out.Values[i] = ec._DestinationFieldYamlProperties_customReadDataLabels(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "envVars":
+			out.Values[i] = ec._DestinationFieldYamlProperties_envVars(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

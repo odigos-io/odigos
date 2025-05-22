@@ -281,10 +281,12 @@ type DestinationFieldYamlProperties {
   componentType: String!
   componentProperties: String! # Using String to store JSON data as a string
   secret: Boolean!
+  secretFile: Boolean!
   initialValue: String!
   renderCondition: [String!]!
   hideFromReadData: [String!]!
   customReadDataLabels: [CustomReadDataLabel!]!
+  envVars: String! # Using String to store JSON data as a string
 }
 
 type DestinationTypesCategoryItem {

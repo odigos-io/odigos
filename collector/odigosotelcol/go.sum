@@ -347,6 +347,8 @@ github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.50
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.50.0/go.mod h1:ZV4VOm0/eHR06JLrXWe09068dHpr3TRpY9Uo7T+anuA=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.27.0 h1:Jtr816GUk6+I2ox9L/v+VcOwN6IyGOEDTSNHfD6m9sY=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.27.0/go.mod h1:E05RN++yLx9W4fXPtX978OLo9P0+fBacauUdET1BckA=
+github.com/GoogleCloudPlatform/opentelemetry-operations-go/extension/googleclientauthextension v0.51.0 h1:JuexSDG/0ReNGY79+oSixm1Jvvw8RaPdCgTgaNaRPnE=
+github.com/GoogleCloudPlatform/opentelemetry-operations-go/extension/googleclientauthextension v0.51.0/go.mod h1:Re7+md/pstjLoSssSuPDSnijX7m9aqYiqmA1lGECv9Y=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/cloudmock v0.51.0 h1:OqVGm6Ei3x5+yZmSJG1Mh2NwHvpVmZ08CB5qJhT9Nuk=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/cloudmock v0.51.0/go.mod h1:SZiPHWGOOk3bl8tkevxkoiwPgsIl6CwrWcbwjfHZpdM=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.51.0 h1:6/0iUd0xrnX7qt+mLNRwg5c0PGv8wpE8K90ryANQwMI=
@@ -1271,6 +1273,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.126.0/go.mod h1:W8xoX/L3Vsd4p8ak6vums9UY3LgTlo42C8r2FXPFiVs=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.126.0 h1:B22B2IvztdZ2ZWv+Ei3HsoakuzhDywutj7o++KUPwJ8=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.126.0/go.mod h1:+LJj/UrcAdk3ALRIwBQGSAVr57ocKsicNolUCBgzBfA=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.126.0 h1:N/XPguRT6Y4e5PqLPxks6ssLHung0f2sxL3Ac3mP59g=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.126.0/go.mod h1:54GWoGDEGl8dYCuMc/UQ/np3/Pk/M6nBzk5CJ6twD/M=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.126.0 h1:IPzKUYR0CJ/+hyC85r+jbi1AYGnyYvAqoMozQvVQcVQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.126.0/go.mod h1:84W9MiVXcyPUz2j5FyJOPfBFoopPJI0CqbytMW8+mR0=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.126.0 h1:6xtTLFmApqn2NofbVI/+EvtrkxD43XTHPt5EaGgpV20=
