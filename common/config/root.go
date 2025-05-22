@@ -39,6 +39,7 @@ var availableConfigers = []Configer{
 	&Elasticsearch{},
 	&GenericOTLP{},
 	&GoogleCloud{},
+	&GoogleCloudOTLP{},
 	&GoogleCloudStorage{},
 	&GrafanaCloudLoki{},
 	&GrafanaCloudPrometheus{},
