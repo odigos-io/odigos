@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,8 @@ package v1alpha1
 import (
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	internal_actions "github.com/odigos-io/odigos/api/hub/actions/v__internal"
 )
 
 type OtelAttributeWithValue struct {
@@ -31,12 +33,13 @@ type OtelAttributeWithValue struct {
 	AttributeStringValue *string `json:"attributeStringValue"`
 }
 
-const ActionNameAddClusterInfo = "AddClusterInfo"
+const ActionNameAddClusterInfo = internal_actions.ActionNameAddClusterInfo
 
 type AddClusterInfoConfig struct {
 	ClusterAttributes []OtelAttributeWithValue `json:"clusterAttributes"`
 }
 
+// TODO: Move to internal after refactoring crd in controller
 func (AddClusterInfoConfig) ProcessorType() string {
 	return "resource"
 }
@@ -66,13 +69,13 @@ type AddClusterInfoStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
-//+genclient
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:path=addclusterinfos,scope=Namespaced,shortName=aci
-//+kubebuilder:metadata:labels=odigos.io/system-object=true
-
 // AddClusterInfo is the Schema for the addclusterinfo odigos action API
+// +genclient
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:path=addclusterinfos,scope=Namespaced,shortName=aci
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
+// +kubebuilder:storageversion
 type AddClusterInfo struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -81,15 +84,10 @@ type AddClusterInfo struct {
 	Status AddClusterInfoStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
 // AddClusterInfoList contains a list of AddClusterInfo
+// +kubebuilder:object:root=true
 type AddClusterInfoList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []AddClusterInfo `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&AddClusterInfo{}, &AddClusterInfoList{})
 }

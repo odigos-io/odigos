@@ -80,12 +80,12 @@ type LatencySamplerStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
-//+genclient
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:path=latencysamplers,scope=Namespaced,shortName=ls
-//+kubebuilder:metadata:labels=odigos.io/system-object=true
-
+// +genclient
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:path=latencysamplers,scope=Namespaced,shortName=ls
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
+// +kubebuilder:storageversion
 // LatencySampler is the Schema for defining latency-based trace sampling rules.
 // It supports targeting specific services and HTTP routes and applying latency thresholds
 // to determine sampling eligibility.
@@ -97,15 +97,10 @@ type LatencySampler struct {
 	Status LatencySamplerStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
+// +kubebuilder:object:root=true
 // LatencySamplerList contains a list of LatencySampler objects.
 type LatencySamplerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []LatencySampler `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&LatencySampler{}, &LatencySamplerList{})
 }

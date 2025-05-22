@@ -166,8 +166,6 @@ spec:
                             properties:
                               attributeConditions:
                                 items:
-                                  description: '''Operand'' represents the attributes
-                                    and values that an operator acts upon in an expression'
                                   properties:
                                     key:
                                       description: attribute key (e.g. "url.path")

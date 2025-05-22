@@ -57,12 +57,12 @@ type ErrorSamplerStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
-//+genclient
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:path=errorsamplers,scope=Namespaced,shortName=es
-//+kubebuilder:metadata:labels=odigos.io/system-object=true
-
+// +genclient
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:path=errorsamplers,scope=Namespaced,shortName=es
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
+// +kubebuilder:storageversion
 // ErrorSampler is the Schema for the ErrorSampler CRD.
 // It defines sampling logic that always retains traces with errors, and optionally samples
 // non-error traces based on the fallback ratio.
@@ -74,15 +74,10 @@ type ErrorSampler struct {
 	Status ErrorSamplerStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
+// +kubebuilder:object:root=true
 // ErrorSamplerList contains a list of ErrorSampler resources.
 type ErrorSamplerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ErrorSampler `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&ErrorSampler{}, &ErrorSamplerList{})
 }

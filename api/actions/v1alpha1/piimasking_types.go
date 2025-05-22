@@ -24,11 +24,8 @@ import (
 // +kubebuilder:validation:Enum=CREDIT_CARD
 type PiiCategory string
 
-const (
-	CreditCardMasking PiiCategory = "CREDIT_CARD"
-)
-
 const ActionNamePiiMasking = "PiiMasking"
+const CreditCardMasking PiiCategory = "CREDIT_CARD"
 
 type PiiMaskingConfig struct {
 	PiiCategories []PiiCategory `json:"piiCategories"`
@@ -63,13 +60,12 @@ type PiiMaskingStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
-//+genclient
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:path=piimaskings,scope=Namespaced,shortName=red
-//+kubebuilder:metadata:labels=odigos.io/system-object=true
-
-// PiiMasking is the Schema for the PiiMasking odigos action API
+// +genclient
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:path=piimaskings,scope=Namespaced,shortName=red
+// +kubebuilder:storageversion
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
 type PiiMasking struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -78,15 +74,9 @@ type PiiMasking struct {
 	Status PiiMaskingStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
-// PiiMaskingList contains a list of PiiMasking
+// +kubebuilder:object:root=true
 type PiiMaskingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []PiiMasking `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&PiiMasking{}, &PiiMaskingList{})
 }

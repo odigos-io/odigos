@@ -10,8 +10,8 @@ import (
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 // +kubebuilder:metadata:labels=odigos.io/system-object=true
-
 // InstrumentationConfig is the Schema for the instrumentationconfig API
 type InstrumentationConfig struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -181,15 +181,16 @@ const (
 
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
-	ContainerName       string                     `json:"containerName"`
-	Language            common.ProgrammingLanguage `json:"language"`
-	RuntimeVersion      string                     `json:"runtimeVersion,omitempty"`
-	EnvVars             []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent          *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType            *common.LibCType           `json:"libCType,omitempty"`
+	ContainerName  string                     `json:"containerName"`
+	Language       common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
+	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+
 	// Indicates whether the target process is running is secure-execution mode.
 	// nil means we were unable to determine the secure-execution mode.
-	SecureExecutionMode *bool                      `json:"secureExecutionMode,omitempty"`
+	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
 
 	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
@@ -279,7 +280,6 @@ func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName strin
 }
 
 type SdkConfig struct {
-
 	// The language of the SDK being configured
 	Language common.ProgrammingLanguage `json:"language"`
 
@@ -300,8 +300,9 @@ type SdkConfig struct {
 	DefaultHeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
-// 'Operand' represents the attributes and values that an operator acts upon in an expression
 type AttributeCondition struct {
+	// 'Operand' represents the attributes and values that an operator acts upon in an expression
+
 	// attribute key (e.g. "url.path")
 	Key string `json:"key"`
 	// currently only string values are supported.
@@ -371,6 +372,7 @@ type InstrumentationLibraryId struct {
 	// The name of the instrumentation library
 	// - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
 	InstrumentationLibraryName string `json:"libraryName"`
+
 	// SpanKind is only supported by Golang and will be ignored for any other SDK language.
 	// In Go, SpanKind is used because the same instrumentation library can be utilized for different span kinds (e.g., client/server).
 	SpanKind common.SpanKind `json:"spanKind,omitempty"`
@@ -385,16 +387,12 @@ type InstrumentationLibraryConfigTraces struct {
 }
 
 // +kubebuilder:object:root=true
-
-// InstrumentationConfigList contains a list of InstrumentationOption
 type InstrumentationConfigList struct {
+	// InstrumentationConfigList contains a list of InstrumentationOption
+
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []InstrumentationConfig `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&InstrumentationConfig{}, &InstrumentationConfigList{})
 }
 
 // Languages returns the set of languages that this configuration applies to

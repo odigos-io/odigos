@@ -58,12 +58,12 @@ type RenameAttributeStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
-//+genclient
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:path=renameattributes,scope=Namespaced
-//+kubebuilder:metadata:labels=odigos.io/system-object=true
-
+// +genclient
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:path=renameattributes,scope=Namespaced
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
+// +kubebuilder:storageversion
 // RenameAttribute is the Schema for the RenameAttribute odigos action API
 type RenameAttribute struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -73,15 +73,10 @@ type RenameAttribute struct {
 	Status RenameAttributeStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
+// +kubebuilder:object:root=true
 // RenameAttributeList contains a list of RenameAttribute
 type RenameAttributeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RenameAttribute `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&RenameAttribute{}, &RenameAttributeList{})
 }

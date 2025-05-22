@@ -1,23 +1,27 @@
+---
+title: actions.odigos.io/v1alpha1
+content_type: tool-reference
+package: actions.odigos.io/v1alpha1
+auto_generated: true
+---
 
 
 ## Resource Types 
 
 
-- [AddClusterInfo](#AddClusterInfo)
-- [DeleteAttribute](#DeleteAttribute)
-- [ErrorSampler](#ErrorSampler)
-- [K8sAttributesResolver](#K8sAttributesResolver)
-- [LatencySampler](#LatencySampler)
-- [PiiMasking](#PiiMasking)
-- [ProbabilisticSampler](#ProbabilisticSampler)
-- [RenameAttribute](#RenameAttribute)
-- [ServiceNameSampler](#ServiceNameSampler)
-- [SpanAttributeSampler](#SpanAttributeSampler)
+- [AddClusterInfo](#actions-odigos-io-v1alpha1-AddClusterInfo)
+- [DeleteAttribute](#actions-odigos-io-v1alpha1-DeleteAttribute)
+- [ErrorSampler](#actions-odigos-io-v1alpha1-ErrorSampler)
+- [K8sAttributesResolver](#actions-odigos-io-v1alpha1-K8sAttributesResolver)
+- [LatencySampler](#actions-odigos-io-v1alpha1-LatencySampler)
+- [PiiMasking](#actions-odigos-io-v1alpha1-PiiMasking)
+- [ProbabilisticSampler](#actions-odigos-io-v1alpha1-ProbabilisticSampler)
+- [RenameAttribute](#actions-odigos-io-v1alpha1-RenameAttribute)
+- [ServiceNameSampler](#actions-odigos-io-v1alpha1-ServiceNameSampler)
+- [SpanAttributeSampler](#actions-odigos-io-v1alpha1-SpanAttributeSampler)
   
-    
-    
 
-## `AddClusterInfo` <a id="AddClusterInfo"></a>
+## `AddClusterInfo` <a id="actions-odigos-io-v1alpha1-AddClusterInfo"></a>
     
 <p>AddClusterInfo is the Schema for the addclusterinfo odigos action API</p>
 
@@ -25,7 +29,7 @@
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
     
-<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>actions.odigos.io/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>AddClusterInfo</code></td></tr>
     
   
@@ -46,7 +50,7 @@
 <code>spec</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#AddClusterInfoSpec"><code>AddClusterInfoSpec</code></a>
+<a href="#actions-odigos-io-v1alpha1-AddClusterInfoSpec"><code>AddClusterInfoSpec</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -57,7 +61,7 @@
 <code>status</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#AddClusterInfoStatus"><code>AddClusterInfoStatus</code></a>
+<a href="#actions-odigos-io-v1alpha1-AddClusterInfoStatus"><code>AddClusterInfoStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -66,7 +70,7 @@
 </tbody>
 </table>
 
-## `DeleteAttribute` <a id="DeleteAttribute"></a>
+## `DeleteAttribute` <a id="actions-odigos-io-v1alpha1-DeleteAttribute"></a>
     
 <p>DeleteAttribute is the Schema for the DeleteAttribute odigos action API</p>
 
@@ -74,7 +78,7 @@
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
     
-<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>actions.odigos.io/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>DeleteAttribute</code></td></tr>
     
   
@@ -95,7 +99,7 @@
 <code>spec</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#DeleteAttributeSpec"><code>DeleteAttributeSpec</code></a>
+<a href="#actions-odigos-io-v1alpha1-DeleteAttributeSpec"><code>DeleteAttributeSpec</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -106,7 +110,7 @@
 <code>status</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#DeleteAttributeStatus"><code>DeleteAttributeStatus</code></a>
+<a href="#actions-odigos-io-v1alpha1-DeleteAttributeStatus"><code>DeleteAttributeStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -115,7 +119,7 @@
 </tbody>
 </table>
 
-## `ErrorSampler` <a id="ErrorSampler"></a>
+## `ErrorSampler` <a id="actions-odigos-io-v1alpha1-ErrorSampler"></a>
     
 <p>ErrorSampler is the Schema for the ErrorSampler CRD.
 It defines sampling logic that always retains traces with errors, and optionally samples
@@ -125,7 +129,7 @@ non-error traces based on the fallback ratio.</p>
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
     
-<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>actions.odigos.io/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>ErrorSampler</code></td></tr>
     
   
@@ -146,7 +150,7 @@ non-error traces based on the fallback ratio.</p>
 <code>spec</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#ErrorSamplerSpec"><code>ErrorSamplerSpec</code></a>
+<a href="#actions-odigos-io-v1alpha1-ErrorSamplerSpec"><code>ErrorSamplerSpec</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -157,7 +161,7 @@ non-error traces based on the fallback ratio.</p>
 <code>status</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#ErrorSamplerStatus"><code>ErrorSamplerStatus</code></a>
+<a href="#actions-odigos-io-v1alpha1-ErrorSamplerStatus"><code>ErrorSamplerStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -166,7 +170,7 @@ non-error traces based on the fallback ratio.</p>
 </tbody>
 </table>
 
-## `K8sAttributesResolver` <a id="K8sAttributesResolver"></a>
+## `K8sAttributesResolver` <a id="actions-odigos-io-v1alpha1-K8sAttributesResolver"></a>
     
 <p>K8sAttributesResolver allows adding an action to collect k8s attributes.</p>
 
@@ -174,7 +178,7 @@ non-error traces based on the fallback ratio.</p>
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
     
-<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>actions.odigos.io/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>K8sAttributesResolver</code></td></tr>
     
   
@@ -195,7 +199,7 @@ non-error traces based on the fallback ratio.</p>
 <code>spec</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#K8sAttributesSpec"><code>K8sAttributesSpec</code></a>
+<a href="#actions-odigos-io-v1alpha1-K8sAttributesSpec"><code>K8sAttributesSpec</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -206,7 +210,7 @@ non-error traces based on the fallback ratio.</p>
 <code>status</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#K8sAttributesStatus"><code>K8sAttributesStatus</code></a>
+<a href="#actions-odigos-io-v1alpha1-K8sAttributesStatus"><code>K8sAttributesStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -215,7 +219,7 @@ non-error traces based on the fallback ratio.</p>
 </tbody>
 </table>
 
-## `LatencySampler` <a id="LatencySampler"></a>
+## `LatencySampler` <a id="actions-odigos-io-v1alpha1-LatencySampler"></a>
     
 <p>LatencySampler is the Schema for defining latency-based trace sampling rules.
 It supports targeting specific services and HTTP routes and applying latency thresholds
@@ -225,7 +229,7 @@ to determine sampling eligibility.</p>
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
     
-<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>actions.odigos.io/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>LatencySampler</code></td></tr>
     
   
@@ -246,7 +250,7 @@ to determine sampling eligibility.</p>
 <code>spec</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#LatencySamplerSpec"><code>LatencySamplerSpec</code></a>
+<a href="#actions-odigos-io-v1alpha1-LatencySamplerSpec"><code>LatencySamplerSpec</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -257,7 +261,7 @@ to determine sampling eligibility.</p>
 <code>status</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#LatencySamplerStatus"><code>LatencySamplerStatus</code></a>
+<a href="#actions-odigos-io-v1alpha1-LatencySamplerStatus"><code>LatencySamplerStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -266,15 +270,13 @@ to determine sampling eligibility.</p>
 </tbody>
 </table>
 
-## `PiiMasking` <a id="PiiMasking"></a>
+## `PiiMasking` <a id="actions-odigos-io-v1alpha1-PiiMasking"></a>
     
-<p>PiiMasking is the Schema for the PiiMasking odigos action API</p>
-
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
     
-<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>actions.odigos.io/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>PiiMasking</code></td></tr>
     
   
@@ -295,7 +297,7 @@ to determine sampling eligibility.</p>
 <code>spec</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#PiiMaskingSpec"><code>PiiMaskingSpec</code></a>
+<a href="#actions-odigos-io-v1alpha1-PiiMaskingSpec"><code>PiiMaskingSpec</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -306,7 +308,7 @@ to determine sampling eligibility.</p>
 <code>status</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#PiiMaskingStatus"><code>PiiMaskingStatus</code></a>
+<a href="#actions-odigos-io-v1alpha1-PiiMaskingStatus"><code>PiiMaskingStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -315,7 +317,7 @@ to determine sampling eligibility.</p>
 </tbody>
 </table>
 
-## `ProbabilisticSampler` <a id="ProbabilisticSampler"></a>
+## `ProbabilisticSampler` <a id="actions-odigos-io-v1alpha1-ProbabilisticSampler"></a>
     
 <p>ProbabilisticSampler is the Schema for the ProbabilisticSampler odigos action API</p>
 
@@ -323,7 +325,7 @@ to determine sampling eligibility.</p>
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
     
-<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>actions.odigos.io/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>ProbabilisticSampler</code></td></tr>
     
   
@@ -344,7 +346,7 @@ to determine sampling eligibility.</p>
 <code>spec</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#ProbabilisticSamplerSpec"><code>ProbabilisticSamplerSpec</code></a>
+<a href="#actions-odigos-io-v1alpha1-ProbabilisticSamplerSpec"><code>ProbabilisticSamplerSpec</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -355,7 +357,7 @@ to determine sampling eligibility.</p>
 <code>status</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#ProbabilisticSamplerStatus"><code>ProbabilisticSamplerStatus</code></a>
+<a href="#actions-odigos-io-v1alpha1-ProbabilisticSamplerStatus"><code>ProbabilisticSamplerStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -364,7 +366,7 @@ to determine sampling eligibility.</p>
 </tbody>
 </table>
 
-## `RenameAttribute` <a id="RenameAttribute"></a>
+## `RenameAttribute` <a id="actions-odigos-io-v1alpha1-RenameAttribute"></a>
     
 <p>RenameAttribute is the Schema for the RenameAttribute odigos action API</p>
 
@@ -372,7 +374,7 @@ to determine sampling eligibility.</p>
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
     
-<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>actions.odigos.io/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>RenameAttribute</code></td></tr>
     
   
@@ -393,7 +395,7 @@ to determine sampling eligibility.</p>
 <code>spec</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#RenameAttributeSpec"><code>RenameAttributeSpec</code></a>
+<a href="#actions-odigos-io-v1alpha1-RenameAttributeSpec"><code>RenameAttributeSpec</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -404,7 +406,7 @@ to determine sampling eligibility.</p>
 <code>status</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#RenameAttributeStatus"><code>RenameAttributeStatus</code></a>
+<a href="#actions-odigos-io-v1alpha1-RenameAttributeStatus"><code>RenameAttributeStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -413,7 +415,7 @@ to determine sampling eligibility.</p>
 </tbody>
 </table>
 
-## `ServiceNameSampler` <a id="ServiceNameSampler"></a>
+## `ServiceNameSampler` <a id="actions-odigos-io-v1alpha1-ServiceNameSampler"></a>
     
 <p>ServiceNameSampler is the Schema for the servicenamesamplers API.
 It enables trace sampling based on whether specific services appear within a trace.</p>
@@ -422,7 +424,7 @@ It enables trace sampling based on whether specific services appear within a tra
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
     
-<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>actions.odigos.io/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>ServiceNameSampler</code></td></tr>
     
   
@@ -443,7 +445,7 @@ It enables trace sampling based on whether specific services appear within a tra
 <code>spec</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#ServiceNameSamplerSpec"><code>ServiceNameSamplerSpec</code></a>
+<a href="#actions-odigos-io-v1alpha1-ServiceNameSamplerSpec"><code>ServiceNameSamplerSpec</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -454,7 +456,7 @@ It enables trace sampling based on whether specific services appear within a tra
 <code>status</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#ServiceNameSamplerStatus"><code>ServiceNameSamplerStatus</code></a>
+<a href="#actions-odigos-io-v1alpha1-ServiceNameSamplerStatus"><code>ServiceNameSamplerStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -463,7 +465,7 @@ It enables trace sampling based on whether specific services appear within a tra
 </tbody>
 </table>
 
-## `SpanAttributeSampler` <a id="SpanAttributeSampler"></a>
+## `SpanAttributeSampler` <a id="actions-odigos-io-v1alpha1-SpanAttributeSampler"></a>
     
 <p>SpanAttributeSampler is the Schema for the spanattributesamplers API.
 It holds the specification for sampling spans based on attribute conditions,
@@ -473,7 +475,7 @@ as well as the sampler's current status.</p>
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
     
-<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>actions.odigos.io/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>SpanAttributeSampler</code></td></tr>
     
   
@@ -494,7 +496,7 @@ as well as the sampler's current status.</p>
 <code>spec</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#SpanAttributeSamplerSpec"><code>SpanAttributeSamplerSpec</code></a>
+<a href="#actions-odigos-io-v1alpha1-SpanAttributeSamplerSpec"><code>SpanAttributeSamplerSpec</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -505,7 +507,7 @@ as well as the sampler's current status.</p>
 <code>status</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#SpanAttributeSamplerStatus"><code>SpanAttributeSamplerStatus</code></a>
+<a href="#actions-odigos-io-v1alpha1-SpanAttributeSamplerStatus"><code>SpanAttributeSamplerStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -514,7 +516,7 @@ as well as the sampler's current status.</p>
 </tbody>
 </table>
 
-## `AddClusterInfoConfig` <a id="AddClusterInfoConfig"></a>
+## `AddClusterInfoConfig` <a id="actions-odigos-io-v1alpha1-AddClusterInfoConfig"></a>
     
 
 **Appears in:**
@@ -531,7 +533,7 @@ as well as the sampler's current status.</p>
 <code>clusterAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#OtelAttributeWithValue"><code>[]OtelAttributeWithValue</code></a>
+<a href="#actions-odigos-io-v1alpha1-OtelAttributeWithValue"><code>[]OtelAttributeWithValue</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -540,12 +542,12 @@ as well as the sampler's current status.</p>
 </tbody>
 </table>
 
-## `AddClusterInfoSpec` <a id="AddClusterInfoSpec"></a>
+## `AddClusterInfoSpec` <a id="actions-odigos-io-v1alpha1-AddClusterInfoSpec"></a>
     
 
 **Appears in:**
 
-- [AddClusterInfo](#AddClusterInfo)
+- [AddClusterInfo](#actions-odigos-io-v1alpha1-AddClusterInfo)
 
 <p>AddClusterInfoSpec defines the desired state of AddClusterInfo action</p>
 
@@ -603,7 +605,7 @@ as well as the sampler's current status.</p>
 <code>clusterAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#OtelAttributeWithValue"><code>[]OtelAttributeWithValue</code></a>
+<a href="#actions-odigos-io-v1alpha1-OtelAttributeWithValue"><code>[]OtelAttributeWithValue</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -612,12 +614,12 @@ as well as the sampler's current status.</p>
 </tbody>
 </table>
 
-## `AddClusterInfoStatus` <a id="AddClusterInfoStatus"></a>
+## `AddClusterInfoStatus` <a id="actions-odigos-io-v1alpha1-AddClusterInfoStatus"></a>
     
 
 **Appears in:**
 
-- [AddClusterInfo](#AddClusterInfo)
+- [AddClusterInfo](#actions-odigos-io-v1alpha1-AddClusterInfo)
 
 <p>AddClusterInfoStatus defines the observed state of AddClusterInfo action</p>
 
@@ -641,12 +643,12 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `AttributeCondition` <a id="AttributeCondition"></a>
+## `AttributeCondition` <a id="actions-odigos-io-v1alpha1-AttributeCondition"></a>
     
 
 **Appears in:**
 
-- [SpanAttributeFilter](#SpanAttributeFilter)
+- [SpanAttributeFilter](#actions-odigos-io-v1alpha1-SpanAttributeFilter)
 
 <p>AttributeCondition wraps different condition types so that only one type
 of condition needs to be specified. This makes it explicit which data type
@@ -662,7 +664,7 @@ the attribute is expected to have.</p>
 <code>string_condition</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#StringAttributeCondition"><code>StringAttributeCondition</code></a>
+<a href="#actions-odigos-io-v1alpha1-StringAttributeCondition"><code>StringAttributeCondition</code></a>
 </td>
 <td>
    <p>StringCondition applies to string-type attributes.</p>
@@ -673,7 +675,7 @@ the attribute is expected to have.</p>
 <code>number_condition</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#NumberAttributeCondition"><code>NumberAttributeCondition</code></a>
+<a href="#actions-odigos-io-v1alpha1-NumberAttributeCondition"><code>NumberAttributeCondition</code></a>
 </td>
 <td>
    <p>NumberCondition applies to numeric attributes (int, long, float, double).</p>
@@ -684,7 +686,7 @@ the attribute is expected to have.</p>
 <code>boolean_condition</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#BooleanAttributeCondition"><code>BooleanAttributeCondition</code></a>
+<a href="#actions-odigos-io-v1alpha1-BooleanAttributeCondition"><code>BooleanAttributeCondition</code></a>
 </td>
 <td>
    <p>BooleanCondition applies to boolean attributes.</p>
@@ -695,7 +697,7 @@ the attribute is expected to have.</p>
 <code>json_condition</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#JsonAttributeCondition"><code>JsonAttributeCondition</code></a>
+<a href="#actions-odigos-io-v1alpha1-JsonAttributeCondition"><code>JsonAttributeCondition</code></a>
 </td>
 <td>
    <p>JsonCondition applies to attributes that are JSON-encoded strings.</p>
@@ -704,12 +706,12 @@ the attribute is expected to have.</p>
 </tbody>
 </table>
 
-## `BooleanAttributeCondition` <a id="BooleanAttributeCondition"></a>
+## `BooleanAttributeCondition` <a id="actions-odigos-io-v1alpha1-BooleanAttributeCondition"></a>
     
 
 **Appears in:**
 
-- [AttributeCondition](#AttributeCondition)
+- [AttributeCondition](#actions-odigos-io-v1alpha1-AttributeCondition)
 
 <p>BooleanAttributeCondition defines a check against a boolean attribute.</p>
 
@@ -748,7 +750,7 @@ the attribute is expected to have.</p>
 </tbody>
 </table>
 
-## `DeleteAttributeConfig` <a id="DeleteAttributeConfig"></a>
+## `DeleteAttributeConfig` <a id="actions-odigos-io-v1alpha1-DeleteAttributeConfig"></a>
     
 
 **Appears in:**
@@ -774,12 +776,12 @@ the attribute is expected to have.</p>
 </tbody>
 </table>
 
-## `DeleteAttributeSpec` <a id="DeleteAttributeSpec"></a>
+## `DeleteAttributeSpec` <a id="actions-odigos-io-v1alpha1-DeleteAttributeSpec"></a>
     
 
 **Appears in:**
 
-- [DeleteAttribute](#DeleteAttribute)
+- [DeleteAttribute](#actions-odigos-io-v1alpha1-DeleteAttribute)
 
 <p>DeleteAttributeSpec defines the desired state of DeleteAttribute action</p>
 
@@ -846,12 +848,12 @@ the attribute is expected to have.</p>
 </tbody>
 </table>
 
-## `DeleteAttributeStatus` <a id="DeleteAttributeStatus"></a>
+## `DeleteAttributeStatus` <a id="actions-odigos-io-v1alpha1-DeleteAttributeStatus"></a>
     
 
 **Appears in:**
 
-- [DeleteAttribute](#DeleteAttribute)
+- [DeleteAttribute](#actions-odigos-io-v1alpha1-DeleteAttribute)
 
 <p>DeleteAttributeStatus defines the observed state of DeleteAttribute action</p>
 
@@ -875,12 +877,12 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `ErrorSamplerSpec` <a id="ErrorSamplerSpec"></a>
+## `ErrorSamplerSpec` <a id="actions-odigos-io-v1alpha1-ErrorSamplerSpec"></a>
     
 
 **Appears in:**
 
-- [ErrorSampler](#ErrorSampler)
+- [ErrorSampler](#actions-odigos-io-v1alpha1-ErrorSampler)
 
 <p>ErrorSamplerSpec defines the configuration for an ErrorSampler action.
 This sampler prioritizes traces that contain errors, and allows specifying a fallback sampling ratio
@@ -953,12 +955,12 @@ that should be sampled. Error traces are always sampled.</p>
 </tbody>
 </table>
 
-## `ErrorSamplerStatus` <a id="ErrorSamplerStatus"></a>
+## `ErrorSamplerStatus` <a id="actions-odigos-io-v1alpha1-ErrorSamplerStatus"></a>
     
 
 **Appears in:**
 
-- [ErrorSampler](#ErrorSampler)
+- [ErrorSampler](#actions-odigos-io-v1alpha1-ErrorSampler)
 
 <p>ErrorSamplerStatus defines the runtime state and observed conditions of an ErrorSampler.
 It may include conditions such as &quot;Available&quot; or &quot;Progressing&quot;.</p>
@@ -982,12 +984,12 @@ It may include conditions such as &quot;Available&quot; or &quot;Progressing&quo
 </tbody>
 </table>
 
-## `HttpRouteFilter` <a id="HttpRouteFilter"></a>
+## `HttpRouteFilter` <a id="actions-odigos-io-v1alpha1-HttpRouteFilter"></a>
     
 
 **Appears in:**
 
-- [LatencySamplerSpec](#LatencySamplerSpec)
+- [LatencySamplerSpec](#actions-odigos-io-v1alpha1-LatencySamplerSpec)
 
 <p>HttpRouteFilter defines a single latency-based sampling rule for an HTTP route.</p>
 
@@ -1046,12 +1048,12 @@ and service match but the span latency is below the threshold.</p>
 </tbody>
 </table>
 
-## `JsonAttributeCondition` <a id="JsonAttributeCondition"></a>
+## `JsonAttributeCondition` <a id="actions-odigos-io-v1alpha1-JsonAttributeCondition"></a>
     
 
 **Appears in:**
 
-- [AttributeCondition](#AttributeCondition)
+- [AttributeCondition](#actions-odigos-io-v1alpha1-AttributeCondition)
 
 <p>JsonAttributeCondition defines conditions for evaluating JSON-encoded span attributes.
 It supports structural and value-based filtering using key lookups and JSONPath expressions.</p>
@@ -1132,12 +1134,12 @@ Example: $.user.role or $.events[0].code</p>
 </tbody>
 </table>
 
-## `K8sAnnotationAttribute` <a id="K8sAnnotationAttribute"></a>
+## `K8sAnnotationAttribute` <a id="actions-odigos-io-v1alpha1-K8sAnnotationAttribute"></a>
     
 
 **Appears in:**
 
-- [K8sAttributesSpec](#K8sAttributesSpec)
+- [K8sAttributesSpec](#actions-odigos-io-v1alpha1-K8sAttributesSpec)
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1171,12 +1173,12 @@ e.g. &quot;kubectl.kubernetes.restartedAte&quot;</p>
 </tbody>
 </table>
 
-## `K8sAttributesSpec` <a id="K8sAttributesSpec"></a>
+## `K8sAttributesSpec` <a id="actions-odigos-io-v1alpha1-K8sAttributesSpec"></a>
     
 
 **Appears in:**
 
-- [K8sAttributesResolver](#K8sAttributesResolver)
+- [K8sAttributesResolver](#actions-odigos-io-v1alpha1-K8sAttributesResolver)
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1286,7 +1288,7 @@ k8s.statefulset.uid</p>
 <code>labelsAttributes</code>
 </td>
 <td>
-<a href="#K8sLabelAttribute"><code>[]K8sLabelAttribute</code></a>
+<a href="#actions-odigos-io-v1alpha1-K8sLabelAttribute"><code>[]K8sLabelAttribute</code></a>
 </td>
 <td>
    <p>list of labels to be extracted from the pod, and the attribute key to be used for the resource attribute created from each label.</p>
@@ -1297,7 +1299,7 @@ k8s.statefulset.uid</p>
 <code>annotationsAttributes</code>
 </td>
 <td>
-<a href="#K8sAnnotationAttribute"><code>[]K8sAnnotationAttribute</code></a>
+<a href="#actions-odigos-io-v1alpha1-K8sAnnotationAttribute"><code>[]K8sAnnotationAttribute</code></a>
 </td>
 <td>
    <p>list of annotations to be extracted from the pod, and the attribute key to be used for the resource attribute created from each annotation.</p>
@@ -1306,12 +1308,12 @@ k8s.statefulset.uid</p>
 </tbody>
 </table>
 
-## `K8sAttributesStatus` <a id="K8sAttributesStatus"></a>
+## `K8sAttributesStatus` <a id="actions-odigos-io-v1alpha1-K8sAttributesStatus"></a>
     
 
 **Appears in:**
 
-- [K8sAttributesResolver](#K8sAttributesResolver)
+- [K8sAttributesResolver](#actions-odigos-io-v1alpha1-K8sAttributesResolver)
 
 <p>K8sAttributesStatus defines the observed state of K8sAttributes action</p>
 
@@ -1335,12 +1337,12 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `K8sLabelAttribute` <a id="K8sLabelAttribute"></a>
+## `K8sLabelAttribute` <a id="actions-odigos-io-v1alpha1-K8sLabelAttribute"></a>
     
 
 **Appears in:**
 
-- [K8sAttributesSpec](#K8sAttributesSpec)
+- [K8sAttributesSpec](#actions-odigos-io-v1alpha1-K8sAttributesSpec)
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1374,12 +1376,12 @@ e.g. &quot;app.kubernetes.name&quot;</p>
 </tbody>
 </table>
 
-## `LatencySamplerSpec` <a id="LatencySamplerSpec"></a>
+## `LatencySamplerSpec` <a id="actions-odigos-io-v1alpha1-LatencySamplerSpec"></a>
     
 
 **Appears in:**
 
-- [LatencySampler](#LatencySampler)
+- [LatencySampler](#actions-odigos-io-v1alpha1-LatencySampler)
 
 <p>LatencySamplerSpec defines the desired state of a LatencySampler.
 This sampler filters traces based on HTTP route and latency thresholds.
@@ -1442,7 +1444,7 @@ that this sampler applies to.</p>
 <code>endpoints_filters</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#HttpRouteFilter"><code>[]HttpRouteFilter</code></a>
+<a href="#actions-odigos-io-v1alpha1-HttpRouteFilter"><code>[]HttpRouteFilter</code></a>
 </td>
 <td>
    <p>EndpointsFilters defines the list of route-based latency sampling filters.
@@ -1452,12 +1454,12 @@ Each filter targets a specific service and HTTP route with a latency threshold.<
 </tbody>
 </table>
 
-## `LatencySamplerStatus` <a id="LatencySamplerStatus"></a>
+## `LatencySamplerStatus` <a id="actions-odigos-io-v1alpha1-LatencySamplerStatus"></a>
     
 
 **Appears in:**
 
-- [LatencySampler](#LatencySampler)
+- [LatencySampler](#actions-odigos-io-v1alpha1-LatencySampler)
 
 <p>LatencySamplerStatus defines the observed state of a LatencySampler.
 It captures runtime status such as readiness or deployment progress.</p>
@@ -1482,12 +1484,12 @@ Typical types include &quot;Available&quot; and &quot;Progressing&quot;.</p>
 </tbody>
 </table>
 
-## `NumberAttributeCondition` <a id="NumberAttributeCondition"></a>
+## `NumberAttributeCondition` <a id="actions-odigos-io-v1alpha1-NumberAttributeCondition"></a>
     
 
 **Appears in:**
 
-- [AttributeCondition](#AttributeCondition)
+- [AttributeCondition](#actions-odigos-io-v1alpha1-AttributeCondition)
 
 <p>NumberAttributeCondition applies to attributes that are numeric (int, float, etc.).</p>
 
@@ -1532,13 +1534,13 @@ Typical types include &quot;Available&quot; and &quot;Progressing&quot;.</p>
 </tbody>
 </table>
 
-## `OtelAttributeWithValue` <a id="OtelAttributeWithValue"></a>
+## `OtelAttributeWithValue` <a id="actions-odigos-io-v1alpha1-OtelAttributeWithValue"></a>
     
 
 **Appears in:**
 
-- [AddClusterInfoConfig](#AddClusterInfoConfig)
-- [AddClusterInfoSpec](#AddClusterInfoSpec)
+- [AddClusterInfoConfig](#actions-odigos-io-v1alpha1-AddClusterInfoConfig)
+- [AddClusterInfoSpec](#actions-odigos-io-v1alpha1-AddClusterInfoSpec)
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -1571,18 +1573,18 @@ empty string is a valid value</p>
 </tbody>
 </table>
 
-## `PiiCategory` <a id="PiiCategory"></a>
+## `PiiCategory` <a id="actions-odigos-io-v1alpha1-PiiCategory"></a>
     
 (Alias of `string`)
 
 **Appears in:**
 
-- [PiiMaskingConfig](#PiiMaskingConfig)
-- [PiiMaskingSpec](#PiiMaskingSpec)
+- [PiiMaskingConfig](#actions-odigos-io-v1alpha1-PiiMaskingConfig)
+- [PiiMaskingSpec](#actions-odigos-io-v1alpha1-PiiMaskingSpec)
 
 
 
-## `PiiMaskingConfig` <a id="PiiMaskingConfig"></a>
+## `PiiMaskingConfig` <a id="actions-odigos-io-v1alpha1-PiiMaskingConfig"></a>
     
 
 **Appears in:**
@@ -1599,7 +1601,7 @@ empty string is a valid value</p>
 <code>piiCategories</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#PiiCategory"><code>[]PiiCategory</code></a>
+<a href="#actions-odigos-io-v1alpha1-PiiCategory"><code>[]PiiCategory</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -1608,12 +1610,12 @@ empty string is a valid value</p>
 </tbody>
 </table>
 
-## `PiiMaskingSpec` <a id="PiiMaskingSpec"></a>
+## `PiiMaskingSpec` <a id="actions-odigos-io-v1alpha1-PiiMaskingSpec"></a>
     
 
 **Appears in:**
 
-- [PiiMasking](#PiiMasking)
+- [PiiMasking](#actions-odigos-io-v1alpha1-PiiMasking)
 
 <p>PiiMaskingSpec defines the desired state of PiiMasking action</p>
 
@@ -1671,7 +1673,7 @@ empty string is a valid value</p>
 <code>piiCategories</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#PiiCategory"><code>[]PiiCategory</code></a>
+<a href="#actions-odigos-io-v1alpha1-PiiCategory"><code>[]PiiCategory</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -1680,12 +1682,12 @@ empty string is a valid value</p>
 </tbody>
 </table>
 
-## `PiiMaskingStatus` <a id="PiiMaskingStatus"></a>
+## `PiiMaskingStatus` <a id="actions-odigos-io-v1alpha1-PiiMaskingStatus"></a>
     
 
 **Appears in:**
 
-- [PiiMasking](#PiiMasking)
+- [PiiMasking](#actions-odigos-io-v1alpha1-PiiMasking)
 
 <p>PiiMaskingStatus defines the observed state of PiiMasking action</p>
 
@@ -1709,12 +1711,12 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `ProbabilisticSamplerSpec` <a id="ProbabilisticSamplerSpec"></a>
+## `ProbabilisticSamplerSpec` <a id="actions-odigos-io-v1alpha1-ProbabilisticSamplerSpec"></a>
     
 
 **Appears in:**
 
-- [ProbabilisticSampler](#ProbabilisticSampler)
+- [ProbabilisticSampler](#actions-odigos-io-v1alpha1-ProbabilisticSampler)
 
 <p>ProbabilisticSamplerSpec defines the desired state of ProbabilisticSampler action</p>
 
@@ -1781,12 +1783,12 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `ProbabilisticSamplerStatus` <a id="ProbabilisticSamplerStatus"></a>
+## `ProbabilisticSamplerStatus` <a id="actions-odigos-io-v1alpha1-ProbabilisticSamplerStatus"></a>
     
 
 **Appears in:**
 
-- [ProbabilisticSampler](#ProbabilisticSampler)
+- [ProbabilisticSampler](#actions-odigos-io-v1alpha1-ProbabilisticSampler)
 
 <p>ProbabilisticSamplerStatus defines the observed state of ProbabilisticSampler action</p>
 
@@ -1810,7 +1812,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `RenameAttributeConfig` <a id="RenameAttributeConfig"></a>
+## `RenameAttributeConfig` <a id="actions-odigos-io-v1alpha1-RenameAttributeConfig"></a>
     
 
 **Appears in:**
@@ -1836,12 +1838,12 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `RenameAttributeSpec` <a id="RenameAttributeSpec"></a>
+## `RenameAttributeSpec` <a id="actions-odigos-io-v1alpha1-RenameAttributeSpec"></a>
     
 
 **Appears in:**
 
-- [RenameAttribute](#RenameAttribute)
+- [RenameAttribute](#actions-odigos-io-v1alpha1-RenameAttribute)
 
 <p>RenameAttributeSpec defines the desired state of RenameAttribute action</p>
 
@@ -1908,12 +1910,12 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `RenameAttributeStatus` <a id="RenameAttributeStatus"></a>
+## `RenameAttributeStatus` <a id="actions-odigos-io-v1alpha1-RenameAttributeStatus"></a>
     
 
 **Appears in:**
 
-- [RenameAttribute](#RenameAttribute)
+- [RenameAttribute](#actions-odigos-io-v1alpha1-RenameAttribute)
 
 <p>RenameAttributeStatus defines the observed state of RenameAttribute action</p>
 
@@ -1937,12 +1939,12 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `ServiceNameFilter` <a id="ServiceNameFilter"></a>
+## `ServiceNameFilter` <a id="actions-odigos-io-v1alpha1-ServiceNameFilter"></a>
     
 
 **Appears in:**
 
-- [ServiceNameSamplerSpec](#ServiceNameSamplerSpec)
+- [ServiceNameSamplerSpec](#actions-odigos-io-v1alpha1-ServiceNameSamplerSpec)
 
 <p>ServiceNameFilter defines a single rule that maps a service name to a sampling decision.</p>
 
@@ -1992,12 +1994,12 @@ if the specified service is not present in the trace.</p>
 </tbody>
 </table>
 
-## `ServiceNameSamplerSpec` <a id="ServiceNameSamplerSpec"></a>
+## `ServiceNameSamplerSpec` <a id="actions-odigos-io-v1alpha1-ServiceNameSamplerSpec"></a>
     
 
 **Appears in:**
 
-- [ServiceNameSampler](#ServiceNameSampler)
+- [ServiceNameSampler](#actions-odigos-io-v1alpha1-ServiceNameSampler)
 
 <p>ServiceNameSamplerSpec defines the desired configuration for a ServiceNameSampler.
 This sampler enables sampling based on the presence of specific service names within a trace.</p>
@@ -2059,7 +2061,7 @@ Common values include &quot;traces&quot;, &quot;metrics&quot;, or &quot;logs&quo
 <code>services_name_filters</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#ServiceNameFilter"><code>[]ServiceNameFilter</code></a>
+<a href="#actions-odigos-io-v1alpha1-ServiceNameFilter"><code>[]ServiceNameFilter</code></a>
 </td>
 <td>
    <p>ServicesNameFilters defines rules for sampling traces based on the presence
@@ -2070,12 +2072,12 @@ services, the associated sampling ratio is applied.</p>
 </tbody>
 </table>
 
-## `ServiceNameSamplerStatus` <a id="ServiceNameSamplerStatus"></a>
+## `ServiceNameSamplerStatus` <a id="actions-odigos-io-v1alpha1-ServiceNameSamplerStatus"></a>
     
 
 **Appears in:**
 
-- [ServiceNameSampler](#ServiceNameSampler)
+- [ServiceNameSampler](#actions-odigos-io-v1alpha1-ServiceNameSampler)
 
 <p>ServiceNameSamplerStatus represents the runtime status of a ServiceNameSampler,
 including observed conditions such as validation errors or processing state.</p>
@@ -2100,12 +2102,12 @@ following the standard Kubernetes conventions.</p>
 </tbody>
 </table>
 
-## `SpanAttributeFilter` <a id="SpanAttributeFilter"></a>
+## `SpanAttributeFilter` <a id="actions-odigos-io-v1alpha1-SpanAttributeFilter"></a>
     
 
 **Appears in:**
 
-- [SpanAttributeSamplerSpec](#SpanAttributeSamplerSpec)
+- [SpanAttributeSamplerSpec](#actions-odigos-io-v1alpha1-SpanAttributeSamplerSpec)
 
 <p>SpanAttributeFilter allows sampling traces based on specific span attributes and conditions.</p>
 
@@ -2142,7 +2144,7 @@ originating from the given service will be evaluated against this filter.</p>
 <code>condition</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#AttributeCondition"><code>AttributeCondition</code></a>
+<a href="#actions-odigos-io-v1alpha1-AttributeCondition"><code>AttributeCondition</code></a>
 </td>
 <td>
    <p>Condition is the rule or expression that will be used to evaluate
@@ -2185,12 +2187,12 @@ then half of non-matching spans would be sampled.</p>
 </tbody>
 </table>
 
-## `SpanAttributeSamplerSpec` <a id="SpanAttributeSamplerSpec"></a>
+## `SpanAttributeSamplerSpec` <a id="actions-odigos-io-v1alpha1-SpanAttributeSamplerSpec"></a>
     
 
 **Appears in:**
 
-- [SpanAttributeSampler](#SpanAttributeSampler)
+- [SpanAttributeSampler](#actions-odigos-io-v1alpha1-SpanAttributeSampler)
 
 <p>SpanAttributeSamplerSpec defines the desired state of SpanAttributeSampler</p>
 
@@ -2253,7 +2255,7 @@ For instance, this could include traces, metrics, logs, etc.</p>
 <code>attribute_filters</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#SpanAttributeFilter"><code>[]SpanAttributeFilter</code></a>
+<a href="#actions-odigos-io-v1alpha1-SpanAttributeFilter"><code>[]SpanAttributeFilter</code></a>
 </td>
 <td>
    <p>AttributeFilters defines a list of criteria to decide how spans should be
@@ -2263,12 +2265,12 @@ sampled based on their attributes. At least one filter is required.</p>
 </tbody>
 </table>
 
-## `SpanAttributeSamplerStatus` <a id="SpanAttributeSamplerStatus"></a>
+## `SpanAttributeSamplerStatus` <a id="actions-odigos-io-v1alpha1-SpanAttributeSamplerStatus"></a>
     
 
 **Appears in:**
 
-- [SpanAttributeSampler](#SpanAttributeSampler)
+- [SpanAttributeSampler](#actions-odigos-io-v1alpha1-SpanAttributeSampler)
 
 <p>SpanAttributeSamplerStatus represents the current status of a SpanAttributeSampler.</p>
 
@@ -2291,12 +2293,12 @@ sampled based on their attributes. At least one filter is required.</p>
 </tbody>
 </table>
 
-## `StringAttributeCondition` <a id="StringAttributeCondition"></a>
+## `StringAttributeCondition` <a id="actions-odigos-io-v1alpha1-StringAttributeCondition"></a>
     
 
 **Appears in:**
 
-- [AttributeCondition](#AttributeCondition)
+- [AttributeCondition](#actions-odigos-io-v1alpha1-AttributeCondition)
 
 <p>StringAttributeCondition defines how to evaluate a string attribute.</p>
 
@@ -2342,3 +2344,4 @@ to match, a substring, or a regular expression.</p>
 </tr>
 </tbody>
 </table>
+  

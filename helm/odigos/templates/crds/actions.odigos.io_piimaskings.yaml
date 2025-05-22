@@ -21,7 +21,6 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: PiiMasking is the Schema for the PiiMasking odigos action API
         properties:
           apiVersion:
             description: |-
