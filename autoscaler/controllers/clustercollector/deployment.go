@@ -3,6 +3,7 @@ package clustercollector
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -113,6 +114,8 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 		gatewayReplicas = int32(*gateway.Spec.ResourcesSettings.MinReplicas)
 	}
 
+	secretVolumes, secretMounts := getSecretVolumesFromDests(dests)
+
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
@@ -132,7 +135,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 					},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: nodeSelector,
+					NodeSelector:       nodeSelector,
 					ServiceAccountName: k8sconsts.OdigosClusterCollectorDeploymentName,
 					Containers: []corev1.Container{
 						{
@@ -146,7 +149,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 							},
 							EnvFrom: getSecretsFromDests(dests),
 							// Add the ODIGOS_VERSION environment variable from the ConfigMap
-							Env: []corev1.EnvVar{
+							Env: append([]corev1.EnvVar{
 								{
 									Name: consts.OdigosVersionEnvVarName,
 									ValueFrom: &corev1.EnvVarSource{
@@ -183,7 +186,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 										},
 									},
 								},
-							},
+							}, getEnvVarsFromDests(dests)...),
 							SecurityContext: &corev1.SecurityContext{
 								AllowPrivilegeEscalation: boolPtr(false),
 							},
@@ -213,8 +216,10 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 									corev1.ResourceCPU:    limitCPU,
 								},
 							},
+							VolumeMounts: secretMounts,
 						},
 					},
+					Volumes: secretVolumes,
 				},
 			},
 		},
@@ -235,6 +240,16 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 	return desiredDeployment, nil
 }
 
+func getEnvVarsFromDests(destList *odigosv1.DestinationList) []corev1.EnvVar {
+	var result []corev1.EnvVar
+	for _, dest := range destList.Items {
+		for key, val := range dest.Spec.EnvVars {
+			result = append(result, corev1.EnvVar{Name: key, Value: val})
+		}
+	}
+	return result
+}
+
 func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSource {
 	var result []corev1.EnvFromSource
 	for _, dst := range destList.Items {
@@ -250,6 +265,35 @@ func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSou
 	}
 
 	return result
+}
+
+func getSecretVolumesFromDests(destList *odigosv1.DestinationList) ([]corev1.Volume, []corev1.VolumeMount) {
+	var volumes []corev1.Volume
+	var volumeMounts []corev1.VolumeMount
+	var items []corev1.KeyToPath
+	for _, dst := range destList.Items {
+		if dst.Spec.SecretRef != nil {
+			volumeName := strings.ReplaceAll(dst.Spec.SecretRef.Name, ".", "-")
+			for _, secretFile := range dst.Spec.SecretFiles {
+				items = append(items, corev1.KeyToPath{Key: secretFile.Key, Path: secretFile.Key})
+				volumeMounts = append(volumeMounts, corev1.VolumeMount{
+					Name:      volumeName,
+					MountPath: secretFile.MountPath,
+				})
+			}
+
+			volumes = append(volumes, corev1.Volume{
+				Name: volumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dst.Spec.SecretRef.Name,
+						Items:      items,
+					},
+				},
+			})
+		}
+	}
+	return volumes, volumeMounts
 }
 
 func boolPtr(b bool) *bool {

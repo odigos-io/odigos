@@ -623,7 +623,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 		return nil, fmt.Errorf("invalid destination data scheme: %v", errors)
 	}
 
-	dataField, secretFields := services.TransformFieldsToDataAndSecrets(destTypeConfig, fieldsMap)
+	dataField, secretFields, secretFiles, envVars := services.TransformFieldsToDataSecretsEnvVars(destTypeConfig, fieldsMap)
 	generateNamePrefix := "odigos.io.dest." + string(destType) + "-"
 
 	k8sDestination := v1alpha1.Destination{
@@ -635,6 +635,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 			DestinationName: destName,
 			Data:            dataField,
 			Signals:         services.ExportedSignalsObjectToSlice(destination.ExportedSignals),
+			EnvVars:         map[string]string{},
 		},
 	}
 	if destination.CurrentStreamName != "" {
@@ -643,8 +644,8 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 		}
 	}
 
-	createSecret := len(secretFields) > 0
-	if createSecret {
+	createSecretFields := len(secretFields) > 0
+	if createSecretFields {
 		secretRef, err := services.CreateDestinationSecret(ctx, destType, secretFields, ns)
 		if err != nil {
 			return nil, err
@@ -652,11 +653,19 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 		k8sDestination.Spec.SecretRef = secretRef
 	}
 
+	for _, fieldName := range secretFiles {
+		k8sDestination.Spec.SecretFiles = append(k8sDestination.Spec.SecretFiles, v1alpha1.SecretFileConfig{Key: fieldName, MountPath: "/secrets"})
+	}
+
+	for key, val := range envVars {
+		k8sDestination.Spec.EnvVars[key] = val
+	}
+
 	dest, err := services.CreateResourceWithGenerateName(ctx, func() (*v1alpha1.Destination, error) {
 		return kube.DefaultClient.OdigosClient.Destinations(ns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
 	})
 	if err != nil {
-		if createSecret {
+		if createSecretFields {
 			kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, destName, metav1.DeleteOptions{})
 		}
 		return nil, err
@@ -711,12 +720,22 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	}
 
 	// Separate data fields and secret fields
-	dataFields, secretFields := services.TransformFieldsToDataAndSecrets(destTypeConfig, fields)
+	dataFields, secretFields, secretFiles, envVars := services.TransformFieldsToDataSecretsEnvVars(destTypeConfig, fields)
 
 	// Retrieve the existing destination
 	dest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Get(ctx, id, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get destination: %v", err)
+	}
+
+	dest.Spec.EnvVars = map[string]string{}
+	for key := range dest.Spec.EnvVars {
+		if _, exists := envVars[key]; !exists {
+			delete(dest.Spec.EnvVars, key)
+		}
+	}
+	for key, val := range envVars {
+		dest.Spec.EnvVars[key] = val
 	}
 
 	// Handle secrets
@@ -737,6 +756,11 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 			return nil, fmt.Errorf("failed to create secret: %v", err)
 		}
 		dest.Spec.SecretRef = secretRef
+
+		for _, fieldName := range secretFiles {
+			dest.Spec.SecretFiles = append(dest.Spec.SecretFiles, v1alpha1.SecretFileConfig{Key: fieldName, MountPath: "/secrets"})
+		}
+
 		// Add owner reference to the secret
 		err = services.AddDestinationOwnerReferenceToSecret(ctx, ns, dest)
 		if err != nil {
@@ -759,6 +783,10 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 				fmt.Printf("Failed to rollback secret: %v\n", rollbackErr)
 			}
 			return nil, fmt.Errorf("failed to update secret: %v", err)
+		}
+
+		for _, fieldName := range secretFiles {
+			dest.Spec.SecretFiles = append(dest.Spec.SecretFiles, v1alpha1.SecretFileConfig{Key: fieldName, MountPath: "/secrets"})
 		}
 	}
 
