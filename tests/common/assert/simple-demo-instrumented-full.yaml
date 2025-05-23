@@ -44,8 +44,6 @@ spec:
         - value: frontend
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
         - value: 'k8s.pod.name=$(ODIGOS_POD_NAME),k8s.container.name=frontend,k8s.namespace.name=default,k8s.deployment.name=frontend'
-      (env[?name == 'JAVA_OPTS']):
-        - value: '-javaagent:/var/odigos/java/javaagent.jar'
       (env[?name == 'JAVA_TOOL_OPTIONS']):
         - value: '-javaagent:/var/odigos/java/javaagent.jar'
 status:
@@ -293,6 +291,12 @@ spec:
         - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
       (env[?name == 'PHP_INI_SCAN_DIR']):
         - value: ':/var/odigos/php/8.2'
+      (env[?name == 'OTEL_PHP_AUTOLOAD_ENABLED']):
+        - value: 'true'
+      (env[?name == 'OTEL_EXPORTER_OTLP_PROTOCOL']):
+        - value: 'http/protobuf'
+      (env[?name == 'OTEL_PROPAGATORS']):
+        - value: 'tracecontext,baggage'
     - name: nginx
 status:
   containerStatuses:

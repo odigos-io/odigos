@@ -97,7 +97,6 @@ helm repo add odigos https://odigos-io.github.io/odigos/
 ```shell
 helm repo update
 helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace
-kubectl label namespace odigos-system odigos.io/system-object="true"
 ```
 
 ## OpenShift Operator
