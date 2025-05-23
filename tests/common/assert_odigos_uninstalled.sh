@@ -110,6 +110,9 @@ if [ ! -z "$CONFIGMAPS_IN_NAMESPACE" ]; then
     exit 1
 fi
 
+# we have an exclusion here for the secrets containing the webhook certs
+# we should remove this exclusion once we improve our secret management in helm
+# the secrets should be regular helm resources and not hooks - which is why they are not removed currently
 SECRETS_IN_NAMESPACE=$(kubectl get secrets -n $NAMESPACE -o json | jq -r '
     .items[] |
     select(.metadata.name != "autoscaler-webhook-cert" and .metadata.name != "webhook-cert") |
