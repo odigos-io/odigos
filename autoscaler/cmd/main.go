@@ -168,6 +168,11 @@ func main() {
 			fmt.Sprintf("%s.%s.svc.cluster.local", k8sconsts.AutoScalerWebhookServiceName, env.GetCurrentNamespace()),
 		},
 		EnableReadinessCheck: true,
+
+		// marking the controller as the owner of the webhooks config updated fields.
+		// this avoid CI/CD systems overwriting the managed fields.
+		FieldOwner: k8sconsts.AutoScalerWebhookFieldOwner,
+
 		// these are the defaults, but we set them explicitly for clarity
 		CaCertDuration:         10 * 365 * 24 * time.Hour, // 10 years
 		ServerCertDuration:     1 * 365 * 24 * time.Hour,  // 1 year

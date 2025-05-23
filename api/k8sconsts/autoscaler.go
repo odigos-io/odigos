@@ -17,4 +17,5 @@ const (
 	AutoscalerWebhookSecretName           = "autoscaler-webhook-cert"
 	AutoscalerWebhookVolumeName           = "autoscaler-webhook-cert"
 	AutoScalerWebhookServiceName          = "odigos-autoscaler"
+	AutoScalerWebhookFieldOwner           = AutoScalerDeploymentName
 )

@@ -71,6 +71,10 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		},
 		EnableReadinessCheck: true,
 
+		// marking the controller as the owner of the webhooks config updated fields (caBundle)
+		// this helps to avoid CI/CD systems overwriting the controller set fields.
+		FieldOwner: k8sconsts.InstrumentorWebhookFieldOwner,
+
 		// we could set RequireLeaderElection to true here but that will make the readiness probe fail for non-leader
 		// instances (since the IsReady channel will not be closed in non-leader instances).
 
