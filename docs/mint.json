@@ -253,6 +253,7 @@
             "backends/elasticsearch",
             "backends/gigapipe",
             "backends/googlecloudmonitoring",
+            "backends/googlecloudotlp",
             "backends/googlecloudstorage",
             "backends/grafanacloudloki",
             "backends/grafanacloudprometheus",
