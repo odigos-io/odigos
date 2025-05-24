@@ -186,8 +186,9 @@
           "icon": "microchip",
           "pages": [
             "pipeline/rules/introduction",
-            "pipeline/rules/payloadcollection",
-            "pipeline/rules/codeattributes"
+            "pipeline/rules/codeattributes",
+            "pipeline/rules/headerscollection",
+            "pipeline/rules/payloadcollection"
           ]
         },
         {

@@ -16,15 +16,21 @@ import (
 )
 
 func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRuleType {
-	if rule.PayloadCollection != nil {
-		if rule.PayloadCollection.HTTPRequest != nil || rule.PayloadCollection.HTTPResponse != nil || rule.PayloadCollection.DbQuery != nil || rule.PayloadCollection.Messaging != nil {
-			return model.InstrumentationRuleTypePayloadCollection
-		}
-	}
-
 	if rule.CodeAttributes != nil {
 		if rule.CodeAttributes.Column != nil || rule.CodeAttributes.FilePath != nil || rule.CodeAttributes.Function != nil || rule.CodeAttributes.LineNumber != nil || rule.CodeAttributes.Namespace != nil || rule.CodeAttributes.Stacktrace != nil {
 			return model.InstrumentationRuleTypeCodeAttributes
+		}
+	}
+
+	if rule.HeadersCollection != nil {
+		if rule.HeadersCollection.HeaderKeys != nil {
+			return model.InstrumentationRuleTypeHeadersCollection
+		}
+	}
+
+	if rule.PayloadCollection != nil {
+		if rule.PayloadCollection.HTTPRequest != nil || rule.PayloadCollection.HTTPResponse != nil || rule.PayloadCollection.DbQuery != nil || rule.PayloadCollection.Messaging != nil {
+			return model.InstrumentationRuleTypePayloadCollection
 		}
 	}
 
@@ -55,8 +61,9 @@ func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule
 			ProfileName:              profileName,
 			Workloads:                convertWorkloads(r.Spec.Workloads),
 			InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
-			PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 			CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
+			HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
+			PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 		}
 		rule.Type = deriveTypeFromRule(rule)
 
@@ -86,6 +93,8 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		ProfileName:              profileName,
 		Workloads:                convertWorkloads(r.Spec.Workloads),
 		InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
+		CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
+		HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 	}
 	rule.Type = deriveTypeFromRule(rule)
@@ -114,6 +123,23 @@ func getPayloadCollectionInput(input model.InstrumentationRuleInput) *instrument
 	}
 
 	return payloadCollection
+}
+
+func getHeadersCollectionInput(input model.InstrumentationRuleInput) *instrumentationrules.HttpHeadersCollection {
+	if input.HeadersCollection == nil {
+		return nil
+	}
+
+	headersCollection := &instrumentationrules.HttpHeadersCollection{}
+
+	if input.HeadersCollection.HeaderKeys != nil {
+		headersCollection.HeaderKeys = make([]string, 0, len(input.HeadersCollection.HeaderKeys))
+		for _, key := range input.HeadersCollection.HeaderKeys {
+			headersCollection.HeaderKeys = append(headersCollection.HeaderKeys, *key)
+		}
+	}
+
+	return headersCollection
 }
 
 func getCodeAttributesInput(input model.InstrumentationRuleInput) *instrumentationrules.CodeAttributes {
@@ -215,8 +241,9 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		ProfileName:              profileName,
 		Workloads:                convertWorkloads(updatedRule.Spec.Workloads),
 		InstrumentationLibraries: convertInstrumentationLibraries(updatedRule.Spec.InstrumentationLibraries),
-		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
 		CodeAttributes:           (*model.CodeAttributes)(updatedRule.Spec.CodeAttributes),
+		HeadersCollection:        convertHeadersCollection(updatedRule.Spec.HeadersCollection),
+		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 
@@ -277,8 +304,9 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			Disabled:                 disabled,
 			Workloads:                workloads,
 			InstrumentationLibraries: instrumentationLibraries,
-			PayloadCollection:        getPayloadCollectionInput(input),
 			CodeAttributes:           getCodeAttributesInput(input),
+			HeadersCollection:        getHeadersCollectionInput(input),
+			PayloadCollection:        getPayloadCollectionInput(input),
 		},
 	}
 
@@ -298,8 +326,9 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		ProfileName:              "",   // New rules are not associated with a profile
 		Workloads:                convertWorkloads(createdRule.Spec.Workloads),
 		InstrumentationLibraries: convertInstrumentationLibraries(createdRule.Spec.InstrumentationLibraries),
-		PayloadCollection:        convertPayloadCollection(createdRule.Spec.PayloadCollection),
 		CodeAttributes:           (*model.CodeAttributes)(createdRule.Spec.CodeAttributes),
+		HeadersCollection:        convertHeadersCollection(createdRule.Spec.HeadersCollection),
+		PayloadCollection:        convertPayloadCollection(createdRule.Spec.PayloadCollection),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 
@@ -343,6 +372,21 @@ func convertInstrumentationLibraries(libraries *[]v1alpha1.InstrumentationLibrar
 		}
 	}
 	return gqlLibraries
+}
+
+func convertHeadersCollection(headers *instrumentationrules.HttpHeadersCollection) *model.HeadersCollection {
+	if headers == nil {
+		return nil
+	}
+
+	headerKeys := make([]*string, len(headers.HeaderKeys))
+	for i := range headers.HeaderKeys {
+		headerKeys[i] = &headers.HeaderKeys[i]
+	}
+
+	return &model.HeadersCollection{
+		HeaderKeys: headerKeys,
+	}
 }
 
 // Converts PayloadCollection to GraphQL-compatible format
