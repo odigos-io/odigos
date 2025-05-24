@@ -186,3 +186,34 @@ spec:
                 fi
                 sleep 5
               done
+
+    - name: Uninstall Odigos
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              helm uninstall odigos -n odigos-test
+
+    - name: Verify Odigos Uninstallation
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              for i in $(seq 1 10); do
+                if ../../common/assert_odigos_uninstalled.sh; then
+                  exit 0
+                fi
+                echo "Attempt $i: Odigos uninstallation verification failed, retrying in 5 seconds..."
+                sleep 5
+              done
+
+              echo "Failed to verify Odigos uninstallation after 12 attempts"
+              exit 1
+      catch:
+        - script:
+            content: |
+              echo "🔍 Listing all resources in namespace 'odigos-test'..."
+              kubectl get all -n odigos-test
+
+              echo "📝 Describing all resources in namespace 'odigos-test'..."
+              kubectl describe all -n odigos-test
