@@ -19127,9 +19127,9 @@ func (ec *executionContext) _SpanAttributeSamplerAction_details(ctx context.Cont
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.([]*model.AttributeFilters)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAttributeFilters2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐAttributeFiltersᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_SpanAttributeSamplerAction_details(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19139,7 +19139,17 @@ func (ec *executionContext) fieldContext_SpanAttributeSamplerAction_details(_ co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "serviceName":
+				return ec.fieldContext_AttributeFilters_serviceName(ctx, field)
+			case "attributeKey":
+				return ec.fieldContext_AttributeFilters_attributeKey(ctx, field)
+			case "fallbackSamplingRatio":
+				return ec.fieldContext_AttributeFilters_fallbackSamplingRatio(ctx, field)
+			case "condition":
+				return ec.fieldContext_AttributeFilters_condition(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AttributeFilters", field.Name)
 		},
 	}
 	return fc, nil
@@ -26892,6 +26902,60 @@ func (ec *executionContext) marshalNApiToken2ᚕᚖgithubᚗcomᚋodigosᚑioᚋ
 	wg.Wait()
 
 	return ret
+}
+
+func (ec *executionContext) marshalNAttributeFilters2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐAttributeFiltersᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.AttributeFilters) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAttributeFilters2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐAttributeFilters(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAttributeFilters2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐAttributeFilters(ctx context.Context, sel ast.SelectionSet, v *model.AttributeFilters) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AttributeFilters(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNAttributeFiltersCondition2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐAttributeFiltersConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.AttributeFiltersCondition) graphql.Marshaler {

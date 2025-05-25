@@ -564,7 +564,7 @@ type SpanAttributeSamplerAction implements Action {
   notes: String
   disable: Boolean!
   signals: [SignalType!]!
-  details: String!
+  details: [AttributeFilters!]!
 }
 
 input ActionInput {
