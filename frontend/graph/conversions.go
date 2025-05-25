@@ -9,9 +9,10 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	appsv1 "k8s.io/api/apps/v1"
 )
 
 func k8sKindToGql(k8sResourceKind string) model.K8sResourceKind {
@@ -162,7 +163,7 @@ func convertConditions(conditions []v1.Condition) []*model.Condition {
 				} else {
 					status = model.ConditionStatusSuccess
 				}
-				
+
 			case v1.ConditionFalse:
 				status = model.ConditionStatusError
 			}
