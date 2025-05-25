@@ -51,6 +51,14 @@ export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
         }));
         break;
 
+      case ActionType.ServiceNameSampler:
+        spec.servicesNameFilters = parsedSpec.services_name_filters?.map(({ service_name, sampling_ratio, fallback_sampling_ratio }) => ({
+          serviceName: service_name,
+          samplingRatio: sampling_ratio,
+          fallbackSamplingRatio: fallback_sampling_ratio,
+        }));
+        break;
+
       default:
         break;
     }
@@ -142,6 +150,17 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
             service_name: serviceName,
             http_route: httpRoute,
             minimum_latency_threshold: minimumLatencyThreshold,
+            fallback_sampling_ratio: fallbackSamplingRatio,
+          })) || [],
+      });
+      break;
+
+    case ActionType.ServiceNameSampler:
+      payload['details'] = JSON.stringify({
+        services_name_filters:
+          servicesNameFilters?.map(({ serviceName, samplingRatio, fallbackSamplingRatio }) => ({
+            service_name: serviceName,
+            sampling_ratio: samplingRatio,
             fallback_sampling_ratio: fallbackSamplingRatio,
           })) || [],
       });
