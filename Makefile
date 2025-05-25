@@ -2,8 +2,8 @@
 # Core variables
 # ──────────────────────────────────────────────
 # TODO: Use installed version, if not applicatble, use latest git tag
-# LATEST_GIT_TAG = $(shell git tag --list 'v*' --sort=-v:refname | head -n1 2>/dev/null)
-TAG ?= $(shell odigos version --cluster 2>/dev/null)
+LATEST_GIT_TAG = $(shell git tag --list 'v*' --sort=-v:refname | head -n1 2>/dev/null)
+TAG ?= $(shell odigos version --cluster 2>/dev/null || echo $LATEST_GIT_TAG)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
