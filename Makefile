@@ -33,26 +33,26 @@ BUILD_DIR  ?= .
 # ──────────────────────────────────────────────
 # Build / push helpers
 # ──────────────────────────────────────────────
-.PHONY: print-tag
-print-tag:
-	@echo $(TAG)
 define bake-load
-	@TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
-	docker buildx bake $(1) --load \
-	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',)
+	TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
+	docker buildx bake $(1) --load --no-cache \
+	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',) \
+	$(if $(LD_FLAGS),--set '*.args.LD_FLAGS=$(LD_FLAGS)',)
 endef
 
 define bake-push
 	@TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
 	docker buildx bake $(1) --push \
-	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',)
+	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',) \
+	$(if $(LD_FLAGS),--set '*.args.LD_FLAGS=$(LD_FLAGS)',)
 endef
 
 # Pattern rules for every service image
 build-%: FORCE ; $(call bake-load,$*)
 push-%: FORCE ; $(call bake-push,$*)
 
-FORCE:
+.PHONY: FORCE
+FORCE:;
 
 # Convenience groups matching the HCL
 .PHONY: build-images push-images build-images-rhel push-images-rhel build-cli build-cli-rhel
