@@ -225,6 +225,10 @@ type ComplexityRoot struct {
 		Categories func(childComplexity int) int
 	}
 
+	HeadersCollection struct {
+		HeaderKeys func(childComplexity int) int
+	}
+
 	HttpPayloadCollection struct {
 		DropPartialPayloads func(childComplexity int) int
 		MaxPayloadLength    func(childComplexity int) int
@@ -255,6 +259,7 @@ type ComplexityRoot struct {
 	InstrumentationRule struct {
 		CodeAttributes           func(childComplexity int) int
 		Disabled                 func(childComplexity int) int
+		HeadersCollection        func(childComplexity int) int
 		InstrumentationLibraries func(childComplexity int) int
 		Mutable                  func(childComplexity int) int
 		Notes                    func(childComplexity int) int
@@ -1370,6 +1375,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GetDestinationCategories.Categories(childComplexity), true
 
+	case "HeadersCollection.headerKeys":
+		if e.complexity.HeadersCollection.HeaderKeys == nil {
+			break
+		}
+
+		return e.complexity.HeadersCollection.HeaderKeys(childComplexity), true
+
 	case "HttpPayloadCollection.dropPartialPayloads":
 		if e.complexity.HttpPayloadCollection.DropPartialPayloads == nil {
 			break
@@ -1488,6 +1500,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationRule.Disabled(childComplexity), true
+
+	case "InstrumentationRule.headersCollection":
+		if e.complexity.InstrumentationRule.HeadersCollection == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.HeadersCollection(childComplexity), true
 
 	case "InstrumentationRule.instrumentationLibraries":
 		if e.complexity.InstrumentationRule.InstrumentationLibraries == nil {
@@ -2782,6 +2801,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputDestinationInput,
 		ec.unmarshalInputExportedSignalsInput,
 		ec.unmarshalInputFieldInput,
+		ec.unmarshalInputHeadersCollectionInput,
 		ec.unmarshalInputHttpPayloadCollectionInput,
 		ec.unmarshalInputInstrumentationLibraryGlobalIdInput,
 		ec.unmarshalInputInstrumentationRuleInput,
@@ -5596,10 +5616,12 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
-			case "payloadCollection":
-				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			case "codeAttributes":
 				return ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
+			case "headersCollection":
+				return ec.fieldContext_InstrumentationRule_headersCollection(ctx, field)
+			case "payloadCollection":
+				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -8912,6 +8934,47 @@ func (ec *executionContext) fieldContext_GetDestinationCategories_categories(_ c
 	return fc, nil
 }
 
+func (ec *executionContext) _HeadersCollection_headerKeys(ctx context.Context, field graphql.CollectedField, obj *model.HeadersCollection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadersCollection_headerKeys(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HeaderKeys, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadersCollection_headerKeys(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadersCollection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _HttpPayloadCollection_mimeTypes(ctx context.Context, field graphql.CollectedField, obj *model.HTTPPayloadCollection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_HttpPayloadCollection_mimeTypes(ctx, field)
 	if err != nil {
@@ -9990,57 +10053,6 @@ func (ec *executionContext) fieldContext_InstrumentationRule_instrumentationLibr
 	return fc, nil
 }
 
-func (ec *executionContext) _InstrumentationRule_payloadCollection(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PayloadCollection, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.PayloadCollection)
-	fc.Result = res
-	return ec.marshalOPayloadCollection2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPayloadCollection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentationRule_payloadCollection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentationRule",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "httpRequest":
-				return ec.fieldContext_PayloadCollection_httpRequest(ctx, field)
-			case "httpResponse":
-				return ec.fieldContext_PayloadCollection_httpResponse(ctx, field)
-			case "dbQuery":
-				return ec.fieldContext_PayloadCollection_dbQuery(ctx, field)
-			case "messaging":
-				return ec.fieldContext_PayloadCollection_messaging(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type PayloadCollection", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _InstrumentationRule_codeAttributes(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
 	if err != nil {
@@ -10091,6 +10103,102 @@ func (ec *executionContext) fieldContext_InstrumentationRule_codeAttributes(_ co
 				return ec.fieldContext_CodeAttributes_stacktrace(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CodeAttributes", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationRule_headersCollection(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_headersCollection(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HeadersCollection, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.HeadersCollection)
+	fc.Result = res
+	return ec.marshalOHeadersCollection2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadersCollection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_headersCollection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "headerKeys":
+				return ec.fieldContext_HeadersCollection_headerKeys(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type HeadersCollection", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationRule_payloadCollection(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PayloadCollection, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.PayloadCollection)
+	fc.Result = res
+	return ec.marshalOPayloadCollection2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPayloadCollection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_payloadCollection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "httpRequest":
+				return ec.fieldContext_PayloadCollection_httpRequest(ctx, field)
+			case "httpResponse":
+				return ec.fieldContext_PayloadCollection_httpResponse(ctx, field)
+			case "dbQuery":
+				return ec.fieldContext_PayloadCollection_dbQuery(ctx, field)
+			case "messaging":
+				return ec.fieldContext_PayloadCollection_messaging(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PayloadCollection", field.Name)
 		},
 	}
 	return fc, nil
@@ -12674,10 +12782,12 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
-			case "payloadCollection":
-				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			case "codeAttributes":
 				return ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
+			case "headersCollection":
+				return ec.fieldContext_InstrumentationRule_headersCollection(ctx, field)
+			case "payloadCollection":
+				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -12753,10 +12863,12 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
-			case "payloadCollection":
-				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			case "codeAttributes":
 				return ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
+			case "headersCollection":
+				return ec.fieldContext_InstrumentationRule_headersCollection(ctx, field)
+			case "payloadCollection":
+				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -20433,6 +20545,33 @@ func (ec *executionContext) unmarshalInputFieldInput(ctx context.Context, obj an
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputHeadersCollectionInput(ctx context.Context, obj any) (model.HeadersCollectionInput, error) {
+	var it model.HeadersCollectionInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"headerKeys"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "headerKeys":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("headerKeys"))
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HeaderKeys = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputHttpPayloadCollectionInput(ctx context.Context, obj any) (model.HTTPPayloadCollectionInput, error) {
 	var it model.HTTPPayloadCollectionInput
 	asMap := map[string]any{}
@@ -20522,7 +20661,7 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "instrumentationLibraries", "payloadCollection", "codeAttributes"}
+	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "instrumentationLibraries", "codeAttributes", "headersCollection", "payloadCollection"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -20564,13 +20703,6 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 				return it, err
 			}
 			it.InstrumentationLibraries = data
-		case "payloadCollection":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("payloadCollection"))
-			data, err := ec.unmarshalOPayloadCollectionInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPayloadCollectionInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.PayloadCollection = data
 		case "codeAttributes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("codeAttributes"))
 			data, err := ec.unmarshalOCodeAttributesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCodeAttributesInput(ctx, v)
@@ -20578,6 +20710,20 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 				return it, err
 			}
 			it.CodeAttributes = data
+		case "headersCollection":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("headersCollection"))
+			data, err := ec.unmarshalOHeadersCollectionInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadersCollectionInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HeadersCollection = data
+		case "payloadCollection":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("payloadCollection"))
+			data, err := ec.unmarshalOPayloadCollectionInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPayloadCollectionInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PayloadCollection = data
 		}
 	}
 
@@ -22461,6 +22607,42 @@ func (ec *executionContext) _GetDestinationCategories(ctx context.Context, sel a
 	return out
 }
 
+var headersCollectionImplementors = []string{"HeadersCollection"}
+
+func (ec *executionContext) _HeadersCollection(ctx context.Context, sel ast.SelectionSet, obj *model.HeadersCollection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, headersCollectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HeadersCollection")
+		case "headerKeys":
+			out.Values[i] = ec._HeadersCollection_headerKeys(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var httpPayloadCollectionImplementors = []string{"HttpPayloadCollection"}
 
 func (ec *executionContext) _HttpPayloadCollection(ctx context.Context, sel ast.SelectionSet, obj *model.HTTPPayloadCollection) graphql.Marshaler {
@@ -22692,10 +22874,12 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._InstrumentationRule_workloads(ctx, field, obj)
 		case "instrumentationLibraries":
 			out.Values[i] = ec._InstrumentationRule_instrumentationLibraries(ctx, field, obj)
-		case "payloadCollection":
-			out.Values[i] = ec._InstrumentationRule_payloadCollection(ctx, field, obj)
 		case "codeAttributes":
 			out.Values[i] = ec._InstrumentationRule_codeAttributes(ctx, field, obj)
+		case "headersCollection":
+			out.Values[i] = ec._InstrumentationRule_headersCollection(ctx, field, obj)
+		case "payloadCollection":
+			out.Values[i] = ec._InstrumentationRule_payloadCollection(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -27201,6 +27385,21 @@ func (ec *executionContext) marshalOGetDestinationCategories2ᚖgithubᚗcomᚋo
 		return graphql.Null
 	}
 	return ec._GetDestinationCategories(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOHeadersCollection2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadersCollection(ctx context.Context, sel ast.SelectionSet, v *model.HeadersCollection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._HeadersCollection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOHeadersCollectionInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadersCollectionInput(ctx context.Context, v any) (*model.HeadersCollectionInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputHeadersCollectionInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOHttpPayloadCollection2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHTTPPayloadCollection(ctx context.Context, sel ast.SelectionSet, v *model.HTTPPayloadCollection) graphql.Marshaler {
