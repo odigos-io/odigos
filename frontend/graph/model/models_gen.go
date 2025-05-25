@@ -286,6 +286,14 @@ type GetDestinationCategories struct {
 	Categories []*DestinationsCategory `json:"categories"`
 }
 
+type HeadersCollection struct {
+	HeaderKeys []*string `json:"headerKeys,omitempty"`
+}
+
+type HeadersCollectionInput struct {
+	HeaderKeys []*string `json:"headerKeys,omitempty"`
+}
+
 type HTTPPayloadCollection struct {
 	MimeTypes           []*string `json:"mimeTypes,omitempty"`
 	MaxPayloadLength    *int      `json:"maxPayloadLength,omitempty"`
@@ -335,8 +343,9 @@ type InstrumentationRule struct {
 	ProfileName              string                            `json:"profileName"`
 	Workloads                []*PodWorkload                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalID `json:"instrumentationLibraries,omitempty"`
-	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
 	CodeAttributes           *CodeAttributes                   `json:"codeAttributes,omitempty"`
+	HeadersCollection        *HeadersCollection                `json:"headersCollection,omitempty"`
+	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
 }
 
 type InstrumentationRuleInput struct {
@@ -345,8 +354,9 @@ type InstrumentationRuleInput struct {
 	Disabled                 *bool                                  `json:"disabled,omitempty"`
 	Workloads                []*PodWorkloadInput                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalIDInput `json:"instrumentationLibraries,omitempty"`
-	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
 	CodeAttributes           *CodeAttributesInput                   `json:"codeAttributes,omitempty"`
+	HeadersCollection        *HeadersCollectionInput                `json:"headersCollection,omitempty"`
+	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
 }
 
 type InstrumentationSourcesAnalyze struct {
@@ -855,20 +865,22 @@ func (e InstallationStatus) MarshalGQL(w io.Writer) {
 type InstrumentationRuleType string
 
 const (
-	InstrumentationRuleTypePayloadCollection InstrumentationRuleType = "PayloadCollection"
 	InstrumentationRuleTypeCodeAttributes    InstrumentationRuleType = "CodeAttributes"
+	InstrumentationRuleTypeHeadersCollection InstrumentationRuleType = "HeadersCollection"
+	InstrumentationRuleTypePayloadCollection InstrumentationRuleType = "PayloadCollection"
 	InstrumentationRuleTypeUnknownType       InstrumentationRuleType = "UnknownType"
 )
 
 var AllInstrumentationRuleType = []InstrumentationRuleType{
-	InstrumentationRuleTypePayloadCollection,
 	InstrumentationRuleTypeCodeAttributes,
+	InstrumentationRuleTypeHeadersCollection,
+	InstrumentationRuleTypePayloadCollection,
 	InstrumentationRuleTypeUnknownType,
 }
 
 func (e InstrumentationRuleType) IsValid() bool {
 	switch e {
-	case InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeUnknownType:
+	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeUnknownType:
 		return true
 	}
 	return false
