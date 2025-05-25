@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: odigos-instrumentor
+    odigos.io/system-object: 'true'
   name: odigos-instrumentor
   namespace: {{ .Release.Namespace }}
 spec:

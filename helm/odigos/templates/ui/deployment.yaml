@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: odigos-ui
+    odigos.io/system-object: 'true'
   name: odigos-ui
   namespace: {{ .Release.Namespace }}
 spec:

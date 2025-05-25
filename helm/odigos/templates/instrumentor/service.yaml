@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: odigos-instrumentor
   namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: 'true'
 spec:
   ports:
     - name: webhook-server

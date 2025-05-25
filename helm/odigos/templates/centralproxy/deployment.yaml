@@ -7,6 +7,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: central-proxy
+    odigos.io/system-object: 'true'
 spec:
   replicas: 1
   selector:

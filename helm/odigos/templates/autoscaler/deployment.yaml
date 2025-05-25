@@ -4,6 +4,7 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: odigos-autoscaler
+    odigos.io/system-object: 'true'
   name: odigos-autoscaler
   namespace: {{ .Release.Namespace }}
 spec:

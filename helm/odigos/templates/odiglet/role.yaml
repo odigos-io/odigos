@@ -3,6 +3,8 @@ kind: Role
 metadata:
   name: odiglet
   namespace: '{{ .Release.Namespace }}'
+  labels:
+    odigos.io/system-object: 'true'
 rules:
   - apiGroups:
       - odigos.io

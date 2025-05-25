@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: odiglet
+  labels:
+    odigos.io/system-object: 'true'
 subjects:
   - kind: ServiceAccount
     name: odiglet
@@ -16,6 +18,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: system:openshift:scc:anyuid:{{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: 'true'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

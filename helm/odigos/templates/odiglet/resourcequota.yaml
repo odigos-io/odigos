@@ -4,6 +4,8 @@ kind: ResourceQuota
 metadata:
   name: odigos-quota
   namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: 'true'
 spec:
   hard:
     pods: "10k"

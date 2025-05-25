@@ -3,6 +3,8 @@ kind: RoleBinding
 metadata:
   name: cleanup-rolebinding
   namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: 'true'
 subjects:
 - kind: ServiceAccount
   name: cleanup-sa

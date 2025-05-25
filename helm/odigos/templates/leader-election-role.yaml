@@ -3,6 +3,8 @@ kind: Role
 metadata:
   name: odigos-leader-election-role
   namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: 'true'
 rules:
 - apiGroups:
   - ""
