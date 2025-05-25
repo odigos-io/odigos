@@ -35,7 +35,7 @@ BUILD_DIR  ?= .
 # ──────────────────────────────────────────────
 define bake-load
 	TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) \
-	docker buildx bake $(1) --load --no-cache \
+	docker buildx bake $(1) --load \
 	$(if $(PLATFORMS),--set '*.platform=$(PLATFORMS)',) \
 	$(if $(LD_FLAGS),--set '*.args.LD_FLAGS=$(LD_FLAGS)',)
 endef
@@ -180,86 +180,6 @@ debug-odiglet:
 .PHONY: build-operator-index
 build-operator-index:
 	opm index add --bundles $(ORG)/odigos-bundle:$(TAG) --tag $(ORG)/odigos-index:$(TAG) --container-tool=docker
-
-<<<<<<< HEAD
-push-image/%:
-	docker buildx build --platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
-	--build-arg SERVICE_NAME="$*" \
-	--build-arg VERSION=$(TAG) \
-	--build-arg RELEASE=$(TAG) \
-	--build-arg SUMMARY="$(SUMMARY)" \
-	--build-arg DESCRIPTION="$(DESCRIPTION)"
-
-.PHONY: push-operator
-push-operator:
-	$(MAKE) push-image/operator DOCKERFILE=operator/$(DOCKERFILE) SUMMARY="Odigos Operator" DESCRIPTION="Kubernetes Operator for Odigos installs Odigos" TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-odiglet
-push-odiglet:
-	$(MAKE) push-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-autoscaler
-push-autoscaler:
-	$(MAKE) push-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-instrumentor
-push-instrumentor:
-	$(MAKE) push-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-scheduler
-push-scheduler:
-	$(MAKE) push-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-collector
-push-collector:
-	$(MAKE) push-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-ui
-push-ui:
-	$(MAKE) push-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-images
-push-images:
-	make push-autoscaler push-scheduler push-odiglet push-instrumentor push-collector push-ui TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
-
-.PHONY: push-images-rhel
-push-images-rhel:
-	$(MAKE) push-images IMG_SUFFIX=-ubi9 DOCKERFILE=Dockerfile.rhel TAG=$(TAG) ORG=$(ORG)
-
-load-to-kind-%:
-	kind load docker-image $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG)
-
-.PHONY: load-to-kind
-load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
-
-.PHONY: restart-ui
-restart-ui:
-	-kubectl rollout restart deployment odigos-ui -n odigos-system
-
-.PHONY: restart-odiglet
-restart-odiglet:
-	-kubectl rollout restart daemonset odiglet -n odigos-system
-
-.PHONY: restart-autoscaler
-restart-autoscaler:
-	-kubectl rollout restart deployment odigos-autoscaler -n odigos-system
-
-.PHONY: restart-instrumentor
-restart-instrumentor:
-	-kubectl rollout restart deployment odigos-instrumentor -n odigos-system
-
-.PHONY: restart-scheduler
-restart-scheduler:
-	-kubectl rollout restart deployment odigos-scheduler -n odigos-system
-
-.PHONY: restart-collector
-restart-collector:
-	-kubectl rollout restart deployment odigos-gateway -n odigos-system
-	# DaemonSets don't directly support the rollout restart command in the same way Deployments do. However, you can achieve the same result by updating an environment variable or any other field in the DaemonSet's pod template, triggering a rolling update of the pods managed by the DaemonSet
-	-kubectl -n odigos-system patch daemonset odigos-data-collection -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
-=======
->>>>>>> 1908cb4f (Makefile cleanup and refactor)
 
 # ──────────────────────────────────────────────
 # Deploy helpers
