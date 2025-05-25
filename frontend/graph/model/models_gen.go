@@ -61,6 +61,25 @@ type APIToken struct {
 	ExpiresAt int    `json:"expiresAt"`
 }
 
+type AttributeFilters struct {
+	ServiceName           string                       `json:"serviceName"`
+	AttributeKey          string                       `json:"attributeKey"`
+	FallbackSamplingRatio float64                      `json:"fallbackSamplingRatio"`
+	Condition             []*AttributeFiltersCondition `json:"condition"`
+}
+
+type AttributeFiltersCondition struct {
+	StringCondition  *StringCondition  `json:"stringCondition,omitempty"`
+	NumberCondition  *NumberCondition  `json:"numberCondition,omitempty"`
+	BooleanCondition *BooleanCondition `json:"booleanCondition,omitempty"`
+	JSONCondition    *JSONCondition    `json:"jsonCondition,omitempty"`
+}
+
+type BooleanCondition struct {
+	Operation     BooleanOperation `json:"operation"`
+	ExpectedValue *string          `json:"expectedValue,omitempty"`
+}
+
 type ClusterCollectorAnalyze struct {
 	Enabled              *EntityProperty `json:"enabled"`
 	CollectorGroup       *EntityProperty `json:"collectorGroup"`
@@ -366,6 +385,12 @@ type InstrumentationSourcesAnalyze struct {
 	InstrumentedText *EntityProperty `json:"instrumentedText,omitempty"`
 }
 
+type JSONCondition struct {
+	Operation     JSONOperation `json:"operation"`
+	ExpectedValue *string       `json:"expectedValue,omitempty"`
+	JSONPath      *string       `json:"jsonPath,omitempty"`
+}
+
 type K8sActualNamespace struct {
 	Name     string             `json:"name"`
 	Selected bool               `json:"selected"`
@@ -499,6 +524,11 @@ type NodeCollectorAnalyze struct {
 	CurrentNodes   *EntityProperty `json:"currentNodes,omitempty"`
 	UpdatedNodes   *EntityProperty `json:"updatedNodes,omitempty"`
 	AvailableNodes *EntityProperty `json:"availableNodes,omitempty"`
+}
+
+type NumberCondition struct {
+	Operation     NumberOperation `json:"operation"`
+	ExpectedValue *string         `json:"expectedValue,omitempty"`
 }
 
 type ObservabilitySignalSupport struct {
@@ -719,6 +749,38 @@ type SourceContainer struct {
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
 }
 
+type SpanAttributeSamplerAction struct {
+	ID      string       `json:"id"`
+	Type    string       `json:"type"`
+	Name    *string      `json:"name,omitempty"`
+	Notes   *string      `json:"notes,omitempty"`
+	Disable bool         `json:"disable"`
+	Signals []SignalType `json:"signals"`
+	Details string       `json:"details"`
+}
+
+func (SpanAttributeSamplerAction) IsAction()              {}
+func (this SpanAttributeSamplerAction) GetID() string     { return this.ID }
+func (this SpanAttributeSamplerAction) GetType() string   { return this.Type }
+func (this SpanAttributeSamplerAction) GetName() *string  { return this.Name }
+func (this SpanAttributeSamplerAction) GetNotes() *string { return this.Notes }
+func (this SpanAttributeSamplerAction) GetDisable() bool  { return this.Disable }
+func (this SpanAttributeSamplerAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+
+type StringCondition struct {
+	Operation     StringOperation `json:"operation"`
+	ExpectedValue *string         `json:"expectedValue,omitempty"`
+}
+
 type SupportedSignals struct {
 	Traces  *ObservabilitySignalSupport `json:"traces"`
 	Metrics *ObservabilitySignalSupport `json:"metrics"`
@@ -731,6 +793,47 @@ type TestConnectionResponse struct {
 	DestinationType *string `json:"destinationType,omitempty"`
 	Message         *string `json:"message,omitempty"`
 	Reason          *string `json:"reason,omitempty"`
+}
+
+type BooleanOperation string
+
+const (
+	BooleanOperationExists BooleanOperation = "exists"
+	BooleanOperationEquals BooleanOperation = "equals"
+)
+
+var AllBooleanOperation = []BooleanOperation{
+	BooleanOperationExists,
+	BooleanOperationEquals,
+}
+
+func (e BooleanOperation) IsValid() bool {
+	switch e {
+	case BooleanOperationExists, BooleanOperationEquals:
+		return true
+	}
+	return false
+}
+
+func (e BooleanOperation) String() string {
+	return string(e)
+}
+
+func (e *BooleanOperation) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = BooleanOperation(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid BooleanOperation", str)
+	}
+	return nil
+}
+
+func (e BooleanOperation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type ComputePlatformType string
@@ -907,6 +1010,59 @@ func (e InstrumentationRuleType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type JSONOperation string
+
+const (
+	JSONOperationExists         JSONOperation = "exists"
+	JSONOperationEquals         JSONOperation = "equals"
+	JSONOperationNotEquals      JSONOperation = "not_equals"
+	JSONOperationIsValidJSON    JSONOperation = "is_valid_json"
+	JSONOperationIsInvalidJSON  JSONOperation = "is_invalid_json"
+	JSONOperationJsonpathExists JSONOperation = "jsonpath_exists"
+	JSONOperationKeyEquals      JSONOperation = "key_equals"
+	JSONOperationKeyNotEquals   JSONOperation = "key_not_equals"
+)
+
+var AllJSONOperation = []JSONOperation{
+	JSONOperationExists,
+	JSONOperationEquals,
+	JSONOperationNotEquals,
+	JSONOperationIsValidJSON,
+	JSONOperationIsInvalidJSON,
+	JSONOperationJsonpathExists,
+	JSONOperationKeyEquals,
+	JSONOperationKeyNotEquals,
+}
+
+func (e JSONOperation) IsValid() bool {
+	switch e {
+	case JSONOperationExists, JSONOperationEquals, JSONOperationNotEquals, JSONOperationIsValidJSON, JSONOperationIsInvalidJSON, JSONOperationJsonpathExists, JSONOperationKeyEquals, JSONOperationKeyNotEquals:
+		return true
+	}
+	return false
+}
+
+func (e JSONOperation) String() string {
+	return string(e)
+}
+
+func (e *JSONOperation) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = JSONOperation(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid JsonOperation", str)
+	}
+	return nil
+}
+
+func (e JSONOperation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type K8sResourceKind string
 
 const (
@@ -947,6 +1103,57 @@ func (e *K8sResourceKind) UnmarshalGQL(v any) error {
 }
 
 func (e K8sResourceKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type NumberOperation string
+
+const (
+	NumberOperationExists             NumberOperation = "exists"
+	NumberOperationEquals             NumberOperation = "equals"
+	NumberOperationNotEquals          NumberOperation = "not_equals"
+	NumberOperationGreaterThan        NumberOperation = "greater_than"
+	NumberOperationLessThan           NumberOperation = "less_than"
+	NumberOperationGreaterThanOrEqual NumberOperation = "greater_than_or_equal"
+	NumberOperationLessThanOrEqual    NumberOperation = "less_than_or_equal"
+)
+
+var AllNumberOperation = []NumberOperation{
+	NumberOperationExists,
+	NumberOperationEquals,
+	NumberOperationNotEquals,
+	NumberOperationGreaterThan,
+	NumberOperationLessThan,
+	NumberOperationGreaterThanOrEqual,
+	NumberOperationLessThanOrEqual,
+}
+
+func (e NumberOperation) IsValid() bool {
+	switch e {
+	case NumberOperationExists, NumberOperationEquals, NumberOperationNotEquals, NumberOperationGreaterThan, NumberOperationLessThan, NumberOperationGreaterThanOrEqual, NumberOperationLessThanOrEqual:
+		return true
+	}
+	return false
+}
+
+func (e NumberOperation) String() string {
+	return string(e)
+}
+
+func (e *NumberOperation) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = NumberOperation(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid NumberOperation", str)
+	}
+	return nil
+}
+
+func (e NumberOperation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -1086,6 +1293,55 @@ func (e *SpanKind) UnmarshalGQL(v any) error {
 }
 
 func (e SpanKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type StringOperation string
+
+const (
+	StringOperationExists      StringOperation = "exists"
+	StringOperationEquals      StringOperation = "equals"
+	StringOperationNotEquals   StringOperation = "not_equals"
+	StringOperationContains    StringOperation = "contains"
+	StringOperationNotContains StringOperation = "not_contains"
+	StringOperationRegex       StringOperation = "regex"
+)
+
+var AllStringOperation = []StringOperation{
+	StringOperationExists,
+	StringOperationEquals,
+	StringOperationNotEquals,
+	StringOperationContains,
+	StringOperationNotContains,
+	StringOperationRegex,
+}
+
+func (e StringOperation) IsValid() bool {
+	switch e {
+	case StringOperationExists, StringOperationEquals, StringOperationNotEquals, StringOperationContains, StringOperationNotContains, StringOperationRegex:
+		return true
+	}
+	return false
+}
+
+func (e StringOperation) String() string {
+	return string(e)
+}
+
+func (e *StringOperation) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = StringOperation(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid StringOperation", str)
+	}
+	return nil
+}
+
+func (e StringOperation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

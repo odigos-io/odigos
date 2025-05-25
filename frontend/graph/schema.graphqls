@@ -493,6 +493,80 @@ type RenameAttributeAction implements Action {
   details: String!
 }
 
+enum StringOperation {
+  exists
+  equals
+  not_equals
+  contains
+  not_contains
+  regex
+}
+enum NumberOperation {
+  exists
+  equals
+  not_equals
+  greater_than
+  less_than
+  greater_than_or_equal
+  less_than_or_equal
+}
+enum BooleanOperation {
+  exists
+  equals
+}
+enum JsonOperation {
+  exists
+  equals
+  not_equals
+  is_valid_json
+  is_invalid_json
+  jsonpath_exists
+  key_equals
+  key_not_equals
+}
+
+type StringCondition {
+  operation: StringOperation!
+  expectedValue: String
+}
+type NumberCondition {
+  operation: NumberOperation!
+  expectedValue: String
+}
+type BooleanCondition {
+  operation: BooleanOperation!
+  expectedValue: String
+}
+type JsonCondition {
+  operation: JsonOperation!
+  expectedValue: String
+  jsonPath: String
+}
+
+type AttributeFiltersCondition {
+  stringCondition: StringCondition
+  numberCondition: NumberCondition
+  booleanCondition: BooleanCondition
+  jsonCondition: JsonCondition
+}
+
+type AttributeFilters {
+  serviceName: String!
+  attributeKey: String!
+  fallbackSamplingRatio: Float!
+  condition: [AttributeFiltersCondition!]!
+}
+
+type SpanAttributeSamplerAction implements Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: String!
+}
+
 input ActionInput {
   type: String!
   name: String
