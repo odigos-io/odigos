@@ -56,7 +56,6 @@ jobs:
           name: odigos-images
           path: |
             odigos-images.tar
-            cli-image.tar
 
   kubernetes-test:
     needs:
@@ -120,7 +119,6 @@ jobs:
           name: odigos-images
       - run: |
           docker load -i odigos-images.tar
-          docker load -i cli-image.tar
           TAG=e2e-test make load-to-kind
 
       - name: Download CLI binary
