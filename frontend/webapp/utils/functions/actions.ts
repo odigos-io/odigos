@@ -96,6 +96,7 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
     fallbackSamplingRatio,
     samplingPercentage,
     endpointsFilters,
+    servicesNameFilters,
   } = action;
 
   const payload: ActionInput = {
