@@ -44,8 +44,6 @@ spec:
         - value: frontend
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
         - value: 'k8s.pod.name=$(ODIGOS_POD_NAME),k8s.container.name=frontend,k8s.namespace.name=default,k8s.deployment.name=frontend'
-      (env[?name == 'JAVA_OPTS']):
-        - value: '-javaagent:/var/odigos/java/javaagent.jar'
       (env[?name == 'JAVA_TOOL_OPTIONS']):
         - value: '-javaagent:/var/odigos/java/javaagent.jar'
 status:

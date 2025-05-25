@@ -125,9 +125,6 @@ data:
         {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path' and 'k8s-virtual-device'." }}
       {{- end }}
     {{- end }}
-    {{- if .Values.avoidInjectingJavaOptsEnvVar }}
-    avoidInjectingJavaOptsEnvVar: {{ .Values.avoidInjectingJavaOptsEnvVar }}
-    {{- end }}
     {{- $envMethod := .Values.instrumentor.agentEnvVarsInjectionMethod }}
     {{- if and $envMethod (not (has $envMethod (list "loader" "pod-manifest" "loader-fallback-to-pod-manifest"))) }}
     {{- fail "Error: Invalid agentEnvVarsInjectionMethod. Supported values are 'loader', 'pod-manifest', and 'loader-fallback-to-pod-manifest'." }}
