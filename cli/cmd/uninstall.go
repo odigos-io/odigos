@@ -21,7 +21,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"go.uber.org/multierr"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -76,12 +75,12 @@ and rollback any metadata changes made to your objects.`,
 
 			// The CLI is running in Kubernetes via a Helm chart [pre-delete hook] to clean up Odigos resources.
 			// Deleting the namespace during uninstallation will cause Helm to fail due to the loss of the release state.
-			if !k8sutils.IsRunningInKubernetes() {
-				createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
-					client, ns, k8sconsts.OdigosSystemLabelKey, uninstallNamespace)
+			// if !k8sutils.IsRunningInKubernetes() {
+			// 	createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
+			// 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallNamespace)
 
-				waitForNamespaceDeletion(ctx, client, ns)
-			}
+			// 	waitForNamespaceDeletion(ctx, client, ns)
+			// }
 
 		} else {
 			fmt.Println("Odigos is not installed in any namespace. cleaning up any other Odigos resources that might be left in the cluster...")
@@ -630,6 +629,38 @@ func uninstallRBAC(ctx context.Context, client *kube.Client, ns, _ string) error
 
 	for _, i := range list2.Items {
 		err = client.RbacV1().ClusterRoleBindings().Delete(ctx, i.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	list3, err := client.RbacV1().Roles(ns).List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: labels.OdigosSystem,
+		}),
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, i := range list3.Items {
+		err = client.RbacV1().Roles(ns).Delete(ctx, i.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	list4, err := client.RbacV1().RoleBindings(ns).List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: labels.OdigosSystem,
+		}),
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, i := range list4.Items {
+		err = client.RbacV1().RoleBindings(ns).Delete(ctx, i.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
