@@ -531,11 +531,11 @@ type StringCondition {
 }
 type NumberCondition {
   operation: NumberOperation!
-  expectedValue: String
+  expectedValue: Float!
 }
 type BooleanCondition {
   operation: BooleanOperation!
-  expectedValue: String
+  expectedValue: Boolean!
 }
 type JsonCondition {
   operation: JsonOperation!
@@ -554,7 +554,7 @@ type AttributeFilters {
   serviceName: String!
   attributeKey: String!
   fallbackSamplingRatio: Float!
-  condition: [AttributeFiltersCondition!]!
+  condition: AttributeFiltersCondition!
 }
 
 type SpanAttributeSamplerAction implements Action {

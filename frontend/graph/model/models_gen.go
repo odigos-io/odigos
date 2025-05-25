@@ -62,10 +62,10 @@ type APIToken struct {
 }
 
 type AttributeFilters struct {
-	ServiceName           string                       `json:"serviceName"`
-	AttributeKey          string                       `json:"attributeKey"`
-	FallbackSamplingRatio float64                      `json:"fallbackSamplingRatio"`
-	Condition             []*AttributeFiltersCondition `json:"condition"`
+	ServiceName           string                     `json:"serviceName"`
+	AttributeKey          string                     `json:"attributeKey"`
+	FallbackSamplingRatio float64                    `json:"fallbackSamplingRatio"`
+	Condition             *AttributeFiltersCondition `json:"condition"`
 }
 
 type AttributeFiltersCondition struct {
@@ -77,7 +77,7 @@ type AttributeFiltersCondition struct {
 
 type BooleanCondition struct {
 	Operation     BooleanOperation `json:"operation"`
-	ExpectedValue *string          `json:"expectedValue,omitempty"`
+	ExpectedValue bool             `json:"expectedValue"`
 }
 
 type ClusterCollectorAnalyze struct {
@@ -528,7 +528,7 @@ type NodeCollectorAnalyze struct {
 
 type NumberCondition struct {
 	Operation     NumberOperation `json:"operation"`
-	ExpectedValue *string         `json:"expectedValue,omitempty"`
+	ExpectedValue float64         `json:"expectedValue"`
 }
 
 type ObservabilitySignalSupport struct {
