@@ -54,9 +54,14 @@ spec:
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          periodSeconds: 10
         name: manager
         volumeMounts:
-          - name: autoscaler-webhook-cert
+          - name: autoscaler-webhooks-cert
             mountPath: /tmp/k8s-webhook-server/serving-certs
             readOnly: true
         resources:
@@ -72,9 +77,9 @@ spec:
         runAsNonRoot: true
       serviceAccountName: odigos-autoscaler
       volumes:
-        - name: autoscaler-webhook-cert
+        - name: autoscaler-webhooks-cert
           secret:
-            secretName: autoscaler-webhook-cert
+            secretName: autoscaler-webhooks-cert
             defaultMode: 420
       terminationGracePeriodSeconds: 10
 {{- if .Values.imagePullSecrets }}
