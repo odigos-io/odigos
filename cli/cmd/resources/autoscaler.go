@@ -89,6 +89,12 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				ResourceNames: []string{k8sconsts.AutoscalerWebhookSecretName},
 				Verbs:         []string{"update"},
 			},
+			{ // Needed to migrate away from the old secret
+				APIGroups:     []string{""},
+				Resources:     []string{"secrets"},
+				ResourceNames: []string{k8sconsts.DeprecatedAutoscalerWebhookSecretName},
+				Verbs:         []string{"delete"},
+			},
 			{ // Needed to sync the gateway-collector configuration
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"destinations"},
@@ -472,10 +478,6 @@ func NewAutoscalerTLSSecret(ns string) *corev1.Secret {
 				"app.kubernetes.io/component":  "certificate",
 				"app.kubernetes.io/created-by": "autoscaler",
 				"app.kubernetes.io/part-of":    "odigos",
-			},
-			Annotations: map[string]string{
-				"helm.sh/hook":               "pre-install,pre-upgrade",
-				"helm.sh/hook-delete-policy": "before-hook-creation",
 			},
 		},
 	}

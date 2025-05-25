@@ -96,7 +96,7 @@ webhooks:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: webhook-cert
+  name: instrumentor-webhooks-cert
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: instrumentor-cert
@@ -104,7 +104,5 @@ metadata:
     app.kubernetes.io/component: certificate
     app.kubernetes.io/created-by: instrumentor
     app.kubernetes.io/part-of: odigos
-  annotations:
-    "helm.sh/hook": "pre-install,pre-upgrade"
-    "helm.sh/hook-delete-policy": "before-hook-creation"
+    odigos.io/system-object: "true"
 # the actual certificate will be populated by the controller

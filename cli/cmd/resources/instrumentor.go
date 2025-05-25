@@ -20,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-
 func NewInstrumentorServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -80,11 +79,17 @@ func NewInstrumentorRole(ns string) *rbacv1.Role {
 				Resources: []string{"secrets"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
+			{ // used by cert-controller to rotate the webhook certificate
 				APIGroups:     []string{""},
 				Resources:     []string{"secrets"},
 				ResourceNames: []string{k8sconsts.InstrumentorWebhookSecretName},
 				Verbs:         []string{"update"},
+			},
+			{ // Used to delete the deprecated webhook secret
+				APIGroups:     []string{""},
+				Resources:     []string{"secrets"},
+				ResourceNames: []string{k8sconsts.DeprecatedInstrumentorWebhookSecretName},
+				Verbs:         []string{"delete"},
 			},
 			{
 				APIGroups: []string{"odigos.io"},
@@ -472,10 +477,6 @@ func NewInstrumentorTLSSecret(ns string) *corev1.Secret {
 				"app.kubernetes.io/component":  "certificate",
 				"app.kubernetes.io/created-by": "instrumentor",
 				"app.kubernetes.io/part-of":    "odigos",
-			},
-			Annotations: map[string]string{
-				"helm.sh/hook":               "pre-install,pre-upgrade",
-				"helm.sh/hook-delete-policy": "before-hook-creation",
 			},
 		},
 	}

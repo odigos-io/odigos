@@ -139,6 +139,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 					// all instrumentation configs are managed by this controller
 					// and should be pulled into the cache
 				},
+				&corev1.Secret{}: {
+					Field: nsSelector,
+				},
 			},
 		},
 	}

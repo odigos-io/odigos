@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
@@ -132,6 +133,12 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
+	// remove the deprecated webhook secret if it exists
+	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: logger, Secret: types.NamespacedName{
+		Namespace: env.GetCurrentNamespace(),
+		Name:      k8sconsts.DeprecatedAutoscalerWebhookSecretName,
+	}})
 
 	collectorImage := defaultCollectorImage
 	if collectorImageEnv, ok := os.LookupEnv("ODIGOS_COLLECTOR_IMAGE"); ok {
