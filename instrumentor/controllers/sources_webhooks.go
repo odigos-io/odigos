@@ -23,6 +23,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -41,6 +42,7 @@ type SourcesDefaulter struct {
 }
 
 var _ webhook.CustomDefaulter = &SourcesDefaulter{}
+var defaultDataStreamLabel = k8sconsts.SourceGroupLabelPrefix + consts.DefaultDataStream
 
 func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	source, ok := obj.(*v1alpha1.Source)
@@ -60,6 +62,9 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 	}
 	if _, ok := source.Labels[k8sconsts.WorkloadKindLabel]; !ok {
 		source.Labels[k8sconsts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
+	}
+	if !doesSourceHaveDataStreamLabel(source) {
+		source.Labels[defaultDataStreamLabel] = "true"
 	}
 
 	// Remove old split finalizers
@@ -196,7 +201,7 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("labels"),
 			source.Labels[k8sconsts.WorkloadNameLabel],
-			"odigos.io/workload-name must match spec.workload.name",
+			fmt.Sprintf("%s must match spec.workload.name", k8sconsts.WorkloadNameLabel),
 		))
 	}
 
@@ -204,7 +209,7 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("labels"),
 			source.Labels[k8sconsts.WorkloadNamespaceLabel],
-			"odigos.io/workload-namespace must match spec.workload.namespace",
+			fmt.Sprintf("%s must match spec.workload.namespace", k8sconsts.WorkloadNamespaceLabel),
 		))
 	}
 
@@ -212,7 +217,15 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("labels"),
 			source.Labels[k8sconsts.WorkloadKindLabel],
-			"odigos.io/workload-kind must match spec.workload.kind",
+			fmt.Sprintf("%s must match spec.workload.kind", k8sconsts.WorkloadKindLabel),
+		))
+	}
+
+	if !doesSourceHaveDataStreamLabel(source) {
+		allErrs = append(allErrs, field.Invalid(
+			field.NewPath("metadata").Child("labels"),
+			source.Labels[defaultDataStreamLabel],
+			fmt.Sprintf("Source must have at least one %s* label to indicate a data stream group", k8sconsts.SourceGroupLabelPrefix),
 		))
 	}
 
@@ -288,4 +301,13 @@ func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source 
 	}
 
 	return nil
+}
+
+func doesSourceHaveDataStreamLabel(source *v1alpha1.Source) bool {
+	for key := range source.Labels {
+		if strings.HasPrefix(key, k8sconsts.SourceGroupLabelPrefix) {
+			return true
+		}
+	}
+	return false
 }
