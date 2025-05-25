@@ -15,6 +15,7 @@ icon: "webhook"
 <Warning>
   Before enabling **headers collection**, please note the following:
   - The support for headers collection varies between instrumentation libraries and languages.
+  - HTTP headers might contain PII data (like cookies or API keys), thus it is recommended to review each requested header before configuring it to avoid sensitive information.
 </Warning>
 
 ## Configuration Options
@@ -23,11 +24,13 @@ icon: "webhook"
   <Accordion title="headerKeys">
     **headerKeys** `string[]` : Limit payload collection to specific header keys.
     - This field is *optional*
+    - If not specified, no headers will be collected.
+    - If set to `["*"]`, all supported headers will be collected.
   </Accordion>
 </AccordionGroup>
 
 <Note>
-  Any unspecified options will not be recorded.
+  Any unspecified headers will not be recorded.
 </Note>
 
 ## Basic Example
