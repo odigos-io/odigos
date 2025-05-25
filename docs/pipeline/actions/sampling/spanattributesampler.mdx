@@ -93,20 +93,22 @@ Sample only traces from the latest relesed version, while still capturing a repr
     - Supported values: `TRACES`
   </Accordion>
   <Accordion title="attribute_filters *">
-    **endpoints_filters** `object[]` : An array of objects representing the filters for the service and attribute filters.
+    **attribute_filters** `object[]` : An array of objects representing the filters for the service and attribute filters.
     - This field is *required*
     <AccordionGroup>
       <Accordion title="service_name *">
         **service_name** `string` : Specifies the service name to search within the trace (Across all available spans).
+        - This field is *required*
       </Accordion>
       <Accordion title="attribute_key *">
-        **service_name** `string` : Specifies the attribute key inside of the span.
+        **attribute_key** `string` : Specifies the attribute key inside of the span.
+        - This field is *required*
       </Accordion>
-      <Accordion title="condition">
+      <Accordion title="condition *">
         **condition** `object[]` : An array of objects representing the filters for span attributes filters.
         - This field is *required*
         <AccordionGroup>
-          <Accordion title="string_operation">
+          <Accordion title="string_condition">
             <AccordionGroup>
               <Accordion title="operation">
                 **operation** `string` : Specifies the operation to run against the attribute.
@@ -120,8 +122,8 @@ Sample only traces from the latest relesed version, while still capturing a repr
                 - **regex** : Interprets expected_value as a regular expression (RE2 syntax) and checks for a match within the attribute.
               </Accordion>
               <Accordion title="expected_value">
-                **expected_value** `bool` : The values to test the attribute against.
-                - Required when operaion is set to one of `[equals, not_equals, contains, not_contains, regex]`.
+                **expected_value** `string` : The values to test the attribute against.
+                - Required when operation is set to one of `[equals, not_equals, contains, not_contains, regex]`.
               </Accordion>
             </AccordionGroup>
           </Accordion>
@@ -140,8 +142,8 @@ Sample only traces from the latest relesed version, while still capturing a repr
                 - **less_than_or_equal** : Checks if attribute \<= expected_value.
               </Accordion>
               <Accordion title="expected_value">
-                **expected_value** `bool` : The values to test the attribute against.
-                - Required when operaion is set to one of `[equals, not_equals, greater_than, less_than, greater_than_or_equal, less_than_or_equal]`.
+                **expected_value** `string` : The values to test the attribute against.
+                - Required when operation is set to one of `[equals, not_equals, greater_than, less_than, greater_than_or_equal, less_than_or_equal]`.
               </Accordion>
             </AccordionGroup>
           </Accordion>
@@ -155,8 +157,8 @@ Sample only traces from the latest relesed version, while still capturing a repr
                 - **equals** : Checks if the attribute exactly matches expected_value.
               </Accordion>
               <Accordion title="expected_value">
-                **expected_value** `bool` : The values to test the attribute against.
-                - Required when operaion is set to `equals`.
+                **expected_value** `string` : The values to test the attribute against.
+                - Required when operation is set to `equals`.
               </Accordion>
             </AccordionGroup>
           </Accordion>
@@ -167,21 +169,21 @@ Sample only traces from the latest relesed version, while still capturing a repr
 
                 accepted values for the boolean operation:
                 - **exists** : Checks that the attribute is a non-empty string.
-                - **is_valid_json** : Ensures the string parses as valid JSON.
-                - **is_invalid_json** : Ensures the string is not valid JSON.
                 - **equals** : Compares the full JSON string to expected_value.
                 - **not_equals** : Verifies the full JSON string is not equal to expected_value.
+                - **is_valid_json** : Ensures the string parses as valid JSON.
+                - **is_invalid_json** : Ensures the string is not valid JSON.
                 - **jsonpath_exists** : Asserts that the specified json_path resolves to a non-empty result.
                 - **key_equals** : Compares the value at json_path to expected_value.
                 - **key_not_equals** : Verifies the value at json_path is not equal to expected_value.
               </Accordion>
               <Accordion title="expected_value">
-                **expected_value** `bool` : The values to test the attribute against.
-                - Required when operaion is set to one of `[equals, not_equals, jsonpath_exists, key_equals, key_not_equals]`.
+                **expected_value** `string` : The values to test the attribute against.
+                - Required when operation is set to one of `[equals, not_equals, jsonpath_exists, key_equals, key_not_equals]`.
               </Accordion>
               <Accordion title="json_path">
-                **expected_value** `string` : It is a JSONPath expression used to navigate the JSON structure.
-                - Required when operaion is set to one of `[jsonpath_exists, key_equals, key_not_equals]`.
+                **json_path** `string` : It is a JSONPath expression used to navigate the JSON structure.
+                - Required when operation is set to one of `[jsonpath_exists, key_equals, key_not_equals]`.
               </Accordion>
           </AccordionGroup>
         </Accordion>
