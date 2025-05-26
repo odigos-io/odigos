@@ -248,25 +248,31 @@ func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.C
 	return updated, nil
 }
 
-// GetGroupDetailsWithDestinations generates a mapping from group names to the sources and destinations associated with them.
+// GetGroupDetailsWithDestinations generates a slice of group details.
 //
 // Example return structure:
 //
-//	map[string]*GroupDetails{
-//	    "groupA": {
+//	[]GroupDetails{
+//	    {
 //	        Name: "groupA",
 //	        Sources: []SourceFilter{
 //	            {Namespace: "ns1", Kind: "Deployment", Name: "frontend"},
 //	            {Namespace: "ns1", Kind: "DaemonSet", Name: "log-agent"},
 //	        },
-//	        Destinations: []string{"coralogix", "jaeger"},
+//	        Destinations: []Destination{
+//	            {DestinationName: "coralogix",
+//				 ConfiguredSignals: []ObservabilitySignal{TracesObservabilitySignal, LogsObservabilitySignal}},
+//	        },
 //	    },
-//	    "groupB": {
+//	    {
 //	        Name: "groupB",
 //	        Sources: []SourceFilter{
 //	            {Namespace: "ns2", Kind: "StatefulSet", Name: "db"},
 //	        },
-//	        Destinations: []string{"jaeger"},
+//	        Destinations: []Destination{
+//	            {DestinationName: "jaeger",
+//				 ConfiguredSignals: []ObservabilitySignal{TracesObservabilitySignal}},
+//	        },
 //	    },
 //	}
 func GetGroupDetailsWithDestinations(
