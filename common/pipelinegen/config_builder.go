@@ -79,6 +79,7 @@ func CalculateGatewayConfig(
 			pipeline := currentConfig.Service.Pipelines[pipelineName]
 			// add the forward connector as a receiver to the pipeline
 			pipeline.Receivers = []string{connectorName}
+			pipeline.Processors = []string{consts.GenericBatchProcessor}
 			// save the updated pipeline with the new receiver
 			currentConfig.Service.Pipelines[pipelineName] = pipeline
 

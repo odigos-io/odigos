@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 type OtelPipelines map[string]config.Pipeline
@@ -22,8 +23,9 @@ func BuildGroupPipelines(
 			pipelineName := fmt.Sprintf("%s/%s", signal, group.Name)
 
 			pipeline := config.Pipeline{
-				Receivers: []string{fmt.Sprintf("odigosrouterconnector/%s", signal)},
-				Exporters: []string{},
+				Receivers:  []string{fmt.Sprintf("odigosrouterconnector/%s", signal)},
+				Processors: []string{consts.GenericBatchProcessor},
+				Exporters:  []string{},
 			}
 
 			// Add forward connectors for each destination in the group to route telemetry data

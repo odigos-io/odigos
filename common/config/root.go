@@ -94,7 +94,6 @@ func LoadConfigers() (map[common.DestinationType]Configer, error) {
 
 		configers[configer.DestType()] = configer
 	}
-	fmt.Println("configers", configers)
 	return configers, nil
 }
 
