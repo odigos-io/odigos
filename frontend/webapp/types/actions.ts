@@ -34,6 +34,13 @@ export interface ParsedActionSpec {
         fallback_sampling_ratio: number;
       }[]
     | null;
+  services_name_filters?:
+    | {
+        service_name: string;
+        sampling_ratio: number;
+        fallback_sampling_ratio: number;
+      }[]
+    | null;
 }
 
 export interface ActionInput {
