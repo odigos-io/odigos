@@ -108,6 +108,7 @@ connectors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.126.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.126.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.126.0
+  - gomod: github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.126.0
 
 providers:
   - gomod: go.opentelemetry.io/collector/confmap/provider/envprovider v0.126.0
