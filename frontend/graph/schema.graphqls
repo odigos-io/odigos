@@ -52,8 +52,9 @@ enum Tier {
 }
 
 enum InstrumentationRuleType {
-  PayloadCollection
   CodeAttributes
+  HeadersCollection
+  PayloadCollection
   UnknownType
 }
 
@@ -138,8 +139,9 @@ type InstrumentationRule {
   profileName: String!
   workloads: [PodWorkload!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
-  payloadCollection: PayloadCollection
   codeAttributes: CodeAttributes
+  headersCollection: HeadersCollection
+  payloadCollection: PayloadCollection
 }
 
 input InstrumentationRuleInput {
@@ -148,8 +150,9 @@ input InstrumentationRuleInput {
   disabled: Boolean
   workloads: [PodWorkloadInput!]
   instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
-  payloadCollection: PayloadCollectionInput
   codeAttributes: CodeAttributesInput
+  headersCollection: HeadersCollectionInput
+  payloadCollection: PayloadCollectionInput
 }
 
 type InstrumentationLibraryGlobalId {
@@ -164,18 +167,12 @@ input InstrumentationLibraryGlobalIdInput {
   language: ProgrammingLanguage
 }
 
-type PayloadCollection {
-  httpRequest: HttpPayloadCollection
-  httpResponse: HttpPayloadCollection
-  dbQuery: DbQueryPayloadCollection
-  messaging: MessagingPayloadCollection
+type HeadersCollection {
+  headerKeys: [String]
 }
 
-input PayloadCollectionInput {
-  httpRequest: HttpPayloadCollectionInput
-  httpResponse: HttpPayloadCollectionInput
-  dbQuery: DbQueryPayloadCollectionInput
-  messaging: MessagingPayloadCollectionInput
+input HeadersCollectionInput {
+  headerKeys: [String]
 }
 
 type HttpPayloadCollection {
@@ -226,6 +223,20 @@ input CodeAttributesInput {
   lineNumber: Boolean
   namespace: Boolean
   stacktrace: Boolean
+}
+
+type PayloadCollection {
+  httpRequest: HttpPayloadCollection
+  httpResponse: HttpPayloadCollection
+  dbQuery: DbQueryPayloadCollection
+  messaging: MessagingPayloadCollection
+}
+
+input PayloadCollectionInput {
+  httpRequest: HttpPayloadCollectionInput
+  httpResponse: HttpPayloadCollectionInput
+  dbQuery: DbQueryPayloadCollectionInput
+  messaging: MessagingPayloadCollectionInput
 }
 
 type ApiToken {

@@ -110,9 +110,11 @@ if [ ! -z "$CONFIGMAPS_IN_NAMESPACE" ]; then
     exit 1
 fi
 
+
+# "default-token" is created in each namespace by k8s prior to k8s 1.24: https://github.com/kubernetes/kubernetes/pull/108309 - so we exclude it
 SECRETS_IN_NAMESPACE=$(kubectl get secrets -n $NAMESPACE -o json | jq -r '
     .items[] |
-    select(.metadata.name != "autoscaler-webhook-cert" and .metadata.name != "webhook-cert") |
+    select(.metadata.name | startswith("default-token") | not) |
     .metadata.name' 2>/dev/null || true)
 if [ ! -z "$SECRETS_IN_NAMESPACE" ]; then
     print_error "Found secrets in namespace $NAMESPACE:"

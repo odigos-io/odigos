@@ -8,10 +8,6 @@ spec:
   containers:
     - image: public.ecr.aws/odigos/java-latest-version:v0.0.1
       name: java-latest-version
-      # nor JAVA_OPTS or JAVA_TOOL_OPTIONS are set in the manifest or Dockerfile of java-latest-version,
-      # In this case we need to ensure that they are both exists in the pod spec.
-      (env[?name=='JAVA_OPTS']):
-       - value: "-javaagent:/var/odigos/java/javaagent.jar"
       (env[?name=='JAVA_TOOL_OPTIONS']):
        - value: "-javaagent:/var/odigos/java/javaagent.jar"
       (env[?name=='LD_PRELOAD']): []
@@ -28,26 +24,6 @@ spec:
       name: java-supported-manifest-env
       (env[?name=='JAVA_TOOL_OPTIONS']):
       - value: "-Dnot.work=true -javaagent:/var/odigos/java/javaagent.jar"
-    # JAVA_OPTS is not set in the manifest of java-supported-manifest-env,
-    # so we need to ensure it is also not set in the pod spec.
-      (env[?name=='JAVA_OPTS']): []
-      (env[?name=='LD_PRELOAD']): []
----
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    app: java-supported-empty-manifest-env
-  namespace: default
-spec:
-  containers:
-    - image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
-      # JAVA_OPTS is defined in the manifest but it is empty,
-      # so we expect here to have our value in both env vars.
-      (env[?name=='JAVA_OPTS']):
-       - value: "-javaagent:/var/odigos/java/javaagent.jar"
-      (env[?name=='JAVA_TOOL_OPTIONS']):
-       - value: "-javaagent:/var/odigos/java/javaagent.jar"
       (env[?name=='LD_PRELOAD']): []
 ---
 apiVersion: v1
@@ -60,11 +36,12 @@ spec:
   containers:
     - image: public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
       name: java-supported-docker-env
-      (env[?name=='JAVA_OPTS']):
-      - value: -Dthis.does.not.exist=true -javaagent:/var/odigos/java/javaagent.jar
+    # the container has a value defined for JAVA_OPTS, we should not touch it
+      (env[?name=='JAVA_OPTS']): []
     # JAVA_TOOL_OPTIONS is not set in the Dockerfile of java-supported-docker-env,
     # so we need to ensure it is also not set in the pod spec.
-      (env[?name=='JAVA_TOOL_OPTIONS']): []
+      (env[?name=='JAVA_TOOL_OPTIONS']):
+      - value: -javaagent:/var/odigos/java/javaagent.jar
       (env[?name=='LD_PRELOAD']): []
 ---
 apiVersion: v1

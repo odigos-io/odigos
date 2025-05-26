@@ -7,6 +7,7 @@ metadata:
     odigos.io/workload-kind: Deployment
     odigos.io/workload-namespace: default
     odigos.io/workload-name: source-without-labels
+    odigos.io/group-default: 'true'
 spec:
   workload:
     name: source-without-labels
