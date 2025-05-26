@@ -94,10 +94,20 @@ helm repo add odigos https://odigos-io.github.io/odigos/
 
 ### Install Odigos
 
-```shell
-helm repo update
-helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace
-```
+<Tabs>
+  <Tab title="OpenSource">
+    ```shell
+    helm repo update
+    helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace
+    ```
+  </Tab>
+  <Tab title="Enterprise">
+    ```shell
+    helm repo update
+    helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace --set onPremToken=$ODIGOS_TOKEN
+    ```
+  </Tab>
+</Tabs>
 
 ## OpenShift Operator
 
