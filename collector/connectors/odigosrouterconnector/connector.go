@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/odigos-io/odigos/common/consts"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/connector"
 	"go.opentelemetry.io/collector/consumer"
@@ -16,6 +15,8 @@ import (
 	collectorpipeline "go.opentelemetry.io/collector/pipeline"
 	semconv1_21 "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.uber.org/zap"
+
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 type tracesConfig struct {
