@@ -1,6 +1,3 @@
-{{- $altNames := list (printf "odigos-instrumentor.%s.svc" .Release.Namespace) (printf "odigos-instrumentor.%s.svc.cluster.local" .Release.Namespace) -}}
-{{- $ca := genCA "serving-cert" 365 -}}
-{{- $cert := genSignedCert "serving-cert" nil $altNames 365 $ca -}}
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
@@ -15,7 +12,6 @@ metadata:
 webhooks:
   - name: pod-mutating-webhook.odigos.io
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
       service:
         name: odigos-instrumentor
         namespace: {{ .Release.Namespace }}
@@ -48,7 +44,6 @@ metadata:
 webhooks:
   - name: source-mutating-webhook.odigos.io
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
       service:
         name: odigos-instrumentor
         namespace: {{ .Release.Namespace }}
@@ -81,7 +76,6 @@ metadata:
 webhooks:
   - name: source-validating-webhook.odigos.io
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
       service:
         name: odigos-instrumentor
         namespace: {{ .Release.Namespace }}
@@ -102,9 +96,8 @@ webhooks:
 ---
 apiVersion: v1
 kind: Secret
-type: kubernetes.io/tls
 metadata:
-  name: webhook-cert
+  name: instrumentor-webhooks-cert
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: instrumentor-cert
@@ -112,9 +105,5 @@ metadata:
     app.kubernetes.io/component: certificate
     app.kubernetes.io/created-by: instrumentor
     app.kubernetes.io/part-of: odigos
-  annotations:
-    "helm.sh/hook": "pre-install,pre-upgrade"
-    "helm.sh/hook-delete-policy": "before-hook-creation"
-data:
-  tls.crt: {{ $cert.Cert | b64enc }}
-  tls.key: {{ $cert.Key | b64enc }}
+    odigos.io/system-object: "true"
+# the actual certificate will be populated by the controller

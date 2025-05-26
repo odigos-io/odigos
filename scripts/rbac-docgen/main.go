@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -37,12 +38,15 @@ This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odi
 `
 
 	cmd := exec.Command("helm", "template", "odigos", "../../helm/odigos", "--set", "openshift.enabled=true")
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	out, err := cmd.Output()
+	result := string(out)
 	if err != nil {
 		fmt.Println("Error:", err)
+		fmt.Println("Stderr:", stderr.String())
 		return
 	}
-	result := string(out)
 	manifests := strings.Split(result, "---")
 	scheme := runtime.NewScheme()
 	_ = rbacv1.AddToScheme(scheme)

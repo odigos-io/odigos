@@ -7,5 +7,5 @@ metadata:
     odigos.io/system-object: 'true'
 rules:
 - apiGroups: [""]
-  resources: ["namespaces", "configmaps"]
+  resources: ["namespaces", "configmaps", "secrets"]
   verbs: ["get", "list", "patch", "delete"]
