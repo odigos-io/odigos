@@ -11,8 +11,10 @@ require (
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
+	github.com/open-policy-agent/cert-controller v0.12.1-0.20250516200449-317fe19e3eb5
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/otel v1.35.0
+	golang.org/x/sync v0.14.0
 	k8s.io/api v0.33.1
 	k8s.io/apimachinery v0.33.1
 	k8s.io/client-go v0.33.1
@@ -62,11 +64,11 @@ require (
 	go.opentelemetry.io/otel/sdk v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.5.0 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
-	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.25.0 // indirect

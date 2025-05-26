@@ -85,6 +85,23 @@ rules:
       - list
       - watch
   - apiGroups:
+      - ''
+    resources:
+      - secrets
+    resourceNames:
+      - autoscaler-webhooks-cert
+    verbs:
+      - update
+# migration from the old webhook cert - this can be removed once we are confident that the old secrets have been deleted
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    resourceNames:
+      - autoscaler-webhook-cert
+    verbs:
+      - delete
+  - apiGroups:
       - odigos.io
     resources:
       - destinations

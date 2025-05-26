@@ -180,7 +180,7 @@ load-to-kind-%:
 
 .PHONY: load-to-kind
 load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: restart-ui
 restart-ui:
@@ -372,7 +372,7 @@ dev-tests-kind-cluster:
 
 .PHONY: dev-tests-setup
 dev-tests-setup: TAG := e2e-test
-dev-tests-setup: dev-tests-kind-cluster cli-build build-images load-to-kind
+dev-tests-setup: dev-tests-kind-cluster cli-build build-cli-image build-images load-to-kind
 
 # Use this target to avoid rebuilding the images if all that changed is the e2e test code
 .PHONY: dev-tests-setup-no-build
@@ -454,3 +454,13 @@ publish-to-ecr:
 	make -j 3 build-tag-push-ecr-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	echo "✅ Deployed Odigos to EKS, now install the CLI"
+
+.PHONY: build-cli-image
+build-cli-image:
+	cd cli && \
+	KO_DOCKER_REPO=$(ORG)/odigos-cli$(IMG_SUFFIX) \
+	VERSION=$(TAG) \
+	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
+	DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S') \
+	ko build --bare --tags $(TAG) --local .
+
