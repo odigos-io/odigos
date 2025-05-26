@@ -29,10 +29,11 @@ function urlencode() (
 
 # Function to process a YAML file
 function process_yaml_file() {
-  local dest_namespace="traces"
-  local dest_service="simple-trace-db"
+  # The syntax of "${1:-traces}" means that if the first argument is not provided, it will use the default value "traces"
+  local dest_namespace="${3:-traces}"
+  local dest_service="${4:-simple-trace-db}"
   local dest_port="4318"
-  local verbose=$2
+  local verbose="${2}"
 
   local file=$1
   file_name=$(basename "$file")
@@ -93,5 +94,9 @@ if ! command -v yq &>/dev/null; then
   exit 1
 fi
 
+DESTINATION_NAMESPACE=$1
+DESTINATION_SERVICE=$2
+DESTINATION_PORT=$3
+
 verify_yaml_schema $TEST_FILE
-process_yaml_file $TEST_FILE $VERBOSE
+process_yaml_file $TEST_FILE $VERBOSE $DESTINATION_NAMESPACE $DESTINATION_SERVICE $DESTINATION_PORT

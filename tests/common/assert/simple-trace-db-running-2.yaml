@@ -1,0 +1,7 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-trace-db-2
+  namespace: traces-2
+status:
+  readyReplicas: 1

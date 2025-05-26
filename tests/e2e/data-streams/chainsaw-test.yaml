@@ -1,0 +1,146 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: data-streams
+spec:
+  description: This e2e test runs a data streams scenario
+  skipDelete: true
+  steps:
+    - name: '[1 - Setup] Prepare destination 1'
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+    - name: '[1 - Setup] Prepare destination 2'
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment-2.yaml
+
+    - name: '[1 - Setup] Install Odigos'
+      try:
+        - script:
+            timeout: 4m
+            content: |
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                ../../../cli/odigos install --namespace odigos-test --version "$COMMIT_HASH" --image-prefix=public.ecr.aws/y2v0v6s7
+              else
+                ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              fi
+
+              ../../common/verify_odigos_installation.sh odigos-test
+        - assert:
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: '[1 - Setup] Verify Node Odiglet label has been added'
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: '[1 - Setup] Assert Trace DB 1 is up'
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: '[1 - Setup] Assert Trace DB 2 is up'
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running-2.yaml
+
+    - name: '[1 - Setup] Install - Simple Demo Apps'
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+        - script:
+            timeout: 2m
+            content: |
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
+        - assert:
+            file: ../../common/assert/simple-demo-installed.yaml
+
+    - name: '[2 - Workload Instrumentation] Instrument Deployments using Sources with otelServiceName field set'
+      try:
+        - apply:
+            file: 01-sources.yaml
+
+    - name: '[2 - Workload Instrumentation] Assert Runtime Detected'
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+
+    - name: '[2 - Workload Instrumentation] Add Destinations for data streams'
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination-stream-1.yaml
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination-stream-2.yaml
+
+    - name: '[2 - Workload Instrumentation] Odigos pipeline ready'
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: '[2 - Workload Instrumentation] Simple-demo instrumented after destination added'
+      try:
+        - assert:
+            file: ../../common/assert/simple-demo-instrumented.yaml
+        - assert:
+            timeout: 2m
+            file: 01-workloads.yaml
+        - script:
+            timeout: 70s
+            content: ./wait_for_rollout.sh
+
+    - name: '[2 - Workload Instrumentation] Generate Traffic'
+      try:
+        - apply:
+            file: ../../common/apply/generate-traffic-job.yaml
+        - script:
+            timeout: 1m
+            content: |
+              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+        - delete:
+            file: ../../common/apply/generate-traffic-job.yaml
+
+    - name: Wait For Trace Stream 1
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-stream-1.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 1
+              done
+      catch:
+        - script:
+            content: |
+              java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
+              kubectl logs $java_pod_name -n default
+
+    - name: Wait For Trace Stream 2
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-stream-2.yaml false traces-2 simple-trace-db-2
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 1
+              done
+      catch:
+        - script:
+            content: |
+              java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
+              kubectl logs $java_pod_name -n default
