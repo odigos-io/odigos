@@ -59,6 +59,15 @@ export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
         }));
         break;
 
+      case ActionType.SpanAttributeSampler:
+        spec.attributeFilters = parsedSpec.attribute_filters?.map(({ service_name, attribute_key, fallback_sampling_ratio, condition }) => ({
+          serviceName: service_name,
+          attributeKey: attribute_key,
+          fallbackSamplingRatio: fallback_sampling_ratio,
+          condition,
+        }));
+        break;
+
       default:
         break;
     }
@@ -97,6 +106,7 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
     samplingPercentage,
     endpointsFilters,
     servicesNameFilters,
+    attributeFilters,
   } = action;
 
   const payload: ActionInput = {
@@ -164,6 +174,17 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
             sampling_ratio: samplingRatio,
             fallback_sampling_ratio: fallbackSamplingRatio,
           })) || [],
+      });
+      break;
+
+    case ActionType.SpanAttributeSampler:
+      payload['details'] = JSON.stringify({
+        attribute_filters: attributeFilters?.map(({ serviceName, attributeKey, fallbackSamplingRatio, condition }) => ({
+          service_name: serviceName,
+          attribute_key: attributeKey,
+          fallback_sampling_ratio: fallbackSamplingRatio,
+          condition,
+        })),
       });
       break;
 

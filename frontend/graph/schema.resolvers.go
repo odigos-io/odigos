@@ -778,17 +778,19 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 	case actionservices.ActionTypeDeleteAttribute:
 		return actionservices.CreateDeleteAttribute(ctx, action)
 	case actionservices.ActionTypePiiMasking:
-		return actionservices.CreateRenameAttribute(ctx, action)
-	case actionservices.ActionTypeServiceNameSampler:
 		return actionservices.CreatePiiMasking(ctx, action)
+	case actionservices.ActionTypeRenameAttribute:
+		return actionservices.CreateRenameAttribute(ctx, action)
 	case actionservices.ActionTypeErrorSampler:
 		return actionservices.CreateErrorSampler(ctx, action)
 	case actionservices.ActionTypeLatencySampler:
 		return actionservices.CreateLatencySampler(ctx, action)
 	case actionservices.ActionTypeProbabilisticSampler:
 		return actionservices.CreateProbabilisticSampler(ctx, action)
-	case actionservices.ActionTypeRenameAttribute:
+	case actionservices.ActionTypeServiceNameSampler:
 		return actionservices.CreateServiceNameSampler(ctx, action)
+	case actionservices.ActionTypeSpanAttributeSampler:
+		return actionservices.CreateSpanAttributeSampler(ctx, action)
 	default:
 		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
 	}
@@ -809,16 +811,18 @@ func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action m
 	case actionservices.ActionTypeDeleteAttribute:
 		return actionservices.UpdateDeleteAttribute(ctx, id, action)
 	case actionservices.ActionTypePiiMasking:
-		return actionservices.UpdateRenameAttribute(ctx, id, action)
-	case actionservices.ActionTypeServiceNameSampler:
 		return actionservices.UpdatePiiMasking(ctx, id, action)
+	case actionservices.ActionTypeRenameAttribute:
+		return actionservices.UpdateRenameAttribute(ctx, id, action)
 	case actionservices.ActionTypeErrorSampler:
 		return actionservices.UpdateErrorSampler(ctx, id, action)
 	case actionservices.ActionTypeLatencySampler:
 		return actionservices.UpdateLatencySampler(ctx, id, action)
 	case actionservices.ActionTypeProbabilisticSampler:
 		return actionservices.UpdateProbabilisticSampler(ctx, id, action)
-	case actionservices.ActionTypeRenameAttribute:
+	case actionservices.ActionTypeSpanAttributeSampler:
+		return actionservices.UpdateSpanAttributeSampler(ctx, id, action)
+	case actionservices.ActionTypeServiceNameSampler:
 		return actionservices.UpdateServiceNameSampler(ctx, id, action)
 	default:
 		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
@@ -879,6 +883,11 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 		err := actionservices.DeleteServiceNameSampler(ctx, id)
 		if err != nil {
 			return false, fmt.Errorf("failed to delete ServiceNameSampler: %v", err)
+		}
+	case actionservices.ActionTypeSpanAttributeSampler:
+		err := actionservices.DeleteSpanAttributeSampler(ctx, id)
+		if err != nil {
+			return false, fmt.Errorf("failed to delete SpanAttributeSampler: %v", err)
 		}
 	default:
 		return false, fmt.Errorf("unsupported action type: %s", actionType)
