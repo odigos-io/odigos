@@ -35,40 +35,8 @@ const (
 	KeyNotEquals       Operation = "key_not_equals"
 )
 
-type StringCondition struct {
-	Operation     string `json:"operation"`
-	ExpectedValue string `json:"expectedValue"`
-}
-type NumberCondition struct {
-	Operation     string  `json:"operation"`
-	ExpectedValue float64 `json:"expectedValue"`
-}
-type BooleanCondition struct {
-	Operation     string `json:"operation"`
-	ExpectedValue bool   `json:"expectedValue"`
-}
-type JsonCondition struct {
-	Operation     string `json:"operation"`
-	ExpectedValue string `json:"expectedValue"`
-	JsonPath      string `json:"jsonPath"`
-}
-
-type AttributeFiltersCondition struct {
-	StringCondition  StringCondition
-	NumberCondition  NumberCondition
-	BooleanCondition BooleanCondition
-	JsonCondition    JsonCondition
-}
-
-type AttributeFilters struct {
-	ServiceName           string                    `json:"serviceName"`
-	AttributeKey          string                    `json:"attributeKey"`
-	FallbackSamplingRatio float64                   `json:"fallbackSamplingRatio"`
-	Condition             AttributeFiltersCondition `json:"condition"`
-}
-
 type SpanAttributeSamplerDetails struct {
-	AttributeFilters []AttributeFilters `json:"attributeFilters"`
+	AttributeFilters []v1alpha1.SpanAttributeFilter `json:"attribute_filters"`
 }
 
 func CreateSpanAttributeSampler(ctx context.Context, action model.ActionInput) (model.Action, error) {
@@ -92,7 +60,7 @@ func CreateSpanAttributeSampler(ctx context.Context, action model.ActionInput) (
 			Notes:            services.DerefString(action.Notes),
 			Disabled:         action.Disable,
 			Signals:          signals,
-			AttributeFilters: convertAttributeFiltersForApi(details.AttributeFilters),
+			AttributeFilters: details.AttributeFilters,
 		},
 	}
 
@@ -139,7 +107,7 @@ func UpdateSpanAttributeSampler(ctx context.Context, id string, action model.Act
 	existingAction.Spec.Notes = services.DerefString(action.Notes)
 	existingAction.Spec.Disabled = action.Disable
 	existingAction.Spec.Signals = signals
-	existingAction.Spec.AttributeFilters = convertAttributeFiltersForApi(details.AttributeFilters)
+	existingAction.Spec.AttributeFilters = details.AttributeFilters
 
 	updatedAction, err := kube.DefaultClient.ActionsClient.SpanAttributeSamplers(ns).Update(ctx, existingAction, metav1.UpdateOptions{})
 	if err != nil {
@@ -173,66 +141,46 @@ func DeleteSpanAttributeSampler(ctx context.Context, id string) error {
 	return nil
 }
 
-func convertAttributeFiltersForApi(attributeFilters []AttributeFilters) []v1alpha1.SpanAttributeFilter {
-	var result []v1alpha1.SpanAttributeFilter
-
-	for _, f := range attributeFilters {
-		result = append(result, v1alpha1.SpanAttributeFilter{
-			ServiceName:           f.ServiceName,
-			AttributeKey:          f.AttributeKey,
-			FallbackSamplingRatio: f.FallbackSamplingRatio,
-			Condition: v1alpha1.AttributeCondition{
-				StringCondition: &v1alpha1.StringAttributeCondition{
-					Operation:     f.Condition.StringCondition.Operation,
-					ExpectedValue: f.Condition.StringCondition.ExpectedValue,
-				},
-				NumberCondition: &v1alpha1.NumberAttributeCondition{
-					Operation:     f.Condition.NumberCondition.Operation,
-					ExpectedValue: f.Condition.NumberCondition.ExpectedValue,
-				},
-				BooleanCondition: &v1alpha1.BooleanAttributeCondition{
-					Operation:     f.Condition.BooleanCondition.Operation,
-					ExpectedValue: f.Condition.BooleanCondition.ExpectedValue,
-				},
-				JsonCondition: &v1alpha1.JsonAttributeCondition{
-					Operation:     f.Condition.JsonCondition.Operation,
-					ExpectedValue: f.Condition.JsonCondition.ExpectedValue,
-					JsonPath:      f.Condition.JsonCondition.JsonPath,
-				},
-			},
-		})
-	}
-
-	return result
-}
-
 func convertAttributeFiltersForResponse(attributeFilters []v1alpha1.SpanAttributeFilter) []*model.AttributeFilters {
 	var result []*model.AttributeFilters
 
 	for _, f := range attributeFilters {
+		cond := &model.AttributeFiltersCondition{}
+
+		if f.Condition.StringCondition != nil {
+			cond.StringCondition = &model.StringCondition{
+				Operation:     model.StringOperation(f.Condition.StringCondition.Operation),
+				ExpectedValue: &f.Condition.StringCondition.ExpectedValue,
+			}
+		}
+
+		if f.Condition.NumberCondition != nil {
+			cond.NumberCondition = &model.NumberCondition{
+				Operation:     model.NumberOperation(f.Condition.NumberCondition.Operation),
+				ExpectedValue: f.Condition.NumberCondition.ExpectedValue,
+			}
+		}
+
+		if f.Condition.BooleanCondition != nil {
+			cond.BooleanCondition = &model.BooleanCondition{
+				Operation:     model.BooleanOperation(f.Condition.BooleanCondition.Operation),
+				ExpectedValue: f.Condition.BooleanCondition.ExpectedValue,
+			}
+		}
+
+		if f.Condition.JsonCondition != nil {
+			cond.JSONCondition = &model.JSONCondition{
+				Operation:     model.JSONOperation(f.Condition.JsonCondition.Operation),
+				ExpectedValue: &f.Condition.JsonCondition.ExpectedValue,
+				JSONPath:      &f.Condition.JsonCondition.JsonPath,
+			}
+		}
+
 		result = append(result, &model.AttributeFilters{
 			ServiceName:           f.ServiceName,
 			AttributeKey:          f.AttributeKey,
 			FallbackSamplingRatio: f.FallbackSamplingRatio,
-			Condition: &model.AttributeFiltersCondition{
-				StringCondition: &model.StringCondition{
-					Operation:     model.StringOperation(f.Condition.StringCondition.Operation),
-					ExpectedValue: &f.Condition.StringCondition.ExpectedValue,
-				},
-				NumberCondition: &model.NumberCondition{
-					Operation:     model.NumberOperation(f.Condition.NumberCondition.Operation),
-					ExpectedValue: f.Condition.NumberCondition.ExpectedValue,
-				},
-				BooleanCondition: &model.BooleanCondition{
-					Operation:     model.BooleanOperation(f.Condition.BooleanCondition.Operation),
-					ExpectedValue: f.Condition.BooleanCondition.ExpectedValue,
-				},
-				JSONCondition: &model.JSONCondition{
-					Operation:     model.JSONOperation(f.Condition.JsonCondition.Operation),
-					ExpectedValue: &f.Condition.JsonCondition.ExpectedValue,
-					JSONPath:      &f.Condition.JsonCondition.JsonPath,
-				},
-			},
+			Condition:             cond,
 		})
 	}
 

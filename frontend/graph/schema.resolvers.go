@@ -369,6 +369,24 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		})
 	}
 
+	// SpanAttributeSamplers actions
+	sasActions, err := kube.DefaultClient.ActionsClient.SpanAttributeSamplers(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range sasActions.Items {
+		specStr, err := json.Marshal(action.Spec)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
+		})
+	}
+
 	return response, nil
 }
 

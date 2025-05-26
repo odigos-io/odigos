@@ -1,6 +1,6 @@
 import { safeJsonParse } from '@odigos/ui-kit/functions';
-import type { ActionInput, FetchedAction, ParsedActionSpec } from '@/types';
-import { ActionType, SignalType, type Action, type ActionFormData } from '@odigos/ui-kit/types';
+import type { ActionInput, FetchedAction, ParsedActionSpec, ParsedAttributeFilter } from '@/types';
+import { ActionType, AttributeFilters, SignalType, type Action, type ActionFormData } from '@odigos/ui-kit/types';
 
 export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
   return items.map((item) => {
@@ -61,38 +61,55 @@ export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
 
       case ActionType.SpanAttributeSampler:
         spec.attributeFilters = parsedSpec.attribute_filters?.map(
-          ({ service_name, attribute_key, fallback_sampling_ratio, condition: { string_condition, number_condition, boolean_condition, json_condition } }) => ({
-            serviceName: service_name,
-            attributeKey: attribute_key,
-            fallbackSamplingRatio: fallback_sampling_ratio,
-            condition: {
-              stringCondition: string_condition
-                ? {
-                    operation: string_condition.operation,
-                    expectedValue: string_condition.expected_value,
-                  }
-                : undefined,
-              numberCondition: number_condition
-                ? {
-                    operation: number_condition.operation,
-                    expectedValue: number_condition.expected_value,
-                  }
-                : undefined,
-              booleanCondition: boolean_condition
-                ? {
-                    operation: boolean_condition.operation,
-                    expectedValue: boolean_condition.expected_value,
-                  }
-                : undefined,
-              jsonCondition: json_condition
-                ? {
-                    operation: json_condition.operation,
-                    expectedValue: json_condition.expected_value,
-                    jsonPath: json_condition.json_path,
-                  }
-                : undefined,
-            },
-          }),
+          ({ service_name, attribute_key, fallback_sampling_ratio, condition: { string_condition, number_condition, boolean_condition, json_condition } }) => {
+            const condition: AttributeFilters['condition'] = {};
+
+            if (string_condition) {
+              condition.stringCondition = {
+                operation: string_condition.operation,
+              };
+              if (string_condition.expected_value) {
+                condition.stringCondition.expectedValue = string_condition.expected_value;
+              }
+            }
+
+            if (number_condition) {
+              condition.numberCondition = {
+                operation: number_condition.operation,
+              };
+              if (number_condition.expected_value !== undefined) {
+                condition.numberCondition.expectedValue = Number(number_condition.expected_value);
+              }
+            }
+
+            if (boolean_condition) {
+              condition.booleanCondition = {
+                operation: boolean_condition.operation,
+              };
+              if (boolean_condition.expected_value !== undefined) {
+                condition.booleanCondition.expectedValue = Boolean(boolean_condition.expected_value);
+              }
+            }
+
+            if (json_condition) {
+              condition.jsonCondition = {
+                operation: json_condition.operation,
+              };
+              if (json_condition.expected_value) {
+                condition.jsonCondition.expectedValue = json_condition.expected_value;
+              }
+              if (json_condition.json_path) {
+                condition.jsonCondition.jsonPath = json_condition.json_path;
+              }
+            }
+
+            return {
+              serviceName: service_name,
+              attributeKey: attribute_key,
+              fallbackSamplingRatio: fallback_sampling_ratio,
+              condition,
+            };
+          },
         );
         break;
 
@@ -207,12 +224,55 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
 
     case ActionType.SpanAttributeSampler:
       payload['details'] = JSON.stringify({
-        attribute_filters: attributeFilters?.map(({ serviceName, attributeKey, fallbackSamplingRatio, condition }) => ({
-          service_name: serviceName,
-          attribute_key: attributeKey,
-          fallback_sampling_ratio: fallbackSamplingRatio,
-          condition,
-        })),
+        attribute_filters: attributeFilters?.map(({ serviceName, attributeKey, fallbackSamplingRatio, condition: { stringCondition, numberCondition, booleanCondition, jsonCondition } }) => {
+          const condition: ParsedAttributeFilter['condition'] = {};
+
+          if (stringCondition) {
+            condition.string_condition = {
+              operation: stringCondition.operation,
+            };
+            if (stringCondition.expectedValue) {
+              condition.string_condition.expected_value = stringCondition.expectedValue;
+            }
+          }
+
+          if (numberCondition) {
+            condition.number_condition = {
+              operation: numberCondition.operation,
+            };
+            if (numberCondition.expectedValue !== undefined) {
+              condition.number_condition.expected_value = Number(numberCondition.expectedValue);
+            }
+          }
+
+          if (booleanCondition) {
+            condition.boolean_condition = {
+              operation: booleanCondition.operation,
+            };
+            if (booleanCondition.expectedValue !== undefined) {
+              condition.boolean_condition.expected_value = Boolean(booleanCondition.expectedValue);
+            }
+          }
+
+          if (jsonCondition) {
+            condition.json_condition = {
+              operation: jsonCondition.operation,
+            };
+            if (jsonCondition.expectedValue) {
+              condition.json_condition.expected_value = jsonCondition.expectedValue;
+            }
+            if (jsonCondition.jsonPath) {
+              condition.json_condition.json_path = jsonCondition.jsonPath;
+            }
+          }
+
+          return {
+            service_name: serviceName,
+            attribute_key: attributeKey,
+            fallback_sampling_ratio: fallbackSamplingRatio,
+            condition,
+          };
+        }),
       });
       break;
 

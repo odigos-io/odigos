@@ -15,14 +15,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ServiceNameFilters struct {
-	ServiceName           string  `json:"serviceName"`
-	SamplingRatio         float64 `json:"samplingRatio"`
-	FallbackSamplingRatio float64 `json:"fallbackSamplingRatio"`
-}
-
 type ServiceNameSamplerDetails struct {
-	ServiceNameFilters []ServiceNameFilters `json:"serviceNameFilters"`
+	ServiceNameFilters []v1alpha1.ServiceNameFilter `json:"services_name_filters"`
 }
 
 func CreateServiceNameSampler(ctx context.Context, action model.ActionInput) (model.Action, error) {
@@ -46,7 +40,7 @@ func CreateServiceNameSampler(ctx context.Context, action model.ActionInput) (mo
 			Notes:               services.DerefString(action.Notes),
 			Disabled:            action.Disable,
 			Signals:             signals,
-			ServicesNameFilters: convertServiceNameFiltersForApi(details.ServiceNameFilters),
+			ServicesNameFilters: details.ServiceNameFilters,
 		},
 	}
 
@@ -93,7 +87,7 @@ func UpdateServiceNameSampler(ctx context.Context, id string, action model.Actio
 	existingAction.Spec.Notes = services.DerefString(action.Notes)
 	existingAction.Spec.Disabled = action.Disable
 	existingAction.Spec.Signals = signals
-	existingAction.Spec.ServicesNameFilters = convertServiceNameFiltersForApi(details.ServiceNameFilters)
+	existingAction.Spec.ServicesNameFilters = details.ServiceNameFilters
 
 	updatedAction, err := kube.DefaultClient.ActionsClient.ServiceNameSamplers(ns).Update(ctx, existingAction, metav1.UpdateOptions{})
 	if err != nil {
@@ -125,20 +119,6 @@ func DeleteServiceNameSampler(ctx context.Context, id string) error {
 	}
 
 	return nil
-}
-
-func convertServiceNameFiltersForApi(serviceNameFilters []ServiceNameFilters) []v1alpha1.ServiceNameFilter {
-	var result []v1alpha1.ServiceNameFilter
-
-	for _, f := range serviceNameFilters {
-		result = append(result, v1alpha1.ServiceNameFilter{
-			ServiceName:           f.ServiceName,
-			SamplingRatio:         f.SamplingRatio,
-			FallbackSamplingRatio: f.FallbackSamplingRatio,
-		})
-	}
-
-	return result
 }
 
 func convertServiceNameFiltersForResponse(serviceNameFilters []v1alpha1.ServiceNameFilter) []*model.ServiceNameFilters {

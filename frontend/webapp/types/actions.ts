@@ -26,47 +26,47 @@ export interface ParsedActionSpec {
   piiCategories?: string[] | null;
   fallback_sampling_ratio?: number | null;
   sampling_percentage?: string | null;
-  endpoints_filters?:
-    | {
-        service_name: string;
-        http_route: string;
-        minimum_latency_threshold: number;
-        fallback_sampling_ratio: number;
-      }[]
-    | null;
-  services_name_filters?:
-    | {
-        service_name: string;
-        sampling_ratio: number;
-        fallback_sampling_ratio: number;
-      }[]
-    | null;
-  attribute_filters?:
-    | {
-        service_name: string;
-        attribute_key: string;
-        fallback_sampling_ratio: number;
-        condition: {
-          string_condition?: {
-            operation: StringOperation;
-            expected_value?: string;
-          };
-          number_condition?: {
-            operation: NumberOperation;
-            expected_value?: number;
-          };
-          boolean_condition?: {
-            operation: BooleanOperation;
-            expected_value?: boolean;
-          };
-          json_condition?: {
-            operation: JsonOperation;
-            expected_value?: string;
-            json_path?: string;
-          };
-        };
-      }[]
-    | null;
+  endpoints_filters?: ParsedEndpointFilter[] | null;
+  services_name_filters?: ParsedServiceNameFilter[] | null;
+  attribute_filters?: ParsedAttributeFilter[] | null;
+}
+
+export interface ParsedEndpointFilter {
+  service_name: string;
+  http_route: string;
+  minimum_latency_threshold: number;
+  fallback_sampling_ratio: number;
+}
+
+export interface ParsedServiceNameFilter {
+  service_name: string;
+  sampling_ratio: number;
+  fallback_sampling_ratio: number;
+}
+
+export interface ParsedAttributeFilter {
+  service_name: string;
+  attribute_key: string;
+  fallback_sampling_ratio: number;
+  condition: {
+    string_condition?: {
+      operation: StringOperation;
+      expected_value?: string;
+    };
+    number_condition?: {
+      operation: NumberOperation;
+      expected_value?: number;
+    };
+    boolean_condition?: {
+      operation: BooleanOperation;
+      expected_value?: boolean;
+    };
+    json_condition?: {
+      operation: JsonOperation;
+      expected_value?: string;
+      json_path?: string;
+    };
+  };
 }
 
 export interface ActionInput {
