@@ -40,14 +40,14 @@ spec:
                   exit 1
                 fi
 
-                kubectl wait --for=condition=ready pods --all -n odigos-test --timeout=4m
-
               else
                 if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
                   echo "❌ Odigos version is not e2e-test, got $ACTUAL_VERSION"
                   exit 1
                 fi
               fi
+
+              ../../common/verify_odigos_installation.sh odigos-test
 
         - assert:
             timeout: 1m
