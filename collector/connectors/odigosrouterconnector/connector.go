@@ -2,8 +2,10 @@ package odigosrouterconnector
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/odigos-io/odigos/common/consts"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/connector"
 	"go.opentelemetry.io/collector/consumer"
@@ -11,15 +13,35 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	collectorpipeline "go.opentelemetry.io/collector/pipeline"
 	semconv1_21 "go.opentelemetry.io/otel/semconv/v1.21.0"
+	"go.uber.org/zap"
 )
+
+type tracesConfig struct {
+	consumers   connector.TracesRouterAndConsumer
+	defaultCons consumer.Traces
+	logger      *zap.Logger
+}
+
+type metricsConfig struct {
+	consumers   connector.MetricsRouterAndConsumer
+	defaultCons consumer.Metrics
+	logger      *zap.Logger
+}
+
+type logsConfig struct {
+	consumers   connector.LogsRouterAndConsumer
+	defaultCons consumer.Logs
+	logger      *zap.Logger
+}
 
 // routerConnector is the main struct for all signal types.
 type routerConnector struct {
-	tracesConsumers  map[string]consumer.Traces
-	metricsConsumers map[string]consumer.Metrics
-	logsConsumers    map[string]consumer.Logs
-	routingTable     *SignalRoutingMap
+	tracesConfig  tracesConfig
+	metricsConfig metricsConfig
+	logsConfig    logsConfig
+	routingTable  *SignalRoutingMap
 }
 
 func (r *routerConnector) Start(_ context.Context, _ component.Host) error { return nil }
@@ -34,18 +56,28 @@ func createTracesConnector(
 	cfg component.Config,
 	next consumer.Traces,
 ) (connector.Traces, error) {
+
+	tr, ok := next.(connector.TracesRouterAndConsumer)
+	if !ok {
+		return nil, errors.New("expected consumer to be a connector router")
+	}
+
 	config := cfg.(*Config)
+
+	defaultTracesConsumer, err := tr.Consumer(
+		collectorpipeline.NewIDWithName(collectorpipeline.SignalTraces, consts.DefaultDataStream),
+	)
+	if err != nil {
+		set.Logger.Warn("failed to get default traces consumer")
+		// Do not return the error — just continue with nil fallback
+		defaultTracesConsumer = nil
+	}
 
 	routeMap := BuildSignalRoutingMap(config.Groups)
 
-	// Extract unique pipeline names from the routeMap for traces
-	tracesConsumers := buildConsumerMap(routeMap, "traces", next)
-
-	fmt.Println("Registered tracesConsumers:", tracesConsumers)
-
 	return &routerConnector{
-		routingTable:    &routeMap,
-		tracesConsumers: tracesConsumers,
+		routingTable: &routeMap,
+		tracesConfig: tracesConfig{consumers: tr, defaultCons: defaultTracesConsumer, logger: set.Logger},
 	}, nil
 }
 
@@ -55,17 +87,28 @@ func createMetricsConnector(
 	cfg component.Config,
 	next consumer.Metrics,
 ) (connector.Metrics, error) {
+
+	tr, ok := next.(connector.MetricsRouterAndConsumer)
+	if !ok {
+		return nil, errors.New("expected consumer to be a connector router")
+	}
+
 	config := cfg.(*Config)
+
+	defaultMetricsConsumer, err := tr.Consumer(
+		collectorpipeline.NewIDWithName(collectorpipeline.SignalMetrics, consts.DefaultDataStream),
+	)
+	if err != nil {
+		set.Logger.Warn("failed to get default metrics consumer")
+		// Do not return the error — just continue with nil fallback
+		defaultMetricsConsumer = nil
+	}
 
 	routeMap := BuildSignalRoutingMap(config.Groups)
 
-	metricsConsumers := buildConsumerMap(routeMap, "metrics", next)
-
-	fmt.Println("Registered metricsConsumers:", metricsConsumers)
-
 	return &routerConnector{
-		routingTable:     &routeMap,
-		metricsConsumers: metricsConsumers,
+		routingTable:  &routeMap,
+		metricsConfig: metricsConfig{consumers: tr, defaultCons: defaultMetricsConsumer, logger: set.Logger},
 	}, nil
 }
 
@@ -75,150 +118,236 @@ func createLogsConnector(
 	cfg component.Config,
 	next consumer.Logs,
 ) (connector.Logs, error) {
+
+	tr, ok := next.(connector.LogsRouterAndConsumer)
+	if !ok {
+		return nil, errors.New("expected consumer to be a connector router")
+	}
+
 	config := cfg.(*Config)
 
+	defaultLogsConsumer, err := tr.Consumer(
+		collectorpipeline.NewIDWithName(collectorpipeline.SignalLogs, consts.DefaultDataStream),
+	)
+	if err != nil {
+		set.Logger.Warn("failed to get default logs consumer")
+		// Do not return the error — just continue with nil fallback
+		// This can happen if the default pipeline is not configured (Sources and Destinations)
+		defaultLogsConsumer = nil
+	}
 	routeMap := BuildSignalRoutingMap(config.Groups)
 
-	logsConsumers := buildConsumerMap(routeMap, "logs", next)
-
-	fmt.Println("Registered logsConsumers:", logsConsumers)
 	return &routerConnector{
-		routingTable:  &routeMap,
-		logsConsumers: logsConsumers,
+		routingTable: &routeMap,
+		logsConfig:   logsConfig{consumers: tr, defaultCons: defaultLogsConsumer, logger: set.Logger},
 	}, nil
 }
 
-func determineRoutingPipelines(attrs pcommon.Map, m SignalRoutingMap, signal string) []string {
+func determineRoutingPipelines(attrs pcommon.Map, m SignalRoutingMap, signal string) ([]string, string) {
 	nsAttr, ok := attrs.Get(string(semconv1_21.K8SNamespaceNameKey))
 	if !ok {
-		return nil
+		return nil, ""
 	}
 	ns := nsAttr.Str()
 
 	name, kind := getDynamicNameAndKind(attrs)
 	if name == "" || kind == "" {
-		return nil
+		return nil, ""
 	}
 
 	key := fmt.Sprintf("%s/%s/%s", ns, NormalizeKind(kind), name)
 
 	routingIndex, ok := m[key]
 	if !ok {
-		return nil
+		return nil, ""
 	}
 
 	pipelines, ok := routingIndex[signal]
 	if !ok {
-		return nil
+		return nil, ""
 	}
 
-	return pipelines
+	return pipelines, key
 }
 
 func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) error {
-	rSpans := td.ResourceSpans()
-	pipelineTraces := make(map[string]ptrace.Traces)
+	cfg := r.tracesConfig
+	groups := make(map[consumer.Traces]ptrace.Traces)
 
-	fmt.Println("routingTable", *r.routingTable)
+	// fallback to default traces consumer if no pipelines are matched
+	defaultTraces := ptrace.NewTraces()
+
+	var errs error
+
+	rSpans := td.ResourceSpans()
+
 	for i := 0; i < rSpans.Len(); i++ {
-		fmt.Println("rSpans", rSpans.At(i))
 		rs := rSpans.At(i)
 
-		// Determine pipelines this span belongs to, based on its resource attributes
-		pipelines := determineRoutingPipelines(rs.Resource().Attributes(), *r.routingTable, "traces")
+		// Determine pipelines for this resource
+		pipelines, key := determineRoutingPipelines(rs.Resource().Attributes(), *r.routingTable, "traces")
 
-		fmt.Println("routing pipelines", pipelines)
+		// if no pipelines matched, copy the resource span to the default consumer
+		if len(pipelines) == 0 {
+			cfg.logger.Debug("no pipelines matched for", zap.Any("key", key))
+			rs.CopyTo(defaultTraces.ResourceSpans().AppendEmpty())
+			continue
+		}
 
 		for _, pipeline := range pipelines {
-			fmt.Println("pipeline in consume traces", pipeline)
-			// Skip if pipeline isn't wired (e.g., not in tracesConsumers)
-			if _, allowed := r.tracesConsumers[pipeline]; !allowed {
-				fmt.Println("pipeline not allowed in consume traces", pipeline)
+
+			pipelineID := collectorpipeline.NewIDWithName(collectorpipeline.SignalTraces, pipeline)
+			consumer, err := cfg.consumers.Consumer(pipelineID)
+			if err != nil {
+				errs = errors.Join(errs, fmt.Errorf("failed to get consumer for pipeline %s: %w", pipelineID, err))
 				continue
 			}
 
-			// Initialize the batch container if not done already
-			if _, exists := pipelineTraces[pipeline]; !exists {
-				fmt.Println("initializing pipeline traces", pipeline)
-				pipelineTraces[pipeline] = ptrace.NewTraces()
+			batch, ok := groups[consumer]
+			if !ok {
+				batch = ptrace.NewTraces()
 			}
-
-			// Append resource span to the relevant pipeline batch
-			rs.CopyTo(pipelineTraces[pipeline].ResourceSpans().AppendEmpty())
+			rs.CopyTo(batch.ResourceSpans().AppendEmpty())
+			groups[consumer] = batch
 		}
 	}
 
-	// Forward each batch to the configured downstream consumer
-	for pipeline, batch := range pipelineTraces {
-		fmt.Println("forwarding traces to", pipeline)
-		if err := r.tracesConsumers[pipeline].ConsumeTraces(ctx, batch); err != nil {
-			return err
+	// Forward all grouped batches to their respective consumers
+	for cons, batch := range groups {
+		if batch.ResourceSpans().Len() == 0 {
+			continue
+		}
+		if err := cons.ConsumeTraces(ctx, batch); err != nil {
+			errs = errors.Join(errs, err)
 		}
 	}
 
-	return nil
+	// Fallback, if any spans unmatched
+	if defaultTraces.ResourceSpans().Len() > 0 {
+		if cfg.defaultCons != nil {
+			if err := cfg.defaultCons.ConsumeTraces(ctx, defaultTraces); err != nil {
+				cfg.logger.Debug("failed to send traces to the default pipeline", zap.Error(err))
+			}
+		}
+	}
+
+	return errs
 }
 
 func (r *routerConnector) ConsumeMetrics(ctx context.Context, md pmetric.Metrics) error {
-	rMetrics := md.ResourceMetrics()
-	pipelineMetrics := make(map[string]pmetric.Metrics)
+	cfg := r.metricsConfig
+	groups := make(map[consumer.Metrics]pmetric.Metrics)
 
+	defaultMetrics := pmetric.NewMetrics()
+	var errs error
+
+	rMetrics := md.ResourceMetrics()
 	for i := 0; i < rMetrics.Len(); i++ {
 		rm := rMetrics.At(i)
+		pipelines, key := determineRoutingPipelines(rm.Resource().Attributes(), *r.routingTable, "metrics")
 
-		// Determine destination pipelines based on workload metadata
-		pipelines := determineRoutingPipelines(rm.Resource().Attributes(), *r.routingTable, "metrics")
+		// If no pipeline matched, copy the resource metrics to the default consumer
+		if len(pipelines) == 0 {
+			cfg.logger.Debug("no pipelines matched for", zap.Any("key", key))
+			rm.CopyTo(defaultMetrics.ResourceMetrics().AppendEmpty())
+			continue
+		}
 
 		for _, pipeline := range pipelines {
-			if _, allowed := r.metricsConsumers[pipeline]; !allowed {
+			consumer, err := cfg.consumers.Consumer(collectorpipeline.NewIDWithName(collectorpipeline.SignalMetrics, pipeline))
+			if err != nil {
+				errs = errors.Join(errs, fmt.Errorf("failed to get metrics consumer for pipeline %s: %w", pipeline, err))
 				continue
 			}
-			if _, exists := pipelineMetrics[pipeline]; !exists {
-				pipelineMetrics[pipeline] = pmetric.NewMetrics()
+
+			batch, ok := groups[consumer]
+			if !ok {
+				batch = pmetric.NewMetrics()
 			}
-			rm.CopyTo(pipelineMetrics[pipeline].ResourceMetrics().AppendEmpty())
+			rm.CopyTo(batch.ResourceMetrics().AppendEmpty())
+			groups[consumer] = batch
 		}
 	}
 
-	// Send routed metrics to relevant consumers
-	for pipeline, batch := range pipelineMetrics {
-		if err := r.metricsConsumers[pipeline].ConsumeMetrics(ctx, batch); err != nil {
-			return err
+	for cons, batch := range groups {
+		if batch.ResourceMetrics().Len() == 0 {
+			continue
+		}
+		if err := cons.ConsumeMetrics(ctx, batch); err != nil {
+			errs = errors.Join(errs, err)
 		}
 	}
 
-	return nil
+	if defaultMetrics.ResourceMetrics().Len() > 0 {
+		if cfg.defaultCons != nil {
+			if err := cfg.defaultCons.ConsumeMetrics(ctx, defaultMetrics); err != nil {
+				cfg.logger.Debug("failed to send metrics to the default pipeline", zap.Error(err))
+			}
+		}
+	}
+
+	return errs
 }
 
 func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
-	rLogs := ld.ResourceLogs()
-	pipelineLogs := make(map[string]plog.Logs)
+	cfg := r.logsConfig
+	// Grouped batches by consumer
+	groups := make(map[consumer.Logs]plog.Logs)
+	// Fallback batch for unmatched spans
+	defaultLogs := plog.NewLogs()
+	var errs error
 
+	rLogs := ld.ResourceLogs()
 	for i := 0; i < rLogs.Len(); i++ {
 		rl := rLogs.At(i)
+		// Determine destination pipelines based on resource metadata
+		pipelines, key := determineRoutingPipelines(rl.Resource().Attributes(), *r.routingTable, "logs")
 
-		// Extract routing info from log's resource attributes
-		pipelines := determineRoutingPipelines(rl.Resource().Attributes(), *r.routingTable, "logs")
+		// If no pipeline matched, copy the resource logs to the default consumer
+		if len(pipelines) == 0 {
+			cfg.logger.Debug("no pipelines matched for", zap.Any("key", key))
+			rl.CopyTo(defaultLogs.ResourceLogs().AppendEmpty())
+			continue
+		}
 
 		for _, pipeline := range pipelines {
-			if _, allowed := r.logsConsumers[pipeline]; !allowed {
+			consumer, err := cfg.consumers.Consumer(
+				collectorpipeline.NewIDWithName(collectorpipeline.SignalLogs, pipeline),
+			)
+			if err != nil {
+				errs = errors.Join(errs, fmt.Errorf("failed to get logs consumer for pipeline %s: %w", pipeline, err))
 				continue
 			}
-			if _, exists := pipelineLogs[pipeline]; !exists {
-				pipelineLogs[pipeline] = plog.NewLogs()
+
+			batch, ok := groups[consumer]
+			if !ok {
+				batch = plog.NewLogs()
 			}
-			rl.CopyTo(pipelineLogs[pipeline].ResourceLogs().AppendEmpty())
+			rl.CopyTo(batch.ResourceLogs().AppendEmpty())
+			groups[consumer] = batch
 		}
 	}
 
-	// Emit logs per matched pipeline
-	for pipeline, batch := range pipelineLogs {
-		if err := r.logsConsumers[pipeline].ConsumeLogs(ctx, batch); err != nil {
-			return err
+	// Send each grouped batch
+	for cons, batch := range groups {
+		if batch.ResourceLogs().Len() == 0 {
+			continue
+		}
+		if err := cons.ConsumeLogs(ctx, batch); err != nil {
+			errs = errors.Join(errs, err)
 		}
 	}
 
-	return nil
+	// Handle fallback for unmatched logs
+	if defaultLogs.ResourceLogs().Len() > 0 {
+		if cfg.defaultCons != nil {
+			if err := cfg.defaultCons.ConsumeLogs(ctx, defaultLogs); err != nil {
+				cfg.logger.Debug("failed to send logs to the default pipeline", zap.Error(err))
+			}
+		}
+	}
+
+	return errs
 }
 
 // getDynamicNameAndKind extracts the workload name and kind from a resource's attributes.
@@ -239,26 +368,4 @@ func getDynamicNameAndKind(attrs pcommon.Map) (name string, kind string) {
 		}
 	}
 	return "", ""
-}
-
-// Each pipeline (e.g., traces/B) expects a dedicated consumer entry.
-// This map allows the connector to forward data to the correct downstream group.
-func buildConsumerMap[T any](
-	routeMap SignalRoutingMap,
-	signal string,
-	next T,
-) map[string]T {
-	consumers := make(map[string]T)
-	seen := make(map[string]struct{})
-
-	for _, signalMap := range routeMap {
-		for _, pipeline := range signalMap[signal] {
-			if _, exists := seen[pipeline]; !exists {
-				consumers[pipeline] = next
-				seen[pipeline] = struct{}{}
-			}
-		}
-	}
-
-	return consumers
 }

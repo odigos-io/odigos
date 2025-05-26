@@ -25,7 +25,8 @@ func TestDetermineRoutingPipelines(t *testing.T) {
 		attrs.PutStr("k8s.namespace.name", "default")
 		attrs.PutStr("k8s.deployment.name", "my-app")
 
-		pipelines := determineRoutingPipelines(attrs, rt, "traces")
+		pipelines, key := determineRoutingPipelines(attrs, rt, "traces")
+		assert.Equal(t, "default/deployment/my-app", key)
 		assert.ElementsMatch(t, []string{"traces/B"}, pipelines)
 	})
 
@@ -34,7 +35,8 @@ func TestDetermineRoutingPipelines(t *testing.T) {
 		attrs.PutStr("k8s.namespace.name", "default")
 		attrs.PutStr("k8s.daemonset.name", "log-agent")
 
-		pipelines := determineRoutingPipelines(attrs, rt, "logs")
+		pipelines, key := determineRoutingPipelines(attrs, rt, "logs")
+		assert.Equal(t, "default/daemonset/log-agent", key)
 		assert.ElementsMatch(t, []string{"logs/A", "logs/B"}, pipelines)
 	})
 
@@ -43,7 +45,8 @@ func TestDetermineRoutingPipelines(t *testing.T) {
 		attrs.PutStr("k8s.namespace.name", "default")
 		attrs.PutStr("k8s.statefulset.name", "metricsd")
 
-		pipelines := determineRoutingPipelines(attrs, rt, "metrics")
+		pipelines, key := determineRoutingPipelines(attrs, rt, "metrics")
+		assert.Equal(t, "default/statefulset/metricsd", key)
 		assert.ElementsMatch(t, []string{"metrics/X"}, pipelines)
 	})
 
@@ -51,7 +54,8 @@ func TestDetermineRoutingPipelines(t *testing.T) {
 		attrs := pcommon.NewMap()
 		attrs.PutStr("k8s.deployment.name", "my-app")
 
-		pipelines := determineRoutingPipelines(attrs, rt, "traces")
+		pipelines, key := determineRoutingPipelines(attrs, rt, "traces")
+		assert.Equal(t, "", key)
 		assert.Nil(t, pipelines)
 	})
 
@@ -59,7 +63,8 @@ func TestDetermineRoutingPipelines(t *testing.T) {
 		attrs := pcommon.NewMap()
 		attrs.PutStr("k8s.namespace.name", "default")
 
-		pipelines := determineRoutingPipelines(attrs, rt, "traces")
+		pipelines, key := determineRoutingPipelines(attrs, rt, "traces")
+		assert.Equal(t, "", key)
 		assert.Nil(t, pipelines)
 	})
 
@@ -68,7 +73,8 @@ func TestDetermineRoutingPipelines(t *testing.T) {
 		attrs.PutStr("k8s.namespace.name", "default")
 		attrs.PutStr("k8s.deployment.name", "ghost")
 
-		pipelines := determineRoutingPipelines(attrs, rt, "traces")
+		pipelines, key := determineRoutingPipelines(attrs, rt, "traces")
+		assert.Equal(t, "", key)
 		assert.Empty(t, pipelines)
 	})
 }

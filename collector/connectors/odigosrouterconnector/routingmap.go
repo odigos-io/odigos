@@ -2,7 +2,9 @@ package odigosrouterconnector
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/pipelinegen"
 )
 
@@ -13,12 +15,12 @@ type RoutingIndex map[string][]string // signal -> []pipeline names
 //
 //	 SignalRoutingMap{
 //	    {ns1/deployment/frontend}: {
-//	        "logs":    {"logs/groupA"},
-//	        "traces":  {"traces/groupA", "traces/groupB"},
-//	        "metrics": {"metrics/groupB"},
+//	        "logs":    {"groupA"},
+//	        "traces":  {"groupA", "groupB"},
+//	        "metrics": {"groupB"},
 //	    },
 //	    {ns2/statefulset/db}: {
-//	        "traces": {"traces/groupB"},
+//	        "traces": {"groupB"},
 //	    },
 //	}
 type SignalRoutingMap map[string]RoutingIndex
@@ -28,20 +30,21 @@ type SignalRoutingMap map[string]RoutingIndex
 func BuildSignalRoutingMap(groups []pipelinegen.GroupDetails) SignalRoutingMap {
 	result := make(SignalRoutingMap)
 
-	fmt.Println("groups", groups)
 	for _, group := range groups {
-		fmt.Println("iterating groups in BuildSignalRoutingMap is", group)
+
+		signalsForGroup := GetSignalsForGroup(group)
+
 		for _, source := range group.Sources {
-			fmt.Println("source in BuildSignalRoutingMap is", source)
 			key := fmt.Sprintf("%s/%s/%s", source.Namespace, NormalizeKind(source.Kind), source.Name)
 
 			if _, exists := result[key]; !exists {
 				result[key] = make(RoutingIndex)
 			}
 
-			for _, signal := range []string{"logs", "metrics", "traces"} {
-				pipeline := signal + "/" + group.Name
-				result[key][signal] = appendIfMissing(result[key][signal], pipeline)
+			for _, signal := range signalsForGroup {
+				signalStr := strings.ToLower(string(signal))
+				pipeline := group.Name
+				result[key][signalStr] = appendIfMissing(result[key][signalStr], pipeline)
 			}
 		}
 	}
@@ -71,4 +74,21 @@ func appendIfMissing(slice []string, item string) []string {
 		}
 	}
 	return append(slice, item)
+}
+
+// GetSignalsForGroup returns all observability signals for a given group.
+// This is used to forward all signals for signal group pipelines e.g. logs/groupA, traces/groupC, metrics/groupB.
+func GetSignalsForGroup(group pipelinegen.GroupDetails) []common.ObservabilitySignal {
+	signals := []common.ObservabilitySignal{}
+	seen := make(map[common.ObservabilitySignal]struct{})
+
+	for _, destination := range group.Destinations {
+		for _, sig := range destination.ConfiguredSignals {
+			if _, exists := seen[sig]; !exists {
+				seen[sig] = struct{}{}
+				signals = append(signals, sig)
+			}
+		}
+	}
+	return signals
 }

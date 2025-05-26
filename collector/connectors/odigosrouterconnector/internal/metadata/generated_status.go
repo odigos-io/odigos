@@ -4,12 +4,11 @@ package metadata
 
 import (
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/trace"
 )
 
 var (
-	Type = component.MustNewType("odigosrouterconnector")
+	Type      = component.MustNewType("odigosrouterconnector")
+	ScopeName = "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
 )
 
 const (
@@ -17,11 +16,3 @@ const (
 	MetricsToMetricsStability = component.StabilityLevelAlpha
 	LogsToLogsStability       = component.StabilityLevelAlpha
 )
-
-func Meter(settings component.TelemetrySettings) metric.Meter {
-	return settings.MeterProvider.Meter("otelcol/odigosrouter")
-}
-
-func Tracer(settings component.TelemetrySettings) trace.Tracer {
-	return settings.TracerProvider.Tracer("otelcol/odigosrouter")
-}

@@ -1,8 +1,9 @@
 package odigosrouterconnector
 
 import (
-	"github.com/odigos-io/odigos/common/pipelinegen"
 	"go.opentelemetry.io/collector/component"
+
+	"github.com/odigos-io/odigos/common/pipelinegen"
 )
 
 type Config struct {
