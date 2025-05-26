@@ -1,4 +1,4 @@
-import { ActionType, type Condition } from '@odigos/ui-kit/types';
+import { ActionType, BooleanOperation, JsonOperation, NumberOperation, StringOperation, type Condition } from '@odigos/ui-kit/types';
 
 export interface FetchedAction {
   id: string;
@@ -39,6 +39,32 @@ export interface ParsedActionSpec {
         service_name: string;
         sampling_ratio: number;
         fallback_sampling_ratio: number;
+      }[]
+    | null;
+  attribute_filters?:
+    | {
+        service_name: string;
+        attribute_key: string;
+        fallback_sampling_ratio: number;
+        condition: {
+          string_condition?: {
+            operation: StringOperation;
+            expected_value?: string;
+          };
+          number_condition?: {
+            operation: NumberOperation;
+            expected_value?: number;
+          };
+          boolean_condition?: {
+            operation: BooleanOperation;
+            expected_value?: boolean;
+          };
+          json_condition?: {
+            operation: JsonOperation;
+            expected_value?: string;
+            json_path?: string;
+          };
+        };
       }[]
     | null;
 }

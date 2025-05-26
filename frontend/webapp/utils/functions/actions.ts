@@ -60,12 +60,40 @@ export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
         break;
 
       case ActionType.SpanAttributeSampler:
-        spec.attributeFilters = parsedSpec.attribute_filters?.map(({ service_name, attribute_key, fallback_sampling_ratio, condition }) => ({
-          serviceName: service_name,
-          attributeKey: attribute_key,
-          fallbackSamplingRatio: fallback_sampling_ratio,
-          condition,
-        }));
+        spec.attributeFilters = parsedSpec.attribute_filters?.map(
+          ({ service_name, attribute_key, fallback_sampling_ratio, condition: { string_condition, number_condition, boolean_condition, json_condition } }) => ({
+            serviceName: service_name,
+            attributeKey: attribute_key,
+            fallbackSamplingRatio: fallback_sampling_ratio,
+            condition: {
+              stringCondition: string_condition
+                ? {
+                    operation: string_condition.operation,
+                    expectedValue: string_condition.expected_value,
+                  }
+                : undefined,
+              numberCondition: number_condition
+                ? {
+                    operation: number_condition.operation,
+                    expectedValue: number_condition.expected_value,
+                  }
+                : undefined,
+              booleanCondition: boolean_condition
+                ? {
+                    operation: boolean_condition.operation,
+                    expectedValue: boolean_condition.expected_value,
+                  }
+                : undefined,
+              jsonCondition: json_condition
+                ? {
+                    operation: json_condition.operation,
+                    expectedValue: json_condition.expected_value,
+                    jsonPath: json_condition.json_path,
+                  }
+                : undefined,
+            },
+          }),
+        );
         break;
 
       default:
