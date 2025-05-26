@@ -684,6 +684,39 @@ type RuntimeInfoAnalyze struct {
 	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
 }
 
+type ServiceNameFilters struct {
+	ServiceName           string  `json:"serviceName"`
+	SamplingRatio         float64 `json:"samplingRatio"`
+	FallbackSamplingRatio float64 `json:"fallbackSamplingRatio"`
+}
+
+type ServiceNameSamplerAction struct {
+	ID      string                `json:"id"`
+	Type    string                `json:"type"`
+	Name    *string               `json:"name,omitempty"`
+	Notes   *string               `json:"notes,omitempty"`
+	Disable bool                  `json:"disable"`
+	Signals []SignalType          `json:"signals"`
+	Details []*ServiceNameFilters `json:"details"`
+}
+
+func (ServiceNameSamplerAction) IsAction()              {}
+func (this ServiceNameSamplerAction) GetID() string     { return this.ID }
+func (this ServiceNameSamplerAction) GetType() string   { return this.Type }
+func (this ServiceNameSamplerAction) GetName() *string  { return this.Name }
+func (this ServiceNameSamplerAction) GetNotes() *string { return this.Notes }
+func (this ServiceNameSamplerAction) GetDisable() bool  { return this.Disable }
+func (this ServiceNameSamplerAction) GetSignals() []SignalType {
+	if this.Signals == nil {
+		return nil
+	}
+	interfaceSlice := make([]SignalType, 0, len(this.Signals))
+	for _, concrete := range this.Signals {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+
 type SingleDestinationMetricsResponse struct {
 	ID            string `json:"id"`
 	TotalDataSent int    `json:"totalDataSent"`
