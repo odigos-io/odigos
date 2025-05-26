@@ -60,7 +60,7 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 	exporterConfig["tls"] = tlsConfig
 	currentConfig.Exporters[exporterName] = exporterConfig
 	pipelineNames := []string{}
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		tracesPipelineName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -70,11 +70,11 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 		return nil, ErrorJaegerTracingDisabled
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		return nil, ErrorJaegerMetricsNotAllowed
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		return nil, ErrorJaegerLogsNotAllowed
 	}
 

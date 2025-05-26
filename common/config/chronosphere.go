@@ -43,7 +43,7 @@ func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Conf
 	}
 	var pipelineNames []string
 
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		tracePipelineName := "traces/chronosphere-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracePipelineName] = Pipeline{
 			Exporters: []string{chronosphereExporterName},
@@ -51,7 +51,7 @@ func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Conf
 		pipelineNames = append(pipelineNames, tracePipelineName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		// Set service.instance.id to pod name or node name
 		chronosphereMetricProcessorName := "resource/chornosphere-" + dest.GetID()
 		currentConfig.Processors[chronosphereMetricProcessorName] = GenericMap{

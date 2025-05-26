@@ -23,7 +23,7 @@ func (s *Splunk) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 		return nil, errors.New("Splunk realm not specified, gateway will not be configured for Splunk")
 	}
 	var pipelineNames []string
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		exporterName := "sapm/" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"access_token": "${SPLUNK_ACCESS_TOKEN}",

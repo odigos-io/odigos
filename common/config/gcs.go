@@ -18,7 +18,7 @@ func (g *GoogleCloudStorage) DestType() common.DestinationType {
 }
 
 func (g *GoogleCloudStorage) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	if !isTracingEnabled(dest) && !isLoggingEnabled(dest) {
+	if !IsTracingEnabled(dest) && !IsLoggingEnabled(dest) {
 		return nil, errors.New("GoogleCloudStorage is not enabled for any supported signals, skipping")
 	}
 
@@ -34,7 +34,7 @@ func (g *GoogleCloudStorage) ModifyConfig(dest ExporterConfigurer, currentConfig
 		},
 	}
 	var pipelineNames []string
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		logsPipelineName := "logs/gcs-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -42,7 +42,7 @@ func (g *GoogleCloudStorage) ModifyConfig(dest ExporterConfigurer, currentConfig
 		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		tracesPipelineName := "traces/gcs-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

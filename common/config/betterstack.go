@@ -25,7 +25,7 @@ func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]stri
 		},
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		exporterName := "prometheusremotewrite/" + uniqueUri
 		cfg.Exporters[exporterName] = GenericMap{
 			"endpoint": "https://in-otel.logs.betterstack.com/metrics",
@@ -39,7 +39,7 @@ func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]stri
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		exporterName := "otlp/" + uniqueUri
 		cfg.Exporters[exporterName] = GenericMap{
 			"endpoint": "https://in-otel.logs.betterstack.com:443",

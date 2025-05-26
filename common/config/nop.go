@@ -15,7 +15,7 @@ func (s *Nop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 
 	currentConfig.Exporters[exporterName] = GenericMap{}
 	var pipelineNames []string
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		tracesPipelineName := "traces/nop-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -23,7 +23,7 @@ func (s *Nop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/nop-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -31,7 +31,7 @@ func (s *Nop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		logsPipelineName := "logs/nop-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

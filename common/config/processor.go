@@ -22,13 +22,13 @@ func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap
 		}
 		cfg[processorKey] = processorsConfig
 
-		if isTracingEnabled(processor) {
+		if IsTracingEnabled(processor) {
 			tracesProcessors = append(tracesProcessors, processorKey)
 		}
-		if isMetricsEnabled(processor) {
+		if IsMetricsEnabled(processor) {
 			metricsProcessors = append(metricsProcessors, processorKey)
 		}
-		if isLoggingEnabled(processor) {
+		if IsLoggingEnabled(processor) {
 			logsProcessors = append(logsProcessors, processorKey)
 		}
 	}

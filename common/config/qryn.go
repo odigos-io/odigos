@@ -50,7 +50,7 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 		return nil, errors.Join(err, errors.New("invalid qryn endpoint. gateway will not be configured with qryn"))
 	}
 	var pipelineNames []string
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		rwExporterName := "prometheusremotewrite/qryn-" + dest.GetID()
 		currentConfig.Exporters[rwExporterName] = GenericMap{
 			"endpoint": fmt.Sprintf("%s/api/v1/prom/remote/write", baseURL),
@@ -75,7 +75,7 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 
 	otlpHttpExporterName := ""
 	otlpHttpExporter := GenericMap{}
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		otlpHttpExporterName = "otlphttp/qryn-" + dest.GetID()
 		otlpHttpExporter["traces_endpoint"] = fmt.Sprintf("%s/v1/traces", baseURL)
 		otlpHttpExporter["encoding"] = "proto"
@@ -95,7 +95,7 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		otlpHttpExporterName = "otlphttp/qryn-" + dest.GetID()
 		otlpHttpExporter["logs_endpoint"] = fmt.Sprintf("%s/v1/logs", baseURL)
 		logsPipelineName := "logs/qryn-" + dest.GetID()

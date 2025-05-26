@@ -31,7 +31,7 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		},
 	}
 	var pipelineNames []string
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		tracesPipelineName := "traces/newrelic-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -39,7 +39,7 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/newrelic-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -47,7 +47,7 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		logsPipelineName := "logs/newrelic-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

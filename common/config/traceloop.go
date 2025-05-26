@@ -43,7 +43,7 @@ func (j *Traceloop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 
 	currentConfig.Exporters[exporterName] = exporterConfig
 	var pipelineNames []string
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -51,7 +51,7 @@ func (j *Traceloop) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},

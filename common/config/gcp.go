@@ -11,7 +11,7 @@ func (g *GoogleCloud) DestType() common.DestinationType {
 }
 
 func (g *GoogleCloud) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		exporterName := "googlecloud/" + dest.GetID()
 		currentConfig.Exporters[exporterName] = struct{}{}
 
@@ -21,7 +21,7 @@ func (g *GoogleCloud) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		}
 	}
 	var pipelineNames []string
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		exporterName := "googlecloud/" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"log": GenericMap{

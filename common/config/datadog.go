@@ -17,7 +17,7 @@ func (d *Datadog) DestType() common.DestinationType {
 }
 
 func (d *Datadog) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	if !isTracingEnabled(dest) && !isLoggingEnabled(dest) && !isMetricsEnabled(dest) {
+	if !IsTracingEnabled(dest) && !IsLoggingEnabled(dest) && !IsMetricsEnabled(dest) {
 		return nil, errors.New("Datadog destination does not have any signals to export")
 	}
 
@@ -38,12 +38,12 @@ func (d *Datadog) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 	connectorEnabled := false
 	connectorName := "datadog/connector-" + dest.GetID()
 	var pipelineNames []string
-	if isTracingEnabled(dest) && isMetricsEnabled(dest) {
+	if IsTracingEnabled(dest) && IsMetricsEnabled(dest) {
 		currentConfig.Connectors[connectorName] = struct{}{}
 		connectorEnabled = true
 	}
 
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		tracesPipelineName := "traces/datadog-" + dest.GetID()
 		exporters := []string{exporterName}
 		if connectorEnabled {
@@ -56,7 +56,7 @@ func (d *Datadog) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/datadog-" + dest.GetID()
 		var receivers []string
 		if connectorEnabled {
@@ -69,7 +69,7 @@ func (d *Datadog) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		logsPipelineName := "logs/datadog-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

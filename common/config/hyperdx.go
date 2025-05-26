@@ -23,7 +23,7 @@ func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 
 	cfg.Exporters[exporterName] = exporterConfig
 	var pipelineNames []string
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -31,7 +31,7 @@ func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -39,7 +39,7 @@ func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		pipeName := "logs/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},

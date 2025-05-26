@@ -48,7 +48,7 @@ func (j *Groundcover) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 
 	currentConfig.Exporters[exporterName] = exporterConfig
 	var pipelineNames []string
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		tracesPipelineName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -56,7 +56,7 @@ func (j *Groundcover) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		tracesPipelineName := "metrics/" + uniqueUri
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -64,7 +64,7 @@ func (j *Groundcover) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		tracesPipelineName := "logs/" + uniqueUri
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

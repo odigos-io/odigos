@@ -7,10 +7,6 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
-const (
-	memoryLimiterProcessorName = "memory_limiter"
-)
-
 var availableConfigers = []Configer{
 	&AlibabaCloud{},
 	&AppDynamics{},
@@ -112,15 +108,15 @@ func isSignalExists(dest SignalSpecific, signal common.ObservabilitySignal) bool
 	return false
 }
 
-func isTracingEnabled(dest SignalSpecific) bool {
+func IsTracingEnabled(dest SignalSpecific) bool {
 	return isSignalExists(dest, common.TracesObservabilitySignal)
 }
 
-func isMetricsEnabled(dest SignalSpecific) bool {
+func IsMetricsEnabled(dest SignalSpecific) bool {
 	return isSignalExists(dest, common.MetricsObservabilitySignal)
 }
 
-func isLoggingEnabled(dest SignalSpecific) bool {
+func IsLoggingEnabled(dest SignalSpecific) bool {
 	return isSignalExists(dest, common.LogsObservabilitySignal)
 }
 

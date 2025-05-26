@@ -198,7 +198,7 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	// Modify the pipelines here
 	var pipelineNames []string
 
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		if topic == "" {
 			exporterConfig["topic"] = "otlp_spans"
 		}
@@ -211,7 +211,7 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		if topic == "" {
 			exporterConfig["topic"] = "otlp_metrics"
 		}
@@ -224,7 +224,7 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		if topic == "" {
 			exporterConfig["topic"] = "otlp_logs"
 		}

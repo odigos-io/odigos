@@ -40,7 +40,7 @@ func (j *AlibabaCloud) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]str
 		},
 	}
 
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},

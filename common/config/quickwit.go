@@ -28,7 +28,7 @@ func (e *Quickwit) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		}
 
 		var pipelineNames []string
-		if isTracingEnabled(dest) {
+		if IsTracingEnabled(dest) {
 			tracesPipelineName := "traces/quickwit-" + dest.GetID()
 			currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 				Exporters: []string{exporterName},
@@ -36,7 +36,7 @@ func (e *Quickwit) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 			pipelineNames = append(pipelineNames, tracesPipelineName)
 		}
 
-		if isLoggingEnabled(dest) {
+		if IsLoggingEnabled(dest) {
 			logsPipelineName := "logs/quickwit-" + dest.GetID()
 			currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 				Exporters: []string{exporterName},
