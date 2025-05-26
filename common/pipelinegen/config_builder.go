@@ -5,10 +5,11 @@ import (
 	"slices"
 	"strings"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
-	"gopkg.in/yaml.v2"
 )
 
 func GetGatewayConfig(
@@ -29,7 +30,6 @@ func CalculateGatewayConfig(
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	groupDetails []GroupDetails,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
-
 	configers, err := config.LoadConfigers()
 	if err != nil {
 		return "", err, nil, nil
@@ -141,7 +141,8 @@ func CalculateGatewayConfig(
 	return string(data), nil, status, signals
 }
 
-func prepareRootPipelines(currentConfig *config.Config, groupDetails []GroupDetails, tracesProcessors, metricsProcessors, logsProcessors []string, signals []common.ObservabilitySignal) {
+func prepareRootPipelines(currentConfig *config.Config, groupDetails []GroupDetails, tracesProcessors,
+	metricsProcessors, logsProcessors []string, signals []common.ObservabilitySignal) {
 	// for each signal, create a root pipeline and a connector
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
 		tracesRootPipelineName := GetTelemetryRootPipeline("traces")
@@ -155,7 +156,6 @@ func prepareRootPipelines(currentConfig *config.Config, groupDetails []GroupDeta
 		currentConfig.Connectors["odigosrouterconnector/traces"] = config.GenericMap{
 			"groups": groupDetails,
 		}
-
 	}
 
 	if slices.Contains(signals, common.MetricsObservabilitySignal) {
@@ -171,7 +171,6 @@ func prepareRootPipelines(currentConfig *config.Config, groupDetails []GroupDeta
 			Processors: processors,
 			Exporters:  []string{"odigosrouterconnector/metrics"},
 		}
-
 	}
 
 	if slices.Contains(signals, common.LogsObservabilitySignal) {
@@ -188,7 +187,6 @@ func prepareRootPipelines(currentConfig *config.Config, groupDetails []GroupDeta
 			Exporters:  []string{"odigosrouterconnector/logs"},
 		}
 	}
-
 }
 
 func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
