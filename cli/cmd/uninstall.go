@@ -73,6 +73,19 @@ and rollback any metadata changes made to your objects.`,
 
 			UninstallOdigosResources(ctx, client, ns)
 
+			hasSystemLabel, err := namespaceHasOdigosLabel(ctx, client, ns, k8sconsts.OdigosSystemLabelKey, k8sconsts.OdigosSystemLabelValue)
+			if err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Failed to check if namespace %s has Odigos label: %s\n", ns, err)
+				os.Exit(1)
+			}
+			if hasSystemLabel {
+				fmt.Printf("Uninstalling namespace %s\n", ns)
+				createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
+			 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallNamespace)
+
+			 	waitForNamespaceDeletion(ctx, client, ns)
+			}
+
 			// The CLI is running in Kubernetes via a Helm chart [pre-delete hook] to clean up Odigos resources.
 			// Deleting the namespace during uninstallation will cause Helm to fail due to the loss of the release state.
 			// if !k8sutils.IsRunningInKubernetes() {
@@ -158,6 +171,16 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 	createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallCRDs)
 
+}
+
+func namespaceHasOdigosLabel(ctx context.Context, client *kube.Client, ns string, labelKey, expectedValue string) (bool, error) {
+	nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	if err != nil {
+		return false, err // namespace may not exist or API error
+	}
+
+	val, exists := nsObj.Labels[labelKey]
+	return exists && val == expectedValue, nil
 }
 
 func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kube.Client) {
