@@ -5,5 +5,5 @@ metadata:
   namespace: {{ .Release.Namespace }}
 rules:
 - apiGroups: [""]
-  resources: ["namespaces", "configmaps"]
+  resources: ["namespaces", "configmaps", "secrets"]
   verbs: ["get", "list", "patch", "delete"]
