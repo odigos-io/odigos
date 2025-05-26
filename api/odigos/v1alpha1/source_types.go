@@ -99,7 +99,7 @@ type SourceSelector struct {
 	// groups: ["backend", "monitoring"]
 	// This means the destination will receive data only from sources labeled with "backend" or "monitoring".
 	// +optional
-	Groups []string `json:"groups,omitempty"`
+	DataStreams []string `json:"dataStreams,omitempty"`
 
 	// Selection Semantics:
 	// If both `Namespaces` and `Groups` are specified, the selection follows an **OR** logic:

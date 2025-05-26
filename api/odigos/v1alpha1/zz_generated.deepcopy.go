@@ -1431,8 +1431,8 @@ func (in *SourceSelector) DeepCopyInto(out *SourceSelector) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.Groups != nil {
-		in, out := &in.Groups, &out.Groups
+	if in.DataStreams != nil {
+		in, out := &in.DataStreams, &out.DataStreams
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}

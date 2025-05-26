@@ -423,8 +423,8 @@ func (r *computePlatformResolver) DataStreams(ctx context.Context, obj *model.Co
 	seen["default"] = true
 
 	for _, dest := range destinations.Items {
-		if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil {
-			for _, streamName := range dest.Spec.SourceSelector.Groups {
+		if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.DataStreams != nil {
+			for _, streamName := range dest.Spec.SourceSelector.DataStreams {
 				if _, exists := seen[streamName]; !exists {
 					seen[streamName] = true
 					dataStreams = append(dataStreams, &model.DataStream{
@@ -438,8 +438,8 @@ func (r *computePlatformResolver) DataStreams(ctx context.Context, obj *model.Co
 	for _, src := range sources.Items {
 		var sourceStreamNames []string
 		for key := range src.Labels {
-			if strings.Contains(key, k8sconsts.SourceGroupLabelPrefix) {
-				sourceStreamNames = append(sourceStreamNames, strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix))
+			if strings.Contains(key, k8sconsts.SourceDataStreamLabelPrefix) {
+				sourceStreamNames = append(sourceStreamNames, strings.TrimPrefix(key, k8sconsts.SourceDataStreamLabelPrefix))
 			}
 		}
 
@@ -627,7 +627,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 			Data:            dataField,
 			Signals:         services.ExportedSignalsObjectToSlice(destination.ExportedSignals),
 			SourceSelector: &v1alpha1.SourceSelector{
-				Groups: []string{destination.CurrentStreamName},
+				DataStreams: []string{destination.CurrentStreamName},
 			},
 		},
 	}
@@ -758,15 +758,15 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	if destination.CurrentStreamName != "" {
 		// Init empty struct if nil
 		if dest.Spec.SourceSelector == nil {
-			dest.Spec.SourceSelector = &v1alpha1.SourceSelector{Groups: make([]string, 0)}
+			dest.Spec.SourceSelector = &v1alpha1.SourceSelector{DataStreams: make([]string, 0)}
 		}
 		// Init empty slice if nil
-		if dest.Spec.SourceSelector.Groups == nil {
-			dest.Spec.SourceSelector.Groups = make([]string, 0)
+		if dest.Spec.SourceSelector.DataStreams == nil {
+			dest.Spec.SourceSelector.DataStreams = make([]string, 0)
 		}
 		// Add the current stream name to the source selector
-		if !services.ArrayContains(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName) {
-			dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName)
+		if !services.ArrayContains(dest.Spec.SourceSelector.DataStreams, destination.CurrentStreamName) {
+			dest.Spec.SourceSelector.DataStreams = append(dest.Spec.SourceSelector.DataStreams, destination.CurrentStreamName)
 		}
 	}
 

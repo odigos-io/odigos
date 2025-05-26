@@ -290,7 +290,7 @@ func GetGroupDetailsWithDestinations(
 			continue
 		}
 
-		for _, groupName := range dest.Spec.SourceSelector.Groups {
+		for _, groupName := range dest.Spec.SourceSelector.DataStreams {
 			group := findOrCreateGroup(&groupList, groupName)
 
 			if !destinationExists(group.Destinations, dest.Name) {
@@ -323,7 +323,7 @@ func getSourcesForGroup(
 	logger logr.Logger,
 ) ([]pipelinegen.SourceFilter, error) {
 
-	labelSelector := labels.Set{fmt.Sprintf("odigos.io/group-%s", group): "true"}.AsSelector()
+	labelSelector := labels.Set{fmt.Sprintf("%s%s", k8sconsts.SourceDataStreamLabelPrefix, group): "true"}.AsSelector()
 	sourceList := &odigosv1.SourceList{}
 	err := kubeClient.List(ctx, sourceList, &client.ListOptions{
 		LabelSelector: labelSelector,

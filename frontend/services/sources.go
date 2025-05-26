@@ -258,7 +258,7 @@ func stringToWorkloadKind(workloadKind string) (WorkloadKind, bool) {
 }
 
 func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, currentStreamName string) (*v1alpha1.Source, error) {
-	streamLabel := k8sconsts.SourceGroupLabelPrefix + currentStreamName
+	streamLabel := k8sconsts.SourceDataStreamLabelPrefix + currentStreamName
 
 	switch workloadKind {
 	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
@@ -339,7 +339,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		dataStreamNames := GetSourceDataStreamNames(source)
 
 		if len(dataStreamNames) > 1 {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceDataStreamLabelPrefix+currentStreamName, "")
 			return err
 		}
 
@@ -353,7 +353,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		dataStreamNames := GetSourceDataStreamNames(source)
 
 		if len(dataStreamNames) > 1 {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceDataStreamLabelPrefix+currentStreamName, "")
 			return err
 		}
 
@@ -589,8 +589,8 @@ func GetSourceDataStreamNames(source *v1alpha1.Source) []*string {
 	dataStreamNames := make([]*string, 0)
 
 	for labelKey, labelValue := range source.Labels {
-		if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
-			streamName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+		if strings.Contains(labelKey, k8sconsts.SourceDataStreamLabelPrefix) && labelValue == "true" {
+			streamName := strings.TrimPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix)
 			dataStreamNames = append(dataStreamNames, &streamName)
 		}
 	}
