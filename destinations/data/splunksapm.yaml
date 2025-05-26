@@ -1,8 +1,8 @@
 apiVersion: internal.odigos.io/v1beta1
 kind: Destination
 metadata:
-  type: splunk
-  displayName: Splunk
+  type: splunksapm
+  displayName: Splunk (SAPM) (Deprecated)
   category: managed
 spec:
   image: splunk.svg
@@ -27,4 +27,4 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: The Splunk ream in use. This is the second part of the URL you use to access Splunk/SignalFX. For example, if you access Splunk at `https://app.us1.signalfx.com`, then the realm is `us1`.
+        tooltip: The Splunk realm in use. This is the second part of the URL you use to access Splunk/SignalFX. For example, if you access Splunk at `https://app.us1.signalfx.com`, then the realm is `us1`.
