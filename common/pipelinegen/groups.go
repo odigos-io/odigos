@@ -10,9 +10,14 @@
 
 package pipelinegen
 
+import (
+	"strings"
+
+	"github.com/odigos-io/odigos/common"
+)
+
 // SourceFilter represents a single K8s source workload that will emit observability data.
 // It is uniquely identified by its Namespace, Kind (e.g. Deployment, StatefulSet), and Name.
-
 type SourceFilter struct {
 	Namespace string `mapstructure:"namespace"` // K8s namespace of the workload
 	Kind      string `mapstructure:"kind"`      // Workload kind: Deployment, StatefulSet, etc.
@@ -24,7 +29,14 @@ type SourceFilter struct {
 type GroupDetails struct {
 	Name         string         `mapstructure:"name"`         // Unique identifier for the group (used as pipeline name suffix)
 	Sources      []SourceFilter `mapstructure:"sources"`      // List of workloads belonging to this group
-	Destinations []string       `mapstructure:"destinations"` // List of destination IDs this group routes data to
+	Destinations []Destination  `mapstructure:"destinations"` // List of destination IDs this group routes data to
+}
+
+// Destination represents a destination that a group can send data to.
+// It includes the destination name and the signals the user configured to be sent to this destination.
+type Destination struct {
+	DestinationName   string                       `mapstructure:"destinationname"`
+	ConfiguredSignals []common.ObservabilitySignal `mapstructure:"configuredsignals"`
 }
 
 // telemetryRootPipelinesBySignal maps observability signal types to their corresponding
@@ -32,9 +44,9 @@ type GroupDetails struct {
 // when building the telemetry configuration.
 // and also to be single source of truth for the root pipelines
 var telemetryRootPipelinesBySignal = map[string]string{
-	"traces":  "traces/in",
-	"metrics": "metrics/in",
-	"logs":    "logs/in",
+	strings.ToLower(string(common.TracesObservabilitySignal)):  "traces/in",
+	strings.ToLower(string(common.MetricsObservabilitySignal)): "metrics/in",
+	strings.ToLower(string(common.LogsObservabilitySignal)):    "logs/in",
 }
 
 func GetTelemetryRootPipeline(signal string) string {
@@ -42,8 +54,8 @@ func GetTelemetryRootPipeline(signal string) string {
 }
 func GetSignalsRootPipelines() []string {
 	return []string{
-		GetTelemetryRootPipeline("traces"),
-		GetTelemetryRootPipeline("metrics"),
-		GetTelemetryRootPipeline("logs"),
+		GetTelemetryRootPipeline(strings.ToLower(string(common.TracesObservabilitySignal))),
+		GetTelemetryRootPipeline(strings.ToLower(string(common.MetricsObservabilitySignal))),
+		GetTelemetryRootPipeline(strings.ToLower(string(common.LogsObservabilitySignal))),
 	}
 }

@@ -12,7 +12,7 @@ type OtelPipelines map[string]config.Pipeline
 // BuildGroupPipelines constructs group pipelines for logs, metrics, traces.
 // Each pipeline receives from its routing connector and exports to all destinations relevant to the group.
 func BuildGroupPipelines(
-	groups map[string]*GroupDetails,
+	groups []GroupDetails,
 	forwardConnectorByDest map[string][]string,
 ) map[string]config.Pipeline {
 	pipelines := make(map[string]config.Pipeline)
@@ -28,8 +28,8 @@ func BuildGroupPipelines(
 
 			// Add forward connectors for each destination in the group to route telemetry data
 			// Forward connectors follow the naming pattern: forward/<signal>/<destination-id>
-			for _, destID := range group.Destinations {
-				connectors, exists := forwardConnectorByDest[destID]
+			for _, dest := range group.Destinations {
+				connectors, exists := forwardConnectorByDest[dest.DestinationName]
 				if !exists {
 					continue
 				}

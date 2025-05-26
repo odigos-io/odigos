@@ -274,9 +274,9 @@ func GetGroupDetailsWithDestinations(
 	kubeClient client.Client,
 	dests *odigosv1.DestinationList,
 	logger logr.Logger,
-) (map[string]*pipelinegen.GroupDetails, error) {
+) ([]pipelinegen.GroupDetails, error) {
 
-	groupMap := make(map[string]*pipelinegen.GroupDetails)
+	groupList := []pipelinegen.GroupDetails{}
 	seenGroups := make(map[string]struct{})
 
 	for _, dest := range dests.Items {
@@ -284,36 +284,29 @@ func GetGroupDetailsWithDestinations(
 			continue
 		}
 
-		for _, group := range dest.Spec.SourceSelector.Groups {
-			// Initialize group if not seen
-			if _, exists := groupMap[group]; !exists {
-				groupMap[group] = &pipelinegen.GroupDetails{
-					Name:         group,
-					Sources:      []pipelinegen.SourceFilter{},
-					Destinations: []string{},
+		for _, groupName := range dest.Spec.SourceSelector.Groups {
+			group := findOrCreateGroup(&groupList, groupName)
+
+			if !destinationExists(group.Destinations, dest.Name) {
+				group.Destinations = append(group.Destinations, pipelinegen.Destination{
+					DestinationName:   dest.Name,
+					ConfiguredSignals: getConfiguredSignals(dest),
+				})
+			}
+
+			if _, alreadySeen := seenGroups[groupName]; !alreadySeen {
+				seenGroups[groupName] = struct{}{}
+
+				sources, err := getSourcesForGroup(ctx, kubeClient, groupName, logger)
+				if err != nil {
+					return nil, err
 				}
+				group.Sources = sources
 			}
-
-			// Attach destination
-			if !destinationExists(groupMap[group].Destinations, dest.Name) {
-				groupMap[group].Destinations = append(groupMap[group].Destinations, dest.Name)
-			}
-
-			// Fetch sources only once
-			if _, alreadySeen := seenGroups[group]; alreadySeen {
-				continue
-			}
-			seenGroups[group] = struct{}{}
-
-			sources, err := getSourcesForGroup(ctx, kubeClient, group, logger)
-			if err != nil {
-				return nil, err
-			}
-			groupMap[group].Sources = sources
 		}
 	}
 
-	return groupMap, nil
+	return groupList, nil
 }
 
 // getSourcesForGroup fetches all sources that are labeled with the given group name.
@@ -346,9 +339,9 @@ func getSourcesForGroup(
 	return sources, nil
 }
 
-func destinationExists(list []string, item string) bool {
+func destinationExists(list []pipelinegen.Destination, item string) bool {
 	for _, v := range list {
-		if v == item {
+		if v.DestinationName == item {
 			return true
 		}
 	}
@@ -364,4 +357,34 @@ func isOdigosTrafficMetricsProcessorRelevant(name string, rootPipelines []string
 	if slices.Contains(destinationPipelines, name) {
 		return true
 	}
+	return false
+}
+
+func findOrCreateGroup(groups *[]pipelinegen.GroupDetails, name string) *pipelinegen.GroupDetails {
+	for i := range *groups {
+		if (*groups)[i].Name == name {
+			return &(*groups)[i]
+		}
+	}
+	newGroup := pipelinegen.GroupDetails{
+		Name:         name,
+		Sources:      []pipelinegen.SourceFilter{},
+		Destinations: []pipelinegen.Destination{},
+	}
+	*groups = append(*groups, newGroup)
+	return &(*groups)[len(*groups)-1]
+}
+
+func getConfiguredSignals(dest odigosv1.Destination) []odigoscommon.ObservabilitySignal {
+	configuredSignals := []odigoscommon.ObservabilitySignal{}
+	if config.IsMetricsEnabled(dest) {
+		configuredSignals = append(configuredSignals, odigoscommon.MetricsObservabilitySignal)
+	}
+	if config.IsTracingEnabled(dest) {
+		configuredSignals = append(configuredSignals, odigoscommon.TracesObservabilitySignal)
+	}
+	if config.IsLoggingEnabled(dest) {
+		configuredSignals = append(configuredSignals, odigoscommon.LogsObservabilitySignal)
+	}
+	return configuredSignals
 }

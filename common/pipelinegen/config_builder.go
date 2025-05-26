@@ -16,7 +16,7 @@ func GetGatewayConfig(
 	processors []config.ProcessorConfigurer,
 	memoryLimiterConfig config.GenericMap,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
-	groupDetails map[string]*GroupDetails,
+	groupDetails []GroupDetails,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig := GetBasicConfig(memoryLimiterConfig)
 	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, groupDetails)
@@ -27,7 +27,7 @@ func CalculateGatewayConfig(
 	dests []config.ExporterConfigurer,
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
-	groupDetails map[string]*GroupDetails,
+	groupDetails []GroupDetails,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 
 	configers, err := config.LoadConfigers()
@@ -70,7 +70,8 @@ func CalculateGatewayConfig(
 			continue
 		}
 
-		// Create a connector for each destination pipeline [AKA forward connector] and add it as a receiver to the pipeline
+		// Create a connector for each destination pipeline [AKA forward connector]
+		// Add it as a receiver to the destination pipeline
 		for _, pipelineName := range destinationPipelineNames {
 			connectorName := "forward/" + pipelineName
 			destForwardConnectors[dest.GetID()] = append(destForwardConnectors[dest.GetID()], connectorName)
@@ -140,25 +141,7 @@ func CalculateGatewayConfig(
 	return string(data), nil, status, signals
 }
 
-func convertGroupMapToSlice(groups map[string]*GroupDetails) []interface{} {
-	var groupList []interface{}
-	for name, group := range groups {
-		groupList = append(groupList, map[string]interface{}{
-			"name":         name,
-			"sources":      group.Sources,
-			"destinations": group.Destinations,
-		})
-	}
-	return groupList
-}
-
-func prepareRootPipelines(currentConfig *config.Config, groupDetails map[string]*GroupDetails, tracesProcessors, metricsProcessors, logsProcessors []string, signals []common.ObservabilitySignal) {
-	groupList := convertGroupMapToSlice(groupDetails)
-
-	fmt.Println("tracesProcessors", tracesProcessors)
-	fmt.Println("metricsProcessors", metricsProcessors)
-	fmt.Println("logsProcessors", logsProcessors)
-
+func prepareRootPipelines(currentConfig *config.Config, groupDetails []GroupDetails, tracesProcessors, metricsProcessors, logsProcessors []string, signals []common.ObservabilitySignal) {
 	// for each signal, create a root pipeline and a connector
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
 		tracesRootPipelineName := GetTelemetryRootPipeline("traces")
@@ -170,7 +153,7 @@ func prepareRootPipelines(currentConfig *config.Config, groupDetails map[string]
 			Exporters:  []string{"odigosrouterconnector/traces"},
 		}
 		currentConfig.Connectors["odigosrouterconnector/traces"] = config.GenericMap{
-			"groups": groupList,
+			"groups": groupDetails,
 		}
 
 	}
@@ -180,7 +163,7 @@ func prepareRootPipelines(currentConfig *config.Config, groupDetails map[string]
 		processors := append([]string{"memory_limiter", "resource/odigos-version"}, metricsProcessors...)
 
 		currentConfig.Connectors["odigosrouterconnector/metrics"] = config.GenericMap{
-			"groups": groupList,
+			"groups": groupDetails,
 		}
 
 		currentConfig.Service.Pipelines[metricsRootPipelineName] = config.Pipeline{
@@ -196,7 +179,7 @@ func prepareRootPipelines(currentConfig *config.Config, groupDetails map[string]
 		processors := append([]string{"memory_limiter", "resource/odigos-version"}, logsProcessors...)
 
 		currentConfig.Connectors["odigosrouterconnector/logs"] = config.GenericMap{
-			"groups": groupList,
+			"groups": groupDetails,
 		}
 
 		currentConfig.Service.Pipelines[logsRootPipelineName] = config.Pipeline{

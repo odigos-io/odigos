@@ -22,6 +22,9 @@ const (
 	// Deprecated: Sources are used to mark workloads for instrumentation.
 	InstrumentationEnabled = "enabled"
 
+	// Default data stream
+	DefaultDataStream = "default"
+
 	// Deprecated: Sources are used to mark workloads for instrumentation.
 	InstrumentationDisabled = "disabled"
 
