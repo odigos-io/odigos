@@ -125,7 +125,7 @@ The templatization process should be monitored and adjusted according to the val
 
 By default, the processor will split the path to segment (e.g. "/user/1234" -> ["user", "1234"]) and replace the segments with the following rules:
 
-- only digits or special characters - `` ^[\d_\-!@#$%^&*()=+{}\[\]:;"'<>,.?/\\|`~]+$ `` -> `{id}` (`1234`, `123_456`, `0`)
+- only digits or special characters - ```^[\d_\-!@#$%^&*()=+{}\[\]:;"'<>,.?/\\|`~]+$``` -> `{id}` (`1234`, `123_456`, `0`)
 - uuids - `[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}` -> `{id}` (`123e4567-e89b-12d3-a456-426614174000`). They can appear as either prefix or suffix of the segment (for example `/process/PROCESS_123e4567-e89b-12d3-a456-42661bd74000`)
 - hex-encoded strings - `^(?:[0-9a-fA-F]{2}){8,}$` -> `{id}` (`6f2a9cdeab34f01e`, `6F2A9CDEAB34F01E`)
 - long numbers anywhere - `\d{7,}` -> `{id}` (`1234567`, `INC328962358623904`, `sb_12345678901234567890_us`)
@@ -157,7 +157,7 @@ For example, if your system uses `id`s in format `id-1234`, you can set the rege
 
 Few more examples for ids that will not be catched by default but can be configured with custom regexp:
 
-- `SA_8856_BH` - `^SA_\d{4}_\w{2}$` ("SA*" then 4 digits then "*" then 2 "word characters" ([a-zA-Z0-9_]))
+- `SA_8856_BH` - `^SA_\d{4}_\w{2}$` ("SA_" then 4 digits then "_" then 2 "word characters" ([a-zA-Z0-9_]))
 - `prod-api-001` - `^(dev|staging|prod)-[a-z]+-\d{3}$` (limit the first part to dev/staging/prod)
 - `backup_20250416_073045` - `^backup_\d{8}_\d{6}$` (Timestamped IDs)
 - `v2.3.4-beta` - `^v\d+\.\d+\.\d+(-[a-z]+)?$` (Application Release Tags)
