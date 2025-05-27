@@ -57,15 +57,31 @@ describe('Actions CRUD', () => {
             cy.contains('div', 'Fallback sampling ratio').parent().parent().find('input').type('1');
             break;
           }
-          case 'LatencySampler': {
-            cy.get('tbody').find('input[placeholder="Choose service"]').type('service');
-            cy.get('tbody').find('input[placeholder="e.g. /api/v1/users"]').type('/path');
-            cy.get('tbody').find('input[placeholder="e.g. 1000"]').type('1');
-            cy.get('tbody').find('input[placeholder="e.g. 20"]').type('1');
-            break;
-          }
           case 'ProbabilisticSampler': {
             cy.contains('div', 'Sampling percentage').parent().parent().find('input').type('1');
+            break;
+          }
+          case 'LatencySampler': {
+            cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
+            cy.get('tbody').find('input[placeholder="e.g. /api/v1/users"]').type('/path');
+            cy.get('tbody').find('input[placeholder="e.g. 1000"]').type('1');
+            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
+            break;
+          }
+          case 'ServiceNameSampler': {
+            cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
+            cy.get('tbody').find('input[placeholder="e.g. 10"]').type('1');
+            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
+            break;
+          }
+          case 'SpanAttributeSampler': {
+            cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
+            cy.get('tbody').find('input[placeholder="e.g. http.request.method"]').type('attribute');
+            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
+            // TODO: condition dropdown
+            // TODO: operation dropdown
+            cy.get('tbody').find('input[placeholder="e.g. GET"]').type('x');
+            cy.get('tbody').find('input[placeholder="e.g. $.user.role"]').type('x');
             break;
           }
 
