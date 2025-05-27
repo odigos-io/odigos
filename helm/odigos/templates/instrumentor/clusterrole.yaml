@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   name: odigos-instrumentor
   labels:
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - ''

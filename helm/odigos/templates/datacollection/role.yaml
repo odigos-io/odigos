@@ -4,7 +4,7 @@ metadata:
   name: odigos-data-collection
   namespace: '{{ .Release.Namespace }}'
   labels:
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - ''

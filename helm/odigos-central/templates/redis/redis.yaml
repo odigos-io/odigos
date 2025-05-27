@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: redis
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 spec:
   replicas: 1
   selector:

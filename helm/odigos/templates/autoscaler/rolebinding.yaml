@@ -4,7 +4,7 @@ metadata:
   name: odigos-autoscaler
   namespace: {{ .Release.Namespace }}
   labels:
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role

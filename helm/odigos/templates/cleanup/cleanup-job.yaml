@@ -8,7 +8,7 @@ metadata:
     "helm.sh/hook": pre-delete
     "helm.sh/hook-delete-policy": hook-succeeded
   labels:
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 spec:
   ttlSecondsAfterFinished: 30
   activeDeadlineSeconds: 240

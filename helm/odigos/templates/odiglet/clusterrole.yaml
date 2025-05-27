@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   name: odiglet
   labels:
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - ''

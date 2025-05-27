@@ -3,7 +3,7 @@ kind: ClusterRoleBinding
 metadata:
   name: cleanup-clusterrolebinding
   labels:
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 subjects:
 - kind: ServiceAccount
   name: cleanup-sa

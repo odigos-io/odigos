@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   name: cleanup-clusterrole
   labels:
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 rules:
 - apiGroups: ["apps"]
   resources: ["deployments", "statefulsets", "daemonsets"]

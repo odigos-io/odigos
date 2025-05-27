@@ -6,7 +6,7 @@ metadata:
   name: odigos-go-offsets
   namespace: {{ .Release.Namespace }}
   labels:
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 data:
 {{- if $jsonContent }}
   "go_offset_results.json": {{ $jsonContent | quote }}

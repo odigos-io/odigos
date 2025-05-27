@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/created-by: instrumentor
     app.kubernetes.io/part-of: odigos
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 webhooks:
   - name: pod-mutating-webhook.odigos.io
     clientConfig:

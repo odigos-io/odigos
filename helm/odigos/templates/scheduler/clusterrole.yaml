@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   name: odigos-scheduler
   labels:
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - odigos.io
