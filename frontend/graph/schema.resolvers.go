@@ -166,7 +166,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 
 	var actualSources []*model.K8sActualSource
 	for idx, ic := range icList.Items {
-		actualSource, err := instrumentationConfigToActualSource(ctx, ic, *srcList[idx])
+		actualSource, err := instrumentationConfigToActualSource(ctx, ic, srcList[idx])
 		if err != nil {
 			return nil, err
 		}
@@ -199,7 +199,7 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
 
-	payload, err := instrumentationConfigToActualSource(ctx, *ic, *src)
+	payload, err := instrumentationConfigToActualSource(ctx, *ic, src)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
