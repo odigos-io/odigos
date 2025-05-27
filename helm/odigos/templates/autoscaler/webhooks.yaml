@@ -42,9 +42,4 @@ metadata:
     app.kubernetes.io/created-by: autoscaler
     app.kubernetes.io/part-of: odigos
     odigos.io/system-object: 'true'
-  annotations:
-    "helm.sh/hook": "pre-install,pre-upgrade"
-    "helm.sh/hook-delete-policy": "before-hook-creation"
-data:
-  tls.crt: {{ $cert.Cert | b64enc }}
-  tls.key: {{ $cert.Key | b64enc }}
+  
