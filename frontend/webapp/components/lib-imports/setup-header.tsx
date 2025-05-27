@@ -2,10 +2,10 @@ import React, { useState, type FC, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import { safeJsonParse } from '@odigos/ui-kit/functions';
-import { useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { ArrowIcon, OdigosLogoText } from '@odigos/ui-kit/icons';
 import { Destination, DestinationFormData } from '@odigos/ui-kit/types';
 import { useDataStreamStore, useSetupStore } from '@odigos/ui-kit/store';
+import { useDataStreamsCRUD, useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos/ui-kit/components';
 import { type DataStreamSelectionFormRef, ToggleDarkMode, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
 
@@ -45,6 +45,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
   const router = useRouter();
 
   const { persistSources } = useSourceCRUD();
+  const { fetchDataStreams } = useDataStreamsCRUD();
   const { createDestination, updateDestination } = useDestinationCRUD();
   const { setSelectedStreamName, selectedStreamName } = useDataStreamStore();
   const { configuredSources, configuredFutureApps, configuredDestinations, configuredDestinationsUpdateOnly, setAvailableSources, setConfiguredSources, setConfiguredFutureApps, resetState } =
@@ -107,6 +108,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
       }),
     );
 
+    await fetchDataStreams();
     resetState();
     router.push(ROUTES.OVERVIEW);
   };
