@@ -81,20 +81,10 @@ and rollback any metadata changes made to your objects.`,
 			if hasSystemLabel {
 				fmt.Printf("Uninstalling namespace %s\n", ns)
 				createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
-			 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallNamespace)
+					client, ns, k8sconsts.OdigosSystemLabelKey, uninstallNamespace)
 
-			 	waitForNamespaceDeletion(ctx, client, ns)
+				waitForNamespaceDeletion(ctx, client, ns)
 			}
-
-			// The CLI is running in Kubernetes via a Helm chart [pre-delete hook] to clean up Odigos resources.
-			// Deleting the namespace during uninstallation will cause Helm to fail due to the loss of the release state.
-			// if !k8sutils.IsRunningInKubernetes() {
-			// 	createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
-			// 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallNamespace)
-
-			// 	waitForNamespaceDeletion(ctx, client, ns)
-			// }
-
 		} else {
 			fmt.Println("Odigos is not installed in any namespace. cleaning up any other Odigos resources that might be left in the cluster...")
 		}
