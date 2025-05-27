@@ -58,6 +58,14 @@ type OdigosSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
+	// (Optional) ClusterName is the name of this cluster for the Odigos Central Backend, if configured.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	ClusterName string `json:"clusterName,omitempty"`
+
+	// (Optional) CentralBackendURL is the URL for the Odigos Central Backend, if configured.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	CentralBackendURL string `json:"centralBackendURL,omitempty"`
+
 	// (Optional) SkipWebhookIssuerCreation skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
 	// Default=false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
