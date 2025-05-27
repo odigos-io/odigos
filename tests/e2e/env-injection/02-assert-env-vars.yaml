@@ -11,7 +11,7 @@ spec:
       (env[?name=='JAVA_OPTS']): []
       (env[?name=='JAVA_TOOL_OPTIONS']): []
       (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
+      - value: "/var/odigos/loader/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -27,7 +27,7 @@ spec:
       - value: "-Dnot.work=true"
       (env[?name=='JAVA_OPTS']): []
       (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
+      - value: "/var/odigos/loader/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -64,7 +64,7 @@ spec:
             name: env-configmap
       (env[?name=='ORIGINAL_PYTHONPATH']): []
       (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
+      - value: "/var/odigos/loader/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -101,4 +101,4 @@ spec:
             name: env-configmap
       (env[?name=='ORIGINAL_JAVA_TOOL_OPTIONS']): []
       (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
+      - value: "/var/odigos/loader/loader.so"
