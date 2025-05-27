@@ -195,7 +195,7 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 
 	// Get Source object to extract stream names
 	src, err := services.GetSourceCRD(ctx, ns, name, services.WorkloadKind(kind))
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
 
