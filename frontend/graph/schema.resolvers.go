@@ -415,43 +415,7 @@ func (r *computePlatformResolver) DataStreams(ctx context.Context, obj *model.Co
 		return nil, err
 	}
 
-	var dataStreams []*model.DataStream
-	dataStreams = append(dataStreams, &model.DataStream{Name: "default"})
-
-	// Collect stream names without duplicates
-	seen := make(map[string]bool)
-	seen["default"] = true
-
-	for _, dest := range destinations.Items {
-		if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil {
-			for _, streamName := range dest.Spec.SourceSelector.Groups {
-				if _, exists := seen[streamName]; !exists {
-					seen[streamName] = true
-					dataStreams = append(dataStreams, &model.DataStream{
-						Name: streamName,
-					})
-				}
-			}
-		}
-	}
-
-	for _, src := range sources.Items {
-		var sourceStreamNames []string
-		for key := range src.Labels {
-			if strings.Contains(key, k8sconsts.SourceGroupLabelPrefix) {
-				sourceStreamNames = append(sourceStreamNames, strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix))
-			}
-		}
-
-		for _, streamName := range sourceStreamNames {
-			if _, exists := seen[streamName]; !exists {
-				seen[streamName] = true
-				dataStreams = append(dataStreams, &model.DataStream{
-					Name: streamName,
-				})
-			}
-		}
-	}
+	dataStreams := services.ExtractDataStreamsFromEntities(sources.Items, destinations.Items)
 
 	return dataStreams, nil
 }
@@ -484,7 +448,8 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 	// Convert workloads to []*model.K8sActualSource
 	sources := make([]*model.K8sActualSource, len(workloads))
 	for i, workload := range workloads {
-		workloadSource := sourceObjects[fmt.Sprintf("%s/%s/%s", workload.Namespace, workload.Name, workload.Kind)]
+		key := fmt.Sprintf("%s/%s/%s", workload.Namespace, workload.Name, workload.Kind)
+		workloadSource := sourceObjects[key]
 
 		namespaceInstrumented := namespaceSource != nil && !namespaceSource.Spec.DisableInstrumentation
 		sourceInstrumented := workloadSource != nil && !workloadSource.Spec.DisableInstrumentation
@@ -492,6 +457,13 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 
 		sources[i] = &workload
 		sources[i].Selected = &isInstrumented
+		sources[i].DataStreamNames = make([]*string, 0)
+
+		if workloadSource != nil {
+			for _, ds := range services.ExtractDataStreamsFromEntities([]v1alpha1.Source{*workloadSource}, make([]v1alpha1.Destination, 0)) {
+				sources[i].DataStreamNames = append(sources[i].DataStreamNames, &ds.Name)
+			}
+		}
 	}
 
 	return sources, nil

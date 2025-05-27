@@ -12,6 +12,48 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+func ExtractDataStreamsFromEntities(sources []v1alpha1.Source, destinations []v1alpha1.Destination) []*model.DataStream {
+	var dataStreams []*model.DataStream
+	dataStreams = append(dataStreams, &model.DataStream{Name: "default"})
+
+	// Collect stream names without duplicates
+	seen := make(map[string]bool)
+	seen["default"] = true
+
+	for _, src := range sources {
+		var sourceStreamNames []string
+		for key := range src.Labels {
+			if strings.Contains(key, k8sconsts.SourceGroupLabelPrefix) {
+				sourceStreamNames = append(sourceStreamNames, strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix))
+			}
+		}
+
+		for _, streamName := range sourceStreamNames {
+			if _, exists := seen[streamName]; !exists {
+				seen[streamName] = true
+				dataStreams = append(dataStreams, &model.DataStream{
+					Name: streamName,
+				})
+			}
+		}
+	}
+
+	for _, dest := range destinations {
+		if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil {
+			for _, streamName := range dest.Spec.SourceSelector.Groups {
+				if _, exists := seen[streamName]; !exists {
+					seen[streamName] = true
+					dataStreams = append(dataStreams, &model.DataStream{
+						Name: streamName,
+					})
+				}
+			}
+		}
+	}
+
+	return dataStreams
+}
+
 func destinationGroupsNotNull(destination *v1alpha1.Destination) bool {
 	if destination.Spec.SourceSelector != nil && destination.Spec.SourceSelector.Groups != nil {
 		return true
