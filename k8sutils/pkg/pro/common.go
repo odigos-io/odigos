@@ -27,7 +27,7 @@ func updateSecretToken(ctx context.Context, client kubernetes.Interface, namespa
 	secret, err := client.CoreV1().Secrets(namespace).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			return fmt.Errorf("tokens are not available in the open-source version of Odigos. Please contact Odigos team to inquire about pro version")
+			return fmt.Errorf("tokens are not available in the community version of Odigos. Please contact Odigos team to inquire about pro version")
 		}
 		return err
 	}
