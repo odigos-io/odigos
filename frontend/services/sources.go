@@ -595,10 +595,12 @@ func GetInstrumentationConfigConditionsForWorkload(ctx context.Context, ic v1alp
 func GetSourceDataStreamNames(source *v1alpha1.Source) []*string {
 	dataStreamNames := make([]*string, 0)
 
-	for labelKey, labelValue := range source.Labels {
-		if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
-			streamName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
-			dataStreamNames = append(dataStreamNames, &streamName)
+	if source != nil {
+		for labelKey, labelValue := range source.Labels {
+			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
+				streamName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+				dataStreamNames = append(dataStreamNames, &streamName)
+			}
 		}
 	}
 

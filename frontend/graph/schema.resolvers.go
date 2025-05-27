@@ -153,7 +153,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 				return fmt.Errorf("no owner reference found for InstrumentationConfig %s", icCopy.Name)
 			}
 			src, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, services.WorkloadKind(icCopy.OwnerReferences[0].Kind))
-			if err != nil {
+			if err != nil && !apierrors.IsNotFound(err) {
 				return err
 			}
 			srcList[idxCopy] = src
