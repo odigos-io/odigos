@@ -94,9 +94,9 @@ type SourceSelector struct {
 	// This means the destination will receive data from all sources in "default" and "production" namespaces.
 	// +optional
 	Namespaces []string `json:"namespaces,omitempty"`
-	// Workloads (sources) are assigned to groups via labels (odigos.io/group-backend: true), allowing a more flexible selection mechanism.
+	// Workloads (sources) are assigned to Datastreams via labels (odigos.io/data-stream: true), allowing a more flexible selection mechanism.
 	// Example:
-	// groups: ["backend", "monitoring"]
+	// dataStreams: ["backend", "monitoring"]
 	// This means the destination will receive data only from sources labeled with "backend" or "monitoring".
 	// +optional
 	DataStreams []string `json:"dataStreams,omitempty"`
