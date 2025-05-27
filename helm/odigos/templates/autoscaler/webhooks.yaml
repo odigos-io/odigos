@@ -41,5 +41,5 @@ metadata:
     app.kubernetes.io/component: certificate
     app.kubernetes.io/created-by: autoscaler
     app.kubernetes.io/part-of: odigos
-    odigos.io/system-object: 'true'
-  
+    odigos.io/system-object: "true"
+# the actual certificate will be populated by the controller
