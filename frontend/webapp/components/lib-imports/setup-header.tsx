@@ -22,7 +22,10 @@ const getFormDataFromDestination = (dest: Destination, selectedStreamName: strin
   const payload: DestinationFormData = {
     type: dest.destinationType.type,
     name: dest.destinationType.displayName,
-    currentStreamName: selectedStreamName,
+
+    // TODO: uncomment when Data Streams are ready to use
+    currentStreamName: '', // selectedStreamName,
+
     exportedSignals: dest.exportedSignals,
     fields: fieldsArray,
   };
@@ -66,7 +69,9 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
         Object.entries(configuredSources).reduce((current, [ns, items]) => {
           current[ns] = items.map((item) => ({
             ...item,
-            currentStreamName: name,
+
+            // TODO: uncomment when Data Streams are ready to use
+            currentStreamName: '', // name,
           }));
 
           return current;

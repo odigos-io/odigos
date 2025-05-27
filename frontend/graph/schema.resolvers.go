@@ -598,10 +598,12 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 			DestinationName: destName,
 			Data:            dataField,
 			Signals:         services.ExportedSignalsObjectToSlice(destination.ExportedSignals),
-			SourceSelector: &v1alpha1.SourceSelector{
-				Groups: []string{destination.CurrentStreamName},
-			},
 		},
+	}
+	if destination.CurrentStreamName != "" {
+		k8sDestination.Spec.SourceSelector = &v1alpha1.SourceSelector{
+			Groups: []string{destination.CurrentStreamName},
+		}
 	}
 
 	createSecret := len(secretFields) > 0
