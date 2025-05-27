@@ -38,7 +38,9 @@ var uninstallCmd = &cobra.Command{
 	Use: "uninstall",
 	Short: `Revert all the changes made by the ` + "`odigos install`" + ` command.
 This command will uninstall Odigos from your cluster. It will delete all Odigos objects
-and rollback any metadata changes made to your objects.`,
+and rollback any metadata changes made to your objects.
+ 
+Note: Namespaces created during Odigos CLI installation will be deleted during uninstallation. This applies only to CLI installs, not Helm.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
