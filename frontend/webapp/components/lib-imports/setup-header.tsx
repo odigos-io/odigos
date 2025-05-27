@@ -15,6 +15,7 @@ interface SetupHeaderProps {
   sourceFormRef?: RefObject<SourceSelectionFormRef | null>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getFormDataFromDestination = (dest: Destination, selectedStreamName: string): DestinationFormData => {
   const parsedFields = safeJsonParse(dest.fields, {});
   const fieldsArray = Object.entries(parsedFields).map(([key, value]) => ({ key, value: String(value) }));
