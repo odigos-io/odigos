@@ -19,6 +19,8 @@ export const CRD_NAMES = {
     'errorsamplers.actions.odigos.io',
     'latencysamplers.actions.odigos.io',
     'probabilisticsamplers.actions.odigos.io',
+    'servicenamesamplers.actions.odigos.io',
+    'spanattributesamplers.actions.odigos.io',
     'piimaskings.actions.odigos.io',
   ],
   INSTRUMENTATION_RULE: 'instrumentationrules.odigos.io',
