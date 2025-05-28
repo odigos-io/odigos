@@ -41,6 +41,18 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	if ic == nil {
+		// If ic is nil and the PodWorkload is missing the odigos.io/agents-meta-hash label, it means it is a rolled back application that shouldn't be rolled out
+		hasAgents, err := workloadHasOdigosAgents(ctx, c, workloadObj)
+		if err != nil {
+			logger.Error(err, "failed to check for odigos agent labels")
+			return false, ctrl.Result{}, err
+		}
+		if !hasAgents {
+			logger.Info("skipping rollout – workload already runs without odigos agents",
+				"workload", pw.Name, "namespace", pw.Namespace)
+			return false, ctrl.Result{}, nil
+		}
+
 		// instrumentation config is deleted, trigger a rollout for the associated workload
 		// this should happen once per workload, as the instrumentation config is deleted
 		// and we want to rollout the workload to remove the instrumentation
@@ -240,8 +252,8 @@ func rolloutCondition(rolloutErr error) metav1.Condition {
 	return cond
 }
 
+// isInCrashLoopBackOff checks whether **any** Pod that belongs to the supplied workload is currently in a *CrashLoopBackOff* restart state.
 func isInCrashLoopBackOff(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
-	// 1. Extract namespace + selector from the workload -------------------------
 	var (
 		ns       string
 		selector *metav1.LabelSelector
@@ -267,7 +279,6 @@ func isInCrashLoopBackOff(ctx context.Context, c client.Client, obj client.Objec
 		return false, fmt.Errorf("isInCrashLoopBackOff: invalid selector: %w", err)
 	}
 
-	// 2. List the pods matching the selector -----------------------------------
 	var podList corev1.PodList
 	if err := c.List(ctx, &podList,
 		client.InNamespace(ns),
@@ -276,7 +287,6 @@ func isInCrashLoopBackOff(ctx context.Context, c client.Client, obj client.Objec
 		return false, fmt.Errorf("isInCrashLoopBackOff: failed listing pods: %w", err)
 	}
 
-	// 3. Look for CrashLoopBackOff in any (init-)container ----------------------
 	for _, p := range podList.Items {
 		if podHasCrashLoop(&p) {
 			return true, nil
@@ -285,8 +295,7 @@ func isInCrashLoopBackOff(ctx context.Context, c client.Client, obj client.Objec
 	return false, nil
 }
 
-// podHasCrashLoop returns true if any (init)-container in the pod is in
-// CrashLoopBackOff.
+// podHasCrashLoop returns true if any (init)-container in the pod is in CrashLoopBackOff.
 func podHasCrashLoop(p *corev1.Pod) bool {
 	for _, cs := range append(p.Status.InitContainerStatuses, p.Status.ContainerStatuses...) {
 		if cs.State.Waiting != nil && cs.State.Waiting.Reason == "CrashLoopBackOff" {
@@ -294,4 +303,49 @@ func podHasCrashLoop(p *corev1.Pod) bool {
 		}
 	}
 	return false
+}
+
+// workloadHasOdigosAgents returns true if ANY pod of the workload still has the `odigos.io/agents-meta-hash` label.
+func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
+	const agentMetaLabel = "odigos.io/agents-meta-hash"
+
+	var (
+		ns       string
+		selector *metav1.LabelSelector
+	)
+
+	switch o := obj.(type) {
+	case *appsv1.Deployment:
+		ns, selector = o.Namespace, o.Spec.Selector
+	case *appsv1.StatefulSet:
+		ns, selector = o.Namespace, o.Spec.Selector
+	case *appsv1.DaemonSet:
+		ns, selector = o.Namespace, o.Spec.Selector
+	default:
+		return false, fmt.Errorf("workloadHasOdigosAgents: unsupported workload kind %T", obj)
+	}
+
+	if selector == nil {
+		return false, errors.New("workloadHasOdigosAgents: workload has nil selector")
+	}
+
+	sel, err := metav1.LabelSelectorAsSelector(selector)
+	if err != nil {
+		return false, fmt.Errorf("workloadHasOdigosAgents: invalid selector: %w", err)
+	}
+
+	var pods corev1.PodList
+	if err := c.List(ctx, &pods,
+		client.InNamespace(ns),
+		client.MatchingLabelsSelector{Selector: sel},
+	); err != nil {
+		return false, fmt.Errorf("workloadHasOdigosAgents: listing pods failed: %w", err)
+	}
+
+	for _, p := range pods.Items {
+		if _, present := p.Labels[agentMetaLabel]; present {
+			return true, nil
+		}
+	}
+	return false, nil
 }
