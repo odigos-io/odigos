@@ -107,6 +107,7 @@ type ComputePlatform struct {
 	Destinations         []*Destination         `json:"destinations"`
 	Actions              []*PipelineAction      `json:"actions"`
 	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
+	DataStreams          []*DataStream          `json:"dataStreams"`
 }
 
 type Condition struct {
@@ -136,6 +137,14 @@ type CustomReadDataLabel struct {
 	Condition string `json:"condition"`
 	Title     string `json:"title"`
 	Value     string `json:"value"`
+}
+
+type DataStream struct {
+	Name string `json:"name"`
+}
+
+type DataStreamInput struct {
+	Name string `json:"name"`
 }
 
 type DbQueryPayloadCollection struct {
@@ -177,8 +186,9 @@ func (this DeleteAttributeAction) GetSignals() []SignalType {
 
 type Destination struct {
 	ID              string                        `json:"id"`
-	Name            string                        `json:"name"`
 	Type            string                        `json:"type"`
+	Name            string                        `json:"name"`
+	DataStreamNames []*string                     `json:"dataStreamNames"`
 	ExportedSignals *ExportedSignals              `json:"exportedSignals"`
 	Fields          string                        `json:"fields"`
 	DestinationType *DestinationTypesCategoryItem `json:"destinationType"`
@@ -204,10 +214,11 @@ type DestinationFieldYamlProperties struct {
 }
 
 type DestinationInput struct {
-	Name            string                `json:"name"`
-	Type            string                `json:"type"`
-	ExportedSignals *ExportedSignalsInput `json:"exportedSignals"`
-	Fields          []*FieldInput         `json:"fields"`
+	Name              string                `json:"name"`
+	Type              string                `json:"type"`
+	CurrentStreamName string                `json:"currentStreamName"`
+	ExportedSignals   *ExportedSignalsInput `json:"exportedSignals"`
+	Fields            []*FieldInput         `json:"fields"`
 }
 
 type DestinationTypesCategoryItem struct {
@@ -286,6 +297,14 @@ type GetDestinationCategories struct {
 	Categories []*DestinationsCategory `json:"categories"`
 }
 
+type HeadersCollection struct {
+	HeaderKeys []*string `json:"headerKeys,omitempty"`
+}
+
+type HeadersCollectionInput struct {
+	HeaderKeys []*string `json:"headerKeys,omitempty"`
+}
+
 type HTTPPayloadCollection struct {
 	MimeTypes           []*string `json:"mimeTypes,omitempty"`
 	MaxPayloadLength    *int      `json:"maxPayloadLength,omitempty"`
@@ -335,8 +354,9 @@ type InstrumentationRule struct {
 	ProfileName              string                            `json:"profileName"`
 	Workloads                []*PodWorkload                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalID `json:"instrumentationLibraries,omitempty"`
-	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
 	CodeAttributes           *CodeAttributes                   `json:"codeAttributes,omitempty"`
+	HeadersCollection        *HeadersCollection                `json:"headersCollection,omitempty"`
+	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
 }
 
 type InstrumentationRuleInput struct {
@@ -345,8 +365,9 @@ type InstrumentationRuleInput struct {
 	Disabled                 *bool                                  `json:"disabled,omitempty"`
 	Workloads                []*PodWorkloadInput                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalIDInput `json:"instrumentationLibraries,omitempty"`
-	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
 	CodeAttributes           *CodeAttributesInput                   `json:"codeAttributes,omitempty"`
+	HeadersCollection        *HeadersCollectionInput                `json:"headersCollection,omitempty"`
+	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
 }
 
 type InstrumentationSourcesAnalyze struct {
@@ -366,6 +387,7 @@ type K8sActualSource struct {
 	Namespace         string             `json:"namespace"`
 	Name              string             `json:"name"`
 	Kind              K8sResourceKind    `json:"kind"`
+	DataStreamNames   []*string          `json:"dataStreamNames"`
 	NumberOfInstances *int               `json:"numberOfInstances,omitempty"`
 	Selected          *bool              `json:"selected,omitempty"`
 	OtelServiceName   *string            `json:"otelServiceName,omitempty"`
@@ -525,7 +547,8 @@ type PaginatedSources struct {
 }
 
 type PatchSourceRequestInput struct {
-	OtelServiceName string `json:"otelServiceName"`
+	OtelServiceName   string `json:"otelServiceName"`
+	CurrentStreamName string `json:"currentStreamName"`
 }
 
 type PayloadCollection struct {
@@ -548,9 +571,10 @@ type PersistNamespaceItemInput struct {
 }
 
 type PersistNamespaceSourceInput struct {
-	Name     string          `json:"name"`
-	Kind     K8sResourceKind `json:"kind"`
-	Selected bool            `json:"selected"`
+	Name              string          `json:"name"`
+	Kind              K8sResourceKind `json:"kind"`
+	Selected          bool            `json:"selected"`
+	CurrentStreamName string          `json:"currentStreamName"`
 }
 
 type PiiMaskingAction struct {
@@ -855,20 +879,22 @@ func (e InstallationStatus) MarshalGQL(w io.Writer) {
 type InstrumentationRuleType string
 
 const (
-	InstrumentationRuleTypePayloadCollection InstrumentationRuleType = "PayloadCollection"
 	InstrumentationRuleTypeCodeAttributes    InstrumentationRuleType = "CodeAttributes"
+	InstrumentationRuleTypeHeadersCollection InstrumentationRuleType = "HeadersCollection"
+	InstrumentationRuleTypePayloadCollection InstrumentationRuleType = "PayloadCollection"
 	InstrumentationRuleTypeUnknownType       InstrumentationRuleType = "UnknownType"
 )
 
 var AllInstrumentationRuleType = []InstrumentationRuleType{
-	InstrumentationRuleTypePayloadCollection,
 	InstrumentationRuleTypeCodeAttributes,
+	InstrumentationRuleTypeHeadersCollection,
+	InstrumentationRuleTypePayloadCollection,
 	InstrumentationRuleTypeUnknownType,
 }
 
 func (e InstrumentationRuleType) IsValid() bool {
 	switch e {
-	case InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeUnknownType:
+	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeUnknownType:
 		return true
 	}
 	return false

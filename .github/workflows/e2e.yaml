@@ -50,11 +50,20 @@ jobs:
           TAG=e2e-test make build-images
           docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
 
+      - uses: ko-build/setup-ko@v0.9
+
+      - name: Build CLI Image
+        run: |
+          TAG=e2e-test make build-cli-image
+          docker save registry.odigos.io/odigos-cli:e2e-test -o cli-image.tar
+
       - name: Upload Odigos Images
         uses: actions/upload-artifact@v4
         with:
           name: odigos-images
-          path: odigos-images.tar
+          path: |
+            odigos-images.tar
+            cli-image.tar
 
   kubernetes-test:
     needs:
@@ -118,6 +127,7 @@ jobs:
           name: odigos-images
       - run: |
           docker load -i odigos-images.tar
+          docker load -i cli-image.tar
           TAG=e2e-test make load-to-kind
 
       - name: Download CLI binary

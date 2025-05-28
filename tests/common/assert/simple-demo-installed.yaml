@@ -80,4 +80,8 @@ status:
       ready: true
       restartCount: 0
       started: true
+    - name: nginx
+      ready: true
+      restartCount: 0
+      started: true
   phase: Running

@@ -52,8 +52,9 @@ enum Tier {
 }
 
 enum InstrumentationRuleType {
-  PayloadCollection
   CodeAttributes
+  HeadersCollection
+  PayloadCollection
   UnknownType
 }
 
@@ -92,6 +93,7 @@ type K8sActualSource {
   namespace: String!
   name: String!
   kind: K8sResourceKind!
+  dataStreamNames: [String]!
   numberOfInstances: Int
   selected: Boolean
   otelServiceName: String
@@ -137,8 +139,9 @@ type InstrumentationRule {
   profileName: String!
   workloads: [PodWorkload!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
-  payloadCollection: PayloadCollection
   codeAttributes: CodeAttributes
+  headersCollection: HeadersCollection
+  payloadCollection: PayloadCollection
 }
 
 input InstrumentationRuleInput {
@@ -147,8 +150,9 @@ input InstrumentationRuleInput {
   disabled: Boolean
   workloads: [PodWorkloadInput!]
   instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
-  payloadCollection: PayloadCollectionInput
   codeAttributes: CodeAttributesInput
+  headersCollection: HeadersCollectionInput
+  payloadCollection: PayloadCollectionInput
 }
 
 type InstrumentationLibraryGlobalId {
@@ -163,18 +167,12 @@ input InstrumentationLibraryGlobalIdInput {
   language: ProgrammingLanguage
 }
 
-type PayloadCollection {
-  httpRequest: HttpPayloadCollection
-  httpResponse: HttpPayloadCollection
-  dbQuery: DbQueryPayloadCollection
-  messaging: MessagingPayloadCollection
+type HeadersCollection {
+  headerKeys: [String]
 }
 
-input PayloadCollectionInput {
-  httpRequest: HttpPayloadCollectionInput
-  httpResponse: HttpPayloadCollectionInput
-  dbQuery: DbQueryPayloadCollectionInput
-  messaging: MessagingPayloadCollectionInput
+input HeadersCollectionInput {
+  headerKeys: [String]
 }
 
 type HttpPayloadCollection {
@@ -227,6 +225,20 @@ input CodeAttributesInput {
   stacktrace: Boolean
 }
 
+type PayloadCollection {
+  httpRequest: HttpPayloadCollection
+  httpResponse: HttpPayloadCollection
+  dbQuery: DbQueryPayloadCollection
+  messaging: MessagingPayloadCollection
+}
+
+input PayloadCollectionInput {
+  httpRequest: HttpPayloadCollectionInput
+  httpResponse: HttpPayloadCollectionInput
+  dbQuery: DbQueryPayloadCollectionInput
+  messaging: MessagingPayloadCollectionInput
+}
+
 type ApiToken {
   token: String!
   name: String!
@@ -244,6 +256,7 @@ type ComputePlatform {
   destinations: [Destination!]!
   actions: [PipelineAction!]!
   instrumentationRules: [InstrumentationRule!]!
+  dataStreams: [DataStream!]!
 }
 
 type SupportedSignals {
@@ -301,8 +314,9 @@ type ExportedSignals {
 
 type Destination {
   id: ID!
-  name: String!
   type: String!
+  name: String!
+  dataStreamNames: [String]!
   exportedSignals: ExportedSignals!
   fields: String!
   destinationType: DestinationTypesCategoryItem!
@@ -318,6 +332,7 @@ type GetConfigResponse {
 input DestinationInput {
   name: String!
   type: String!
+  currentStreamName: String!
   exportedSignals: ExportedSignalsInput!
   fields: [FieldInput!]!
 }
@@ -342,6 +357,7 @@ input PersistNamespaceSourceInput {
   name: String!
   kind: K8sResourceKind!
   selected: Boolean!
+  currentStreamName: String!
 }
 
 type TestConnectionResponse {
@@ -367,6 +383,7 @@ type PipelineAction {
 
 input PatchSourceRequestInput {
   otelServiceName: String!
+  currentStreamName: String!
 }
 
 interface Action {
@@ -632,6 +649,14 @@ type InstrumentationInstanceHealth {
   condition: Condition
 }
 
+type DataStream {
+  name: String!
+}
+
+input DataStreamInput {
+  name: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -650,7 +675,7 @@ type Mutation {
   updateK8sActualSource(sourceId: K8sSourceId!, patchSourceRequest: PatchSourceRequestInput!): Boolean!
   createNewDestination(destination: DestinationInput!): Destination!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
-  deleteDestination(id: ID!): Boolean!
+  deleteDestination(id: ID!, currentStreamName: String!): Boolean!
   testConnectionForDestination(destination: DestinationInput!): TestConnectionResponse!
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
@@ -658,4 +683,6 @@ type Mutation {
   createInstrumentationRule(instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
   updateInstrumentationRule(ruleId: ID!, instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
   deleteInstrumentationRule(ruleId: ID!): Boolean!
+  updateDataStream(id: ID!, dataStream: DataStreamInput!): DataStream!
+  deleteDataStream(id: ID!): Boolean!
 }

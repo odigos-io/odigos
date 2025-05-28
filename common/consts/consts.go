@@ -25,6 +25,9 @@ const (
 	// Deprecated: Sources are used to mark workloads for instrumentation.
 	InstrumentationDisabled = "disabled"
 
+	// DefaultDataStream is the default data stream name used for telemetry data.
+	DefaultDataStream = "default"
+
 	// Deprecated: reported name is set via the Source CR.
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
 	RolloutTriggerAnnotation     = "rollout-trigger"
@@ -51,6 +54,7 @@ const (
 	GoOffsetsPublicURL = "https://storage.googleapis.com/odigos-cloud/offset_results_min.json"
 
 	LdPreloadEnvVarName = "LD_PRELOAD"
+	OdigosLoaderDirName = "loader"
 	OdigosLoaderName    = "loader.so"
 )
 
@@ -70,9 +74,9 @@ const (
 	CentralBackendURLProperty         = "central-backend-url"
 	CustomContainerRuntimeSocketPath  = "custom-container-runtime-socket-path"
 	K8sNodeLogsDirectory              = "k8s-node-logs-directory"
-	AvoidJavaOptsEnvVar               = "avoid-java-opts-env-var"
 	AgentEnvVarsInjectionMethod       = "agent-env-vars-injection-method"
 	ClusterNameProperty               = "cluster-name"
+	UserInstrumentationEnvsProperty   = "user-instrumentation-envs"
 	NodeSelectorProperty              = "node-selector"
 	KarpenterEnabledProperty          = "karpenter-enabled"
 )

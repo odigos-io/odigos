@@ -327,7 +327,18 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			Extensions: []string{"health_check", "pprof"},
 			Telemetry: config.Telemetry{
 				Metrics: config.GenericMap{
-					"address": fmt.Sprintf("0.0.0.0:%d", ownMetricsPort),
+					"readers": []config.GenericMap{
+						{
+							"pull": config.GenericMap{
+								"exporter": config.GenericMap{
+									"prometheus": config.GenericMap{
+										"host": "0.0.0.0",
+										"port": ownMetricsPort,
+									},
+								},
+							},
+						},
+					},
 				},
 				Resource: map[string]*string{
 					// The collector add "otelcol" as a service name, so we need to remove it

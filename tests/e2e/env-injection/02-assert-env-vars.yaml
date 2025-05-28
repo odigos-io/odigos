@@ -11,7 +11,7 @@ spec:
       (env[?name=='JAVA_OPTS']): []
       (env[?name=='JAVA_TOOL_OPTIONS']): []
       (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
+      - value: "/var/odigos/loader/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -27,23 +27,7 @@ spec:
       - value: "-Dnot.work=true"
       (env[?name=='JAVA_OPTS']): []
       (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
----
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    app: java-supported-empty-manifest-env
-  namespace: default
-spec:
-  containers:
-    - image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
-      (env[?name=='JAVA_TOOL_OPTIONS']): []
-      # user defined JAVA_OPTS in the manifest but it is empty,
-      (env[?name=='JAVA_OPTS']):
-        - name: JAVA_OPTS
-      (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
+      - value: "/var/odigos/loader/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -56,9 +40,9 @@ spec:
     - image: public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
       name: java-supported-docker-env
       # LD_PRELOAD is declared in the Dockerfile, hence we fallback to adding it to the user defined env vars.
-      (env[?name=='JAVA_OPTS']):
-      - value: -Dthis.does.not.exist=true -javaagent:/var/odigos/java/javaagent.jar
-      (env[?name=='JAVA_TOOL_OPTIONS']): []
+      (env[?name=='JAVA_OPTS']): []
+      (env[?name=='JAVA_TOOL_OPTIONS']):
+      - value: -javaagent:/var/odigos/java/javaagent.jar
       (env[?name=='LD_PRELOAD']): []
 ---
 apiVersion: v1
@@ -80,7 +64,7 @@ spec:
             name: env-configmap
       (env[?name=='ORIGINAL_PYTHONPATH']): []
       (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
+      - value: "/var/odigos/loader/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -117,4 +101,4 @@ spec:
             name: env-configmap
       (env[?name=='ORIGINAL_JAVA_TOOL_OPTIONS']): []
       (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
+      - value: "/var/odigos/loader/loader.so"

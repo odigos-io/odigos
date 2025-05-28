@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "back:build": "cd .. && go build -o odigos-backend",
     "back:start": "cd .. && ./odigos-backend --port 8085 --debug --address 0.0.0.0",
@@ -12,25 +12,25 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@apollo/client": "^3.13.7",
-    "@apollo/experimental-nextjs-app-support": "^0.12.1",
-    "@odigos/ui-kit": "^0.0.24",
-    "graphql": "^16.10.0",
-    "next": "15.3.0",
+    "@apollo/client": "^3.13.8",
+    "@apollo/experimental-nextjs-app-support": "^0.12.2",
+    "@odigos/ui-kit": "^0.0.33",
+    "graphql": "^16.11.0",
+    "next": "15.3.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-error-boundary": "^5.0.0",
+    "react-error-boundary": "^6.0.0",
     "styled-components": "6.1.15",
-    "zustand": "^5.0.3"
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
-    "@types/node": "22.14.1",
-    "@types/react": "19.1.1",
-    "@types/react-dom": "19.1.2",
+    "@types/node": "22.15.21",
+    "@types/react": "19.1.6",
+    "@types/react-dom": "19.1.5",
     "autoprefixer": "^10.4.21",
-    "cypress": "^14.3.0",
-    "eslint": "9.24.0",
-    "eslint-config-next": "15.3.0",
+    "cypress": "^14.4.0",
+    "eslint": "9.27.0",
+    "eslint-config-next": "15.3.2",
     "postcss": "^8.5.3",
     "typescript": "5.8.3"
   }

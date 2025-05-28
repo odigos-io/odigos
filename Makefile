@@ -180,7 +180,7 @@ load-to-kind-%:
 
 .PHONY: load-to-kind
 load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: restart-ui
 restart-ui:
@@ -247,10 +247,10 @@ update-dep/%: DIR=$*
 update-dep/%:
 	cd $(DIR) && go get $(MODULE)@$(VERSION)
 
-UNSTABLE_COLLECTOR_VERSION=v0.121.0
-STABLE_COLLECTOR_VERSION=v1.27.0
-STABLE_OTEL_GO_VERSION=v1.34.0
-UNSTABLE_OTEL_GO_VERSION=v0.59.0
+UNSTABLE_COLLECTOR_VERSION=v0.126.0
+STABLE_COLLECTOR_VERSION=v1.32.0
+STABLE_OTEL_GO_VERSION=v1.35.0
+UNSTABLE_OTEL_GO_VERSION=v0.60.0
 
 .PHONY: update-otel
 update-otel:
@@ -270,15 +270,15 @@ update-otel:
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/nopexporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/otlpexporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/otlphttpexporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
-	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/extension VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/extension VERSION=$(STABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/extension/zpagesextension VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/otelcol VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/pdata VERSION=$(STABLE_COLLECTOR_VERSION)
-	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/processor VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/processor VERSION=$(STABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/processor/batchprocessor VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/processor/memorylimiterprocessor VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/processor/processortest VERSION=$(UNSTABLE_COLLECTOR_VERSION)
-	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/receiver VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/receiver VERSION=$(STABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/receiver/otlpreceiver VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/receiver/receivertest VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/otel VERSION=$(STABLE_OTEL_GO_VERSION)
@@ -344,7 +344,17 @@ helm-install:
 		--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL) \
 		--set onPremToken=$(ONPREM_TOKEN) \
 		--set centralProxy.enabled=$(if $(and $(CLUSTER_NAME),$(CENTRAL_BACKEND_URL)),true,false)
-	kubectl label namespace odigos-system odigos.io/system-object="true"
+
+.PHONY: helm-install-central
+helm-install-central:
+	@echo "Installing Odigos Central using Helm..."
+	helm upgrade --install odigos-central ./helm/odigos-central \
+		--create-namespace \
+		--namespace odigos-central \
+		--set image.tag=$(ODIGOS_CLI_VERSION) \
+		--set onPremToken=$(ONPREM_TOKEN) \
+	kubectl label namespace odigos-central odigos.io/central-system-object="true" --overwrite
+
 
 .PHONY: api-all
 api-all:
@@ -362,7 +372,7 @@ dev-tests-kind-cluster:
 
 .PHONY: dev-tests-setup
 dev-tests-setup: TAG := e2e-test
-dev-tests-setup: dev-tests-kind-cluster cli-build build-images load-to-kind
+dev-tests-setup: dev-tests-kind-cluster cli-build build-cli-image build-images load-to-kind
 
 # Use this target to avoid rebuilding the images if all that changed is the e2e test code
 .PHONY: dev-tests-setup-no-build
@@ -444,3 +454,13 @@ publish-to-ecr:
 	make -j 3 build-tag-push-ecr-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	echo "✅ Deployed Odigos to EKS, now install the CLI"
+
+.PHONY: build-cli-image
+build-cli-image:
+	cd cli && \
+	KO_DOCKER_REPO=$(ORG)/odigos-cli$(IMG_SUFFIX) \
+	VERSION=$(TAG) \
+	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
+	DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S') \
+	ko build --bare --tags $(TAG) --local .
+

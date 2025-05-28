@@ -11,7 +11,7 @@ spec:
       (env[?name=='JAVA_OPTS']): []
       (env[?name=='JAVA_TOOL_OPTIONS']): []
       (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
+        - value: "/var/odigos/loader/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -27,23 +27,7 @@ spec:
       - value: "-Dnot.work=true"
       (env[?name=='JAVA_OPTS']): []
       (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
----
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    app: java-supported-empty-manifest-env
-  namespace: default
-spec:
-  containers:
-    - image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
-      (env[?name=='JAVA_TOOL_OPTIONS']): []
-      # user defined JAVA_OPTS in the manifest but it is empty,
-      (env[?name=='JAVA_OPTS']):
-        - name: JAVA_OPTS
-      (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
+      - value: "/var/odigos/loader/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -58,7 +42,6 @@ spec:
       # LD_PRELOAD is declared in the Dockerfile, hence we can't add the loader
       # in this test the user specified the env var injection to be loader only,
       # hence we assert here that nothing is added from our side.
-      (env[?name=='JAVA_OPTS']): []
       (env[?name=='JAVA_TOOL_OPTIONS']): []
       (env[?name=='LD_PRELOAD']): []
 ---
@@ -81,7 +64,7 @@ spec:
             name: env-configmap
       (env[?name=='ORIGINAL_PYTHONPATH']): []
       (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
+      - value: "/var/odigos/loader/loader.so"
 ---
 apiVersion: v1
 kind: Pod
@@ -119,4 +102,4 @@ spec:
             name: env-configmap
       (env[?name=='ORIGINAL_JAVA_TOOL_OPTIONS']): []
       (env[?name=='LD_PRELOAD']):
-       - value: "/var/odigos/loader.so"
+      - value: "/var/odigos/loader/loader.so"

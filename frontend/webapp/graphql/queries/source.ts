@@ -9,6 +9,7 @@ export const GET_SOURCES = gql`
           namespace
           name
           kind
+          dataStreamNames
           selected
           otelServiceName
           containers {
@@ -39,6 +40,7 @@ export const GET_SOURCE = gql`
         namespace
         name
         kind
+        dataStreamNames
         selected
         otelServiceName
         containers {
