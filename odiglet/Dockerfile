@@ -146,7 +146,7 @@ COPY --from=php-agents /php-agents/opentelemetry-php/8.4 /instrumentations/php/8
 
 # loader
 ARG ODIGOS_LOADER_VERSION=v0.0.3
-RUN wget https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
+RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
 FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
