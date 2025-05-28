@@ -87,7 +87,7 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected
+// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;CrashLoopBackOff
 type AgentEnabledReason string
 
 const (
@@ -103,6 +103,8 @@ const (
 	// if the source cannot be instrumented because there are no running pods,
 	// we want to show this reason to the user so it's not a spinner
 	AgentEnabledReasonRuntimeDetailsUnavailable AgentEnabledReason = "RuntimeDetailsUnavailable"
+
+	AgentEnabledReasonCrashLoopBackOff AgentEnabledReason = "CrashLoopBackOff"
 )
 
 // +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
@@ -143,6 +145,8 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 80
 	case AgentEnabledReasonOtherAgentDetected:
 		return 90
+	case AgentEnabledReasonCrashLoopBackOff:
+		return 95
 	default:
 		return 100
 	}
