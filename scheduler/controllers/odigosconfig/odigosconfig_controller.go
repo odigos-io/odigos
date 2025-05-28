@@ -136,9 +136,6 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: odigosNs,
 			Name:      consts.OdigosEffectiveConfigName,
-			Labels: map[string]string{
-				k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue,
-			},
 		},
 		Data: map[string]string{
 			consts.OdigosConfigurationFileName: string(effectiveConfigYamlText),
