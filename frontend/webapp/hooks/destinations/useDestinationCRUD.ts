@@ -21,7 +21,9 @@ interface UseDestinationCrud {
 const mapNoUndefinedFields = (destination: DestinationFormData, selectedStreamName: string) => ({
   ...destination,
   fields: destination.fields.filter(({ value }) => value !== undefined),
-  currentStreamName: selectedStreamName,
+
+  // TODO: uncomment when Data Streams are ready to use
+  currentStreamName: '', // selectedStreamName,
 });
 
 export const useDestinationCRUD = (): UseDestinationCrud => {
@@ -104,7 +106,14 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
-      await mutateDelete({ variables: { id, currentStreamName: selectedStreamName } });
+      await mutateDelete({
+        variables: {
+          id,
+
+          // TODO: uncomment when Data Streams are ready to use
+          currentStreamName: '', // selectedStreamName
+        },
+      });
     }
   };
 

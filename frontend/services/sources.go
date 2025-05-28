@@ -258,7 +258,10 @@ func stringToWorkloadKind(workloadKind string) (WorkloadKind, bool) {
 }
 
 func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, currentStreamName string) (*v1alpha1.Source, error) {
-	streamLabel := k8sconsts.SourceDataStreamLabelPrefix + currentStreamName
+	streamLabel := ""
+	if currentStreamName != "" {
+  	streamLabel := k8sconsts.SourceDataStreamLabelPrefix + currentStreamName
+	}
 
 	switch workloadKind {
 	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
@@ -280,9 +283,11 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		if err != nil {
 			return nil, err
 		}
-		source, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, streamLabel, "true")
-		if err != nil {
-			return nil, err
+		if streamLabel != "" {
+			source, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, streamLabel, "true")
+			if err != nil {
+				return nil, err
+			}
 		}
 		return source, nil
 	}
@@ -301,6 +306,11 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 				Kind:      k8sconsts.WorkloadKind(workloadKind),
 			},
 		},
+	}
+	if currentStreamName != "" {
+		newSource.ObjectMeta.Labels = map[string]string{
+			streamLabel: "true",
+		}
 	}
 
 	source, err = kube.DefaultClient.OdigosClient.Sources(nsName).Create(ctx, newSource, metav1.CreateOptions{})
@@ -349,10 +359,9 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		// namespace source does not exist.
 		// we need to delete the workload source,
 		// or remove the relevant data-stream label (if source is in multiple streams)
-
 		dataStreamNames := GetSourceDataStreamNames(source)
 
-		if len(dataStreamNames) > 1 {
+		if len(dataStreamNames) > 1 && currentStreamName != "" {
 			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceDataStreamLabelPrefix+currentStreamName, "")
 			return err
 		}

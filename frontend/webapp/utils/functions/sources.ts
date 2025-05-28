@@ -40,12 +40,14 @@ export const prepareSourcePayloads = (
         kind,
         // this is to map selected=undefined to selected=false
         selected: selected === undefined ? false : selected,
+
         // currentStreamName comes from the UI Kit, if it's missing we use selectedStreamName is a fallback,
         // we could rely on only the selectedStreamName, but if we want to override the selected then we need to use the currentStreamName
         // (for example - if we want to have a single page to manage all groups, then we need to override the selected)
-        currentStreamName: currentStreamName || selectedStreamName,
-      }));
 
+        // TODO: uncomment when Data Streams are ready to use
+        currentStreamName: '', // currentStreamName || selectedStreamName,
+      }));
       const toDeleteFromStore: WorkloadId[] = [];
       const toUpdateInStore: Source[] = [];
 
