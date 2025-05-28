@@ -157,6 +157,7 @@ func IsReasonStatusDisabled(reason string) bool {
 		string(AgentEnabledReasonIgnoredContainer),
 		string(AgentEnabledReasonNoAvailableAgent),
 		string(AgentEnabledReasonOtherAgentDetected),
+		string(AgentEnabledReasonCrashLoopBackOff),
 		string(AgentEnabledReasonRuntimeDetailsUnavailable):
 
 		return true

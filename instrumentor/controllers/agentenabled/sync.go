@@ -13,6 +13,7 @@ import (
 	distroTypes "github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -46,8 +47,14 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 		return ctrl.Result{}, listErr
 	}
 
+	conf, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	rollbackDisabled := conf.RollbackDisabled
+
 	for _, ic := range allInstrumentationConfigs.Items {
-		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp)
+		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, *rollbackDisabled)
 		if err != nil || !res.IsZero() {
 			return res, err
 		}
@@ -56,7 +63,7 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 	return ctrl.Result{}, nil
 }
 
-func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider) (ctrl.Result, error) {
+func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, rollbackDisabled bool) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName)
@@ -76,7 +83,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		if apierrors.IsNotFound(err) {
 			// instrumentation config is deleted, trigger a rollout for the associated workload
 			// this should happen once per workload, as the instrumentation config is deleted
-			_, res, err := rollout.Do(ctx, c, nil, pw)
+			_, res, err := rollout.Do(ctx, c, nil, pw, rollbackDisabled)
 			return res, err
 		}
 		return ctrl.Result{}, err
@@ -102,7 +109,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	}
 
 	agentEnabledChanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
-	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw)
+	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw, rollbackDisabled)
 
 	if rolloutChanged || agentEnabledChanged {
 		updateErr := c.Status().Update(ctx, &ic)

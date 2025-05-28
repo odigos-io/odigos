@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,7 +33,7 @@ const requeueWaitingForWorkloadRollout = 10 * time.Second
 // and a corresponding condition is set.
 //
 // Returns a boolean indicating if the status of the instrumentation config has changed, a ctrl.Result and an error.
-func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload) (bool, ctrl.Result, error) {
+func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, rollbackDisabled bool) (bool, ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
@@ -64,7 +65,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	newRolloutHash := ic.Spec.AgentsMetaHash
 
 	if savedRolloutHash == newRolloutHash {
-		if !isWorkloadRolloutDone(workloadObj) {
+		if !rollbackDisabled && !isWorkloadRolloutDone(workloadObj) {
 			crashLoopBackOff, err := isInCrashLoopBackOff(ctx, c, workloadObj)
 			if err != nil {
 				logger.Error(err, "Failed to check crashLoopBackOff")
@@ -81,7 +82,8 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 
 				if err := c.Update(ctx, ic); err != nil {
 					logger.Error(err, "failed to persist spec rollback")
-					return false, ctrl.Result{}, err
+					res, err := utils.K8SUpdateErrorHandler(err)
+					return false, res, err
 				}
 
 				rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
