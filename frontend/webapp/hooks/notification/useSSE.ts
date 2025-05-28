@@ -17,22 +17,9 @@ const EVENT_TYPES = {
 };
 
 enum CrdTypes {
-  OdigosConfig = 'OdigosConfiguration',
-
-  CollectorsGroup = 'CollectorsGroup',
   Source = 'Source',
   InstrumentationConfig = 'InstrumentationConfig',
-  InstrumentationInstance = 'InstrumentationInstance',
   Destination = 'Destination',
-  InstrumentationRule = 'InstrumentationRule',
-  Processor = 'Processor',
-  AddClusterInfo = 'AddClusterInfo',
-  DeleteAttributes = 'DeleteAttribute',
-  RenameAttributes = 'RenameAttribute',
-  PiiMasking = 'PiiMasking',
-  ErrorSampler = 'ErrorSampler',
-  LatencySampler = 'LatencySampler',
-  ProbabilisticSampler = 'ProbabilisticSampler',
 }
 
 export const useSSE = () => {
