@@ -165,7 +165,10 @@ func IsReasonStatusDisabled(reason string) bool {
 		string(AgentEnabledReasonOtherAgentDetected),
 		string(AgentEnabledReasonRuntimeDetailsUnavailable),
 		// K8s workload-related reasons
-		string(K8sWorkloadRolloutReasonFailedCreate):
+		string(K8sWorkloadRolloutReasonFailedCreate),
+		string(AgentEnabledReasonCrashLoopBackOff),
+		string(AgentEnabledReasonRuntimeDetailsUnavailable):
+
 		return true
 	default:
 		return false
