@@ -79,12 +79,12 @@ describe('Actions CRUD', () => {
             cy.get('tbody').find('input[placeholder="e.g. http.request.method"]').type('attribute');
             cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
 
-            // All parents: text__TextWrapper -> tooltip__TooltipContainer > field-label__Wrapper > dropdown__RootContainer
-            cy.get('tbody').find('div').contains('Condition').parent().parent().parent().parent().children().eq(1).click();
+            // All parents: tooltip__TooltipContainer > field-label__Wrapper > dropdown__RootContainer
+            cy.get('tbody').find('div').contains('Condition').parent().parent().parent().children().eq(1).click();
             cy.get('tbody').find('div').contains('String Condition').click();
 
-            // All parents: text__TextWrapper -> tooltip__TooltipContainer > field-label__Wrapper > dropdown__RootContainer
-            cy.get('tbody').find('div').contains('Operation').parent().parent().parent().parent().children().eq(1).click();
+            // All parents: tooltip__TooltipContainer > field-label__Wrapper > dropdown__RootContainer
+            cy.get('tbody').find('div').contains('Operation').parent().parent().parent().children().eq(1).click();
             cy.get('tbody').find('div').contains('Equals').click();
 
             cy.get('tbody').find('input[placeholder="e.g. GET"]').type('x');
