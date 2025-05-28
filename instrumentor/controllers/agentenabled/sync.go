@@ -122,7 +122,6 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider) (*agentInjectedStatusCondition, error) {
-
 	cg, irls, effectiveConfig, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
@@ -145,9 +144,18 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	defaultDistrosPerLanguage := distroProvider.GetDefaultDistroNames()
 	distroPerLanguage := applyRulesForDistros(defaultDistrosPerLanguage, irls, distroProvider.Getter)
 
+	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff we'd like to stop
+	// instrumentating it and to disable future instrumentation of this service
+	cond := meta.FindStatusCondition(ic.Status.Conditions, odigosv1.AgentEnabledStatusConditionType)
+	instEnabled := true
+	if cond != nil {
+		if cond.Reason == string(odigosv1.AgentEnabledReasonCrashLoopBackOff) {
+			instEnabled = false
+		}
+	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	for _, containerRuntimeDetails := range ic.Status.RuntimeDetailsByContainer {
-		currentContainerConfig := containerInstrumentationConfig(containerRuntimeDetails.ContainerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter)
+		currentContainerConfig := containerInstrumentationConfig(containerRuntimeDetails.ContainerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, instEnabled)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -172,7 +180,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	if len(instrumentedContainerNames) > 0 {
 		// if any instrumented containers are found, the pods webhook should process pods for this workload.
 		// set the AgentInjectionEnabled to true to signal that.
-		ic.Spec.AgentInjectionEnabled = true
+		ic.Spec.AgentInjectionEnabled = instEnabled
 		agentsDeploymentHash, err := rollout.HashForContainersConfig(containersConfig)
 		if err != nil {
 			return nil, err
@@ -213,7 +221,8 @@ func containerInstrumentationConfig(containerName string,
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails odigosv1.RuntimeDetailsByContainer,
 	distroPerLanguage map[common.ProgrammingLanguage]string,
-	distroGetter *distros.Getter) odigosv1.ContainerAgentConfig {
+	distroGetter *distros.Getter,
+	instEnabled bool) odigosv1.ContainerAgentConfig {
 
 	// check unknown language first. if language is not supported, we can skip the rest of the checks.
 	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
@@ -341,25 +350,45 @@ func containerInstrumentationConfig(containerName string,
 				AgentEnabledMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent '%s' detected running in the container", runtimeDetails.OtherAgent.Name),
 			}
 		} else {
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        true,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
-				AgentEnabledMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
-				OtelDistroName:      distroName,
-				DistroParams:        distroParameters,
+			if instEnabled {
+				return odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        true,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
+					AgentEnabledMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
+					OtelDistroName:      distroName,
+					DistroParams:        distroParameters,
+				}
+			} else {
+				return odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonCrashLoopBackOff,
+					AgentEnabledMessage: "Pods entered CrashLoopBackOff; instrumentation disabled",
+					OtelDistroName:      distroName,
+					DistroParams:        distroParameters,
+				}
 			}
+
 		}
 	}
-
-	containerConfig := odigosv1.ContainerAgentConfig{
-		ContainerName:  containerName,
-		AgentEnabled:   true,
-		OtelDistroName: distroName,
-		DistroParams:   distroParameters,
+	if instEnabled {
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:  containerName,
+			AgentEnabled:   true,
+			OtelDistroName: distroName,
+			DistroParams:   distroParameters,
+		}
+	} else {
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:       containerName,
+			AgentEnabled:        false,
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonCrashLoopBackOff,
+			AgentEnabledMessage: "Pods entered CrashLoopBackOff; instrumentation disabled",
+			OtelDistroName:      distroName,
+			DistroParams:        distroParameters,
+		}
 	}
-
-	return containerConfig
 }
 
 func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,

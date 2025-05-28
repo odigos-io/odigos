@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -51,6 +52,51 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	newRolloutHash := ic.Spec.AgentsMetaHash
 
 	if savedRolloutHash == newRolloutHash {
+		if !isWorkloadRolloutDone(workloadObj) {
+			crashLoopBackOff, err := isInCrashLoopBackOff(ctx, c, workloadObj)
+			if err != nil {
+				logger.Error(err, "Failed to check crashLoopBackOff")
+				return false, ctrl.Result{}, err
+			}
+
+			if crashLoopBackOff {
+				// If we're here it means we've crashed the applications and we should revert back
+				for i := range ic.Spec.Containers {
+					ic.Spec.Containers[i].AgentEnabled = false
+					ic.Spec.Containers[i].AgentEnabledReason = odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff
+				}
+				ic.Spec.AgentInjectionEnabled = false
+
+				if err := c.Update(ctx, ic); err != nil {
+					logger.Error(err, "failed to persist spec rollback")
+					return false, ctrl.Result{}, err
+				}
+
+				rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
+				if rolloutErr != nil {
+					logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
+					return false, ctrl.Result{}, rolloutErr
+				}
+
+				meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+					Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+					Status:  metav1.ConditionTrue,
+					Reason:  string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully),
+					Message: "Rolled back application instrumentation",
+				})
+
+				meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+					Type:    odigosv1alpha1.AgentEnabledStatusConditionType,
+					Status:  metav1.ConditionFalse,
+					Reason:  string(odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff),
+					Message: "Pods entered CrashLoopBackOff; instrumentation disabled",
+				})
+				return true, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+			}
+
+			return false, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+
+		}
 		return false, ctrl.Result{}, nil
 	}
 
@@ -75,7 +121,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(rolloutErr))
 
 	// at this point, the hashes are different, notify the caller the status has changed
-	return true, ctrl.Result{}, nil
+	return true, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
 }
 
 // RolloutRestartWorkload restarts the given workload by patching its template annotations.
@@ -192,4 +238,60 @@ func rolloutCondition(rolloutErr error) metav1.Condition {
 	}
 
 	return cond
+}
+
+func isInCrashLoopBackOff(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
+	// 1. Extract namespace + selector from the workload -------------------------
+	var (
+		ns       string
+		selector *metav1.LabelSelector
+	)
+
+	switch o := obj.(type) {
+	case *appsv1.Deployment:
+		ns, selector = o.Namespace, o.Spec.Selector
+	case *appsv1.StatefulSet:
+		ns, selector = o.Namespace, o.Spec.Selector
+	case *appsv1.DaemonSet:
+		ns, selector = o.Namespace, o.Spec.Selector
+	default:
+		return false, fmt.Errorf("isInCrashLoopBackOff: unsupported workload kind %T", obj)
+	}
+
+	if selector == nil {
+		return false, errors.New("isInCrashLoopBackOff: workload has nil selector")
+	}
+
+	sel, err := metav1.LabelSelectorAsSelector(selector)
+	if err != nil {
+		return false, fmt.Errorf("isInCrashLoopBackOff: invalid selector: %w", err)
+	}
+
+	// 2. List the pods matching the selector -----------------------------------
+	var podList corev1.PodList
+	if err := c.List(ctx, &podList,
+		client.InNamespace(ns),
+		client.MatchingLabelsSelector{Selector: sel},
+	); err != nil {
+		return false, fmt.Errorf("isInCrashLoopBackOff: failed listing pods: %w", err)
+	}
+
+	// 3. Look for CrashLoopBackOff in any (init-)container ----------------------
+	for _, p := range podList.Items {
+		if podHasCrashLoop(&p) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// podHasCrashLoop returns true if any (init)-container in the pod is in
+// CrashLoopBackOff.
+func podHasCrashLoop(p *corev1.Pod) bool {
+	for _, cs := range append(p.Status.InitContainerStatuses, p.Status.ContainerStatuses...) {
+		if cs.State.Waiting != nil && cs.State.Waiting.Reason == "CrashLoopBackOff" {
+			return true
+		}
+	}
+	return false
 }
