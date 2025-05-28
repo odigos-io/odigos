@@ -4,11 +4,11 @@ import React, { useMemo, type PropsWithChildren } from 'react';
 import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import styled from 'styled-components';
-import { useSetupStore } from '@odigos/ui-kit/store';
+import { useSSE, useTokenTracker } from '@/hooks';
 import { ToastList } from '@odigos/ui-kit/containers';
 import { OnboardingStepperWrapper } from '@/components';
 import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';
-import { useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
+import { useDataStreamStore, useSetupStore } from '@odigos/ui-kit/store';
 import { ErrorBoundary, FlexColumn, Stepper, StepperProps } from '@odigos/ui-kit/components';
 
 const PageContent = styled(FlexColumn)`
@@ -29,7 +29,7 @@ function SetupLayout({ children }: PropsWithChildren) {
   // call important hooks that should run on page-mount
   useSSE();
   useTokenTracker();
-  const { selectedStreamName } = useDataStreamsCRUD();
+  const { selectedStreamName } = useDataStreamStore();
   const { configuredSources, configuredDestinations, configuredDestinationsUpdateOnly } = useSetupStore();
 
   const pathname = usePathname();
