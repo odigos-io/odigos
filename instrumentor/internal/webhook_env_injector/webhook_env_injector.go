@@ -49,7 +49,7 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 
 	// check if odigos loader should be used
 	if *injectionMethod == common.LoaderEnvInjectionMethod || *injectionMethod == common.LoaderFallbackToPodManifestInjectionMethod {
-		odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderName)
+		odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
 
 		manifestValExits := getContainerEnvVarPointer(&container.Env, commonconsts.LdPreloadEnvVarName) != nil
 		runtimeDetailsVal, foundInInspection := getEnvVarFromRuntimeDetails(runtimeDetails, commonconsts.LdPreloadEnvVarName)

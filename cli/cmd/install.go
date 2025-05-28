@@ -373,7 +373,7 @@ func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]st
 		UiMode:                    common.UiMode(uiMode),
 		ClusterName:               clusterName,
 		CentralBackendURL:         centralBackendURL,
-		UserInstrumentationEnvs:          parsedUserJson,
+		UserInstrumentationEnvs:   parsedUserJson,
 		NodeSelector:              nodeSelector,
 	}
 
