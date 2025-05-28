@@ -19,5 +19,5 @@ spec:
       containers:
       - name: cleanup
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "cli" "Tag" $imageTag) }}
-        args: ["uninstall", "--yes"]
+        args: ["uninstall", "--yes", "--in-cluster"]
       restartPolicy: Never
