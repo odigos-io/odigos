@@ -38,6 +38,10 @@ function process_yaml_file() {
   local file=$1
   file_name=$(basename "$file")
   echo "Running test $file_name"
+  echo "Dest namespace: $dest_namespace"
+  echo "Dest service: $dest_service"
+  echo "Dest port: $dest_port"
+
   query=$(yq '.query' "$file")
   encoded_query=$(urlencode "$query")
   expected_count=$(yq e '.expected.count' "$file")
@@ -94,9 +98,8 @@ if ! command -v yq &>/dev/null; then
   exit 1
 fi
 
-DESTINATION_NAMESPACE=$1
-DESTINATION_SERVICE=$2
-DESTINATION_PORT=$3
+DESTINATION_NAMESPACE=$3
+DESTINATION_SERVICE=$4
 
 verify_yaml_schema $TEST_FILE
 process_yaml_file $TEST_FILE $VERBOSE $DESTINATION_NAMESPACE $DESTINATION_SERVICE $DESTINATION_PORT

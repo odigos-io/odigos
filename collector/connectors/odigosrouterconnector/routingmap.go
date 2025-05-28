@@ -8,33 +8,37 @@ import (
 	"github.com/odigos-io/odigos/common/pipelinegen"
 )
 
-// RoutingIndex maps signals (logs/metrics/traces) to group pipelines
+// RoutingIndex maps signals (logs/metrics/traces) to dataStream pipelines
 type RoutingIndex map[string][]string // signal -> []pipeline names
 
-// SignalRoutingMap indexes all sources by SourceKey and provides routing per signal
+// SignalRoutingMap indexes all sources and namespaces by SourceKey and provides routing per signal
 //
 //	 SignalRoutingMap{
 //	    {ns1/deployment/frontend}: {
-//	        "logs":    {"groupA"},
-//	        "traces":  {"groupA", "groupB"},
-//	        "metrics": {"groupB"},
+//	        "logs":    ["dataStream-A"],
+//	        "traces":  ["dataStream-A", "dataStream-B"],
+//	        "metrics": ["dataStream-B"],
 //	    },
 //	    {ns2/statefulset/db}: {
-//	        "traces": {"groupB"},
+//	        "traces": ["dataStream-B"],
+//	    },
+//	    {ns3/*/*}: {
+//	        "traces": ["dataStream-Default"],
 //	    },
 //	}
 type SignalRoutingMap map[string]RoutingIndex
 
 // BuildSignalRoutingMap prepares a fast-access routing map based on structured group details.
 // Future-proof: usable by both routing connector and custom connector logic.
-func BuildSignalRoutingMap(groups []pipelinegen.GroupDetails) SignalRoutingMap {
+func BuildSignalRoutingMap(dataStreams []pipelinegen.GroupDetails) SignalRoutingMap {
 	result := make(SignalRoutingMap)
 
-	for _, group := range groups {
+	for _, dataStream := range dataStreams {
 
-		signalsForGroup := GetSignalsForGroup(group)
+		signalsForGroup := GetSignalsForGroup(dataStream)
 
-		for _, source := range group.Sources {
+		// Build the keys for the sources
+		for _, source := range dataStream.Sources {
 			key := fmt.Sprintf("%s/%s/%s", source.Namespace, NormalizeKind(source.Kind), source.Name)
 
 			if _, exists := result[key]; !exists {
@@ -43,7 +47,21 @@ func BuildSignalRoutingMap(groups []pipelinegen.GroupDetails) SignalRoutingMap {
 
 			for _, signal := range signalsForGroup {
 				signalStr := strings.ToLower(string(signal))
-				pipeline := group.Name
+				pipeline := dataStream.Name
+				result[key][signalStr] = appendIfMissing(result[key][signalStr], pipeline)
+			}
+		}
+
+		// Build the keys for the namespaces (future select) e.g. ns1/*/*
+		for _, namespace := range dataStream.Namespaces {
+			key := fmt.Sprintf("%s/*/*", namespace.Namespace)
+			if _, exists := result[key]; !exists {
+				result[key] = make(RoutingIndex)
+			}
+
+			for _, signal := range signalsForGroup {
+				signalStr := strings.ToLower(string(signal))
+				pipeline := dataStream.Name
 				result[key][signalStr] = appendIfMissing(result[key][signalStr], pipeline)
 			}
 		}

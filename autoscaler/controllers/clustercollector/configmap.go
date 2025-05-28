@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -13,6 +14,7 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/common/consts"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
@@ -282,67 +284,91 @@ func GetGroupDetailsWithDestinations(
 	logger logr.Logger,
 ) ([]pipelinegen.GroupDetails, error) {
 
-	groupList := []pipelinegen.GroupDetails{}
+	dataStreamDetailsList := []pipelinegen.GroupDetails{}
 	seenGroups := make(map[string]struct{})
 
 	for _, dest := range dests.Items {
+
+		// If the destination has no source selector, use the default data stream
+		// Otherwise, use the data streams specified in the source selector
+		dataStreams := []string{}
 		if dest.Spec.SourceSelector == nil {
-			continue
+			dataStreams = append(dataStreams, consts.DefaultDataStream)
+		} else {
+			dataStreams = dest.Spec.SourceSelector.DataStreams
 		}
 
-		for _, groupName := range dest.Spec.SourceSelector.DataStreams {
-			group := findOrCreateGroup(&groupList, groupName)
+		for _, dataStream := range dataStreams {
+			dataStreamDetails := findOrCreateGroup(&dataStreamDetailsList, dataStream)
 
-			if !destinationExists(group.Destinations, dest.Name) {
-				group.Destinations = append(group.Destinations, pipelinegen.Destination{
+			if !destinationExists(dataStreamDetails.Destinations, dest.Name) {
+				dataStreamDetails.Destinations = append(dataStreamDetails.Destinations, pipelinegen.Destination{
 					DestinationName:   dest.Name,
 					ConfiguredSignals: getConfiguredSignals(dest),
 				})
 			}
 
-			if _, alreadySeen := seenGroups[groupName]; !alreadySeen {
-				seenGroups[groupName] = struct{}{}
+			if _, alreadySeen := seenGroups[dataStream]; !alreadySeen {
+				seenGroups[dataStream] = struct{}{}
 
-				sources, err := getSourcesForGroup(ctx, kubeClient, groupName, logger)
+				sourcesFilters, namespacesFilters, err := getSourcesForDataStream(ctx, kubeClient, dataStream, logger)
 				if err != nil {
 					return nil, err
 				}
-				group.Sources = sources
+				dataStreamDetails.Sources = sourcesFilters
+				dataStreamDetails.Namespaces = namespacesFilters
 			}
 		}
 	}
 
-	return groupList, nil
+	return dataStreamDetailsList, nil
 }
 
-// getSourcesForGroup fetches all sources that are labeled with the given group name.
-func getSourcesForGroup(
+// getSourcesForDataStream fetches all sources [workload and namespace] that are labeled with the given data stream name.
+func getSourcesForDataStream(
 	ctx context.Context,
 	kubeClient client.Client,
-	group string,
+	dataStream string,
 	logger logr.Logger,
-) ([]pipelinegen.SourceFilter, error) {
+) ([]pipelinegen.SourceFilter, []pipelinegen.NamespaceFilter, error) {
 
-	labelSelector := labels.Set{fmt.Sprintf("%s%s", k8sconsts.SourceDataStreamLabelPrefix, group): "true"}.AsSelector()
 	sourceList := &odigosv1.SourceList{}
-	err := kubeClient.List(ctx, sourceList, &client.ListOptions{
-		LabelSelector: labelSelector,
-	})
-	if err != nil {
-		logger.Error(err, "Failed to fetch sources for group", "group", group)
-		return nil, err
+	namespacesSources := &odigosv1.SourceList{}
+
+	if dataStream == consts.DefaultDataStream {
+		var err error
+		sourceList, namespacesSources, err = getSourcesForDefaultDataStream(ctx, kubeClient, dataStream)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		labelSelector := labels.Set{fmt.Sprintf("%s%s", k8sconsts.SourceDataStreamLabelPrefix, dataStream): "true"}.AsSelector()
+		err := kubeClient.List(ctx, sourceList, &client.ListOptions{
+			LabelSelector: labelSelector,
+		})
+		if err != nil {
+			logger.Error(err, "Failed to fetch sources for DataStream", "dataStream", dataStream)
+			return nil, nil, err
+		}
 	}
 
-	sources := make([]pipelinegen.SourceFilter, 0, len(sourceList.Items))
+	namespacesFilters := make([]pipelinegen.NamespaceFilter, 0, len(namespacesSources.Items))
+	for _, source := range namespacesSources.Items {
+		namespacesFilters = append(namespacesFilters, pipelinegen.NamespaceFilter{
+			Namespace: source.Spec.Workload.Namespace,
+		})
+	}
+
+	sourcesFilters := make([]pipelinegen.SourceFilter, 0, len(sourceList.Items))
 	for _, source := range sourceList.Items {
-		sources = append(sources, pipelinegen.SourceFilter{
+		sourcesFilters = append(sourcesFilters, pipelinegen.SourceFilter{
 			Namespace: source.Spec.Workload.Namespace,
 			Kind:      string(source.Spec.Workload.Kind),
 			Name:      source.Spec.Workload.Name,
 		})
 	}
 
-	return sources, nil
+	return sourcesFilters, namespacesFilters, nil
 }
 
 func destinationExists(list []pipelinegen.Destination, item string) bool {
@@ -393,4 +419,48 @@ func getConfiguredSignals(dest odigosv1.Destination) []odigoscommon.Observabilit
 		configuredSignals = append(configuredSignals, odigoscommon.LogsObservabilitySignal)
 	}
 	return configuredSignals
+}
+
+// For the default data stream, include all sources that don't have any data stream labels assigned
+// and sources that have the default data stream label assigned
+func getSourcesForDefaultDataStream(ctx context.Context, kubeClient client.Client, group string) (*odigosv1.SourceList, *odigosv1.SourceList, error) {
+
+	defaultStreamSources := &odigosv1.SourceList{}
+	err := kubeClient.List(ctx, defaultStreamSources, &client.ListOptions{})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to list all sources: %w", err)
+	}
+
+	workloadSources := []odigosv1.Source{}
+
+	// this is done for namespace that were selected as "future select"
+	// in that case a single source will be created for the namespace.
+	namespacesSources := []odigosv1.Source{}
+
+	for _, src := range defaultStreamSources.Items {
+
+		if src.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
+			namespacesSources = append(namespacesSources, src)
+			continue
+		}
+
+		hasDataStreamLabel := false
+		explicitMatch := false
+
+		for key, value := range src.Labels {
+			if strings.HasPrefix(key, k8sconsts.SourceDataStreamLabelPrefix) {
+				hasDataStreamLabel = true
+				if key == fmt.Sprintf("%s%s", k8sconsts.SourceDataStreamLabelPrefix, group) && value == "true" {
+					explicitMatch = true
+				}
+			}
+		}
+
+		// If the source has no data stream labels assigned or has the default data stream label assigned, include it in the filtered list
+		if !hasDataStreamLabel || explicitMatch {
+			workloadSources = append(workloadSources, src)
+		}
+	}
+
+	return &odigosv1.SourceList{Items: workloadSources}, &odigosv1.SourceList{Items: namespacesSources}, nil
 }

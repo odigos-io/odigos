@@ -153,7 +153,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 				return fmt.Errorf("no owner reference found for InstrumentationConfig %s", icCopy.Name)
 			}
 			src, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, services.WorkloadKind(icCopy.OwnerReferences[0].Kind))
-			if err != nil {
+			if err != nil && !apierrors.IsNotFound(err) {
 				return err
 			}
 			srcList[idxCopy] = src
@@ -166,7 +166,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 
 	var actualSources []*model.K8sActualSource
 	for idx, ic := range icList.Items {
-		actualSource, err := instrumentationConfigToActualSource(ctx, ic, *srcList[idx])
+		actualSource, err := instrumentationConfigToActualSource(ctx, ic, srcList[idx])
 		if err != nil {
 			return nil, err
 		}
@@ -195,11 +195,11 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 
 	// Get Source object to extract stream names
 	src, err := services.GetSourceCRD(ctx, ns, name, services.WorkloadKind(kind))
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
 
-	payload, err := instrumentationConfigToActualSource(ctx, *ic, *src)
+	payload, err := instrumentationConfigToActualSource(ctx, *ic, src)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
