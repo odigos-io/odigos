@@ -4,7 +4,6 @@ import React, { useMemo, type PropsWithChildren } from 'react';
 import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import styled from 'styled-components';
-import { useSetupStore } from '@odigos/ui-kit/store';
 import { ToastList } from '@odigos/ui-kit/containers';
 import { OnboardingStepperWrapper } from '@/components';
 import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';

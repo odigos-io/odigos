@@ -260,7 +260,7 @@ func stringToWorkloadKind(workloadKind string) (WorkloadKind, bool) {
 func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, currentStreamName string) (*v1alpha1.Source, error) {
 	streamLabel := ""
 	if currentStreamName != "" {
-  	streamLabel := k8sconsts.SourceDataStreamLabelPrefix + currentStreamName
+		streamLabel = k8sconsts.SourceDataStreamLabelPrefix + currentStreamName
 	}
 
 	switch workloadKind {
@@ -295,9 +295,6 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	newSource := &v1alpha1.Source{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "source-",
-			Labels: map[string]string{
-				streamLabel: "true",
-			},
 		},
 		Spec: v1alpha1.SourceSpec{
 			Workload: k8sconsts.PodWorkload{
@@ -348,7 +345,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 		dataStreamNames := GetSourceDataStreamNames(source)
 
-		if len(dataStreamNames) > 1 {
+		if len(dataStreamNames) > 1 && currentStreamName != "" {
 			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceDataStreamLabelPrefix+currentStreamName, "")
 			return err
 		}
