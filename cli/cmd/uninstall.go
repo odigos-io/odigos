@@ -74,26 +74,25 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 				waitForPodsToRolloutWithoutInstrumentation(ctx, client)
 			}
 
-			// This runs only if --in-cluster was not passed
-			// Meaning: local CLI use (not running by cleanup job)
-			if !cmd.Flag("--instrumentation-only").Changed {
-				UninstallOdigosResources(ctx, client, ns)
+			if cmd.Flag("instrumentation-only").Changed {
+				odigosDeployment, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+				if err != nil && !apierrors.IsNotFound(err) {
+					fmt.Printf("\033[31mERROR\033[0m Failed to get Odigos deployment config map: %s\n", err)
+					os.Exit(1)
+				}
+				if IsOdigosHelmInstallation(odigosDeployment) {
+					// PATCH: Currently, the odigos-config resource has a Helm hook annotation,
+					// so it is not managed by Helm (i.e., it lacks Helm metadata labels).
+					// As a result, running `helm uninstall` does not delete this object
+					// (or the corresponding effective-config).
+					// As a workaround, we explicitly delete it here, and let helm delete all other resources.
+					uninstallOdigosConfiguration(ctx, client, ns)
+					fmt.Printf("Uninstalling OdigosConfiguration from namespace %s\n", ns)
+					os.Exit(0)
+				}
 			}
-			
-			odigosDeployment, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-			if err != nil && !apierrors.IsNotFound(err) {
-				fmt.Printf("\033[31mERROR\033[0m Failed to get Odigos deployment config map: %s\n", err)
-				os.Exit(1)
-			}
-			if IsOdigosHelmInstallation(odigosDeployment) {
-				// PATCH: Currently, the odigos-config resource has a Helm hook annotation,
-				// so it is not managed by Helm (i.e., it lacks Helm metadata labels).
-				// As a result, running `helm uninstall` does not delete this object
-				// (or the corresponding effective-config).
-				// As a workaround, we explicitly delete it here, and let helm delete all other resources.
-				uninstallOdigosConfiguration(ctx, client, ns)
-				fmt.Printf("Uninstalling OdigosConfiguration from namespace %s\n", ns)
-			}
+
+			UninstallOdigosResources(ctx, client, ns)
 
 			hasSystemLabel, err := namespaceHasOdigosLabel(ctx, client, ns)
 			if err != nil {
