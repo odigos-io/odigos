@@ -108,15 +108,13 @@ const (
 	AgentEnabledReasonCrashLoopBackOff AgentEnabledReason = "CrashLoopBackOff"
 )
 
-// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;RolloutFinished;RollingOut
+// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
 type WorkloadRolloutReason string
 
 const (
 	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
-	WorkloadRolloutReasonRollingOut             WorkloadRolloutReason = "RollingOut"
-	WorkloadRolloutReasonRolloutFinished        WorkloadRolloutReason = "RolloutFinished"
 )
 
 // givin multiple reasons for not injecting an agent, this function returns the priority of the reason.
