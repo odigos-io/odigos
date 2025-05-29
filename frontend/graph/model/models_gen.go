@@ -342,15 +342,6 @@ type InstrumentationInstanceAnalyze struct {
 	IdentifyingAttributes []*EntityProperty `json:"identifyingAttributes"`
 }
 
-type InstrumentationInstanceHealth struct {
-	Namespace        string          `json:"namespace"`
-	Name             string          `json:"name"`
-	Kind             K8sResourceKind `json:"kind"`
-	TotalInstances   int             `json:"totalInstances"`
-	HealthyInstances int             `json:"healthyInstances"`
-	Condition        *Condition      `json:"condition,omitempty"`
-}
-
 type InstrumentationLibraryGlobalID struct {
 	Name     string               `json:"name"`
 	SpanKind *SpanKind            `json:"spanKind,omitempty"`
@@ -785,6 +776,13 @@ type SourceAnalyze struct {
 	TotalPods       int                            `json:"totalPods"`
 	PodsPhasesCount string                         `json:"podsPhasesCount"`
 	Pods            []*PodAnalyze                  `json:"pods"`
+}
+
+type SourceConditions struct {
+	Namespace  string          `json:"namespace"`
+	Name       string          `json:"name"`
+	Kind       K8sResourceKind `json:"kind"`
+	Conditions []*Condition    `json:"conditions"`
 }
 
 type SourceContainer struct {

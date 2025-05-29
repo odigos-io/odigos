@@ -204,16 +204,13 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
 
-	instanceHealthCondition, _ := services.GetInstrumentationInstancesHealthCondition(ctx, ns, name, string(kind))
-	if instanceHealthCondition.Status != "" {
-		payload.Conditions = append(payload.Conditions, &instanceHealthCondition)
-	}
-
-	workloadConditions, err := services.GetInstrumentationConfigConditionsForWorkload(ctx, *ic)
+	otherConditions, err := services.GetOtherConditionsForSources(ctx, ns, name, string(kind))
 	if err != nil {
 		return nil, err
 	}
-	payload.Conditions = append(payload.Conditions, convertConditions(workloadConditions)...)
+	for _, item := range otherConditions {
+		payload.Conditions = append(payload.Conditions, item.Conditions...)
+	}
 
 	services.SortConditions(payload.Conditions)
 
@@ -1179,9 +1176,9 @@ func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, ki
 	return source_describe.GetSourceDescription(ctx, namespace, kind, name)
 }
 
-// InstrumentationInstancesHealth is the resolver for the instrumentationInstancesHealth field.
-func (r *queryResolver) InstrumentationInstancesHealth(ctx context.Context) ([]*model.InstrumentationInstanceHealth, error) {
-	return services.GetInstrumentationInstancesHealthConditions(ctx)
+// SourceConditions is the resolver for the sourceConditions field.
+func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceConditions, error) {
+	return services.GetOtherConditionsForSources(ctx, "", "", "")
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.
