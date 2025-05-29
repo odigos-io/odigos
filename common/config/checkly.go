@@ -47,7 +47,7 @@ func (j *Checkly) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 		},
 	}
 
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Processors: []string{processorName},

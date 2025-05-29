@@ -98,7 +98,7 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 
 	var pipelineNames []string
 
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		tracesPipelineName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters:  []string{exporterName},
@@ -107,7 +107,7 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/" + uniqueUri
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters:  []string{exporterName},
@@ -116,7 +116,7 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		logsPipelineName := "logs/" + uniqueUri
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters:  []string{exporterName},

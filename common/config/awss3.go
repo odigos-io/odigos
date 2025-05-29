@@ -26,7 +26,7 @@ func (s *AWSS3) DestType() common.DestinationType {
 }
 
 func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	if !isLoggingEnabled(dest) && !isTracingEnabled(dest) && !isMetricsEnabled(dest) {
+	if !IsLoggingEnabled(dest) && !IsTracingEnabled(dest) && !IsMetricsEnabled(dest) {
 		return nil, errors.New("no metrics, logs or traces enabled, gateway will not be configured for AWS S3")
 	}
 
@@ -67,7 +67,7 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	}
 
 	var pipelineNames []string
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		logsPipelineName := "logs/awss3-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -75,7 +75,7 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/awss3-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -83,7 +83,7 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		tracesPipelineName := "traces/awss3-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

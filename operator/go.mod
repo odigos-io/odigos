@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/operator
 go 1.24.0
 
 require (
-	github.com/odigos-io/odigos/api v0.0.0
+	github.com/odigos-io/odigos/api v1.0.187
 	github.com/odigos-io/odigos/cli v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
@@ -36,7 +36,6 @@ require (
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
-	github.com/goccy/go-yaml v1.17.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/cel-go v0.23.2 // indirect

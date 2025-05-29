@@ -50,7 +50,7 @@ func (j *Bonree) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 		}
 	}
 
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName, "servicegraph"},
@@ -58,7 +58,7 @@ func (j *Bonree) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		pipeName := "metrics/servicegraph/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Receivers: []string{"servicegraph"},

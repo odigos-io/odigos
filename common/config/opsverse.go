@@ -24,7 +24,7 @@ func (g *OpsVerse) DestType() common.DestinationType {
 func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	var err error
 	var pipelineNames []string
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		e := g.isMetricsVarsExists(dest)
 		if e != nil {
 			err = errors.Join(err, e)
@@ -46,7 +46,7 @@ func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		}
 	}
 
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		e := g.isTracingVarsExists(dest)
 		if e != nil {
 			err = errors.Join(err, e)
@@ -70,7 +70,7 @@ func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		}
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		e := g.isLogsVarsExists(dest)
 		if e != nil {
 			err = errors.Join(err, e)

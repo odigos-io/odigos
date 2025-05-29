@@ -43,7 +43,7 @@ func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 
 	cfg.Exporters[exporterName] = exporterConfig
 	var pipelineNames []string
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -51,7 +51,7 @@ func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -59,7 +59,7 @@ func (j *Lumigo) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		pipeName := "logs/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},

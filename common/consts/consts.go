@@ -105,3 +105,7 @@ const (
 const (
 	KarpenterStartupTaintKey = "odigos.io/needs-init"
 )
+
+const (
+	GenericBatchProcessor = "batch/generic-batch-processor"
+)

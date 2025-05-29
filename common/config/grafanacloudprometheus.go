@@ -23,7 +23,7 @@ func (g *GrafanaCloudPrometheus) DestType() common.DestinationType {
 }
 
 func (g *GrafanaCloudPrometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	if !isMetricsEnabled(dest) {
+	if !IsMetricsEnabled(dest) {
 		return nil, errors.New("metrics not enabled, gateway will not be configured for grafana cloud prometheus")
 	}
 

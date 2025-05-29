@@ -23,6 +23,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -41,6 +42,7 @@ type SourcesDefaulter struct {
 }
 
 var _ webhook.CustomDefaulter = &SourcesDefaulter{}
+var defaultDataStreamLabel = k8sconsts.SourceDataStreamLabelPrefix + consts.DefaultDataStream
 
 // TODO: uncomment when Data Streams are ready to use
 // var defaultDataStreamLabel = k8sconsts.SourceGroupLabelPrefix + consts.DefaultDataStream
@@ -308,7 +310,7 @@ func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source 
 
 func doesSourceHaveDataStreamLabel(source *v1alpha1.Source) bool {
 	for key := range source.Labels {
-		if strings.HasPrefix(key, k8sconsts.SourceGroupLabelPrefix) {
+		if strings.HasPrefix(key, k8sconsts.SourceDataStreamLabelPrefix) {
 			return true
 		}
 	}

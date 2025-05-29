@@ -32,7 +32,7 @@ func (t *Tempo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	}
 
 	var pipelineNames []string
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		url = strings.TrimPrefix(url, "http://")
 		endpoint := url
 

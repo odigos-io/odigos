@@ -17,7 +17,7 @@ func (m *Middleware) DestType() common.DestinationType {
 }
 
 func (m *Middleware) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	if !isTracingEnabled(dest) && !isMetricsEnabled(dest) && !isLoggingEnabled(dest) {
+	if !IsTracingEnabled(dest) && !IsMetricsEnabled(dest) && !IsLoggingEnabled(dest) {
 		return nil, errors.New("Middleware is not enabled for any supported signals, skipping")
 	}
 
@@ -34,7 +34,7 @@ func (m *Middleware) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		},
 	}
 	var pipelineNames []string
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		tracesPipelineName := "traces/middleware-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -42,7 +42,7 @@ func (m *Middleware) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/middleware-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -50,7 +50,7 @@ func (m *Middleware) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		logsPipelineName := "logs/middleware-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

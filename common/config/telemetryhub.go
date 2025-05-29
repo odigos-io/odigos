@@ -22,7 +22,7 @@ func (j *TelemetryHub) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]str
 		},
 	}
 
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -30,7 +30,7 @@ func (j *TelemetryHub) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]str
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -38,7 +38,7 @@ func (j *TelemetryHub) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]str
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		pipeName := "logs/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},

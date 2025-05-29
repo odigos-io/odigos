@@ -39,7 +39,7 @@ func (s *Signoz) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 	}
 
 	var pipelineNames []string
-	if isTracingEnabled(dest) {
+	if IsTracingEnabled(dest) {
 		tracesPipelineName := "traces/signoz-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{signozExporterName},
@@ -47,7 +47,7 @@ func (s *Signoz) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if isMetricsEnabled(dest) {
+	if IsMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/signoz-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{signozExporterName},
@@ -55,7 +55,7 @@ func (s *Signoz) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if isLoggingEnabled(dest) {
+	if IsLoggingEnabled(dest) {
 		logsPipelineName := "logs/signoz-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{signozExporterName},
