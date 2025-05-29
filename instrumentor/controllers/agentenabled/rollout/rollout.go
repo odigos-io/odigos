@@ -120,20 +120,20 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing),
 			Message: "waiting for workload rollout to finish before triggering a new one",
 		})
-		logger.Info("Rollout not done")
 		return statusChanged, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
 	}
-	logger.Info("Rollout done")
+
 	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
 	if rolloutErr != nil {
 		logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
 	}
-	logger.Info("Restart")
+
 	ic.Status.WorkloadRolloutHash = newRolloutHash
 	meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(rolloutErr))
-	logger.Info("Restart statusses")
+
 	// at this point, the hashes are different, notify the caller the status has changed
-	return true, ctrl.Result{}, nil
+	// Requeue to try and catch a crashing app
+	return true, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
 }
 
 // RolloutRestartWorkload restarts the given workload by patching its template annotations.
