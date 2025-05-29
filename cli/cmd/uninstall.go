@@ -85,7 +85,7 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 					// so it is not managed by Helm (i.e., it lacks Helm metadata labels).
 					// As a result, running `helm uninstall` does not delete this object
 					// (or the corresponding effective-config).
-					// As a workaround, we explicitly delete it here, and let helm delete all other resources.
+					// As a workaround, we explicitly delete it here, and let helm delete all other resources. 
 					uninstallOdigosConfiguration(ctx, client, ns)
 					fmt.Printf("Uninstalling OdigosConfiguration from namespace %s\n", ns)
 					os.Exit(0)
