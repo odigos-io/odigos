@@ -2,11 +2,12 @@
   "name": "Odigos",
   "short_name": "Odigos",
   "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "16x16 24x24 32x32 64x64 192x192 512x512",
-      "type": "image/x-icon"
-    }
+    { "src": "/favicon.svg", "sizes": "16x16", "type": "image/svg" },
+    { "src": "/favicon.svg", "sizes": "24x24", "type": "image/svg" },
+    { "src": "/favicon.svg", "sizes": "32x32", "type": "image/svg" },
+    { "src": "/favicon.svg", "sizes": "64x64", "type": "image/svg" },
+    { "src": "/favicon.svg", "sizes": "192x192", "type": "image/svg" },
+    { "src": "/favicon.svg", "sizes": "512x512", "type": "image/svg" }
   ],
   "theme_color": "#FFFFFF",
   "background_color": "#000000",
