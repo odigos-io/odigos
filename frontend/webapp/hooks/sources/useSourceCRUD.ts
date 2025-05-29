@@ -84,14 +84,14 @@ export const useSourceCRUD = (): UseSourceCrud => {
     const { data } = await queryOtherConditions();
 
     if (data?.sourceConditions) {
-      const sourcesWithInstances: Source[] = [];
+      const tempSources: Source[] = [];
 
       for (const item of data.sourceConditions) {
         const updatedSource = addConditionToSources(item, sourcesFromStore);
-        if (updatedSource) sourcesWithInstances.push(updatedSource);
+        if (updatedSource) tempSources.push(updatedSource);
       }
 
-      addEntities(EntityTypes.Source, sourcesWithInstances);
+      addEntities(EntityTypes.Source, tempSources);
     }
   };
 
