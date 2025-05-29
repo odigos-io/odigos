@@ -74,6 +74,9 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 				waitForPodsToRolloutWithoutInstrumentation(ctx, client)
 			}
 
+			// If the user only wants to uninstall instrumentation, we exit here.
+			// This flag being used by users who want to remove instrumentation without removing the entire Odigos setup,
+			// And by cleanup jobs that runs as helm pre-uninstall hook before helm uninstall command.
 			if cmd.Flag("instrumentation-only").Changed {
 				odigosDeployment, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 				if err != nil && !apierrors.IsNotFound(err) {
