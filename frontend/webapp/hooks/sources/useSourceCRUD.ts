@@ -44,7 +44,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const [queryByPage] = useLazyQuery<{ computePlatform: { sources: PaginatedData<Source> } }, { nextPage: string }>(GET_SOURCES);
   const [queryById] = useLazyQuery<{ computePlatform: { source: Source } }, { sourceId: WorkloadId }>(GET_SOURCE);
-  const [queryInstances] = useLazyQuery<{ sourceConditions: SourceConditions[] }>(GET_SOURCE_CONDITIONS);
+  const [queryOtherConditions] = useLazyQuery<{ sourceConditions: SourceConditions[] }>(GET_SOURCE_CONDITIONS);
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCE, {
     onError: (error) => {
@@ -81,7 +81,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const fetchAllConditions = async () => {
     const sourcesFromStore = useEntityStore.getState().sources;
-    const { data } = await queryInstances();
+    const { data } = await queryOtherConditions();
 
     if (data?.sourceConditions) {
       const sourcesWithInstances: Source[] = [];
