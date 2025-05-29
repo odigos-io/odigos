@@ -814,6 +814,5 @@ func init() {
 	rootCmd.AddCommand(uninstallCmd)
 	uninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	uninstallCmd.Flags().Bool("no-wait", false, "skip waiting for pods to rollout without instrumentation")
-	uninstallCmd.Flags().Bool("instrumentation-only", false, "Set to true if running inside a Kubernetes cluster (e.g. as a Helm hook job). Skips deletion of resources managed by Helm, which should be removed via 'helm uninstall'.")
-
+	uninstallCmd.Flags().Bool("instrumentation-only", false, "only remove instrumentation from workloads, without removing the entire Odigos setup")
 }
