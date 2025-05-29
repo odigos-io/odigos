@@ -6,11 +6,19 @@ receivers:
 exporters: {}
 processors:
   batch/generic-batch-processor: {}
+  resource/dummy-processor: {}
 extensions: {}
 connectors: {}
 service:
   extensions: []
-  pipelines: {}
+  pipelines:
+    metrics/otelcol:
+      receivers:
+      - prometheus/self-metrics
+      processors:
+      - resource/pod-name
+      exporters:
+      - otlp/odigos-own-telemetry-ui
   telemetry:
     metrics: {}
     resource: {}

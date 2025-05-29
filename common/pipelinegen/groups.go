@@ -52,9 +52,9 @@ type Destination struct {
 // when building the telemetry configuration.
 // and also to be single source of truth for the root pipelines
 var telemetryRootPipelinesBySignal = map[string]string{
-	strings.ToLower(string(common.TracesObservabilitySignal)):  "traces/in",
-	strings.ToLower(string(common.MetricsObservabilitySignal)): "metrics/in",
-	strings.ToLower(string(common.LogsObservabilitySignal)):    "logs/in",
+	strings.ToLower(string(common.TracesObservabilitySignal)):  strings.ToLower(string(common.TracesObservabilitySignal)) + "/in",
+	strings.ToLower(string(common.MetricsObservabilitySignal)): strings.ToLower(string(common.MetricsObservabilitySignal)) + "/in",
+	strings.ToLower(string(common.LogsObservabilitySignal)):    strings.ToLower(string(common.LogsObservabilitySignal)) + "/in",
 }
 
 func GetTelemetryRootPipeline(signal string) string {

@@ -62,13 +62,11 @@ func CalculateGatewayConfig(
 		}
 
 		destinationPipelineNames, err := configer.ModifyConfig(dest, currentConfig)
-		status.Destination[dest.GetID()] = err
-
-		unifiedDestinationPipelineNames = append(unifiedDestinationPipelineNames, destinationPipelineNames...)
-
 		if err != nil {
+			status.Destination[dest.GetID()] = err
 			continue
 		}
+		unifiedDestinationPipelineNames = append(unifiedDestinationPipelineNames, destinationPipelineNames...)
 
 		// Create a connector for each destination pipeline [AKA forward connector]
 		// Add it as a receiver to the destination pipeline
@@ -79,6 +77,7 @@ func CalculateGatewayConfig(
 			pipeline := currentConfig.Service.Pipelines[pipelineName]
 			// add the forward connector as a receiver to the pipeline
 			pipeline.Receivers = []string{connectorName}
+			// every destination pipeline should have a generic batch processor
 			pipeline.Processors = []string{consts.GenericBatchProcessor}
 			// save the updated pipeline with the new receiver
 			currentConfig.Service.Pipelines[pipelineName] = pipeline
@@ -228,6 +227,7 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 					},
 				},
 			},
+			"batch/generic-batch-processor": config.GenericMap{}, // Currently configured with default values
 		},
 		Extensions: config.GenericMap{
 			"health_check": config.GenericMap{

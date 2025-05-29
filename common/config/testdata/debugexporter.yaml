@@ -16,6 +16,7 @@ exporters:
     sampling_thereafter: 1
     verbosity: basic
 processors:
+  batch/generic-batch-processor: {}
   memory_limiter: {}
   resource/odigos-version:
     attributes:
@@ -27,6 +28,10 @@ extensions:
     endpoint: 0.0.0.0:13133
   pprof:
     endpoint: 0.0.0.0:1777
+connectors:
+  forward/logs/debug-d1: {}
+  odigosrouterconnector/logs:
+    groups: []
 service:
   extensions:
   - health_check
@@ -34,9 +39,19 @@ service:
   pipelines:
     logs/debug-d1:
       receivers:
+      - forward/logs/debug-d1
+      processors:
+      - batch/generic-batch-processor
+      exporters:
+      - debug/d1
+    logs/in:
+      receivers:
       - otlp
       processors:
       - memory_limiter
       - resource/odigos-version
       exporters:
-      - debug/d1
+      - odigosrouterconnector/logs
+  telemetry:
+    metrics: {}
+    resource: {}

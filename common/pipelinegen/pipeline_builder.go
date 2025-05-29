@@ -24,7 +24,7 @@ func BuildGroupPipelines(
 
 			pipeline := config.Pipeline{
 				Receivers:  []string{fmt.Sprintf("odigosrouterconnector/%s", signal)},
-				Processors: []string{consts.GenericBatchProcessor},
+				Processors: []string{consts.GenericBatchProcessor}, // every group pipeline should have a generic batch processor
 				Exporters:  []string{},
 			}
 
