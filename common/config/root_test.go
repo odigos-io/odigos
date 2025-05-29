@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 )
 
 var empty = struct{}{}
@@ -26,6 +27,9 @@ func (dest DummyDestination) GetConfig() map[string]string {
 }
 func (dest DummyDestination) GetSignals() []common.ObservabilitySignal {
 	return []common.ObservabilitySignal{common.LogsObservabilitySignal}
+}
+func (dest DummyDestination) GetSecretRef() *corev1.LocalObjectReference {
+	return nil
 }
 
 func openTestData(t *testing.T, path string) string {

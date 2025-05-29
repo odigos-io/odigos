@@ -35,20 +35,6 @@ type DestinationSpec struct {
 	// If not specified, defaults to "all".
 	// +optional
 	SourceSelector *SourceSelector `json:"sourceSelector,omitempty"`
-
-	// SecretFiles defines keys from the SecretEnvRef to mount as files alongside
-	// any environment variable secrets.
-	// +optional
-	SecretFiles []SecretFileConfig `json:"secretFiles,omitempty"`
-
-	// EnvVars defines environment variables to add to the Collector deployment.
-	// +optional
-	EnvVars map[string]string `json:"envVars,omitempty"`
-}
-
-type SecretFileConfig struct {
-	Key       string `json:"key"`
-	MountPath string `json:"mountPath"`
 }
 
 // DestinationStatus defines the observed state of Destination
@@ -98,4 +84,8 @@ func (dest Destination) GetConfig() map[string]string {
 }
 func (dest Destination) GetSignals() []common.ObservabilitySignal {
 	return dest.Spec.Signals
+}
+
+func (dest Destination) GetSecretRef() *v1.LocalObjectReference {
+	return dest.Spec.SecretRef
 }

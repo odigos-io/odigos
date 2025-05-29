@@ -47,27 +47,6 @@ spec:
                 type: object
               destinationName:
                 type: string
-              envVars:
-                additionalProperties:
-                  type: string
-                description: EnvVars defines environment variables to add to the Collector
-                  deployment.
-                type: object
-              secretFiles:
-                description: |-
-                  SecretFiles defines keys from the SecretEnvRef to mount as files alongside
-                  any environment variable secrets.
-                items:
-                  properties:
-                    key:
-                      type: string
-                    mountPath:
-                      type: string
-                  required:
-                  - key
-                  - mountPath
-                  type: object
-                type: array
               secretRef:
                 description: |-
                   LocalObjectReference contains enough information to let you locate the

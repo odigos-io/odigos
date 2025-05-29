@@ -35,9 +35,7 @@ spec:
     - name: GCP_APPLICATION_CREDENTIALS
       displayName: Google Application Credentials
       componentType: textarea
-      secretFile: true
-      envVars:
-        GOOGLE_APPLICATION_CREDENTIALS: "/secrets/GCP_APPLICATION_CREDENTIALS"
+      secret: true
       componentProps:
         required: false
         placeholder: 'Credentials config....'
