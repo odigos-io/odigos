@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
@@ -75,23 +76,16 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 
 			// This runs only if --in-cluster was not passed
 			// Meaning: local CLI use (not running by cleanup job)
-			if !cmd.Flag("in-cluster").Changed {
+			if !cmd.Flag("--instrumentation-only").Changed {
 				UninstallOdigosResources(ctx, client, ns)
-
-				hasSystemLabel, err := namespaceHasOdigosLabel(ctx, client, ns)
-				if err != nil {
-					fmt.Printf("\033[31mERROR\033[0m Failed to check if namespace %s has Odigos label: %s\n", ns, err)
-					os.Exit(1)
-				}
-				// This means that we only delete the namespace if we created (labled) it during the install process.
-				if hasSystemLabel {
-					fmt.Printf("Uninstalling namespace %s\n", ns)
-					createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
-						client, ns, k8sconsts.OdigosSystemLabelKey, uninstallNamespace)
-
-					waitForNamespaceDeletion(ctx, client, ns)
-				}
-			} else {
+			}
+			
+			odigosDeployment, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+			if err != nil && !apierrors.IsNotFound(err) {
+				fmt.Printf("\033[31mERROR\033[0m Failed to get Odigos deployment config map: %s\n", err)
+				os.Exit(1)
+			}
+			if IsOdigosHelmInstallation(odigosDeployment) {
 				// PATCH: Currently, the odigos-config resource has a Helm hook annotation,
 				// so it is not managed by Helm (i.e., it lacks Helm metadata labels).
 				// As a result, running `helm uninstall` does not delete this object
@@ -100,6 +94,21 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 				uninstallOdigosConfiguration(ctx, client, ns)
 				fmt.Printf("Uninstalling OdigosConfiguration from namespace %s\n", ns)
 			}
+
+			hasSystemLabel, err := namespaceHasOdigosLabel(ctx, client, ns)
+			if err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Failed to check if namespace %s has Odigos label: %s\n", ns, err)
+				os.Exit(1)
+			}
+			// This means that we only delete the namespace if we created (labled) it during the install process.
+			if hasSystemLabel {
+				fmt.Printf("Uninstalling namespace %s\n", ns)
+				createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
+					client, ns, k8sconsts.OdigosSystemLabelKey, uninstallNamespace)
+
+				waitForNamespaceDeletion(ctx, client, ns)
+			}
+
 		} else {
 			fmt.Println("Odigos is not installed in any namespace. cleaning up any other Odigos resources that might be left in the cluster...")
 		}
@@ -790,10 +799,18 @@ func uninstallOdigosConfiguration(ctx context.Context, client *kube.Client, ns s
 	return nil
 }
 
+func IsOdigosHelmInstallation(cm *v1.ConfigMap) bool {
+	if cm == nil {
+		return false
+	}
+	method := cm.Data[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey]
+	return installationmethod.K8sInstallationMethod(method) == installationmethod.K8sInstallationMethodHelm
+}
+
 func init() {
 	rootCmd.AddCommand(uninstallCmd)
 	uninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	uninstallCmd.Flags().Bool("no-wait", false, "skip waiting for pods to rollout without instrumentation")
-	uninstallCmd.Flags().Bool("in-cluster", false, "Set to true if running inside a Kubernetes cluster (e.g. as a Helm hook job). Skips deletion of resources managed by Helm, which should be removed via 'helm uninstall'.")
+	uninstallCmd.Flags().Bool("instrumentation-only", false, "Set to true if running inside a Kubernetes cluster (e.g. as a Helm hook job). Skips deletion of resources managed by Helm, which should be removed via 'helm uninstall'.")
 
 }
