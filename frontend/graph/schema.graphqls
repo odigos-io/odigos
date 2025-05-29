@@ -730,13 +730,11 @@ type OdigosAnalyze {
   hasErrors: Boolean!
 }
 
-type InstrumentationInstanceHealth {
+type SourceConditions {
   namespace: String!
   name: String!
   kind: K8sResourceKind!
-  totalInstances: Int!
-  healthyInstances: Int!
-  condition: Condition
+  conditions: [Condition!]!
 }
 
 type DataStream {
@@ -755,7 +753,7 @@ type Query {
   getOverviewMetrics: OverviewMetricsResponse!
   describeOdigos: OdigosAnalyze!
   describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
-  instrumentationInstancesHealth: [InstrumentationInstanceHealth!]!
+  sourceConditions: [SourceConditions!]!
 }
 
 type Mutation {
