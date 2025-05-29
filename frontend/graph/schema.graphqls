@@ -489,6 +489,22 @@ type ProbabilisticSamplerAction implements Action {
   details: String!
 }
 
+type ServiceNameFilters {
+  serviceName: String!
+  samplingRatio: Float!
+  fallbackSamplingRatio: Float!
+}
+
+type ServiceNameSamplerAction implements Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: [ServiceNameFilters!]!
+}
+
 type RenameAttributeAction implements Action {
   id: ID!
   type: String!
@@ -497,6 +513,80 @@ type RenameAttributeAction implements Action {
   disable: Boolean!
   signals: [SignalType!]!
   details: String!
+}
+
+enum StringOperation {
+  exists
+  equals
+  not_equals
+  contains
+  not_contains
+  regex
+}
+enum NumberOperation {
+  exists
+  equals
+  not_equals
+  greater_than
+  less_than
+  greater_than_or_equal
+  less_than_or_equal
+}
+enum BooleanOperation {
+  exists
+  equals
+}
+enum JsonOperation {
+  exists
+  equals
+  not_equals
+  is_valid_json
+  is_invalid_json
+  jsonpath_exists
+  key_equals
+  key_not_equals
+}
+
+type StringCondition {
+  operation: StringOperation!
+  expectedValue: String
+}
+type NumberCondition {
+  operation: NumberOperation!
+  expectedValue: Float!
+}
+type BooleanCondition {
+  operation: BooleanOperation!
+  expectedValue: Boolean!
+}
+type JsonCondition {
+  operation: JsonOperation!
+  expectedValue: String
+  jsonPath: String
+}
+
+type AttributeFiltersCondition {
+  stringCondition: StringCondition
+  numberCondition: NumberCondition
+  booleanCondition: BooleanCondition
+  jsonCondition: JsonCondition
+}
+
+type AttributeFilters {
+  serviceName: String!
+  attributeKey: String!
+  fallbackSamplingRatio: Float!
+  condition: AttributeFiltersCondition!
+}
+
+type SpanAttributeSamplerAction implements Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: [AttributeFilters!]!
 }
 
 input ActionInput {
@@ -640,13 +730,11 @@ type OdigosAnalyze {
   hasErrors: Boolean!
 }
 
-type InstrumentationInstanceHealth {
+type SourceConditions {
   namespace: String!
   name: String!
   kind: K8sResourceKind!
-  totalInstances: Int!
-  healthyInstances: Int!
-  condition: Condition
+  conditions: [Condition!]!
 }
 
 type DataStream {
@@ -665,7 +753,7 @@ type Query {
   getOverviewMetrics: OverviewMetricsResponse!
   describeOdigos: OdigosAnalyze!
   describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
-  instrumentationInstancesHealth: [InstrumentationInstanceHealth!]!
+  sourceConditions: [SourceConditions!]!
 }
 
 type Mutation {

@@ -8,7 +8,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
 
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -89,29 +88,8 @@ func convertConditions(conditions []v1.Condition) []*model.Condition {
 				message = string(c.Reason)
 			}
 
-			var status model.ConditionStatus
-
-			switch c.Status {
-			case v1.ConditionUnknown:
-				status = model.ConditionStatusLoading
-			case v1.ConditionTrue:
-				if c.Type == string(appsv1.DeploymentReplicaFailure) {
-					status = model.ConditionStatusError
-				} else {
-					status = model.ConditionStatusSuccess
-				}
-
-			case v1.ConditionFalse:
-				status = model.ConditionStatusError
-			}
-
-			// force "disabled" status ovverrides for certain "reasons"
-			if v1alpha1.IsReasonStatusDisabled(reason) {
-				status = model.ConditionStatusDisabled
-			}
-
 			result = append(result, &model.Condition{
-				Status:             status,
+				Status:             services.TransformConditionStatus(c.Status, c.Type, reason),
 				Type:               c.Type,
 				Reason:             &reason,
 				Message:            &message,

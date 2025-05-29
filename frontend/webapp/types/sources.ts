@@ -6,6 +6,6 @@ export interface SourceInstrumentInput {
   sources: Omit<SelectedSource, 'numberOfInstances'>[];
 }
 
-export type InstrumentationInstancesHealth = WorkloadId & {
-  condition: Condition;
+export type SourceConditions = WorkloadId & {
+  conditions: Condition[];
 };

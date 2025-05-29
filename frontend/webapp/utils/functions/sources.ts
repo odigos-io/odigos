@@ -1,21 +1,21 @@
 import { getWorkloadId } from '@odigos/ui-kit/functions';
 import { EntityTypes, type WorkloadId, type Source } from '@odigos/ui-kit/types';
 import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigos/ui-kit/store';
-import type { InstrumentationInstancesHealth, NamespaceInstrumentInput, SourceInstrumentInput } from '@/types';
+import type { NamespaceInstrumentInput, SourceConditions, SourceInstrumentInput } from '@/types';
 
-export const addConditionToSources = ({ namespace, name, kind, condition }: InstrumentationInstancesHealth, sources: Source[]): Source | null => {
+export const addConditionToSources = ({ namespace, name, kind, conditions }: SourceConditions, sources: Source[]): Source | null => {
   const foundIdx = sources.findIndex((x) => x.namespace === namespace && x.name === name && x.kind === kind);
   if (foundIdx === -1) return null;
 
   if (sources[foundIdx].conditions) {
     return {
       ...sources[foundIdx],
-      conditions: sources[foundIdx].conditions.concat([condition]),
+      conditions: sources[foundIdx].conditions.concat(conditions),
     };
   } else {
     return {
       ...sources[foundIdx],
-      conditions: [condition],
+      conditions,
     };
   }
 };

@@ -58,15 +58,17 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
   </Accordion>
 
   <Accordion title="services_name_filters *">
-  **services_name_filters** `object[]` : An array of objects representing the filters for the services.
+    **services_name_filters** `object[]` : An array of objects representing the filters for the services.
     - This field is *required*
     <AccordionGroup>
-      <Accordion title="service_name">
+      <Accordion title="service_name *">
         **service_name** `string` : Specifies the service name to search within the trace (Across all available spans).
+        - This field is *required*
       </Accordion>
 
-      <Accordion title="sampling_ratio">
+      <Accordion title="sampling_ratio *">
         **sampling_ratio** `float` : Specifies the sample rate for all traces that contains `service_name`.
+        - This field is *required*
       </Accordion>
 
       <Accordion title="fallback_sampling_ratio *">
