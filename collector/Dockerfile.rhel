@@ -20,8 +20,8 @@ LABEL "version"=$VERSION
 LABEL "release"=$RELEASE
 LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
-COPY --from=builder /go/src/odigosotelcol/odigosotelcol /odigosotelcol
-COPY --from=builder /go/src/odigosotelcol/licenses /licenses
-COPY --from=builder /go/src/odigosotelcol/LICENSE /licenses/.
+COPY --from=builder /go/src/collector/odigosotelcol/odigosotelcol /odigosotelcol
+COPY --from=builder /go/src/collector/odigosotelcol/licenses /licenses
+COPY --from=builder /go/src/collector/odigosotelcol/LICENSE /licenses/.
 USER 65532:65532
 CMD ["/odigosotelcol"]
