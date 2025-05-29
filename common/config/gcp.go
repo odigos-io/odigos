@@ -1,6 +1,10 @@
 package config
 
 import (
+	"strings"
+
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/odigos-io/odigos/common"
 )
 
@@ -8,6 +12,7 @@ const (
 	gcpProjectIdKey              = "GCP_PROJECT_ID"
 	gcpBillingProjectIdKey       = "GCP_BILLING_PROJECT"
 	gcpApplicationCredentialsKey = "GCP_APPLICATION_CREDENTIALS"
+	gcpCredentialsMountPath      = "/secrets"
 )
 
 type GoogleCloud struct{}
@@ -95,4 +100,51 @@ func (g *GoogleCloudOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *C
 	}
 
 	return nil, nil
+}
+
+// Implement CollectorSpecConfigurer for GoogleCloudOTLP
+var _ CollectorSpecConfigurer = (*GoogleCloudOTLP)(nil)
+
+func (g *GoogleCloudOTLP) GetCollectorSpec(dest ExporterConfigurer) *CollectorSpec {
+	spec := &CollectorSpec{}
+	config := dest.GetConfig()
+
+	// If GCP_APPLICATION_CREDENTIALS is set, mount the secret and set the environment variable
+	if val, exists := config[gcpApplicationCredentialsKey]; exists && val != "" && dest.GetSecretRef() != nil {
+		// Add volume mount
+		spec.VolumeMounts = []corev1.VolumeMount{
+			{
+				Name:      strings.ReplaceAll(dest.GetSecretRef().Name, ".", "-"),
+				MountPath: gcpCredentialsMountPath,
+			},
+		}
+
+		// Add volume
+		spec.Volumes = []corev1.Volume{
+			{
+				Name: strings.ReplaceAll(dest.GetSecretRef().Name, ".", "-"),
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dest.GetSecretRef().Name,
+						Items: []corev1.KeyToPath{
+							{
+								Key:  gcpApplicationCredentialsKey,
+								Path: gcpApplicationCredentialsKey,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		// Add environment variable pointing to the mounted credentials
+		spec.EnvVars = []corev1.EnvVar{
+			{
+				Name:  "GOOGLE_APPLICATION_CREDENTIALS",
+				Value: gcpCredentialsMountPath + "/" + gcpApplicationCredentialsKey,
+			},
+		}
+	}
+
+	return spec
 }

@@ -226,12 +226,10 @@ type DestinationFieldYamlProperties struct {
 	ComponentType        string                 `json:"componentType"`
 	ComponentProperties  string                 `json:"componentProperties"`
 	Secret               bool                   `json:"secret"`
-	SecretFile           bool                   `json:"secretFile"`
 	InitialValue         string                 `json:"initialValue"`
 	RenderCondition      []string               `json:"renderCondition"`
 	HideFromReadData     []string               `json:"hideFromReadData"`
 	CustomReadDataLabels []*CustomReadDataLabel `json:"customReadDataLabels"`
-	EnvVars              string                 `json:"envVars"`
 }
 
 type DestinationInput struct {

@@ -1216,29 +1216,6 @@ Keys are parameter names (like &quot;libc&quot;) and values are the value to use
 If not specified, defaults to &quot;all&quot;.</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>secretFiles</code>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-SecretFileConfig"><code>[]SecretFileConfig</code></a>
-</td>
-<td>
-   <p>SecretFiles defines keys from the SecretEnvRef to mount as files alongside
-any environment variable secrets.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>envVars</code>
-</td>
-<td>
-<code>map[string]string</code>
-</td>
-<td>
-   <p>EnvVars defines environment variables to add to the Collector deployment.</p>
-</td>
-</tr>
 </tbody>
 </table>
 
@@ -2571,43 +2548,6 @@ In the Future we might add another level of configuration base on the parent spa
 <td>
    <p>default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.</p>
 </td>
-</tr>
-</tbody>
-</table>
-
-## `SecretFileConfig` <a id="odigos-io-v1alpha1-SecretFileConfig"></a>
-    
-
-**Appears in:**
-
-- [DestinationSpec](#odigos-io-v1alpha1-DestinationSpec)
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>key</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>mountPath</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
 </tr>
 </tbody>
 </table>

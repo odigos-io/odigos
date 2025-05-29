@@ -1,6 +1,8 @@
 package config
 
 import (
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/odigos-io/odigos/common"
 )
 
@@ -14,6 +16,7 @@ type ExporterConfigurer interface {
 	// expected to be unique across all instances of exporters used in collector config, [a-zA-Z0-9-_]+
 	GetID() string
 	GetConfig() map[string]string
+	GetSecretRef() *corev1.LocalObjectReference
 }
 
 type ProcessorConfigurer interface {
@@ -50,4 +53,23 @@ type Pipeline struct {
 	Receivers  []string `json:"receivers"`
 	Processors []string `json:"processors"`
 	Exporters  []string `json:"exporters"`
+}
+
+// CollectorSpecConfigurer is an interface that allows destinations to configure
+// their collector deployment specifications, such as environment variables and volume mounts.
+type CollectorSpecConfigurer interface {
+	// GetCollectorSpec returns the collector deployment specifications for this destination
+	GetCollectorSpec(dest ExporterConfigurer) *CollectorSpec
+}
+
+// CollectorSpec defines the configuration for a collector deployment
+type CollectorSpec struct {
+	// EnvVars is a list of environment variables to be added to the collector deployment
+	EnvVars []corev1.EnvVar
+
+	// VolumeMounts is a list of volume mounts to be added to the collector deployment
+	VolumeMounts []corev1.VolumeMount
+
+	// Volumes is a list of volumes to be added to the collector deployment
+	Volumes []corev1.Volume
 }

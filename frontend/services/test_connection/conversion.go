@@ -6,6 +6,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // Implement the ExporterConfigurer interface
@@ -45,8 +46,11 @@ func (dc *DestinationConfigurer) GetConfig() map[string]string {
 	return configMap
 }
 
-func ConvertDestinationToConfigurer(destination model.DestinationInput) (config.ExporterConfigurer, error) {
+func (dc *DestinationConfigurer) GetSecretRef() *corev1.LocalObjectReference {
+	return nil // Since DestinationInput doesn't have a secret reference field, we return nil
+}
 
+func ConvertDestinationToConfigurer(destination model.DestinationInput) (config.ExporterConfigurer, error) {
 	if destination.Type == "" {
 		return nil, errors.New("destination type is required")
 	}
