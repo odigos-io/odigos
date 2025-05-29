@@ -166,7 +166,7 @@ func TestCalculateDataStreamAndDestinations(t *testing.T) {
 		},
 	}
 
-	dataStreamDetails := []pipelinegen.GroupDetails{
+	dataStreamDetails := []pipelinegen.DataStreams{
 		{
 			Name: "dummy-group",
 			Sources: []pipelinegen.SourceFilter{
@@ -222,7 +222,7 @@ func TestCalculateDataStreamUsingNamespaceSources(t *testing.T) {
 		},
 	}
 
-	dataStreamDetails := []pipelinegen.GroupDetails{
+	dataStreamDetails := []pipelinegen.DataStreams{
 		{
 			Name:    "groupA",
 			Sources: []pipelinegen.SourceFilter{},
@@ -282,7 +282,7 @@ func TestCalculateDataStreamMissingSources(t *testing.T) {
 		},
 	}
 
-	dataStreamDetails := []pipelinegen.GroupDetails{
+	dataStreamDetails := []pipelinegen.DataStreams{
 		{
 			Name:    "dummy-group",
 			Sources: []pipelinegen.SourceFilter{},
@@ -335,7 +335,7 @@ func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 		},
 	}
 
-	dataStreamDetails := []pipelinegen.GroupDetails{
+	dataStreamDetails := []pipelinegen.DataStreams{
 		{
 			Name: "dummy-group",
 			Sources: []pipelinegen.SourceFilter{

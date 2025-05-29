@@ -133,7 +133,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
-	groupDetails, err := GetGroupDetailsWithDestinations(ctx, c, dests, logger)
+	dataStreams, err := GetDataStreamsWithDestinations(ctx, c, dests, logger)
 	if err != nil {
 		logger.Error(err, "Failed to build group details")
 		return nil, err
@@ -148,7 +148,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
 			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines)
 		},
-		groupDetails,
+		dataStreams,
 	)
 
 	if err != nil {
@@ -250,13 +250,13 @@ func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.C
 	return updated, nil
 }
 
-// GetGroupDetailsWithDestinations generates a slice of group details.
+// GetDataStreamsWithDestinations generates a slice of data streams.
 //
 // Example return structure:
 //
-//	[]GroupDetails{
+//	[]DataStreams{
 //	    {
-//	        Name: "groupA",
+//	        Name: "dataStreamA",
 //	        Sources: []SourceFilter{
 //	            {Namespace: "ns1", Kind: "Deployment", Name: "frontend"},
 //	            {Namespace: "ns1", Kind: "DaemonSet", Name: "log-agent"},
@@ -267,7 +267,7 @@ func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.C
 //	        },
 //	    },
 //	    {
-//	        Name: "groupB",
+//	        Name: "dataStreamB",
 //	        Sources: []SourceFilter{
 //	            {Namespace: "ns2", Kind: "StatefulSet", Name: "db"},
 //	        },
@@ -277,15 +277,15 @@ func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.C
 //	        },
 //	    },
 //	}
-func GetGroupDetailsWithDestinations(
+func GetDataStreamsWithDestinations(
 	ctx context.Context,
 	kubeClient client.Client,
 	dests *odigosv1.DestinationList,
 	logger logr.Logger,
-) ([]pipelinegen.GroupDetails, error) {
+) ([]pipelinegen.DataStreams, error) {
 
-	dataStreamDetailsList := []pipelinegen.GroupDetails{}
-	seenGroups := make(map[string]struct{})
+	dataStreamDetailsList := []pipelinegen.DataStreams{}
+	seenDataStreams := make(map[string]struct{})
 
 	for _, dest := range dests.Items {
 
@@ -299,7 +299,7 @@ func GetGroupDetailsWithDestinations(
 		}
 
 		for _, dataStream := range dataStreams {
-			dataStreamDetails := findOrCreateGroup(&dataStreamDetailsList, dataStream)
+			dataStreamDetails := findOrCreateDataStream(&dataStreamDetailsList, dataStream)
 
 			if !destinationExists(dataStreamDetails.Destinations, dest.Name) {
 				dataStreamDetails.Destinations = append(dataStreamDetails.Destinations, pipelinegen.Destination{
@@ -308,8 +308,8 @@ func GetGroupDetailsWithDestinations(
 				})
 			}
 
-			if _, alreadySeen := seenGroups[dataStream]; !alreadySeen {
-				seenGroups[dataStream] = struct{}{}
+			if _, alreadySeen := seenDataStreams[dataStream]; !alreadySeen {
+				seenDataStreams[dataStream] = struct{}{}
 
 				sourcesFilters, namespacesFilters, err := getSourcesForDataStream(ctx, kubeClient, dataStream, logger)
 				if err != nil {
@@ -392,19 +392,19 @@ func isOdigosTrafficMetricsProcessorRelevant(name string, rootPipelines []string
 	return false
 }
 
-func findOrCreateGroup(groups *[]pipelinegen.GroupDetails, name string) *pipelinegen.GroupDetails {
-	for i := range *groups {
-		if (*groups)[i].Name == name {
-			return &(*groups)[i]
+func findOrCreateDataStream(dataStreams *[]pipelinegen.DataStreams, name string) *pipelinegen.DataStreams {
+	for i := range *dataStreams {
+		if (*dataStreams)[i].Name == name {
+			return &(*dataStreams)[i]
 		}
 	}
-	newGroup := pipelinegen.GroupDetails{
+	newDataStream := pipelinegen.DataStreams{
 		Name:         name,
 		Sources:      []pipelinegen.SourceFilter{},
 		Destinations: []pipelinegen.Destination{},
 	}
-	*groups = append(*groups, newGroup)
-	return &(*groups)[len(*groups)-1]
+	*dataStreams = append(*dataStreams, newDataStream)
+	return &(*dataStreams)[len(*dataStreams)-1]
 }
 
 func getConfiguredSignals(dest odigosv1.Destination) []odigoscommon.ObservabilitySignal {

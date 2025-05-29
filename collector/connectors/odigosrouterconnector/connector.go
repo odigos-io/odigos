@@ -74,7 +74,7 @@ func createTracesConnector(
 		defaultTracesConsumer = nil
 	}
 
-	routeMap := BuildSignalRoutingMap(config.Groups)
+	routeMap := BuildSignalRoutingMap(config.DataStreams)
 
 	return &routerConnector{
 		routingTable: &routeMap,
@@ -105,7 +105,7 @@ func createMetricsConnector(
 		defaultMetricsConsumer = nil
 	}
 
-	routeMap := BuildSignalRoutingMap(config.Groups)
+	routeMap := BuildSignalRoutingMap(config.DataStreams)
 
 	return &routerConnector{
 		routingTable:  &routeMap,
@@ -136,7 +136,7 @@ func createLogsConnector(
 		// This can happen if the default pipeline is not configured (Sources and Destinations)
 		defaultLogsConsumer = nil
 	}
-	routeMap := BuildSignalRoutingMap(config.Groups)
+	routeMap := BuildSignalRoutingMap(config.DataStreams)
 
 	return &routerConnector{
 		routingTable: &routeMap,

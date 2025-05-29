@@ -16,9 +16,9 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
-// GroupDetails defines a logical group of source workloads and the destination exporters
+// DataStreams defines a logical group of source workloads and the destination exporters
 // that they are allowed to send observability data to.
-type GroupDetails struct {
+type DataStreams struct {
 	Name         string            `mapstructure:"name"`         // Unique identifier for the group (used as pipeline name suffix)
 	Namespaces   []NamespaceFilter `mapstructure:"namespaces"`   // List of namespaces belonging to this group [marked as future select]
 	Sources      []SourceFilter    `mapstructure:"sources"`      // List of workloads belonging to this group

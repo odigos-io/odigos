@@ -30,12 +30,12 @@ type SignalRoutingMap map[string]RoutingIndex
 
 // BuildSignalRoutingMap prepares a fast-access routing map based on structured group details.
 // Future-proof: usable by both routing connector and custom connector logic.
-func BuildSignalRoutingMap(dataStreams []pipelinegen.GroupDetails) SignalRoutingMap {
+func BuildSignalRoutingMap(dataStreams []pipelinegen.DataStreams) SignalRoutingMap {
 	result := make(SignalRoutingMap)
 
 	for _, dataStream := range dataStreams {
 
-		signalsForGroup := GetSignalsForGroup(dataStream)
+		signalsForDataStream := GetSignalsForDataStream(dataStream)
 
 		// Build the keys for the sources
 		for _, source := range dataStream.Sources {
@@ -45,7 +45,7 @@ func BuildSignalRoutingMap(dataStreams []pipelinegen.GroupDetails) SignalRouting
 				result[key] = make(RoutingIndex)
 			}
 
-			for _, signal := range signalsForGroup {
+			for _, signal := range signalsForDataStream {
 				signalStr := strings.ToLower(string(signal))
 				pipeline := dataStream.Name
 				result[key][signalStr] = appendIfMissing(result[key][signalStr], pipeline)
@@ -59,7 +59,7 @@ func BuildSignalRoutingMap(dataStreams []pipelinegen.GroupDetails) SignalRouting
 				result[key] = make(RoutingIndex)
 			}
 
-			for _, signal := range signalsForGroup {
+			for _, signal := range signalsForDataStream {
 				signalStr := strings.ToLower(string(signal))
 				pipeline := dataStream.Name
 				result[key][signalStr] = appendIfMissing(result[key][signalStr], pipeline)
@@ -94,13 +94,13 @@ func appendIfMissing(slice []string, item string) []string {
 	return append(slice, item)
 }
 
-// GetSignalsForGroup returns all observability signals for a given group.
-// This is used to forward all signals for signal group pipelines e.g. logs/groupA, traces/groupC, metrics/groupB.
-func GetSignalsForGroup(group pipelinegen.GroupDetails) []common.ObservabilitySignal {
+// GetSignalsForDataStream returns all observability signals for a given data stream.
+// This is used to forward all signals for signal data stream pipelines e.g. logs/groupA, traces/groupC, metrics/groupB.
+func GetSignalsForDataStream(dataStream pipelinegen.DataStreams) []common.ObservabilitySignal {
 	signals := []common.ObservabilitySignal{}
 	seen := make(map[common.ObservabilitySignal]struct{})
 
-	for _, destination := range group.Destinations {
+	for _, destination := range dataStream.Destinations {
 		for _, sig := range destination.ConfiguredSignals {
 			if _, exists := seen[sig]; !exists {
 				seen[sig] = struct{}{}

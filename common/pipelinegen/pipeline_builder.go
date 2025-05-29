@@ -10,17 +10,17 @@ import (
 
 type OtelPipelines map[string]config.Pipeline
 
-// BuildGroupPipelines constructs group pipelines for logs, metrics, traces.
-// Each pipeline receives from its routing connector and exports to all destinations relevant to the group.
-func BuildGroupPipelines(
-	groups []GroupDetails,
+// BuildDataStreamPipelines constructs data stream pipelines for logs, metrics, traces.
+// Each pipeline receives from its routing connector and exports to all destinations relevant to the data stream.
+func BuildDataStreamPipelines(
+	dataStreams []DataStreams,
 	forwardConnectorByDest map[string][]string,
 ) map[string]config.Pipeline {
 	pipelines := make(map[string]config.Pipeline)
 
-	for _, group := range groups {
+	for _, dataStream := range dataStreams {
 		for _, signal := range []string{"logs", "metrics", "traces"} {
-			pipelineName := fmt.Sprintf("%s/%s", signal, group.Name)
+			pipelineName := fmt.Sprintf("%s/%s", signal, dataStream.Name)
 
 			pipeline := config.Pipeline{
 				Receivers:  []string{fmt.Sprintf("odigosrouterconnector/%s", signal)},
@@ -30,7 +30,7 @@ func BuildGroupPipelines(
 
 			// Add forward connectors for each destination in the group to route telemetry data
 			// Forward connectors follow the naming pattern: forward/<signal>/<destination-id>
-			for _, dest := range group.Destinations {
+			for _, dest := range dataStream.Destinations {
 				connectors, exists := forwardConnectorByDest[dest.DestinationName]
 				if !exists {
 					continue

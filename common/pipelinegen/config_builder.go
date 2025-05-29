@@ -17,7 +17,7 @@ func GetGatewayConfig(
 	processors []config.ProcessorConfigurer,
 	memoryLimiterConfig config.GenericMap,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
-	groupDetails []GroupDetails,
+	groupDetails []DataStreams,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig := GetBasicConfig(memoryLimiterConfig)
 	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, groupDetails)
@@ -28,7 +28,7 @@ func CalculateGatewayConfig(
 	dests []config.ExporterConfigurer,
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
-	groupDetails []GroupDetails,
+	groupDetails []DataStreams,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := config.LoadConfigers()
 	if err != nil {
@@ -108,7 +108,7 @@ func CalculateGatewayConfig(
 	}
 
 	//  Add pipelines that receive from routing connectors and forward to destinations
-	groupPipelines := BuildGroupPipelines(groupDetails, destForwardConnectors)
+	groupPipelines := BuildDataStreamPipelines(groupDetails, destForwardConnectors)
 	for name, pipe := range groupPipelines {
 		currentConfig.Service.Pipelines[name] = pipe
 	}
@@ -141,7 +141,7 @@ func CalculateGatewayConfig(
 	return string(data), nil, status, signals
 }
 
-func prepareRootPipelines(currentConfig *config.Config, groupDetails []GroupDetails, tracesProcessors,
+func prepareRootPipelines(currentConfig *config.Config, groupDetails []DataStreams, tracesProcessors,
 	metricsProcessors, logsProcessors []string, signals []common.ObservabilitySignal) {
 	// for each signal, create a root pipeline and a connector
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
