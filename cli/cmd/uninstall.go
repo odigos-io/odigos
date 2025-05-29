@@ -78,11 +78,12 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 			if !cmd.Flag("in-cluster").Changed {
 				UninstallOdigosResources(ctx, client, ns)
 
-				hasSystemLabel, err := namespaceHasOdigosLabel(ctx, client, ns, k8sconsts.OdigosSystemLabelKey, k8sconsts.OdigosSystemLabelValue)
+				hasSystemLabel, err := namespaceHasOdigosLabel(ctx, client, ns)
 				if err != nil {
 					fmt.Printf("\033[31mERROR\033[0m Failed to check if namespace %s has Odigos label: %s\n", ns, err)
 					os.Exit(1)
 				}
+				// This means that we only delete the namespace if we created (labled) it during the install process.
 				if hasSystemLabel {
 					fmt.Printf("Uninstalling namespace %s\n", ns)
 					createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
@@ -177,14 +178,13 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 
 }
 
-func namespaceHasOdigosLabel(ctx context.Context, client *kube.Client, ns string, labelKey, expectedValue string) (bool, error) {
+func namespaceHasOdigosLabel(ctx context.Context, client *kube.Client, ns string) (bool, error) {
 	nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
 		return false, err // namespace may not exist or API error
 	}
-
-	val, exists := nsObj.Labels[labelKey]
-	return exists && val == expectedValue, nil
+	val, exists := nsObj.Labels[k8sconsts.OdigosSystemLabelKey]
+	return exists && val == k8sconsts.OdigosSystemLabelValue, nil
 }
 
 func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kube.Client) {
