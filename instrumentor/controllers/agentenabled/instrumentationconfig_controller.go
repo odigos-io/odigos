@@ -19,7 +19,10 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	rollbackDisabled := conf.RollbackDisabled
+	rollbackDisabled := false
+	if conf.RollbackDisabled != nil {
+		rollbackDisabled = *conf.RollbackDisabled
+	}
 
-	return reconcileWorkload(ctx, r.Client, req.Name, req.Namespace, r.DistrosProvider, *rollbackDisabled)
+	return reconcileWorkload(ctx, r.Client, req.Name, req.Namespace, r.DistrosProvider, rollbackDisabled)
 }

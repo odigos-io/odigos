@@ -103,17 +103,20 @@ const (
 	// if the source cannot be instrumented because there are no running pods,
 	// we want to show this reason to the user so it's not a spinner
 	AgentEnabledReasonRuntimeDetailsUnavailable AgentEnabledReason = "RuntimeDetailsUnavailable"
-
+	// used for the rollback feature, when an application was instrumented and it caused a CrashLoopBackOff
+	// We're marking it as that and rolling back the instrumentation
 	AgentEnabledReasonCrashLoopBackOff AgentEnabledReason = "CrashLoopBackOff"
 )
 
-// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
+// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;RolloutFinished;RollingOut
 type WorkloadRolloutReason string
 
 const (
 	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
+	WorkloadRolloutReasonRollingOut             WorkloadRolloutReason = "RollingOut"
+	WorkloadRolloutReasonRolloutFinished        WorkloadRolloutReason = "RolloutFinished"
 )
 
 // givin multiple reasons for not injecting an agent, this function returns the priority of the reason.
