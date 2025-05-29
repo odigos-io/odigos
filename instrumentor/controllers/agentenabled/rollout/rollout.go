@@ -71,9 +71,8 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 				logger.Error(err, "Failed to check crashLoopBackOff")
 				return false, ctrl.Result{}, err
 			}
-			logger.Info("*************************************************************************************")
+
 			if crashLoopBackOff && ic.Spec.AgentInjectionEnabled {
-				logger.Info("In crashLoopBackOff")
 				for i := range ic.Spec.Containers {
 					ic.Spec.Containers[i].AgentEnabled = false
 					ic.Spec.Containers[i].AgentEnabledReason = odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff
