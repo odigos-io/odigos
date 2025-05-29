@@ -321,6 +321,24 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		})
 	}
 
+	// PiiMaskings actions
+	piActions, err := kube.DefaultClient.ActionsClient.PiiMaskings(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range piActions.Items {
+		specStr, err := json.Marshal(action.Spec)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
+		})
+	}
+
 	// ErrorSamplers actions
 	esActions, err := kube.DefaultClient.ActionsClient.ErrorSamplers(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -375,12 +393,30 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 		})
 	}
 
-	// PiiMaskings actions
-	piActions, err := kube.DefaultClient.ActionsClient.PiiMaskings(ns).List(ctx, metav1.ListOptions{})
+	// ServiceNameSamplers actions
+	snsActions, err := kube.DefaultClient.ActionsClient.ServiceNameSamplers(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	for _, action := range piActions.Items {
+	for _, action := range snsActions.Items {
+		specStr, err := json.Marshal(action.Spec)
+		if err != nil {
+			return nil, err
+		}
+		response = append(response, &model.PipelineAction{
+			ID:         action.Name,
+			Type:       action.Kind,
+			Spec:       string(specStr),
+			Conditions: convertConditions(action.Status.Conditions),
+		})
+	}
+
+	// SpanAttributeSamplers actions
+	sasActions, err := kube.DefaultClient.ActionsClient.SpanAttributeSamplers(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range sasActions.Items {
 		specStr, err := json.Marshal(action.Spec)
 		if err != nil {
 			return nil, err
@@ -844,14 +880,18 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 		return actionservices.CreateDeleteAttribute(ctx, action)
 	case actionservices.ActionTypePiiMasking:
 		return actionservices.CreatePiiMasking(ctx, action)
+	case actionservices.ActionTypeRenameAttribute:
+		return actionservices.CreateRenameAttribute(ctx, action)
 	case actionservices.ActionTypeErrorSampler:
 		return actionservices.CreateErrorSampler(ctx, action)
 	case actionservices.ActionTypeLatencySampler:
 		return actionservices.CreateLatencySampler(ctx, action)
 	case actionservices.ActionTypeProbabilisticSampler:
 		return actionservices.CreateProbabilisticSampler(ctx, action)
-	case actionservices.ActionTypeRenameAttribute:
-		return actionservices.CreateRenameAttribute(ctx, action)
+	case actionservices.ActionTypeServiceNameSampler:
+		return actionservices.CreateServiceNameSampler(ctx, action)
+	case actionservices.ActionTypeSpanAttributeSampler:
+		return actionservices.CreateSpanAttributeSampler(ctx, action)
 	default:
 		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
 	}
@@ -872,14 +912,18 @@ func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action m
 		return actionservices.UpdateDeleteAttribute(ctx, id, action)
 	case actionservices.ActionTypePiiMasking:
 		return actionservices.UpdatePiiMasking(ctx, id, action)
+	case actionservices.ActionTypeRenameAttribute:
+		return actionservices.UpdateRenameAttribute(ctx, id, action)
 	case actionservices.ActionTypeErrorSampler:
 		return actionservices.UpdateErrorSampler(ctx, id, action)
 	case actionservices.ActionTypeLatencySampler:
 		return actionservices.UpdateLatencySampler(ctx, id, action)
 	case actionservices.ActionTypeProbabilisticSampler:
 		return actionservices.UpdateProbabilisticSampler(ctx, id, action)
-	case actionservices.ActionTypeRenameAttribute:
-		return actionservices.UpdateRenameAttribute(ctx, id, action)
+	case actionservices.ActionTypeSpanAttributeSampler:
+		return actionservices.UpdateSpanAttributeSampler(ctx, id, action)
+	case actionservices.ActionTypeServiceNameSampler:
+		return actionservices.UpdateServiceNameSampler(ctx, id, action)
 	default:
 		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
 	}
@@ -909,6 +953,11 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 		if err != nil {
 			return false, fmt.Errorf("failed to delete DeleteAttribute: %v", err)
 		}
+	case actionservices.ActionTypeRenameAttribute:
+		err := actionservices.DeleteRenameAttribute(ctx, id)
+		if err != nil {
+			return false, fmt.Errorf("failed to delete RenameAttribute: %v", err)
+		}
 	case actionservices.ActionTypePiiMasking:
 		err := actionservices.DeletePiiMasking(ctx, id)
 		if err != nil {
@@ -929,10 +978,15 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 		if err != nil {
 			return false, fmt.Errorf("failed to delete ProbabilisticSampler: %v", err)
 		}
-	case actionservices.ActionTypeRenameAttribute:
-		err := actionservices.DeleteRenameAttribute(ctx, id)
+	case actionservices.ActionTypeServiceNameSampler:
+		err := actionservices.DeleteServiceNameSampler(ctx, id)
 		if err != nil {
-			return false, fmt.Errorf("failed to delete RenameAttribute: %v", err)
+			return false, fmt.Errorf("failed to delete ServiceNameSampler: %v", err)
+		}
+	case actionservices.ActionTypeSpanAttributeSampler:
+		err := actionservices.DeleteSpanAttributeSampler(ctx, id)
+		if err != nil {
+			return false, fmt.Errorf("failed to delete SpanAttributeSampler: %v", err)
 		}
 	default:
 		return false, fmt.Errorf("unsupported action type: %s", actionType)
