@@ -63,13 +63,13 @@ export const GET_SOURCE = gql`
   }
 `;
 
-export const GET_INSTANCES = gql`
-  query GetInstrumentationInstancesHealth {
-    instrumentationInstancesHealth {
+export const GET_SOURCE_CONDITIONS = gql`
+  query GetSourceConditions {
+    sourceConditions {
       namespace
       name
       kind
-      condition {
+      conditions {
         status
         type
         reason
