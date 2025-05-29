@@ -91,9 +91,9 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 					// As a workaround, we explicitly delete it here, and let helm delete all other resources.
 					uninstallOdigosConfiguration(ctx, client, ns)
 					fmt.Printf("Uninstalling OdigosConfiguration from namespace %s\n", ns)
-					os.Exit(0)
+					return 
 				}
-				os.Exit(0)
+				return
 			}
 
 			UninstallOdigosResources(ctx, client, ns)
@@ -193,10 +193,14 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 func namespaceHasOdigosLabel(ctx context.Context, client *kube.Client, ns string) (bool, error) {
 	nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
-		return false, err // namespace may not exist or API error
+		return false, err 
 	}
-	val, exists := nsObj.Labels[k8sconsts.OdigosSystemLabelKey]
-	return exists && val == k8sconsts.OdigosSystemLabelValue, nil
+
+	if nsObj.Labels != nil {
+		val, exists := nsObj.Labels[k8sconsts.OdigosSystemLabelKey]
+		return exists && val == k8sconsts.OdigosSystemLabelValue, nil
+	}
+	return false, nil
 }
 
 func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kube.Client) {
