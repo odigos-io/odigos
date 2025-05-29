@@ -4,9 +4,9 @@ import { useNamespace } from '../namespaces';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import type { PaginatedData, SourceConditions, SourceInstrumentInput } from '@/types';
 import { addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
-import type { InstrumentationInstancesHealth, PaginatedData, SourceInstrumentInput } from '@/types';
-import { GET_INSTANCES, GET_SOURCE, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud } from '@odigos/ui-kit/types';
 import {
   type NamespaceSelectionFormData,
@@ -44,7 +44,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const [queryByPage] = useLazyQuery<{ computePlatform: { sources: PaginatedData<Source> } }, { nextPage: string }>(GET_SOURCES);
   const [queryById] = useLazyQuery<{ computePlatform: { source: Source } }, { sourceId: WorkloadId }>(GET_SOURCE);
-  const [queryInstances] = useLazyQuery<{ instrumentationInstancesHealth: InstrumentationInstancesHealth[] }>(GET_INSTANCES);
+  const [queryOtherConditions] = useLazyQuery<{ sourceConditions: SourceConditions[] }>(GET_SOURCE_CONDITIONS);
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCE, {
     onError: (error) => {
@@ -79,19 +79,19 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (toDeleteCount > 0 || toAddCount > 0) setInstrumentAwait(true);
   };
 
-  const fetchAllInstances = async () => {
+  const fetchAllConditions = async () => {
     const sourcesFromStore = useEntityStore.getState().sources;
-    const { data } = await queryInstances();
+    const { data } = await queryOtherConditions();
 
-    if (data?.instrumentationInstancesHealth) {
-      const sourcesWithInstances: Source[] = [];
+    if (data?.sourceConditions) {
+      const tempSources: Source[] = [];
 
-      for (const instanceHealth of data.instrumentationInstancesHealth) {
-        const updatedSource = addConditionToSources(instanceHealth, sourcesFromStore);
-        if (updatedSource) sourcesWithInstances.push(updatedSource);
+      for (const item of data.sourceConditions) {
+        const updatedSource = addConditionToSources(item, sourcesFromStore);
+        if (updatedSource) tempSources.push(updatedSource);
       }
 
-      addEntities(EntityTypes.Source, sourcesWithInstances);
+      addEntities(EntityTypes.Source, tempSources);
     }
   };
 
@@ -114,7 +114,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
         setEntitiesLoading(EntityTypes.Source, false);
         setInstrumentCount('sourcesToCreate', 0);
         setInstrumentCount('sourcesCreated', 0);
-        fetchAllInstances();
+        fetchAllConditions();
       }
     }
   };
