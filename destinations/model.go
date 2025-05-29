@@ -44,10 +44,8 @@ type Field struct {
 	ComponentType        string                 `yaml:"componentType"`
 	ComponentProps       map[string]interface{} `yaml:"componentProps"`
 	Secret               bool                   `yaml:"secret"`
-	SecretFile           bool                   `yaml:"secretFile"`
 	InitialValue         string                 `yaml:"initialValue"`
 	RenderCondition      []string               `yaml:"renderCondition"`
 	HideFromReadData     []string               `yaml:"hideFromReadData"`
 	CustomReadDataLabels []*CustomReadDataLabel `yaml:"customReadDataLabels"`
-	EnvVars              map[string]string      `yaml:"envVars"`
 }

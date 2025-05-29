@@ -3,7 +3,6 @@ package clustercollector
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -13,6 +12,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -51,7 +51,7 @@ func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Collector
 
 	// Use the hash of the secrets  to make sure the gateway will restart when the secrets (mounted as environment variables) changes
 	configDataHash := common.Sha256Hash(secretsVersionHash)
-	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, odigletNodeSelector)
+	desiredDeployment, err := getDesiredDeployment(ctx, dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, odigletNodeSelector)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
 	}
@@ -94,8 +94,9 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 	return existing, nil
 }
 
-func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string,
+func getDesiredDeployment(ctx context.Context, dests *odigosv1.DestinationList, configDataHash string,
 	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, nodeSelector map[string]string) (*appsv1.Deployment, error) {
+	logger := log.FromContext(ctx)
 
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
@@ -114,7 +115,122 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 		gatewayReplicas = int32(*gateway.Spec.ResourcesSettings.MinReplicas)
 	}
 
-	secretVolumes, secretMounts := getSecretVolumesFromDests(dests)
+	// Get collector spec configurations from destinations
+	var volumeMounts []corev1.VolumeMount
+	var volumes []corev1.Volume
+
+	// Use a map to track environment variables and their sources to handle conflicts
+	envVarsMap := make(map[string]struct {
+		value    corev1.EnvVar
+		destName string
+	})
+
+	// Add configuration from destinations that implement CollectorSpecConfigurer
+	configers, err := config.LoadConfigers()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load destination configers: %w", err)
+	}
+
+	for _, dest := range dests.Items {
+		// Get destination type config and check if it implements CollectorSpecConfigurer
+		if destConfig, ok := configers[dest.Spec.Type]; ok {
+			if configurer, ok := destConfig.(config.CollectorSpecConfigurer); ok {
+				if spec := configurer.GetCollectorSpec(&dest); spec != nil {
+					// Handle environment variables, checking for conflicts
+					for _, env := range spec.EnvVars {
+						if existing, exists := envVarsMap[env.Name]; exists {
+							logger.Info("Environment variable conflict detected",
+								"variable", env.Name,
+								"existing_destination", existing.destName,
+								"new_destination", dest.Name,
+								"using", "first occurrence")
+							continue
+						}
+						envVarsMap[env.Name] = struct {
+							value    corev1.EnvVar
+							destName string
+						}{
+							value:    env,
+							destName: dest.Name,
+						}
+					}
+
+					if len(spec.VolumeMounts) > 0 {
+						volumeMounts = append(volumeMounts, spec.VolumeMounts...)
+					}
+					if len(spec.Volumes) > 0 {
+						volumes = append(volumes, spec.Volumes...)
+					}
+				}
+			}
+		}
+	}
+
+	// Add default environment variables
+	defaultEnvVars := []corev1.EnvVar{
+		{
+			Name: consts.OdigosVersionEnvVarName,
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: k8sconsts.OdigosDeploymentConfigMapName,
+					},
+					Key: k8sconsts.OdigosDeploymentConfigMapVersionKey,
+				},
+			},
+		},
+		{
+			Name: "POD_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath:  "metadata.name",
+				},
+			},
+		},
+		{
+			Name:  "GOMEMLIMIT",
+			Value: fmt.Sprintf("%dMiB", gateway.Spec.ResourcesSettings.GomemlimitMiB),
+		},
+		{
+			// let the Go runtime know how many CPUs are available,
+			// without this, Go will assume all the cores are available.
+			Name: "GOMAXPROCS",
+			ValueFrom: &corev1.EnvVarSource{
+				ResourceFieldRef: &corev1.ResourceFieldSelector{
+					ContainerName: containerName,
+					// limitCPU, Kubernetes automatically rounds up the value to an integer
+					// (700m -> 1, 1200m -> 2)
+					Resource: "limits.cpu",
+				},
+			},
+		},
+	}
+
+	// Add default environment variables, checking for conflicts
+	for _, env := range defaultEnvVars {
+		if existing, exists := envVarsMap[env.Name]; exists {
+			logger.Info("Environment variable conflict with default variable",
+				"variable", env.Name,
+				"destination", existing.destName,
+				"using", "default value")
+		}
+		envVarsMap[env.Name] = struct {
+			value    corev1.EnvVar
+			destName string
+		}{
+			value:    env,
+			destName: "default",
+		}
+	}
+
+	// Convert final environment variables map to slice
+	var envVars []corev1.EnvVar
+	for _, envVar := range envVarsMap {
+		envVars = append(envVars, envVar.value)
+	}
+
+	// Add secrets from destinations
+	envFromSources := getSecretsFromDests(dests)
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -147,46 +263,6 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 								k8sconsts.OdigosClusterCollectorConfigMapName,
 								k8sconsts.OdigosClusterCollectorConfigMapKey),
 							},
-							EnvFrom: getSecretsFromDests(dests),
-							// Add the ODIGOS_VERSION environment variable from the ConfigMap
-							Env: append([]corev1.EnvVar{
-								{
-									Name: consts.OdigosVersionEnvVarName,
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: k8sconsts.OdigosDeploymentConfigMapName,
-											},
-											Key: k8sconsts.OdigosDeploymentConfigMapVersionKey,
-										},
-									},
-								},
-								{
-									Name: "POD_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-								{
-									Name:  "GOMEMLIMIT",
-									Value: fmt.Sprintf("%dMiB", gateway.Spec.ResourcesSettings.GomemlimitMiB),
-								},
-								{
-									// let the Go runtime know how many CPUs are available,
-									// without this, Go will assume all the cores are available.
-									Name: "GOMAXPROCS",
-									ValueFrom: &corev1.EnvVarSource{
-										ResourceFieldRef: &corev1.ResourceFieldSelector{
-											ContainerName: containerName,
-											// limitCPU, Kubernetes automatically rounds up the value to an integer
-											// (700m -> 1, 1200m -> 2)
-											Resource: "limits.cpu",
-										},
-									},
-								},
-							}, getEnvVarsFromDests(dests)...),
 							SecurityContext: &corev1.SecurityContext{
 								AllowPrivilegeEscalation: boolPtr(false),
 							},
@@ -216,10 +292,12 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 									corev1.ResourceCPU:    limitCPU,
 								},
 							},
-							VolumeMounts: secretMounts,
+							EnvFrom:      envFromSources,
+							Env:          envVars,
+							VolumeMounts: volumeMounts,
 						},
 					},
-					Volumes: secretVolumes,
+					Volumes: volumes,
 				},
 			},
 		},
@@ -232,22 +310,12 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 		}
 	}
 
-	err := ctrl.SetControllerReference(gateway, desiredDeployment, scheme)
+	err = ctrl.SetControllerReference(gateway, desiredDeployment, scheme)
 	if err != nil {
 		return nil, err
 	}
 
 	return desiredDeployment, nil
-}
-
-func getEnvVarsFromDests(destList *odigosv1.DestinationList) []corev1.EnvVar {
-	var result []corev1.EnvVar
-	for _, dest := range destList.Items {
-		for key, val := range dest.Spec.EnvVars {
-			result = append(result, corev1.EnvVar{Name: key, Value: val})
-		}
-	}
-	return result
 }
 
 func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSource {
@@ -263,47 +331,13 @@ func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSou
 			})
 		}
 	}
-
 	return result
 }
 
-func getSecretVolumesFromDests(destList *odigosv1.DestinationList) ([]corev1.Volume, []corev1.VolumeMount) {
-	var volumes []corev1.Volume
-	var volumeMounts []corev1.VolumeMount
-	var items []corev1.KeyToPath
-	for _, dst := range destList.Items {
-		if dst.Spec.SecretRef != nil {
-			volumeName := strings.ReplaceAll(dst.Spec.SecretRef.Name, ".", "-")
-			for _, secretFile := range dst.Spec.SecretFiles {
-				items = append(items, corev1.KeyToPath{Key: secretFile.Key, Path: secretFile.Key})
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					Name:      volumeName,
-					MountPath: secretFile.MountPath,
-				})
-			}
-
-			volumes = append(volumes, corev1.Volume{
-				Name: volumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: dst.Spec.SecretRef.Name,
-						Items:      items,
-					},
-				},
-			})
-		}
-	}
-	return volumes, volumeMounts
+func intPtr(i int32) *int32 {
+	return &i
 }
 
 func boolPtr(b bool) *bool {
 	return &b
-}
-
-func intPtr(n int32) *int32 {
-	return &n
-}
-
-func int64Ptr(n int64) *int64 {
-	return &n
 }

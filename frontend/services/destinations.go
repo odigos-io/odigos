@@ -65,7 +65,6 @@ func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) mo
 				ComponentType:        field.ComponentType,
 				ComponentProperties:  string(componentPropsJSON),
 				Secret:               field.Secret,
-				SecretFile:           field.SecretFile,
 				InitialValue:         field.InitialValue,
 				RenderCondition:      field.RenderCondition,
 				HideFromReadData:     field.HideFromReadData,
@@ -139,12 +138,10 @@ func VerifyDestinationDataScheme(destType common.DestinationType, destTypeConfig
 	return errors
 }
 
-func TransformFieldsToDataSecretsEnvVars(destTypeConfig *destinations.Destination, fields map[string]string) (map[string]string, map[string]string, []string, map[string]string) {
+func TransformFieldsToDataAndSecrets(destTypeConfig *destinations.Destination, fields map[string]string) (map[string]string, map[string]string) {
 
 	dataFields := map[string]string{}
 	secretFields := map[string]string{}
-	secretFiles := make([]string, 0)
-	envVars := map[string]string{}
 
 	for fieldName, fieldValue := range fields {
 
@@ -158,23 +155,16 @@ func TransformFieldsToDataSecretsEnvVars(destTypeConfig *destinations.Destinatio
 		// assuming the list is small so it's ok to iterate it
 		for _, fieldConfig := range destTypeConfig.Spec.Fields {
 			if fieldName == fieldConfig.Name {
-				if fieldConfig.Secret || fieldConfig.SecretFile {
+				if fieldConfig.Secret {
 					secretFields[fieldName] = fieldValue
-					if fieldConfig.SecretFile {
-						secretFiles = append(secretFiles, fieldName)
-					}
-				} else {
-					dataFields[fieldName] = fieldValue
+					fieldValue = "redacted"
 				}
-
-				for key, val := range fieldConfig.EnvVars {
-					envVars[key] = val
-				}
+				dataFields[fieldName] = fieldValue
 			}
 		}
 	}
 
-	return dataFields, secretFields, secretFiles, envVars
+	return dataFields, secretFields
 }
 
 func GetDestinationSecretFields(c context.Context, odigosns string, dest *v1alpha1.Destination) (map[string]string, error) {
@@ -300,7 +290,7 @@ func ExportedSignalsObjectToSlice(signals *model.ExportedSignalsInput) []common.
 }
 
 func CreateDestinationSecret(ctx context.Context, destType common.DestinationType, secretFields map[string]string, ns string) (*k8s.LocalObjectReference, error) {
-	generateNamePrefix := "odigos.io.dest.files." + string(destType) + "-"
+	generateNamePrefix := "odigos.io.dest." + string(destType) + "-"
 	secret := k8s.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: generateNamePrefix,
