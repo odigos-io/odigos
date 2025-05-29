@@ -40,7 +40,7 @@ odigos install
 
 ```
   -h, --help                   help for uninstall
-      --instrumentation-only   Set to true if running inside a Kubernetes cluster (e.g. as a Helm hook job). Skips deletion of resources managed by Helm, which should be removed via 'helm uninstall'.
+      --instrumentation-only   only remove instrumentation from workloads, without removing the entire Odigos setup
       --no-wait                skip waiting for pods to rollout without instrumentation
       --yes                    skip the confirmation prompt
 ```
