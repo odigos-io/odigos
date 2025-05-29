@@ -15,7 +15,7 @@ extensions: {}
 connectors:
   forward/logs/debug-dummy: {}
   odigosrouterconnector/logs:
-    groups:
+    datastreams:
     - name: dummy-group
       namespaces: []
       sources: []

@@ -31,7 +31,7 @@ extensions:
 connectors:
   forward/logs/debug-d1: {}
   odigosrouterconnector/logs:
-    groups: []
+    datastreams: []
 service:
   extensions:
   - health_check

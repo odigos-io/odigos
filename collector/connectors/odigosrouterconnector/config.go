@@ -8,7 +8,7 @@ import (
 
 type Config struct {
 	component.Config
-	DataStreams []pipelinegen.DataStreams `mapstructure:"dataStreams"`
+	DataStreams []pipelinegen.DataStreams `mapstructure:"datastreams"`
 }
 
 func (c *Config) Validate() error {

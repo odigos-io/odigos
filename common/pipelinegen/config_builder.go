@@ -154,7 +154,7 @@ func prepareRootPipelines(currentConfig *config.Config, groupDetails []DataStrea
 			Exporters:  []string{"odigosrouterconnector/traces"},
 		}
 		currentConfig.Connectors["odigosrouterconnector/traces"] = config.GenericMap{
-			"groups": groupDetails,
+			"datastreams": groupDetails,
 		}
 	}
 
@@ -163,7 +163,7 @@ func prepareRootPipelines(currentConfig *config.Config, groupDetails []DataStrea
 		processors := append([]string{"memory_limiter", "resource/odigos-version"}, metricsProcessors...)
 
 		currentConfig.Connectors["odigosrouterconnector/metrics"] = config.GenericMap{
-			"groups": groupDetails,
+			"datastreams": groupDetails,
 		}
 
 		currentConfig.Service.Pipelines[metricsRootPipelineName] = config.Pipeline{
@@ -178,7 +178,7 @@ func prepareRootPipelines(currentConfig *config.Config, groupDetails []DataStrea
 		processors := append([]string{"memory_limiter", "resource/odigos-version"}, logsProcessors...)
 
 		currentConfig.Connectors["odigosrouterconnector/logs"] = config.GenericMap{
-			"groups": groupDetails,
+			"datastreams": groupDetails,
 		}
 
 		currentConfig.Service.Pipelines[logsRootPipelineName] = config.Pipeline{
