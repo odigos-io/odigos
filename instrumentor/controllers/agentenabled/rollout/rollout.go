@@ -42,14 +42,15 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	if ic == nil {
-		// If ic is nil and the PodWorkload is missing the odigos.io/agents-meta-hash label, it means it is a rolled back application that shouldn't be rolled out
+		// If ic is nil and the PodWorkload is missing the odigos.io/agents-meta-hash label,
+		// it means it is a rolled back application that shouldn't be rolled out again.
 		hasAgents, err := workloadHasOdigosAgents(ctx, c, workloadObj)
 		if err != nil {
 			logger.Error(err, "failed to check for odigos agent labels")
 			return false, ctrl.Result{}, err
 		}
 		if !hasAgents {
-			logger.Info("skipping rollout – workload already runs without odigos agents",
+			logger.Info("skipping rollout - workload already runs without odigos agents",
 				"workload", pw.Name, "namespace", pw.Namespace)
 			return false, ctrl.Result{}, nil
 		}
@@ -63,17 +64,14 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash := ic.Spec.AgentsMetaHash
-
 	if savedRolloutHash == newRolloutHash {
-		if !rollbackDisabled && !isWorkloadRolloutDone(workloadObj) {
+		if !isWorkloadRolloutDone(workloadObj) && !rollbackDisabled {
 			crashLoopBackOff, err := isInCrashLoopBackOff(ctx, c, workloadObj)
 			if err != nil {
 				logger.Error(err, "Failed to check crashLoopBackOff")
 				return false, ctrl.Result{}, err
 			}
-
-			if crashLoopBackOff {
-				// If we're here it means we've crashed the applications and we should revert back
+			if crashLoopBackOff && ic.Spec.AgentInjectionEnabled {
 				for i := range ic.Spec.Containers {
 					ic.Spec.Containers[i].AgentEnabled = false
 					ic.Spec.Containers[i].AgentEnabledReason = odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff
@@ -96,7 +94,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 					Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 					Status:  metav1.ConditionTrue,
 					Reason:  string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully),
-					Message: "Rolled back application instrumentation",
+					Message: "pods entered CrashLoopBackOff; instrumentation disabled",
 				})
 
 				meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
@@ -105,15 +103,14 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 					Reason:  string(odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff),
 					Message: "Pods entered CrashLoopBackOff; instrumentation disabled",
 				})
+				// Status always changes, requeue to test wait for status change with workload
 				return true, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
 			}
-
+			// Requeue to wait for workload to finish or enter CrashLoopBackOff
 			return false, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
-
 		}
 		return false, ctrl.Result{}, nil
 	}
-
 	// if a rollout is ongoing, wait for it to finish, requeue
 	statusChanged := false
 	if !isWorkloadRolloutDone(workloadObj) {
@@ -123,19 +120,20 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing),
 			Message: "waiting for workload rollout to finish before triggering a new one",
 		})
+		logger.Info("Rollout not done")
 		return statusChanged, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
 	}
-
+	logger.Info("Rollout done")
 	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
 	if rolloutErr != nil {
 		logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
 	}
-
+	logger.Info("Restart")
 	ic.Status.WorkloadRolloutHash = newRolloutHash
 	meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(rolloutErr))
-
+	logger.Info("Restart statusses")
 	// at this point, the hashes are different, notify the caller the status has changed
-	return true, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+	return true, ctrl.Result{}, nil
 }
 
 // RolloutRestartWorkload restarts the given workload by patching its template annotations.
@@ -307,10 +305,8 @@ func podHasCrashLoop(p *corev1.Pod) bool {
 	return false
 }
 
-// workloadHasOdigosAgents returns true if ANY pod of the workload still has the `odigos.io/agents-meta-hash` label.
+// workloadHasOdigosAgents returns true if the workload still has *any* pod present in the instrumented-pod.
 func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
-	const agentMetaLabel = "odigos.io/agents-meta-hash"
-
 	var (
 		ns       string
 		selector *metav1.LabelSelector
@@ -337,17 +333,15 @@ func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Ob
 	}
 
 	var pods corev1.PodList
-	if err := c.List(ctx, &pods,
+	if err := c.List(
+		ctx, &pods,
 		client.InNamespace(ns),
 		client.MatchingLabelsSelector{Selector: sel},
 	); err != nil {
 		return false, fmt.Errorf("workloadHasOdigosAgents: listing pods failed: %w", err)
 	}
 
-	for _, p := range pods.Items {
-		if _, present := p.Labels[agentMetaLabel]; present {
-			return true, nil
-		}
-	}
-	return false, nil
+	// Because the cache already filters on k8sconsts.OdigosAgentsMetaHashLabel,
+	// any non-empty list means the workload still runs instrumented pods.
+	return len(pods.Items) > 0, nil
 }

@@ -48,13 +48,16 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 	}
 
 	conf, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
+	rollbackDisabled := false
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	rollbackDisabled := conf.RollbackDisabled
+	if conf.RollbackDisabled != nil {
+		rollbackDisabled = *conf.RollbackDisabled
+	}
 
 	for _, ic := range allInstrumentationConfigs.Items {
-		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, *rollbackDisabled)
+		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, rollbackDisabled)
 		if err != nil || !res.IsZero() {
 			return res, err
 		}
