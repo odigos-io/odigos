@@ -3,6 +3,8 @@ kind: Role
 metadata:
   name: cleanup-role
   namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
 rules:
 - apiGroups: [""]
   resources: ["namespaces", "configmaps", "secrets"]
