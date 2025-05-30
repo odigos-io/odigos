@@ -1,4 +1,5 @@
 {{- if semverCompare ">=1.26.0" .Capabilities.KubeVersion.Version }}
+apiVersion: v1
 kind: Service
 metadata:
   name: odiglet-local
