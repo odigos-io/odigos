@@ -4,6 +4,8 @@ kind: RoleBinding
 metadata:
   name: central-proxy
   namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
 subjects:
   - kind: ServiceAccount
     name: central-proxy

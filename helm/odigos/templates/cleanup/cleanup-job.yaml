@@ -7,6 +7,8 @@ metadata:
   annotations:
     "helm.sh/hook": pre-delete
     "helm.sh/hook-delete-policy": hook-succeeded
+  labels:
+    odigos.io/system-object: "true"
 spec:
   ttlSecondsAfterFinished: 30
   activeDeadlineSeconds: 240
@@ -17,5 +19,5 @@ spec:
       containers:
       - name: cleanup
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "cli" "Tag" $imageTag) }}
-        args: ["uninstall", "--yes"]
+        args: ["uninstall", "--yes", "--instrumentation-only"]
       restartPolicy: Never
