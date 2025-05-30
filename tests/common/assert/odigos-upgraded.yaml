@@ -81,7 +81,7 @@ spec:
             - SYS_PTRACE
         privileged: true
       image: registry.odigos.io/odigos-odiglet:e2e-test
-  hostNetwork: true
+  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
   nodeName: kind-control-plane
   nodeSelector:
@@ -117,7 +117,7 @@ spec:
             - SYS_PTRACE
         privileged: true
       image: registry.odigos.io/odigos-odiglet:e2e-test
-  hostNetwork: true
+  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
   nodeName: kind-worker
   nodeSelector:
