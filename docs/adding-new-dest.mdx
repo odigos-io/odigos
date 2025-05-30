@@ -116,17 +116,17 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
 
 <Steps>
   <Step title="Add Destination Type">
-    Go to [`common/dests.go`](https://github.com/odigos-io/odigos/tree/main/common/dests.go) and add your new destination to the `DestinationType` enum.
+    Go to [`destination/dests.go`](https://github.com/odigos-io/odigos/tree/main/destination/dests.go) and add your new destination to the `DestinationType` enum.
     - Make sure the value is the same as the `type` property in `mydest.yaml`
   </Step>
   <Step title="Add Collector Config">
-    Go to [`common/config`](https://github.com/odigos-io/odigos/tree/main/common/config) directory and create a new GO file.
+    Go to [`destinations/config`](https://github.com/odigos-io/odigos/tree/main/destinations/config) directory and create a new GO file.
     - Example: `mydest.go`
 
     <AccordionGroup>
       <Accordion icon="circle-info" title="Explain Config">
-        - **DestType** - Returns the enum value of the destination added to [`common/dests.go`](https://github.com/odigos-io/odigos/tree/main/common/dests.go) in step 1.
-        - **ModifyConfig** - Is called with the `dest` object which holds the data received from the UI and the `currentConfig` object. The `currentConfig` object contains the current configuration of the gateway collector. Modify this object to include the [OpenTelemetry configuration](https://opentelemetry.io/docs/collector/configuration/) needed by your destination. You can assume a basic configuration is already provided in the `currentConfig` object, for details see `getBasicConfig` method in [`common/config/root.go`](https://github.com/odigos-io/odigos/tree/main/common/config/root.go) file.
+        - **DestType** - Returns the enum value of the destination added to [`destinations/dests.go`](https://github.com/odigos-io/odigos/tree/main/destinations/dests.go) in step 1.
+        - **ModifyConfig** - Is called with the `dest` object which holds the data received from the UI and the `currentConfig` object. The `currentConfig` object contains the current configuration of the gateway collector. Modify this object to include the [OpenTelemetry configuration](https://opentelemetry.io/docs/collector/configuration/) needed by your destination. You can assume a basic configuration is already provided in the `currentConfig` object, for details see `getBasicConfig` method in [`destinations/config/root.go`](https://github.com/odigos-io/odigos/tree/main/destinations/config/root.go) file.
             - Make sure to give any exporter or pipeline a unique name in order to avoid conflicts, use the conventions:
                 - `otlp/<dest-name>-<dest.GetID()>` for OTel gRPC exporters
                 - `otlphttp/<dest-name>-<dest.GetID()>` for OTel HTTP exporters
@@ -155,7 +155,7 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
     type MyDest struct{}
 
     func (m *MyDest) DestType() common.DestinationType {
-      // DestinationType defined in common/dests.go
+      // DestinationType defined in destinations/dests.go
       return common.MyDestDestinationType
     }
 
@@ -219,10 +219,10 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
     ```
   </Step>
   <Step title="Add Available Config">
-    Go to [`common/config/root.go`](https://github.com/odigos-io/odigos/tree/main/common/config/root.go) and add the new destination to the `availableConfigers` list.
+    Go to [`destinations/config/root.go`](https://github.com/odigos-io/odigos/tree/main/destinations/config/root.go) and add the new destination to the `availableConfigers` list.
     - Example: `&MyDest{}`
 
-    ```go common/config/root.go
+    ```go destinations/config/root.go
     var availableConfigers = []Configer{
       &MyDest{},
       /* List of existing destinations...  */

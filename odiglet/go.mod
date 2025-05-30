@@ -9,7 +9,7 @@ require (
 	github.com/moby/sys/mountinfo v0.7.2
 	github.com/odigos-io/odigos-device-plugin v1.19.6
 	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/common v1.0.189
 	github.com/odigos-io/odigos/distros v0.0.0
 	github.com/odigos-io/odigos/instrumentation v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
@@ -48,7 +48,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
-	github.com/goccy/go-yaml v1.17.1 // indirect
+	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v1.2.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
@@ -62,6 +62,8 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/odigos-io/odigos/destinations v0.0.0-20250530103639-c5df85572bd9 // indirect
+	github.com/odigos-io/odigos/destinations/config v0.0.0-00010101000000-000000000000 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.22.0 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
@@ -120,6 +122,8 @@ require (
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/destinations => ../destinations
+	github.com/odigos-io/odigos/destinations/config => ../destinations/config
 	github.com/odigos-io/odigos/distros => ../distros
 	github.com/odigos-io/odigos/instrumentation => ../instrumentation
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils

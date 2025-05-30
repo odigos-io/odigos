@@ -2,7 +2,7 @@ package common
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/destinations/config"
 )
 
 func GetMemoryLimiterConfig(memorySettings odigosv1.CollectorsGroupResourcesSettings) config.GenericMap {

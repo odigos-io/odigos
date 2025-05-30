@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/destinations"
+	"github.com/odigos-io/odigos/destinations/config"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	configres         map[common.DestinationType]config.Configer
+	configres         map[destinations.DestinationType]config.Configer
 	connectionTesters = []ExporterConnectionTester{
 		NewOTLPTester(),     // "otlp/" prefix
 		NewOTLPHTTPTester(), // "otlphttp/" prefix
@@ -49,7 +49,7 @@ type TestConnectionResult struct {
 	Message         string
 	Reason          TestConnectionErrorReason
 	StatusCode      int
-	DestinationType common.DestinationType
+	DestinationType destinations.DestinationType
 }
 
 type ExporterConnectionTester interface {

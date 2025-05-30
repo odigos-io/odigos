@@ -3,7 +3,7 @@ package testconnection
 import (
 	"testing"
 
-	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/destinations/config"
 	"github.com/stretchr/testify/assert"
 )
 
