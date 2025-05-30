@@ -1,0 +1,42 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: googlecloudotlp
+  displayName: Google Cloud Observability (OTLP)
+  category: managed
+spec:
+  image: gcp.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  fields:
+    - name: GCP_PROJECT_ID
+      displayName: GCP Project ID
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: 'myproject'
+        tooltip: The GCP project to send OTLP data.
+    
+    - name: GCP_BILLING_PROJECT
+      displayName: GCP Billing Project ID
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 'myproject'
+        tooltip: The GCP project to count toward billing and quota.
+
+    - name: GCP_APPLICATION_CREDENTIALS
+      displayName: Google Application Credentials
+      componentType: textarea
+      secret: true
+      componentProps:
+        required: false
+        placeholder: 'Credentials config....'
+        tooltip: The JSON GCP Application Credentials file for the GCP project. Either a Workload Identity Federation config file or Service Account Key. Required if running Odigos outside of Google Cloud.

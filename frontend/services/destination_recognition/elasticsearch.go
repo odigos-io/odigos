@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/destinations"
+	"github.com/odigos-io/odigos/destinations/config"
 	k8s "k8s.io/api/core/v1"
 )
 
@@ -25,7 +25,7 @@ func (j *ElasticSearchDestinationFinder) isPotentialService(service k8s.Service)
 }
 
 func isElasticSearchService(portNumber int32, name string) bool {
-	return portNumber == ElasticSearchHttpPort && strings.Contains(name, string(common.ElasticsearchDestinationType))
+	return portNumber == ElasticSearchHttpPort && strings.Contains(name, string(destinations.ElasticsearchDestinationType))
 }
 
 func (j *ElasticSearchDestinationFinder) fetchDestinationDetails(service k8s.Service) DestinationDetails {
@@ -35,7 +35,7 @@ func (j *ElasticSearchDestinationFinder) fetchDestinationDetails(service k8s.Ser
 	fields[elasticServiceURL] = urlString
 
 	return DestinationDetails{
-		Type:   common.ElasticsearchDestinationType,
+		Type:   destinations.ElasticsearchDestinationType,
 		Fields: fields,
 	}
 }
