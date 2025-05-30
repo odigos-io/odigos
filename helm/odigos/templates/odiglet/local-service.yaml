@@ -1,0 +1,16 @@
+{{- if semverCompare ">=1.26.0" .Capabilities.KubeVersion.Version }}
+kind: Service
+metadata:
+  name: odiglet-local
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+spec:
+  ports:
+    - name: op-amp
+      port: 4320
+      targetPort: 4320
+  selector:
+    app.kubernetes.io/name: odiglet
+  internalTrafficPolicy: Local
+{{- end}}
