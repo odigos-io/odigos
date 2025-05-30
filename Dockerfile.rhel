@@ -5,6 +5,7 @@ ARG SERVICE_NAME
 WORKDIR /workspace
 COPY api/ api/
 COPY common/ common/
+COPY destinations/ destinations/
 COPY k8sutils/ k8sutils/
 COPY profiles/ profiles/
 COPY distros/ distros/

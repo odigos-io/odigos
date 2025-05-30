@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
 	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/common v1.0.189
 	github.com/odigos-io/odigos/distros v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/onsi/ginkgo v1.16.5
@@ -26,10 +26,12 @@ require (
 	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/goccy/go-yaml v1.17.1 // indirect
+	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
+	github.com/odigos-io/odigos/destinations v0.0.0-20250530103639-c5df85572bd9 // indirect
+	github.com/odigos-io/odigos/destinations/config v0.0.0-00010101000000-000000000000 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
@@ -100,6 +102,8 @@ require (
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/destinations => ../destinations
+	github.com/odigos-io/odigos/destinations/config => ../destinations/config
 	github.com/odigos-io/odigos/distros => ../distros
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 )
