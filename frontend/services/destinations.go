@@ -94,7 +94,7 @@ func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) mo
 
 }
 
-func GetDestinationTypeConfig(destType common.DestinationType) (*destinations.Destination, error) {
+func GetDestinationTypeConfig(destType destinations.DestinationType) (*destinations.Destination, error) {
 	for _, dest := range destinations.Get() {
 		if dest.Metadata.Type == destType {
 			return &dest, nil
@@ -104,7 +104,7 @@ func GetDestinationTypeConfig(destType common.DestinationType) (*destinations.De
 	return nil, fmt.Errorf("destination type %s not found", destType)
 }
 
-func VerifyDestinationDataScheme(destType common.DestinationType, destTypeConfig *destinations.Destination, data map[string]string) []error {
+func VerifyDestinationDataScheme(destType destinations.DestinationType, destTypeConfig *destinations.Destination, data map[string]string) []error {
 
 	errors := []error{}
 
@@ -289,7 +289,7 @@ func ExportedSignalsObjectToSlice(signals *model.ExportedSignalsInput) []common.
 	return resp
 }
 
-func CreateDestinationSecret(ctx context.Context, destType common.DestinationType, secretFields map[string]string, ns string) (*k8s.LocalObjectReference, error) {
+func CreateDestinationSecret(ctx context.Context, destType destinations.DestinationType, secretFields map[string]string, ns string) (*k8s.LocalObjectReference, error) {
 	generateNamePrefix := "odigos.io.dest." + string(destType) + "-"
 	secret := k8s.Secret{
 		ObjectMeta: metav1.ObjectMeta{

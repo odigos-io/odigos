@@ -19,13 +19,14 @@ package v1alpha1
 
 import (
 	common "github.com/odigos-io/odigos/common"
+	destinations "github.com/odigos-io/odigos/destinations"
 	v1 "k8s.io/api/core/v1"
 )
 
 // DestinationSpecApplyConfiguration represents a declarative configuration of the DestinationSpec type for use
 // with apply.
 type DestinationSpecApplyConfiguration struct {
-	Type            *common.DestinationType           `json:"type,omitempty"`
+	Type            *destinations.DestinationType     `json:"type,omitempty"`
 	DestinationName *string                           `json:"destinationName,omitempty"`
 	Data            map[string]string                 `json:"data,omitempty"`
 	SecretRef       *v1.LocalObjectReference          `json:"secretRef,omitempty"`
@@ -42,7 +43,7 @@ func DestinationSpec() *DestinationSpecApplyConfiguration {
 // WithType sets the Type field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Type field is set to the value of the last call.
-func (b *DestinationSpecApplyConfiguration) WithType(value common.DestinationType) *DestinationSpecApplyConfiguration {
+func (b *DestinationSpecApplyConfiguration) WithType(value destinations.DestinationType) *DestinationSpecApplyConfiguration {
 	b.Type = &value
 	return b
 }

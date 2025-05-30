@@ -17,15 +17,16 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/common"	
+	"github.com/odigos-io/odigos/destinations/config"
+	"github.com/odigos-io/odigos/destinations"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DestinationSpec defines the desired state of Destination
 type DestinationSpec struct {
-	Type            common.DestinationType       `json:"type"`
+	Type            destinations.DestinationType       `json:"type"`
 	DestinationName string                       `json:"destinationName"`
 	Data            map[string]string            `json:"data"`
 	SecretRef       *v1.LocalObjectReference     `json:"secretRef,omitempty"`
@@ -76,7 +77,7 @@ var _ config.ExporterConfigurer = &Destination{}
 func (dest Destination) GetID() string {
 	return dest.Name
 }
-func (dest Destination) GetType() common.DestinationType {
+func (dest Destination) GetType() destinations.DestinationType {
 	return dest.Spec.Type
 }
 func (dest Destination) GetConfig() map[string]string {
