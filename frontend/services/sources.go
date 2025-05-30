@@ -686,10 +686,26 @@ func GetOtherConditionsForSources(ctx context.Context, namespace string, name st
 	}
 	for _, workloadItem := range workloadsConditions {
 		key := fmt.Sprintf("%s/%s/%s", workloadItem.Namespace, workloadItem.Name, workloadItem.Kind)
-		if _, exists := conditionsMap[key]; !exists {
-			conditionsMap[key] = workloadItem
-		} else {
-			conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, workloadItem.Conditions...)
+		if _, exists := conditionsMap[key]; exists {
+			for _, condition := range workloadItem.Conditions {
+				if condition.LastTransitionTime != nil {
+					// Only add conditions that are newer than the first instance condition
+					// We don't need to show conditions on the workload that are older than the oldest update to the instrumentation
+					// Only conditions that are relevant to Odigos acting on the workload
+					firstInstanceTime := conditionsMap[key].Conditions[0].LastTransitionTime
+					firstTime, err := time.Parse(time.RFC3339, *firstInstanceTime)
+					if err != nil {
+						return nil, err
+					}
+					t, err := time.Parse(time.RFC3339, *condition.LastTransitionTime)
+					if err != nil {
+						return nil, err
+					}
+					if t.After(firstTime) {
+						conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, condition)
+					}
+				}
+			}
 			SortConditions(conditionsMap[key].Conditions)
 		}
 	}
