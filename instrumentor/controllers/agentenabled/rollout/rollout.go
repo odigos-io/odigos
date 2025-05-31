@@ -9,8 +9,10 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -31,7 +33,7 @@ const requeueWaitingForWorkloadRollout = 10 * time.Second
 // and a corresponding condition is set.
 //
 // Returns a boolean indicating if the status of the instrumentation config has changed, a ctrl.Result and an error.
-func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload) (bool, ctrl.Result, error) {
+func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, rollbackDisabled bool) (bool, ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
@@ -40,6 +42,19 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	if ic == nil {
+		// If ic is nil and the PodWorkload is missing the odigos.io/agents-meta-hash label,
+		// it means it is a rolled back application that shouldn't be rolled out again.
+		hasAgents, err := workloadHasOdigosAgents(ctx, c, workloadObj)
+		if err != nil {
+			logger.Error(err, "failed to check for odigos agent labels")
+			return false, ctrl.Result{}, err
+		}
+		if !hasAgents {
+			logger.Info("skipping rollout - workload already runs without odigos agents",
+				"workload", pw.Name, "namespace", pw.Namespace)
+			return false, ctrl.Result{}, nil
+		}
+
 		// instrumentation config is deleted, trigger a rollout for the associated workload
 		// this should happen once per workload, as the instrumentation config is deleted
 		// and we want to rollout the workload to remove the instrumentation
@@ -49,11 +64,54 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash := ic.Spec.AgentsMetaHash
-
 	if savedRolloutHash == newRolloutHash {
+		if !isWorkloadRolloutDone(workloadObj) && !rollbackDisabled {
+			crashLoopBackOff, err := isInCrashLoopBackOff(ctx, c, workloadObj)
+			if err != nil {
+				logger.Error(err, "Failed to check crashLoopBackOff")
+				return false, ctrl.Result{}, err
+			}
+
+			if crashLoopBackOff && ic.Spec.AgentInjectionEnabled {
+				for i := range ic.Spec.Containers {
+					ic.Spec.Containers[i].AgentEnabled = false
+					ic.Spec.Containers[i].AgentEnabledReason = odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff
+				}
+				ic.Spec.AgentInjectionEnabled = false
+
+				if err := c.Update(ctx, ic); err != nil {
+					logger.Error(err, "failed to persist spec rollback")
+					res, err := utils.K8SUpdateErrorHandler(err)
+					return false, res, err
+				}
+
+				rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
+				if rolloutErr != nil {
+					logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
+					return false, ctrl.Result{}, rolloutErr
+				}
+
+				meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+					Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+					Status:  metav1.ConditionTrue,
+					Reason:  string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully),
+					Message: "pods entered CrashLoopBackOff; instrumentation disabled",
+				})
+
+				meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+					Type:    odigosv1alpha1.AgentEnabledStatusConditionType,
+					Status:  metav1.ConditionFalse,
+					Reason:  string(odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff),
+					Message: "Pods entered CrashLoopBackOff; instrumentation disabled",
+				})
+				// Status always changes, requeue to test wait for status change with workload
+				return true, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+			}
+			// Requeue to wait for workload to finish or enter CrashLoopBackOff
+			return false, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+		}
 		return false, ctrl.Result{}, nil
 	}
-
 	// if a rollout is ongoing, wait for it to finish, requeue
 	statusChanged := false
 	if !isWorkloadRolloutDone(workloadObj) {
@@ -75,7 +133,8 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(rolloutErr))
 
 	// at this point, the hashes are different, notify the caller the status has changed
-	return true, ctrl.Result{}, nil
+	// Requeue to try and catch a crashing app
+	return true, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
 }
 
 // RolloutRestartWorkload restarts the given workload by patching its template annotations.
@@ -192,4 +251,98 @@ func rolloutCondition(rolloutErr error) metav1.Condition {
 	}
 
 	return cond
+}
+
+// isInCrashLoopBackOff checks whether **any** Pod that belongs to the supplied workload is currently in a *CrashLoopBackOff* restart state.
+func isInCrashLoopBackOff(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
+	var (
+		ns       string
+		selector *metav1.LabelSelector
+	)
+
+	switch o := obj.(type) {
+	case *appsv1.Deployment:
+		ns, selector = o.Namespace, o.Spec.Selector
+	case *appsv1.StatefulSet:
+		ns, selector = o.Namespace, o.Spec.Selector
+	case *appsv1.DaemonSet:
+		ns, selector = o.Namespace, o.Spec.Selector
+	default:
+		return false, fmt.Errorf("isInCrashLoopBackOff: unsupported workload kind %T", obj)
+	}
+
+	if selector == nil {
+		return false, errors.New("isInCrashLoopBackOff: workload has nil selector")
+	}
+
+	sel, err := metav1.LabelSelectorAsSelector(selector)
+	if err != nil {
+		return false, fmt.Errorf("isInCrashLoopBackOff: invalid selector: %w", err)
+	}
+
+	var podList corev1.PodList
+	if err := c.List(ctx, &podList,
+		client.InNamespace(ns),
+		client.MatchingLabelsSelector{Selector: sel},
+	); err != nil {
+		return false, fmt.Errorf("isInCrashLoopBackOff: failed listing pods: %w", err)
+	}
+
+	for _, p := range podList.Items {
+		if podHasCrashLoop(&p) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// podHasCrashLoop returns true if any (init)-container in the pod is in CrashLoopBackOff.
+func podHasCrashLoop(p *corev1.Pod) bool {
+	for _, cs := range append(p.Status.InitContainerStatuses, p.Status.ContainerStatuses...) {
+		if cs.State.Waiting != nil && cs.State.Waiting.Reason == "CrashLoopBackOff" {
+			return true
+		}
+	}
+	return false
+}
+
+// workloadHasOdigosAgents returns true if the workload still has *any* pod present in the instrumented-pod.
+func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
+	var (
+		ns       string
+		selector *metav1.LabelSelector
+	)
+
+	switch o := obj.(type) {
+	case *appsv1.Deployment:
+		ns, selector = o.Namespace, o.Spec.Selector
+	case *appsv1.StatefulSet:
+		ns, selector = o.Namespace, o.Spec.Selector
+	case *appsv1.DaemonSet:
+		ns, selector = o.Namespace, o.Spec.Selector
+	default:
+		return false, fmt.Errorf("workloadHasOdigosAgents: unsupported workload kind %T", obj)
+	}
+
+	if selector == nil {
+		return false, errors.New("workloadHasOdigosAgents: workload has nil selector")
+	}
+
+	sel, err := metav1.LabelSelectorAsSelector(selector)
+	if err != nil {
+		return false, fmt.Errorf("workloadHasOdigosAgents: invalid selector: %w", err)
+	}
+
+	var pods corev1.PodList
+	if err := c.List(
+		ctx, &pods,
+		client.InNamespace(ns),
+		client.MatchingLabelsSelector{Selector: sel},
+	); err != nil {
+		return false, fmt.Errorf("workloadHasOdigosAgents: listing pods failed: %w", err)
+	}
+
+	// Because the cache already filters on k8sconsts.OdigosAgentsMetaHashLabel,
+	// any non-empty list means the workload still runs instrumented pods.
+	return len(pods.Items) > 0, nil
 }

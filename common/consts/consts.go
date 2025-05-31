@@ -79,6 +79,7 @@ const (
 	UserInstrumentationEnvsProperty   = "user-instrumentation-envs"
 	NodeSelectorProperty              = "node-selector"
 	KarpenterEnabledProperty          = "karpenter-enabled"
+	RollbackDisabledProperty          = "rollback-disabled"
 )
 
 var (
