@@ -6,6 +6,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -21,6 +22,17 @@ import (
 func IsObjectInstrumentedBySource(ctx context.Context,
 	k8sClient client.Client,
 	obj client.Object) (bool, metav1.Condition, error) {
+	labels := obj.GetLabels()
+	if val, exists := labels[k8sconsts.OdigosSystemLabelKey]; exists && val == k8sconsts.OdigosSystemLabelValue {
+		condition := metav1.Condition{
+			Type:    odigosv1.MarkedForInstrumentationStatusConditionType,
+			Status:  metav1.ConditionUnknown,
+			Reason:  string(odigosv1.MarkedForInstrumentationReasonError),
+			Message: "cannot instrument Odigos system components",
+		}
+		return false, condition, fmt.Errorf("cannot instrument Odigos system components")
+	}
+
 	// Check if a Source object exists for this object
 	sources, err := odigosv1.GetSources(ctx, k8sClient, obj)
 	if err != nil {
