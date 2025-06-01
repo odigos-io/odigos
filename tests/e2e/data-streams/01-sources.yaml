@@ -5,7 +5,7 @@ metadata:
   namespace: default
   labels:
     odigos.io/e2e: source
-    odigos.io/data-stream: stream-1
+    odigos.io/data-stream-stream-1: "true"
 spec:
   workload:
     name: frontend
@@ -19,7 +19,7 @@ metadata:
   namespace: default
   labels:
     odigos.io/e2e: source
-    odigos.io/data-stream: stream-1
+    odigos.io/data-stream-stream-1: "true"
 spec:
   workload:
     name: coupon
@@ -33,7 +33,7 @@ metadata:
   namespace: default
   labels:
     odigos.io/e2e: source
-    odigos.io/data-stream: stream-1
+    odigos.io/data-stream-stream-1: "true"
 spec:
   workload:
     name: inventory
@@ -47,7 +47,7 @@ metadata:
   namespace: default
   labels:
     odigos.io/e2e: source
-    odigos.io/data-stream: stream-1
+    odigos.io/data-stream-stream-1: "true"
 spec:
   workload:
     name: pricing
@@ -61,7 +61,7 @@ metadata:
   namespace: default
   labels:
     odigos.io/e2e: source
-    odigos.io/data-stream: stream-1
+    odigos.io/data-stream-stream-1: "true"
 spec:
   workload:
     name: membership
@@ -75,7 +75,7 @@ metadata:
   namespace: default
   labels:
     odigos.io/e2e: source
-    odigos.io/data-stream: stream-2
+    odigos.io/data-stream-stream-2: "true"
 spec:
   workload:
     name: currency
