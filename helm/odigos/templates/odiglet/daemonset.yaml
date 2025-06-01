@@ -3,6 +3,7 @@ kind: DaemonSet
 metadata:
   labels:
     app.kubernetes.io/name: odiglet
+    odigos.io/system-object: "true"
   name: odiglet
   namespace: {{ .Release.Namespace }}
 spec:
@@ -141,7 +142,9 @@ spec:
             - name: odigos-go-offsets
               mountPath: /offsets
             {{- end }}
+      {{- if semverCompare "<1.26.0" .Capabilities.KubeVersion.Version }}
       hostNetwork: true
+      {{- end}}
       hostPID: true
       dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical
