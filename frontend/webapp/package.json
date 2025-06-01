@@ -16,7 +16,7 @@
     "@apollo/experimental-nextjs-app-support": "^0.12.2",
     "@odigos/ui-kit": "^0.0.34",
     "graphql": "^16.11.0",
-    "next": "15.3.2",
+    "next": "15.3.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-error-boundary": "^6.0.0",
