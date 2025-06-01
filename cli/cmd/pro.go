@@ -20,6 +20,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 
 	"github.com/spf13/cobra"
@@ -32,6 +33,7 @@ var (
 	updateRemoteFlag bool
 	proNamespaceFlag string
 	useDefault       bool
+	migrate          bool
 )
 
 var proCmd = &cobra.Command{
@@ -51,6 +53,63 @@ var proCmd = &cobra.Command{
 		} else if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
 			os.Exit(1)
+		}
+		if migrate {
+			fmt.Println("Starting migration from Community to Enterprise tier...")
+		
+			managerOpts := resourcemanager.ManagerOpts{
+				ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+			}
+			config, err := resources.GetCurrentConfig(ctx, client, ns)
+			if err != nil {
+				fmt.Println("Odigos pro migrate failed - unable to read the current Odigos configuration.")
+				os.Exit(1)
+			}
+		
+			cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+			if err != nil {
+				fmt.Println("Odigos pro migrate failed - unable to read the current Odigos version for migration")
+				os.Exit(1)
+			}
+			odigosVersion := cm.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
+			if odigosVersion == "" {
+				fmt.Println("Odigos pro migrate failed - unable to read the current Odigos version for migration")
+				os.Exit(1)
+			}
+			// At this point we only support migration to the same odigos version.
+			operation := "Synching"
+		
+			resourceManagers := resources.CreateResourceManagers(
+				client, ns, common.OnPremOdigosTier, &onPremToken, config, odigosVersion,
+				installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
+		
+			err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
+			if err != nil {
+				fmt.Println("Odigos pro migrate failed - unable to apply Odigos resources.")
+				os.Exit(1)
+			}
+		
+			ossNodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+				LabelSelector: k8sconsts.OdigletOSSInstalledLabel,
+			})
+			if err != nil {
+				fmt.Printf("failed to list nodes with %s: %v\n", k8sconsts.OdigletOSSInstalledLabel, err)
+				os.Exit(1)
+			}
+			// TODO: handle karpetner nodes as well.
+			for _, node := range ossNodes.Items {
+				if node.Labels != nil {
+					delete(node.Labels, k8sconsts.OdigletOSSInstalledLabel)
+					node.Labels[k8sconsts.OdigletEnterpriseInstalledLabel] = k8sconsts.OdigletInstalledLabelValue
+					_, err = client.CoreV1().Nodes().Update(ctx, &node, metav1.UpdateOptions{})
+					if err != nil {
+						fmt.Printf("failed to update node %s: %v\n", node.Name, err)
+						os.Exit(1)
+					}
+				}
+			}
+			fmt.Println("Migration completed successfully.")
+			return
 		}
 
 		if updateRemoteFlag {
@@ -355,7 +414,7 @@ func init() {
 
 	proCmd.AddCommand(offsetsCmd)
 	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
-
+	proCmd.Flags().BoolVar(&migrate, "migrate", false, "Migrate from Community to Enterprise tier")
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
