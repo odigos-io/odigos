@@ -136,4 +136,5 @@ type OdigosConfiguration struct {
 	NodeSelector                     map[string]string              `json:"nodeSelector,omitempty"`
 	KarpenterEnabled                 *bool                          `json:"karpenterEnabled,omitempty"`
 	RollbackDisabled                 *bool                          `json:"rollbackDisabled,omitempty"`
+	RollbackGraceTime                string                         `json:"rollbackGraceTime,omitempty"`
 }

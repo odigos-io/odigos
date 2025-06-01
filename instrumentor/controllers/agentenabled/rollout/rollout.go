@@ -10,6 +10,7 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -73,6 +74,29 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 			}
 
 			if crashLoopBackOff && ic.Spec.AgentInjectionEnabled {
+				// Allow grace time for worklaod to stabelize before uninstrumenting it
+				conf, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
+				if err != nil {
+					return false, ctrl.Result{}, err
+				}
+				rollbackGraceTime := "5m"
+				if conf.RollbackGraceTime != "" {
+					rollbackGraceTime = conf.RollbackGraceTime
+				}
+				graceTime, err := time.ParseDuration(rollbackGraceTime)
+				if err != nil {
+					return false, ctrl.Result{}, fmt.Errorf("invalid duration %q: %w", rollbackGraceTime, err)
+				}
+
+				timeSinceCrashLoop, err := timeSinceCrashLoopStart(ctx, c, workloadObj)
+				if err != nil {
+					return false, ctrl.Result{}, err
+				}
+
+				if timeSinceCrashLoop < graceTime {
+					return false, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+				}
+
 				for i := range ic.Spec.Containers {
 					ic.Spec.Containers[i].AgentEnabled = false
 					ic.Spec.Containers[i].AgentEnabledReason = odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff
@@ -304,6 +328,78 @@ func podHasCrashLoop(p *corev1.Pod) bool {
 		}
 	}
 	return false
+}
+
+// timeSinceCrashLoopStart checks all Pods belonging to the given workload (Deployment, StatefulSet, or DaemonSet),
+// finds those that are in CrashLoopBackOff, and returns how much time has elapsed since the earliest‐started
+// crashing Pod was created. If no Pod is in CrashLoopBackOff, it returns (0, nil).
+//
+// Example return values:
+//   - If a Pod entered CrashLoopBackOff 2m30s ago, this will return ≈2m30s.
+//   - If multiple Pods are crashing, it returns the duration since the oldest Pod.StartTime among them.
+func timeSinceCrashLoopStart(ctx context.Context, c client.Client, obj client.Object) (time.Duration, error) {
+	var (
+		ns       string
+		selector *metav1.LabelSelector
+	)
+
+	// Extract namespace and label selector from the workload object
+	switch o := obj.(type) {
+	case *appsv1.Deployment:
+		ns, selector = o.Namespace, o.Spec.Selector
+	case *appsv1.StatefulSet:
+		ns, selector = o.Namespace, o.Spec.Selector
+	case *appsv1.DaemonSet:
+		ns, selector = o.Namespace, o.Spec.Selector
+	default:
+		return 0, fmt.Errorf("timeSinceCrashLoopStart: unsupported workload kind %T", obj)
+	}
+
+	if selector == nil {
+		return 0, fmt.Errorf("timeSinceCrashLoopStart: workload has nil selector")
+	}
+
+	sel, err := metav1.LabelSelectorAsSelector(selector)
+	if err != nil {
+		return 0, fmt.Errorf("timeSinceCrashLoopStart: invalid selector: %w", err)
+	}
+
+	// List all Pods matching that selector in the given namespace
+	var podList corev1.PodList
+	if err := c.List(ctx, &podList,
+		client.InNamespace(ns),
+		client.MatchingLabelsSelector{Selector: sel},
+	); err != nil {
+		return 0, fmt.Errorf("timeSinceCrashLoopStart: failed listing pods: %w", err)
+	}
+
+	// Track the earliest Pod.StartTime among those in CrashLoopBackOff
+	var earliest *time.Time
+
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		if !podHasCrashLoop(pod) {
+			continue
+		}
+
+		// If StartTime is nil (very unlikely for a running Pod), skip it
+		if pod.Status.StartTime == nil {
+			continue
+		}
+
+		start := pod.Status.StartTime.Time
+		if earliest == nil || start.Before(*earliest) {
+			earliest = &start
+		}
+	}
+
+	// If no Pod is in CrashLoopBackOff, return zero duration (no error)
+	if earliest == nil {
+		return 0, nil
+	}
+
+	// Compute how long ago that earliest‐started Pod began
+	return time.Since(*earliest), nil
 }
 
 // workloadHasOdigosAgents returns true if the workload still has *any* pod present in the instrumented-pod.

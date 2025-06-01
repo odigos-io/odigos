@@ -80,6 +80,7 @@ const (
 	NodeSelectorProperty              = "node-selector"
 	KarpenterEnabledProperty          = "karpenter-enabled"
 	RollbackDisabledProperty          = "rollback-disabled"
+	RollbackGraceTimeProperty         = "rollback-grace-time"
 )
 
 var (
