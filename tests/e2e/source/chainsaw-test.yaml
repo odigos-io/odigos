@@ -83,7 +83,7 @@ spec:
             file: 01-workloads.yaml
         - script:
             timeout: 70s
-            content: ./wait_for_rollout.sh
+            content: ../../common/wait_for_rollout.sh
 
     - name: '[2 - Workload Instrumentation] Generate Traffic'
       try:

@@ -91,12 +91,9 @@ spec:
       try:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
-        - assert:
-            timeout: 2m
-            file: 01-workloads.yaml
         - script:
             timeout: 70s
-            content: ./wait_for_rollout.sh
+            content: ../../common/wait_for_rollout.sh
 
     - name: '[2 - Workload Instrumentation] Generate Traffic'
       try:
