@@ -42,6 +42,7 @@ var configCmd = &cobra.Command{
 	- "agent-env-vars-injection-method": Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest.
 	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
 	- "rollback-disabled": Disable auto rollback feature for failing instrumentations.
+	- "rollback-grace-time": Grace time before uninstrumenting an application [default: 3m].
 	`,
 }
 
@@ -241,6 +242,12 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			nodeSelectorMap[label[0]] = label[1]
 		}
 		config.NodeSelector = nodeSelectorMap
+
+	case consts.RollbackGraceTimeProperty:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		config.RollbackGraceTime = value[0]
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
