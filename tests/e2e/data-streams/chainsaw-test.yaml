@@ -63,7 +63,7 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 
-    - name: '[2 - Workload Instrumentation] Instrument Deployments using Sources with otelServiceName field set'
+    - name: '[2 - Workload Instrumentation] Instrument Deployments using Sources'
       try:
         - apply:
             file: 01-sources.yaml
