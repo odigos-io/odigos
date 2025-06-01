@@ -24,7 +24,7 @@
     "zustand": "^5.0.5"
   },
   "devDependencies": {
-    "@types/node": "22.15.23",
+    "@types/node": "22.15.29",
     "@types/react": "19.1.6",
     "@types/react-dom": "19.1.5",
     "autoprefixer": "^10.4.21",
