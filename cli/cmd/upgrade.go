@@ -41,25 +41,11 @@ and apply any required migrations and adaptations.`,
 			os.Exit(1)
 		}
 
-		config, err := resources.GetCurrentConfig(ctx, client, ns)
-		if err != nil {
-			fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
-			os.Exit(1)
-		}
-
-		config.ConfigVersion += 1
-		if uiMode != "" {
-			config.UiMode = common.UiMode(uiMode)
-		}
-
-		if config.ImagePrefix == "" {
-			config.ImagePrefix = k8sconsts.OdigosImagePrefix
-		}
-
 		var operation string
-		skipVersionCheck := cmd.Flag("skip-version-check") == nil || !cmd.Flag("skip-version-check").Changed
 
-		if skipVersionCheck {
+		skipVersionCheckFlag := cmd.Flag("skip-version-check")
+		if skipVersionCheckFlag == nil || !cmd.Flag("skip-version-check").Changed {
+
 			cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 			if err != nil {
 				fmt.Println("Odigos upgrade failed - unable to read the current Odigos version for migration")
@@ -77,13 +63,11 @@ and apply any required migrations and adaptations.`,
 				fmt.Println("Odigos upgrade failed - unable to parse the current Odigos version for migration")
 				os.Exit(1)
 			}
-
 			if sourceVersion.LessThan(version.Must(version.NewVersion("1.0.0"))) {
 				fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0'. Current version is %s.\n", currOdigosVersion)
 				fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.\n")
 				os.Exit(1)
 			}
-
 			targetVersion, err := version.NewVersion(versionFlag)
 			if err != nil {
 				fmt.Println("Odigos upgrade failed - unable to parse the target Odigos version for migration")
@@ -112,34 +96,39 @@ and apply any required migrations and adaptations.`,
 			operation = "Forcefully upgrading"
 		}
 
-		onPremTokenSet := cmd.Flag("onprem-token").Changed
-		var currentTier common.OdigosTier
+		config, err := resources.GetCurrentConfig(ctx, client, ns)
+		if err != nil {
+			fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
+			os.Exit(1)
+		}
 
-		if onPremTokenSet {
-			currentTier = common.OnPremOdigosTier
-		} else {
-			currentTier, err = odigospro.GetCurrentOdigosTier(ctx, client, ns)
-			if err != nil {
-				fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
-				os.Exit(1)
-			}
+		// update the config on upgrade
+		config.ConfigVersion += 1
+		if uiMode != "" {
+			config.UiMode = common.UiMode(uiMode)
+		}
+
+		// Migrate images from prior to registry.odigos.io
+		if config.ImagePrefix == "" {
+			config.ImagePrefix = k8sconsts.OdigosImagePrefix
+		}
+
+		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, ns)
+		if err != nil {
+			fmt.Println("Odigos cloud login failed - unable to read the current Odigos tier.")
+			os.Exit(1)
 		}
 
 		managerOpts := resourcemanager.ManagerOpts{
 			ImageReferences: GetImageReferences(currentTier, openshiftEnabled),
 		}
 
-		resourceManagers := resources.CreateResourceManagers(
-			client, ns, currentTier, &odigosOnPremToken, config, versionFlag,
-			installationmethod.K8sInstallationMethodOdigosCli, managerOpts,
-		)
-
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to apply Odigos resources.")
 			os.Exit(1)
 		}
-
 		err = resources.DeleteOldOdigosSystemObjects(ctx, client, ns, config)
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to cleanup old Odigos resources.")
@@ -148,8 +137,7 @@ and apply any required migrations and adaptations.`,
 	},
 	Example: `
 # Upgrade Odigos version
-odigos upgrade --version v1.0.123
-odigos upgrade --onprem-token <token> --version v1.0.123
+odigos upgrade
 `,
 }
 
@@ -157,7 +145,6 @@ func init() {
 	rootCmd.AddCommand(upgradeCmd)
 	upgradeCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	updateCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", "", "set the UI mode (one-of: normal, readonly)")
-	upgradeCmd.Flags().StringVar(&odigosOnPremToken, "onprem-token", "", "authentication token for odigos enterprise on-premises")
 
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
