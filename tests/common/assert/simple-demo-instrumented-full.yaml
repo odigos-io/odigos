@@ -94,7 +94,7 @@ spec:
               apiVersion: v1
               fieldPath: status.hostIP
       (env[?name == 'ODIGOS_OPAMP_SERVER_HOST']):
-        - value: '$(NODE_IP):4320'
+        - (($values.k8sMinorVersion < `26` && value == '$(NODE_IP):4320') || value == 'odiglet-local.odigos-test:4320'): true
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
         - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
       (env[?name == 'NODE_OPTIONS']):
@@ -147,7 +147,7 @@ spec:
               apiVersion: v1
               fieldPath: status.hostIP
       (env[?name == 'ODIGOS_OPAMP_SERVER_HOST']):
-        - value: '$(NODE_IP):4320'
+        - (($values.k8sMinorVersion < `26` && value == '$(NODE_IP):4320') || value == 'odiglet-local.odigos-test:4320'): true
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
         - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
       (env[?name == 'PYTHONPATH']):

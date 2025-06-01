@@ -142,7 +142,9 @@ spec:
             - name: odigos-go-offsets
               mountPath: /offsets
             {{- end }}
+      {{- if semverCompare "<1.26.0" .Capabilities.KubeVersion.Version }}
       hostNetwork: true
+      {{- end}}
       hostPID: true
       dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical
