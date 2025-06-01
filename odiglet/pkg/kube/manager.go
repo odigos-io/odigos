@@ -1,6 +1,8 @@
 package kube
 
 import (
+	"fmt"
+
 	"github.com/odigos-io/odigos/instrumentation"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
@@ -10,8 +12,10 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
+	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -49,6 +53,13 @@ func CreateManager() (ctrl.Manager, error) {
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	currentNodeSelector := fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName)
 
+	metricsBindAddress := "0"
+	if feature.ServiceInternalTrafficPolicy(feature.GA) {
+		// If the internal traffic policy is enabled, it means we are not bound to the hose network,
+		// we can create metrics server without worrying about conflicts.
+		metricsBindAddress = fmt.Sprintf(":%d", k8sconsts.OdigletMetricsServerPort)
+	}
+
 	return manager.New(config.GetConfigOrDie(), manager.Options{
 		Scheme: scheme,
 		Cache: cache.Options{
@@ -65,7 +76,7 @@ func CreateManager() (ctrl.Manager, error) {
 			},
 		},
 		Metrics: metricsserver.Options{
-			BindAddress: "0",
+			BindAddress: metricsBindAddress,
 		},
 	})
 }

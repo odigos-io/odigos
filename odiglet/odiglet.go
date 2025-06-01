@@ -21,8 +21,14 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
+
+	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"k8s.io/client-go/kubernetes"
 	controllerruntime "sigs.k8s.io/controller-runtime"
+	controllermetric "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 type Odiglet struct {
@@ -49,6 +55,22 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 	if err != nil {
 		return nil, fmt.Errorf("failed to create controller-runtime manager %w", err)
 	}
+
+	e, err := otelprometheus.New(
+		otelprometheus.WithRegisterer(controllermetric.Registry),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create prometheus exporter %w", err)
+	}
+
+	provider := metric.NewMeterProvider(
+		metric.WithReader(e),
+		metric.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.K8SNodeName(env.Current.NodeName),
+		)),
+	)
+	instrumentationMgrOpts.MeterProvider = provider
 
 	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
 	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates)
