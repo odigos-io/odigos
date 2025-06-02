@@ -14,8 +14,6 @@ import (
 
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"go.opentelemetry.io/auto"
-	"go.opentelemetry.io/auto/pipeline"
-	"go.opentelemetry.io/auto/pipeline/otelsdk"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 )
 
@@ -50,18 +48,15 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 	}
 
 	cp := ebpf.NewConfigProvider(initialConfig)
-	h, err := otelsdk.NewTraceHandler(
-		ctx,
-		otelsdk.WithResourceAttributes(settings.ResourceAttributes...),
-		otelsdk.WithServiceName(settings.ServiceName),
-		otelsdk.WithTraceExporter(defaultExporter),
-	)
 
 	inst, err := auto.NewInstrumentation(
 		ctx,
 		auto.WithEnv(), // for OTEL_LOG_LEVEL
 		auto.WithPID(pid),
-		auto.WithHandler(&pipeline.Handler{TraceHandler: h}),
+		auto.WithResourceAttributes(settings.ResourceAttributes...),
+		auto.WithServiceName(settings.ServiceName),
+		auto.WithTraceExporter(defaultExporter),
+		auto.WithGlobal(),
 		auto.WithConfigProvider(cp),
 	)
 	if err != nil {
