@@ -67,6 +67,9 @@ type ActionSpec struct {
 
 	// PiiMasking is the config for the PiiMasking Action.
 	PiiMasking *actionsv1.PiiMaskingConfig `json:"piiMasking,omitempty"`
+
+	// K8sAttributes is the config for the K8sAttributes Action.
+	K8sAttributes *actionsv1.K8sAttributesConfig `json:"k8sAttributes,omitempty"`
 }
 
 type ActionStatus struct {
