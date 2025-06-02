@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/instrumentation
 go 1.24.0
 
 require (
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/runtime-detector v0.0.7
 	go.opentelemetry.io/otel v1.35.0
