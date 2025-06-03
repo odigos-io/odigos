@@ -8,6 +8,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -67,19 +68,19 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	newRolloutHash := ic.Spec.AgentsMetaHash
 	if savedRolloutHash == newRolloutHash {
 		if !isWorkloadRolloutDone(workloadObj) && !rollbackDisabled {
-			crashLoopBackOff, err := isInCrashLoopBackOff(ctx, c, workloadObj)
+			TimeSinceCrashLoopBackOff, err := crashLoopBackOffDuration(ctx, c, workloadObj)
 			if err != nil {
 				logger.Error(err, "Failed to check crashLoopBackOff")
 				return false, ctrl.Result{}, err
 			}
 
-			if crashLoopBackOff && ic.Spec.AgentInjectionEnabled {
+			if TimeSinceCrashLoopBackOff > 0 && ic.Spec.AgentInjectionEnabled {
 				// Allow grace time for worklaod to stabelize before uninstrumenting it
 				conf, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
 				if err != nil {
 					return false, ctrl.Result{}, err
 				}
-				rollbackGraceTime := "5m"
+				rollbackGraceTime := consts.AutoRollbackGraceTime
 				if conf.RollbackGraceTime != "" {
 					rollbackGraceTime = conf.RollbackGraceTime
 				}
@@ -88,13 +89,8 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 					return false, ctrl.Result{}, fmt.Errorf("invalid duration %q: %w", rollbackGraceTime, err)
 				}
 
-				timeSinceCrashLoop, err := timeSinceCrashLoopStart(ctx, c, workloadObj)
-				if err != nil {
-					return false, ctrl.Result{}, err
-				}
-
-				if timeSinceCrashLoop < graceTime {
-					return false, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+				if TimeSinceCrashLoopBackOff < graceTime {
+					return false, ctrl.Result{RequeueAfter: graceTime - TimeSinceCrashLoopBackOff}, nil
 				}
 
 				for i := range ic.Spec.Containers {
@@ -277,49 +273,6 @@ func rolloutCondition(rolloutErr error) metav1.Condition {
 	return cond
 }
 
-// isInCrashLoopBackOff checks whether **any** Pod that belongs to the supplied workload is currently in a *CrashLoopBackOff* restart state.
-func isInCrashLoopBackOff(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
-	var (
-		ns       string
-		selector *metav1.LabelSelector
-	)
-
-	switch o := obj.(type) {
-	case *appsv1.Deployment:
-		ns, selector = o.Namespace, o.Spec.Selector
-	case *appsv1.StatefulSet:
-		ns, selector = o.Namespace, o.Spec.Selector
-	case *appsv1.DaemonSet:
-		ns, selector = o.Namespace, o.Spec.Selector
-	default:
-		return false, fmt.Errorf("isInCrashLoopBackOff: unsupported workload kind %T", obj)
-	}
-
-	if selector == nil {
-		return false, errors.New("isInCrashLoopBackOff: workload has nil selector")
-	}
-
-	sel, err := metav1.LabelSelectorAsSelector(selector)
-	if err != nil {
-		return false, fmt.Errorf("isInCrashLoopBackOff: invalid selector: %w", err)
-	}
-
-	var podList corev1.PodList
-	if err := c.List(ctx, &podList,
-		client.InNamespace(ns),
-		client.MatchingLabelsSelector{Selector: sel},
-	); err != nil {
-		return false, fmt.Errorf("isInCrashLoopBackOff: failed listing pods: %w", err)
-	}
-
-	for _, p := range podList.Items {
-		if podHasCrashLoop(&p) {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
 // podHasCrashLoop returns true if any (init)-container in the pod is in CrashLoopBackOff.
 func podHasCrashLoop(p *corev1.Pod) bool {
 	for _, cs := range append(p.Status.InitContainerStatuses, p.Status.ContainerStatuses...) {
@@ -330,20 +283,25 @@ func podHasCrashLoop(p *corev1.Pod) bool {
 	return false
 }
 
-// timeSinceCrashLoopStart checks all Pods belonging to the given workload (Deployment, StatefulSet, or DaemonSet),
-// finds those that are in CrashLoopBackOff, and returns how much time has elapsed since the earliest‐started
-// crashing Pod was created. If no Pod is in CrashLoopBackOff, it returns (0, nil).
+// crashLoopBackOffDuration returns how long the supplied workload
+// (Deployment, StatefulSet, or DaemonSet) has been in *CrashLoopBackOff*.
 //
-// Example return values:
-//   - If a Pod entered CrashLoopBackOff 2m30s ago, this will return ≈2m30s.
-//   - If multiple Pods are crashing, it returns the duration since the oldest Pod.StartTime among them.
-func timeSinceCrashLoopStart(ctx context.Context, c client.Client, obj client.Object) (time.Duration, error) {
+// It inspects all Pods selected by the workload’s label selector:
+//
+//   - If at least one Pod is currently in CrashLoopBackOff, it finds the
+//     earliest Pod.StartTime among those Pods and returns the elapsed time
+//     since that moment.
+//
+//   - If **no** Pod is in CrashLoopBackOff, it simply returns 0 and no error.
+//
+// A non-nil error is returned only for unexpected situations (e.g. unsupported
+// workload kind, invalid selector, or failed Pod list call).
+func crashLoopBackOffDuration(ctx context.Context, c client.Client, obj client.Object) (time.Duration, error) {
 	var (
 		ns       string
 		selector *metav1.LabelSelector
 	)
 
-	// Extract namespace and label selector from the workload object
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
 		ns, selector = o.Namespace, o.Spec.Selector
@@ -352,53 +310,50 @@ func timeSinceCrashLoopStart(ctx context.Context, c client.Client, obj client.Ob
 	case *appsv1.DaemonSet:
 		ns, selector = o.Namespace, o.Spec.Selector
 	default:
-		return 0, fmt.Errorf("timeSinceCrashLoopStart: unsupported workload kind %T", obj)
+		return 0, fmt.Errorf("crashLoopBackOffDuration: unsupported workload kind %T", obj)
 	}
 
 	if selector == nil {
-		return 0, fmt.Errorf("timeSinceCrashLoopStart: workload has nil selector")
+		return 0, fmt.Errorf("crashLoopBackOffDuration: workload has nil selector")
 	}
-
 	sel, err := metav1.LabelSelectorAsSelector(selector)
 	if err != nil {
-		return 0, fmt.Errorf("timeSinceCrashLoopStart: invalid selector: %w", err)
+		return 0, fmt.Errorf("crashLoopBackOffDuration: invalid selector: %w", err)
 	}
 
-	// List all Pods matching that selector in the given namespace
+	// 2. List matching Pods once (single API call for both checks).
 	var podList corev1.PodList
 	if err := c.List(ctx, &podList,
 		client.InNamespace(ns),
 		client.MatchingLabelsSelector{Selector: sel},
 	); err != nil {
-		return 0, fmt.Errorf("timeSinceCrashLoopStart: failed listing pods: %w", err)
+		return 0, fmt.Errorf("crashLoopBackOffDuration: failed listing pods: %w", err)
 	}
 
-	// Track the earliest Pod.StartTime among those in CrashLoopBackOff
+	// 3. Find the earliest-started Pod that is crashing.
 	var earliest *time.Time
-
 	for i := range podList.Items {
-		pod := &podList.Items[i]
-		if !podHasCrashLoop(pod) {
+		p := &podList.Items[i]
+
+		if !podHasCrashLoop(p) {
+			continue
+		}
+		if p.Status.StartTime == nil { // extremely rare
 			continue
 		}
 
-		// If StartTime is nil (very unlikely for a running Pod), skip it
-		if pod.Status.StartTime == nil {
-			continue
-		}
-
-		start := pod.Status.StartTime.Time
+		start := p.Status.StartTime.Time
 		if earliest == nil || start.Before(*earliest) {
 			earliest = &start
 		}
 	}
 
-	// If no Pod is in CrashLoopBackOff, return zero duration (no error)
+	// 4. Return 0 if nothing is in CrashLoopBackOff.
 	if earliest == nil {
 		return 0, nil
 	}
 
-	// Compute how long ago that earliest‐started Pod began
+	// 5. Otherwise, duration since the workload entered CrashLoopBackOff.
 	return time.Since(*earliest), nil
 }
 

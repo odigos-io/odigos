@@ -251,3 +251,7 @@ nodeSelector: {}
 # https://docs.odigos.io/setup/odigos-with-karpenter
 karpenter:
   enabled: false
+
+autoRollback:
+  disabled: false
+  graceTime: 5m

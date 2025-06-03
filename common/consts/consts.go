@@ -107,3 +107,7 @@ const (
 const (
 	KarpenterStartupTaintKey = "odigos.io/needs-init"
 )
+
+const (
+	AutoRollbackGraceTime = "5m"
+)
