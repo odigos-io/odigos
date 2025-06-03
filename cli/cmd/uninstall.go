@@ -90,7 +90,6 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 					// (or the corresponding effective-config).
 					// As a workaround, we explicitly delete it here, and let helm delete all other resources.
 					uninstallOdigosConfiguration(ctx, client, ns)
-					fmt.Printf("Uninstalling OdigosConfiguration from namespace %s\n", ns)
 					return 
 				}
 				return
@@ -799,7 +798,11 @@ func uninstallOdigosConfiguration(ctx context.Context, client *kube.Client, ns s
 
 	for _, cm := range list.Items {
 		if cm.Name == consts.OdigosConfigurationName {
-			return client.CoreV1().ConfigMaps(ns).Delete(ctx, cm.Name, metav1.DeleteOptions{})
+			err := client.CoreV1().ConfigMaps(ns).Delete(ctx, cm.Name, metav1.DeleteOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to delete ConfigMap %s in namespace %s: %w", cm.Name, ns, err)
+			}
+			fmt.Printf("Deleted Odigos configuration ConfigMap %s in namespace %s\n", cm.Name, ns)
 		}
 	}
 
