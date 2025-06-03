@@ -23,7 +23,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -42,7 +41,6 @@ type SourcesDefaulter struct {
 }
 
 var _ webhook.CustomDefaulter = &SourcesDefaulter{}
-var defaultDataStreamLabel = k8sconsts.SourceDataStreamLabelPrefix + consts.DefaultDataStream
 
 // TODO: uncomment when Data Streams are ready to use
 // var defaultDataStreamLabel = k8sconsts.SourceGroupLabelPrefix + consts.DefaultDataStream
