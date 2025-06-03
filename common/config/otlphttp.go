@@ -96,7 +96,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	currentConfig.Exporters[otlpHttpExporterName] = exporterConf
 
 	var pipelineNames []string
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/otlphttp-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{otlpHttpExporterName},
@@ -104,7 +104,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/otlphttp-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{otlpHttpExporterName},
@@ -112,7 +112,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/otlphttp-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{otlpHttpExporterName},

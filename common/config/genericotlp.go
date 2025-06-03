@@ -81,7 +81,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	currentConfig.Exporters[genericOtlpExporterName] = exporterConf
 
 	var pipelineNames []string
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/generic-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{genericOtlpExporterName},
@@ -89,7 +89,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/generic-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{genericOtlpExporterName},
@@ -97,7 +97,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/generic-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{genericOtlpExporterName},

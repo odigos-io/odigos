@@ -36,7 +36,7 @@ func (a *AzureBlobStorage) ModifyConfig(dest ExporterConfigurer, currentConfig *
 	exporterName := "azureblobstorage/" + dest.GetID()
 	var pipelineNames []string
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"blob": GenericMap{
 				"account_name": accountName,
@@ -51,7 +51,7 @@ func (a *AzureBlobStorage) ModifyConfig(dest ExporterConfigurer, currentConfig *
 		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"blob": GenericMap{
 				"account_name": accountName,

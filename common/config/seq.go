@@ -37,7 +37,7 @@ func (j *Seq) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 		},
 	}
 
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -45,7 +45,7 @@ func (j *Seq) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		pipeName := "logs/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},

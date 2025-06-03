@@ -45,7 +45,7 @@ func (j *Tingyun) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 		},
 	}
 
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Processors: []string{resourceProcessorName},
@@ -54,7 +54,7 @@ func (j *Tingyun) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Processors: []string{resourceProcessorName},

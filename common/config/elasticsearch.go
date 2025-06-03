@@ -74,7 +74,7 @@ func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 
 	pipelineNames := []string{}
 
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/elasticsearch-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -82,7 +82,7 @@ func (e *Elasticsearch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/elasticsearch-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

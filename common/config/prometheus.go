@@ -27,7 +27,7 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		return nil, errors.New("Prometheus remote writer url not specified, gateway will not be configured for prometheus")
 	}
 
-	if !IsMetricsEnabled(dest) {
+	if !isMetricsEnabled(dest) {
 		return nil, errors.New("metrics not enabled for prometheus destination, gateway will not be configured for prometheus")
 	}
 

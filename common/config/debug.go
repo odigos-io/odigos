@@ -47,7 +47,7 @@ func (s *Debug) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	}
 
 	var pipelineNames []string
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/debug-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -55,7 +55,7 @@ func (s *Debug) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/debug-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -63,7 +63,7 @@ func (s *Debug) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/debug-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

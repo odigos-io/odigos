@@ -32,7 +32,7 @@ func (s *Mock) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 		"reject_fraction": reject,
 	}
 	var pipelineNames []string
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/mockdestination-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -40,7 +40,7 @@ func (s *Mock) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/mockdestination-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -48,7 +48,7 @@ func (s *Mock) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/mockdestination-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

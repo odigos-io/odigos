@@ -40,7 +40,7 @@ func (j *Oracle) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 		},
 	}
 
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		dataKeyType, exists := config[ORACLE_DATA_KEY_TYPE]
 		if !exists {
 			return nil, errorMissingKey(ORACLE_DATA_KEY_TYPE)
@@ -59,7 +59,7 @@ func (j *Oracle) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, e
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		exporterConfig["endpoint"] = endpoint + "/20200101/opentelemetry"
 		cfg.Exporters[exporterName] = exporterConfig
 

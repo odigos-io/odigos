@@ -20,7 +20,7 @@ func (h *Honeycomb) DestType() common.DestinationType {
 }
 
 func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	if !IsTracingEnabled(dest) {
+	if !isTracingEnabled(dest) {
 		return nil, ErrorHoneycombTracingDisabled
 	}
 
@@ -39,7 +39,7 @@ func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 
 	var pipelineNames []string
 
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		tracePipelineName := "traces/honeycomb-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracePipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -47,7 +47,7 @@ func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		pipelineNames = append(pipelineNames, tracePipelineName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/honeycomb-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -55,7 +55,7 @@ func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/honeycomb-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

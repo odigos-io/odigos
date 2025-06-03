@@ -43,7 +43,7 @@ func (g *Dynamic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 	currentConfig.Exporters[exporterName] = parsedConfig
 
 	var pipelineNames []string
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -51,7 +51,7 @@ func (g *Dynamic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -59,7 +59,7 @@ func (g *Dynamic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

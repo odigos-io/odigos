@@ -37,7 +37,7 @@ func (l *Logzio) DestType() common.DestinationType {
 func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	var pipelineNames []string
 	region := dest.GetConfig()["LOGZIO_REGION"]
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		exporterName := "logzio/tracing-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"region":        region,
@@ -50,7 +50,7 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		listenerUrl := l.GetListenerUrl(region)
 		exporterName := "prometheusremotewrite/logzio-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
@@ -69,7 +69,7 @@ func (l *Logzio) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		exporterName := "logzio/logs-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"region":        region,

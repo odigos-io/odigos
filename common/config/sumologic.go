@@ -17,7 +17,7 @@ func (s *SumoLogic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	}
 
 	var pipelineNames []string
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/sumologic-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -25,7 +25,7 @@ func (s *SumoLogic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/sumologic-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -33,7 +33,7 @@ func (s *SumoLogic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		pipelineNames = append(pipelineNames, logsPipelineName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/sumologic-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

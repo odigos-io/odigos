@@ -93,7 +93,7 @@ func (m *AWSXRay) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 	currentConfig.Exporters[exporterName] = exporterConfig
 
 	// Configure tracing pipeline
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},

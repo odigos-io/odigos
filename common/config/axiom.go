@@ -35,7 +35,7 @@ func (a *Axiom) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 
 	pipelineNames := []string{}
 
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/axiom-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{axiomExporterName},
@@ -43,7 +43,7 @@ func (a *Axiom) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/axiom-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{axiomExporterName},

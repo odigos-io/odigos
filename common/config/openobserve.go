@@ -40,7 +40,7 @@ func (j *OpenObserve) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		},
 	}
 
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -48,7 +48,7 @@ func (j *OpenObserve) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -56,7 +56,7 @@ func (j *OpenObserve) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		pipeName := "logs/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},

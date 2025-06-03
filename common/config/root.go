@@ -107,15 +107,15 @@ func isSignalExists(dest SignalSpecific, signal common.ObservabilitySignal) bool
 	return false
 }
 
-func IsTracingEnabled(dest SignalSpecific) bool {
+func isTracingEnabled(dest SignalSpecific) bool {
 	return isSignalExists(dest, common.TracesObservabilitySignal)
 }
 
-func IsMetricsEnabled(dest SignalSpecific) bool {
+func isMetricsEnabled(dest SignalSpecific) bool {
 	return isSignalExists(dest, common.MetricsObservabilitySignal)
 }
 
-func IsLoggingEnabled(dest SignalSpecific) bool {
+func isLoggingEnabled(dest SignalSpecific) bool {
 	return isSignalExists(dest, common.LogsObservabilitySignal)
 }
 

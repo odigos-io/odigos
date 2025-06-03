@@ -82,7 +82,7 @@ func (e *Causely) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 	}
 	var pipelineNames []string
 
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/causely-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -90,7 +90,7 @@ func (e *Causely) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		logsPipelineName := "metrics/causely-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

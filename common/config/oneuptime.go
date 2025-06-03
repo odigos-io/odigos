@@ -29,7 +29,7 @@ func (j *OneUptime) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 
 	currentConfig.Exporters[exporterName] = exporterConfig
 	var pipelineNames []string
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		pipeName := "traces/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -37,7 +37,7 @@ func (j *OneUptime) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -45,7 +45,7 @@ func (j *OneUptime) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		pipeName := "logs/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},

@@ -62,7 +62,7 @@ func (j *Greptime) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string,
 
 	cfg.Service.Extensions = append(cfg.Service.Extensions, authExtensionName)
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
 		cfg.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},

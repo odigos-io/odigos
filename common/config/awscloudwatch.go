@@ -45,7 +45,7 @@ func (m *AWSCloudWatch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 	}
 	currentConfig.Exporters[metricsExporterName] = metricsExporterConfig
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		pipeName := "logs/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{logsExporterName},
@@ -53,7 +53,7 @@ func (m *AWSCloudWatch) ModifyConfig(dest ExporterConfigurer, currentConfig *Con
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		pipeName := "metrics/" + uniqueUri
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{metricsExporterName},

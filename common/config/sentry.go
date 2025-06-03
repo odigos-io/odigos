@@ -13,11 +13,11 @@ func (s *Sentry) DestType() common.DestinationType {
 }
 
 func (s *Sentry) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	if !IsTracingEnabled(dest) {
+	if !isTracingEnabled(dest) {
 		return nil, errors.New("Sentry is not enabled for any supported signals, skipping")
 	}
 	var pipelineNames []string
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		exporterName := "sentry/" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"dsn": "${DSN}",

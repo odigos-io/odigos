@@ -23,7 +23,7 @@ func (c *Coralogix) DestType() common.DestinationType {
 }
 
 func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
-	if !IsTracingEnabled(dest) && !IsLoggingEnabled(dest) && !IsMetricsEnabled(dest) {
+	if !isTracingEnabled(dest) && !isLoggingEnabled(dest) && !isMetricsEnabled(dest) {
 		return nil, ErrorCoralogixNoSignals
 	}
 
@@ -50,7 +50,7 @@ func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 
 	var pipelineNames []string
 
-	if IsTracingEnabled(dest) {
+	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/coralogix-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -58,7 +58,7 @@ func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
 
-	if IsMetricsEnabled(dest) {
+	if isMetricsEnabled(dest) {
 		metricsPipelineName := "metrics/coralogix-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -66,7 +66,7 @@ func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
 
-	if IsLoggingEnabled(dest) {
+	if isLoggingEnabled(dest) {
 		logsPipelineName := "logs/coralogix-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},

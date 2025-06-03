@@ -304,7 +304,7 @@ func GetDataStreamsWithDestinations(
 			if !destinationExists(dataStreamDetails.Destinations, dest.Name) {
 				dataStreamDetails.Destinations = append(dataStreamDetails.Destinations, pipelinegen.Destination{
 					DestinationName:   dest.Name,
-					ConfiguredSignals: getConfiguredSignals(dest),
+					ConfiguredSignals: dest.GetSignals(),
 				})
 			}
 
@@ -405,20 +405,6 @@ func findOrCreateDataStream(dataStreams *[]pipelinegen.DataStreams, name string)
 	}
 	*dataStreams = append(*dataStreams, newDataStream)
 	return &(*dataStreams)[len(*dataStreams)-1]
-}
-
-func getConfiguredSignals(dest odigosv1.Destination) []odigoscommon.ObservabilitySignal {
-	configuredSignals := []odigoscommon.ObservabilitySignal{}
-	if config.IsMetricsEnabled(dest) {
-		configuredSignals = append(configuredSignals, odigoscommon.MetricsObservabilitySignal)
-	}
-	if config.IsTracingEnabled(dest) {
-		configuredSignals = append(configuredSignals, odigoscommon.TracesObservabilitySignal)
-	}
-	if config.IsLoggingEnabled(dest) {
-		configuredSignals = append(configuredSignals, odigoscommon.LogsObservabilitySignal)
-	}
-	return configuredSignals
 }
 
 // For the default data stream, include all sources that don't have any data stream labels assigned
