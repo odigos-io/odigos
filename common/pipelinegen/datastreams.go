@@ -18,6 +18,9 @@ import (
 
 // DataStreams defines a logical group of source workloads and the destination exporters
 // that they are allowed to send observability data to.
+// On the odigosfilterconnector, sources are taking precedence over namespaces.
+// This means that if a source is specified, the namespace filter will be ignored.
+// and only if the sources is not defined, the namespace filter will be used.
 type DataStreams struct {
 	Name         string            `mapstructure:"name"`         // Unique identifier for the group (used as pipeline name suffix)
 	Namespaces   []NamespaceFilter `mapstructure:"namespaces"`   // List of namespaces belonging to this group [marked as future select]
