@@ -27,6 +27,8 @@ Manage Odigos configuration settings to customize system behavior.
 	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., {"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}
 	- "agent-env-vars-injection-method": Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest.
 	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
+	- "instrumentation-auto-rollback-disabled": Disable auto rollback feature for failing instrumentations.
+	- "instrumentation-auto-rollback-grace-time": Grace time before uninstrumenting an application [default: 5m].
 	
 
 ### Options
