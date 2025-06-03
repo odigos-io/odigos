@@ -41,8 +41,6 @@ var configCmd = &cobra.Command{
 	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., {"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}
 	- "agent-env-vars-injection-method": Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest.
 	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
-	- "instrumentation-auto-rollback-disabled": Disable auto rollback feature for failing instrumentations.
-	- "instrumentation-auto-rollback-grace-time": Grace time before uninstrumenting an application [default: 5m].
 	`,
 }
 
@@ -118,7 +116,7 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 
 	case consts.TelemetryEnabledProperty, consts.OpenshiftEnabledProperty, consts.PspProperty,
 		consts.SkipWebhookIssuerCreationProperty, consts.AllowConcurrentAgentsProperty,
-		consts.KarpenterEnabledProperty, consts.RollbackDisabledProperty:
+		consts.KarpenterEnabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value (true/false)", property)
@@ -141,8 +139,6 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			config.AllowConcurrentAgents = &boolValue
 		case consts.KarpenterEnabledProperty:
 			config.KarpenterEnabled = &boolValue
-		case consts.RollbackDisabledProperty:
-			config.RollbackDisabled = &boolValue
 		}
 
 	case consts.ImagePrefixProperty, consts.UiModeProperty, consts.UiPaginationLimit:
@@ -242,12 +238,6 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			nodeSelectorMap[label[0]] = label[1]
 		}
 		config.NodeSelector = nodeSelectorMap
-
-	case consts.RollbackGraceTimeProperty:
-		if len(value) != 1 {
-			return fmt.Errorf("%s expects exactly one value", property)
-		}
-		config.RollbackGraceTime = value[0]
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)

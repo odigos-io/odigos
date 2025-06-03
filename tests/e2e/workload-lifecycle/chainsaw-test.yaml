@@ -8,7 +8,7 @@ spec:
   steps:
     - name: Prepare destination
       try:
-        - apply:
+        - apply: 
             file: ../../common/apply/simple-trace-db-deployment.yaml
     - name: Install Odigos
       try:
@@ -58,7 +58,6 @@ spec:
     - name: '01 Assert Instrumented'
       try:
         - assert:
-            timeout: 5m
             file: 01-assert-instrumented.yaml
 
     - name: '01 Assert Workloads'
