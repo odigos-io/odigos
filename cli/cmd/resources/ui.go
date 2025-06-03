@@ -3,19 +3,19 @@ package resources
 import (
 	"context"
 
-	rbacv1 "k8s.io/api/rbac/v1"
-
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type uiResourceManager struct {
@@ -98,13 +98,41 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 									"memory": *resource.NewQuantity(67108864, resource.BinarySI),
 								},
 							},
-							SecurityContext: &corev1.SecurityContext{},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "ui-db-storage",
 									MountPath: "/data",
 								},
 							},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/healthz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: 8081,
+										},
+									},
+								},
+								InitialDelaySeconds: 15,
+								TimeoutSeconds:      0,
+								PeriodSeconds:       20,
+								SuccessThreshold:    0,
+								FailureThreshold:    0,
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/readyz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: 8081,
+										},
+									},
+								},
+								PeriodSeconds: 10,
+							},
+							SecurityContext: &corev1.SecurityContext{},
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
