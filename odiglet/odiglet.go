@@ -59,7 +59,7 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 		semconv.K8SNodeName(env.Current.NodeName),
 	))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Otel MeterProvider", err)
+		return nil, fmt.Errorf("failed to create OpenTelemetry MeterProvider: %w", err)
 	}
 	instrumentationMgrOpts.MeterProvider = provider
 
