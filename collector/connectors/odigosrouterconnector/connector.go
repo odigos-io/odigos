@@ -16,6 +16,7 @@ import (
 	semconv1_21 "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.uber.org/zap"
 
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 )
 
@@ -144,7 +145,7 @@ func createLogsConnector(
 	}, nil
 }
 
-func determineRoutingPipelines(attrs pcommon.Map, m SignalRoutingMap, signal string) ([]string, string) {
+func determineRoutingPipelines(attrs pcommon.Map, m SignalRoutingMap, signal common.ObservabilitySignal) ([]string, string) {
 	nsAttr, ok := attrs.Get(string(semconv1_21.K8SNamespaceNameKey))
 	if !ok {
 		return nil, ""
@@ -193,7 +194,7 @@ func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) e
 		rs := rSpans.At(i)
 
 		// Determine pipelines for this resource
-		pipelines, key := determineRoutingPipelines(rs.Resource().Attributes(), *r.routingTable, "traces")
+		pipelines, key := determineRoutingPipelines(rs.Resource().Attributes(), *r.routingTable, common.TracesObservabilitySignal)
 
 		// if no pipelines matched, copy the resource span to the default consumer
 		if len(pipelines) == 0 {
@@ -252,7 +253,7 @@ func (r *routerConnector) ConsumeMetrics(ctx context.Context, md pmetric.Metrics
 	rMetrics := md.ResourceMetrics()
 	for i := 0; i < rMetrics.Len(); i++ {
 		rm := rMetrics.At(i)
-		pipelines, key := determineRoutingPipelines(rm.Resource().Attributes(), *r.routingTable, "metrics")
+		pipelines, key := determineRoutingPipelines(rm.Resource().Attributes(), *r.routingTable, common.MetricsObservabilitySignal)
 
 		// If no pipeline matched, copy the resource metrics to the default consumer
 		if len(pipelines) == 0 {
@@ -309,7 +310,7 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 	for i := 0; i < rLogs.Len(); i++ {
 		rl := rLogs.At(i)
 		// Determine destination pipelines based on resource metadata
-		pipelines, key := determineRoutingPipelines(rl.Resource().Attributes(), *r.routingTable, "logs")
+		pipelines, key := determineRoutingPipelines(rl.Resource().Attributes(), *r.routingTable, common.LogsObservabilitySignal)
 
 		// If no pipeline matched, copy the resource logs to the default consumer
 		if len(pipelines) == 0 {

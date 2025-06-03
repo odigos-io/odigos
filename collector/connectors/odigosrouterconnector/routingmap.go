@@ -2,14 +2,13 @@ package odigosrouterconnector
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/pipelinegen"
 )
 
 // RoutingIndex maps signals (logs/metrics/traces) to dataStream pipelines
-type RoutingIndex map[string][]string // signal -> []pipeline names
+type RoutingIndex map[common.ObservabilitySignal][]string // signal -> []pipeline names
 
 // SignalRoutingMap indexes all sources and namespaces by SourceKey and provides routing per signal
 //
@@ -46,9 +45,8 @@ func BuildSignalRoutingMap(dataStreams []pipelinegen.DataStreams) SignalRoutingM
 			}
 
 			for _, signal := range signalsForDataStream {
-				signalStr := strings.ToLower(string(signal))
 				pipeline := dataStream.Name
-				result[key][signalStr] = appendIfMissing(result[key][signalStr], pipeline)
+				result[key][signal] = appendIfMissing(result[key][signal], pipeline)
 			}
 		}
 
@@ -60,9 +58,8 @@ func BuildSignalRoutingMap(dataStreams []pipelinegen.DataStreams) SignalRoutingM
 			}
 
 			for _, signal := range signalsForDataStream {
-				signalStr := strings.ToLower(string(signal))
 				pipeline := dataStream.Name
-				result[key][signalStr] = appendIfMissing(result[key][signalStr], pipeline)
+				result[key][signal] = appendIfMissing(result[key][signal], pipeline)
 			}
 		}
 	}
