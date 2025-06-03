@@ -73,6 +73,18 @@ jobs:
           docker tag ${DOCKER_REGISTRY}/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-autoscaler:${COMMIT_HASH}
           docker tag ${DOCKER_REGISTRY}/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-odiglet:${COMMIT_HASH}
 
+
+      - uses: ko-build/setup-ko@v0.9
+
+      - name: Build CLI Image
+        env:
+          COMMIT_HASH: ${{ github.sha }}
+          DOCKER_REGISTRY: registry.odigos.io
+        run: |
+          make build-cli-image TAG=${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-cli:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-cli:${COMMIT_HASH}
+
+
       - name: Push Docker Images to ECR
         env:
           COMMIT_HASH: ${{ github.sha }}
@@ -83,3 +95,4 @@ jobs:
           docker push public.ecr.aws/y2v0v6s7/odigos-scheduler:${COMMIT_HASH}
           docker push public.ecr.aws/y2v0v6s7/odigos-autoscaler:${COMMIT_HASH}
           docker push public.ecr.aws/y2v0v6s7/odigos-odiglet:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-cli:${COMMIT_HASH}
