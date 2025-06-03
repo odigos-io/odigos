@@ -153,11 +153,6 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"configmaps"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed for secret values in destinations
-				APIGroups: []string{""},
-				Resources: []string{"secrets"},
-				Verbs:     []string{"get", "list"},
-			},
 			{ // Needed for CRUD on instr. rule and destinations
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationrules", "destinations"},
