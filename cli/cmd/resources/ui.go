@@ -2,7 +2,6 @@ package resources
 
 import (
 	"context"
-	"flag"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -36,9 +35,6 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
-
-	port := 3000
-	flag.IntVar(&port, "port", port, "Port to listen on")
 
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -90,7 +86,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "ui",
-									ContainerPort: int32(port),
+									ContainerPort: 3000,
 								},
 							},
 							Resources: corev1.ResourceRequirements{
@@ -115,7 +111,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 										Path: "/healthz",
 										Port: intstr.IntOrString{
 											Type:   intstr.Type(0),
-											IntVal: int32(port),
+											IntVal: 3000,
 										},
 									},
 								},
