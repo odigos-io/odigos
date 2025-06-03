@@ -180,7 +180,7 @@ func determineRoutingPipelines(attrs pcommon.Map, m SignalRoutingMap, signal str
 
 func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) error {
 	cfg := r.tracesConfig
-	groups := make(map[consumer.Traces]ptrace.Traces)
+	tracesByConsumer := make(map[consumer.Traces]ptrace.Traces)
 
 	// fallback to default traces consumer if no pipelines are matched
 	defaultTraces := ptrace.NewTraces()
@@ -211,17 +211,17 @@ func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) e
 				continue
 			}
 
-			batch, ok := groups[consumer]
+			batch, ok := tracesByConsumer[consumer]
 			if !ok {
 				batch = ptrace.NewTraces()
 			}
 			rs.CopyTo(batch.ResourceSpans().AppendEmpty())
-			groups[consumer] = batch
+			tracesByConsumer[consumer] = batch
 		}
 	}
 
 	// Forward all grouped batches to their respective consumers
-	for cons, batch := range groups {
+	for cons, batch := range tracesByConsumer {
 		if batch.ResourceSpans().Len() == 0 {
 			continue
 		}
@@ -244,7 +244,7 @@ func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) e
 
 func (r *routerConnector) ConsumeMetrics(ctx context.Context, md pmetric.Metrics) error {
 	cfg := r.metricsConfig
-	groups := make(map[consumer.Metrics]pmetric.Metrics)
+	metricsByConsumer := make(map[consumer.Metrics]pmetric.Metrics)
 
 	defaultMetrics := pmetric.NewMetrics()
 	var errs error
@@ -268,16 +268,16 @@ func (r *routerConnector) ConsumeMetrics(ctx context.Context, md pmetric.Metrics
 				continue
 			}
 
-			batch, ok := groups[consumer]
+			batch, ok := metricsByConsumer[consumer]
 			if !ok {
 				batch = pmetric.NewMetrics()
 			}
 			rm.CopyTo(batch.ResourceMetrics().AppendEmpty())
-			groups[consumer] = batch
+			metricsByConsumer[consumer] = batch
 		}
 	}
 
-	for cons, batch := range groups {
+	for cons, batch := range metricsByConsumer {
 		if batch.ResourceMetrics().Len() == 0 {
 			continue
 		}
@@ -300,7 +300,7 @@ func (r *routerConnector) ConsumeMetrics(ctx context.Context, md pmetric.Metrics
 func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 	cfg := r.logsConfig
 	// Grouped batches by consumer
-	groups := make(map[consumer.Logs]plog.Logs)
+	logsByConsumer := make(map[consumer.Logs]plog.Logs)
 	// Fallback batch for unmatched spans
 	defaultLogs := plog.NewLogs()
 	var errs error
@@ -327,17 +327,17 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 				continue
 			}
 
-			batch, ok := groups[consumer]
+			batch, ok := logsByConsumer[consumer]
 			if !ok {
 				batch = plog.NewLogs()
 			}
 			rl.CopyTo(batch.ResourceLogs().AppendEmpty())
-			groups[consumer] = batch
+			logsByConsumer[consumer] = batch
 		}
 	}
 
 	// Send each grouped batch
-	for cons, batch := range groups {
+	for cons, batch := range logsByConsumer {
 		if batch.ResourceLogs().Len() == 0 {
 			continue
 		}

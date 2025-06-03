@@ -1,7 +1,7 @@
 // Package pipelinegen contains helper structures for dynamically generating OpenTelemetry
 // pipelines based on source groups and their associated destinations.
 //
-// This file (`groups.go`) defines the core data structures used to:
+// This file (`datastreams.go`) defines the core data structures used to:
 // - Describe source filters (which K8s workloads send data)
 // - Associate groups of sources with destination exporters
 // - Track exporter metadata (like supported signals)
