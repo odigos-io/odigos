@@ -8,8 +8,6 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 )
 
-type OtelPipelines map[string]config.Pipeline
-
 // BuildDataStreamPipelines constructs data stream pipelines for logs, metrics, traces.
 // Each pipeline receives from its routing connector and exports to all destinations relevant to the data stream.
 func BuildDataStreamPipelines(
