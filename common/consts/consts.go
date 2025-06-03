@@ -79,8 +79,8 @@ const (
 	UserInstrumentationEnvsProperty   = "user-instrumentation-envs"
 	NodeSelectorProperty              = "node-selector"
 	KarpenterEnabledProperty          = "karpenter-enabled"
-	RollbackDisabledProperty          = "rollback-disabled"
-	RollbackGraceTimeProperty         = "rollback-grace-time"
+	RollbackDisabledProperty          = "instrumentation-auto-rollback-disabled"
+	RollbackGraceTimeProperty         = "instrumentation-auto-rollback-grace-time"
 )
 
 var (
