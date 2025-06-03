@@ -108,7 +108,7 @@ func CalculateGatewayConfig(
 	}
 
 	//  Add pipelines that receive from routing connectors and forward to destinations
-	groupPipelines := BuildDataStreamPipelines(groupDetails, destForwardConnectors)
+	groupPipelines := buildDataStreamPipelines(groupDetails, destForwardConnectors)
 	for name, pipe := range groupPipelines {
 		currentConfig.Service.Pipelines[name] = pipe
 	}
