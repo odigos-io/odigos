@@ -5,7 +5,7 @@ import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
 import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';
 import { getIdFromSseTarget } from '@odigos/ui-kit/functions';
-import { CrdTypes, EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
+import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
 import { type NotifyPayload, useInstrumentStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 
 const CONNECTED = 'CONNECTED';
@@ -15,6 +15,12 @@ const EVENT_TYPES = {
   MODIFIED: 'Modified',
   DELETED: 'Deleted',
 };
+
+enum CrdTypes {
+  Source = 'Source',
+  InstrumentationConfig = 'InstrumentationConfig',
+  Destination = 'Destination',
+}
 
 export const useSSE = () => {
   const { setPendingItems } = usePendingStore();

@@ -197,7 +197,6 @@ func installOdigos(ctx context.Context, client *kube.Client, ns string, config *
 
 	resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, token, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 	return resources.ApplyResourceManagers(ctx, client, resourceManagers, label)
-
 }
 
 func parseNodeSelectorFlag() (map[string]string, error) {
@@ -253,12 +252,9 @@ func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (b
 }
 
 func createNamespace(ctx context.Context, client *kube.Client, ns string, labelKey string) error {
-	nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	_, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err == nil {
-		val, exists := nsObj.Labels[labelKey]
-		if !exists || val != k8sconsts.OdigosSystemLabelValue {
-			return fmt.Errorf("namespace %s does not contain the expected label: %s", ns, labelKey)
-		}
+		// Namespace already exists, nothing to do
 		return nil
 	}
 
@@ -377,7 +373,7 @@ func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]st
 		UiMode:                    common.UiMode(uiMode),
 		ClusterName:               clusterName,
 		CentralBackendURL:         centralBackendURL,
-		UserInstrumentationEnvs:          parsedUserJson,
+		UserInstrumentationEnvs:   parsedUserJson,
 		NodeSelector:              nodeSelector,
 	}
 

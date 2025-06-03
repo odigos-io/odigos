@@ -110,14 +110,55 @@ if [ ! -z "$CONFIGMAPS_IN_NAMESPACE" ]; then
     exit 1
 fi
 
+
+# "default-token" is created in each namespace by k8s prior to k8s 1.24: https://github.com/kubernetes/kubernetes/pull/108309 - so we exclude it
 SECRETS_IN_NAMESPACE=$(kubectl get secrets -n $NAMESPACE -o json | jq -r '
     .items[] |
-    select(.metadata.name != "autoscaler-webhook-cert" and .metadata.name != "webhook-cert") |
+    select(.metadata.name | startswith("default-token") | not) |
     .metadata.name' 2>/dev/null || true)
 if [ ! -z "$SECRETS_IN_NAMESPACE" ]; then
     print_error "Found secrets in namespace $NAMESPACE:"
     echo "$SECRETS_IN_NAMESPACE"
     exit 1
+fi
+
+# 4. Verify RBAC resources are deleted
+echo "Checking for RBAC resources..."
+
+CLUSTER_ROLES=$(kubectl get clusterroles -o name | grep odigos || true)
+if [ ! -z "$CLUSTER_ROLES" ]; then
+    print_error "Found ClusterRoles related to Odigos:"
+    echo "$CLUSTER_ROLES"
+    exit 1
+else
+    print_success "No ClusterRoles related to Odigos found"
+fi
+
+CLUSTER_ROLE_BINDINGS=$(kubectl get clusterrolebindings -o name | grep odigos || true)
+if [ ! -z "$CLUSTER_ROLE_BINDINGS" ]; then
+    print_error "Found ClusterRoleBindings related to Odigos:"
+    echo "$CLUSTER_ROLE_BINDINGS"
+    exit 1
+else
+    print_success "No ClusterRoleBindings related to Odigos found"
+fi
+
+ROLE_BINDINGS=$(kubectl get rolebindings -n $NAMESPACE -o name | grep odigos || true)
+if [ ! -z "$ROLE_BINDINGS" ]; then
+    print_error "Found RoleBindings in namespace $NAMESPACE related to Odigos:"
+    echo "$ROLE_BINDINGS"
+    exit 1
+else
+    print_success "No RoleBindings related to Odigos found in $NAMESPACE"
+fi
+
+ROLES=$(kubectl get roles -n $NAMESPACE -o name | grep odigos || true)
+if [ ! -z "$ROLES" ]; then
+    print_error "Found Roles in namespace $NAMESPACE related to Odigos:"
+    echo "$ROLES"
+    exit 1
+else
+    print_success "No Roles related to Odigos found in $NAMESPACE"
 fi
 
 print_success "Odigos has been successfully uninstalled!"
