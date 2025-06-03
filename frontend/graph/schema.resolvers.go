@@ -228,9 +228,13 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 
 	var destinations []*model.Destination
 	for _, dest := range dests.Items {
-		secretFields, err := services.GetDestinationSecretFields(ctx, ns, &dest)
-		if err != nil {
-			return nil, err
+		secretFields := make(map[string]string)
+
+		if !services.IsReadonlyMode(ctx) {
+			secretFields, err = services.GetDestinationSecretFields(ctx, ns, &dest)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		// Convert the k8s destination format to the expected endpoint format
