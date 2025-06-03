@@ -87,7 +87,7 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;CrashLoopBackOff
+// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected
 type AgentEnabledReason string
 
 const (
@@ -103,9 +103,6 @@ const (
 	// if the source cannot be instrumented because there are no running pods,
 	// we want to show this reason to the user so it's not a spinner
 	AgentEnabledReasonRuntimeDetailsUnavailable AgentEnabledReason = "RuntimeDetailsUnavailable"
-	// used for the rollback feature, when an application was instrumented and it caused a CrashLoopBackOff
-	// We're marking it as that and rolling back the instrumentation
-	AgentEnabledReasonCrashLoopBackOff AgentEnabledReason = "CrashLoopBackOff"
 )
 
 // +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
@@ -141,8 +138,6 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 80
 	case AgentEnabledReasonOtherAgentDetected:
 		return 90
-	case AgentEnabledReasonCrashLoopBackOff:
-		return 95
 	default:
 		return 100
 	}
@@ -158,7 +153,6 @@ func IsReasonStatusDisabled(reason string) bool {
 		string(AgentEnabledReasonIgnoredContainer),
 		string(AgentEnabledReasonNoAvailableAgent),
 		string(AgentEnabledReasonOtherAgentDetected),
-		string(AgentEnabledReasonCrashLoopBackOff),
 		string(AgentEnabledReasonRuntimeDetailsUnavailable):
 
 		return true
@@ -187,15 +181,15 @@ const (
 
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
-	ContainerName  string                     `json:"containerName"`
-	Language       common.ProgrammingLanguage `json:"language"`
-	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
-	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+	ContainerName       string                     `json:"containerName"`
+	Language            common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion      string                     `json:"runtimeVersion,omitempty"`
+	EnvVars             []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent          *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType            *common.LibCType           `json:"libCType,omitempty"`
 	// Indicates whether the target process is running is secure-execution mode.
 	// nil means we were unable to determine the secure-execution mode.
-	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
+	SecureExecutionMode *bool                      `json:"secureExecutionMode,omitempty"`
 
 	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
