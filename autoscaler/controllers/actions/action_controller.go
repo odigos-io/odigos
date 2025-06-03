@@ -58,7 +58,7 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 	}
 
 	if action.Spec.K8sAttributes != nil {
-		config, err := k8sAttributeConfig(ctx, k8sclient, action.Namespace)
+		config, signals, ownerReferences, err := k8sAttributeConfig(ctx, k8sclient, action.Namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -66,26 +66,30 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 		if err != nil {
 			return nil, err
 		}
-		return &odigosv1.Processor{
+		processor := &odigosv1.Processor{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "odigos.io/v1alpha1",
 				Kind:       "Processor",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "odigos-k8sattributes",
-				Namespace: action.Namespace,
+				Name:            "odigos-k8sattributes",
+				Namespace:       action.Namespace,
+				OwnerReferences: ownerReferences,
 			},
 			Spec: odigosv1.ProcessorSpec{
 				Type:            action.Spec.K8sAttributes.ProcessorType(),
 				ProcessorName:   "Unified Kubernetes Attributes",
 				Disabled:        false,
 				Notes:           action.Spec.Notes,
-				Signals:         action.Spec.Signals,
 				CollectorRoles:  []odigosv1.CollectorsGroupRole{odigosv1.CollectorsGroupRoleNodeCollector},
 				OrderHint:       action.Spec.K8sAttributes.OrderHint(),
 				ProcessorConfig: runtime.RawExtension{Raw: configJson},
 			},
-		}, nil
+		}
+		for signal := range signals {
+			processor.Spec.Signals = append(processor.Spec.Signals, signal)
+		}
+		return processor, nil
 	}
 
 	return nil, errors.New("no supported action found in resource")
