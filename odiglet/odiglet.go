@@ -12,6 +12,7 @@ import (
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
+	"github.com/odigos-io/odigos/k8sutils/pkg/metrics"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -22,13 +23,10 @@ import (
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 
-	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/client-go/kubernetes"
 	controllerruntime "sigs.k8s.io/controller-runtime"
-	controllermetric "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 type Odiglet struct {
@@ -56,20 +54,13 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 		return nil, fmt.Errorf("failed to create controller-runtime manager %w", err)
 	}
 
-	e, err := otelprometheus.New(
-		otelprometheus.WithRegisterer(controllermetric.Registry),
-	)
+	provider, err := metrics.NewMeterProviderForController(resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.K8SNodeName(env.Current.NodeName),
+	))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create prometheus exporter %w", err)
+		return nil, fmt.Errorf("failed to create Otel MeterProvider", err)
 	}
-
-	provider := metric.NewMeterProvider(
-		metric.WithReader(e),
-		metric.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.K8SNodeName(env.Current.NodeName),
-		)),
-	)
 	instrumentationMgrOpts.MeterProvider = provider
 
 	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)

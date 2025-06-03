@@ -67,7 +67,7 @@ type ManagerOptions[processDetails ProcessDetails, configGroup ConfigGroup] stru
 	// The caller is responsible for closing the channel once no more updates are expected.
 	ConfigUpdates <-chan ConfigUpdate[configGroup]
 
-	// NeterProvider is used to create a meter for recording metrics.
+	// MeterProvider is used to create a meter for recording metrics.
 	// If non provided, a no-op provider will be used from the global OpenTelemetry API.
 	MeterProvider      metric.MeterProvider
 }
