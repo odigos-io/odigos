@@ -53,10 +53,20 @@ var proCmd = &cobra.Command{
 		} else if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
 			os.Exit(1)
-		}
+		}	
 		if migrate {
 			fmt.Println("Starting migration from Community to Enterprise tier...")
-		
+
+			odigosConfig, err := resources.GetCurrentConfig(ctx, client, ns)
+			if err != nil {
+				fmt.Printf("Error getting config maps: %v\n", err)
+				return
+			}
+			if odigosConfig.KarpenterEnabled != nil && *odigosConfig.KarpenterEnabled {
+				fmt.Println("\033[31mERROR\033[0m Migration from Community to Enterprise tier is not supported when Karpenter is installed in the cluster.")
+				os.Exit(1)
+			}
+
 			managerOpts := resourcemanager.ManagerOpts{
 				ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
 			}
@@ -96,7 +106,7 @@ var proCmd = &cobra.Command{
 				fmt.Printf("failed to list nodes with %s: %v\n", k8sconsts.OdigletOSSInstalledLabel, err)
 				os.Exit(1)
 			}
-			// TODO: handle karpetner nodes as well.
+			
 			for _, node := range ossNodes.Items {
 				if node.Labels != nil {
 					delete(node.Labels, k8sconsts.OdigletOSSInstalledLabel)
