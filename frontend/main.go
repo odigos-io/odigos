@@ -104,6 +104,22 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 	// Serve React app if page not found serve index.html
 	r.NoRoute(gin.WrapH(httpFileServerWith404(http.FS(dist))))
 
+	// Readiness and Liveness probes
+	r.GET("/readyz", func(c *gin.Context) {
+		if kube.DefaultClient == nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ready"})
+	})
+	r.GET("/healthz", func(c *gin.Context) {
+		if kube.DefaultClient == nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not healthy"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+	})
+
 	// GraphQL handlers
 	gqlHandler := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{
