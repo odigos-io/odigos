@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -177,6 +178,8 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	if err := log.Init(); err != nil {
 		panic(err)
 	}
+
+	time.Sleep(15 * time.Second) // Give some time for the connection to be established
 	err := fs.CopyAgentsDirectoryToHost()
 	if err != nil {
 		log.Logger.Error(err, "Failed to copy agents directory to host")
