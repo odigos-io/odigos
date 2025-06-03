@@ -29,6 +29,7 @@ spec:
         args:
           - --namespace=$(CURRENT_NS)
           - --address=0.0.0.0
+          - --health-probe-bind-address=:3000
         env:
           - name: CURRENT_NS
             valueFrom:
@@ -47,13 +48,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 8081
+            port: 3000
           initialDelaySeconds: 15
           periodSeconds: 20
         readinessProbe:
           httpGet:
             path: /readyz
-            port: 8081
+            port: 3000
           periodSeconds: 10
         resources:
           limits:
