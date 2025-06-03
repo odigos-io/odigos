@@ -2,8 +2,8 @@ package metrics
 
 import (
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
-	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 	mstricapi "go.opentelemetry.io/otel/metric"
+	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	controllermetric "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
