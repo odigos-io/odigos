@@ -44,11 +44,6 @@ type K8sAnnotationAttribute struct {
 }
 
 type K8sAttributesConfig struct {
-	ActionName string                       `json:"actionName,omitempty"`
-	Notes      string                       `json:"notes,omitempty"`
-	Disabled   bool                         `json:"disabled,omitempty"`
-	Signals    []common.ObservabilitySignal `json:"signals"`
-
 	// Collect the following container related attributes:
 	// k8s.container.name
 	// container.id
