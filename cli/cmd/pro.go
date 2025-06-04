@@ -33,7 +33,6 @@ var (
 	updateRemoteFlag bool
 	proNamespaceFlag string
 	useDefault       bool
-	migrate          bool
 )
 
 var proCmd = &cobra.Command{
