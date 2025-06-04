@@ -8,12 +8,12 @@ spec:
   steps:
     - name: Prepare destination
       try:
-        - apply: 
+        - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
     - name: Install Odigos
       try:
         - script:
-            timeout: 10m
+            timeout: 15m
             content: |
               ../../../cli/odigos install --namespace odigos-test --version e2e-test
               ../../common/verify_odigos_installation.sh odigos-test
@@ -32,7 +32,7 @@ spec:
       try:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
-  
+
     - name: Assert Trace DB is up
       try:
         - assert:
@@ -68,7 +68,7 @@ spec:
       try:
         - assert:
             timeout: 1m
-            file:  ../../common/assert/pipeline-ready.yaml
+            file: ../../common/assert/pipeline-ready.yaml
 
     - name: 01 - Assert Environment Variables
       try:

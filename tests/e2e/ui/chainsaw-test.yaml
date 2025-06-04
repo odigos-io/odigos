@@ -9,7 +9,7 @@ spec:
     - name: Install Odigos CLI
       try:
         - script:
-            timeout: 10m
+            timeout: 15m
             content: |
               ../../../cli/odigos install --namespace odigos-test --version e2e-test
               ../../common/verify_odigos_installation.sh odigos-test

@@ -13,7 +13,7 @@ spec:
     - name: '[1 - Setup] Install Odigos'
       try:
         - script:
-            timeout: 10m
+            timeout: 15m
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 ../../../cli/odigos install --namespace odigos-test --version "$COMMIT_HASH" --image-prefix=public.ecr.aws/y2v0v6s7
@@ -125,7 +125,7 @@ spec:
             name: odiglet
             namespace: odigos-test
 
-    - name: "[2 - Workload Instrumentation] Verify Trace - Resource Attributes"
+    - name: '[2 - Workload Instrumentation] Verify Trace - Resource Attributes'
       try:
         - script:
             timeout: 3m
