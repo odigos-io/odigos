@@ -27,6 +27,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/client-go/kubernetes"
 	controllerruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
 
 type Odiglet struct {
@@ -62,6 +63,13 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 		return nil, fmt.Errorf("failed to create OpenTelemetry MeterProvider: %w", err)
 	}
 	instrumentationMgrOpts.MeterProvider = provider
+
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		return nil, fmt.Errorf("unable to set up health check: %w", err)
+	}
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		return nil, fmt.Errorf("unable to set up ready check: %w", err)
+	}
 
 	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
 	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates)

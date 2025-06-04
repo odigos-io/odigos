@@ -18,6 +18,7 @@ spec:
               ../../../cli/odigos install --namespace odigos-test --version e2e-test
               ../../common/verify_odigos_installation.sh odigos-test
         - assert:
+            timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
 
     # currently the default env injection method is pod-manifest

@@ -114,6 +114,11 @@ const (
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
 )
 
+const (
+	// K8s workload status conditions, not set in the InstrumentationConfigStatus but used in the frontend to display the status.
+	K8sWorkloadRolloutReasonFailedCreate = "FailedCreate"
+)
+
 // givin multiple reasons for not injecting an agent, this function returns the priority of the reason.
 // which is - it allows choosing the most important reason to be displayed to the user in the aggregate status.
 func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
@@ -147,14 +152,16 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 // this function returns true if the reason is considered as "disabled" status.
 func IsReasonStatusDisabled(reason string) bool {
 	switch reason {
+	// Agent-related reasons
 	case string(AgentEnabledReasonUnsupportedProgrammingLanguage),
 		string(AgentEnabledReasonUnsupportedRuntimeVersion),
 		string(RuntimeDetectionReasonNoRunningPods),
 		string(AgentEnabledReasonIgnoredContainer),
 		string(AgentEnabledReasonNoAvailableAgent),
 		string(AgentEnabledReasonOtherAgentDetected),
-		string(AgentEnabledReasonRuntimeDetailsUnavailable):
-
+		string(AgentEnabledReasonRuntimeDetailsUnavailable),
+		// K8s workload-related reasons
+		string(K8sWorkloadRolloutReasonFailedCreate):
 		return true
 	default:
 		return false
@@ -181,15 +188,15 @@ const (
 
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
-	ContainerName       string                     `json:"containerName"`
-	Language            common.ProgrammingLanguage `json:"language"`
-	RuntimeVersion      string                     `json:"runtimeVersion,omitempty"`
-	EnvVars             []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent          *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType            *common.LibCType           `json:"libCType,omitempty"`
+	ContainerName  string                     `json:"containerName"`
+	Language       common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
+	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType       *common.LibCType           `json:"libCType,omitempty"`
 	// Indicates whether the target process is running is secure-execution mode.
 	// nil means we were unable to determine the secure-execution mode.
-	SecureExecutionMode *bool                      `json:"secureExecutionMode,omitempty"`
+	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
 
 	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
