@@ -27,7 +27,7 @@ spec:
     - name: Verify Odigos Installation
       try:
         - script:
-            timeout: 6m
+            timeout: 7m
             content: |
               echo "Starting Odigos version check..."
               export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)

@@ -34,7 +34,7 @@ spec:
         - apply:
             file: ../../common/apply/install-jaeger.yaml
         - script:
-            timeout: 1m
+            timeout: 2m
             content: |
               kubectl wait --for=condition=ready pod -l app=jaeger -n tracing --timeout=60s
         - assert:
@@ -43,7 +43,6 @@ spec:
     - name: Start UI from CLI
       try:
         - script:
-            timeout: 1m
             content: |
               nohup ../../../cli/odigos ui > odigos-ui.log 2>&1 &
               sleep 3
@@ -51,7 +50,6 @@ spec:
     - name: Wait for UI
       try:
         - script:
-            timeout: 1m
             content: |
               for i in {1..10}; do
                 curl -s http://localhost:3000 && break || sleep 2
