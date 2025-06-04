@@ -1,0 +1,111 @@
+---
+title: "Available Profiles"
+description: "A comprehensive list of all available Odigos profiles and their descriptions"
+sidebarTitle: "Profiles"
+icon: "user"
+---
+
+Odigos provides various profiles that can be used to customize your installation. Each profile serves a specific purpose and can be enabled or disabled based on your needs. Profiles are divided into different categories based on their functionality.
+
+## Resource Sizing Profiles
+
+These profiles determine the resource allocation for Odigos components:
+
+| Profile | Description | Tier |
+|---------|-------------|------|
+| `size_xs` | Extra small size deployment profile (75% of small) | Community |
+| `size_s` | Small size deployment profile (base size) | Community |
+| `size_m` | Medium size deployment profile (1.25x small) | Community |
+| `size_l` | Large size deployment profile (1.5x small) | Community |
+
+### Core Component Resource Requirements
+
+Each size profile sets the following resource requirements for core Odigos components:
+
+| Component | Profile | Memory Request | Memory Limit | CPU Request | CPU Limit |
+|-----------|---------|----------------|--------------|-------------|------------|
+| All Core Components | `size_xs` | 48Mi | 384Mi | 8m | 375m |
+| All Core Components | `size_s` | 64Mi | 512Mi | 10m | 500m |
+| All Core Components | `size_m` | 80Mi | 640Mi | 13m | 625m |
+| All Core Components | `size_l` | 96Mi | 768Mi | 15m | 750m |
+
+Core Components include: odigos-autoscaler, odigos-instrumentor, odigos-scheduler, and odigos-ui
+
+### Collector Resource Requirements
+
+The profiles also configure resource requirements for the OpenTelemetry collectors:
+
+**Cluster Gateway Collector**:
+
+| Profile | Min Replicas | Max Replicas | Memory Request | Memory Limit | CPU Request | CPU Limit |
+|---------|--------------|--------------|----------------|--------------|-------------|------------|
+| `size_xs` | 1 | 4 | 225Mi | 225Mi | 113m | 225m |
+| `size_s` | 1 | 5 | 300Mi | 300Mi | 150m | 300m |
+| `size_m` | 2 | 8 | 500Mi | 600Mi | 500m | 1000m |
+| `size_l` | 3 | 12 | 750Mi | 850Mi | 750m | 1250m |
+
+**Node Data Collection Collector**:
+
+| Profile | Memory Request | Memory Limit | CPU Request | CPU Limit |
+|---------|---------------|--------------|-------------|------------|
+| `size_xs` | 113Mi | 225Mi | 113m | 225m |
+| `size_s` | 150Mi | 300Mi | 150m | 300m |
+| `size_m` | 250Mi | 500Mi | 250m | 500m |
+| `size_l` | 500Mi | 750Mi | 500m | 750m |
+
+For more information about configuring resource requirements, see [Pipeline Configuration](/pipeline/configuration).
+
+## Instrumentation Profiles
+
+These profiles control how Odigos instruments your applications:
+
+| Profile | Description | Tier |
+|---------|-------------|------|
+| `allow_concurrent_agents` | Allows Odigos to run concurrently with other agents | Community |
+| `java-ebpf-instrumentations` | Instrument Java applications using eBPF instrumentation and eBPF enterprise processing | OnPrem |
+| `java-native-instrumentations` | Deprecated, native instrumentations are now enabled by default | OnPrem |
+| `legacy-dotnet-instrumentation` | Instrument DotNet applications using legacy OpenTelemetry instrumentation (needed for 6.0 support) | OnPrem |
+| `mount-method-k8s-host-path` | Mount odigos agents files to pod container filesystem using k8s host path volume | Community |
+| `mount-method-k8s-virtual-device` | Mount odigos agents files to pod container filesystem using k8s virtual device | Community |
+| `loader-fallback-to-pod-manifest-env-var-injection` | Try using odigos loader env var injection method, fallback to pod manifest if not possible | Community |
+
+## Attribute Management Profiles
+
+These profiles control how Odigos handles span attributes:
+
+| Profile | Description | Tier |
+|---------|-------------|------|
+| `category-attributes` | Add category attributes to the spans | OnPrem |
+| `code-attributes` | Record span attributes in 'code' namespace where supported | OnPrem |
+| `copy-scope` | Copy the scope name into a separate attribute for backends that do not support scopes | Community |
+| `hostname-as-podname` | Populate the spans resource `host.name` attribute with value of `k8s.pod.name` | OnPrem |
+| `full-payload-collection` | Collect any payload from the cluster where supported with default settings | OnPrem |
+| `db-payload-collection` | Collect db payload from the cluster where supported with default settings | OnPrem |
+| `query-operation-detector` | Detect the SQL operation name from the query text | OnPrem |
+| `semconv` | Upgrade and align some attribute names to a newer version of the OpenTelemetry semantic conventions | Community |
+| `reduce-span-name-cardinality` | Reduce the cardinality of the span name by replacing common scenarios observed | OnPrem |
+
+## Pipeline Profiles
+
+These profiles control how Odigos processes and exports data:
+
+| Profile | Description | Tier |
+|---------|-------------|------|
+| `small-batches` | Reduce the batch size for exports | OnPrem |
+
+## Managing Profiles
+
+You can manage profiles using the Odigos CLI:
+
+```bash
+# List available profiles
+odigos profile --available
+
+# Add a profile
+odigos profile add <profile_name>
+
+# Remove a profile
+odigos profile remove <profile_name>
+```
+
+For more information about using profiles, see the [Odigos CLI Profile Command](/cli/odigos_profile) documentation. 

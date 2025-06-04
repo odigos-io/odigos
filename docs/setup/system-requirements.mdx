@@ -44,6 +44,8 @@ The following components runs as Deployment and request the following resources 
 | odigos-schedualer      | 64Mi         | 512Mi       | 10m       | 500m     |
 | odigos-ui | 64Mi         | 512Mi       | 10m       | 500m     |
 
+The resource requirements can be configured using [size profiles](/profiles/available-profiles#resource-sizing-profiles) (`size_xs`, `size_s`, `size_m`, `size_l`). The values shown above are for the default `size_s` profile.
+
 In addition, Odigos deploys OpenTelemetry Collector Deployment, 
 with auto scaling (multiple replicas) and configurable resources requests and limits.
 The default values (unless overridden) are:
@@ -52,7 +54,9 @@ The default values (unless overridden) are:
 |---------------|---------------|-------------|------------|----------|
 | odigos-gateway      | 300Mi         | 300Mi       | 150m       | 300m     |
 
-Read more [here](/pipeline/configuration).
+For more details on configuring resource requirements, see:
+- [Resource Sizing Profiles](/profiles/available-profiles#resource-sizing-profiles)
+- [Pipeline Configuration](/pipeline/configuration)
 
 ### Per Node
 
@@ -65,6 +69,6 @@ Read more [here](/pipeline/configuration).
 |---------------|---------------|-------------|------------|----------|
 | odigos-data-collection | 150Mi         | 300Mi       | 150m       | 300m     |
 
-You can override these values by providing a custom configuration (read more [here](/pipeline/configuration)).
+These values can be adjusted using [size profiles](/profiles/available-profiles#resource-sizing-profiles) or by providing a custom configuration in the [pipeline configuration](/pipeline/configuration).
 
 
