@@ -44,6 +44,17 @@ spec:
         ports:
           - containerPort: 3000
             name: ui
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 3000
+          periodSeconds: 10
         resources:
           limits:
             cpu: 500m
@@ -55,7 +66,7 @@ spec:
           allowPrivilegeEscalation: false
         volumeMounts:
           - name: ui-db-storage
-            mountPath: /data          
+            mountPath: /data
       securityContext:
         runAsNonRoot: true
       serviceAccountName: odigos-ui
