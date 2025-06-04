@@ -54,54 +54,6 @@ var proCmd = &cobra.Command{
 			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
 			os.Exit(1)
 		}
-		if migrate {
-			fmt.Println("Starting migration from Community to Enterprise tier...")
-
-			odigosConfig, err := resources.GetCurrentConfig(ctx, client, ns)
-			if err != nil {
-				fmt.Printf("Error getting config maps: %v\n", err)
-				return
-			}
-			if odigosConfig.KarpenterEnabled != nil && *odigosConfig.KarpenterEnabled {
-				fmt.Println("\033[31mERROR\033[0m Migration from Community to Enterprise tier is not supported when Karpenter is installed in the cluster.")
-				os.Exit(1)
-			}
-
-			managerOpts := resourcemanager.ManagerOpts{
-				ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
-			}
-			config, err := resources.GetCurrentConfig(ctx, client, ns)
-			if err != nil {
-				fmt.Println("Odigos pro migrate failed - unable to read the current Odigos configuration.")
-				os.Exit(1)
-			}
-
-			cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-			if err != nil {
-				fmt.Println("Odigos pro migrate failed - unable to read the current Odigos version for migration")
-				os.Exit(1)
-			}
-			odigosVersion := cm.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
-			if odigosVersion == "" {
-				fmt.Println("Odigos pro migrate failed - unable to read the current Odigos version for migration")
-				os.Exit(1)
-			}
-			// At this point we only support migration to the same odigos version.
-			operation := "Synching"
-
-			resourceManagers := resources.CreateResourceManagers(
-				client, ns, common.OnPremOdigosTier, &onPremToken, config, odigosVersion,
-				installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
-
-			err = resources.ApplyResourceManagers(ctx, client, resourceManagers, operation)
-			if err != nil {
-				fmt.Println("Odigos pro migrate failed - unable to apply Odigos resources.")
-				os.Exit(1)
-			}
-
-			fmt.Println("Migration completed successfully.")
-			return
-		}
 
 		if updateRemoteFlag {
 			err = executeRemoteUpdateToken(ctx, client, ns, onPremToken)
@@ -282,6 +234,74 @@ var centralInstallCmd = &cobra.Command{
 	},
 }
 
+var migrateCmd = &cobra.Command{
+	Use:   "migrate",
+	Short: "Migrate Odigos from Community to Enterprise tier",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		onPremToken := cmd.Flag("onprem-token").Value.String()
+		if onPremToken == "" {
+			fmt.Println("\033[31mERROR\033[0m onprem-token is required")
+			os.Exit(1)
+		}
+
+		ns, err := resources.GetOdigosNamespace(client, ctx)
+		if resources.IsErrNoOdigosNamespaceFound(err) {
+			fmt.Println("\033[31mERROR\033[0m no odigos installation found in the current cluster")
+			os.Exit(1)
+		} else if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Starting migration from Community to Enterprise tier...")
+
+		odigosConfig, err := resources.GetCurrentConfig(ctx, client, ns)
+		if err != nil {
+			fmt.Printf("Error getting config maps: %v\n", err)
+			return
+		}
+		if odigosConfig.KarpenterEnabled != nil && *odigosConfig.KarpenterEnabled {
+			fmt.Println("\033[31mERROR\033[0m Migration is not supported when Karpenter is installed.")
+			os.Exit(1)
+		}
+
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+		}
+		config, err := resources.GetCurrentConfig(ctx, client, ns)
+		if err != nil {
+			fmt.Println("Odigos pro migrate failed - unable to read current config.")
+			os.Exit(1)
+		}
+
+		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Println("Odigos pro migrate failed - unable to get version ConfigMap.")
+			os.Exit(1)
+		}
+		odigosVersion := cm.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
+		if odigosVersion == "" {
+			fmt.Println("Odigos pro migrate failed - missing version info.")
+			os.Exit(1)
+		}
+
+		resourceManagers := resources.CreateResourceManagers(
+			client, ns, common.OnPremOdigosTier, &onPremToken, config, odigosVersion,
+			installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
+
+		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Synching")
+		if err != nil {
+			fmt.Println("Odigos pro migrate failed - unable to apply resources.")
+			os.Exit(1)
+		}
+
+		fmt.Println("Migration completed successfully.")
+	},
+}
+
 func createOdigosCentralSecret(ctx context.Context, client *kube.Client, ns, token string) error {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -405,7 +425,6 @@ func init() {
 
 	proCmd.AddCommand(offsetsCmd)
 	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
-	proCmd.Flags().BoolVar(&migrate, "migrate", false, "Migrate from Community to Enterprise tier")
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
@@ -414,4 +433,9 @@ func init() {
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
 	centralCmd.AddCommand(portForwardCentralCmd)
+
+	proCmd.AddCommand(migrateCmd)
+	migrateCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
+	migrateCmd.MarkFlagRequired("onprem-token")
+
 }
