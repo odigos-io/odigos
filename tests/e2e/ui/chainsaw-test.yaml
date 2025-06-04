@@ -12,7 +12,7 @@ spec:
             timeout: 10m
             content: |
               ../../../cli/odigos install --version e2e-test
-              ../../common/verify_odigos_installation.sh odigos-test
+              ../../common/verify_odigos_installation.sh odigos-system
         - assert:
             file: ../../common/assert/odigos-installed.yaml
 
