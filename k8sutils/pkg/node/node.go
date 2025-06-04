@@ -63,7 +63,7 @@ func PrepareNodeForOdigosInstallation(clientset *kubernetes.Clientset, nodeName 
 		case k8sconsts.OdigletEnterpriseInstalledLabel:
 			delete(node.Labels, k8sconsts.OdigletOSSInstalledLabel)
 		}
-	
+		
 		node.Labels[labelKey] = k8sconsts.OdigletInstalledLabelValue
 
 		_, err = clientset.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
