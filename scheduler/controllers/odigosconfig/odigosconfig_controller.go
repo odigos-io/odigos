@@ -13,6 +13,8 @@ import (
 	"github.com/odigos-io/odigos/profiles"
 	"github.com/odigos-io/odigos/profiles/manifests"
 	"github.com/odigos-io/odigos/profiles/sizing"
+
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -98,6 +100,12 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	err = r.persistEffectiveConfig(ctx, &odigosConfig, odigosConfigMap)
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	// Update resource sizes for all components based on profiles
+	// Do this last since it will restart the scheduler deployment
+	if err := r.resolveResourceSizes(ctx, &odigosConfig); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to resolve resource sizes: %w", err)
 	}
 
 	return ctrl.Result{}, nil
@@ -316,4 +324,45 @@ func resolveEnvInjectionMethod(odigosConfig *common.OdigosConfiguration) {
 		// any illegal value will be defaulted to pod-manifest
 		odigosConfig.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
 	}
+}
+
+func (r *odigosConfigController) resolveResourceSizes(ctx context.Context, odigosConfig *common.OdigosConfiguration) error {
+	// Get resource requirements based on profiles
+	resourceReqs := sizing.GetResourceRequirementsFromProfiles(odigosConfig.Profiles)
+
+	// Components to update
+	components := []struct {
+		name string
+		ns   string
+	}{
+		{name: k8sconsts.UIDeploymentName, ns: env.GetCurrentNamespace()},
+		{name: k8sconsts.AutoScalerDeploymentName, ns: env.GetCurrentNamespace()},
+		{name: k8sconsts.InstrumentorDeploymentName, ns: env.GetCurrentNamespace()},
+		// Do scheduler last since it will restart the deployment
+		{name: k8sconsts.SchedulerDeploymentName, ns: env.GetCurrentNamespace()},
+	}
+
+	// Update each component's deployment
+	for _, component := range components {
+		// Get the deployment
+		deployment := &appsv1.Deployment{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name:      component.name,
+			Namespace: component.ns,
+		}, deployment); err != nil {
+			return fmt.Errorf("failed to get deployment %s: %w", component.name, err)
+		}
+
+		// Update the main container's resources
+		if len(deployment.Spec.Template.Spec.Containers) > 0 {
+			deployment.Spec.Template.Spec.Containers[0].Resources = resourceReqs
+
+			// Patch the deployment
+			if err := r.Client.Update(ctx, deployment); err != nil {
+				return fmt.Errorf("failed to patch deployment %s: %w", component.name, err)
+			}
+		}
+	}
+
+	return nil
 }

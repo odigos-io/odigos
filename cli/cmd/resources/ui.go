@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/profiles/sizing"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,7 +32,7 @@ func (u *uiResourceManager) Name() string {
 	return "UI"
 }
 
-func NewUIDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+func NewUIDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string, resourceSizes corev1.ResourceRequirements) *appsv1.Deployment {
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -89,16 +90,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 									ContainerPort: 3000,
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("500m"),
-									"memory": *resource.NewQuantity(536870912, resource.BinarySI),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("10m"),
-									"memory": *resource.NewQuantity(67108864, resource.BinarySI),
-								},
-							},
+							Resources: resourceSizes,
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "ui-db-storage",
@@ -430,13 +422,16 @@ func NewUIService(ns string) *corev1.Service {
 }
 
 func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
+	// Get resource requirements based on profiles
+	resourceReqs := sizing.GetResourceRequirementsFromProfiles(u.config.Profiles)
+
 	resources := []kube.Object{
 		NewUIServiceAccount(u.ns),
 		NewUIRole(u.ns, u.readonly),
 		NewUIRoleBinding(u.ns),
 		NewUIClusterRole(u.readonly),
 		NewUIClusterRoleBinding(u.ns),
-		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.managerOpts.ImageReferences.UIImage, u.config.NodeSelector),
+		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.managerOpts.ImageReferences.UIImage, u.config.NodeSelector, resourceReqs),
 		NewUIService(u.ns),
 	}
 	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources, u.managerOpts)

@@ -9,12 +9,12 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/profiles/sizing"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -270,7 +270,7 @@ func NewAutoscalerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string, collectorImage string, nodeSelector map[string]string) *appsv1.Deployment {
+func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string, collectorImage string, resourceReqs corev1.ResourceRequirements) *appsv1.Deployment {
 
 	optionalEnvs := []corev1.EnvVar{}
 	if nodeSelector == nil {
@@ -371,16 +371,7 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 									MountPath: "/tmp/k8s-webhook-server/serving-certs",
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("500m"),
-									"memory": *resource.NewQuantity(536870912, resource.BinarySI),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("10m"),
-									"memory": *resource.NewQuantity(67108864, resource.BinarySI),
-								},
-							},
+							Resources: resourceReqs,
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
@@ -552,6 +543,9 @@ func NewAutoScalerResourceManager(client *kube.Client, ns string, config *common
 func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
 
 func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) error {
+	// Get resource requirements based on profiles
+	resourceReqs := sizing.GetResourceRequirementsFromProfiles(a.config.Profiles)
+
 	resources := []kube.Object{
 		NewAutoscalerServiceAccount(a.ns),
 		NewAutoscalerRole(a.ns),
@@ -559,7 +553,7 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 		NewAutoscalerClusterRole(a.config.OpenshiftEnabled),
 		NewAutoscalerClusterRoleBinding(a.ns),
 		NewAutoscalerLeaderElectionRoleBinding(a.ns),
-		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.AutoscalerImage, a.managerOpts.ImageReferences.CollectorImage, a.config.NodeSelector),
+		NewAutoscalerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.AutoscalerImage, a.config.NodeSelector, a.managerOpts.ImageReferences.CollectorImage, resourceReqs),
 		NewAutoscalerService(a.ns),
 		NewAutoscalerTLSSecret(a.ns),
 		NewActionValidatingWebhookConfiguration(a.ns),

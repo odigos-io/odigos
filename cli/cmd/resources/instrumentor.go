@@ -10,12 +10,12 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/profiles/sizing"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -482,7 +482,7 @@ func NewInstrumentorTLSSecret(ns string) *corev1.Secret {
 	}
 }
 
-func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, tier common.OdigosTier, nodeSelector map[string]string) *appsv1.Deployment {
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, tier common.OdigosTier, nodeSelector map[string]string, resourceSizes corev1.ResourceRequirements) *appsv1.Deployment {
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -608,16 +608,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 									MountPath: "/tmp/k8s-webhook-server/serving-certs",
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("500m"),
-									"memory": *resource.NewQuantity(536870912, resource.BinarySI),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("10m"),
-									"memory": *resource.NewQuantity(67108864, resource.BinarySI),
-								},
-							},
+							Resources: resourceSizes,
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
@@ -710,6 +701,9 @@ func NewInstrumentorResourceManager(client *kube.Client, ns string, config *comm
 func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
+	// Get resource requirements based on profiles
+	resourceReqs := sizing.GetResourceRequirementsFromProfiles(a.config.Profiles)
+
 	resources := []kube.Object{
 		NewInstrumentorServiceAccount(a.ns),
 		NewInstrumentorLeaderElectionRoleBinding(a.ns),
@@ -717,7 +711,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(a.config.OpenshiftEnabled),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.managerOpts.ImageReferences.InstrumentorImage, a.tier, a.config.NodeSelector),
+		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.managerOpts.ImageReferences.InstrumentorImage, a.tier, a.config.NodeSelector, resourceReqs),
 		NewInstrumentorService(a.ns),
 	}
 

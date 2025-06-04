@@ -9,11 +9,11 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/profiles/sizing"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -168,7 +168,7 @@ func NewSchedulerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewSchedulerDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+func NewSchedulerDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string, resourceSizes corev1.ResourceRequirements) *appsv1.Deployment {
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -259,16 +259,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("500m"),
-									"memory": *resource.NewQuantity(536870912, resource.BinarySI),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("10m"),
-									"memory": *resource.NewQuantity(67108864, resource.BinarySI),
-								},
-							},
+							Resources: resourceSizes,
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
@@ -332,6 +323,9 @@ func NewSchedulerResourceManager(client *kube.Client, ns string, config *common.
 func (a *schedulerResourceManager) Name() string { return "Scheduler" }
 
 func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error {
+	// Get resource requirements based on profiles
+	resourceReqs := sizing.GetResourceRequirementsFromProfiles(a.config.Profiles)
+
 	resources := []kube.Object{
 		NewSchedulerServiceAccount(a.ns),
 		NewSchedulerLeaderElectionRoleBinding(a.ns),
@@ -339,7 +333,7 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 		NewSchedulerRoleBinding(a.ns),
 		NewSchedulerClusterRole(),
 		NewSchedulerClusterRoleBinding(a.ns),
-		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.SchedulerImage, a.config.NodeSelector),
+		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.SchedulerImage, a.config.NodeSelector, resourceReqs),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

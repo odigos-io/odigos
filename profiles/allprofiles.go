@@ -35,6 +35,7 @@ var AllProfiles = []profile.Profile{
 
 	pipeline.SmallBatchesProfile,
 
+	sizing.SizeXSProfile,
 	sizing.SizeSProfile,
 	sizing.SizeMProfile,
 	sizing.SizeLProfile,
