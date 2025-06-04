@@ -13,7 +13,7 @@ spec:
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
-            timeout: 10m # longer timeout since the images are being pulled from dockerhub
+            timeout: 15m # longer timeout since the images are being pulled from dockerhub
             content: |
               #!/bin/bash
 
