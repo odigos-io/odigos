@@ -174,18 +174,22 @@ func startWatchers(ctx context.Context, flags *Flags) error {
 	return nil
 }
 
-func main() {
-
-	// Initialize SQLite database
+func startDatabase() error {
 	database, err := db.NewSQLiteDB("/data/data.db")
+
 	if err != nil {
-		log.Println(err, "Failed to connect to DB") // TODO: Move to fatal once db required
+		// TODO: Move to fatal once db required
+		// return err
+		log.Println(err, "Failed to connect to DB")
 	} else {
 		defer database.Close()
-		// InitializeDatabaseSchema sets up the initial database schema.
 		db.InitializeDatabaseSchema(database.GetDB())
 	}
 
+	return nil
+}
+
+func main() {
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := parseFlags()
 
@@ -203,6 +207,12 @@ func main() {
 	}()
 
 	go common.StartPprofServer(ctx, logr.FromSlogHandler(slog.Default().Handler()))
+
+	// Start SQLite database
+	err := startDatabase()
+	if err != nil {
+		log.Fatalf("Error starting database: %s", err)
+	}
 
 	// Load destinations data
 	err = destinations.Load()
