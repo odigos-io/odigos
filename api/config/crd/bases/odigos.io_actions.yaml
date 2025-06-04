@@ -81,6 +81,78 @@ spec:
                 description: A boolean field allowing to temporarily disable the action,
                   but keep it around for future use
                 type: boolean
+              k8sAttributes:
+                description: K8sAttributes is the config for the K8sAttributes Action.
+                properties:
+                  annotationsAttributes:
+                    description: list of annotations to be extracted from the pod,
+                      and the attribute key to be used for the resource attribute
+                      created from each annotation.
+                    items:
+                      properties:
+                        annotationKey:
+                          description: |-
+                            The label name to be extracted from the pod.
+                            e.g. "kubectl.kubernetes.io/restartedAt"
+                          type: string
+                        attributeKey:
+                          description: |-
+                            The attribute key to be used for the resource attribute created from the label.
+                            e.g. "kubectl.kubernetes.restartedAte"
+                          type: string
+                      required:
+                      - annotationKey
+                      - attributeKey
+                      type: object
+                    type: array
+                  collectClusterUID:
+                    description: Collect the k8s.cluster.uid attribute, which is set
+                      to the uid of the namespace "kube-system"
+                    type: boolean
+                  collectContainerAttributes:
+                    description: |-
+                      Collect the following container related attributes:
+                      k8s.container.name
+                      container.id
+                      container.image.name
+                      container.image.tag
+                    type: boolean
+                  collectReplicaSetAttributes:
+                    description: |-
+                      collect replicaset related attributes (when relevant, e.g. for deployments):
+                      k8s.replicaset.name
+                      if CollectWorkloadUID is set, also collect:
+                      k8s.replicaset.uid
+                    type: boolean
+                  collectWorkloadUID:
+                    description: |-
+                      Collect the following workload UID attributes:
+                      k8s.deployment.uid
+                      k8s.daemonset.uid
+                      k8s.statefulset.uid
+                    type: boolean
+                  labelsAttributes:
+                    description: list of labels to be extracted from the pod, and
+                      the attribute key to be used for the resource attribute created
+                      from each label.
+                    items:
+                      properties:
+                        attributeKey:
+                          description: |-
+                            The attribute key to be used for the resource attribute created from the label.
+                            e.g. "app.kubernetes.name"
+                          type: string
+                        labelKey:
+                          description: |-
+                            The label name to be extracted from the pod.
+                            e.g. "app.kubernetes.io/name"
+                          type: string
+                      required:
+                      - attributeKey
+                      - labelKey
+                      type: object
+                    type: array
+                type: object
               notes:
                 description: 'A free-form text field that allows you to attach notes
                   regarding the action for convenience. For example: why it was added.
