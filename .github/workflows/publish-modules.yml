@@ -39,7 +39,7 @@ jobs:
             echo "status=success" >> $GITHUB_OUTPUT
             echo "✅ No open PRs with label \"offsets\"."
           fi
-          
+
       - name: Notify Slack on Success
         if: ${{ steps.verify.outputs.status == 'success' }}
         env:
@@ -49,7 +49,7 @@ jobs:
             "description": "✅ No open offset PRs in `${{ matrix.repo }}`",
             "tag": "verify-offsets-success"
           }' $SLACK_WEBHOOK_URL
-  
+
       - name: Notify Slack on Failure
         if: ${{ failure() }}
         env:
@@ -63,7 +63,7 @@ jobs:
             \"description\": \"❌ ERROR: Open offset PRs found in \`${{ matrix.repo }}\`\n\n$pr_links_formatted\",
             \"link\": \"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}\",
             \"tag\": \"verify-offsets-failure\"
-          }" $SLACK_WEBHOOK_URL      
+          }" $SLACK_WEBHOOK_URL
 
   verify-dependencies-sync:
     needs: verify-offsets
@@ -94,7 +94,7 @@ jobs:
             echo "status=success" >> $GITHUB_OUTPUT
             echo "✅ No open PRs with label \"dependencies-syncer-bot\"."
           fi
-          
+
       - name: Notify Slack on Success
         if: ${{ steps.verify.outputs.status == 'success' }}
         env:
@@ -104,7 +104,7 @@ jobs:
             "description": "✅ No open dependencies-syncer-bot PRs in `${{ matrix.repo }}`",
             "tag": "verify-dependencies-sync-success"
           }' $SLACK_WEBHOOK_URL
-  
+
       - name: Notify Slack on Failure
         if: ${{ failure() }}
         env:
@@ -118,7 +118,7 @@ jobs:
             \"description\": \"❌ ERROR: Open depenencies-syncer-bot PRs found in \`${{ matrix.repo }}\`\n\n$pr_links_formatted\",
             \"link\": \"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}\",
             \"tag\": \"verify-dependencies-sync-failure\"
-          }" $SLACK_WEBHOOK_URL  
+          }" $SLACK_WEBHOOK_URL
 
   print-tag:
     needs: verify-dependencies-sync
@@ -248,7 +248,7 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-      
+
       - id: gcp-auth
         name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
@@ -296,11 +296,6 @@ jobs:
                 matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
                 matrix.service == 'operator' && format('operator/{0}', matrix.dockerfile) ||
                 matrix.dockerfile }}
-          context: >-
-            ${{
-              (matrix.service == 'collector' && 'collector') ||
-              '.'
-            }}
 
       - name: Notify Slack End
         env:
