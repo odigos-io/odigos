@@ -285,6 +285,22 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 								SuccessThreshold:    0,
 								FailureThreshold:    0,
 							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/readyz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: 8081,
+										},
+									},
+								},
+								InitialDelaySeconds: 15,
+								TimeoutSeconds:      0,
+								PeriodSeconds:       20,
+								SuccessThreshold:    0,
+								FailureThreshold:    0,
+							},
 							SecurityContext: &corev1.SecurityContext{},
 						},
 					},
