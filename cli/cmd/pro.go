@@ -433,7 +433,7 @@ func init() {
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
 	centralCmd.AddCommand(portForwardCentralCmd)
-
+	// migrate subcommand
 	proCmd.AddCommand(migrateCmd)
 	migrateCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	migrateCmd.MarkFlagRequired("onprem-token")
