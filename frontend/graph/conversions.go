@@ -1,10 +1,13 @@
 package graph
 
 import (
+	"context"
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/services"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,7 +32,9 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	return &str
 }
 
-func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationConfig) *model.K8sActualSource {
+func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, source *v1alpha1.Source) (*model.K8sActualSource, error) {
+	selected := true
+	dataStreamNames := services.GetSourceDataStreamNames(source)
 	var containers []*model.SourceContainer
 
 	// Map the containers runtime details
@@ -64,11 +69,13 @@ func instrumentationConfigToActualSource(instruConfig v1alpha1.InstrumentationCo
 		Namespace:         instruConfig.Namespace,
 		Kind:              k8sKindToGql(instruConfig.OwnerReferences[0].Kind),
 		Name:              instruConfig.OwnerReferences[0].Name,
-		NumberOfInstances: nil,
+		Selected:          &selected,
+		DataStreamNames:   dataStreamNames,
 		OtelServiceName:   &instruConfig.Spec.ServiceName,
+		NumberOfInstances: nil,
 		Containers:        containers,
 		Conditions:        convertConditions(instruConfig.Status.Conditions),
-	}
+	}, nil
 }
 
 func convertConditions(conditions []v1.Condition) []*model.Condition {
@@ -81,24 +88,8 @@ func convertConditions(conditions []v1.Condition) []*model.Condition {
 				message = string(c.Reason)
 			}
 
-			var status model.ConditionStatus
-
-			switch c.Status {
-			case v1.ConditionUnknown:
-				status = model.ConditionStatusLoading
-			case v1.ConditionTrue:
-				status = model.ConditionStatusSuccess
-			case v1.ConditionFalse:
-				status = model.ConditionStatusError
-			}
-
-			// force "disabled" status ovverrides for certain "reasons"
-			if v1alpha1.IsReasonStatusDisabled(reason) {
-				status = model.ConditionStatusDisabled
-			}
-
 			result = append(result, &model.Condition{
-				Status:             status,
+				Status:             services.TransformConditionStatus(c.Status, c.Type, reason),
 				Type:               c.Type,
 				Reason:             &reason,
 				Message:            &message,

@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: odigos-scheduler
+    odigos.io/system-object: "true"
   name: odigos-scheduler
   namespace: {{ .Release.Namespace }}
 spec:
@@ -17,6 +18,10 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-scheduler
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       containers:
       - args:
           - --health-probe-bind-address=:8081

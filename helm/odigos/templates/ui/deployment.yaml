@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: odigos-ui
+    odigos.io/system-object: "true"
   name: odigos-ui
   namespace: {{ .Release.Namespace }}
 spec:
@@ -17,6 +18,10 @@ spec:
       labels:
         app: odigos-ui
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       containers:
       - name: ui
         {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
@@ -39,6 +44,17 @@ spec:
         ports:
           - containerPort: 3000
             name: ui
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 3000
+          periodSeconds: 10
         resources:
           limits:
             cpu: 500m
@@ -50,7 +66,7 @@ spec:
           allowPrivilegeEscalation: false
         volumeMounts:
           - name: ui-db-storage
-            mountPath: /data          
+            mountPath: /data
       securityContext:
         runAsNonRoot: true
       serviceAccountName: odigos-ui

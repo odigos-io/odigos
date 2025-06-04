@@ -2,7 +2,6 @@ import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
 import { TEST_CONNECTION_MUTATION } from '@/graphql';
 import { useNotificationStore } from '@odigos/ui-kit/store';
-import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { Crud, StatusType, type DestinationFormData } from '@odigos/ui-kit/types';
 
 interface TestConnectionResponse {
@@ -29,12 +28,10 @@ export const useTestConnection = () => {
     },
   );
 
-  const testConnection = (destination: DestinationFormData) => {
-    if (isReadonly) {
-      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, true);
-    } else {
-      testConnectionMutation({ variables: { destination: { ...destination, fields: destination.fields.map((f) => ({ ...f, value: f.value || '' })) } } });
-    }
+  const testConnection = async (destination: DestinationFormData) => {
+    const { data } = await testConnectionMutation({ variables: { destination: { ...destination, fields: destination.fields.map((f) => ({ ...f, value: f.value || '' })) } } });
+
+    return data?.testConnectionForDestination;
   };
 
   return {

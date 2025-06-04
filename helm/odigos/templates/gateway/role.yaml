@@ -1,0 +1,18 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: odigos-gateway
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    odigos.io/system-object: "true"
+rules:
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+    resourceNames:
+      - odigos-gateway
+    verbs:
+      - get
+      - list
+      - watch

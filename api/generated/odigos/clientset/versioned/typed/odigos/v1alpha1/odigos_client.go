@@ -27,6 +27,7 @@ import (
 
 type OdigosV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	ActionsGetter
 	CollectorsGroupsGetter
 	DestinationsGetter
 	InstrumentationConfigsGetter
@@ -40,6 +41,10 @@ type OdigosV1alpha1Interface interface {
 // OdigosV1alpha1Client is used to interact with features provided by the odigos.io group.
 type OdigosV1alpha1Client struct {
 	restClient rest.Interface
+}
+
+func (c *OdigosV1alpha1Client) Actions(namespace string) ActionInterface {
+	return newActions(c, namespace)
 }
 
 func (c *OdigosV1alpha1Client) CollectorsGroups(namespace string) CollectorsGroupInterface {
@@ -79,9 +84,7 @@ func (c *OdigosV1alpha1Client) Sources(namespace string) SourceInterface {
 // where httpClient was generated with rest.HTTPClientFor(c).
 func NewForConfig(c *rest.Config) (*OdigosV1alpha1Client, error) {
 	config := *c
-	if err := setConfigDefaults(&config); err != nil {
-		return nil, err
-	}
+	setConfigDefaults(&config)
 	httpClient, err := rest.HTTPClientFor(&config)
 	if err != nil {
 		return nil, err
@@ -93,9 +96,7 @@ func NewForConfig(c *rest.Config) (*OdigosV1alpha1Client, error) {
 // Note the http client provided takes precedence over the configured transport values.
 func NewForConfigAndClient(c *rest.Config, h *http.Client) (*OdigosV1alpha1Client, error) {
 	config := *c
-	if err := setConfigDefaults(&config); err != nil {
-		return nil, err
-	}
+	setConfigDefaults(&config)
 	client, err := rest.RESTClientForConfigAndClient(&config, h)
 	if err != nil {
 		return nil, err
@@ -118,7 +119,7 @@ func New(c rest.Interface) *OdigosV1alpha1Client {
 	return &OdigosV1alpha1Client{c}
 }
 
-func setConfigDefaults(config *rest.Config) error {
+func setConfigDefaults(config *rest.Config) {
 	gv := odigosv1alpha1.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
@@ -127,8 +128,6 @@ func setConfigDefaults(config *rest.Config) error {
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
 	}
-
-	return nil
 }
 
 // RESTClient returns a RESTClient that is used to communicate

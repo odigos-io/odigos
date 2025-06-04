@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: odigos-autoscaler
+  labels:
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - odigos.io
@@ -19,6 +21,22 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - actions
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - actions/status
+    verbs:
+      - get
+      - patch
+      - update
 {{- if .Values.openshift.enabled }}
   - apiGroups:
       - odigos.io
@@ -29,3 +47,19 @@ rules:
       - patch
       - update
 {{- end }}
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+    resourceNames:
+      - action-validating-webhook-configuration
+    verbs:
+      - update

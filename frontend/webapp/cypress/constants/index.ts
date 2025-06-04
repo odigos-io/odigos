@@ -1,7 +1,9 @@
 export const ROUTES = {
   ROOT: '/',
+  CHOOSE_STREAM: '/choose-stream',
   CHOOSE_SOURCES: '/choose-sources',
   CHOOSE_DESTINATION: '/choose-destination',
+  SETUP_SUMMARY: '/setup-summary',
   OVERVIEW: '/overview',
 };
 
@@ -14,10 +16,12 @@ export const CRD_NAMES = {
     'addclusterinfos.actions.odigos.io',
     'deleteattributes.actions.odigos.io',
     'renameattributes.actions.odigos.io',
+    'piimaskings.actions.odigos.io',
     'errorsamplers.actions.odigos.io',
     'latencysamplers.actions.odigos.io',
     'probabilisticsamplers.actions.odigos.io',
-    'piimaskings.actions.odigos.io',
+    'servicenamesamplers.actions.odigos.io',
+    'spanattributesamplers.actions.odigos.io',
   ],
   INSTRUMENTATION_RULE: 'instrumentationrules.odigos.io',
 };
@@ -29,21 +33,32 @@ export const NAMESPACES = {
 
 export const SELECTED_ENTITIES = {
   NAMESPACE: NAMESPACES.DEFAULT,
-  NAMESPACE_SOURCES: ['coupon', 'frontend', 'inventory', 'membership', 'pricing'],
+  NAMESPACE_SOURCES: ['coupon', 'currency', 'frontend', 'inventory', 'membership', 'pricing'],
   DESTINATION: {
     TYPE: 'jaeger',
     DISPLAY_NAME: 'Jaeger',
     AUTOFILL_FIELD: 'JAEGER_URL',
     AUTOFILL_VALUE: 'jaeger.tracing:4317',
   },
-  ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'RenameAttribute', 'ErrorSampler', 'LatencySampler', 'ProbabilisticSampler', 'PiiMasking'],
+  ACTIONS: [
+    'K8sAttributesResolver',
+    'AddClusterInfo',
+    'DeleteAttribute',
+    'RenameAttribute',
+    'PiiMasking',
+    'ErrorSampler',
+    'LatencySampler',
+    'ProbabilisticSampler',
+    'ServiceNameSampler',
+    'SpanAttributeSampler',
+  ],
   INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };
 
 export const DATA_IDS = {
   SELECT_NAMESPACE: `[data-id=namespace-${SELECTED_ENTITIES.NAMESPACE}]`,
   SELECT_SOURCE: (sourceName: string) => `[data-id=source-${sourceName}]`,
-  SELECT_DESTINATION: `[data-id=select-potential-destination-${SELECTED_ENTITIES.DESTINATION.TYPE}]`,
+  SELECT_DESTINATION: `[data-id=select-DetectedbyOdigos-destination-${SELECTED_ENTITIES.DESTINATION.TYPE}]`,
   SELECT_DESTINATION_AUTOFILL_FIELD: `[data-id=${SELECTED_ENTITIES.DESTINATION.AUTOFILL_FIELD}]`,
 
   ADD_SOURCE: '[data-id=add-Source]',
@@ -90,7 +105,7 @@ export const BUTTONS = {
   BACK: 'BACK',
   NEXT: 'NEXT',
   DONE: 'DONE',
-  ADD_DESTINATION: 'ADD Destination',
+  ADD_DESTINATION: 'Add Destination',
   UNINSTRUMENT: 'Uninstrument',
 };
 
@@ -107,7 +122,7 @@ export const TEXTS = {
   NO_RESOURCES: (namespace: string) => `No resources found in ${namespace} namespace.`,
   NO_SOURCES_SELECTED: 'No sources selected. Please go back to select sources.',
 
-  SOURCE_WARN_MODAL_TITLE: 'Uninstrument 5 sources',
+  SOURCE_WARN_MODAL_TITLE: (count: number) => `Uninstrument ${count} sources`,
   SOURCE_WARN_MODAL_NOTE: "You're about to uninstrument the last Source",
   DESTINATION_WARN_MODAL_TITLE: `Delete Destination (${CYPRESS_TEST})`,
   DESTINATION_WARN_MODAL_NOTE: "You're about to delete the last Destination",

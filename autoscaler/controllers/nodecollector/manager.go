@@ -7,8 +7,57 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
+
+type receiverSignalsChangedPredicate struct {
+}
+
+func (o receiverSignalsChangedPredicate) Create(e event.CreateEvent) bool {
+	if e.Object == nil {
+		return false
+	}
+
+	return true
+}
+
+func (i receiverSignalsChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectNew == nil || e.ObjectOld == nil {
+		return false
+	}
+
+	oldCollectorGroup, ok := e.ObjectOld.(*odigosv1.CollectorsGroup)
+	if !ok {
+		return false
+	}
+	newCollectorGroup, ok := e.ObjectNew.(*odigosv1.CollectorsGroup)
+	if !ok {
+		return false
+	}
+
+	// check if the receiver signals array has changed (len or content)
+	if len(oldCollectorGroup.Status.ReceiverSignals) != len(newCollectorGroup.Status.ReceiverSignals) {
+		return true
+	}
+	for i := 0; i < len(oldCollectorGroup.Status.ReceiverSignals); i++ {
+		if oldCollectorGroup.Status.ReceiverSignals[i] != newCollectorGroup.Status.ReceiverSignals[i] {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (i receiverSignalsChangedPredicate) Delete(e event.DeleteEvent) bool {
+	return false
+}
+
+func (i receiverSignalsChangedPredicate) Generic(e event.GenericEvent) bool {
+	return false
+}
+
+var _ predicate.Predicate = &receiverSignalsChangedPredicate{}
 
 func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion string) error {
 	err := builder.
@@ -19,7 +68,11 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		Owns(&corev1.ConfigMap{}). // in case the configmap of the node-collector is deleted or modified for any reason, this will reconcile and recreate it
 		// we assume everything in the collectorsgroup spec is the configuration for the collectors to generate.
 		// thus, we need to monitor any change to the spec which is what the generation field is for.
-		WithEventFilter(predicate.And(&odigospredicate.OdigosCollectorsGroupNodePredicate, &predicate.GenerationChangedPredicate{})).
+		WithEventFilter(
+			predicate.Or(
+				predicate.And(&odigospredicate.OdigosCollectorsGroupNodePredicate, &predicate.GenerationChangedPredicate{}),
+				predicate.And(&odigospredicate.OdigosCollectorsGroupClusterPredicate, &receiverSignalsChangedPredicate{}),
+			)).
 		Complete(&CollectorsGroupReconciler{
 			Client:           mgr.GetClient(),
 			Scheme:           mgr.GetScheme(),

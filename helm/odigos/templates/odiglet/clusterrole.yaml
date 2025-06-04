@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: odiglet
+  labels:
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - ''
@@ -34,6 +36,7 @@ rules:
       - list
       - watch
       - patch
+      - update
   - apiGroups:
       - odigos.io
     resources:

@@ -64,9 +64,9 @@ WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.9.0
 ARG TARGETARCH
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        echo "arm64" > /tmp/arch_suffix; \
+    echo "arm64" > /tmp/arch_suffix; \
     else \
-        echo "x64" > /tmp/arch_suffix; \
+    echo "x64" > /tmp/arch_suffix; \
     fi
 
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
@@ -85,7 +85,27 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
     mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
 
-FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.7 AS builder
+
+# PHP
+FROM --platform=$BUILDPLATFORM maniator/gh AS php-agents
+WORKDIR /php-agents
+ARG TARGETARCH
+ARG PHP_AGENT_VERSION="v0.1.21"
+ARG PHP_VERSIONS="8.0 8.1 8.2 8.3 8.4"
+ENV PHP_VERSIONS=${PHP_VERSIONS}
+# Clone agents repo (contains pre-compiled binaries, and pre-installed dependencies for each PHP version)
+RUN git clone https://github.com/odigos-io/opentelemetry-php \
+    && cd opentelemetry-php \
+    && git checkout tags/${PHP_AGENT_VERSION}
+# Move the pre-compiled binaries to the correct directories
+RUN for v in ${PHP_VERSIONS}; do \
+    mv opentelemetry-php/$v/bin/${TARGETARCH}/* opentelemetry-php/$v/; \
+    rm -rf opentelemetry-php/$v/bin; \
+    done
+
+
+######### ODIGLET #########
+FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
@@ -120,6 +140,17 @@ COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-na
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
+
+# PHP
+COPY --from=php-agents /php-agents/opentelemetry-php/8.0 /instrumentations/php/8.0
+COPY --from=php-agents /php-agents/opentelemetry-php/8.1 /instrumentations/php/8.1
+COPY --from=php-agents /php-agents/opentelemetry-php/8.2 /instrumentations/php/8.2
+COPY --from=php-agents /php-agents/opentelemetry-php/8.3 /instrumentations/php/8.3
+COPY --from=php-agents /php-agents/opentelemetry-php/8.4 /instrumentations/php/8.4
+
+# loader
+ARG ODIGOS_LOADER_VERSION=v0.0.3
+RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest
 ARG VERSION

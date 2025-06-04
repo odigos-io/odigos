@@ -1,0 +1,31 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: php-community
+spec:
+  name: php-community
+  language: php
+  runtimeEnvironments:
+    - name: php
+      supportedVersions: '>=8.0,<8.5'
+  displayName: 'PHP Community Native Instrumentation'
+  description: |
+    This distribution is for PHP applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  environmentVariables:
+    otlpHttpLocalNode: true
+    staticVariables:
+      # How to use PHP_INI_SCAN_DIR env with colon (:) separator...
+      # See https://github.com/odigos-io/opentelemetry-php?tab=readme-ov-file#deploying-an-agent
+      - envName: PHP_INI_SCAN_DIR
+        envValue: ':/var/odigos/php/{{RUNTIME_VERSION_MAJOR_MINOR}}'
+      - envName: OTEL_PHP_AUTOLOAD_ENABLED
+        envValue: 'true'
+      - envName: OTEL_EXPORTER_OTLP_PROTOCOL
+        envValue: 'http/protobuf'
+      - envName: OTEL_PROPAGATORS
+        envValue: 'tracecontext,baggage'
+  runtimeAgent:
+    directoryNames:
+      - '{{ODIGOS_AGENTS_DIR}}/php'
+    device: 'instrumentation.odigos.io/generic'
+    k8sAttrsViaEnvVars: true

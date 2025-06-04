@@ -7,6 +7,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: central-proxy
+    odigos.io/system-object: "true"
 spec:
   replicas: 1
   selector:
@@ -18,6 +19,10 @@ spec:
         app.kubernetes.io/name: central-proxy
     spec:
       serviceAccountName: central-proxy
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       containers:
         - name: central-proxy
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}

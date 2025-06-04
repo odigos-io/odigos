@@ -3,6 +3,7 @@ kind: DaemonSet
 metadata:
   labels:
     app.kubernetes.io/name: odiglet
+    odigos.io/system-object: "true"
   name: odiglet
   namespace: {{ .Release.Namespace }}
 spec:
@@ -21,6 +22,10 @@ spec:
       labels:
         app.kubernetes.io/name: odiglet
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       initContainers:
         - name: init
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
@@ -61,6 +66,10 @@ spec:
                 configMapKeyRef:
                   key: ODIGOS_TIER
                   name: odigos-deployment
+            - name: CURRENT_NS
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
       containers:
         - name: odiglet
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
@@ -74,10 +83,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}       
+            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
             - name: CONTAINER_RUNTIME_SOCK
               value: {{ .Values.odiglet.customContainerRuntimeSocketPath }}
-            {{- end }}                  
+            {{- end }}
             - name: NODE_IP
               valueFrom:
                 fieldRef:
@@ -90,7 +99,7 @@ spec:
               value: info
             {{- if .Values.onPremToken }}
             - name: OTEL_GO_OFFSETS_FILE
-              value: /offsets/offset_results.json
+              value: /offsets/go_offset_results.json
             - name: ODIGOS_ONPREM_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -110,7 +119,7 @@ spec:
           volumeMounts:
             - name: run-dir
               mountPath: /run
-            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}              
+            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
             - name: custom-container-runtime-socket
               mountPath: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
             {{- end }}
@@ -133,7 +142,9 @@ spec:
             - name: odigos-go-offsets
               mountPath: /offsets
             {{- end }}
+      {{- if semverCompare "<1.26.0" .Capabilities.KubeVersion.Version }}
       hostNetwork: true
+      {{- end}}
       hostPID: true
       dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical

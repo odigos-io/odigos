@@ -5,17 +5,16 @@ import (
 )
 
 const (
-	CurrentNamespaceEnvVar        = "CURRENT_NS"
-	OdigosVersionEnvVarName       = "ODIGOS_VERSION"
-	OdigosTierEnvVarName          = "ODIGOS_TIER"
-	DefaultOdigosNamespace        = "odigos-system"
-	DefaultOdigosCentralNamespace = "odigos-central"
-	OdigosConfigurationName       = "odigos-config"
-	OdigosEffectiveConfigName     = "effective-config"
-	OdigosConfigurationFileName   = "config.yaml"
-	OTLPPort                      = 4317
-	OTLPHttpPort                  = 4318
-	PprofOdigosPort               = 6060
+	CurrentNamespaceEnvVar      = "CURRENT_NS"
+	OdigosVersionEnvVarName     = "ODIGOS_VERSION"
+	OdigosTierEnvVarName        = "ODIGOS_TIER"
+	DefaultOdigosNamespace      = "odigos-system"
+	OdigosConfigurationName     = "odigos-config"
+	OdigosEffectiveConfigName   = "effective-config"
+	OdigosConfigurationFileName = "config.yaml"
+	OTLPPort                    = 4317
+	OTLPHttpPort                = 4318
+	PprofOdigosPort             = 6060
 
 	// Deprecated: Sources are used to mark workloads for instrumentation.
 	OdigosInstrumentationLabel = "odigos-instrumentation"
@@ -25,6 +24,9 @@ const (
 
 	// Deprecated: Sources are used to mark workloads for instrumentation.
 	InstrumentationDisabled = "disabled"
+
+	// DefaultDataStream is the default data stream name used for telemetry data.
+	DefaultDataStream = "default"
 
 	// Deprecated: reported name is set via the Source CR.
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
@@ -50,6 +52,10 @@ const (
 	Destination             = "Destination"
 
 	GoOffsetsPublicURL = "https://storage.googleapis.com/odigos-cloud/offset_results_min.json"
+
+	LdPreloadEnvVarName = "LD_PRELOAD"
+	OdigosLoaderDirName = "loader"
+	OdigosLoaderName    = "loader.so"
 )
 
 // Odigos config properties
@@ -66,7 +72,13 @@ const (
 	IgnoredContainersProperty         = "ignored-containers"
 	MountMethodProperty               = "mount-method"
 	CentralBackendURLProperty         = "central-backend-url"
-	CustomContainerRunetimeSocketPath = "custom-container-runtime-socket-path"
+	CustomContainerRuntimeSocketPath  = "custom-container-runtime-socket-path"
+	K8sNodeLogsDirectory              = "k8s-node-logs-directory"
+	AgentEnvVarsInjectionMethod       = "agent-env-vars-injection-method"
+	ClusterNameProperty               = "cluster-name"
+	UserInstrumentationEnvsProperty   = "user-instrumentation-envs"
+	NodeSelectorProperty              = "node-selector"
+	KarpenterEnabledProperty          = "karpenter-enabled"
 )
 
 var (
@@ -82,4 +94,14 @@ var (
 	// Python related ones
 	OpampServerHostEnvName = "ODIGOS_OPAMP_SERVER_HOST"
 	OpAMPPort              = 4320
+)
+
+// Odigos Central related consts
+const (
+	DefaultOdigosCentralNamespace = "odigos-central"
+)
+
+// Karpenter related consts
+const (
+	KarpenterStartupTaintKey = "odigos.io/needs-init"
 )

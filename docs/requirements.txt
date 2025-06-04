@@ -1,11 +1,11 @@
-certifi==2025.1.31
-charset-normalizer==3.4.1
+certifi==2025.4.26
+charset-normalizer==3.4.2
 idna==3.10
 numpy==2.2.3
-packaging==24.2
+packaging==25.0
 PyYAML==6.0.2
 requests==2.32.3
 scipy==1.15.2
-svgpathtools==1.6.1
+svgpathtools==1.7.0
 svgwrite==1.4.3
 urllib3==2.4.0

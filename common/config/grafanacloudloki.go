@@ -23,7 +23,7 @@ func (g *GrafanaCloudLoki) DestType() common.DestinationType {
 
 func (g *GrafanaCloudLoki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	if !isLoggingEnabled(dest) {
-		return nil, errors.New("Logging not enabled, gateway will not be configured for grafana cloud Loki")
+		return nil, errors.New("logging not enabled, gateway will not be configured for grafana cloud Loki")
 	}
 
 	lokiUrl, exists := dest.GetConfig()[grafanaCloudLokiEndpointKey]

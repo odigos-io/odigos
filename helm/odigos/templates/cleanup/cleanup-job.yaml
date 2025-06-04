@@ -1,3 +1,4 @@
+{{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -6,6 +7,8 @@ metadata:
   annotations:
     "helm.sh/hook": pre-delete
     "helm.sh/hook-delete-policy": hook-succeeded
+  labels:
+    odigos.io/system-object: "true"
 spec:
   ttlSecondsAfterFinished: 30
   activeDeadlineSeconds: 240
@@ -15,10 +18,6 @@ spec:
       serviceAccountName: cleanup-sa
       containers:
       - name: cleanup
-        {{- if .Values.imagePrefix }}
-        image: "{{ .Values.imagePrefix }}/{{ .Values.cli.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        {{- else }}
-        image: "{{ .Values.cli.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        {{- end }}
-        args: ["uninstall", "--yes"]
+        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "cli" "Tag" $imageTag) }}
+        args: ["uninstall", "--yes", "--instrumentation-only"]
       restartPolicy: Never
