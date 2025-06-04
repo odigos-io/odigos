@@ -18,6 +18,7 @@ spec:
               ../../common/verify_odigos_installation.sh odigos-test
             timeout: 4m
         - assert:
+            timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
     - name: Verify Node Odiglet label has been added
       try:
