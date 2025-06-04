@@ -138,10 +138,3 @@ data:
     {{- if .Values.karpenter.enabled }}
     karpenterEnabled: {{ .Values.karpenter.enabled }}
     {{- end }}
-    {{- if .Values.autoRollback.disabled }}
-    RollbackDisabled: {{ .Values.autoRollback.disabled }}
-    {{- end }}
-    {{- if .Values.autoRollback.graceTime }}
-    RollbackGraceTime: {{ .Values.autoRollback.graceTime }}
-    {{- end }}
-

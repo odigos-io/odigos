@@ -77,7 +77,6 @@ spec:
     - name: '[2 - Workload Instrumentation] Simple-demo instrumented after destination added'
       try:
         - assert:
-            timeout: 5m
             file: ../../common/assert/simple-demo-instrumented.yaml
         - assert:
             timeout: 2m

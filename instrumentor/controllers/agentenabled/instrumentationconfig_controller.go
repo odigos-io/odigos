@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos/distros"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -15,14 +14,5 @@ type InstrumentationConfigReconciler struct {
 }
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	conf, err := k8sutils.GetCurrentOdigosConfig(ctx, r.Client)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	rollbackDisabled := false
-	if conf.RollbackDisabled != nil {
-		rollbackDisabled = *conf.RollbackDisabled
-	}
-
-	return reconcileWorkload(ctx, r.Client, req.Name, req.Namespace, r.DistrosProvider, rollbackDisabled)
+	return reconcileWorkload(ctx, r.Client, req.Name, req.Namespace, r.DistrosProvider)
 }

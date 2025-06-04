@@ -79,8 +79,6 @@ const (
 	UserInstrumentationEnvsProperty   = "user-instrumentation-envs"
 	NodeSelectorProperty              = "node-selector"
 	KarpenterEnabledProperty          = "karpenter-enabled"
-	RollbackDisabledProperty          = "instrumentation-auto-rollback-disabled"
-	RollbackGraceTimeProperty         = "instrumentation-auto-rollback-grace-time"
 )
 
 var (
@@ -106,8 +104,4 @@ const (
 // Karpenter related consts
 const (
 	KarpenterStartupTaintKey = "odigos.io/needs-init"
-)
-
-const (
-	AutoRollbackGraceTime = "5m"
 )
