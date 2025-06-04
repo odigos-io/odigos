@@ -7,6 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -19,13 +27,6 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 type PodsWebhook struct {
@@ -97,7 +98,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	for i := range pod.Spec.Containers {
 		podContainerSpec := &pod.Spec.Containers[i]
 		containerConfig := ic.Spec.GetContainerAgentConfig(podContainerSpec.Name)
-		runtimeDetails := ic.Status.GetRuntimeDetailsForContainer(corev1.Container(*podContainerSpec))
+		runtimeDetails := ic.Status.GetRuntimeDetailsForContainer(*podContainerSpec)
 		if containerConfig == nil {
 			// no config is found for this container, so skip (don't inject anything to it)
 			continue
@@ -244,7 +245,6 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		}
 		// TODO: once we have a flag to enable/disable device injection, we should check it here.
 		if distroMetadata.RuntimeAgent.Device != nil {
-
 			// amir 17 feb 2025, this is here only for migration.
 			// even if mount method is not device, we still need to inject the deprecated agent specific device
 			// while we remove them one by one
@@ -273,7 +273,6 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 }
 
 func getRelevantOtelSDKs(ctx context.Context, kubeClient client.Client, podWorkload k8sconsts.PodWorkload) (map[common.ProgrammingLanguage]common.OtelSdk, error) {
-
 	instrumentationRules := odigosv1.InstrumentationRuleList{}
 	if err := kubeClient.List(ctx, &instrumentationRules); err != nil {
 		return nil, err

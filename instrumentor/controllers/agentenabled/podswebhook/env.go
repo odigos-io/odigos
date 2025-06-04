@@ -3,13 +3,14 @@ package podswebhook
 import (
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
-	corev1 "k8s.io/api/core/v1"
 )
 
 type EnvVarNamesMap map[string]struct{}
@@ -89,7 +90,7 @@ func InjectOtlpHttpEndpointEnvVar(existingEnvNames EnvVarNamesMap, container *co
 func InjectUserEnvForLang(odigosConfig *common.OdigosConfiguration, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig) {
 	languageSpecificEnvs := odigosConfig.UserInstrumentationEnvs.Languages
 
-	// Check for conatiner language and inject env vars if they not exists
+	// Check for container language and inject env vars if they not exists
 	for _, containerDetailes := range ic.Status.RuntimeDetailsByContainer {
 		langConfig, exists := languageSpecificEnvs[containerDetailes.Language]
 		if !exists || !langConfig.Enabled {

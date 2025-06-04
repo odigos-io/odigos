@@ -3,13 +3,14 @@ package agentenabled
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // fetches the relevant resources for reconciliation of the current workload object.
@@ -21,7 +22,6 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 	*[]odigosv1.InstrumentationRule,
 	*common.OdigosConfiguration,
 	error) {
-
 	cg, err := getCollectorsGroup(ctx, c)
 	if err != nil {
 		return nil, nil, nil, err

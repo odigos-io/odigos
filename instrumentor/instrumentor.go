@@ -11,6 +11,12 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/open-policy-agent/cert-controller/pkg/rotator"
+	"golang.org/x/sync/errgroup"
+	"k8s.io/apimachinery/pkg/types"
+	controllerruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
@@ -20,11 +26,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
-	"github.com/open-policy-agent/cert-controller/pkg/rotator"
-	"golang.org/x/sync/errgroup"
-	"k8s.io/apimachinery/pkg/types"
-	controllerruntime "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
 
 type Instrumentor struct {
@@ -48,13 +49,17 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 
 	// This temporary migration step ensures the runtimeDetails migration in the instrumentationConfig is performed.
 	// This code can be removed once the migration is confirmed to be successful.
-	mgr.Add(&runtimemigration.MigrationRunnable{KubeClient: mgr.GetClient(), Logger: opts.Logger})
+	if err := mgr.Add(&runtimemigration.MigrationRunnable{KubeClient: mgr.GetClient(), Logger: opts.Logger}); err != nil {
+		return nil, err
+	}
 
 	// remove the deprecated webhook secret if it exists
-	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.Logger, Secret: types.NamespacedName{
+	if err := mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.Logger, Secret: types.NamespacedName{
 		Namespace: env.GetCurrentNamespace(),
 		Name:      k8sconsts.DeprecatedInstrumentorWebhookSecretName,
-	}})
+	}}); err != nil {
+		return nil, err
+	}
 
 	// setup the certificate rotator
 	rotatorSetupFinished := make(chan struct{})

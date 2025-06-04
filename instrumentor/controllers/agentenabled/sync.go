@@ -6,6 +6,13 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-version"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -14,12 +21,6 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type agentInjectedStatusCondition struct {
@@ -122,7 +123,6 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider) (*agentInjectedStatusCondition, error) {
-
 	cg, irls, effectiveConfig, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
@@ -177,7 +177,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		if err != nil {
 			return nil, err
 		}
-		ic.Spec.AgentsMetaHash = string(agentsDeploymentHash)
+		ic.Spec.AgentsMetaHash = agentsDeploymentHash
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
 			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
@@ -214,7 +214,6 @@ func containerInstrumentationConfig(containerName string,
 	runtimeDetails odigosv1.RuntimeDetailsByContainer,
 	distroPerLanguage map[common.ProgrammingLanguage]string,
 	distroGetter *distros.Getter) odigosv1.ContainerAgentConfig {
-
 	// check unknown language first. if language is not supported, we can skip the rest of the checks.
 	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
 		return odigosv1.ContainerAgentConfig{
@@ -364,7 +363,6 @@ func containerInstrumentationConfig(containerName string,
 
 func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
 	instrumentationRules *[]odigosv1.InstrumentationRule, dg *distros.Getter) map[common.ProgrammingLanguage]string {
-
 	distrosPerLanguage := make(map[common.ProgrammingLanguage]string, len(defaultDistros))
 	for lang, distroName := range defaultDistros {
 		distrosPerLanguage[lang] = distroName
@@ -407,7 +405,6 @@ func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
 // - reason: AgentInjectionReason enum value that represents the reason why we are waiting
 // - message: human-readable message that describes the reason why we are waiting
 func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.InstrumentationConfig) (bool, odigosv1.AgentEnabledReason, string) {
-
 	// Check if the node collector is ready
 	isNodeCollectorReady, message := isNodeCollectorReady(cg)
 	if !isNodeCollectorReady {

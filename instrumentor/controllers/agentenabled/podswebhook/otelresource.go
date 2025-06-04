@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 const otelServiceNameEnvVarName = "OTEL_SERVICE_NAME"
@@ -61,7 +62,6 @@ func getResourceAttributesEnvVarValue(ra []resourceAttribute) string {
 }
 
 func InjectOtelResourceAndServiceNameEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, distroName string, pw k8sconsts.PodWorkload, serviceName string) EnvVarNamesMap {
-
 	// OTEL_SERVICE_NAME
 	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, otelServiceNameEnvVarName, serviceName, nil)
 

@@ -1,8 +1,9 @@
 package predicates
 
 import (
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 type OtelSdkInstrumentationRulePredicate struct{}

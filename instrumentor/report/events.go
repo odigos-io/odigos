@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 )
 
 const (
@@ -157,6 +158,10 @@ func report(ctx context.Context, c client.Client, installationId string) error {
 		return err
 	}
 
-	_, err = http.Post(endpoint, "application/json", bytes.NewBuffer(jsonReport))
-	return err
+	resp, err := http.Post(endpoint, "application/json", bytes.NewBuffer(jsonReport))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
 }

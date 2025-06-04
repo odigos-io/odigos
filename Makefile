@@ -6,7 +6,7 @@ ORG ?= registry.odigos.io
 GOLANGCI_LINT_VERSION ?= v2.1.6
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
 GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
-LINT_CMD = golangci-lint run -c ../.golangci.yml
+LINT_CMD = golangci-lint run
 ifdef FIX_LINT
     LINT_CMD += --fix
 endif
@@ -36,12 +36,21 @@ ifdef MODULE
 		echo "Error: $(MODULE) is not a Go module (no go.mod found)"; \
 		exit 1; \
 	fi
-	@cd $(MODULE) && $(LINT_CMD) ./...
+	@cd $(MODULE) && \
+	if [ -f .golangci.yml ]; then \
+	$(LINT_CMD) -c .golangci.yml ./...; \
+	else \
+	$(LINT_CMD) -c ../.golangci.yml ./...; \
+	fi
 else
 	@echo "No MODULE specified, running lint for all Go modules..."
 	@for module in $(GO_MODULES); do \
-		echo "Running lint for $$module"; \
-		(cd $$module && $(LINT_CMD) ./...) || exit 1; \
+	echo "Running lint for $$module"; \
+	if [ -f "$$module/.golangci.yml" ]; then \
+	(cd $$module && $(LINT_CMD) -c .golangci.yml ./...) || exit 1; \
+	else \
+	(cd $$module && $(LINT_CMD) -c ../.golangci.yml ./...) || exit 1; \
+	fi; \
 	done
 endif
 
@@ -52,6 +61,7 @@ lint-fix:
 	MODULE=profiles make lint FIX_LINT=true
 	MODULE=destinations make lint FIX_LINT=true
 	MODULE=procdiscovery make lint FIX_LINT=true
+	$(MAKE) -C instrumentor lint FIX_LINT=true
 
 .PHONY: cli-docs
 cli-docs:
