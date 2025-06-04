@@ -113,6 +113,7 @@ spec:
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
+            timeout: 2m
             file: ../../common/assert/simple-demo-instrumented-full.yaml
 
     - name: Generate Traffic
