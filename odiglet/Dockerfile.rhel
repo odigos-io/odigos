@@ -110,6 +110,7 @@ WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
 COPY common/ common/
+COPY destinations/ destinations/
 COPY k8sutils/ k8sutils/
 COPY procdiscovery/ procdiscovery/
 COPY opampserver/ opampserver/

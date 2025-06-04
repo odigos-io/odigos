@@ -53,6 +53,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.126.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.126.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.126.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.126.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.126.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.126.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter v0.126.0
@@ -248,6 +249,7 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/collector/googlemanagedprometheus v0.51.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.50.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.27.0 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/extension/googleclientauthextension v0.51.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.51.0 // indirect
 	github.com/IBM/sarama v1.45.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect

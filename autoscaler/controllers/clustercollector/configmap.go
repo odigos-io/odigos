@@ -10,7 +10,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/destinations/config"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
