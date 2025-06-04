@@ -240,3 +240,63 @@ spec:
         - script:
             content: |
               ../../common/simple_trace_db_query_runner.sh 03-wait-for-trace.yaml --verbose
+
+    - name: '04 - Set XSmall Profile'
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              ../../../cli/odigos profile add size_xs
+              
+              # Wait for deployments to restart and stabilize
+              echo "Waiting for odigos-gateway deployment to rollout..."
+              kubectl rollout status deployment/odigos-gateway -n odigos-test
+              
+              echo "Waiting for odigos-node-collector daemonset to rollout..."
+              kubectl rollout status daemonset/odigos-data-collection -n odigos-test
+
+    - name: '04 - Assert XSmall Profile Resources'
+      try:
+        - assert:
+            timeout: 1m
+            file: 04-assert-xsmall-profile.yaml
+
+    - name: '04 - Generate Traffic with XSmall Profile'
+      try:
+        - script:
+            timeout: 200s
+            content: |
+              set -e
+
+              NAMESPACE="default"
+              DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
+
+              for DEPLOYMENT in $DEPLOYMENTS; do
+                echo "Waiting for deployment $DEPLOYMENT to finish rollout..."
+                kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE
+                if [ $? -ne 0 ]; then
+                  echo "Deployment $DEPLOYMENT failed to finish rollout."
+                  exit 1
+                fi
+              done
+
+              kubectl apply -f 01-generate-traffic.yaml
+              job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+              kubectl wait --for=condition=complete job/$job_name
+              kubectl delete -f 01-generate-traffic.yaml
+
+    - name: '04 - Wait for Traces with XSmall Profile'
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh 01-wait-for-trace.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+              done
+      catch:
+        - script:
+            content: |
+              ../../common/simple_trace_db_query_runner.sh 01-wait-for-trace.yaml --verbose

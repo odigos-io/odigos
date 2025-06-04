@@ -1,0 +1,113 @@
+# Gateway Collector
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-gateway
+  namespace: odigos-test
+spec:
+  template:
+    spec:
+      containers:
+      - name: gateway
+        resources:
+          requests:
+            memory: "225Mi"
+            cpu: "113m"
+          limits:
+            memory: "225Mi"
+            cpu: "225m"
+---
+# Node Collector
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: odigos-data-collection
+  namespace: odigos-test
+spec:
+  template:
+    spec:
+      containers:
+      - name: data-collection
+        resources:
+          requests:
+            memory: "113Mi"
+            cpu: "113m"
+          limits:
+            memory: "225Mi"
+            cpu: "225m"
+---
+# Autoscaler
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-autoscaler
+  namespace: odigos-test
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        resources:
+          requests:
+            memory: "48Mi"
+            cpu: "8m"
+          limits:
+            memory: "384Mi"
+            cpu: "375m"
+---
+# Scheduler
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-scheduler
+  namespace: odigos-test
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        resources:
+          requests:
+            memory: "48Mi"
+            cpu: "8m"
+          limits:
+            memory: "384Mi"
+            cpu: "375m"
+---
+# Instrumentor
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-instrumentor
+  namespace: odigos-test
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        resources:
+          requests:
+            memory: "48Mi"
+            cpu: "8m"
+          limits:
+            memory: "384Mi"
+            cpu: "375m"
+---
+# UI
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-ui
+  namespace: odigos-test
+spec:
+  template:
+    spec:
+      containers:
+      - name: ui
+        resources:
+          requests:
+            memory: "48Mi"
+            cpu: "8m"
+          limits:
+            memory: "384Mi"
+            cpu: "375m" 
