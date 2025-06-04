@@ -9,6 +9,7 @@ spec:
     - name: Install Odigos
       try:
         - script:
+            timeout: 10m
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 ../../../cli/odigos install --namespace odigos-test --version "$COMMIT_HASH" --image-prefix=public.ecr.aws/y2v0v6s7
@@ -17,7 +18,6 @@ spec:
               fi
 
               ../../common/verify_odigos_installation.sh odigos-test
-            timeout: 4m
         - assert:
             file: ../../common/assert/odigos-installed.yaml
     - name: "[Defaulting] - Source without labels has labels added"

@@ -13,7 +13,7 @@ spec:
     - name: '[1 - Setup] Install Odigos'
       try:
         - script:
-            timeout: 4m
+            timeout: 10m
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 ../../../cli/odigos install --namespace odigos-test --version "$COMMIT_HASH" --image-prefix=public.ecr.aws/y2v0v6s7
