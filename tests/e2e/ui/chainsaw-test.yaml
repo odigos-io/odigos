@@ -9,9 +9,12 @@ spec:
     - name: Install Odigos CLI
       try:
         - script:
-            timeout: 3m
+            timeout: 10m
             content: |
               ../../../cli/odigos install --version e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+        - assert:
+            file: ../../common/assert/odigos-installed.yaml
 
     - name: Install - Simple Demo Apps
       try:
@@ -34,7 +37,7 @@ spec:
         - apply:
             file: ../../common/apply/install-jaeger.yaml
         - script:
-            timeout: 2m
+            timeout: 1m
             content: |
               kubectl wait --for=condition=ready pod -l app=jaeger -n tracing --timeout=60s
         - assert:
