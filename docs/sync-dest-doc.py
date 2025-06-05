@@ -1,173 +1,648 @@
 import os
 import yaml
+import json
 import re
 
-def get_display_text(field):
-    """Helper function to generate display text, including dropdown values if present."""
-    display_name = field.get('displayName', '')
-    if field.get('componentType', '') == 'dropdown':
-        values = field.get('componentProps', {}).get('values', [])
-        if values:
-            display_name += f" [{', '.join(values)}]"
-    return display_name
 
-def shorten_yaml(yaml_content):
+# Helper functions
+
+def indent_lines(str="", spaces=0):
     """
-    Function to generate a shortened YAML structure in the Kubernetes manifest format based on the provided content.
-    Also generates a Secret manifest for fields marked as secret.
+    Indent each line in a string by the specified number of spaces.
+
+    Args:
+        str (str): Input string to indent.
+        spaces (int): Number of spaces to indent each line.
+
+    Returns:
+        str: Indented string.
     """
-    destination_name = yaml_content.get("metadata", {}).get("type", "").lower()
-    destination = {
+    indented = "\n".join(
+        f"{' ' * spaces}{line}" if line.strip() else line for line in str.splitlines()
+    )
+
+    return indented
+
+
+def replace_section(mdx_content, start_block, end_block, new_content, default_append_to_end):
+    """
+    Replace or update a section in the content between start_block and end_block.
+
+    Args:
+        mdx_content (str): Original content to modify.
+        start_block (str): Start marker for the block.
+        end_block (str): End marker for the block.
+        new_content (str): New content to insert.
+        default_append_to_end (bool): If true, append to the end; otherwise append to start.
+
+    Returns:
+        str: Modified content.
+    """
+
+    # Compile the regex pattern to find the section
+    section_pattern = re.compile(
+        rf"({re.escape(start_block)}[\s\S]+?)({re.escape(end_block)})",
+        re.DOTALL
+    )
+
+    if section_pattern.search(mdx_content):
+        # If the section is found, replace including the end block
+        mdx_content = section_pattern.sub(new_content, mdx_content)
+    else:
+        # If the section is not found, append the entire section
+        if default_append_to_end:
+            # Append to the end
+            mdx_content += f"{new_content}"
+        else:
+            # Append to the start
+            mdx_content = f"{new_content}{mdx_content}"
+
+    return mdx_content
+
+
+# Generate functions
+# (generate content from within YAML files)
+
+def generate_logo(yaml_content, img_tag=False, img_size=4):
+    """
+    Function to generate the logo for the destination.
+
+    Args:
+        yaml_content (dict): Destination YAML content.
+        img_tag (bool): If True, return the image tag; otherwise, return the markdown link.
+        img_size (int): Size of the image (in Tailwind format).
+
+    Returns:
+        str: Logo content.
+    """
+    dest_type = yaml_content.get("metadata", {}).get("type", "")
+    dest_image = yaml_content.get("spec", {}).get("image", "")
+
+    if img_tag:
+        return f"<img src=\"https://d15jtxgb40qetw.cloudfront.net/{dest_image}\" alt=\"{dest_type}\" className=\"not-prose h-{int(img_size)}\" />"
+
+    return f"[![logo with clickable link](https://d15jtxgb40qetw.cloudfront.net/{dest_image})](https://www.google.com/search?q={dest_type})"
+
+
+def generate_signals(yaml_content):
+    """
+    Function to generate the 'Supported Signals' section.
+    It will generate a list of signals supported by the destination.
+
+    Args:
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        str: Signals content.
+    """
+    signals = yaml_content.get("spec", {}).get("signals", {})
+    with_traces = signals.get("traces", {}).get("supported", False)
+    with_metrics = signals.get("metrics", {}).get("supported", False)
+    with_logs = signals.get("logs", {}).get("supported", False)
+
+    content = (
+        "<Accordion title=\"Supported Signals:\">"
+        + f"\n{indent_lines('✅' if with_traces else '❌', 2)} Traces"
+        + f"\n{indent_lines('✅' if with_metrics else '❌', 2)} Metrics"
+        + f"\n{indent_lines('✅' if with_logs else '❌', 2)} Logs"
+        + "\n</Accordion>"
+    )
+
+    return content
+
+
+def generate_note(yaml_content):
+    """
+    Function to generate the 'Check' note section.
+    It will generate a note for the destination.
+
+    Args:
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        str: Note content.
+    """
+    note = yaml_content.get("spec", {}).get("note", {})
+    type = note.get("type", "Note")
+    content = note.get("content", "")
+
+    if content:
+        note = f"<{type}>\n{indent_lines(content, 2)}\n</{type}>"
+    else:
+        note = ""
+
+    return note
+
+
+def generate_fields(yaml_content):
+    """
+    Function to generate the 'Configuring Destination Fields' section.
+    It will generate a list of fields with their types and descriptions.
+
+    Args:
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        str: Fields content.
+    """
+    yaml_fields = yaml_content.get("spec", {}).get("fields", [])
+    fields = ""
+
+    for f in yaml_fields:
+        # !! Skipped field-values: Check "Allowed properties for Destination Fields" in "docs/adding-new-dest.mdx" for more details
+        # secret, componentProps.values , customReadDataLabels, renderCondition, hideFromReadData,
+
+        id = f.get("name", "")
+        name = f.get("displayName", "")
+        initial_value = f.get("initialValue", {})
+        component_props = f.get("componentProps", {})
+        tooltip = component_props.get("tooltip", "")
+        placeholder = component_props.get("placeholder", "")
+        is_required = component_props.get("required", False)
+
+        type = "unknown"
+        component_type = f.get("componentType", {})
+        if component_type == "checkbox":
+            type = "boolean"
+        elif component_type == "multiInput":
+            type = "string[]"
+        elif component_type == "keyValuePairs":
+            type = "{ key: string; value: string; }[]"
+        elif component_type == "input" or component_type == "textarea" or component_type == "dropdown":
+            input_type = component_props.get("type", False)
+            if input_type == "number":
+                type = "number"
+            elif input_type == "password":
+                type = "string"
+            else:
+                type = "string"
+
+        field = (
+            f"- **{id}** `{type}` : {name}."
+            + (f" {tooltip}" if tooltip else "")
+            + f"\n  - This field is {'required' if is_required else 'optional'}"
+            + (f" and defaults to `{initial_value}`" if initial_value is not None and (
+                initial_value or isinstance(initial_value, (bool, int))
+            ) else "")
+            + (f"\n  - Example: `{placeholder}`" if placeholder else "")
+        )
+
+        if fields:
+            fields += "\n"
+        fields += field
+
+    return fields
+
+
+def generate_kubectl_apply(yaml_content):
+    """
+    Function to generate the `kubectl apply` command for the destination.
+    It will generate the YAML content for the destination and the secret (if required).
+
+    Args:
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        str: `kubectl apply` command content.
+    """
+    destination_type = yaml_content.get("metadata", {}).get("type", "").lower()
+
+    destination_yaml = {
         "apiVersion": "odigos.io/v1alpha1",
         "kind": "Destination",
         "metadata": {
-            "name": f"{destination_name}-example",  # Adding '-example' suffix to the name
-            "namespace": "odigos-system"
+            "namespace": "odigos-system",
+            "name": f"{destination_type}-example",
         },
         "spec": {
             "data": {},  # This will hold the required fields directly
-            "destinationName": destination_name,
+            "destinationName": destination_type,
             "signals": [],
-            "type": yaml_content.get("metadata", {}).get("type", "")
+            "type": yaml_content.get("metadata", {}).get("type", ""),
         }
     }
 
-    secret_manifest = {
+    secret_yaml = {
         "apiVersion": "v1",
         "kind": "Secret",
         "metadata": {
-            "name": f"{destination_name}-secret",
-            "namespace": "odigos-system"  # Updated default namespace
+            "namespace": destination_yaml["metadata"]["namespace"],
+            "name": f"{destination_type}-secret",
         },
         "type": "Opaque",
         "data": {}
     }
 
-    # Separate required, optional, and secret fields
-    fields = yaml_content.get("spec", {}).get("fields", [])
-    required_fields = {}
-    optional_fields = []
-    has_secrets = False
-    secret_optional = False
-
-    for field in fields:
-        config_name = field.get("name", "")
-        config_display = get_display_text(field)
-        if field.get("secret", False):
-            # Secret fields are added only to the Secret manifest
-            secret_manifest["data"][config_name] = f"<base64 {config_display}>"
-            has_secrets = True
-            if not field.get("componentProps", {}).get("required", False):
-                secret_optional = True
-        elif field.get("componentProps", {}).get("required", False):
-            required_fields[config_name] = f"<{config_display}>"
-        else:
-            optional_fields.append(f"    # {config_name}: <{config_display}>")
-
-    # Add required fields to the 'data' section
-    destination["spec"]["data"].update(required_fields)
-
     # Handle signals
     signals = yaml_content.get("spec", {}).get("signals", {})
     if signals.get("traces", {}).get("supported", False):
-        destination["spec"]["signals"].append("TRACES")
+        destination_yaml["spec"]["signals"].append("TRACES")
     if signals.get("metrics", {}).get("supported", False):
-        destination["spec"]["signals"].append("METRICS")
+        destination_yaml["spec"]["signals"].append("METRICS")
     if signals.get("logs", {}).get("supported", False):
-        destination["spec"]["signals"].append("LOGS")
+        destination_yaml["spec"]["signals"].append("LOGS")
 
-    # Handle optional secrets
-    secret_ref_section = ""
-    if has_secrets:
-        if secret_optional:
-            secret_ref_section = "  # Uncomment the secretRef below if you are using the optional Secret.\n"
-            secret_ref_section += f"  # secretRef:\n  #   name: {secret_manifest['metadata']['name']}\n"
+    # Separate required, optional, and secret fields
+    required_fields = {}
+    optional_fields = ""
+    has_secrets = False
+    secret_optional = False
+
+    # Handle fields
+    for field in yaml_content.get("spec", {}).get("fields", []):
+        key = field.get("name", "")
+        name = field.get('displayName', '')
+        component_props = field.get('componentProps', {})
+        required = component_props.get("required", False)
+        initial_value = field.get("initialValue", {})
+
+        # Get initial values
+        if initial_value:
+            name += f" (default: {initial_value})"
+
+        # Get values for dropdowns
+        if field.get('componentType', '') == 'dropdown':
+            values = component_props.get('values', [])
+            if values:
+                name += f" (options: [{', '.join(values)}])"
+
+        if field.get("secret", False):
+            # Secret fields are added only to the Secret manifest
+            has_secrets = True
+            secret_yaml["data"][key] = f"<Base64 {name}>"
+            if not required:
+                secret_optional = True
+        elif required:
+            # Required fields are added directly to the Destination manifest
+            required_fields[key] = f"<{name}>"
         else:
-            destination["spec"]["secretRef"] = {
-                "name": secret_manifest["metadata"]["name"]
-            }
+            # Prepare optional fields as commented lines
+            optional_fields += f"\n    # {key}: <{name}>"
 
-    # Prepare optional fields as commented lines under the 'data' section
-    optional_section = "\n".join(optional_fields)
+    # Add required fields to the 'data' section
+    destination_yaml["spec"]["data"].update(required_fields)
+
+    # Convert the YAML to a string
+    destination_yaml = yaml.dump(destination_yaml, default_flow_style=False)
+
+    # Inject the optional fields within the 'data' section
     if optional_fields:
-        optional_section += "\n    # Note: The commented fields above are optional."
+        destination_yaml = re.compile(
+            # Capture destinationName in group(2)
+            r"(\bdata:\s*\n(?:[ \t]+.+\n)*)(\s*destinationName: .+)",
+            re.DOTALL
+        ).sub(
+            lambda match: match.group(1) +  # Entire data block
+            "    # Note: The commented fields below are optional." +
+            optional_fields + "\n" +  # Append optional fields
+            match.group(2),  # Preserve destinationName
+            destination_yaml
+        )
 
-    return destination, optional_section, secret_manifest if has_secrets else None, secret_ref_section
+    # Handle secrets
+    if has_secrets:
+        secret_name = secret_yaml["metadata"]["name"]
+        # Convert the YAML to a string
+        secret_yaml = yaml.dump(secret_yaml, default_flow_style=False)
+        # Between the 'destinationName' and the 'signals' blocks
+        pointer_between = r"(\b(?:destinationName: .+))(?=\n\s*signals:)"
+        # The existing 'secretRef' section
+        pointer_is = r"\bsecretRef:\s*\n(.*?)(?=\n\s*\w+:|\n\s*signals:)"
 
-def update_mdx_with_yaml(mdx_path, shortened_yaml, optional_section, secret_manifest, secret_ref_section):
-    """
-    Function to update the MDX file by adding the shortened YAML under the '2. **Using kubernetes manifests**' section.
-    If a Secret manifest is generated, it is also added within the same yaml code block.
-    """
-    instructions = (
-        "\n\nSave the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:\n\n"
-        "```bash\n"
-        "kubectl apply -f destination.yaml\n"
-        "```\n"
-    )
-
-    yaml_section_title = "2. **Using kubernetes manifests**"
-    new_yaml_content = yaml.dump(shortened_yaml, default_flow_style=False)
-
-    # Inject the optional fields under the 'data' section
-    if optional_section:
-        data_section_pattern = re.compile(r"\bdata:\s*\n(.*?)(?=\n\s*\w+:|\n\s*destinationName:)", re.DOTALL)
-        new_yaml_content = data_section_pattern.sub(r"\g<0>\n" + optional_section, new_yaml_content)
-
-    # Add secretRef section correctly if it exists
-    if secret_ref_section:
-        # Ensure secretRef is added right after destinationName
-        new_yaml_content = re.sub(r"(destinationName: .+)", r"\1\n" + secret_ref_section, new_yaml_content)
-
-    # If a secret manifest exists, add it to the same yaml code block
-    if secret_manifest:
-        secret_yaml_content = yaml.dump(secret_manifest, default_flow_style=False)
-        if secret_ref_section:
+        if secret_optional:
+            # Inject optional 'secretRef' section between the 'destinationName' and the 'signals' blocks
+            destination_yaml = re.sub(
+                pointer_between,
+                lambda match: f"{match.group(1)}"
+                f"\n  # Uncomment the 'secretRef' below if you are using the optional Secret."
+                f"\n  # secretRef:\n  #   name: {secret_name}",
+                destination_yaml,
+                flags=re.MULTILINE
+            )
             # Comment out the entire secret if it's optional
-            secret_yaml_content = re.sub(r"^(.)", r"# \1", secret_yaml_content, flags=re.MULTILINE)
-            secret_yaml_content = f"# The following Secret is optional. Uncomment the entire block if you need to use it.\n{secret_yaml_content}"
-        new_yaml_content += f"\n---\n{secret_yaml_content}"
+            secret_yaml = f"# The following Secret is optional. Uncomment the entire block if you need to use it.\n" + \
+                re.sub(r"^(.)", r"# \1", secret_yaml, flags=re.MULTILINE)
 
-    # Wrap the combined YAML content in a single yaml code block
-    code_block = f"```yaml\n{new_yaml_content}```"
+        elif "secretRef:" in destination_yaml:
+            # Inject required 'secretRef' by updating the existing 'secretRef' section
+            destination_yaml = re.compile(pointer_is, re.DOTALL).sub(
+                f"  secretRef:\n    name: {secret_name}", destination_yaml
+            )
+        else:
+            # Inject required 'secretRef' section between the 'destinationName' and the 'signals' blocks
+            destination_yaml = re.compile(pointer_between, re.DOTALL).sub(
+                r"\1\n  secretRef:\n    name: " + secret_name, destination_yaml
+            )
 
-    # Construct the final content to insert
-    final_content = f"{yaml_section_title}{instructions}\n\n{code_block}"
+        # Wrap the combined (destination + secret) YAML content in a single code-block
+        code_block = f"```yaml\n{destination_yaml}\n---\n\n{secret_yaml}```"
+    else:
+        # Wrap the destination YAML content in a single code-block
+        code_block = f"```yaml\n{destination_yaml}```"
+
+    return code_block
+
+
+# Get functions
+# (gets generated content for MDX files)
+
+def get_documenation(yaml_content):
+    """
+    Function to get the documentation content for the destination.
+
+    Args:
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        dict: Documentation content
+    """
+    meta = yaml_content.get("metadata", {})
+    type = meta.get("type", "")
+    name = meta.get("displayName", "")
+    category = meta.get("category", "")
+    category = "Managed" if category == "managed" else "Self-Hosted"
+
+    signals = generate_signals(yaml_content)
+    fields = generate_fields(yaml_content)
+    note = generate_note(yaml_content)
+
+    start_before_custom = "---"
+    content_before_custom = (
+        f"{start_before_custom}"
+        + f"\ntitle: '{name}'"
+        + f"\ndescription: 'Configuring the {name} backend ({category})'"
+        + f"\nsidebarTitle: '{name}'"
+        + "\nicon: 'signal-stream'"
+        + "\n---"
+        + "\n\n### Getting Started"
+        + f"\n\n{generate_logo(yaml_content, True, 20)}"
+        + "\n\n{/*"
+        + "\n    Add custom content here (under this comment)..."
+        + "\n"
+        + "\n    e.g."
+        + "\n\n    **Creating Account**<br />"
+        + "\n    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**"
+        + "\n\n    **Obtaining Access Token**<br />"
+        + "\n    Go to **⚙️ > Access Tokens** and click **Create New**"
+        + "\n"
+        + "\n    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!"
+        + "\n    !! START CUSTOM EDIT !!"
+        + "\n*/}"
+    )
+    end_before_custom = content_before_custom[-100:]
+
+    start_after_custom = (
+        "{/*"
+        + "\n    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!"
+        + "\n    !! END CUSTOM EDIT !!"
+        + "\n*/}"
+    )
+    signals_content = f"\n\n{signals}" if signals else ""
+    fields_content = f"\n\n{fields}" if fields else ""
+    note_content = f"\n\n{note}" if note else ""
+    content_after_custom = (
+        f"{start_after_custom}"
+        + "\n\n### Configuring Destination Fields"
+        + signals_content
+        + fields_content
+        + note_content
+        + "\n\n### Adding Destination to Odigos"
+        + "\n\nThere are two primary methods for configuring destinations in Odigos:"
+        + "\n\n##### **Using the UI**"
+        + "\n\n<Steps>"
+        + "\n  <Step>"
+        + "\n    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI"
+        + "\n    ```bash"
+        + "\n    odigos ui"
+        + "\n    ```"
+        + "\n  </Step>"
+        + "\n  <Step>"
+        + "\n    Click on `Add Destination`"
+        + f", select `{name}` and follow the on-screen instructions"
+        + "\n  </Step>"
+        + "\n</Steps>"
+        + "\n\n##### **Using Kubernetes manifests**"
+        + "\n\n<Steps>"
+        + "\n  <Step>"
+        + f"\n    Save the YAML below to a file (e.g. `{type}.yaml`)"
+        + f"\n{indent_lines(generate_kubectl_apply(yaml_content), 4)}"
+        + "\n  </Step>"
+        + "\n  <Step>"
+        + "\n    Apply the YAML using `kubectl`"
+        + "\n    ```bash"
+        + f"\n    kubectl apply -f {type}.yaml"
+        + "\n    ```"
+        + "\n  </Step>"
+        + "\n</Steps>"
+    )
+    end_after_custom = content_after_custom[-50:]
+
+    return {
+        "start_before_custom": start_before_custom,
+        "content_before_custom": content_before_custom,
+        "end_before_custom": end_before_custom,
+        "start_after_custom": start_after_custom,
+        "content_after_custom": content_after_custom,
+        "end_after_custom": end_after_custom,
+    }
+
+
+# CRUD functions
+# (apply generated content in MDX files)
+
+def update_mdx(mdx_path, yaml_content):
+    """
+    Function to update the MDX file by replacing the existing content.
+
+    Args:
+        mdx_path (str): Path to the MDX file.
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        None
+    """
+    documenation = get_documenation(yaml_content)
 
     with open(mdx_path, 'r') as mdx_file:
         mdx_content = mdx_file.read()
 
-    # Find the existing section and replace it with the updated content
-    # Updated regex pattern to avoid multiple repeat error
-    section_pattern = re.compile(rf"({re.escape(yaml_section_title)}[\s\S]+?)```yaml\n[\s\S]+?```", re.DOTALL)
-    if section_pattern.search(mdx_content):
-        mdx_content = section_pattern.sub(final_content, mdx_content)
-    else:
-        # If the section is not found, append the entire content
-        mdx_content += f"\n\n{final_content}"
+    mdx_content = replace_section(
+        mdx_content,
+        documenation.get("start_before_custom"),
+        documenation.get("end_before_custom"),
+        documenation.get("content_before_custom"),
+        False
+    )
+    mdx_content = replace_section(
+        mdx_content,
+        documenation.get("start_after_custom"),
+        documenation.get("end_after_custom"),
+        documenation.get("content_after_custom"),
+        True
+    )
 
     with open(mdx_path, 'w') as mdx_file:
         mdx_file.write(mdx_content)
 
-def process_files(docs_dir, backends_dir):
+
+def create_mdx(mdx_path, yaml_content):
     """
-    Main function to process the files in the directories.
+    Function to create a new MDX file with the generated content.
+
+    Args:
+        mdx_path (str): Path to the MDX file.
+        yaml_content (dict): Destination YAML content.
+
+    Returns:
+        None
     """
-    for root, dirs, files in os.walk(docs_dir):
+    documenation = get_documenation(yaml_content)
+    content_before = documenation.get("content_before_custom")
+    content_after = documenation.get("content_after_custom")
+    mdx_content = (
+        f"{content_before}"
+        + f"\n\n{content_after}"
+    )
+
+    with open(mdx_path, 'w') as mdx_file:
+        mdx_file.write(mdx_content)
+
+
+# Root
+
+
+def process_files(backend_mdx_dir, backend_yaml_dir):
+    """
+    This function will generate or update the MDX files for each destination YAML.
+
+    Args:
+        backend_mdx_dir (str): Path to the MDX files directory.
+        backend_yaml_dir (str): Path to the YAML files directory.
+
+    Returns:
+        None
+    """
+    for root, _, files in os.walk(backend_yaml_dir):
+        for file in files:
+            if file.endswith('.yaml'):
+                # Read the YAML file
+                yaml_path = os.path.join(root, file)
+                with open(yaml_path, 'r') as yaml_file:
+                    yaml_content = yaml.safe_load(yaml_file)
+
+                # Generate or update the MDX file
+                mdx_path = os.path.join(
+                    backend_mdx_dir, file.replace('.yaml', '.mdx')
+                )
+                if os.path.exists(mdx_path):
+                    update_mdx(mdx_path, yaml_content)
+                else:
+                    create_mdx(mdx_path, yaml_content)
+
+
+def process_overview(backend_yaml_dir, docs_dir):
+    """
+    This function will generate the overview page with the list of backends.
+
+    Args:
+        backend_yaml_dir (str): Path to the YAML files directory.
+        docs_dir (str): Path to the docs directory.
+
+    Returns:
+        None
+    """
+    overview_path = os.path.join(docs_dir, "backends-overview.mdx")
+
+    rows = []
+    for root, _, files in os.walk(backend_yaml_dir):
+        for file in sorted(files):
+            if file.endswith('.yaml'):
+                # Read the YAML file
+                yaml_path = os.path.join(root, file)
+                with open(yaml_path, 'r') as yaml_file:
+                    yaml_content = yaml.safe_load(yaml_file)
+                    meta = yaml_content.get("metadata", {})
+                    name = meta.get("displayName", "")
+                    category = meta.get("category", "")
+                    signals = yaml_content.get("spec", {}).get("signals", {})
+
+                    rows.append(
+                        f"{generate_logo(yaml_content, True, 4)} | "
+                        f"[{name}](/backends/{file.replace('.yaml', '')}) | "
+                        f"{'Managed' if category == 'managed' else 'Self-Hosted'} | "
+                        f"{'✅' if signals.get('traces', {}).get('supported', False) else ''} | "
+                        f"{'✅' if signals.get('metrics', {}).get('supported', False) else ''} | "
+                        f"{'✅' if signals.get('logs', {}).get('supported', False) else ''} |"
+                    )
+
+    content = (
+        "---"
+        + "\ntitle: 'Overview'"
+        + "\ndescription: 'Odigos makes it simple to add and configure destinations, allowing you to select the specific signals (`traces`,`metrics`,`logs`) that you want to send to each destination.'"
+        + "\nsidebarTitle: 'Overview'"
+        + "\nicon: 'house'"
+        + "\n---"
+        + "\n\n<Tip>"
+        + "\n  Can't find your backend in Odigos? Please tell us! We are constantly adding new integrations.<br />"
+        + "\n  You can also follow our quick [add new destination](/adding-new-dest) guide and submit a PR."
+        + "\n</Tip>"
+        + "\n\n| | | | Traces | Metrics | Logs |"
+        + "\n|---|---|---|:---:|:---:|:---:|"
+        + "\n"
+        + "\n".join(rows)
+    )
+
+    with open(overview_path, 'w') as file:
+        file.write(content)
+
+
+def process_mint(backend_mdx_dir, docs_dir):
+    """
+    This function will update the Mint navigation to include the new backends.
+
+    Args:
+        backend_mdx_dir (str): Path to the MDX files directory.
+        docs_dir (str): Path to the docs directory.
+
+    Returns:
+        None
+    """
+    mint_path = os.path.join(docs_dir, "mint.json")
+
+    # Load the JSON file
+    with open(mint_path, 'r') as file:
+        mint_data = json.load(file)
+
+    # Locate the "Destinations" group within "navigation"
+    destinations_group = next((
+        nav for nav in mint_data.get("navigation", [])
+        if nav.get("group") == "Destinations"
+    ), None)
+
+    # Locate the group with "Supported Backends" within "pages"
+    supported_backends_group = next((
+        page for page in destinations_group.get("pages", [])
+        if isinstance(page, dict) and page.get("group") == "Supported Backends"
+    ), None)
+
+    # Replace the "pages" array with new backend paths
+    mint_pages = []
+    for _, _, files in os.walk(backend_mdx_dir):
         for file in files:
             if file.endswith('.mdx'):
-                mdx_path = os.path.join(root, file)
-                yaml_path = os.path.join(backends_dir, file.replace('.mdx', '.yaml'))
+                mint_pages.append(f"backends/{file.replace('.mdx', '')}")
+    supported_backends_group["pages"] = sorted(mint_pages)
 
-                if os.path.exists(yaml_path):
-                    with open(yaml_path, 'r') as yaml_file:
-                        yaml_content = yaml.safe_load(yaml_file)
-                    
-                    shortened_yaml, optional_section, secret_manifest, secret_ref_section = shorten_yaml(yaml_content)
-                    update_mdx_with_yaml(mdx_path, shortened_yaml, optional_section, secret_manifest, secret_ref_section)
+    # Save the modified JSON back to the file
+    with open(mint_path, 'w') as file:
+        json.dump(mint_data, file, indent=2)
+
 
 if __name__ == "__main__":
-    docs_dir = "./backends"
-    backends_dir = "../destinations/data"
-    
-    process_files(docs_dir, backends_dir)
+    backend_mdx_dir = "./backends"
+    backend_yaml_dir = "../destinations/data"
+    docs_dir = "."
+
+    process_files(backend_mdx_dir, backend_yaml_dir)
+    process_overview(backend_yaml_dir, docs_dir)
+    process_mint(backend_mdx_dir, docs_dir)

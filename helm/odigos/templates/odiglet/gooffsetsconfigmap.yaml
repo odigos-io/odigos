@@ -1,0 +1,15 @@
+{{- $configMap := lookup "v1" "ConfigMap" .Release.Namespace "odigos-go-offsets" | default (dict "data" (dict)) }}
+{{- $jsonContent := index $configMap.data "go_offset_results.json" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-go-offsets
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+data:
+{{- if $jsonContent }}
+  "go_offset_results.json": {{ $jsonContent | quote }}
+{{- else }}
+  "go_offset_results.json": ""
+{{- end }}

@@ -9,7 +9,16 @@ cli/odigos
 **/__pycache__/
 **/*.pyc
 serving-certs/
+**/.tools/
+**/LICENSES
+/odigos
+gha-creds-*.json
+artifacts/
+preflight*
 
 **.tfstate
 **.tfstate.backup
 **.terraform**
+
+*.log
+*.logs

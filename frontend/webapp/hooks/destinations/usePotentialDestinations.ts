@@ -1,60 +1,82 @@
 import { useMemo } from 'react';
-import { safeJsonParse } from '@/utils';
 import { useQuery } from '@apollo/client';
-import { GetDestinationTypesResponse } from '@/types';
-import { GET_DESTINATION_TYPE, GET_POTENTIAL_DESTINATIONS } from '@/graphql';
+import { GET_POTENTIAL_DESTINATIONS } from '@/graphql';
+import { deepClone, safeJsonParse } from '@odigos/ui-kit/functions';
+import { useDestinationCategories } from './useDestinationCategories';
+import { useSetupStore, type ISetupState } from '@odigos/ui-kit/store';
 
-interface DestinationDetails {
+interface PotentialDestination {
   type: string;
   fields: string;
 }
 
 interface GetPotentialDestinationsData {
-  potentialDestinations: DestinationDetails[];
+  potentialDestinations: PotentialDestination[];
 }
 
+const checkIfConfigured = (configuredDest: ISetupState['configuredDestinations'][0], potentialDest: PotentialDestination, autoFilledFields: Record<string, any>) => {
+  const typesMatch = configuredDest.type === potentialDest.type;
+  if (!typesMatch) return false;
+
+  let fieldsMatch = false;
+
+  for (const { key, value } of configuredDest.form.fields) {
+    if (Object.hasOwn(autoFilledFields, key)) {
+      // An exact match is when all "ifs" result in true.
+      // If one resulted with false, it is not an exact match and therefore not an "already configured destination".
+      if (autoFilledFields[key] === value) {
+        fieldsMatch = true;
+      } else {
+        fieldsMatch = false;
+        break;
+      }
+    }
+  }
+
+  return fieldsMatch;
+};
+
 export const usePotentialDestinations = () => {
-  const { data: destinationTypesData } =
-    useQuery<GetDestinationTypesResponse>(GET_DESTINATION_TYPE);
-  const { loading, error, data } = useQuery<GetPotentialDestinationsData>(
-    GET_POTENTIAL_DESTINATIONS
-  );
+  const { configuredDestinations } = useSetupStore();
+  const { categories } = useDestinationCategories();
+  const { loading, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
 
   const mappedPotentialDestinations = useMemo(() => {
-    if (!destinationTypesData || !data) return [];
+    if (!categories || !potentialDestinations) return [];
 
     // Create a deep copy of destination types to manipulate
-    const destinationTypesCopy = JSON.parse(
-      JSON.stringify(destinationTypesData.destinationTypes.categories)
-    );
+    const parsed = deepClone<typeof categories>(categories);
 
     // Map over the potential destinations
-    return data.potentialDestinations.map((destination) => {
-      for (const category of destinationTypesCopy) {
-        const index = category.items.findIndex(
-          (item) => item.type === destination.type
-        );
-        if (index !== -1) {
-          // Spread the matched destination type data into the potential destination
-          const matchedType = category.items[index];
-          category.items.splice(index, 1); // Remove the matched item from destination types
-          return {
-            ...destination,
-            ...matchedType,
-            fields: safeJsonParse<{ [key: string]: string }>(
-              destination.fields,
-              {}
-            ),
-          };
+    return potentialDestinations
+      .map((pd) => {
+        for (const category of parsed) {
+          const autoFilledFields = safeJsonParse<{ [key: string]: string }>(pd.fields, {});
+          const alreadyConfigured = configuredDestinations.find((cd) => checkIfConfigured(cd, pd, autoFilledFields));
+
+          if (!alreadyConfigured) {
+            const idx = category.items.findIndex((item) => item.type === pd.type);
+
+            if (idx !== -1) {
+              return {
+                // Spread the matched destination type data into the potential destination
+                ...category.items[idx],
+                fields: category.items[idx].fields.map((field) => ({
+                  ...field,
+                  initialValue: autoFilledFields[field.name],
+                })),
+              };
+            }
+          }
         }
-      }
-      return destination;
-    });
-  }, [destinationTypesData, data]);
+
+        return null;
+      })
+      .filter((pd) => pd);
+  }, [configuredDestinations, categories, potentialDestinations]);
 
   return {
     loading,
-    error,
-    data: mappedPotentialDestinations,
+    potentialDestinations: mappedPotentialDestinations,
   };
 };

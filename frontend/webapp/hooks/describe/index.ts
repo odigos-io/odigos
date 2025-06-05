@@ -1,2 +1,1 @@
-export * from './useDescribeOdigos';
-export * from './useDescribeSource';
+export * from './useDescribe';

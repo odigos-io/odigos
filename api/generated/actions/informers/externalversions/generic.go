@@ -18,7 +18,7 @@ limitations under the License.
 package externalversions
 
 import (
-	"fmt"
+	fmt "fmt"
 
 	v1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -58,6 +58,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().DeleteAttributes().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("errorsamplers"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().ErrorSamplers().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("k8sattributesresolvers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().K8sAttributesResolvers().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("latencysamplers"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().LatencySamplers().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("piimaskings"):
@@ -66,6 +68,10 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().ProbabilisticSamplers().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("renameattributes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().RenameAttributes().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("servicenamesamplers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().ServiceNameSamplers().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("spanattributesamplers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().SpanAttributeSamplers().Informer()}, nil
 
 	}
 

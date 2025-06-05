@@ -22,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '~1.23'
+          go-version: "~1.24"
           check-latest: true
           cache: true
           cache-dependency-path: |
@@ -50,11 +50,20 @@ jobs:
           TAG=e2e-test make build-images
           docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
 
+      - uses: ko-build/setup-ko@v0.9
+
+      - name: Build CLI Image
+        run: |
+          TAG=e2e-test make build-cli-image
+          docker save registry.odigos.io/odigos-cli:e2e-test -o cli-image.tar
+
       - name: Upload Odigos Images
         uses: actions/upload-artifact@v4
         with:
           name: odigos-images
-          path: odigos-images.tar
+          path: |
+            odigos-images.tar
+            cli-image.tar
 
   kubernetes-test:
     needs:
@@ -70,10 +79,12 @@ jobs:
           - '1.32'
         test-scenario:
           - 'ui'
-          - 'multi-apps'
           - 'helm-chart'
           - 'cli-upgrade'
           - 'workload-lifecycle'
+          - 'source'
+          - 'webhooks'
+          - 'env-injection'
         include:
           - kube-version: '1.20.15'
             kind-image: 'kindest/node:v1.20.15@sha256:a32bf55309294120616886b5338f95dd98a2f7231519c7dedcec32ba29699394'
@@ -88,7 +99,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '~1.23'
+          go-version: '~1.24'
           check-latest: true
           cache: true
           cache-dependency-path: |
@@ -108,6 +119,7 @@ jobs:
           node_image: ${{ matrix.kind-image }}
           version: 'v0.25.0'
           cluster_name: kind
+          config: tests/common/apply/kind-config.yaml
 
       - name: Download and Load Docker Images to Kind
         uses: actions/download-artifact@v4
@@ -115,6 +127,7 @@ jobs:
           name: odigos-images
       - run: |
           docker load -i odigos-images.tar
+          docker load -i cli-image.tar
           TAG=e2e-test make load-to-kind
 
       - name: Download CLI binary
@@ -127,4 +140,38 @@ jobs:
 
       - name: Run E2E Tests
         run: |
-          chainsaw test tests/e2e/${{ matrix.test-scenario }}
+          MINOR_VERSION=$(echo ${{ matrix.kube-version }} | sed -E 's/^1\.([0-9]+).*$/\1/')
+
+          chainsaw test tests/e2e/${{ matrix.test-scenario }} --values - <<EOF
+          k8sMinorVersion: ${MINOR_VERSION}
+          EOF
+
+      - name: Run diagnose command
+        if: ${{ failure() && matrix.test-scenario != 'ui' }}
+        run: |
+          ./cli/odigos diagnose
+        continue-on-error: true
+
+      - name: Upload diagnose artifact
+        if: ${{ failure() && matrix.test-scenario != 'ui' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-details-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
+          path: odigos_debug*.tar.gz
+        continue-on-error: true
+
+      - name: Upload UI screenshots artifact
+        if: ${{ failure() && matrix.test-scenario == 'ui' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
+          path: frontend/webapp/cypress/screenshots
+        continue-on-error: true
+
+      - name: Upload UI videos artifact
+        if: ${{ failure() && matrix.test-scenario == 'ui' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-videos-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
+          path: frontend/webapp/cypress/videos
+        continue-on-error: true

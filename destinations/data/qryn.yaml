@@ -20,17 +20,21 @@ spec:
       componentProps:
         type: text
         required: true
+        tooltip: The API Endpoint for for your qryn instance
+        placeholder: http://qryn.local:3100
     - name: QRYN_OSS_PASSWORD
       displayName: Basic auth password
       componentType: input
       componentProps:
         type: password
+        tooltip: The HTTP Basic Auth password for your qryn instance
       secret: true
     - name: QRYN_OSS_USERNAME
       displayName: Basic auth username
       componentType: input
       componentProps:
         type: text
+        tooltip: The HTTP Basic Auth username for your qryn instance
     - name: QRYN_OSS_RESOURCE_TO_TELEMETRY_CONVERSION
       displayName: Convert container attributes to labels
       componentType: checkbox

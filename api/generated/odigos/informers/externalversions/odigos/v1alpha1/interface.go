@@ -23,6 +23,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// Actions returns a ActionInformer.
+	Actions() ActionInformer
 	// CollectorsGroups returns a CollectorsGroupInformer.
 	CollectorsGroups() CollectorsGroupInformer
 	// Destinations returns a DestinationInformer.
@@ -35,8 +37,6 @@ type Interface interface {
 	InstrumentationRules() InstrumentationRuleInformer
 	// InstrumentedApplications returns a InstrumentedApplicationInformer.
 	InstrumentedApplications() InstrumentedApplicationInformer
-	// OdigosConfigurations returns a OdigosConfigurationInformer.
-	OdigosConfigurations() OdigosConfigurationInformer
 	// Processors returns a ProcessorInformer.
 	Processors() ProcessorInformer
 	// Sources returns a SourceInformer.
@@ -52,6 +52,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// Actions returns a ActionInformer.
+func (v *version) Actions() ActionInformer {
+	return &actionInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // CollectorsGroups returns a CollectorsGroupInformer.
@@ -82,11 +87,6 @@ func (v *version) InstrumentationRules() InstrumentationRuleInformer {
 // InstrumentedApplications returns a InstrumentedApplicationInformer.
 func (v *version) InstrumentedApplications() InstrumentedApplicationInformer {
 	return &instrumentedApplicationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// OdigosConfigurations returns a OdigosConfigurationInformer.
-func (v *version) OdigosConfigurations() OdigosConfigurationInformer {
-	return &odigosConfigurationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Processors returns a ProcessorInformer.

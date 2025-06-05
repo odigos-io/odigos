@@ -2,10 +2,9 @@ package resources
 
 import (
 	"context"
-	"slices"
+	"path/filepath"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/common/consts"
@@ -18,23 +17,13 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	k8sversion "k8s.io/apimachinery/pkg/util/version"
-)
-
-const (
-	OdigletDaemonSetName          = "odiglet"
-	OdigletAppLabelValue          = OdigletDaemonSetName
-	OdigletServiceAccountName     = OdigletDaemonSetName
-	OdigletRoleName               = OdigletDaemonSetName
-	OdigletRoleBindingName        = OdigletDaemonSetName
-	OdigletClusterRoleName        = OdigletDaemonSetName
-	OdigletClusterRoleBindingName = OdigletDaemonSetName
-	OdigletContainerName          = "odiglet"
-	OdigletImageName              = "keyval/odigos-odiglet"
-	OdigletEnterpriseImageName    = "keyval/odigos-enterprise-odiglet"
 )
 
 func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
@@ -44,7 +33,7 @@ func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigletServiceAccountName,
+			Name:      k8sconsts.OdigletServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -57,7 +46,7 @@ func NewOdigletRole(ns string) *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigletRoleName,
+			Name:      k8sconsts.OdigletRoleName,
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -67,12 +56,6 @@ func NewOdigletRole(ns string) *rbacv1.Role {
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups", "collectorsgroups/status"},
 				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // Needed to read the odigos_config for ignored containers
-				APIGroups:     []string{""},
-				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosConfigurationName},
-				Verbs:         []string{"get", "list", "watch"},
 			},
 		},
 	}
@@ -85,34 +68,48 @@ func NewOdigletRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigletRoleBindingName,
+			Name:      k8sconsts.OdigletRoleBindingName,
 			Namespace: ns,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      OdigletServiceAccountName,
+				Name:      k8sconsts.OdigletServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     OdigletRoleName,
+			Name:     k8sconsts.OdigletRoleName,
 		},
 	}
 }
 
-func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
+func NewOdigletClusterRole(psp, ownerPermissionEnforcement bool) *rbacv1.ClusterRole {
+	finalizersUpdate := []rbacv1.PolicyRule{}
+	if ownerPermissionEnforcement {
+		finalizersUpdate = append(finalizersUpdate, rbacv1.PolicyRule{
+			// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
+			// When we create an InstrumentationInstance, we set the OwnerReference to the related pod.
+			// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+			// update finalizers on the workloads so that they can block deletion.
+			// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+			APIGroups: []string{""},
+			Resources: []string{"pods/finalizers"},
+			Verbs:     []string{"update"},
+		})
+	}
+
 	clusterrole := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: OdigletClusterRoleName,
+			Name: k8sconsts.OdigletClusterRoleName,
 		},
-		Rules: []rbacv1.PolicyRule{
+		Rules: append([]rbacv1.PolicyRule{
 			{ // Needed for language detection
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
@@ -123,40 +120,10 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				Resources: []string{"pods/status"},
 				Verbs:     []string{"get"},
 			},
-			{ // Needed for language detection
-				// TODO: remove this once Tamir/PR is read for new language detection
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments", "daemonsets", "statefulsets"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // Needed for language detection
-				// TODO: remove this once Tamir/PR is read for new language detection
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments/status", "daemonsets/status", "statefulsets/status"},
-				Verbs:     []string{"get"},
-			},
-			{ // Needed for language detection
-				// TODO: remove this once Tamir/PR is read for new language detection
-				APIGroups: []string{"apps"},
-				Resources: []string{"replicasets"},
-				Verbs:     []string{"get"},
-			},
-			{ // Needed for virtual device registration
+			{ // Needed for virtual device registration + taint removal in case of Karpenter
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // Needed for storage of runtime details / language detection (almost deprecated)
-				// TODO: remove this once Tamir/PR is read for instrumentation app ---> instrumentation config migration
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications"},
-				Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
-			},
-			{ // Needed for storage of runtime details / language detection (almost deprecated)
-				// TODO: remove this once Tamir/PR is read for instrumentation app ---> instrumentation config migration
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications/status"},
-				Verbs:     []string{"get", "patch", "update"},
+				Verbs:     []string{"get", "list", "watch", "patch", "update"},
 			},
 			{ // Needed for storage of the process instrumentation state
 				APIGroups: []string{"odigos.io"},
@@ -178,7 +145,7 @@ func NewOdigletClusterRole(psp bool) *rbacv1.ClusterRole {
 				Resources: []string{"instrumentationconfigs/status"},
 				Verbs:     []string{"get", "patch", "update"},
 			},
-		},
+		}, finalizersUpdate...),
 	}
 
 	if psp {
@@ -201,19 +168,19 @@ func NewOdigletClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: OdigletClusterRoleBindingName,
+			Name: k8sconsts.OdigletClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      OdigletServiceAccountName,
+				Name:      k8sconsts.OdigletServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     OdigletClusterRoleName,
+			Name:     k8sconsts.OdigletClusterRoleName,
 		},
 	}
 }
@@ -231,7 +198,7 @@ func NewSCCRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      OdigletServiceAccountName,
+				Name:      k8sconsts.OdigletServiceAccountName,
 				Namespace: ns,
 			},
 			{
@@ -299,8 +266,15 @@ func NewResourceQuota(ns string) *corev1.ResourceQuota {
 	}
 }
 
-func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string, odigosTier common.OdigosTier, openshiftEnabled bool, goAutoIncludeCodeAttributes bool, clusterDetails *autodetect.ClusterDetails) *appsv1.DaemonSet {
+func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string,
+	odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails, customContainerRuntimeSocketPath string, nodeSelector map[string]string) *appsv1.DaemonSet {
+	if nodeSelector == nil {
+		nodeSelector = make(map[string]string)
+	}
 
+	if _, ok := nodeSelector["kubernetes.io/os"]; !ok {
+		nodeSelector["kubernetes.io/os"] = "linux"
+	}
 	dynamicEnv := []corev1.EnvVar{}
 	if odigosTier == common.CloudOdigosTier {
 		dynamicEnv = append(dynamicEnv, odigospro.CloudTokenAsEnvVar())
@@ -308,18 +282,49 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 		dynamicEnv = append(dynamicEnv, odigospro.OnPremTokenAsEnvVar())
 	}
 
-	if goAutoIncludeCodeAttributes {
-		dynamicEnv = append(dynamicEnv, corev1.EnvVar{
-			Name:  "OTEL_GO_AUTO_INCLUDE_CODE_ATTRIBUTES",
-			Value: "true",
-		})
-	}
+	additionalVolumes := make([]corev1.Volume, 0)
+	additionalVolumeMounts := make([]corev1.VolumeMount, 0)
 
 	odigosSeLinuxHostVolumes := []corev1.Volume{}
 	odigosSeLinuxHostVolumeMounts := []corev1.VolumeMount{}
 	if openshiftEnabled || clusterDetails.Kind == autodetect.KindOpenShift {
 		odigosSeLinuxHostVolumes = append(odigosSeLinuxHostVolumes, selinuxHostVolumes()...)
 		odigosSeLinuxHostVolumeMounts = append(odigosSeLinuxHostVolumeMounts, selinuxHostVolumeMounts()...)
+	}
+	additionalVolumes = append(additionalVolumes, odigosSeLinuxHostVolumes...)
+	additionalVolumeMounts = append(additionalVolumeMounts, odigosSeLinuxHostVolumeMounts...)
+
+	customContainerRuntimeSocketVolumes := []corev1.Volume{}
+	customContainerRunetimeSocketVolumeMounts := []corev1.VolumeMount{}
+	if customContainerRuntimeSocketPath != "" {
+		customContainerRuntimeSocketVolumes = setCustomContainerRuntimeSocketVolume(customContainerRuntimeSocketPath)
+		customContainerRunetimeSocketVolumeMounts = setCustomContainerRuntimeSocketVolumeMount(customContainerRuntimeSocketPath)
+		dynamicEnv = append(dynamicEnv,
+			corev1.EnvVar{
+				Name:  k8sconsts.CustomContainerRuntimeSocketEnvVar,
+				Value: customContainerRuntimeSocketPath})
+	}
+	additionalVolumes = append(additionalVolumes, customContainerRuntimeSocketVolumes...)
+	additionalVolumeMounts = append(additionalVolumeMounts, customContainerRunetimeSocketVolumeMounts...)
+
+	if odigosTier == common.OnPremOdigosTier {
+		goOffsetsVolume := corev1.Volume{
+			Name: k8sconsts.GoOffsetsConfigMap,
+			VolumeSource: v1.VolumeSource{
+				ConfigMap: &v1.ConfigMapVolumeSource{
+					LocalObjectReference: v1.LocalObjectReference{
+						Name: k8sconsts.GoOffsetsConfigMap,
+					},
+				},
+			},
+		}
+		goOffsetsVolumeMount := corev1.VolumeMount{
+			Name:      k8sconsts.GoOffsetsConfigMap,
+			MountPath: k8sconsts.OffsetFileMountPath,
+		}
+		additionalVolumes = append(additionalVolumes, goOffsetsVolume)
+		additionalVolumeMounts = append(additionalVolumeMounts, goOffsetsVolumeMount)
+		dynamicEnv = append(dynamicEnv, v1.EnvVar{Name: k8sconsts.GoOffsetsEnvVar, Value: k8sconsts.OffsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName})
 	}
 
 	// 50% of the nodes can be unavailable during the update.
@@ -341,22 +346,22 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 		rollingUpdate.MaxSurge = &maxSurge
 	}
 
-	return &appsv1.DaemonSet{
+	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      OdigletDaemonSetName,
+			Name:      k8sconsts.OdigletDaemonSetName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": OdigletAppLabelValue,
+				"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
 			},
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": OdigletAppLabelValue,
+					"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
@@ -366,19 +371,17 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": OdigletAppLabelValue,
+						"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: map[string]string{
-						"kubernetes.io/os": "linux",
-					},
+					NodeSelector: nodeSelector,
 					Tolerations: []corev1.Toleration{
 						{
-							Key:      "node.kubernetes.io/os",
-							Operator: corev1.TolerationOpEqual,
-							Value:    "windows",
-							Effect:   corev1.TaintEffectNoSchedule,
+							// This toleration with 'Exists' operator and no key/effect specified
+							// will match ALL taints, allowing pods to be scheduled on any node
+							// regardless of its taints (including master/control-plane nodes)
+							Operator: corev1.TolerationOpExists,
 						},
 					},
 					Volumes: append([]corev1.Volume{
@@ -387,14 +390,6 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/run",
-								},
-							},
-						},
-						{
-							Name: "pod-resources",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/lib/kubelet/pod-resources",
 								},
 							},
 						},
@@ -410,7 +405,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							Name: "odigos",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/odigos",
+									Path: k8sconsts.OdigosAgentsDirectory,
 								},
 							},
 						},
@@ -422,7 +417,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								},
 							},
 						},
-					}, odigosSeLinuxHostVolumes...),
+					}, additionalVolumes...),
 					InitContainers: []corev1.Container{
 						{
 							Name:  "init",
@@ -433,23 +428,60 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							Args: []string{
 								"init",
 							},
-							Resources: corev1.ResourceRequirements{},
-							VolumeMounts: []corev1.VolumeMount{
+							Env: []corev1.EnvVar{
 								{
-									Name:      "odigos",
-									MountPath: "/var/odigos",
+									Name: k8sconsts.NodeNameEnvVar,
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name: consts.OdigosTierEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
+										},
+									},
+								},
+								{
+									Name: "CURRENT_NS",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
+										},
+									},
 								},
 							},
+							Resources: corev1.ResourceRequirements{},
+							VolumeMounts: append([]corev1.VolumeMount{
+								{
+									Name:      "odigos",
+									MountPath: k8sconsts.OdigosAgentsDirectory,
+								},
+							}, odigosSeLinuxHostVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: ptrbool(true),
+								Capabilities: &corev1.Capabilities{
+									Add: []corev1.Capability{
+										"SYS_PTRACE",
+									},
+								},
+							},
 						},
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  OdigletContainerName,
+							Name:  k8sconsts.OdigletContainerName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Env: append([]corev1.EnvVar{
 								{
-									Name: "NODE_NAME",
+									Name: k8sconsts.NodeNameEnvVar,
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "spec.nodeName",
@@ -487,6 +519,38 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								},
 							},
 							Resources: corev1.ResourceRequirements{},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/healthz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: 8081,
+										},
+									},
+								},
+								InitialDelaySeconds: 15,
+								TimeoutSeconds:      0,
+								PeriodSeconds:       20,
+								SuccessThreshold:    0,
+								FailureThreshold:    0,
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/readyz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: 8081,
+										},
+									},
+								},
+								InitialDelaySeconds: 15,
+								TimeoutSeconds:      0,
+								PeriodSeconds:       20,
+								SuccessThreshold:    0,
+								FailureThreshold:    0,
+							},
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
 									Name:      "run-dir",
@@ -497,20 +561,15 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									MountPath: "/var/lib/kubelet/device-plugins",
 								},
 								{
-									Name:      "pod-resources",
-									MountPath: "/var/lib/kubelet/pod-resources",
-									ReadOnly:  true,
-								},
-								{
 									Name:      "odigos",
-									MountPath: "/var/odigos",
+									MountPath: k8sconsts.OdigosAgentsDirectory,
 									ReadOnly:  true,
 								},
 								{
 									Name:      "kernel-debug",
 									MountPath: "/sys/kernel/debug",
 								},
-							}, odigosSeLinuxHostVolumeMounts...),
+							}, additionalVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: ptrbool(true),
@@ -523,12 +582,78 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 						},
 					},
 					DNSPolicy:          "ClusterFirstWithHostNet",
-					ServiceAccountName: OdigletServiceAccountName,
-					HostNetwork:        true,
+					ServiceAccountName: k8sconsts.OdigletServiceAccountName,
 					HostPID:            true,
 					PriorityClassName:  "system-node-critical",
 				},
 			},
+		},
+	}
+
+	// if inetrnal trffic policy is not yet supported in the cluster, fall back to host network
+	if k8sversionInCluster == nil || k8sversionInCluster.LessThan(k8sversion.MustParse("v1.26")) {
+		ds.Spec.Template.Spec.HostNetwork = true
+	}
+
+	return ds
+}
+
+// NewOdigletGoOffsetsConfigMap returns the custom Go Offsets ConfigMap mounted by Odiglet.
+// If one already exists, it will return that object (to support upgrades while preserving existing file).
+// Otherwise, it returns a configmap with a blank file, which instructs Odiglet to use the default offsets.
+func NewOdigletGoOffsetsConfigMap(ctx context.Context, client *kube.Client, ns string) (*v1.ConfigMap, error) {
+	existingCm := &v1.ConfigMap{}
+	existingCm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
+
+	if err != nil && !apierrors.IsNotFound(err) {
+		return nil, err
+	}
+
+	goOffsetContent := ""
+	if err == nil {
+		if _, exists := existingCm.Data[k8sconsts.GoOffsetsFileName]; exists {
+			goOffsetContent = existingCm.Data[k8sconsts.GoOffsetsFileName]
+		}
+	}
+
+	return &v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.GoOffsetsConfigMap,
+			Namespace: ns,
+		},
+		Data: map[string]string{
+			k8sconsts.GoOffsetsFileName: goOffsetContent,
+		},
+	}, nil
+}
+
+func NewOdigletLocalTrafficService(ns string) *corev1.Service {
+	localTrafficPolicy := v1.ServiceInternalTrafficPolicyLocal
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigletLocalTrafficServiceName,
+			Namespace: ns,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "op-amp",
+					Port:       int32(consts.OpAMPPort),
+					TargetPort: intstr.FromInt(consts.OpAMPPort),
+				},
+			},
+			InternalTrafficPolicy: &localTrafficPolicy,
 		},
 	}
 }
@@ -571,6 +696,29 @@ func selinuxHostVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
+// used to inject the host volumes into odigos components for custom container runtime socket path
+func setCustomContainerRuntimeSocketVolume(customContainerRuntimeSocketPath string) []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: "custom-container-runtime-socket",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: filepath.Dir(customContainerRuntimeSocketPath),
+				},
+			},
+		},
+	}
+}
+
+func setCustomContainerRuntimeSocketVolumeMount(customContainerRuntimeSocketPath string) []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      "custom-container-runtime-socket",
+			MountPath: filepath.Dir(customContainerRuntimeSocketPath),
+		},
+	}
+}
+
 func ptrMountPropagationMode(p corev1.MountPropagationMode) *corev1.MountPropagationMode {
 	return &p
 }
@@ -581,34 +729,32 @@ type odigletResourceManager struct {
 	config        *common.OdigosConfiguration
 	odigosTier    common.OdigosTier
 	odigosVersion string
+	managerOpts   resourcemanager.ManagerOpts
 }
 
-func NewOdigletResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string) resourcemanager.ResourceManager {
-	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion}
+func NewOdigletResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
+	return &odigletResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion, managerOpts: managerOpts}
 }
 
 func (a *odigletResourceManager) Name() string { return "Odiglet" }
 
 func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
-
-	odigletImage := a.config.OdigletImage
-	// if the user specified an image, use it. otherwise, use the default image.
-	// prev v1.0.4 - the cli would automatically store "keyval/odigos-odiglet" instead of empty value,
-	// thus we need to treat the default image name as empty value.
-	if odigletImage == "" || odigletImage == OdigletImageName {
-		if a.odigosTier == common.CommunityOdigosTier {
-			odigletImage = OdigletImageName
-		} else {
-			odigletImage = OdigletEnterpriseImageName
-		}
+	goOffsetConfigMap, err := NewOdigletGoOffsetsConfigMap(ctx, a.client, a.ns)
+	if err != nil {
+		return err
 	}
-
 	resources := []kube.Object{
 		NewOdigletServiceAccount(a.ns),
 		NewOdigletRole(a.ns),
 		NewOdigletRoleBinding(a.ns),
-		NewOdigletClusterRole(a.config.Psp),
+		NewOdigletClusterRole(a.config.Psp, a.config.OpenshiftEnabled),
 		NewOdigletClusterRoleBinding(a.ns),
+		goOffsetConfigMap,
+	}
+
+	k8sVersion := cmdcontext.K8SVersionFromContext(ctx)
+	if k8sVersion != nil && k8sVersion.AtLeast(k8sversion.MustParse("v1.26")) {
+		resources = append(resources, NewOdigletLocalTrafficService(a.ns))
 	}
 
 	clusterKind := cmdcontext.ClusterKindFromContext(ctx)
@@ -624,22 +770,13 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		resources = append(resources, NewResourceQuota(a.ns))
 	}
 
-	// temporary hack - check if the profiles named "code-attributes" or "kratos" are enabled.
-	// in the future, the go code attribute collection should be handled on an otel-sdk level
-	// instead of setting a global environment variable.
-	// once this is done, we can remove this check.
-	goAutoIncludeCodeAttributes := a.config.GoAutoIncludeCodeAttributes
-	if slices.Contains(a.config.Profiles, "code-attributes") || slices.Contains(a.config.Profiles, "kratos") {
-		goAutoIncludeCodeAttributes = true
-	}
-
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
 	resources = append(resources,
-		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, odigletImage, a.odigosTier, a.config.OpenshiftEnabled, goAutoIncludeCodeAttributes,
+		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.OdigletImage, a.odigosTier, a.config.OpenshiftEnabled,
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
-				K8SVersion: cmdcontext.K8SVersionFromContext(ctx),
-			}))
+				K8SVersion: k8sVersion,
+			}, a.config.CustomContainerRuntimeSocketPath, a.config.NodeSelector))
 
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

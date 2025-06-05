@@ -2,8 +2,8 @@ package python
 
 import (
 	"debug/elf"
-	"fmt"
-	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -19,19 +19,35 @@ const (
 	libPythonStr      = "libpython3"
 )
 
-func (p *PythonInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
-	if strings.Contains(proc.ExeName, pythonProcessName) || strings.Contains(proc.CmdLine, pythonProcessName) {
-		return common.PythonProgrammingLanguage, true
-	}
+// pythonExeRegex matches executable names that represent Python interpreters.
+// It allows for the following formats:
+//   - python           (generic python executable)
+//   - python3          (major version specified)
+//   - python311        (major and minor version without a dot)
+//   - python3.12       (major and minor version with a dot)
+//
+// The pattern ensures that after the "python" prefix, only numeric versions (optionally with a single dot) are allowed.
+var pythonExeRegex = regexp.MustCompile(`^python(\d+(\.\d+)?)?$`)
 
-	if p.isLibPythonLinked(proc) {
+func (p *PythonInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	baseExe := filepath.Base(pcx.ExePath)
+
+	if pythonExeRegex.MatchString(baseExe) {
 		return common.PythonProgrammingLanguage, true
 	}
 
 	return "", false
 }
 
-func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
+func (p *PythonInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	if p.isLibPythonLinked(pcx) {
+		return common.PythonProgrammingLanguage, true
+	}
+
+	return "", false
+}
+
+func (p *PythonInspector) GetRuntimeVersion(proc *process.ProcessContext, containerURL string) *version.Version {
 	if value, exists := proc.GetDetailedEnvsValue(process.PythonVersionConst); exists {
 		return common.GetVersion(value)
 	}
@@ -39,19 +55,18 @@ func (p *PythonInspector) GetRuntimeVersion(proc *process.Details, containerURL 
 	return nil
 }
 
-func (p *PythonInspector) isLibPythonLinked(proc *process.Details) bool {
-	f := fmt.Sprintf("/proc/%d/exe", proc.ProcessID)
-	file, err := os.Open(f)
-	if err != nil {
-		return false
-	}
-	defer file.Close()
+func (p *PythonInspector) isLibPythonLinked(pcx *process.ProcessContext) bool {
+	exeFile, err := pcx.GetExeFile()
 
-	elfFile, err := elf.NewFile(file)
 	if err != nil {
 		return false
 	}
-	defer elfFile.Close()
+
+	elfFile, err := elf.NewFile(exeFile)
+	if err != nil {
+		return false
+	}
+	defer elfFile.Close() // nolint:errcheck // we can't do anything if it fails
 
 	dynamicSection, err := elfFile.DynString(elf.DT_NEEDED)
 	if err != nil {

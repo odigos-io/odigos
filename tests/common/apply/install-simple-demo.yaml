@@ -16,11 +16,11 @@ spec:
     spec:
       containers:
         - name: coupon
-          image: keyval/odigos-demo-coupon:v0.1
+          image: registry.odigos.io/odigos-demo-coupon:v0.1.18
           imagePullPolicy: IfNotPresent
           env:
             - name: MEMBERSHIP_SERVICE_HOST
-              value: "membership:8080"
+              value: membership:8080
           ports:
             - containerPort: 8080
 ---
@@ -55,10 +55,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: keyval/odigos-demo-frontend:v0.2
+          image: registry.odigos.io/odigos-demo-frontend:v0.1.18
           imagePullPolicy: IfNotPresent
-          securityContext:
-            runAsUser: 1000
           env:
             - name: INVENTORY_SERVICE_HOST
               value: inventory:8080
@@ -66,20 +64,10 @@ spec:
               value: pricing:8080
             - name: COUPON_SERVICE_HOST
               value: coupon:8080
+            - name: CURRENCY_SERVICE_HOST
+              value: currency:8080
           ports:
             - containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: /actuator/health/readiness
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          livenessProbe:
-            httpGet:
-              path: /actuator/health/liveness
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 5
 ---
 kind: Service
 apiVersion: v1
@@ -112,7 +100,7 @@ spec:
     spec:
       containers:
         - name: inventory
-          image: keyval/odigos-demo-inventory:v0.1
+          image: registry.odigos.io/odigos-demo-inventory:v0.1.18
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -148,7 +136,7 @@ spec:
     spec:
       containers:
         - name: membership
-          image: keyval/odigos-demo-membership:v0.1
+          image: registry.odigos.io/odigos-demo-membership:v0.1.18
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -184,7 +172,7 @@ spec:
     spec:
       containers:
         - name: pricing
-          image: keyval/odigos-demo-pricing:v0.1
+          image: registry.odigos.io/odigos-demo-pricing:v0.1.18
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -197,6 +185,71 @@ metadata:
 spec:
   selector:
     app: pricing
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currency
+  namespace: default
+  labels:
+    app: currency
+spec:
+  selector:
+    matchLabels:
+      app: currency
+  template:
+    metadata:
+      labels:
+        app: currency
+    spec:
+      containers:
+        - name: currency
+          image: registry.odigos.io/odigos-demo-currency:v0.1.18
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9000
+        - name: nginx
+          image: nginx:1.27.5
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: currency-nginx-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: currency-nginx-config
+  namespace: default
+data:
+  nginx.conf: |
+    server {
+        listen 8080;
+        server_name localhost;
+
+        location / {
+            include fastcgi_params;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_param SCRIPT_FILENAME /app/index.php;
+        }
+    }
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: currency
+  namespace: default
+spec:
+  selector:
+    app: currency
   ports:
     - protocol: TCP
       port: 8080

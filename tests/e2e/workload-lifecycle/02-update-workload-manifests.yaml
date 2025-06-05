@@ -5,6 +5,7 @@ metadata:
   namespace: default
   labels:
     app: nodejs-unsupported-version
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -18,7 +19,7 @@ spec:
     spec:
       containers:
         - name: nodejs-unsupported-version
-          image: nodejs-unsupported-version:v0.0.1
+          image: public.ecr.aws/odigos/nodejs-unsupported-version:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -30,6 +31,7 @@ metadata:
   namespace: default
   labels:
     app: nodejs-very-old-version
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -43,7 +45,7 @@ spec:
     spec:
       containers:
         - name: nodejs-very-old-version
-          image: nodejs-very-old-version:v0.0.1
+          image: public.ecr.aws/odigos/nodejs-very-old-version:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -55,6 +57,7 @@ metadata:
   namespace: default
   labels:
     app: nodejs-minimum-version
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -68,7 +71,7 @@ spec:
     spec:
       containers:
         - name: nodejs-minimum-version
-          image: nodejs-minimum-version:v0.0.1
+          image: public.ecr.aws/odigos/nodejs-minimum-version:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -80,6 +83,7 @@ metadata:
   namespace: default
   labels:
     app: nodejs-latest-version
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -93,7 +97,7 @@ spec:
     spec:
       containers:
         - name: nodejs-latest-version
-          image: nodejs-latest-version:v0.0.1
+          image: public.ecr.aws/odigos/nodejs-latest-version:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -105,6 +109,7 @@ metadata:
   namespace: default
   labels:
     app: nodejs-dockerfile-env
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -118,7 +123,7 @@ spec:
     spec:
       containers:
         - name: nodejs-dockerfile-env
-          image: nodejs-dockerfile-env:v0.0.1
+          image: public.ecr.aws/odigos/nodejs-dockerfile-env:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -130,6 +135,7 @@ metadata:
   namespace: default
   labels:
     app: nodejs-manifest-env
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -143,7 +149,7 @@ spec:
     spec:
       containers:
         - name: nodejs-manifest-env
-          image: nodejs-manifest-env:v0.0.1
+          image: public.ecr.aws/odigos/nodejs-manifest-env:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -158,6 +164,7 @@ metadata:
   namespace: default
   labels:
     app: cpp-http-server
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -171,32 +178,7 @@ spec:
     spec:
       containers:
         - name: cpp-http-server
-          image: cpp-http-server:v0.0.1
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 3000
----
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-  name: language-change
-  namespace: default
-  labels:
-    app: language-change
-spec:
-  selector:
-    matchLabels:
-      app: language-change
-  template:
-    metadata:
-      labels:
-        app: language-change
-      annotations:
-        odigos-test-step: "2"
-    spec:
-      containers:
-        - name: language-change
-          image: cpp-http-server:v0.0.1
+          image: public.ecr.aws/odigos/cpp-http-server:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -208,6 +190,7 @@ metadata:
   namespace: default
   labels:
     app: java-supported-version
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -221,7 +204,7 @@ spec:
     spec:
       containers:
         - name: java-supported-version
-          image: java-supported-version:v0.0.1
+          image: public.ecr.aws/odigos/java-supported-version:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -237,6 +220,7 @@ metadata:
   namespace: default
   labels:
     app: java-azul
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -250,7 +234,7 @@ spec:
     spec:
       containers:
         - name: java-azul
-          image: java-azul:v0.0.1
+          image: public.ecr.aws/odigos/java-azul:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -266,6 +250,7 @@ metadata:
   namespace: default
   labels:
     app: java-supported-docker-env
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -279,7 +264,7 @@ spec:
     spec:
       containers:
         - name: java-supported-docker-env
-          image: java-supported-docker-env:v0.0.1
+          image: public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -296,6 +281,7 @@ metadata:
   namespace: default
   labels:
     app: java-supported-manifest-env
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -309,7 +295,7 @@ spec:
     spec:
       containers:
         - name: java-supported-manifest-env
-          image: java-supported-manifest-env:v0.0.1
+          image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -326,6 +312,7 @@ metadata:
   namespace: default
   labels:
     app: java-latest-version
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -339,7 +326,7 @@ spec:
     spec:
       containers:
         - name: java-latest-version
-          image: java-latest-version:v0.0.1
+          image: public.ecr.aws/odigos/java-latest-version:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -356,6 +343,7 @@ metadata:
   namespace: default
   labels:
     app: java-old-version
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -369,7 +357,7 @@ spec:
     spec:
       containers:
         - name: java-old-version
-          image: java-old-version:v0.0.1
+          image: public.ecr.aws/odigos/java-old-version:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -385,6 +373,7 @@ metadata:
   namespace: default
   labels:
     app: python-latest-version
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -398,7 +387,7 @@ spec:
     spec:
       containers:
         - name: python-latest-version
-          image: python-latest-version:v0.0.1
+          image: public.ecr.aws/odigos/python-latest-version:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
@@ -422,6 +411,7 @@ metadata:
   namespace: default
   labels:
     app: python-alpine
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -435,7 +425,7 @@ spec:
     spec:
       containers:
         - name: python-alpine
-          image: python-alpine:v0.0.1
+          image: public.ecr.aws/odigos/python-alpine:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
@@ -459,6 +449,7 @@ metadata:
   namespace: default
   labels:
     app: python-not-supported
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -472,7 +463,7 @@ spec:
     spec:
       containers:
         - name: python-not-supported
-          image: python-not-supported:v0.0.1
+          image: public.ecr.aws/odigos/python-not-supported:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
@@ -496,6 +487,7 @@ metadata:
   namespace: default
   labels:
     app: python-min-version
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -509,7 +501,7 @@ spec:
     spec:
       containers:
         - name: python-min-version
-          image: python-min-version:v0.0.1
+          image: public.ecr.aws/odigos/python-min-version:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
@@ -533,6 +525,7 @@ metadata:
   namespace: default
   labels:
     app: dotnet8-musl
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -546,7 +539,7 @@ spec:
     spec:
       containers:
         - name: dotnet8-musl
-          image: dotnet8-musl:v0.0.1
+          image: public.ecr.aws/odigos/dotnet8-musl:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -561,6 +554,7 @@ metadata:
   namespace: default
   labels:
     app: dotnet6-musl
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -574,7 +568,7 @@ spec:
     spec:
       containers:
         - name: dotnet6-musl
-          image: dotnet6-musl:v0.0.1
+          image: public.ecr.aws/odigos/dotnet6-musl:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -589,6 +583,7 @@ metadata:
   namespace: default
   labels:
     app: dotnet8-glibc
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -602,7 +597,7 @@ spec:
     spec:
       containers:
         - name: dotnet8-glibc
-          image: dotnet8-glibc:v0.0.1
+          image: public.ecr.aws/odigos/dotnet8-glibc:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -617,6 +612,7 @@ metadata:
   namespace: default
   labels:
     app: dotnet6-glibc
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -630,7 +626,7 @@ spec:
     spec:
       containers:
         - name: dotnet6-glibc
-          image: dotnet6-glibc:v0.0.1
+          image: public.ecr.aws/odigos/dotnet6-glibc:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

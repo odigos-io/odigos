@@ -9,45 +9,53 @@ spec:
     - name: Install Odigos CLI
       try:
         - script:
-            timeout: 60s
+            timeout: 3m
             content: |
-              ../../../cli/odigos install --version e2e-test
+              ../../../cli/odigos install --version e2e-test --namespace odigos-test
+              ../../common/verify_odigos_installation.sh odigos-test
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
 
-    - name: Install App - Simple Demo
+    - name: Install - Simple Demo Apps
       try:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
         - script:
-            timeout: 120s
+            timeout: 2m
             content: |
               kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
               kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
               kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
               kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
               kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 
-    - name: Add Destination - Jaeger
+    - name: Install - Jaeger
       try:
+        - apply:
+            file: ../../common/apply/install-jaeger.yaml
         - script:
-            timeout: 120s
+            timeout: 1m
             content: |
-              kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/jaeger.yaml
-              kubectl wait --for=condition=available --timeout=120s deployment/jaeger -n tracing
+              kubectl wait --for=condition=ready pod -l app=jaeger -n tracing --timeout=60s
+        - assert:
+            file: ../../common/assert/jaeger-installed.yaml
 
     - name: Start UI from CLI
       try:
         - script:
-            timeout: 10s
+            timeout: 1m
             content: |
               nohup ../../../cli/odigos ui > odigos-ui.log 2>&1 &
-              sleep 5
+              sleep 3
 
     - name: Wait for UI
       try:
         - script:
-            timeout: 30s
+            timeout: 1m
             content: |
               for i in {1..10}; do
                 curl -s http://localhost:3000 && break || sleep 2
@@ -56,7 +64,7 @@ spec:
     - name: Run Cypress tests
       try:
         - script:
-            timeout: 300s
+            timeout: 10m
             content: |
               cd ../../../frontend/webapp
               yarn install

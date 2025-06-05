@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: odigos-instrumentor
+  labels:
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - ''
@@ -15,6 +17,14 @@ rules:
       - ''
     resources:
       - namespaces
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - ''
+    resources:
+      - pods
     verbs:
       - list
       - watch
@@ -49,6 +59,22 @@ rules:
       - watch
       - update
       - patch
+{{- if .Values.openshift.enabled }}
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets/finalizers
+      - deployments/finalizers
+      - daemonsets/finalizers
+    verbs:
+      - update
+{{- end }}
+  - apiGroups:
+      - operator.odigos.io
+    resources:
+      - odigos/finalizers
+    verbs:
+      - update
   - apiGroups:
       - odigos.io
     resources:
@@ -61,7 +87,7 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentedapplications/status
+      - instrumentationconfigs/status
     verbs:
       - get
       - patch
@@ -81,6 +107,51 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentationconfigs/status
+      - sources
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - sources/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+    resourceNames:
+      - source-mutating-webhook-configuration
+      - mutating-webhook-configuration
+    verbs:
+      - update
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+    resourceNames:
+      - source-validating-webhook-configuration
     verbs:
       - update

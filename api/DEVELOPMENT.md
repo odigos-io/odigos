@@ -8,11 +8,11 @@
 4. Run `make generate-client` to update the auto generated files under `api/generated`.
 5. Run `make sync-helm-crd` to sync the CRD yaml files to the helm chart.
 
-you can run `make all` to combine steps 2-5 instead of running them individually.
+you can run `make all` to combine steps 2-5 instead of running them individually. 
 
 ## CRD versioning
 
-Odigos CRDs are versioned. For example the `odigosconfigurations.odigos.io` resource version is `v1alpha1`.
+Odigos CRDs are versioned. For example the `sources.odigos.io` resource version is `v1alpha1`.
 
 The version should be bumped when a breaking change is made to a CRD. A breaking change is a change that requires a migration of the objects from the old version to the new one.
 

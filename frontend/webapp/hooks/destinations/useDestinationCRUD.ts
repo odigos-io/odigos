@@ -1,88 +1,132 @@
-import { useMutation } from '@apollo/client';
-import { useNotificationStore } from '@/store';
-import { ACTION, getSseTargetFromId } from '@/utils';
-import { useComputePlatform } from '../compute-platform';
-import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type DestinationInput } from '@/types';
+import { useEffect } from 'react';
+import { useConfig } from '../config';
+import { GET_DESTINATIONS } from '@/graphql';
+import { mapFetchedDestinations } from '@/utils';
+import { useLazyQuery, useMutation } from '@apollo/client';
+import { getSseTargetFromId } from '@odigos/ui-kit/functions';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
+import { useDataStreamStore, useEntityStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
+import { Crud, EntityTypes, StatusType, type Destination, type DestinationFormData } from '@odigos/ui-kit/types';
 
-interface Params {
-  onSuccess?: (type: string) => void;
-  onError?: (type: string) => void;
+interface UseDestinationCrud {
+  destinations: Destination[];
+  destinationsLoading: boolean;
+  fetchDestinations: () => void;
+  createDestination: (destination: DestinationFormData) => Promise<void>;
+  updateDestination: (id: string, destination: DestinationFormData) => Promise<void>;
+  deleteDestination: (id: string) => Promise<void>;
 }
 
-export const useDestinationCRUD = (params?: Params) => {
-  const removeNotifications = useNotificationStore((store) => store.removeNotifications);
-  const { data, refetch } = useComputePlatform();
+const mapNoUndefinedFields = (destination: DestinationFormData, selectedStreamName: string) => ({
+  ...destination,
+  fields: destination.fields.filter(({ value }) => value !== undefined),
+
+  // TODO: uncomment when Data Streams are ready to use
+  currentStreamName: '', // selectedStreamName,
+});
+
+export const useDestinationCRUD = (): UseDestinationCrud => {
+  const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
+  const { selectedStreamName } = useDataStreamStore();
+  const { addPendingItems, removePendingItems } = usePendingStore();
+  const { destinationsLoading, setEntitiesLoading, destinations, addEntities, removeEntities } = useEntityStore();
 
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string) => {
-    addNotification({
-      type,
-      title,
-      message,
-      crdType: OVERVIEW_ENTITY_TYPES.DESTINATION,
-      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.DESTINATION) : undefined,
-    });
+  const notifyUser = (type: StatusType, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
+    addNotification({ type, title, message, crdType: EntityTypes.Destination, target: id ? getSseTargetFromId(id, EntityTypes.Destination) : undefined, hideFromHistory });
   };
 
-  const handleError = (title: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, title, message, id);
-    params?.onError?.(title);
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }, {}>(GET_DESTINATIONS);
+
+  const fetchDestinations = async () => {
+    setEntitiesLoading(EntityTypes.Destination, true);
+    const { error, data } = await fetchAll();
+
+    if (error) {
+      notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
+    } else if (data?.computePlatform?.destinations) {
+      const { destinations: items } = data.computePlatform;
+      addEntities(EntityTypes.Destination, mapFetchedDestinations(items));
+      setEntitiesLoading(EntityTypes.Destination, false);
+    }
   };
 
-  const handleComplete = (title: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION_TYPE.SUCCESS, title, message, id);
-    refetch();
-    params?.onSuccess?.(title);
+  const [mutateCreate] = useMutation<{ createNewDestination: Destination }, { destination: DestinationFormData }>(CREATE_DESTINATION, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Create, error.cause?.message || error.message),
+    onCompleted: (res) => {
+      const destination = res.createNewDestination;
+      addEntities(EntityTypes.Destination, mapFetchedDestinations([destination]));
+      notifyUser(StatusType.Success, Crud.Create, `Successfully created "${destination.destinationType.type}" destination`, destination.id);
+    },
+  });
+
+  const [mutateUpdate] = useMutation<{ updateDestination: { id: string } }, { id: string; destination: DestinationFormData }>(UPDATE_DESTINATION, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
+    onCompleted: (res, req) => {
+      setTimeout(() => {
+        const id = req?.variables?.id as string;
+        const destination = destinations.find((r) => r.id === id);
+        removePendingItems([{ entityType: EntityTypes.Destination, entityId: id }]);
+        notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${destination?.destinationType?.type || id}" destination`, id);
+        // We wait for SSE
+      }, 3000);
+    },
+  });
+
+  const [mutateDelete] = useMutation<{ deleteDestination: boolean }, { id: string; currentStreamName: string }>(DELETE_DESTINATION, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Delete, error.cause?.message || error.message),
+    onCompleted: (res, req) => {
+      const id = req?.variables?.id as string;
+      const destination = destinations.find((r) => r.id === id);
+      removeEntities(EntityTypes.Destination, [id]);
+      notifyUser(StatusType.Success, Crud.Delete, `Successfully deleted "${destination?.destinationType.type || id}" destination`, id);
+    },
+  });
+
+  const createDestination: UseDestinationCrud['createDestination'] = async (destination) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      await mutateCreate({ variables: { destination: mapNoUndefinedFields(destination, selectedStreamName) } });
+    }
   };
 
-  const [createDestination, cState] = useMutation<{
-    createNewDestination: { id: string };
-  }>(CREATE_DESTINATION, {
-    onError: (error) => handleError(ACTION.CREATE, error.message),
-    onCompleted: (res, req) => {
-      const id = res.createNewDestination.id;
-      const type = req?.variables?.destination.type;
-      const name = req?.variables?.destination.name;
-      const label = `${type}${!!name ? ` (${name})` : ''}`;
-      handleComplete(ACTION.CREATE, `destination "${label}" was created`, id);
-    },
-  });
-  const [updateDestination, uState] = useMutation<{
-    updateDestination: { id: string };
-  }>(UPDATE_DESTINATION, {
-    onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: (res, req) => {
-      const id = res.updateDestination.id;
-      const type = req?.variables?.destination.type;
-      const name = req?.variables?.destination.name;
-      const label = `${type}${!!name ? ` (${name})` : ''}`;
-      handleComplete(ACTION.UPDATE, `destination "${label}" was updated`, id);
-    },
-  });
-  const [deleteDestination, dState] = useMutation<{
-    deleteDestination: boolean;
-  }>(DELETE_DESTINATION, {
-    onError: (error) => handleError(ACTION.DELETE, error.message),
-    onCompleted: (res, req) => {
-      const id = req?.variables?.id;
-      removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.DESTINATION));
-      handleComplete(ACTION.DELETE, `destination "${id}" was deleted`);
-    },
-  });
+  const updateDestination: UseDestinationCrud['updateDestination'] = async (id, destination) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      notifyUser(StatusType.Default, 'Pending', 'Updating destination...', undefined, true);
+      addPendingItems([{ entityType: EntityTypes.Destination, entityId: id }]);
+      await mutateUpdate({ variables: { id, destination: mapNoUndefinedFields(destination, selectedStreamName) } });
+    }
+  };
+
+  const deleteDestination: UseDestinationCrud['deleteDestination'] = async (id) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      await mutateDelete({
+        variables: {
+          id,
+
+          // TODO: uncomment when Data Streams are ready to use
+          currentStreamName: '', // selectedStreamName
+        },
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!destinations.length && !destinationsLoading) fetchDestinations();
+  }, []);
 
   return {
-    loading: cState.loading || uState.loading || dState.loading,
-    destinations: data?.computePlatform.destinations || [],
-
-    createDestination: (destination: DestinationInput) => {
-      createDestination({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
-    },
-    updateDestination: (id: string, destination: DestinationInput) => {
-      updateDestination({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
-    },
-    deleteDestination: (id: string) => {
-      deleteDestination({ variables: { id } });
-    },
+    destinations,
+    destinationsLoading,
+    fetchDestinations,
+    createDestination,
+    updateDestination,
+    deleteDestination,
   };
 };

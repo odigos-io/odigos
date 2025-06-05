@@ -1,0 +1,44 @@
+name: Trigger Odigos Enterprise Workflow
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'common/**'
+      - 'k8sutils/**'
+      - 'procdiscovery/**'
+      - 'opampserver/**'
+      - 'instrumentation/**'
+      - 'odiglet/**'
+      - 'profiles/**'
+
+jobs:
+  trigger-odigos-enterprise:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Associated PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          REPO_OWNER=$(echo $REPO | cut -d'/' -f1)
+          REPO_NAME=$(echo $REPO | cut -d'/' -f2)
+          COMMIT_SHA="${{ github.sha }}" # Commit SHA from the push event
+
+          # Query GitHub API for PRs linked to the commit
+          RESPONSE=$(curl -s \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.groot-preview+json" \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/commits/$COMMIT_SHA/pulls")
+
+          # Extract PR URL
+          echo "PR_URL=$(echo "$RESPONSE" | jq -r '.[0].html_url')" >> "$GITHUB_ENV"
+
+      - name: Trigger process PR in Odigos Enterprise
+        run: |
+          curl -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
+          https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
+          -d '{"event_type": "process_update_dependencies_pr", "client_payload": {"pr_creator": "${{ github.event.pusher.name }}", "source_pr_url": "${{ env.PR_URL }}" }}'

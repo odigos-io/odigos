@@ -21,8 +21,9 @@ func (g *OpsVerse) DestType() common.DestinationType {
 	return common.OpsVerseDestinationType
 }
 
-func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	var err error
+	var pipelineNames []string
 	if isMetricsEnabled(dest) {
 		e := g.isMetricsVarsExists(dest)
 		if e != nil {
@@ -41,6 +42,7 @@ func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 			currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
 				Exporters: []string{rwExporterName},
 			}
+			pipelineNames = append(pipelineNames, metricsPipelineName)
 		}
 	}
 
@@ -64,6 +66,7 @@ func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 			currentConfig.Service.Pipelines["traces/opsverse"] = Pipeline{
 				Exporters: []string{exporterName},
 			}
+			pipelineNames = append(pipelineNames, "traces/opsverse")
 		}
 	}
 
@@ -93,10 +96,11 @@ func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 			currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 				Exporters: []string{lokiExporterName},
 			}
+			pipelineNames = append(pipelineNames, logsPipelineName)
 		}
 	}
 
-	return err
+	return pipelineNames, err
 }
 
 func (g *OpsVerse) isTracingVarsExists(dest ExporterConfigurer) error {

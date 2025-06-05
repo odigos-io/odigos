@@ -1,38 +1,11 @@
-import { type Condition } from './common';
-import { WORKLOAD_PROGRAMMING_LANGUAGES } from '@/utils';
+import type { SelectedSource } from '@odigos/ui-kit/store';
+import type { Condition, WorkloadId } from '@odigos/ui-kit/types';
 
-export type SourceContainer = {
-  containerName: string;
-  language: WORKLOAD_PROGRAMMING_LANGUAGES;
-  runtimeVersion: string;
-  otherAgent: string | null;
-};
-
-export type K8sActualSource = {
-  name: string;
-  kind: string;
+export interface SourceInstrumentInput {
   namespace: string;
-  reportedName: string;
-  numberOfInstances: number;
-  selected?: boolean;
-  instrumentedApplicationDetails: {
-    containers: Array<SourceContainer>;
-    conditions: Array<Condition>;
-  };
-};
-
-export type WorkloadId = {
-  kind: string;
-  name: string;
-  namespace: string;
-};
-
-export interface PatchSourceRequestInput {
-  reportedName?: string;
+  sources: Omit<SelectedSource, 'numberOfInstances'>[];
 }
 
-export type PersistSourcesArray = {
-  kind: string;
-  name: string;
-  selected: boolean;
+export type SourceConditions = WorkloadId & {
+  conditions: Condition[];
 };

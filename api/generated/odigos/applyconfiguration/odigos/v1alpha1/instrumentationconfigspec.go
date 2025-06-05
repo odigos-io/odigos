@@ -20,10 +20,11 @@ package v1alpha1
 // InstrumentationConfigSpecApplyConfiguration represents a declarative configuration of the InstrumentationConfigSpec type for use
 // with apply.
 type InstrumentationConfigSpecApplyConfiguration struct {
-	ServiceName               *string                                           `json:"serviceName,omitempty"`
-	RuntimeDetailsInvalidated *bool                                             `json:"runtimeDetailsInvalidated,omitempty"`
-	Config                    []WorkloadInstrumentationConfigApplyConfiguration `json:"config,omitempty"`
-	SdkConfigs                []SdkConfigApplyConfiguration                     `json:"sdkConfigs,omitempty"`
+	ServiceName           *string                                  `json:"serviceName,omitempty"`
+	AgentInjectionEnabled *bool                                    `json:"agentInjectionEnabled,omitempty"`
+	Containers            []ContainerAgentConfigApplyConfiguration `json:"containers,omitempty"`
+	AgentsMetaHash        *string                                  `json:"agentsMetaHash,omitempty"`
+	SdkConfigs            []SdkConfigApplyConfiguration            `json:"sdkConfigs,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -40,24 +41,32 @@ func (b *InstrumentationConfigSpecApplyConfiguration) WithServiceName(value stri
 	return b
 }
 
-// WithRuntimeDetailsInvalidated sets the RuntimeDetailsInvalidated field in the declarative configuration to the given value
+// WithAgentInjectionEnabled sets the AgentInjectionEnabled field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the RuntimeDetailsInvalidated field is set to the value of the last call.
-func (b *InstrumentationConfigSpecApplyConfiguration) WithRuntimeDetailsInvalidated(value bool) *InstrumentationConfigSpecApplyConfiguration {
-	b.RuntimeDetailsInvalidated = &value
+// If called multiple times, the AgentInjectionEnabled field is set to the value of the last call.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithAgentInjectionEnabled(value bool) *InstrumentationConfigSpecApplyConfiguration {
+	b.AgentInjectionEnabled = &value
 	return b
 }
 
-// WithConfig adds the given value to the Config field in the declarative configuration
+// WithContainers adds the given value to the Containers field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Config field.
-func (b *InstrumentationConfigSpecApplyConfiguration) WithConfig(values ...*WorkloadInstrumentationConfigApplyConfiguration) *InstrumentationConfigSpecApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the Containers field.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithContainers(values ...*ContainerAgentConfigApplyConfiguration) *InstrumentationConfigSpecApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithConfig")
+			panic("nil value passed to WithContainers")
 		}
-		b.Config = append(b.Config, *values[i])
+		b.Containers = append(b.Containers, *values[i])
 	}
+	return b
+}
+
+// WithAgentsMetaHash sets the AgentsMetaHash field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AgentsMetaHash field is set to the value of the last call.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithAgentsMetaHash(value string) *InstrumentationConfigSpecApplyConfiguration {
+	b.AgentsMetaHash = &value
 	return b
 }
 

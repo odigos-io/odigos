@@ -18,13 +18,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
 	versioned "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	internalinterfaces "github.com/odigos-io/odigos/api/generated/odigos/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/listers/odigos/v1alpha1"
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/listers/odigos/v1alpha1"
+	apiodigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -35,7 +35,7 @@ import (
 // InstrumentationRules.
 type InstrumentationRuleInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.InstrumentationRuleLister
+	Lister() odigosv1alpha1.InstrumentationRuleLister
 }
 
 type instrumentationRuleInformer struct {
@@ -61,16 +61,28 @@ func NewFilteredInstrumentationRuleInformer(client versioned.Interface, namespac
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.OdigosV1alpha1().InstrumentationRules(namespace).List(context.TODO(), options)
+				return client.OdigosV1alpha1().InstrumentationRules(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.OdigosV1alpha1().InstrumentationRules(namespace).Watch(context.TODO(), options)
+				return client.OdigosV1alpha1().InstrumentationRules(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.OdigosV1alpha1().InstrumentationRules(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.OdigosV1alpha1().InstrumentationRules(namespace).Watch(ctx, options)
 			},
 		},
-		&odigosv1alpha1.InstrumentationRule{},
+		&apiodigosv1alpha1.InstrumentationRule{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,9 +93,9 @@ func (f *instrumentationRuleInformer) defaultInformer(client versioned.Interface
 }
 
 func (f *instrumentationRuleInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&odigosv1alpha1.InstrumentationRule{}, f.defaultInformer)
+	return f.factory.InformerFor(&apiodigosv1alpha1.InstrumentationRule{}, f.defaultInformer)
 }
 
-func (f *instrumentationRuleInformer) Lister() v1alpha1.InstrumentationRuleLister {
-	return v1alpha1.NewInstrumentationRuleLister(f.Informer().GetIndexer())
+func (f *instrumentationRuleInformer) Lister() odigosv1alpha1.InstrumentationRuleLister {
+	return odigosv1alpha1.NewInstrumentationRuleLister(f.Informer().GetIndexer())
 }

@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: odigos-test
   labels:
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 ---
 apiVersion: v1
 kind: Pod
@@ -51,6 +51,20 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
+    app: odigos-ui
+  namespace: odigos-test
+status:
+  containerStatuses:
+    - name: ui
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
     app.kubernetes.io/name: odiglet
   namespace: odigos-test
   ownerReferences:
@@ -68,7 +82,7 @@ spec:
           add:
             - SYS_PTRACE
         privileged: true
-  hostNetwork: true
+  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
   nodeSelector:
     kubernetes.io/os: linux
@@ -92,10 +106,6 @@ spec:
       port: 3000
       protocol: TCP
       targetPort: 3000
-    - name: legacy-ui
-      port: 3001
-      protocol: TCP
-      targetPort: 3001
     - name: otlp
       port: 4317
       protocol: TCP
@@ -108,7 +118,7 @@ kind: ConfigMap
 metadata:
   labels:
     odigos.io/config: '1'
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
   name: odigos-config
   namespace: odigos-test
 ---
@@ -116,30 +126,19 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    odigos.io/config: '1'
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
   name: destinations.odigos.io
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    odigos.io/config: '1'
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
   name: instrumentedapplications.odigos.io
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    odigos.io/config: '1'
-    odigos.io/system-object: 'true'
-  name: odigosconfigurations.odigos.io
----
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    odigos.io/config: '1'
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
   name: processors.odigos.io

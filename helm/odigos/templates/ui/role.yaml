@@ -3,6 +3,8 @@ kind: Role
 metadata:
   name: odigos-ui
   namespace: '{{ .Release.Namespace }}'
+  labels:
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - ''
@@ -11,6 +13,7 @@ rules:
     verbs:
       - get
       - list
+  {{- if ne .Values.ui.uiMode "readonly" }}
   - apiGroups:
       - ''
     resources:
@@ -21,6 +24,8 @@ rules:
       - create
       - patch
       - update
+      - delete
+  {{- end }}
   - apiGroups:
       - odigos.io
     resources:
@@ -29,10 +34,12 @@ rules:
     verbs:
       - get
       - list
+      {{- if ne .Values.ui.uiMode "readonly" }}
       - create
       - patch
       - update
       - delete
+      {{- end }}
   - apiGroups:
       - odigos.io
     resources:
@@ -53,7 +60,9 @@ rules:
     verbs:
       - get
       - list
+      {{- if ne .Values.ui.uiMode "readonly" }}
       - create
       - patch
       - update
       - delete
+      {{- end }}

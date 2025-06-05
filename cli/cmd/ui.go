@@ -3,18 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 
-	"k8s.io/client-go/rest"
-
-	"k8s.io/apimachinery/pkg/util/httpstream"
-	"k8s.io/client-go/transport/spdy"
-
-	"k8s.io/client-go/tools/portforward"
-
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -26,17 +18,26 @@ import (
 )
 
 const (
-	defaultPort       = 3000
-	legacyDefaultPort = 3001
+	defaultPort = 3000
 )
 
 // uiCmd represents the ui command
 var uiCmd = &cobra.Command{
 	Use:   "ui",
 	Short: "Start the Odigos UI",
-	Long:  `Start the Odigos UI. This command will port-forward the odigos-ui pod to your local machine.`,
+	Long:  `Start the Odigos UI. This will start a web server that you can access in your browser and enables you to manage and configure Odigos.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := cmd.Context()
+		ctx, cancel := context.WithCancel(cmd.Context())
+		defer cancel()
+
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt)
+		go func() {
+			<-sigCh
+			fmt.Println("\nReceived interrupt. Stopping UI port forwarding...")
+			cancel()
+		}()
+
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
@@ -50,98 +51,39 @@ var uiCmd = &cobra.Command{
 			}
 		}
 
-		legacyFlag, _ := cmd.Flags().GetBool("legacy")
 		localPort := cmd.Flag("port").Value.String()
-		clusterPort := defaultPort
-
-		if legacyFlag {
-			clusterPort = legacyDefaultPort
-		}
-
 		localAddress := cmd.Flag("address").Value.String()
+
 		uiPod, err := findOdigosUIPod(client, ctx, ns)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find odigos-ui pod: %s\n", err)
 			os.Exit(1)
 		}
+		fmt.Printf("Odigos UI is available at: http://%s:%s\n", localAddress, localPort)
+		fmt.Printf("Port-forwarding from %s/%s\n", uiPod.Namespace, uiPod.Name)
+		fmt.Printf("Press Ctrl+C to stop\n")
 
-		if err := portForwardWithContext(ctx, uiPod, client, localPort, localAddress, clusterPort); err != nil {
+		if err := kube.PortForwardWithContext(ctx, uiPod, client, localPort, localAddress); err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot start port-forward: %s\n", err)
 			os.Exit(1)
 		}
+
 	},
-}
+	Example: `
+# Start the Odigos UI on http://localhost:3000
+odigos ui
 
-func portForwardWithContext(ctx context.Context, uiPod *corev1.Pod, client *kube.Client, localPort string, localAddress string, clusterPort int) error {
-	stopChannel := make(chan struct{}, 1)
-	readyChannel := make(chan struct{})
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt)
-	defer signal.Stop(signals)
+# Start the Odigos UI on specific port if 3000 is already in use
+odigos ui --port 3456
 
-	returnCtx, returnCtxCancel := context.WithCancel(ctx)
-	defer returnCtxCancel()
-
-	go func() {
-		// If closed either by client (Ctrl+C) or server - stop port-forward
-		select {
-		case <-signals:
-		case <-returnCtx.Done():
-		}
-		close(stopChannel)
-	}()
-
-	fmt.Printf("Odigos UI is available at: http://%s:%s\n\n", localAddress, localPort)
-	fmt.Printf("Port-forwarding from %s/%s\n", uiPod.Namespace, uiPod.Name)
-	fmt.Printf("Press Ctrl+C to stop\n")
-
-	req := client.CoreV1().RESTClient().
-		Post().
-		Resource("pods").
-		Namespace(uiPod.Namespace).
-		Name(uiPod.Name).
-		SubResource("portforward")
-
-	return forwardPorts("POST", req.URL(), client.Config, stopChannel, readyChannel, localPort, localAddress, clusterPort)
-}
-
-func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dialer, error) {
-	transport, upgrader, err := spdy.RoundTripperFor(cfg)
-	if err != nil {
-		return nil, err
-	}
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, method, url)
-
-	tunnelingDialer, err := portforward.NewSPDYOverWebsocketDialer(url, cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	// First attempt tunneling (websocket) dialer, then fallback to spdy dialer.
-	dialer = portforward.NewFallbackDialer(tunnelingDialer, dialer, httpstream.IsUpgradeFailure)
-	return dialer, nil
-}
-
-func forwardPorts(method string, url *url.URL, cfg *rest.Config, stopCh chan struct{}, readyCh chan struct{}, localPort string, localAddress string, clusterPort int) error {
-	dialer, err := createDialer(method, url, cfg)
-	if err != nil {
-		return err
-	}
-
-	port := fmt.Sprintf("%s:%d", localPort, clusterPort)
-	fw, err := portforward.NewOnAddresses(dialer,
-		[]string{localAddress},
-		[]string{port}, stopCh, readyCh, nil, os.Stderr)
-
-	if err != nil {
-		return err
-	}
-	return fw.ForwardPorts()
+# Start the Odigos UI and have it manage and configure a specific cluster
+odigos ui --kubeconfig <path-to-kubeconfig>
+`,
 }
 
 func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*corev1.Pod, error) {
 	pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("app=%s", resources.UIAppLabelValue),
+		LabelSelector: fmt.Sprintf("app=%s", k8sconsts.UIAppLabelValue),
 	})
 
 	if err != nil {
@@ -162,6 +104,5 @@ func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*core
 func init() {
 	rootCmd.AddCommand(uiCmd)
 	uiCmd.Flags().Int("port", defaultPort, "Port to listen on")
-	uiCmd.Flags().String("address", "localhost", "Address to listen on")
-	uiCmd.Flags().Bool("legacy", false, "Use the legacy UI port")
+	uiCmd.Flags().String("address", "localhost", "Address to serve the UI on")
 }

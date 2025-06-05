@@ -17,6 +17,14 @@ limitations under the License.
 
 package v1alpha1
 
+// ActionListerExpansion allows custom methods to be added to
+// ActionLister.
+type ActionListerExpansion interface{}
+
+// ActionNamespaceListerExpansion allows custom methods to be added to
+// ActionNamespaceLister.
+type ActionNamespaceListerExpansion interface{}
+
 // CollectorsGroupListerExpansion allows custom methods to be added to
 // CollectorsGroupLister.
 type CollectorsGroupListerExpansion interface{}
@@ -64,14 +72,6 @@ type InstrumentedApplicationListerExpansion interface{}
 // InstrumentedApplicationNamespaceListerExpansion allows custom methods to be added to
 // InstrumentedApplicationNamespaceLister.
 type InstrumentedApplicationNamespaceListerExpansion interface{}
-
-// OdigosConfigurationListerExpansion allows custom methods to be added to
-// OdigosConfigurationLister.
-type OdigosConfigurationListerExpansion interface{}
-
-// OdigosConfigurationNamespaceListerExpansion allows custom methods to be added to
-// OdigosConfigurationNamespaceLister.
-type OdigosConfigurationNamespaceListerExpansion interface{}
 
 // ProcessorListerExpansion allows custom methods to be added to
 // ProcessorLister.

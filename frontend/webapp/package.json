@@ -5,36 +5,33 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint --fix",
+    "back:build": "cd .. && go build -o odigos-backend",
+    "back:start": "cd .. && ./odigos-backend --port 8085 --debug --address 0.0.0.0",
     "cy:run": "cypress run --e2e -q",
-    "cy:open": "cypress open --e2e -b electron"
+    "cy:open": "cypress open --e2e -b electron",
+    "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@apollo/client": "^3.11.10",
-    "@apollo/experimental-nextjs-app-support": "^0.11.6",
-    "@keyval-dev/design-system": "^2.3.3",
-    "@xyflow/react": "^12.3.5",
-    "graphql": "^16.9.0",
-    "javascript-time-ago": "^2.5.11",
-    "next": "15.0.3",
-    "prism-react-renderer": "^2.4.1",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-flow-renderer": "^10.3.17",
-    "styled-components": "^6.1.13",
-    "zustand": "^5.0.1"
+    "@apollo/client": "^3.13.8",
+    "@apollo/experimental-nextjs-app-support": "^0.12.2",
+    "@odigos/ui-kit": "^0.0.35",
+    "graphql": "^16.11.0",
+    "next": "15.3.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-error-boundary": "^6.0.0",
+    "styled-components": "6.1.15",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
-    "@types/node": "22.9.0",
-    "@types/react": "18.3.12",
-    "@types/react-dom": "18.3.1",
-    "autoprefixer": "^10.4.20",
-    "babel-plugin-styled-components": "^2.1.4",
-    "cypress": "^13.16.1",
-    "eslint": "9.15.0",
-    "eslint-config-next": "15.0.3",
-    "postcss": "^8.4.49",
-    "typescript": "5.6.3"
+    "@types/node": "22.15.29",
+    "@types/react": "19.1.6",
+    "@types/react-dom": "19.1.5",
+    "autoprefixer": "^10.4.21",
+    "cypress": "^14.4.1",
+    "eslint": "9.28.0",
+    "eslint-config-next": "15.3.3",
+    "postcss": "^8.5.4",
+    "typescript": "5.8.3"
   }
 }

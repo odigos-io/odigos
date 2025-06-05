@@ -1,0 +1,111 @@
+name: Verify Documentation Changes
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-crd-api-doc-change:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Generate CRD API docs
+        run: |
+          go work init && go work use -r .
+          cd api
+          make docgen
+      - name: Check for changes in CRD API docs
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git diff
+            echo "CRD API docs need to be updated. Please run 'cd api && make docgen', then commit the changes."
+            exit 1
+          fi
+
+  check-cli-doc-change:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Generate CLI docs
+        run: |
+          make cli-docs
+      - name: Check for changes in CLI docs
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git diff
+            echo "CLI docs need to be updated. Please run 'make cli-docs', then commit the changes."
+            exit 1
+          fi
+
+  check-rbac-doc-change:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+      - name: Generate RBAC docs
+        run: |
+          make rbac-docs
+      - name: Check for changes in RBAC docs
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git diff
+            echo "RBAC docs need to be updated. Please run 'make rbac-docs', then commit the changes."
+            exit 1
+          fi
+
+  check-destination-doc-change:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+      - name: Generate Destination docs
+        run: |
+          cd docs
+          python sync-dest-doc.py
+      - name: Check for changes in Destinations docs
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git diff
+            echo "Destinations docs need to be updated. Please run 'cd docs && python sync-dest-doc.py', then commit the changes."
+            exit 1
+          fi
+
+  check-instrumentation-doc-change:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+          cd docs
+          yarn py-install-deps
+      - name: Generate Instrumentation docs
+        run: |
+          cd docs
+          python sync-instru-doc.py
+      - name: Check for changes in Instrumentation docs
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git diff
+            echo "Instrumentation docs need to be updated. Pleaserun 'cd docs && python sync-instru-doc.py', then commit the changes."
+            exit 1
+          fi

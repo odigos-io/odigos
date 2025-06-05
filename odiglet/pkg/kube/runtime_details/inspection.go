@@ -2,8 +2,6 @@ package runtime_details
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -13,80 +11,26 @@ import (
 
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 
-	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
-	"github.com/odigos-io/odigos/common/utils"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var errNoPodsFound = errors.New("no pods found")
-
-func ignoreNoPodsFoundError(err error) error {
-	if err.Error() == errNoPodsFound.Error() {
-		return nil
-	}
-	return err
-}
-
-func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labels map[string]string,
-	kubeClient client.Client, scheme *runtime.Scheme, object client.Object) error {
-	pods, err := kubeutils.GetRunningPods(ctx, labels, object.GetNamespace(), kubeClient)
-	if err != nil {
-		logger.Error(err, "error fetching running pods")
-		return err
-	}
-
-	if len(pods) == 0 {
-		return errNoPodsFound
-	}
-
-	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, kubeClient)
-	if err != nil {
-		logger.Error(err, "failed to get odigos config")
-		return err
-	}
-
-	runtimeResults, err := runtimeInspection(ctx, pods, odigosConfig.IgnoredContainers, nil)
-	if err != nil {
-		logger.Error(err, "error inspecting pods")
-		return err
-	}
-
-	err = persistRuntimeResults(ctx, runtimeResults, object, kubeClient, scheme)
-	if err != nil {
-		logger.Error(err, "error persisting runtime results")
-		return err
-	}
-
-	return nil
-}
-
-func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers []string, criClient *criwrapper.CriClient) ([]odigosv1.RuntimeDetailsByContainer, error) {
+func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient) ([]odigosv1.RuntimeDetailsByContainer, error) {
 	resultsMap := make(map[string]odigosv1.RuntimeDetailsByContainer)
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
-
-			// Skip ignored containers, but label them as ignored
-			if utils.IsItemIgnored(container.Name, ignoredContainers) {
-				resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
-					ContainerName: container.Name,
-					Language:      common.IgnoredProgrammingLanguage,
-				}
-				continue
-			}
 
 			processes, err := process.FindAllInContainer(string(pod.UID), container.Name)
 			if err != nil {
@@ -104,7 +48,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers
 
 			for _, proc := range processes {
 				containerURL := kubeutils.GetPodExternalURL(pod.Status.PodIP, container.Ports)
-				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL)
+				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL, log.Logger)
 				if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
 					inspectProc = &proc
 					break
@@ -114,6 +58,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers
 			envs := make([]odigosv1.EnvVar, 0)
 			var detectedAgent *odigosv1.OtherAgent
 			var libcType *common.LibCType
+			var secureExecutionMode *bool
 
 			if inspectProc == nil {
 				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
@@ -152,6 +97,8 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers
 						log.Logger.Error(err, "error inspecting libc type", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 					}
 				}
+
+				secureExecutionMode = inspectProc.SecureExecutionMode
 			}
 
 			var runtimeVersion string
@@ -160,15 +107,16 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, ignoredContainers
 			}
 
 			resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
-				ContainerName:  container.Name,
-				Language:       programLanguageDetails.Language,
-				RuntimeVersion: runtimeVersion,
-				EnvVars:        envs,
-				OtherAgent:     detectedAgent,
-				LibCType:       libcType,
+				ContainerName:       container.Name,
+				Language:            programLanguageDetails.Language,
+				RuntimeVersion:      runtimeVersion,
+				EnvVars:             envs,
+				OtherAgent:          detectedAgent,
+				LibCType:            libcType,
+				SecureExecutionMode: secureExecutionMode,
 			}
 
-			if criClient != nil { // CriClient passed as nil in cases that will be deprecated in the future [InstrumentedApplication]
+			if inspectProc != nil {
 				procEnvVars := inspectProc.Environments.OverwriteEnvs
 				updateRuntimeDetailsWithContainerRuntimeEnvs(ctx, *criClient, pod, container, programLanguageDetails, &resultsMap, procEnvVars)
 			}
@@ -194,22 +142,22 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 		return
 	}
 
+	envVarNames = append(envVarNames, consts.LdPreloadEnvVarName)
+
 	// Verify if environment variables already exist in the container manifest.
 	// If they exist, set the RuntimeUpdateState as ProcessingStateSkipped.
-	// there's no need to fetch them from the Container Runtime, and we will just append our additions in the webhook.
 	if envsExistsInManifest := checkEnvVarsInContainerManifest(container, envVarNames); envsExistsInManifest {
 		runtimeDetailsByContainer := (*resultsMap)[container.Name]
 		state := odigosv1.ProcessingStateSkipped
 		runtimeDetailsByContainer.RuntimeUpdateState = &state
 		(*resultsMap)[container.Name] = runtimeDetailsByContainer
-		return
 	}
 
-	// Environment variables do not exist in the manifest; fetch them from the container's Runtime
+	// Environment variables do not exist in the manifest; fetch them from the container's Image
 	fetchAndSetEnvFromContainerRuntime(ctx, criClient, pod, container, envVarNames, resultsMap, procEnvVars)
 }
 
-// fetchAndSetEnvFromContainerRuntime retrieves environment variables from the container's runtime and updates the runtime details.
+// fetchAndSetEnvFromContainerRuntime retrieves environment variables from the container's Image and updates the runtime details.
 func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
 	envVarKeys []string, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer, procEnvVars map[string]string) {
 	containerID := getContainerID(pod.Status.ContainerStatuses, container.Name)
@@ -280,8 +228,10 @@ func checkEnvVarsInContainerManifest(container corev1.Container, envVarNames []s
 	return false
 }
 
-func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, newStatus odigosv1.InstrumentationConfigStatus) error {
-	// This come to make sure we're updating instrumentationConfig only once (at the first time)
+func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, newRuntimeDetials []odigosv1.RuntimeDetailsByContainer) error {
+
+	// fetch a fresh copy of instrumentation config.
+	// TODO: is this necessary? can we do it with the existing object?
 	currentConfig := &odigosv1.InstrumentationConfig{}
 	err := kubeclient.Get(ctx, client.ObjectKeyFromObject(instrumentationConfig), currentConfig)
 	if err != nil {
@@ -290,61 +240,51 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 
 	// Verify if the RuntimeDetailsByContainer already set.
 	// If it has, skip updating the RuntimeDetails to ensure the new runtime detection is performed only once.
+	// In some cases we would like to update the existing RuntimeDetailsByContainer:
+	// 1. LD_PRELOAD is identified in EnvVars [/proc/pid/environ]
+	// 2. LD_PRELOAD is identified in EnvFromContainerRuntime [DockerFile]
+	// 3. SecureExecutionMode is set to true.
+	// 4. RuntimeVersion changes
 	if len(currentConfig.Status.RuntimeDetailsByContainer) > 0 {
-		return nil
+		updated := false
+		for _, newDetail := range newRuntimeDetials {
+			for j := range currentConfig.Status.RuntimeDetailsByContainer {
+				existingDetail := &currentConfig.Status.RuntimeDetailsByContainer[j]
+				if newDetail.ContainerName == existingDetail.ContainerName {
+					if mergeRuntimeDetails(existingDetail, newDetail) {
+						updated = true
+					}
+				}
+			}
+		}
+		// Do not overwrite existing details if no updates are needed
+		if !updated {
+			return nil
+		}
+	} else {
+		// First time setting the values
+		currentConfig.Status.RuntimeDetailsByContainer = newRuntimeDetials
 	}
 
-	// persist the runtime results into the status of the instrumentation config
-	patchStatus := odigosv1.InstrumentationConfig{
-		Status: newStatus,
-	}
-	patchData, err := json.Marshal(patchStatus)
-	if err != nil {
-		return err
-	}
-	err = kubeclient.Status().Patch(ctx, instrumentationConfig, client.RawPatch(types.MergePatchType, patchData), client.FieldOwner("odiglet-runtimedetails"))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func persistRuntimeResults(ctx context.Context, results []odigosv1.RuntimeDetailsByContainer, owner client.Object, kubeClient client.Client, scheme *runtime.Scheme) error {
-	updatedIa := &odigosv1.InstrumentedApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      workload.CalculateWorkloadRuntimeObjectName(owner.GetName(), owner.GetObjectKind().GroupVersionKind().Kind),
-			Namespace: owner.GetNamespace(),
-		},
-	}
-
-	err := controllerutil.SetControllerReference(owner, updatedIa, scheme)
-	if err != nil {
-		log.Logger.Error(err, "Failed to set controller reference")
-		return err
-	}
-
-	operationResult, err := controllerutil.CreateOrPatch(ctx, kubeClient, updatedIa, func() error {
-		updatedIa.Spec.RuntimeDetails = results
-		return nil
+	meta.SetStatusCondition(&currentConfig.Status.Conditions, metav1.Condition{
+		Type:    odigosv1.RuntimeDetectionStatusConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  string(odigosv1.RuntimeDetectionReasonDetectedSuccessfully),
+		Message: "runtime detection completed successfully",
 	})
 
+	err = kubeclient.Status().Update(ctx, currentConfig)
 	if err != nil {
-		log.Logger.Error(err, "Failed to update runtime info", "name", owner.GetName(), "kind",
-			owner.GetObjectKind().GroupVersionKind().Kind, "namespace", owner.GetNamespace())
+		return err
 	}
 
-	if operationResult != controllerutil.OperationResultNone {
-		log.Logger.V(0).Info("updated runtime info", "result", operationResult, "name", owner.GetName(), "kind",
-			owner.GetObjectKind().GroupVersionKind().Kind, "namespace", owner.GetNamespace())
-	}
 	return nil
 }
 
-func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *workload.PodWorkload) (*odigosv1.InstrumentedApplication, error) {
+func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *k8sconsts.PodWorkload) (*odigosv1.InstrumentationConfig, error) {
 	instrumentedApplicationName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
 
-	var runtimeDetails odigosv1.InstrumentedApplication
+	var runtimeDetails odigosv1.InstrumentationConfig
 	err := kubeClient.Get(ctx, client.ObjectKey{
 		Namespace: podWorkload.Namespace,
 		Name:      instrumentedApplicationName,
@@ -354,4 +294,53 @@ func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkloa
 	}
 
 	return &runtimeDetails, nil
+}
+
+func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigosv1.RuntimeDetailsByContainer) bool {
+	updated := false
+
+	// 1. Merge LD_PRELOAD from EnvVars [/proc/pid/environ]
+	odigosStr := "odigos"
+	updated = mergeLdPreloadEnvVars(new.EnvVars, &existing.EnvVars, &odigosStr)
+
+	// 2. Merge LD_PRELOAD from EnvFromContainerRuntime [DockerFile]
+	updated = mergeLdPreloadEnvVars(new.EnvFromContainerRuntime, &existing.EnvFromContainerRuntime, nil)
+
+	// 3. Update SecureExecutionMode if needed
+	if existing.SecureExecutionMode == nil && new.SecureExecutionMode != nil {
+		existing.SecureExecutionMode = new.SecureExecutionMode
+		updated = true
+	}
+
+	// 4. Update RuntimeVersion if different
+	if new.RuntimeVersion != "" && new.RuntimeVersion != existing.RuntimeVersion {
+		existing.RuntimeVersion = new.RuntimeVersion
+		updated = true
+	}
+
+	return updated
+}
+
+func mergeLdPreloadEnvVars(
+	newEnvs []odigosv1.EnvVar,
+	existingEnvs *[]odigosv1.EnvVar,
+	skipIfContains *string,
+) bool {
+	// Step 1: Check if LD_PRELOAD already exists in the existing envs
+	for _, existingEnv := range *existingEnvs {
+		if existingEnv.Name == consts.LdPreloadEnvVarName {
+			return false // Already present, nothing to do
+		}
+	}
+
+	// Step 2: Try to add it from new envs
+	for _, newEnv := range newEnvs {
+		if newEnv.Name == consts.LdPreloadEnvVarName {
+			if skipIfContains == nil || !strings.Contains(newEnv.Value, *skipIfContains) {
+				*existingEnvs = append(*existingEnvs, newEnv)
+				return true // Add LD_PRELOAD and return
+			}
+		}
+	}
+	return false // No LD_PRELOAD found, nothing to do
 }

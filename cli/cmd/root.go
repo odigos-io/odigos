@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"flag"
 	"os"
+
+	"k8s.io/klog/v2"
 
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
@@ -25,20 +28,41 @@ Key Features of Odigos:
 Get started with Odigos today to effortlessly improve the observability of your Kubernetes services!`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
+		if verbosity {
+			enableVerbosity()
+		}
 
-		client := kube.GetCLIClientOrExit(cmd)
-		ctx = cmdcontext.ContextWithKubeClient(ctx, client)
+		commandRequiresKubeClient := true
+		if cmd.Name() == "version" {
+			// version command can run without a kube client (prints only cli version)
+			commandRequiresKubeClient = false
+		}
 
-		details := autodetect.GetK8SClusterDetails(ctx, kubeConfig, kubeContext, client)
-		ctx = cmdcontext.ContextWithClusterDetails(ctx, details)
+		client, err := kube.CreateClient(cmd)
+		if err != nil && commandRequiresKubeClient {
+			kube.PrintClientErrorAndExit(err)
+		}
+
+		if client != nil {
+			ctx = cmdcontext.ContextWithKubeClient(ctx, client)
+			details := autodetect.GetK8SClusterDetails(ctx, kubeConfig, kubeContext, client)
+			ctx = cmdcontext.ContextWithClusterDetails(ctx, details)
+		}
 
 		cmd.SetContext(ctx)
 	},
 }
 
+// RootCmd is used to expose the root command for docs generation.
+// It returns a non-pointer copy of the rootCmd.
+func RootCmd() cobra.Command {
+	return *rootCmd
+}
+
 var (
 	kubeConfig  string
 	kubeContext string
+	verbosity   bool
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -53,4 +77,12 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringVar(&kubeConfig, "kubeconfig", env.GetDefaultKubeConfigPath(), "(optional) absolute path to the kubeconfig file")
 	rootCmd.PersistentFlags().StringVar(&kubeContext, "kube-context", "", "(optional) name of the kubeconfig context to use")
+	rootCmd.PersistentFlags().BoolVarP(&verbosity, "verbose", "v", false, "enable verbose output")
+}
+
+// enableVerbosity will enable logging for every client-go api call
+func enableVerbosity() {
+	flagSet := flag.NewFlagSet("klog", flag.ExitOnError)
+	klog.InitFlags(flagSet)
+	flagSet.Set("v", "6")
 }

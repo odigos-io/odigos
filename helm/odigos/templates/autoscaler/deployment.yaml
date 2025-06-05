@@ -1,8 +1,10 @@
+{{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: odigos-autoscaler
+    odigos.io/system-object: "true"
   name: odigos-autoscaler
   namespace: {{ .Release.Namespace }}
 spec:
@@ -17,21 +19,18 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-autoscaler
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       containers:
       - args:
           - --health-probe-bind-address=:8081
           - --metrics-bind-address=127.0.0.1:8080
           - --leader-elect
-          {{ if .Values.imagePrefix }}
-          - --image-prefix={{ .Values.imagePrefix }}
-          {{ end }}
         command:
           - /app
-        {{- if .Values.imagePrefix }}
-        image: "{{ .Values.imagePrefix }}/{{ .Values.autoscaler.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        {{- else }}
-        image: "{{ .Values.autoscaler.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        {{- end }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "autoscaler" "Tag" $imageTag) }}
         env:
           - name: OTEL_SERVICE_NAME
             value: auto-scaler
@@ -39,19 +38,33 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          - name: ODIGOS_VERSION
+            valueFrom:
+              configMapKeyRef:
+                key: ODIGOS_VERSION
+                name: odigos-deployment   
+          - name: ODIGOS_COLLECTOR_IMAGE
+            value: '{{ template "utils.imageName" (dict "Values" .Values "Component" "collector" "Tag" $imageTag) }}'
         envFrom:
           - configMapRef:
               name: odigos-own-telemetry-otel-config
               optional: true
-          - configMapRef:
-              name: odigos-deployment
         livenessProbe:
           httpGet:
             path: /healthz
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          periodSeconds: 10
         name: manager
+        volumeMounts:
+          - name: autoscaler-webhooks-cert
+            mountPath: /tmp/k8s-webhook-server/serving-certs
+            readOnly: true
         resources:
           limits:
             cpu: 500m
@@ -64,6 +77,11 @@ spec:
       securityContext:
         runAsNonRoot: true
       serviceAccountName: odigos-autoscaler
+      volumes:
+        - name: autoscaler-webhooks-cert
+          secret:
+            secretName: autoscaler-webhooks-cert
+            defaultMode: 420
       terminationGracePeriodSeconds: 10
 {{- if .Values.imagePullSecrets }}
       imagePullSecrets:

@@ -3,5 +3,7 @@ kind: ConfigMap
 metadata:
   name: odigos-own-telemetry-otel-config
   namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
 data:
   OTEL_SDK_DISABLED: "true"

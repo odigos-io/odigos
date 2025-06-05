@@ -10,9 +10,10 @@ enum K8sResourceKind {
 }
 
 enum ConditionStatus {
-  True
-  False
-  Unknown
+  success
+  error
+  disabled
+  loading
 }
 
 enum ProgrammingLanguage {
@@ -44,27 +45,26 @@ enum InstallationStatus {
   FINISHED
 }
 
-type SourceContainerRuntimeDetails {
+enum Tier {
+  community
+  cloud
+  onprem
+}
+
+enum InstrumentationRuleType {
+  CodeAttributes
+  HeadersCollection
+  PayloadCollection
+  UnknownType
+}
+
+type SourceContainer {
   containerName: String!
   language: String!
   runtimeVersion: String!
-  otherAgent: String
-}
-
-type InstrumentationOption {
-  optionKey: String!
-  spanKind: SpanKind!
-}
-
-type InstrumentationLibrary {
-  libraryName: String!
-  options: [InstrumentationOption!]!
-}
-
-type InstrumentedApplicationDetails {
-  containers: [SourceContainerRuntimeDetails!]
-  conditions: [Condition!]
-  instrumentationOptions: [InstrumentationLibrary!]!
+  instrumented: Boolean!
+  instrumentationMessage: String!
+  otelDistroName: String
 }
 
 type Condition {
@@ -77,8 +77,8 @@ type Condition {
 
 type K8sActualNamespace {
   name: String!
-  instrumentationLabelEnabled: Boolean
-  k8sActualSources(instrumentationLabeled: Boolean): [K8sActualSource]!
+  selected: Boolean!
+  sources: [K8sActualSource]!
 }
 
 input K8sDesiredNamespaceInput {
@@ -91,14 +91,19 @@ input K8sNamespaceId {
 
 type K8sActualSource {
   namespace: String!
-  kind: K8sResourceKind!
   name: String!
-  serviceName: String
+  kind: K8sResourceKind!
+  dataStreamNames: [String]!
   numberOfInstances: Int
-  reportedName: String
-  autoInstrumented: Boolean!
-  autoInstrumentedDecision: String!
-  instrumentedApplicationDetails: InstrumentedApplicationDetails
+  selected: Boolean
+  otelServiceName: String
+  containers: [SourceContainer!]
+  conditions: [Condition!]
+}
+
+type PaginatedSources {
+  nextPage: String!
+  items: [K8sActualSource]!
 }
 
 input K8sDesiredSourceInput {
@@ -108,8 +113,8 @@ input K8sDesiredSourceInput {
 
 type PodWorkload {
   namespace: String!
-  kind: K8sResourceKind!
   name: String!
+  kind: K8sResourceKind!
 }
 
 input PodWorkloadInput {
@@ -125,12 +130,17 @@ input K8sSourceId {
 }
 
 type InstrumentationRule {
+  type: InstrumentationRuleType!
   ruleId: ID!
   ruleName: String
   notes: String
   disabled: Boolean
+  mutable: Boolean!
+  profileName: String!
   workloads: [PodWorkload!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
+  codeAttributes: CodeAttributes
+  headersCollection: HeadersCollection
   payloadCollection: PayloadCollection
 }
 
@@ -140,6 +150,8 @@ input InstrumentationRuleInput {
   disabled: Boolean
   workloads: [PodWorkloadInput!]
   instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
+  codeAttributes: CodeAttributesInput
+  headersCollection: HeadersCollectionInput
   payloadCollection: PayloadCollectionInput
 }
 
@@ -155,18 +167,12 @@ input InstrumentationLibraryGlobalIdInput {
   language: ProgrammingLanguage
 }
 
-type PayloadCollection {
-  httpRequest: HttpPayloadCollection
-  httpResponse: HttpPayloadCollection
-  dbQuery: DbQueryPayloadCollection
-  messaging: MessagingPayloadCollection
+type HeadersCollection {
+  headerKeys: [String]
 }
 
-input PayloadCollectionInput {
-  httpRequest: HttpPayloadCollectionInput
-  httpResponse: HttpPayloadCollectionInput
-  dbQuery: DbQueryPayloadCollectionInput
-  messaging: MessagingPayloadCollectionInput
+input HeadersCollectionInput {
+  headerKeys: [String]
 }
 
 type HttpPayloadCollection {
@@ -201,15 +207,56 @@ input MessagingPayloadCollectionInput {
   dropPartialPayloads: Boolean
 }
 
+type CodeAttributes {
+  column: Boolean
+  filePath: Boolean
+  function: Boolean
+  lineNumber: Boolean
+  namespace: Boolean
+  stacktrace: Boolean
+}
+
+input CodeAttributesInput {
+  column: Boolean
+  filePath: Boolean
+  function: Boolean
+  lineNumber: Boolean
+  namespace: Boolean
+  stacktrace: Boolean
+}
+
+type PayloadCollection {
+  httpRequest: HttpPayloadCollection
+  httpResponse: HttpPayloadCollection
+  dbQuery: DbQueryPayloadCollection
+  messaging: MessagingPayloadCollection
+}
+
+input PayloadCollectionInput {
+  httpRequest: HttpPayloadCollectionInput
+  httpResponse: HttpPayloadCollectionInput
+  dbQuery: DbQueryPayloadCollectionInput
+  messaging: MessagingPayloadCollectionInput
+}
+
+type ApiToken {
+  token: String!
+  name: String!
+  issuedAt: Int!
+  expiresAt: Int!
+}
+
 type ComputePlatform {
   computePlatformType: ComputePlatformType!
-  k8sActualNamespace(name: String!): K8sActualNamespace
+  apiTokens: [ApiToken]!
   k8sActualNamespaces: [K8sActualNamespace]!
-  k8sActualSource(name: String, namespace: String, kind: String): K8sActualSource
-  k8sActualSources: [K8sActualSource]!
+  k8sActualNamespace(name: String!): K8sActualNamespace
+  sources(nextPage: String!): PaginatedSources!
+  source(sourceId: K8sSourceId!): K8sActualSource!
   destinations: [Destination!]!
   actions: [PipelineAction!]!
   instrumentationRules: [InstrumentationRule!]!
+  dataStreams: [DataStream!]!
 }
 
 type SupportedSignals {
@@ -222,50 +269,13 @@ type ObservabilitySignalSupport {
   supported: Boolean!
 }
 
-type DestinationTypesCategoryItem {
-  type: String!
-  displayName: String!
-  imageUrl: String!
-  supportedSignals: SupportedSignals!
-  testConnectionSupported: Boolean!
-}
-
-type DestinationsCategory {
-  name: String!
-  items: [DestinationTypesCategoryItem!]!
-}
-
-type GetDestinationTypesResponse {
-  categories: [DestinationsCategory!]!
-}
-
-type ExportedSignals {
-  traces: Boolean!
-  metrics: Boolean!
-  logs: Boolean!
-}
-
-type Destination {
-  id: ID!
-  name: String!
-  type: String!
-  exportedSignals: ExportedSignals!
-  fields: String!
-  destinationType: DestinationTypesCategoryItem!
-  conditions: [Condition!]
-}
-
-type GetConfigResponse {
-  installation: InstallationStatus!
-}
-
 type CustomReadDataLabel {
   condition: String!
   title: String!
   value: String!
 }
 
-type Field {
+type DestinationFieldYamlProperties {
   name: String!
   displayName: String!
   componentType: String!
@@ -277,13 +287,52 @@ type Field {
   customReadDataLabels: [CustomReadDataLabel!]!
 }
 
-type GetDestinationDetailsResponse {
-  fields: [Field!]!
+type DestinationTypesCategoryItem {
+  type: String!
+  displayName: String!
+  imageUrl: String!
+  supportedSignals: SupportedSignals!
+  testConnectionSupported: Boolean!
+  fields: [DestinationFieldYamlProperties!]!
+}
+
+type DestinationsCategory {
+  name: String!
+  description: String!
+  items: [DestinationTypesCategoryItem!]!
+}
+
+type GetDestinationCategories {
+  categories: [DestinationsCategory!]!
+}
+
+type ExportedSignals {
+  traces: Boolean!
+  metrics: Boolean!
+  logs: Boolean!
+}
+
+type Destination {
+  id: ID!
+  type: String!
+  name: String!
+  dataStreamNames: [String]!
+  exportedSignals: ExportedSignals!
+  fields: String!
+  destinationType: DestinationTypesCategoryItem!
+  conditions: [Condition!]
+}
+
+type GetConfigResponse {
+  installation: InstallationStatus!
+  tier: Tier!
+  readonly: Boolean!
 }
 
 input DestinationInput {
   name: String!
   type: String!
+  currentStreamName: String!
   exportedSignals: ExportedSignalsInput!
   fields: [FieldInput!]!
 }
@@ -301,13 +350,14 @@ input ExportedSignalsInput {
 
 input PersistNamespaceItemInput {
   name: String!
-  futureSelected: Boolean
+  futureSelected: Boolean!
 }
 
 input PersistNamespaceSourceInput {
   name: String!
   kind: K8sResourceKind!
-  selected: Boolean
+  selected: Boolean!
+  currentStreamName: String!
 }
 
 type TestConnectionResponse {
@@ -332,7 +382,8 @@ type PipelineAction {
 }
 
 input PatchSourceRequestInput {
-  reportedName: String
+  otelServiceName: String!
+  currentStreamName: String!
 }
 
 interface Action {
@@ -342,6 +393,35 @@ interface Action {
   notes: String
   disable: Boolean!
   signals: [SignalType!]!
+}
+
+type K8sLabelAttribute {
+  labelKey: String!
+  attributeKey: String!
+}
+
+type K8sAnnotationAttribute {
+  annotationKey: String!
+  attributeKey: String!
+}
+
+type K8sAttributes {
+  collectContainerAttributes: Boolean!
+  collectReplicaSetAttributes: Boolean!
+  collectWorkloadId: Boolean!
+  collectClusterId: Boolean!
+  labelsAttributes: [K8sLabelAttribute!]!
+  annotationsAttributes: [K8sAnnotationAttribute!]!
+}
+
+type K8sAttributesAction implements Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: K8sAttributes!
 }
 
 type ClusterInfo {
@@ -357,10 +437,6 @@ type AddClusterInfoAction implements Action {
   disable: Boolean!
   signals: [SignalType!]!
   details: [ClusterInfo!]!
-}
-
-type DeleteAttribute {
-  attributeName: String!
 }
 
 type DeleteAttributeAction implements Action {
@@ -413,6 +489,22 @@ type ProbabilisticSamplerAction implements Action {
   details: String!
 }
 
+type ServiceNameFilters {
+  serviceName: String!
+  samplingRatio: Float!
+  fallbackSamplingRatio: Float!
+}
+
+type ServiceNameSamplerAction implements Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: [ServiceNameFilters!]!
+}
+
 type RenameAttributeAction implements Action {
   id: ID!
   type: String!
@@ -421,6 +513,80 @@ type RenameAttributeAction implements Action {
   disable: Boolean!
   signals: [SignalType!]!
   details: String!
+}
+
+enum StringOperation {
+  exists
+  equals
+  not_equals
+  contains
+  not_contains
+  regex
+}
+enum NumberOperation {
+  exists
+  equals
+  not_equals
+  greater_than
+  less_than
+  greater_than_or_equal
+  less_than_or_equal
+}
+enum BooleanOperation {
+  exists
+  equals
+}
+enum JsonOperation {
+  exists
+  equals
+  not_equals
+  is_valid_json
+  is_invalid_json
+  jsonpath_exists
+  key_equals
+  key_not_equals
+}
+
+type StringCondition {
+  operation: StringOperation!
+  expectedValue: String
+}
+type NumberCondition {
+  operation: NumberOperation!
+  expectedValue: Float!
+}
+type BooleanCondition {
+  operation: BooleanOperation!
+  expectedValue: Boolean!
+}
+type JsonCondition {
+  operation: JsonOperation!
+  expectedValue: String
+  jsonPath: String
+}
+
+type AttributeFiltersCondition {
+  stringCondition: StringCondition
+  numberCondition: NumberCondition
+  booleanCondition: BooleanCondition
+  jsonCondition: JsonCondition
+}
+
+type AttributeFilters {
+  serviceName: String!
+  attributeKey: String!
+  fallbackSamplingRatio: Float!
+  condition: AttributeFiltersCondition!
+}
+
+type SpanAttributeSamplerAction implements Action {
+  id: ID!
+  type: String!
+  name: String
+  notes: String
+  disable: Boolean!
+  signals: [SignalType!]!
+  details: [AttributeFilters!]!
 }
 
 input ActionInput {
@@ -459,16 +625,11 @@ type EntityProperty {
   explain: String
 }
 
-type InstrumentationLabelsAnalyze {
+type InstrumentationSourcesAnalyze {
   instrumented: EntityProperty!
   workload: EntityProperty
   namespace: EntityProperty
   instrumentedText: EntityProperty
-}
-
-type InstrumentationConfigAnalyze {
-  created: EntityProperty!
-  createTime: EntityProperty
 }
 
 type ContainerRuntimeInfoAnalyze {
@@ -483,21 +644,18 @@ type RuntimeInfoAnalyze {
   containers: [ContainerRuntimeInfoAnalyze!]!
 }
 
-type InstrumentedApplicationAnalyze {
+type ContainerAgentConfigAnalyze {
+  containerName: EntityProperty!
+  agentEnabled: EntityProperty!
+  reason: EntityProperty
+  message: EntityProperty
+  otelDistroName: EntityProperty
+}
+
+type OtelAgentsAnalyze {
   created: EntityProperty!
   createTime: EntityProperty
-  containers: [ContainerRuntimeInfoAnalyze!]!
-}
-
-type ContainerWorkloadManifestAnalyze {
-  containerName: EntityProperty!
-  devices: EntityProperty!
-  originalEnv: [EntityProperty!]!
-}
-
-type InstrumentationDeviceAnalyze {
-  statusText: EntityProperty!
-  containers: [ContainerWorkloadManifestAnalyze!]!
+  containers: [ContainerAgentConfigAnalyze!]!
 }
 
 type InstrumentationInstanceAnalyze {
@@ -523,12 +681,10 @@ type SourceAnalyze {
   name: EntityProperty!
   kind: EntityProperty!
   namespace: EntityProperty!
-  labels: InstrumentationLabelsAnalyze!
+  sourceObjects: InstrumentationSourcesAnalyze!
 
-  instrumentationConfig: InstrumentationConfigAnalyze!
-  runtimeInfo: RuntimeInfoAnalyze
-  instrumentedApplication: InstrumentedApplicationAnalyze!
-  instrumentationDevice: InstrumentationDeviceAnalyze!
+  runtimeInfo: RuntimeInfoAnalyze!
+  otelAgents: OtelAgentsAnalyze!
 
   totalPods: Int!
   podsPhasesCount: String!
@@ -563,6 +719,9 @@ type NodeCollectorAnalyze {
 
 type OdigosAnalyze {
   odigosVersion: EntityProperty!
+  kubernetesVersion: EntityProperty!
+  tier: EntityProperty!
+  installationMethod: EntityProperty!
   numberOfDestinations: Int!
   numberOfSources: Int!
   clusterCollector: ClusterCollectorAnalyze!
@@ -571,30 +730,47 @@ type OdigosAnalyze {
   hasErrors: Boolean!
 }
 
+type SourceConditions {
+  namespace: String!
+  name: String!
+  kind: K8sResourceKind!
+  conditions: [Condition!]!
+}
+
+type DataStream {
+  name: String!
+}
+
+input DataStreamInput {
+  name: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
-  destinationTypes: GetDestinationTypesResponse
-  destinationTypeDetails(type: String!): GetDestinationDetailsResponse
+  destinationCategories: GetDestinationCategories
   potentialDestinations: [DestinationDetails!]!
   getOverviewMetrics: OverviewMetricsResponse!
   describeOdigos: OdigosAnalyze!
   describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
+  sourceConditions: [SourceConditions!]!
 }
 
 type Mutation {
-  createNewDestination(destination: DestinationInput!): Destination!
+  updateApiToken(token: String!): Boolean!
   persistK8sNamespace(namespace: PersistNamespaceItemInput!): Boolean!
   persistK8sSources(namespace: String!, sources: [PersistNamespaceSourceInput!]!): Boolean!
-  testConnectionForDestination(destination: DestinationInput!): TestConnectionResponse!
   updateK8sActualSource(sourceId: K8sSourceId!, patchSourceRequest: PatchSourceRequestInput!): Boolean!
+  createNewDestination(destination: DestinationInput!): Destination!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
-  deleteDestination(id: ID!): Boolean!
+  deleteDestination(id: ID!, currentStreamName: String!): Boolean!
+  testConnectionForDestination(destination: DestinationInput!): TestConnectionResponse!
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
   deleteAction(id: ID!, actionType: String!): Boolean!
-
   createInstrumentationRule(instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
   updateInstrumentationRule(ruleId: ID!, instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
   deleteInstrumentationRule(ruleId: ID!): Boolean!
+  updateDataStream(id: ID!, dataStream: DataStreamInput!): DataStream!
+  deleteDataStream(id: ID!): Boolean!
 }

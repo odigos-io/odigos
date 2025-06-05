@@ -14,11 +14,10 @@ try {
 
         // Retrieve environment variables.
         var opampServerHost = process.env.ODIGOS_OPAMP_SERVER_HOST;
-        var instrumentationDeviceId = process.env.ODIGOS_INSTRUMENTATION_DEVICE_ID;
 
         // Create a span processor and start the OpenTelemetry agent.
         var spanProcessor = createNativeCommunitySpanProcessor();
-        startOpenTelemetryAgent('odigos-native-community', instrumentationDeviceId, opampServerHost, spanProcessor);
+        startOpenTelemetryAgent('odigos-native-community', opampServerHost, spanProcessor);
     }    
 } catch (e) {
     console.error('Odigos: Failed to load OpenTelemetry auto-instrumentation agent native-community', e);

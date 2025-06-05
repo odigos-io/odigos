@@ -1,0 +1,277 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: source
+spec:
+  description: This e2e test runs a multi-apps scenario with Source instrumentation
+  skipDelete: true
+  steps:
+    - name: '[1 - Setup] Prepare destination'
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+    - name: '[1 - Setup] Install Odigos'
+      try:
+        - script:
+            timeout: 4m
+            content: |
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                ../../../cli/odigos install --namespace odigos-test --version "$COMMIT_HASH" --image-prefix=public.ecr.aws/y2v0v6s7
+              else
+                ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              fi
+
+              ../../common/verify_odigos_installation.sh odigos-test
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: '[1 - Setup] Verify Node Odiglet label has been added'
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: '[1 - Setup]Assert Trace DB is up'
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: '[1 - Setup] Install - Simple Demo Apps'
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+        - script:
+            timeout: 2m
+            content: |
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
+        - assert:
+            file: ../../common/assert/simple-demo-installed.yaml
+
+    - name: '[2 - Workload Instrumentation] Instrument Deployments using Sources with otelServiceName field set'
+      try:
+        - apply:
+            file: 01-sources.yaml
+
+    - name: '[2 - Workload Instrumentation] Assert Runtime Detected'
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+
+    - name: '[2 - Workload Instrumentation] Add Destination'
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: '[2 - Workload Instrumentation] Odigos pipeline ready'
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: '[2 - Workload Instrumentation] Simple-demo instrumented after destination added'
+      try:
+        - assert:
+            file: ../../common/assert/simple-demo-instrumented.yaml
+        - assert:
+            timeout: 2m
+            file: 01-workloads.yaml
+        - script:
+            timeout: 70s
+            content: ./wait_for_rollout.sh
+
+    - name: '[2 - Workload Instrumentation] Generate Traffic'
+      try:
+        - apply:
+            file: ../../common/apply/generate-traffic-job.yaml
+        - script:
+            timeout: 1m
+            content: |
+              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+        - delete:
+            file: ../../common/apply/generate-traffic-job.yaml
+
+    - name: '[2 - Workload Instrumentation] Wait For Trace'
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-reported.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 1
+              done
+      catch:
+        - script:
+            content: |
+              java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
+              kubectl logs $java_pod_name -n default
+
+    - name: '[2 - Workload Instrumentation] Verify Trace - Context Propagation'
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation-reported.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
+
+    - name: "[2 - Workload Instrumentation] Verify Trace - Resource Attributes"
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/resource-attributes.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
+
+    - name: '[2 - Workload Instrumentation] Verify Trace - Span Attributes'
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/span-attributes-reported.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
+
+    - name: '[2 - Workload Instrumentation] Verify collector metrics are collected by the UI'
+      try:
+        - script:
+            timeout: 5m
+            content: |
+              while true; do
+                ../../common/assert_collector_metrics_from_ui.sh odigos-test
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 5
+              done
+
+    - name: '[3 - Workload Uninstrumentation] Uninstrument individual deployments'
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              kubectl delete sources --all
+              while true; do
+                ic_count=$(kubectl get instrumentationconfigs --output name | wc -l)
+                if [ $ic_count -eq "0" ]; then
+                  break
+                fi
+                sleep 5
+              done
+
+    - name: '[3 - Workload Uninstrumentation] Assert workloads updated after uninstrumentation'
+      try:
+        - assert:
+            timeout: 2m
+            file: 02-workloads.yaml
+
+    - name: '[Migration - 1] - odigos-instrumentation: enabled creates normal Source'
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl label deployment/coupon odigos-instrumentation=enabled
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-coupon
+            check:
+              ($error == null): true
+    - name: '[Migration - 2] - Changing odigos-instrumentation: disabled has no effect on existing Source'
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl label deployment/coupon odigos-instrumentation=disabled --overwrite
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-coupon
+            check:
+              ($error == null): true
+
+    - name: '[Migration - 3] - odigos-instrumentation: disabled creates disabled Source'
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl label deployment/pricing odigos-instrumentation=disabled
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-pricing
+            check:
+              ($error != null): true
+    - name: '[Migration - 4] - Changing odigos-instrumentation: enabled has no effect on existing disabled Source'
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl label deployment/pricing odigos-instrumentation=enabled --overwrite
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-pricing
+            check:
+              ($error != null): true
+
+    - name: '[Migration - 5.1] - Label workload with odigos-instrumentation: disabled to create Disabled Source'
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl label deployment/membership odigos-instrumentation=disabled
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-membership
+            check:
+              ($error != null): true
+    - name: '[Migration - 5.2] - Patching Disabled Source for labeled Workload to Enabled enables workload (overriding disabled label)'
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl patch source $(kubectl get source -l odigos.io/workload-name=membership --no-headers -o custom-columns=":metadata.name") --type=merge -p '{"spec":{"disableInstrumentation":false}}'
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-membership
+            check:
+              ($error == null): true
+
+    - name: '[Migration - 6.1] - Label workload with odigos-instrumentation: enabled to create Enabled Source'
+      try:
+        - script:
+            timeout: 60s
+            content: kubectl label deployment/inventory odigos-instrumentation=enabled
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-inventory
+            check:
+              ($error == null): true
+    - name: '[Migration - 6.2] - Patching Enabled Source for labeled Workload to Disabled disables workload (overriding enabled label)'
+      try:
+        - script:
+            timeout: 70s
+            content: kubectl patch source $(kubectl get source -l odigos.io/workload-name=inventory --no-headers -o custom-columns=":metadata.name") --type=merge -p '{"spec":{"disableInstrumentation":true}}'
+        - script:
+            content: kubectl get instrumentationconfigs/deployment-inventory
+            check:
+              ($error != null): true
+
+    - name: 'Uninstall Odigos'
+      try:
+        - script:
+            timeout: 2m
+            content: ../../../cli/odigos uninstall --yes
+        - script:
+            timeout: 1m
+            content: |
+              for i in $(seq 1 10); do
+                if ../../common/assert_odigos_uninstalled.sh; then
+                  exit 0
+                fi
+                echo "Attempt $i: Odigos uninstallation verification failed, retrying in 5 seconds..."
+                sleep 5
+              done
+
+              echo "Failed to verify Odigos uninstallation after 12 attempts"
+              exit 1

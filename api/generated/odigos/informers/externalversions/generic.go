@@ -18,7 +18,7 @@ limitations under the License.
 package externalversions
 
 import (
-	"fmt"
+	fmt "fmt"
 
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -52,6 +52,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=odigos.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("actions"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Actions().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("collectorsgroups"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().CollectorsGroups().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("destinations"):
@@ -64,8 +66,6 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().InstrumentationRules().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("instrumentedapplications"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().InstrumentedApplications().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("odigosconfigurations"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().OdigosConfigurations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("processors"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Processors().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("sources"):

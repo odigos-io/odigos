@@ -4,18 +4,41 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/frontend/endpoints/sse"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services/sse"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/tools/cache"
+	toolsWatch "k8s.io/client-go/tools/watch"
 )
 
+var destinationModifiedEventBatcher *EventBatcher
+
 func StartDestinationWatcher(ctx context.Context, namespace string) error {
-	watcher, err := kube.DefaultClient.OdigosClient.Destinations(namespace).Watch(context.Background(), metav1.ListOptions{})
+	destinationModifiedEventBatcher = NewEventBatcher(
+		EventBatcherConfig{
+			MinBatchSize: 1,
+			Duration:     3 * time.Second,
+			Event:        sse.MessageEventModified,
+			CRDType:      consts.Destination,
+			SuccessBatchMessageFunc: func(batchSize int, crd string) string {
+				return fmt.Sprintf("Successfully updated %d destinations", batchSize)
+			},
+			FailureBatchMessageFunc: func(batchSize int, crd string) string {
+				return fmt.Sprintf("Failed to update %d destinations", batchSize)
+			},
+		},
+	)
+
+	watcher, err := toolsWatch.NewRetryWatcher("1", &cache.ListWatch{WatchFunc: func(_ metav1.ListOptions) (watch.Interface, error) {
+		return kube.DefaultClient.OdigosClient.Destinations(namespace).Watch(ctx, metav1.ListOptions{})
+	}})
 	if err != nil {
-		return fmt.Errorf("error creating watcher: %v", err)
+		return fmt.Errorf("error creating destinations watcher: %v", err)
 	}
 
 	go handleDestinationWatchEvents(ctx, watcher)
@@ -24,6 +47,7 @@ func StartDestinationWatcher(ctx context.Context, namespace string) error {
 
 func handleDestinationWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
+	defer destinationModifiedEventBatcher.Cancel()
 	for {
 		select {
 		case <-ctx.Done():
@@ -31,54 +55,25 @@ func handleDestinationWatchEvents(ctx context.Context, watcher watch.Interface) 
 			return
 		case event, ok := <-ch:
 			if !ok {
+				log.Println("Destination watcher closed")
 				return
 			}
 			switch event.Type {
-			case watch.Added:
-				handleAddedDestination(event)
 			case watch.Modified:
-				handleModifiedDestination(event)
-			case watch.Deleted:
-				handleDeletedDestination(event)
-			default:
-				log.Printf("unexpected type: %T", event.Object)
+				handleModifiedDestination(event.Object.(*v1alpha1.Destination))
 			}
 		}
 	}
 }
 
-func handleAddedDestination(event watch.Event) {
-	destination, ok := event.Object.(*v1alpha1.Destination)
-	if !ok {
-		genericErrorMessage(sse.MessageEventAdded, "Destination", "error type assertion")
-	}
-	data := fmt.Sprintf("Destination %s created", destination.Spec.DestinationName)
-	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventAdded, Type: "success", Target: destination.Name, Data: data, CRDType: "Destination"})
-}
-
-func handleModifiedDestination(event watch.Event) {
-	destination, ok := event.Object.(*v1alpha1.Destination)
-	if !ok {
-		genericErrorMessage(sse.MessageEventModified, "Destination", "error type assertion")
-	}
-	if len(destination.Status.Conditions) == 0 {
+func handleModifiedDestination(destination *v1alpha1.Destination) {
+	length := len(destination.Status.Conditions)
+	if length == 0 {
 		return
 	}
 
-	lastCondition := destination.Status.Conditions[len(destination.Status.Conditions)-1]
-	data := lastCondition.Message
-	conditionType := sse.MessageTypeSuccess
-	if lastCondition.Status == "False" {
-		conditionType = sse.MessageTypeError
-	}
-	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventModified, Type: conditionType, Target: destination.Name, Data: data, CRDType: "Destination"})
-}
+	target := destination.Name
+	data := fmt.Sprintf(`Successfully updated "%s" destination`, destination.Spec.Type)
 
-func handleDeletedDestination(event watch.Event) {
-	destination, ok := event.Object.(*v1alpha1.Destination)
-	if !ok {
-		genericErrorMessage(sse.MessageEventDeleted, "Destination", "error type assertion")
-	}
-	data := fmt.Sprintf("Destination %s deleted successfully", destination.Spec.DestinationName)
-	sse.SendMessageToClient(sse.SSEMessage{Event: sse.MessageEventDeleted, Type: "success", Target: "", Data: data, CRDType: "Destination"})
+	destinationModifiedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }

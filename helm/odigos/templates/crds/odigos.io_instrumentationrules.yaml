@@ -5,8 +5,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
   labels:
-    metadata.labels.odigos.io/config: "1"
-    metadata.labels.odigos.io/system-object: "true"
+    odigos.io/system-object: "true"
   name: instrumentationrules.odigos.io
 spec:
   group: odigos.io
@@ -40,10 +39,55 @@ spec:
             type: object
           spec:
             properties:
+              codeAttributes:
+                description: Configure which code attributes should be recorded as
+                  span attributes.
+                properties:
+                  column:
+                    description: |-
+                      Should record the `code.column` attribute.
+                      if unset, the value will resolve from other relevant rules, or fallback to false
+                    type: boolean
+                  filePath:
+                    description: |-
+                      Should record the `code.filepath` attribute.
+                      if unset, the value will resolve from other relevant rules, or fallback to false
+                    type: boolean
+                  function:
+                    description: |-
+                      Should record the `code.function` attribute.
+                      if unset, the value will resolve from other relevant rules, or fallback to false
+                    type: boolean
+                  lineNumber:
+                    description: |-
+                      Should record the `code.lineno` attribute.
+                      if unset, the value will resolve from other relevant rules, or fallback to false
+                    type: boolean
+                  namespace:
+                    description: |-
+                      Should record the `code.namespace` attribute.
+                      if unset, the value will resolve from other relevant rules, or fallback to false
+                    type: boolean
+                  stackTrace:
+                    description: |-
+                      Should record the `code.stacktrace` attribute.
+                      if unset, the value will resolve from other relevant rules, or fallback to false
+                    type: boolean
+                type: object
               disabled:
                 description: A boolean field allowing to temporarily disable the rule,
                   but keep it around for future use
                 type: boolean
+              headersCollection:
+                description: Allows to configure the collection of http headers for
+                  different types of payloads.
+                properties:
+                  headerKeys:
+                    description: Limit payload collection to specific header keys.
+                    items:
+                      type: string
+                    type: array
+                type: object
               instrumentationLibraries:
                 description: |-
                   For fine grained control, the user can specify the instrumentation library to use.
@@ -64,8 +108,13 @@ spec:
                       - go
                       - dotnet
                       - javascript
+                      - php
+                      - ruby
+                      - rust
                       - mysql
                       - nginx
+                      - redis
+                      - postgres
                       - unknown
                       - ignored
                       type: string
@@ -93,11 +142,22 @@ spec:
                   regarding the rule for convenience. For example: why it was added.
                   Odigos does not use or assume any meaning from this field.'
                 type: string
+              otelDistros:
+                description: Set the otel distros to use instead of the defaults.
+                properties:
+                  otelDistroNames:
+                    description: |-
+                      Set a list of distribution names that take priority over the default distributions.
+                      if a language is not in this list, the default distribution will be used.
+                      if multiple distributions are specified for the same language, in one or many rules, the behavior is undefined.
+                    items:
+                      type: string
+                    type: array
+                required:
+                - otelDistroNames
+                type: object
               otelSdks:
-                description: |-
-                  Set the OtelSdk to use for the workloads in this rule.
-                  instrumentation libraries will be ignored if set.
-                  the rule will be used only for languages which are specified, and ignored otherwise.
+                description: 'Deprecated: use OtelDistros instead.'
                 properties:
                   otelSdkByLanguage:
                     additionalProperties:

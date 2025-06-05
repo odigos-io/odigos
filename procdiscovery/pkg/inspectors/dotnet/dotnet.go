@@ -2,9 +2,7 @@ package dotnet
 
 import (
 	"bufio"
-	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -13,18 +11,30 @@ import (
 
 type DotnetInspector struct{}
 
-func (d *DotnetInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
-	mapsPath := filepath.Join("/proc", strconv.Itoa(p.ProcessID), "maps")
-	f, err := os.Open(mapsPath)
+const processName = "dotnet"
+
+func (d *DotnetInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	baseExe := filepath.Base(pcx.ExePath)
+
+	// Only allow exact match for "dotnet"
+	if baseExe == processName {
+		return common.DotNetProgrammingLanguage, true
+	}
+
+	return "", false
+}
+
+func (d *DotnetInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	// Heavy check: read the process maps from cache and look for "libcoreclr.so"
+	mapsFile, err := pcx.GetMapsFile()
 	if err != nil {
 		return "", false
 	}
-	defer f.Close()
 
-	scanner := bufio.NewScanner(f)
+	// Scan the maps content for the .NET runtime library.
+	scanner := bufio.NewScanner(mapsFile)
 	for scanner.Scan() {
 		line := scanner.Text()
-		// Check if the .NET core runtime library is present
 		if strings.Contains(line, "libcoreclr.so") {
 			return common.DotNetProgrammingLanguage, true
 		}

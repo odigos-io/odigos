@@ -1,0 +1,107 @@
+exporters:
+  otlp/gateway:
+    endpoint: odigos-gateway.odigos-system:4317
+    tls:
+      insecure: true
+extensions:
+  health_check: {}
+processors:
+  batch: {}
+  resource:
+    attributes:
+    - action: upsert
+      key: k8s.node.name
+      value: ${NODE_NAME}
+  resourcedetection:
+    detectors:
+    - ec2
+    - gcp
+    - azure
+  test_type/test_processor:
+    key: val
+receivers:
+  filelog:
+    exclude:
+    - /var/log/pods/kube-system_*/**/*
+    - /var/log/pods/odigos-system_*/**/*
+    include:
+    - /var/log/pods/default_test-deployment-*_*/*/*.log
+    - /var/log/pods/default_test-daemonset-*_*/*/*.log
+    - /var/log/pods/other-namespace_test-statefulset-*_*/*/*.log
+    include_file_name: false
+    include_file_path: true
+    operators:
+    - id: get-format
+      routes:
+      - expr: body matches "^\\{"
+        output: parser-docker
+      - expr: body matches "^[^ Z]+ "
+        output: parser-crio
+      - expr: body matches "^[^ Z]+Z"
+        output: parser-containerd
+      type: router
+    - id: parser-crio
+      output: extract_metadata_from_filepath
+      regex: ^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$
+      timestamp:
+        layout: 2006-01-02T15:04:05.999999999Z07:00
+        layout_type: gotime
+        parse_from: attributes.time
+      type: regex_parser
+    - id: parser-containerd
+      output: extract_metadata_from_filepath
+      regex: ^(?P<time>[^ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$
+      timestamp:
+        layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+        parse_from: attributes.time
+      type: regex_parser
+    - id: parser-docker
+      output: extract_metadata_from_filepath
+      timestamp:
+        layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+        parse_from: attributes.time
+      type: json_parser
+    - from: attributes.log
+      to: body
+      type: move
+    - id: extract_metadata_from_filepath
+      parse_from: attributes["log.file.path"]
+      regex: ^.*\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\-]{36})\/(?P<container_name>[^\._]+)\/(?P<restart_count>\d+)\.log$
+      type: regex_parser
+    - from: attributes.stream
+      to: attributes["log.iostream"]
+      type: move
+    - from: attributes.container_name
+      to: attributes["k8s.container.name"]
+      type: move
+    - from: attributes.namespace
+      to: attributes["k8s.namespace.name"]
+      type: move
+    - from: attributes.pod_name
+      to: attributes["k8s.pod.name"]
+      type: move
+    - from: attributes.restart_count
+      to: attributes["k8s.container.restart_count"]
+      type: move
+    - from: attributes.uid
+      to: attributes["k8s.pod.uid"]
+      type: move
+    start_at: beginning
+  otlp:
+    protocols:
+      grpc: {}
+      http: {}
+service:
+  extensions:
+  - health_check
+  pipelines:
+    logs:
+      exporters:
+      - otlp/gateway
+      processors:
+      - batch
+      - resource
+      - resourcedetection
+      - test_type/test_processor
+      receivers:
+      - filelog

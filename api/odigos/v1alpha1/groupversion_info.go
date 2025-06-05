@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains API Schema definitions for the odigos.io v1alpha1 API group
-//+kubebuilder:object:generate=true
-//+groupName=odigos.io
+// +kubebuilder:object:generate=true
+// +groupName=odigos.io
 package v1alpha1
 
 import (
@@ -34,3 +34,8 @@ var (
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
 )
+
+// Resource takes an unqualified resource and returns a Group qualified GroupResource
+func Resource(resource string) schema.GroupResource {
+	return SchemeGroupVersion.WithResource(resource).GroupResource()
+}

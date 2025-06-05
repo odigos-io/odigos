@@ -1,66 +1,117 @@
 ---
-title: "OTLP gRPC"
+title: 'OTLP gRPC'
+description: 'Configuring the OTLP gRPC backend (Self-Hosted)'
+sidebarTitle: 'OTLP gRPC'
+icon: 'signal-stream'
 ---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/opentelemetry.svg" alt="otlp" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
 
 For advanced users trying to implement complex observability pipelines, Odigos support sending data to any OTLP gRPC unencrypted endpoint.
 
-- Notice that if your backend expects [OTLP over http](https://opentelemetry.io/docs/specs/otel/protocol/exporter/#configuration-options) you should use the [OTLP http](/backends/otlphttp) destination instead.
-- If your backedn is supported natively in Odigos its recommended to use the native integration.
+<Note>
+  Note that if your backend expects [OTLP over http](https://opentelemetry.io/docs/specs/otel/protocol/exporter/#configuration-options) you should use the [OTLP http](/backends/otlphttp) destination instead.
+</Note>
 
 <Tip>
-  Can't find your backend in Odigos? Please tell us! We are constantly
-  adding new integrations.
+  If your backend is supported natively in Odigos, it's recommended to use the native integration.
 </Tip>
 
-## Configuration
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-The only required configuration is the endpoint of the OTLP gRPC server. Note that odigos only supports unencrypted endpoints (no tls).
+### Configuring Destination Fields
 
-The endpoint format is `host:port`. 
-- host is required
-- port is optional and defaults to the default OTLP gRPC port `4317`.
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
 
+- **OTLP_GRPC_ENDPOINT** `string` : OTLP gRPC Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP gRPC port `4317`.
+  - This field is required
+  - Example: `host:port`
+- **OTLP_GRPC_COMPRESSION** `string` : Destination Compression Type. Compression type to use for the destination. The default is `none`. The compression type must be supported by the destination.
+  - This field is optional and defaults to `none`
+- **OTLP_GRPC_HEADERS** `{ key: string; value: string; }[]` : Headers. Headers is the option to set custom GRPC headers for OTLP GRPC destination. If specified, please provide each header in the format: key:value. Multiple headers can be added. Keys must be non-empty strings and follow standard HTTP header conventions. Values must be non-empty strings and may include alphanumerics, whitespace, and standard punctuation.
+  - This field is optional
+- **OTLP_GRPC_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
+  - This field is optional and defaults to `False`
+- **OTLP_GRPC_CA_PEM** `string` : Certificate Authority. When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
+- **OTLP_GRPC_INSECURE_SKIP_VERIFY** `boolean` : Insecure Skip Verify. Skip TLS certificate verification
+  - This field is optional and defaults to `False`
 
-## Adding a Destination to Odigos
+### Adding Destination to Odigos
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+There are two primary methods for configuring destinations in Odigos:
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `OTLP gRPC` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `OTLP gRPC` and follow the on-screen instructions.
-
-
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: otlp-example
-  namespace: odigos-system
-spec:
-  data:
-    OTLP_GRPC_ENDPOINT: <OTLP gRPC Endpoint>
-  destinationName: otlp
-  signals:
-  - TRACES
-  - METRICS
-  - LOGS
-  type: otlp
-```
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `otlp.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: otlp-example
+      namespace: odigos-system
+    spec:
+      data:
+        OTLP_GRPC_ENDPOINT: <OTLP gRPC Endpoint>
+        # Note: The commented fields below are optional.
+        # OTLP_GRPC_COMPRESSION: <Destination Compression Type (default: none) (options: [none, gzip, snappy, lz4, zlib, deflate, zstd])>
+        # OTLP_GRPC_HEADERS: <Headers>
+        # OTLP_GRPC_TLS_ENABLED: <Enable TLS>
+        # OTLP_GRPC_CA_PEM: <Certificate Authority>
+        # OTLP_GRPC_INSECURE_SKIP_VERIFY: <Insecure Skip Verify>
+      destinationName: otlp
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: otlp
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f otlp.yaml
+    ```
+  </Step>
+</Steps>

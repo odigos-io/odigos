@@ -3,17 +3,28 @@ kind: Role
 metadata:
   name: odigos-scheduler
   namespace: '{{ .Release.Namespace }}'
+  labels: 
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - ''
-    resourceNames:
-      - odigos-config
     resources:
       - configmaps
     verbs:
       - get
       - list
       - watch
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+    resourceNames:
+      - effective-config
+      - odigos-deployment
+    verbs:
+      - patch
+      - create
+      - update
   - apiGroups:
       - odigos.io
     resources:
@@ -35,7 +46,19 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-      - destinations
+      - instrumentationrules
+      - processors
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - delete
+      - create
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
     verbs:
       - get
       - list

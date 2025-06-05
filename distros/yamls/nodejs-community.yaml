@@ -1,0 +1,24 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: nodejs-community
+spec:
+  name: nodejs-community
+  language: javascript
+  runtimeEnvironments:
+    - name: nodejs
+      supportedVersions: '>= 14'
+  displayName: 'Node.js Community Native Instrumentation'
+  description: |
+    This distribution is for Node.js applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  environmentVariables:
+    opAmpClientEnvironments: true
+    otlpHttpLocalNode: true
+  runtimeAgent:
+    directoryNames:
+      - "{{ODIGOS_AGENTS_DIR}}/nodejs"
+    device: 'instrumentation.odigos.io/generic'
+    environmentVariables:
+      - envName: NODE_OPTIONS
+        envValue: '--require {{ODIGOS_AGENTS_DIR}}/nodejs/autoinstrumentation.js'
+        delimiter: ' '

@@ -1,23 +1,58 @@
 image:
-  tag: ""
+  tag: ''
 imagePullSecrets: []
 
-# namespaces not to show in odigos ui
-ignoredNamespaces:
-  - odigos-system
-  - kube-system
-  - local-path-storage
-  - istio-system
-  - linkerd
-  - kube-node-lease
+# By default, images are pulled from odigos registry at `registry.odigos.io`
+# If you use custom or internal registry to serve in your cluster, you can set the imagePrefix to your registry.
+# For example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-<component>:<tag>`
+imagePrefix:
 
+# namespaces list not to show in odigos ui
+# set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease, odigos-system
+# you can add additional namespaces to ignore by adding them to the list
+ignoredNamespaces:
+
+# container names to never instrument
+# useful for sidecars which are not interesting to be instrumented
+# set by default: istio-proxy, vault-agent, filebeat, linkerd-proxy, fluentd, akeyless-init
+# you can add additional container names to ignore by adding them to the list
 ignoredContainers:
-  - istio-proxy
-  - vault-agent
-  - filebeat
-  - linkerd-proxy
-  - fluentd
-  - akeyless-init
+
+# Name of the cluster, will be used to identify this cluster in the centralized backend
+clusterName: ''
+
+userInstrumentationEnvs:
+  # Configuration for OpenTelemetry (OTEL) agents instrumentation.
+  # These settings enable and configure OTEL agents for programming languages supported by Odigos.
+  # See the official OTEL documentation for language-specific configuration details:
+  # https://opentelemetry.io/docs/zero-code/
+  # Example:
+  # languages:
+  #   java:
+  #     enabled: true
+  #     env:
+  #       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: "true"
+  # Note: For eBPF-based distributions, exporting and batching cannot be configured here, as they are managed by the Odiglet.
+  # Warning: This is an advanced feature. Only modify these settings if you are familiar with OTEL and its implications.
+  languages:
+    java:
+      enabled: false
+      env: {}
+    python:
+      enabled: false
+      env: {}
+    nodejs:
+      enabled: false
+      env: {}
+    go:
+      enabled: false
+      env: {}
+    dotnet:
+      enabled: false
+      env: {}
+    php:
+      enabled: false
+      env: {}
 
 collectorGateway:
   # the memory request for the cluster gateway collector deployment.
@@ -43,11 +78,10 @@ collectorGateway:
   limitCPUm: 1000
 
   # The number of replicas for the cluster gateway collector deployment.
-  # Also uses in MinReplicas the HPA config. 
+  # Also uses in MinReplicas the HPA config.
   minReplicas: 1
   # The maxReplicas in the HPA config.
   maxReplicas: 10
-
 
   # sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
   # it is the hard limit after which a force garbage collection will be performed.
@@ -103,66 +137,94 @@ collectorNode:
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
   goMemLimitMiB: 360
 
+  # this configuration is used for logs collection where '/var/log' in a k8s node is a symlink
+  # to some other directory (for example, '/mnt/var/log')
+  k8sNodeLogsDirectory: ''
+
 autoscaler:
-  image:
-    repository: keyval/odigos-autoscaler
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
 
 scheduler:
-  image:
-    repository: keyval/odigos-scheduler
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
 
 ui:
-  image:
-    repository: keyval/odigos-ui
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
+  # uiMode: 'normal' or 'readonly'
+  #  - This flag controls whether the UI should be in read-only mode.
+  #  - Setting this to "readonly" will disable the ability to create, update, or delete objects in the UI.
+  #  - If not set, the UI will be in normal mode.
+  uiMode: 'normal'
+  # uiPaginationLimit:
+  #  - This flag controls the number of items to fetch per paginated-batch in the UI.
+  #  - If not set, the UI will fetch 100 items per paginated-batch.
+  uiPaginationLimit: 0
+  centralBackendURL: ''
 
 instrumentor:
-  deleteLangDetectionPods: true
-  image:
-    repository: keyval/odigos-instrumentor
+  # which mount method to use for odigos agent directory
+  # k8s-virtual-device: default method using a virtual device
+  # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
+  mountMethod: ''
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
-# skipWebhookIssuerCreation:
-#   - This flag controls whether the chart should skip creating an Issuer
-#     and associated Certificate for securing the mutating webhook communication.
-#   - Setting this to "true" will skip the creation of an Issuer and Certificate, 
-#     even if cert-manager is detected in the cluster and the required API version is available.
-#   - In some cases, the Issuer and Certificate are necessary for the instrumentor service 
-#     to run its pod mutating webhook, which requires a signed certificate to comply with 
-#     Kubernetes' TLS requirements.
-#   - If cert-manager is not installed or detected, no Issuer or Certificate will be created 
-#     regardless of this flag.
+  # skipWebhookIssuerCreation:
+  #   - This flag controls whether the chart should skip creating an Issuer
+  #     and associated Certificate for securing the mutating webhook communication.
+  #   - Setting this to "true" will skip the creation of an Issuer and Certificate,
+  #     even if cert-manager is detected in the cluster and the required API version is available.
+  #   - In some cases, the Issuer and Certificate are necessary for the instrumentor service
+  #     to run its pod mutating webhook, which requires a signed certificate to comply with
+  #     Kubernetes' TLS requirements.
+  #   - If cert-manager is not installed or detected, no Issuer or Certificate will be created
+  #     regardless of this flag.
   skipWebhookIssuerCreation: false
+  # how to add the required environment variables for instrumentation to a container
+  # loader: only try using the odigos loader which requires setting the LD_PRELOAD env var in the container manifest.
+  # pod-manifest: add the environment variables to the container manifest.
+  # loader-fallback-to-pod-manifest: try using the odigos loader first, and if it fails, fallback to adding the environment variables to the container manifest.
+  agentEnvVarsInjectionMethod: ''
 
 odiglet:
-  image:
-    repository: keyval/odigos-odiglet
-    enterpriseRepository: keyval/odigos-enterprise-odiglet
   nodeSelector:
     kubernetes.io/os: linux
   tolerations:
-    - effect: NoSchedule
-      key: node.kubernetes.io/os
-      operator: Equal
-      value: windows
+    ## This toleration with 'Exists' operator and no key/effect specified
+    ## will match ALL taints, allowing pods to be scheduled on any node
+    ## regardless of its taints (including master/control-plane nodes)
+    - operator: Exists
   affinity: {}
+  # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
+  # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
+  # into the Odiglet to ensure it can access the container runtime unix socket.
+  customContainerRuntimeSocketPath: ''
 
-cli:
-  image:
-    repository: keyval/odigos-cli
+centralProxy:
+  enabled: false
+  # Central backend URL where this proxy will forward data
+  centralBackendURL: ''
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: {}
 
 # Pod Security Policy
 psp:
@@ -175,4 +237,17 @@ openshift:
   enabled: false
 
 gke:
+  enabled: false
+
+profiles: []
+
+# Optional NodeSelector to apply to all Odigos components
+# Note: Odigos will only be able to instrument workloads on the same nodes.
+nodeSelector: {}
+
+
+# Karpenter settings, before changing to true please modify the karpenter-node-template.yaml file
+# to add the odigos-agent startupTaints configuration.
+# https://docs.odigos.io/setup/odigos-with-karpenter
+karpenter:
   enabled: false

@@ -17,8 +17,10 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+TOOLS := $(PWD)/../.tools
+
 .PHONY: all
-all: generate manifests generate-client sync-helm-crd
+all: generate manifests generate-client sync-helm-crd docgen
 
 ##@ General
 
@@ -39,8 +41,28 @@ help: ## Display this help.
 
 ##@ Development
 
+.PHONY: tools
+tools:
+	@if [ ! -d "$(TOOLS)" ]; then \
+		mkdir $(TOOLS); \
+	fi
+
+.PHONY: genref
+genref: tools
+	GOBIN=$(TOOLS) go install github.com/kubernetes-sigs/reference-docs/genref@v0.28.0
+
+.PHONY: docgen
+docgen: genref
+	rm -rf $(PWD)/../docs/api-reference/*
+	$(TOOLS)/genref -c genref-config.yaml -f markdown -o $(PWD)/../docs/api-reference
+	for file in $(PWD)/../docs/api-reference/*; do \
+		mv $${file} $${file%.md}.mdx; \
+	done
+
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	# remove the existing CRD files directory before recreating, so removed files will not be left over
+	@rm -rf config/crd/bases
 	$(CONTROLLER_GEN) crd:allowDangerousTypes=true webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate

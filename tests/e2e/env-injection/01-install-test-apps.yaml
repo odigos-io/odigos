@@ -1,0 +1,276 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-docker-env
+  namespace: default
+  labels:
+    app: java-supported-docker-env
+spec:
+  selector:
+    matchLabels:
+      app: java-supported-docker-env
+  template:
+    metadata:
+      labels:
+        app: java-supported-docker-env
+    spec:
+      containers:
+        - name: java-supported-docker-env
+          image: public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-supported-docker-env
+  namespace: default
+spec:
+  selector:
+    app: java-supported-docker-env
+  ports:
+    - protocol: TCP
+      port: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-manifest-env
+  namespace: default
+  labels:
+    app: java-supported-manifest-env
+spec:
+  selector:
+    matchLabels:
+      app: java-supported-manifest-env
+  template:
+    metadata:
+      labels:
+        app: java-supported-manifest-env
+    spec:
+      containers:
+        - name: java-supported-manifest-env
+          image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Dnot.work=true"
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-supported-manifest-env
+  namespace: default
+spec:
+  selector:
+    app: java-supported-manifest-env
+  ports:
+    - protocol: TCP
+      port: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-latest-version
+  namespace: default
+  labels:
+    app: java-latest-version
+spec:
+  selector:
+    matchLabels:
+      app: java-latest-version
+  template:
+    metadata:
+      labels:
+        app: java-latest-version
+    spec:
+      containers:
+        - name: java-latest-version
+          image: public.ecr.aws/odigos/java-latest-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-latest-version
+  namespace: default
+spec:
+  selector:
+    app: java-latest-version
+  ports:
+    - protocol: TCP
+      port: 3000
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env-configmap
+  namespace: default
+data:
+  JAVA_TOOL_OPTIONS: "-Ddummy.property=unused"
+  PYTHONPATH: "/bar"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: default
+  labels:
+    app: inventory
+spec:
+  selector:
+    matchLabels:
+      app: inventory
+  template:
+    metadata:
+      labels:
+        app: inventory
+    spec:
+      containers:
+        - name: inventory
+          env:
+          - name: PYTHONPATH
+            valueFrom:
+              configMapKeyRef:
+                key: PYTHONPATH
+                name: env-configmap
+          image: registry.odigos.io/odigos-demo-inventory:v0.1.14
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: inventory
+  namespace: default
+spec:
+  selector:
+    app: inventory
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: python-alpine
+  namespace: default
+  labels:
+    app: python-alpine
+spec:
+  selector:
+    matchLabels:
+      app: python-alpine
+  template:
+    metadata:
+      labels:
+        app: python-alpine
+    spec:
+      containers:
+        - name: python-alpine
+          image: public.ecr.aws/odigos/python-alpine:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "myapp.settings"
+            - name: PYTHONPATH
+              value: "/app"
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-alpine
+  namespace: default
+spec:
+  selector:
+    app: python-alpine
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: default
+  labels:
+    app: frontend
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: registry.odigos.io/odigos-demo-frontend:v0.1.14
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1000
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              valueFrom:
+                configMapKeyRef:
+                  key: JAVA_TOOL_OPTIONS
+                  name: env-configmap
+            - name: INVENTORY_SERVICE_HOST
+              value: inventory:8080
+            - name: PRICING_SERVICE_HOST
+              value: pricing:8080
+            - name: COUPON_SERVICE_HOST
+              value: coupon:8080
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: frontend
+  namespace: default
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080

@@ -1,0 +1,15 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: legacy-dotnet-instrumentation
+spec:
+  ruleName: "legacy dotnet instrumentation"
+  notes: "Auto generated rule from legacy-dotnet-instrumentation profile. Do not edit."
+  otelSdks:
+    otelSdkByLanguage:
+      dotnet:
+        sdkTier: "enterprise"
+        sdkType: "native"
+  otelDistros:
+    otelDistroNames:
+    - "dotnet-legacy"

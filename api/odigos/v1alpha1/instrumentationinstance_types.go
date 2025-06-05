@@ -20,6 +20,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// reports the health of the instrumentation instances.
+	InstrumentationInstancesHealth = "InstrumentationInstancesHealth"
+)
+
 type InstrumentationInstanceSpec struct {
 	// +required
 	// stores the name of the container in the pod where the SDK is running.
@@ -118,7 +123,6 @@ type InstrumentationInstanceStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=odigos.io/config=1
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // InstrumentationInstance is the Schema for the InstrumentationInstances API

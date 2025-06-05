@@ -2,12 +2,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cleanup-clusterrole
+  labels:
+    odigos.io/system-object: "true"
 rules:
 - apiGroups: ["apps"]
   resources: ["deployments", "statefulsets", "daemonsets"]
   verbs: ["get", "list", "patch"]
 - apiGroups: [""]
-  resources: ["namespaces", "services", "secrets"]
+  resources: ["namespaces", "services", "secrets", "nodes", "configmaps"]
   verbs: ["get", "list", "patch"]
 - apiGroups: ["rbac.authorization.k8s.io"]
   resources: ["clusterroles", "clusterrolebindings"]
@@ -16,6 +18,9 @@ rules:
   resources: ["customresourcedefinitions"]
   verbs: ["list", "get", "patch", "delete"]
 - apiGroups: ["admissionregistration.k8s.io"]
-  resources: ["mutatingwebhookconfigurations"]
+  resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
   verbs: ["get", "list", "delete"]
-  
+- apiGroups: ["odigos.io"]
+  resources: ["sources"]
+  verbs: ["get", "list", "delete"]
+

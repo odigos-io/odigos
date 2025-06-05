@@ -1,56 +1,94 @@
 ---
-title: "Prometheus"
+title: 'Prometheus'
+description: 'Configuring the Prometheus backend (Self-Hosted)'
+sidebarTitle: 'Prometheus'
+icon: 'signal-stream'
 ---
 
-## Enabling Remote Write in Prometheus
+### Getting Started
 
-Currently, Odigos supports Prometheus via the Remote Write API.
-In order to enable remote write in Prometheus, set [the following feature flag](https://prometheus.io/docs/prometheus/latest/feature_flags/#remote-write-receiver).
+<img src="https://d15jtxgb40qetw.cloudfront.net/prometheus.svg" alt="prometheus" className="not-prose h-20" />
 
-## Configuring the Prometheus Backend
+{/*
+    Add custom content here (under this comment)...
 
-Once the remote write API is enabled, you can configure the Prometheus backend in the Odigos UI.
-Enter the URL of the Prometheus server and give a name to the backend.
+    e.g.
 
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
 
-## Adding a Destination to Odigos
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+<Note>
+  These instructions are for the **self hosted** Prometheus instance. If you need a managed service, please follow the instructions on the [Grafana Cloud Prometheus](/backends/grafanacloudprometheus) page.
+</Note>
+
+**Enabling Remote Write in Prometheus**<br />
+Currently, Odigos supports Prometheus via the Remote Write API. In order to enable remote write in Prometheus, set [the following feature flag](https://prometheus.io/docs/prometheus/latest/feature_flags/#remote-write-receiver).
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ✅ Metrics
+  ❌ Logs
+</Accordion>
+
+- **PROMETHEUS_REMOTEWRITE_URL** `string` : Remote Write URL.
+  - This field is required
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Prometheus` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `Prometheus` and follow the on-screen instructions.
-
-
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: prometheus-example
-  namespace: odigos-system
-spec:
-  data:
-    PROMETHEUS_REMOTEWRITE_URL: <Remote Write URL>
-  destinationName: prometheus
-  signals:
-  - METRICS
-  type: prometheus
-```
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `prometheus.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: prometheus-example
+      namespace: odigos-system
+    spec:
+      data:
+        PROMETHEUS_REMOTEWRITE_URL: <Remote Write URL>
+      destinationName: prometheus
+      signals:
+      - METRICS
+      type: prometheus
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f prometheus.yaml
+    ```
+  </Step>
+</Steps>

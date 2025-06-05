@@ -18,13 +18,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
 	versioned "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	internalinterfaces "github.com/odigos-io/odigos/api/generated/odigos/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/listers/odigos/v1alpha1"
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/listers/odigos/v1alpha1"
+	apiodigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -35,7 +35,7 @@ import (
 // CollectorsGroups.
 type CollectorsGroupInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.CollectorsGroupLister
+	Lister() odigosv1alpha1.CollectorsGroupLister
 }
 
 type collectorsGroupInformer struct {
@@ -61,16 +61,28 @@ func NewFilteredCollectorsGroupInformer(client versioned.Interface, namespace st
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.OdigosV1alpha1().CollectorsGroups(namespace).List(context.TODO(), options)
+				return client.OdigosV1alpha1().CollectorsGroups(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.OdigosV1alpha1().CollectorsGroups(namespace).Watch(context.TODO(), options)
+				return client.OdigosV1alpha1().CollectorsGroups(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.OdigosV1alpha1().CollectorsGroups(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.OdigosV1alpha1().CollectorsGroups(namespace).Watch(ctx, options)
 			},
 		},
-		&odigosv1alpha1.CollectorsGroup{},
+		&apiodigosv1alpha1.CollectorsGroup{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,9 +93,9 @@ func (f *collectorsGroupInformer) defaultInformer(client versioned.Interface, re
 }
 
 func (f *collectorsGroupInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&odigosv1alpha1.CollectorsGroup{}, f.defaultInformer)
+	return f.factory.InformerFor(&apiodigosv1alpha1.CollectorsGroup{}, f.defaultInformer)
 }
 
-func (f *collectorsGroupInformer) Lister() v1alpha1.CollectorsGroupLister {
-	return v1alpha1.NewCollectorsGroupLister(f.Informer().GetIndexer())
+func (f *collectorsGroupInformer) Lister() odigosv1alpha1.CollectorsGroupLister {
+	return odigosv1alpha1.NewCollectorsGroupLister(f.Informer().GetIndexer())
 }

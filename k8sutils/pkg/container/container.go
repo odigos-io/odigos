@@ -4,8 +4,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/odigos-io/odigos/common"
 	v1 "k8s.io/api/core/v1"
+
+	"github.com/odigos-io/odigos/common"
 )
 
 var (
@@ -13,8 +14,51 @@ var (
 	ErrContainerNotInPodSpec = errors.New("container not found in pod spec")
 )
 
+func LanguageAndSdk(pod *v1.Pod, containerName string, distroName string) (common.ProgrammingLanguage, common.OtelSdk, error) {
+	if distroName != "" {
+		// TODO: so we can remove the device slowly while having backward compatibility,
+		// we map here the distroNames one by one.
+		// this is temporary, and should be refactored once device is removed
+		switch distroName {
+		case "golang-community":
+			return common.GoProgrammingLanguage, common.OtelSdkEbpfCommunity, nil
+		case "golang-enterprise":
+			return common.GoProgrammingLanguage, common.OtelSdkEbpfEnterprise, nil
+		case "java-enterprise":
+			return common.JavaProgrammingLanguage, common.OtelSdkNativeEnterprise, nil
+		case "java-ebpf-instrumentations":
+			return common.JavaProgrammingLanguage, common.OtelSdkEbpfEnterprise, nil
+		case "python-enterprise":
+			return common.PythonProgrammingLanguage, common.OtelSdkEbpfEnterprise, nil
+		case "nodejs-enterprise":
+			return common.JavascriptProgrammingLanguage, common.OtelSdkEbpfEnterprise, nil
+		case "mysql-enterprise":
+			return common.MySQLProgrammingLanguage, common.OtelSdkEbpfEnterprise, nil
+
+		// None ebpf distros here only to avoid error when parsing the generic device
+		case "python-community":
+			return common.PythonProgrammingLanguage, common.OtelSdkNativeCommunity, nil
+		case "nodejs-community":
+			return common.JavascriptProgrammingLanguage, common.OtelSdkNativeCommunity, nil
+		case "java-community":
+			return common.JavaProgrammingLanguage, common.OtelSdkNativeCommunity, nil
+		case "dotnet-community":
+			return common.DotNetProgrammingLanguage, common.OtelSdkNativeCommunity, nil
+		case "dotnet-legacy":
+			return common.DotNetProgrammingLanguage, common.OtelSdkNativeEnterprise, nil
+		case "php-community":
+			return common.PhpProgrammingLanguage, common.OtelSdkNativeCommunity, nil
+		}
+	}
+
+	// TODO: this is fallback for migration from device (so that we can handle pods that have not been updated yet)
+	// remove this once device is removed
+	return LanguageSdkFromPodContainer(pod, containerName)
+}
+
 func LanguageSdkFromPodContainer(pod *v1.Pod, containerName string) (common.ProgrammingLanguage, common.OtelSdk, error) {
-	for _, container := range pod.Spec.Containers {
+	for i := range pod.Spec.Containers {
+		container := pod.Spec.Containers[i]
 		if container.Name == containerName {
 			language, sdk, found := GetLanguageAndOtelSdk(&container)
 			if !found {
@@ -31,6 +75,12 @@ func LanguageSdkFromPodContainer(pod *v1.Pod, containerName string) (common.Prog
 func GetLanguageAndOtelSdk(container *v1.Container) (common.ProgrammingLanguage, common.OtelSdk, bool) {
 	deviceName := podContainerDeviceName(container)
 	if deviceName == nil {
+		return common.UnknownProgrammingLanguage, common.OtelSdk{}, false
+	}
+
+	// temporary workaround for the "generic" device until we git rid of the other devices
+	// and it is the only one left
+	if *deviceName == "instrumentation.odigos.io/generic" {
 		return common.UnknownProgrammingLanguage, common.OtelSdk{}, false
 	}
 
@@ -66,7 +116,8 @@ func AllContainersReady(pod *v1.Pod) bool {
 	// Return false if any container is:
 	// 1. Not Ready
 	// 2. Started is nil or false
-	for _, containerStatus := range pod.Status.ContainerStatuses {
+	for i := range pod.Status.ContainerStatuses {
+		containerStatus := &pod.Status.ContainerStatuses[i]
 		if !containerStatus.Ready || containerStatus.Started == nil || !*containerStatus.Started {
 			return false
 		}

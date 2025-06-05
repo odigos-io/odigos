@@ -1,96 +1,78 @@
 version: 2
 updates:
   # Maintain dependencies for GitHub Actions
-  - package-ecosystem: "github-actions"
+  - package-ecosystem: 'github-actions'
     directory: /
     schedule:
       day: sunday
       interval: weekly
+
   - package-ecosystem: gomod
     directories:
       - /api
       - /autoscaler
       - /cli
       - /common
+      - /destinations
       - /frontend
+      - /instrumentation
       - /instrumentor
+      - /k8sutils
       - /odiglet
       - /opampserver
-      - /instrumentation
+      - /procdiscovery
+      - /profiles
+      - /scheduler
     schedule:
-      day: monday
+      day: sunday
       interval: weekly
     groups:
       otel-dependencies:
         patterns:
-          - "go.opentelemetry.io*"
-        exclude-patterns: # go auto instrumentations update is manually
-          - "go.opentelemetry.io/auto"
-  - package-ecosystem: gomod
-    directory: /odiglet
-    schedule:
-      day: monday
-      interval: weekly
-    groups:
+          - 'go.opentelemetry.io*'
+        exclude-patterns:
+          - 'go.opentelemetry.io/auto'
       go-auto-instrumentations:
         patterns:
-          - "go.opentelemetry.io/auto"
-  - package-ecosystem: gomod
-    directory: /autoscaler
-    schedule:
-      day: sunday
-      interval: weekly
-    groups:
+          - 'go.opentelemetry.io/auto'
       k8s-dependencies:
         patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
-  - package-ecosystem: gomod
-    directory: /odiglet
-    schedule:
-      day: sunday
-      interval: weekly
-    groups:
-      k8s-dependencies:
-        patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
-  - package-ecosystem: gomod
-    directory: /scheduler
-    schedule:
-      day: sunday
-      interval: weekly
-    groups:
-      k8s-dependencies:
-        patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
-  - package-ecosystem: gomod
-    directory: /cli
-    schedule:
-      day: sunday
-      interval: weekly
-    groups:
-      k8s-dependencies:
-        patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
-  - package-ecosystem: gomod
-    directory: /instrumentor
-    schedule:
-      day: sunday
-      interval: weekly
-    groups:
-      k8s-dependencies:
-        patterns:
-          - "k8s.io*"
-          - "sigs.k8s.io*"
+          - 'k8s.io*'
+          - 'sigs.k8s.io*'
+
   - package-ecosystem: pip
-    directory: /odiglet/agents/python
+    directories:
+      - /docs
+      - /agents/python
+    schedule:
+      day: sunday
+      interval: weekly
+
+  - package-ecosystem: npm
+    directories:
+      - /frontend/webapp
+      - /docs
+      - /agents/nodejs-native-community
     schedule:
       day: sunday
       interval: weekly
     groups:
-      otel-dependencies:
+      react-dependencies:
         patterns:
-          - "opentelemetry*"
+          - 'react'
+          - 'react-dom'
+          - '@types/react'
+          - '@types/react-dom'
+
+  - package-ecosystem: docker
+    directories:
+      - /
+      - /collector
+      - /frontend
+      - /odiglet
+      - /operator
+    schedule:
+      day: sunday
+      interval: weekly
+    allow:
+      - dependency-name: 'registry.access.redhat.com/ubi9*'

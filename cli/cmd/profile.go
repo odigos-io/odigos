@@ -3,20 +3,29 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"slices"
+	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
-	k8sprofiles "github.com/odigos-io/odigos/k8sutils/pkg/profiles"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
+	"github.com/odigos-io/odigos/profiles"
+	"github.com/odigos-io/odigos/profiles/profile"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 var profileCmd = &cobra.Command{
 	Use:   "profile",
-	Short: "Manage odigos profiles",
-	Long:  `Odigos profiles are used to apply some specific preset configuration to the odigos installation`,
+	Short: "Manage presets of applied profiles to your odigos installation",
+	Long:  `This command can be used to interact with the applied profiles in your odigos installation.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
@@ -44,7 +53,7 @@ var profileCmd = &cobra.Command{
 
 		if availableFlag {
 			fmt.Println("Listing available profiles for", currentTier, "tier:")
-			profiles := resources.GetAvailableProfilesForTier(currentTier)
+			profiles := profiles.GetAvailableProfilesForTier(currentTier)
 			if len(profiles) == 0 {
 				fmt.Println("No profiles are available for the current tier")
 				os.Exit(0)
@@ -60,14 +69,74 @@ var profileCmd = &cobra.Command{
 			fmt.Println("Odigos profile unavailable - no configuration found")
 			os.Exit(1)
 		}
+		configProfiles := config.Profiles
 
-		if len(config.Profiles) == 0 {
+		odigosDeployment, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Println("Odigos profile unavailable - unable to read odigos deployment configmap")
+			os.Exit(1)
+		}
+		tokenProfilesStr := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]
+		var tokenProfiles []string
+		if tokenProfilesStr != "" {
+			tokenProfiles = strings.Split(tokenProfilesStr, ",")
+		}
+
+		effectiveCm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Println("Odigos profile unavailable - unable to read effective configmap")
+			os.Exit(1)
+		}
+		var effectiveConfig common.OdigosConfiguration
+		if err := yaml.Unmarshal([]byte(effectiveCm.Data[consts.OdigosConfigurationFileName]), &effectiveConfig); err != nil {
+			fmt.Println("Odigos profile unavailable - unable to read effective configmap")
+			os.Exit(1)
+		}
+		effecitveProfilesStr := effectiveConfig.Profiles
+		var effectiveProfiles []string
+		if len(effecitveProfilesStr) > 0 {
+			effectiveProfiles = make([]string, len(effecitveProfilesStr))
+			for i, profile := range effecitveProfilesStr {
+				effectiveProfiles[i] = string(profile)
+			}
+		}
+
+		if len(configProfiles) == 0 && len(tokenProfiles) == 0 && len(effectiveProfiles) == 0 {
 			fmt.Println("No profiles are currently applied")
 			os.Exit(0)
 		}
 
-		fmt.Println("Currently applied profiles:", config.Profiles)
+		if len(configProfiles) > 0 {
+			fmt.Println("Profiles set in config:")
+			for _, profile := range configProfiles {
+				fmt.Println("-", profile)
+			}
+			fmt.Println("")
+		}
+
+		if len(tokenProfiles) > 0 {
+			fmt.Println("Profiles from odigos api token:")
+			for _, profile := range tokenProfiles {
+				fmt.Println("-", profile)
+			}
+			fmt.Println("")
+		}
+
+		if len(effectiveProfiles) > 0 {
+			fmt.Println("Effective profiles:")
+			for _, profile := range effectiveProfiles {
+				fmt.Println("-", profile)
+			}
+			fmt.Println("")
+		}
 	},
+	Example: `
+# Enable payload collection for all supported workloads and instrumentation libraries in the cluster
+odigos profile add full-payload-collection
+
+# Remove the full-payload-collection profile from the cluster
+odigos profile remove full-payload-collection
+`,
 }
 
 var addProfileCmd = &cobra.Command{
@@ -101,17 +170,8 @@ var addProfileCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// Fetch the available profiles for the current tier
-		profiles := resources.GetAvailableProfilesForTier(currentTier)
-		var selectedProfile *k8sprofiles.Profile
-
-		// Search for the specified profile in the available profiles
-		for _, profile := range profiles {
-			if string(profile.ProfileName) == profileName {
-				selectedProfile = &profile
-				break
-			}
-		}
+		profiles := profiles.GetAvailableProfilesForTier(currentTier)
+		selectedProfile := profile.FindProfileByName(common.ProfileName(profileName), profiles)
 
 		if selectedProfile == nil {
 			fmt.Printf("\033[31mERROR\033[0m Profile '%s' not available.\n", profileName)
@@ -126,18 +186,20 @@ var addProfileCmd = &cobra.Command{
 		config.ConfigVersion += 1
 
 		// Check if the profile is already applied
-		for _, appliedProfile := range config.Profiles {
-			if string(appliedProfile) == profileName {
-				fmt.Println("\033[34mINFO\033[0m Profile", profileName, "is already applied.")
-				os.Exit(0)
-			}
+		if slices.Contains(config.Profiles, selectedProfile.ProfileName) {
+			fmt.Println("\033[34mINFO\033[0m Profile", profileName, "is already applied.")
+			os.Exit(0)
 		}
 
 		// Add the profile to the current configuration
 		config.Profiles = append(config.Profiles, selectedProfile.ProfileName)
 
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences: GetImageReferences(currentTier, openshiftEnabled),
+		}
+
 		// Apply the updated configuration
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion)
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 		if err != nil {
 			fmt.Println("Odigos profile add failed - unable to apply Odigos resources.")
@@ -210,8 +272,12 @@ var removeProfileCmd = &cobra.Command{
 
 		config.Profiles = newProfiles
 
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences: GetImageReferences(currentTier, openshiftEnabled),
+		}
+
 		// Apply the updated configuration
-		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion)
+		resourceManagers := resources.CreateResourceManagers(client, ns, currentTier, nil, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 		if err != nil {
 			fmt.Println("Odigos profile remove failed - unable to apply Odigos resources.")

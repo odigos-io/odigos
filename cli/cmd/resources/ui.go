@@ -3,27 +3,19 @@ package resources
 import (
 	"context"
 
-	rbacv1 "k8s.io/api/rbac/v1"
-
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
-)
-
-const (
-	UIImage              = "keyval/odigos-ui"
-	UIServiceName        = "ui"
-	UIDeploymentName     = "odigos-ui"
-	UIAppLabelValue      = "odigos-ui"
-	UIContainerName      = "ui"
-	UIServiceAccountName = "odigos-ui"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type uiResourceManager struct {
@@ -31,46 +23,53 @@ type uiResourceManager struct {
 	ns            string
 	config        *common.OdigosConfiguration
 	odigosVersion string
+	readonly      bool
+	managerOpts   resourcemanager.ManagerOpts
 }
 
 func (u *uiResourceManager) Name() string {
 	return "UI"
 }
 
-func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Deployment {
+func NewUIDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+	if nodeSelector == nil {
+		nodeSelector = make(map[string]string)
+	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      UIDeploymentName,
+			Name:      k8sconsts.UIDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": UIAppLabelValue,
+				"app.kubernetes.io/name": k8sconsts.UIAppLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": UIAppLabelValue,
+					"app": k8sconsts.UIAppLabelValue,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": UIAppLabelValue,
+						"app": k8sconsts.UIAppLabelValue,
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": UIContainerName,
+						"kubectl.kubernetes.io/default-container": k8sconsts.UIContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector: nodeSelector,
 					Containers: []corev1.Container{
 						{
-							Name:  UIContainerName,
-							Image: containers.GetImageName(imagePrefix, UIImage, version),
+							Name:  k8sconsts.UIContainerName,
+							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Args: []string{
 								"--namespace=$(CURRENT_NS)",
 							},
@@ -100,11 +99,55 @@ func NewUIDeployment(ns string, version string, imagePrefix string) *appsv1.Depl
 									"memory": *resource.NewQuantity(67108864, resource.BinarySI),
 								},
 							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "ui-db-storage",
+									MountPath: "/data",
+								},
+							},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/healthz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: 3000,
+										},
+									},
+								},
+								InitialDelaySeconds: 15,
+								TimeoutSeconds:      0,
+								PeriodSeconds:       20,
+								SuccessThreshold:    0,
+								FailureThreshold:    0,
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/readyz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: 3000,
+										},
+									},
+								},
+								PeriodSeconds: 10,
+							},
 							SecurityContext: &corev1.SecurityContext{},
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            UIServiceAccountName,
+					Volumes: []corev1.Volume{
+						{
+							Name: "ui-db-storage",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: resource.NewQuantity(50*1024*1024, resource.BinarySI), // 50 MiB in bytes
+								},
+							},
+						},
+					},
+					ServiceAccountName: k8sconsts.UIServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
@@ -123,39 +166,28 @@ func NewUIServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      UIServiceAccountName,
+			Name:      k8sconsts.UIServiceAccountName,
 			Namespace: ns,
 		},
 	}
 }
 
-func NewUIRole(ns string) *rbacv1.Role {
-	return &rbacv1.Role{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Role",
-			APIVersion: "rbac.authorization.k8s.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-ui",
-			Namespace: ns,
-		},
-		Rules: []rbacv1.PolicyRule{
+func NewUIRole(ns string, readonly bool) *rbacv1.Role {
+	rules := []rbacv1.PolicyRule{}
+
+	if readonly {
+		rules = []rbacv1.PolicyRule{
 			{ // Needed to read odigos-config configmap for settings
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed for secret values in destinations
-				APIGroups: []string{""},
-				Resources: []string{"secrets"},
-				Verbs:     []string{"get", "list", "create", "patch", "update"},
-			},
-			{ // Needed for CRUD on Odigos entities
+			{ // Needed for CRUD on instr. rule and destinations
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationrules", "destinations"},
-				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
+				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed to watch Odigos entities
+			{ // Needed to notify UI about changes with destinations
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"destinations"},
 				Verbs:     []string{"watch"},
@@ -165,12 +197,57 @@ func NewUIRole(ns string) *rbacv1.Role {
 				Resources: []string{"collectorsgroups"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed for CRUD on Pipeline Actions
+			{ // Needed for CRUD on pipeline actions
+				APIGroups: []string{"actions.odigos.io"},
+				Resources: []string{"*"},
+				Verbs:     []string{"get", "list"},
+			},
+		}
+	} else {
+		rules = []rbacv1.PolicyRule{
+			{ // Needed to read odigos-config configmap for settings
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Needed for secret values in destinations
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
+			},
+			{ // Needed for CRUD on instr. rule and destinations
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationrules", "destinations"},
+				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
+			},
+			{ // Needed to notify UI about changes with destinations
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations"},
+				Verbs:     []string{"watch"},
+			},
+			{ // Needed to read Odigos entities
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Needed for CRUD on pipeline actions
 				APIGroups: []string{"actions.odigos.io"},
 				Resources: []string{"*"},
 				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
 			},
+		}
+	}
+
+	return &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Role",
+			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-ui",
+			Namespace: ns,
+		},
+		Rules: rules,
 	}
 }
 
@@ -187,7 +264,7 @@ func NewUIRoleBinding(ns string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      UIServiceAccountName,
+				Name:      k8sconsts.UIServiceAccountName,
 				Namespace: ns,
 			},
 		},
@@ -199,7 +276,92 @@ func NewUIRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewUIClusterRole() *rbacv1.ClusterRole {
+func NewUIClusterRole(readonly bool) *rbacv1.ClusterRole {
+	rules := []rbacv1.PolicyRule{}
+
+	if readonly {
+		rules = []rbacv1.PolicyRule{
+			{ // Needed to get and instrument namespaces
+				APIGroups: []string{""},
+				Resources: []string{"namespaces"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Needed to get and instrument sources
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments", "statefulsets", "daemonsets"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Needed for "Describe Source" and for "Describe Odigos"
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Need "services" for "Potential Destinations"
+				APIGroups: []string{""},
+				Resources: []string{"services"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Need "pods" for "Describe Source"
+				// for collector metrics - watch and list collectors pods
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed to read Odigos entities,
+				// "watch" to notify UI about changes with sources
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationconfigs", "instrumentationinstances"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed to instrument / uninstrument sources
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"sources"},
+				Verbs:     []string{"get", "list"},
+			},
+		}
+	} else {
+		rules = []rbacv1.PolicyRule{
+			{ // Needed to get and instrument namespaces
+				APIGroups: []string{""},
+				Resources: []string{"namespaces"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Needed to get workloads
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments", "statefulsets", "daemonsets"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Needed for "Describe Source" and for "Describe Odigos"
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Need "services" for "Potential Destinations"
+				APIGroups: []string{""},
+				Resources: []string{"services"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Need "pods" for "Describe Source"
+				// for collector metrics - watch and list collectors pods
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed to read Odigos entities,
+				// "watch" to notify UI about changes with sources
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationconfigs", "instrumentationinstances"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed to instrument / uninstrument sources.
+				// Patch is needed to update service name.
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"sources"},
+				Verbs:     []string{"get", "list", "create", "patch", "delete"},
+			},
+		}
+	}
+
 	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
@@ -208,39 +370,7 @@ func NewUIClusterRole() *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "odigos-ui",
 		},
-		Rules: []rbacv1.PolicyRule{
-			{ // Needed to get and instrument namespaces
-				APIGroups: []string{""},
-				Resources: []string{"namespaces"},
-				Verbs:     []string{"get", "list", "patch"},
-			},
-			{ // Needed to instrument applications
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments", "statefulsets", "daemonsets"},
-				Verbs:     []string{"get", "list", "patch", "update"},
-			},
-			{ // Needed for "Describe Source" and for "Describe Odigos"
-				APIGroups: []string{"apps"},
-				Resources: []string{"replicasets"},
-				Verbs:     []string{"get", "list"},
-			},
-			{ // Need "services" for "Potential Destinations"
-				// Need "pods" for "Describe Source"
-				APIGroups: []string{""},
-				Resources: []string{"services", "pods"},
-				Verbs:     []string{"get", "list"},
-			},
-			{ // Needed to read Odigos entities
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications", "instrumentationinstances", "instrumentationconfigs"},
-				Verbs:     []string{"get", "list"},
-			},
-			{ // Needed to watch Odigos entities
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications", "instrumentationinstances"},
-				Verbs:     []string{"watch"},
-			},
-		},
+		Rules: rules,
 	}
 }
 
@@ -256,7 +386,7 @@ func NewUIClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      UIServiceAccountName,
+				Name:      k8sconsts.UIServiceAccountName,
 				Namespace: ns,
 			},
 		},
@@ -275,24 +405,20 @@ func NewUIService(ns string) *corev1.Service {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      UIServiceName,
+			Name:      k8sconsts.UIServiceName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app": UIAppLabelValue,
+				"app": k8sconsts.UIAppLabelValue,
 			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
-				"app": UIAppLabelValue,
+				"app": k8sconsts.UIAppLabelValue,
 			},
 			Ports: []corev1.ServicePort{
 				{
-					Name: "ui",
-					Port: 3000,
-				},
-				{
-					Name: "legacy-ui",
-					Port: 3001,
+					Name: k8sconsts.OdigosUiServiceName,
+					Port: k8sconsts.OdigosUiServicePort,
 				},
 				{
 					Name: "otlp",
@@ -306,21 +432,23 @@ func NewUIService(ns string) *corev1.Service {
 func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
 		NewUIServiceAccount(u.ns),
-		NewUIRole(u.ns),
+		NewUIRole(u.ns, u.readonly),
 		NewUIRoleBinding(u.ns),
-		NewUIClusterRole(),
+		NewUIClusterRole(u.readonly),
 		NewUIClusterRoleBinding(u.ns),
-		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix),
+		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.managerOpts.ImageReferences.UIImage, u.config.NodeSelector),
 		NewUIService(u.ns),
 	}
-	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources)
+	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources, u.managerOpts)
 }
 
-func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string) resourcemanager.ResourceManager {
+func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosVersion string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
 	return &uiResourceManager{
 		client:        client,
 		ns:            ns,
 		config:        config,
 		odigosVersion: odigosVersion,
+		readonly:      config.UiMode == common.ReadonlyUiMode,
+		managerOpts:   managerOpts,
 	}
 }

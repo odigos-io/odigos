@@ -3,16 +3,17 @@ package diagnose_util
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"sync"
+
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"os"
-	"path/filepath"
 	"sigs.k8s.io/yaml"
-	"sync"
 )
 
 const (
@@ -105,7 +106,7 @@ func fetchSingleResource(ctx context.Context, kubeClient *kube.Client, crdDataDi
 		Resource: resourceData[CRDName],  // The resourceData type
 	}
 
-	err := client.ListWithPages(client.DefaultPageSize, kubeClient.Dynamic.Resource(gvr).List, ctx, metav1.ListOptions{}, func(crds *unstructured.UnstructuredList) error {
+	err := client.ListWithPages(client.DefaultPageSize, kubeClient.Dynamic.Resource(gvr).List, ctx, &metav1.ListOptions{}, func(crds *unstructured.UnstructuredList) error {
 		for _, crd := range crds.Items {
 			if err := saveCrdToFile(crd, crdDataDirPath, crd.GetName()); err != nil {
 				fmt.Printf("Fetching Resource %s Failed because: %s\n", resourceData[CRDName], err)

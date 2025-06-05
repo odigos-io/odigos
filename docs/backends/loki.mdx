@@ -1,27 +1,36 @@
 ---
-title: "Loki"
+title: 'Loki'
+description: 'Configuring the Loki backend (Self-Hosted)'
+sidebarTitle: 'Loki'
+icon: 'signal-stream'
 ---
 
-This destination is for self hosted loki instances.
+### Getting Started
 
-If you use grafana cloud managed loki, follow the instructions in the [Grafana Cloud Loki](/backends/grafanacloudloki) page.
+<img src="https://d15jtxgb40qetw.cloudfront.net/loki.svg" alt="loki" className="not-prose h-20" />
 
-## Configuring the Loki Destination
+{/*
+    Add custom content here (under this comment)...
 
-In order to add a new loki destination, insert the loki backend URL into Odigos UI.
+    e.g.
 
-### Connection Settings
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
 
-To send logs to Loki, you need to configure the Loki URL in the Odigos UI. 
-This destination is for self hosted Loki instances, so you will need to have a Loki instance running and accessible from the k8s cluster running odigos.
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
 
-The URL should be in the format `http://<loki-host>:<loki-port>/loki/api/v1/push`.
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
 
-- If scheme is not provided, it defaults to `http`.
-- If port is not provided, it defaults to `3100`.
-- If path is not provided, it defaults to `/loki/api/v1/push`.
+<Note>
+  These instructions are for the **self hosted** Loki instance. If you need a managed service, please follow the instructions on the [Grafana Cloud Loki](/backends/grafanacloudloki) page.
+</Note>
 
-### Loki Labels
+This destination is for self hosted Loki instances.
+
+**Loki Labels**
 
 Loki labels are used to "index" logs and allow efficent filtering in the Grafana UI. You can read more about them [here](https://grafana.com/docs/loki/latest/get-started/labels/).
 
@@ -33,46 +42,68 @@ You can configure your grafana cloud loki labels in the `Labels` multi-input con
 - If the label is not present in a log record, it will be ignored.
 - The default labels if not set are: `k8s.container.name, k8s.pod.name, k8s.namespace.name`
 
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-## Adding a Destination to Odigos
+### Configuring Destination Fields
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ❌ Metrics
+  ✅ Logs
+</Accordion>
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+- **LOKI_URL** `string` : Endpoint. If scheme is not provided, it defaults to `http`. If port is not provided, it defaults to `3100`. If path is not provided, it defaults to `/loki/api/v1/push`.
+  - This field is required
+  - Example: `http://<loki-host>:<loki-port>/loki/api/v1/push`
+- **LOKI_LABELS** `string[]` : Labels. use these OpenTelemetry resource attributes as loki labels for each log record
+  - This field is required and defaults to `["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]`
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Loki` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `Loki` and follow the on-screen instructions.
-
-
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: loki-example
-  namespace: odigos-system
-spec:
-  data:
-    LOKI_LABELS: <Labels>
-    LOKI_URL: <Endpoint>
-  destinationName: loki
-  signals:
-  - LOGS
-  type: loki
-```
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `loki.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: loki-example
+      namespace: odigos-system
+    spec:
+      data:
+        LOKI_LABELS: '<Labels (default: ["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"])>'
+        LOKI_URL: <Endpoint>
+      destinationName: loki
+      signals:
+      - LOGS
+      type: loki
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f loki.yaml
+    ```
+  </Step>
+</Steps>

@@ -1,89 +1,79 @@
-import type { Condition } from './common';
-import type { SignalUppercase } from '@/utils';
+import { ActionType, BooleanOperation, JsonOperation, NumberOperation, StringOperation, type Condition } from '@odigos/ui-kit/types';
 
-export enum PlatformTypes {
-  K8S = 'k8s',
-  VM = 'vm',
+export interface FetchedAction {
+  id: string;
+  type: ActionType;
+  conditions: Condition[];
+  spec: string;
 }
 
-export enum ActionsType {
-  ADD_CLUSTER_INFO = 'AddClusterInfo',
-  DELETE_ATTRIBUTES = 'DeleteAttribute',
-  RENAME_ATTRIBUTES = 'RenameAttribute',
-  ERROR_SAMPLER = 'ErrorSampler',
-  PROBABILISTIC_SAMPLER = 'ProbabilisticSampler',
-  LATENCY_SAMPLER = 'LatencySampler',
-  PII_MASKING = 'PiiMasking',
-}
-
-export type AddClusterInfoSpec = {
-  clusterAttributes: {
-    attributeName: string;
-    attributeStringValue: string;
-  }[];
-};
-
-export type DeleteAttributesSpec = {
-  attributeNamesToDelete: string[];
-};
-
-export type RenameAttributesSpec = {
-  renames: {
-    [oldKey: string]: string;
-  };
-};
-
-export type PiiMaskingSpec = {
-  piiCategories: string[];
-};
-
-export type ErrorSamplerSpec = {
-  fallback_sampling_ratio: number;
-};
-
-export type ProbabilisticSamplerSpec = {
-  sampling_percentage: string;
-};
-
-export type LatencySamplerSpec = {
-  endpoints_filters: {
-    service_name: string;
-    http_route: string;
-    minimum_latency_threshold: number;
-    fallback_sampling_ratio: number;
-  }[];
-};
-
-export interface ActionItem {
+// the stringified spec is parsed to this, which we still have to map to our ui-containers
+export interface ParsedActionSpec {
   actionName: string;
   notes: string;
   signals: string[];
   disabled?: boolean;
-  clusterAttributes?: AddClusterInfoSpec['clusterAttributes'];
-  attributeNamesToDelete?: DeleteAttributesSpec['attributeNamesToDelete'];
-  renames?: RenameAttributesSpec['renames'];
-  piiCategories?: PiiMaskingSpec['piiCategories'];
-  fallback_sampling_ratio?: ErrorSamplerSpec['fallback_sampling_ratio'];
-  sampling_percentage?: ProbabilisticSamplerSpec['sampling_percentage'];
-  endpoints_filters?: LatencySamplerSpec['endpoints_filters'];
+
+  collectContainerAttributes?: boolean | null;
+  collectReplicaSetAttributes?: boolean | null;
+  collectWorkloadUID?: boolean | null;
+  collectClusterUID?: boolean | null;
+  labelsAttributes?: { labelKey: string; attributeKey: string }[] | null;
+  annotationsAttributes?: { annotationKey: string; attributeKey: string }[] | null;
+  clusterAttributes?: { attributeName: string; attributeStringValue: string }[] | null;
+  attributeNamesToDelete?: string[] | null;
+  renames?: { [oldKey: string]: string } | null;
+  piiCategories?: string[] | null;
+  fallback_sampling_ratio?: number | null;
+  sampling_percentage?: string | null;
+  endpoints_filters?: ParsedEndpointFilter[] | null;
+  services_name_filters?: ParsedServiceNameFilter[] | null;
+  attribute_filters?: ParsedAttributeFilter[] | null;
 }
 
-export interface ActionData {
-  id: string;
-  type: ActionsType;
-  spec: ActionItem | string;
-  conditions: Condition[];
+export interface ParsedEndpointFilter {
+  service_name: string;
+  http_route: string;
+  minimum_latency_threshold: number;
+  fallback_sampling_ratio: number;
 }
 
-export interface ActionDataParsed extends ActionData {
-  spec: ActionItem;
+export interface ParsedServiceNameFilter {
+  service_name: string;
+  sampling_ratio: number;
+  fallback_sampling_ratio: number;
 }
 
-export type ActionInput = {
-  type: ActionsType;
+export interface ParsedAttributeFilter {
+  service_name: string;
+  attribute_key: string;
+  fallback_sampling_ratio: number;
+  condition: {
+    string_condition?: {
+      operation: StringOperation;
+      expected_value?: string;
+    };
+    number_condition?: {
+      operation: NumberOperation;
+      expected_value?: number;
+    };
+    boolean_condition?: {
+      operation: BooleanOperation;
+      expected_value?: boolean;
+    };
+    json_condition?: {
+      operation: JsonOperation;
+      expected_value?: string;
+      json_path?: string;
+    };
+  };
+}
+
+export interface ActionInput {
+  type: ActionType;
   name: string;
   notes: string;
   disable: boolean;
-  signals: SignalUppercase[];
+  signals: string[]; // uppercase
   details: string;
-};
+}

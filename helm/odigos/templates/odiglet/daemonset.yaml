@@ -3,6 +3,7 @@ kind: DaemonSet
 metadata:
   labels:
     app.kubernetes.io/name: odiglet
+    odigos.io/system-object: "true"
   name: odiglet
   namespace: {{ .Release.Namespace }}
 spec:
@@ -21,20 +22,17 @@ spec:
       labels:
         app.kubernetes.io/name: odiglet
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       initContainers:
         - name: init
-          {{- if .Values.imagePrefix }}
+          {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           {{- if .Values.onPremToken }}
-          image: "{{ .Values.imagePrefix }}/{{ .Values.odiglet.image.enterpriseRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
           {{- else }}
-          image: "{{ .Values.imagePrefix }}/{{ .Values.odiglet.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          {{- end }}
-          {{- else }}
-          {{- if .Values.onPremToken }}
-          image: "{{ .Values.odiglet.image.enterpriseRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          {{- else }}
-          image: "{{ .Values.odiglet.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          {{- end }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
@@ -44,26 +42,51 @@ spec:
           volumeMounts:
             - name: odigos
               mountPath: /var/odigos
+            {{- if .Values.openshift.enabled }}
+            - name: host
+              mountPath: /host
+              readOnly: true
+            - name: selinux
+              mountPath: /host/etc/selinux
+              mountPropagation: Bidirectional
+            {{- end }}
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - SYS_PTRACE
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: ODIGOS_TIER
+              valueFrom:
+                configMapKeyRef:
+                  key: ODIGOS_TIER
+                  name: odigos-deployment
+            - name: CURRENT_NS
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
       containers:
         - name: odiglet
-          {{- if .Values.imagePrefix }}
+          {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           {{- if .Values.onPremToken }}
-          image: "{{ .Values.imagePrefix }}/{{ .Values.odiglet.image.enterpriseRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
           {{- else }}
-          image: "{{ .Values.imagePrefix }}/{{ .Values.odiglet.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          {{- end }}
-          {{- else }}
-          {{- if .Values.onPremToken }}
-          image: "{{ .Values.odiglet.image.enterpriseRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          {{- else }}
-          image: "{{ .Values.odiglet.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          {{- end }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
           env:
             - name: NODE_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
+            - name: CONTAINER_RUNTIME_SOCK
+              value: {{ .Values.odiglet.customContainerRuntimeSocketPath }}
+            {{- end }}
             - name: NODE_IP
               valueFrom:
                 fieldRef:
@@ -75,6 +98,8 @@ spec:
             - name: OTEL_LOG_LEVEL
               value: info
             {{- if .Values.onPremToken }}
+            - name: OTEL_GO_OFFSETS_FILE
+              value: /offsets/go_offset_results.json
             - name: ODIGOS_ONPREM_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -91,36 +116,60 @@ spec:
             capabilities:
               add:
                 - SYS_PTRACE
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            periodSeconds: 10
           volumeMounts:
             - name: run-dir
               mountPath: /run
-            {{ if .Values.openshift.enabled }}
+            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
+            - name: custom-container-runtime-socket
+              mountPath: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
+            {{- end }}
+            {{- if .Values.openshift.enabled }}
             - name: host
               mountPath: /host
               readOnly: true
             - name: selinux
               mountPath: /host/etc/selinux
               mountPropagation: Bidirectional
-            {{ end }}
+            {{- end }}
             - name: device-plugins-dir
               mountPath: /var/lib/kubelet/device-plugins
-            - name: pod-resources
-              mountPath: /var/lib/kubelet/pod-resources
-              readOnly: true
             - name: odigos
               mountPath: /var/odigos
               readOnly: true
             - name: kernel-debug
               mountPath: /sys/kernel/debug
+            {{- if .Values.onPremToken }}
+            - name: odigos-go-offsets
+              mountPath: /offsets
+            {{- end }}
+      {{- if semverCompare "<1.26.0" .Capabilities.KubeVersion.Version }}
       hostNetwork: true
+      {{- end}}
       hostPID: true
+      dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical
       serviceAccountName: odiglet
       volumes:
         - name: run-dir
           hostPath:
             path: /run
-        {{ if .Values.openshift.enabled }}
+        {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
+        - name: custom-container-runtime-socket
+          hostPath:
+            path: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
+        {{- end }}
+        {{- if .Values.openshift.enabled }}
         - name: host
           hostPath:
             path: /
@@ -128,9 +177,6 @@ spec:
           hostPath:
             path: /etc/selinux
         {{- end }}
-        - name: pod-resources
-          hostPath:
-            path: /var/lib/kubelet/pod-resources
         - name: device-plugins-dir
           hostPath:
             path: /var/lib/kubelet/device-plugins
@@ -140,6 +186,11 @@ spec:
         - name: kernel-debug
           hostPath:
             path: /sys/kernel/debug
+        {{- if .Values.onPremToken }}
+        - name: odigos-go-offsets
+          configMap:
+            name: odigos-go-offsets
+        {{- end }}
 {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 6 }}

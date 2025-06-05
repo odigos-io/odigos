@@ -1,97 +1,155 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
-import { NOTIFICATION_TYPE } from '@/types';
-import { useComputePlatform } from '../compute-platform';
-import { type NotifyPayload, useConnectionStore, useNotificationStore } from '@/store';
+import { useStatusStore } from '@/store';
+import { useSourceCRUD } from '../sources';
+import { useDestinationCRUD } from '../destinations';
+import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';
+import { getIdFromSseTarget } from '@odigos/ui-kit/functions';
+import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
+import { type NotifyPayload, useInstrumentStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 
-const modifyType = (notification: NotifyPayload) => {
-  if (notification.title === 'Modified') {
-    if (notification.message?.indexOf('ProcessTerminated') === 0 || notification.message?.indexOf('NoHeartbeat') === 0 || notification.message?.indexOf('Failed') === 0) {
-      return NOTIFICATION_TYPE.ERROR;
-    } else {
-      return NOTIFICATION_TYPE.INFO;
-    }
-  }
+const CONNECTED = 'CONNECTED';
 
-  return notification.type;
+const EVENT_TYPES = {
+  ADDED: 'Added',
+  MODIFIED: 'Modified',
+  DELETED: 'Deleted',
 };
 
+enum CrdTypes {
+  Source = 'Source',
+  InstrumentationConfig = 'InstrumentationConfig',
+  Destination = 'Destination',
+}
+
 export const useSSE = () => {
+  const { setPendingItems } = usePendingStore();
   const { addNotification } = useNotificationStore();
-  const { setConnectionStore } = useConnectionStore();
-  const { refetch: refetchComputePlatform } = useComputePlatform();
+  const { title, setStatusStore } = useStatusStore();
+  const { fetchDestinations } = useDestinationCRUD();
+  const { fetchSourcesPaginated, fetchSourceById } = useSourceCRUD();
 
   const retryCount = useRef(0);
   const maxRetries = 10;
 
   useEffect(() => {
     const connect = () => {
-      const eventSource = new EventSource(API.EVENTS);
+      const es = new EventSource(API.EVENTS);
 
-      eventSource.onmessage = (event) => {
-        const key = event.data;
-        const data = JSON.parse(key);
-
+      es.onmessage = (event) => {
+        const data = JSON.parse(event.data);
         const notification: NotifyPayload = {
           type: data.type,
-          title: data.event,
-          message: data.data,
-          crdType: data.crdType,
+          title: data.event || '',
+          message: data.data || '',
+          crdType: data.crdType || '',
           target: data.target,
         };
 
-        notification.type = modifyType(notification);
+        const { setInstrumentAwait, isAwaitingInstrumentation, setInstrumentCount, sourcesToCreate, sourcesCreated, sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
 
-        // Dispatch the notification to the store
-        addNotification(notification);
-        refetchComputePlatform();
+        const isConnected = [CONNECTED].includes(notification.crdType as string);
+        const isSource = [CrdTypes.InstrumentationConfig].includes(notification.crdType as CrdTypes);
+        const isDestination = [CrdTypes.Destination].includes(notification.crdType as CrdTypes);
+
+        if (!isConnected && !(isSource && isAwaitingInstrumentation) && notification.title !== EVENT_TYPES.MODIFIED) {
+          addNotification(notification);
+        }
+
+        // Handle specific CRD types
+        if (isConnected) {
+          // If the current status in store is API Token related, we don't want to override it with the connected message
+          if (title !== DISPLAY_TITLES.API_TOKEN) {
+            setStatusStore({ status: StatusType.Success, title: notification.title as string, message: notification.message as string });
+          }
+        } else if (isSource) {
+          switch (notification.title) {
+            case EVENT_TYPES.MODIFIED:
+              if (!isAwaitingInstrumentation && notification.target) {
+                const id = getIdFromSseTarget(notification.target, EntityTypes.Source);
+
+                // This timeout is to ensure that the object isn't in paginating state when we start fetching the data,
+                // otherwise paginated-fetch will replace the modified-data with old-data.
+                setTimeout(() => fetchSourceById(id as WorkloadId), 1000);
+              }
+              break;
+
+            case EVENT_TYPES.ADDED:
+              const created = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              setInstrumentCount('sourcesCreated', created);
+
+              // If not waiting, or we're at 100%, then proceed
+              if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
+                addNotification({ type: StatusType.Success, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
+                setInstrumentAwait(false);
+                fetchSourcesPaginated();
+              }
+              break;
+
+            case EVENT_TYPES.DELETED:
+              const deleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              setInstrumentCount('sourcesDeleted', deleted);
+
+              // If not waiting, or we're at 100%, then proceed
+              if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && deleted >= sourcesToDelete)) {
+                addNotification({ type: StatusType.Success, title: EVENT_TYPES.DELETED, message: `Successfully deleted ${deleted} sources` });
+                setInstrumentAwait(false);
+                setInstrumentCount('sourcesToDelete', 0);
+                setInstrumentCount('sourcesDeleted', 0);
+              }
+              break;
+
+            default:
+              break;
+          }
+        } else if (isDestination) {
+          fetchDestinations();
+        } else {
+          console.warn('Unhandled SSE for CRD type:', notification.crdType);
+        }
+
+        // This works for now,
+        // but in the future we might have to change this to "removePendingItems",
+        // and remove the specific pending items based on their entityType and entityId
+        setPendingItems([]);
 
         // Reset retry count on successful connection
         retryCount.current = 0;
       };
 
-      eventSource.onerror = (event) => {
-        console.error('EventSource failed:', event);
-        eventSource.close();
+      es.onerror = () => {
+        es.close();
 
-        // Retry connection with exponential backoff if below max retries
         if (retryCount.current < maxRetries) {
           retryCount.current += 1;
-          const retryTimeout = Math.min(10000, 1000 * Math.pow(2, retryCount.current));
+          setStatusStore({
+            status: StatusType.Warning,
+            title: 'Disconnected',
+            message: `Disconnected from the server. Retrying connection (${retryCount.current})`,
+          });
 
-          setTimeout(() => connect(), retryTimeout);
+          // Retry connection with exponential backoff if below max retries
+          setTimeout(() => connect(), Math.min(10000, 1000 * Math.pow(2, retryCount.current)));
         } else {
-          console.error('Max retries reached. Could not reconnect to EventSource.');
-
-          setConnectionStore({
-            connecting: false,
-            active: false,
+          setStatusStore({
+            status: StatusType.Error,
             title: `Connection lost on ${new Date().toLocaleString()}`,
             message: 'Please reboot the application',
           });
           addNotification({
-            type: NOTIFICATION_TYPE.ERROR,
+            type: StatusType.Error,
             title: 'Connection Error',
             message: 'Connection to the server failed. Please reboot the application.',
           });
         }
       };
 
-      setConnectionStore({
-        connecting: false,
-        active: true,
-        title: 'Connection Alive',
-        message: '',
-      });
-
-      return eventSource;
+      return es;
     };
 
-    const eventSource = connect();
-
+    // Initialize event source connection
+    const es = connect();
     // Clean up event source on component unmount
-    return () => {
-      eventSource.close();
-    };
-  }, []);
+    return () => es.close();
+  }, [title]);
 };

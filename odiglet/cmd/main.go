@@ -3,9 +3,14 @@ package main
 import (
 	"os"
 
+	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/odiglet"
+	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+
+	_ "net/http/pprof"
 
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
@@ -14,26 +19,28 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-
-	_ "net/http/pprof"
 )
 
-func odigletInitPhase() {
-	if err := log.Init(); err != nil {
+func main() {
+	// Init Kubernetes clientset
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
 		panic(err)
 	}
-	err := fs.CopyAgentsDirectoryToHost()
-	if err != nil {
-		log.Logger.Error(err, "Failed to copy agents directory to host")
-		os.Exit(-1)
-	}
-	os.Exit(0)
-}
 
-func main() {
+	// Increase the QPS and Burst to avoid client throttling
+	// Observed mainly in large clusters once updating big amount of instrumentationInstances
+	cfg.QPS = 200
+	cfg.Burst = 200
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		panic(err)
+	}
+
 	// If started in init mode
 	if len(os.Args) == 2 && os.Args[1] == "init" {
-		odigletInitPhase()
+		odiglet.OdigletInitPhase(clientset)
 	}
 
 	if err := log.Init(); err != nil {
@@ -48,7 +55,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	o, err := odiglet.New(deviceInjectionCallbacks(), ebpfInstrumentationFactories())
+	dg, err := distros.NewCommunityGetter()
+	if err != nil {
+		log.Logger.Error(err, "Failed to create distro getter")
+		os.Exit(1)
+	}
+
+	instrumentationManagerOptions := ebpf.InstrumentationManagerOptions{
+		Factories:          ebpfInstrumentationFactories(),
+		DistributionGetter: dg,
+	}
+
+	o, err := odiglet.New(clientset, deviceInjectionCallbacks(), instrumentationManagerOptions)
 	if err != nil {
 		log.Logger.Error(err, "Failed to initialize odiglet")
 		os.Exit(1)

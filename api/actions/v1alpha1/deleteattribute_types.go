@@ -21,6 +21,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const ActionNameDeleteAttribute = "DeleteAttribute"
+
+type DeleteAttributeConfig struct {
+	AttributeNamesToDelete []string `json:"attributeNamesToDelete"`
+}
+
+func (DeleteAttributeConfig) ProcessorType() string {
+	return "transform"
+}
+
+func (DeleteAttributeConfig) OrderHint() int {
+	return -100
+}
+
 // DeleteAttributeSpec defines the desired state of DeleteAttribute action
 type DeleteAttributeSpec struct {
 	ActionName string                       `json:"actionName,omitempty"`
@@ -46,7 +60,6 @@ type DeleteAttributeStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=deleteattributes,scope=Namespaced,shortName=da
-//+kubebuilder:metadata:labels=odigos.io/config=1
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // DeleteAttribute is the Schema for the DeleteAttribute odigos action API

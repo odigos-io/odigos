@@ -10,11 +10,16 @@ const DefaultPageSize = 500
 
 type listFunc[T metav1.ListInterface] func(context.Context, metav1.ListOptions) (T, error)
 
-func ListWithPages[T metav1.ListInterface](pageSize int, list listFunc[T], ctx context.Context, opts metav1.ListOptions, handler func(obj T) error) error {
+func ListWithPages[T metav1.ListInterface](pageSize int, list listFunc[T], ctx context.Context,
+	opts *metav1.ListOptions, handler func(obj T) error) error {
+	if opts == nil {
+		opts = &metav1.ListOptions{}
+	}
+
 	opts.Limit = int64(pageSize)
 	opts.Continue = ""
 	for {
-		obj, err := list(ctx, opts)
+		obj, err := list(ctx, *opts)
 		if err != nil {
 			return err
 		}

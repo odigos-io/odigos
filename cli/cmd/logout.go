@@ -6,10 +6,12 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/spf13/cobra"
 )
 
@@ -19,8 +21,8 @@ var logoutCmd = &cobra.Command{
 	Short: "Logout from Odigos cloud",
 	Long: `Disconnect this Odigos installation from your odigos cloud account.
 
-	After running this command, you will no longer be able to control and monitor this Odigos installation from Odigos cloud.
-	You can run 'odigos ui' to manage your Odigos installation locally.
+After running this command, you will no longer be able to control and monitor this Odigos installation from Odigos cloud.
+You can run 'odigos ui' to manage your Odigos installation locally.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
@@ -72,7 +74,11 @@ var logoutCmd = &cobra.Command{
 		config.ConfigVersion += 1
 
 		emptyApiKey := ""
-		resourceManagers := resources.CreateResourceManagers(client, ns, common.CommunityOdigosTier, &emptyApiKey, config, currentOdigosVersion)
+
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences: GetImageReferences(currentTier, openshiftEnabled),
+		}
+		resourceManagers := resources.CreateResourceManagers(client, ns, common.CommunityOdigosTier, &emptyApiKey, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 		if err != nil {
 			fmt.Println("Odigos cloud logout failed - unable to apply Odigos resources.")

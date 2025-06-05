@@ -1,0 +1,16 @@
+apiVersion: odigos.io/v1alpha1
+kind: Processor
+metadata:
+  name: query-operation-detector
+  namespace: odigos-system
+spec:
+  type: odigossqldboperationprocessor
+  processorName: query-operation-detector
+  notes: "Auto generated rule from query-operation-detector profile. Do not edit."
+  processorConfig: {}
+  # Should be after the semconv processor
+  orderHint: 150
+  signals:
+  - TRACES
+  collectorRoles:
+  - CLUSTER_GATEWAY

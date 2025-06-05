@@ -1,23 +1,23 @@
 # Contributing Guide
 
-* [Welcome](#welcome)
-* [Ways to Contribute](#ways-to-contribute)
-* [Find an Issue](#find-an-issue)
-* [Issue Guidelines](#issue-guidelines)
-* [Pull Request Guidelines](#pull-request-guidelines)
-* [Communication](#communication)
-* [Code Review Process](#code-review-process)
-* [Testing Requirements](#testing-requirements)
-* [Code of Conduct](#code-of-conduct)
-* [License](#license)
-* [Local Development](#local-development)
+- [Welcome](#welcome)
+- [Ways to Contribute](#ways-to-contribute)
+- [Find an Issue](#find-an-issue)
+- [Issue Guidelines](#issue-guidelines)
+- [Pull Request Guidelines](#pull-request-guidelines)
+- [Communication](#communication)
+- [Code Review Process](#code-review-process)
+- [Testing Requirements](#testing-requirements)
+- [Code of Conduct](#code-of-conduct)
+- [License](#license)
+- [Local Development](#local-development)
   - [Run Odigos CLI from Code](#run-odigos-cli-from-code)
   - [How to Develop Odigos Locally](#how-to-develop-odigos-locally)
   - [How to Build and Run Odigos Frontend Locally](#how-to-build-and-run-odigos-frontend-locally)
-* [Odiglet](#odiglet)
+- [Odiglet](#odiglet)
   - [Builder Base Image](#builder-base-image)
   - [Remote Debugging](#remote-debugging)
-* [Instrumentor](#instrumentor)
+- [Instrumentor](#instrumentor)
   - [Debugging](#debugging)
 
 Welcome! We are glad that you want to contribute to our project! 💖
@@ -73,7 +73,7 @@ When reporting an issue:
 
 ## Pull Request Guidelines
 
-When submitt
+When submitting a pull request:
 
 1. Include a clear description of the change and its purpose.
 2. Link to any related issues or documentation.
@@ -120,11 +120,11 @@ First, follow the [Quickstart Guide](https://docs.odigos.io/quickstart/introduct
 
 Make sure you are able to:
 
-- [X] run Odigos CLI in your terminal.
-- [X] open the demo application UI in your browser to interact with it.
-- [X] install odigos in your development cluster with `odigos install`.
-- [X] open Odigos UI in your browser to interact with it.
-- [X] see telemetry data that odigos generates, for example traces in jaeger.
+- [x] run Odigos CLI in your terminal.
+- [x] open the demo application UI in your browser to interact with it.
+- [x] install odigos in your development cluster with `odigos install`.
+- [x] open Odigos UI in your browser to interact with it.
+- [x] see telemetry data that odigos generates, for example traces in jaeger.
 
 After you have a working odigos setup, you can start making changes to the code and test them locally.
 
@@ -162,9 +162,9 @@ make deploy
 - Deploy a specific service by running one of the following commands:
 
 ```bash
-make deploy-odiglet 
-make deploy-autoscaler 
-make deploy-collector 
+make deploy-odiglet
+make deploy-autoscaler
+make deploy-collector
 make deploy-scheduler
 make deploy-instrumentor
 make deploy-ui
@@ -184,22 +184,7 @@ See the [Odigos docs](https://docs.odigos.io/intro) for the full steps on debugg
 
 ### How to Build and run Odigos Frontend Locally
 
-Build the frontend
-
-```bash
-cd frontend/webapp 
-yarn install
-yarn build
-yarn dev
-cd ../.. # back to root of the project for next steps
-```
-
-Then run the web server
-
-```bash
-cd frontend
-go build -o odigos-backend && ./odigos-backend --port 8085 --debug --address 0.0.0.0
-```
+See the [Frontend README.md](https://github.com/odigos-io/odigos/blob/main/frontend/webapp/README.md) for the full steps.
 
 ## Odiglet
 
@@ -232,7 +217,7 @@ If the Mutating Webhook is enabled, follow these steps:
    Create a local directory and extract the certificate and key by running the following command:
 
 ```
-mkdir -p serving-certs && kubectl get secret instrumentor-webhook-cert -n odigos-system -o jsonpath='{.data.tls\.crt}' | base64 -d > serving-certs/tls.crt && kubectl get secret instrumentor-webhook-cert -n odigos-system -o jsonpath='{.data.tls\.key}' | base64 -d > serving-certs/tls.key
+mkdir -p serving-certs && kubectl get secret webhook-cert -n odigos-system -o jsonpath='{.data.tls\.crt}' | base64 -d > serving-certs/tls.crt && kubectl get secret webhook-cert -n odigos-system -o jsonpath='{.data.tls\.key}' | base64 -d > serving-certs/tls.key
 ```
 
 2. Apply this service to the cluster, it will replace the existing `odigos-instrumentor` service:

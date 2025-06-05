@@ -1,0 +1,84 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: s3
+  displayName: AWS S3
+  category: managed
+spec:
+  image: awss3.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: S3_BUCKET
+      displayName: Bucket Name
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: The name of the bucket where the data will be stored
+    - name: S3_REGION
+      displayName: Bucket Region
+      componentType: dropdown
+      componentProps:
+        required: true
+        tooltip: The AWS region where the bucket is located
+        values:
+          - af-south-1
+          - ap-east-1
+          - ap-northeast-1
+          - ap-northeast-2
+          - ap-northeast-3
+          - ap-south-1
+          - ap-south-2
+          - ap-southeast-1
+          - ap-southeast-2
+          - ap-southeast-3
+          - ap-southeast-4
+          - ap-southeast-5
+          - ap-southeast-7
+          - ca-central-1
+          - ca-west-1
+          - eu-central-1
+          - eu-central-2
+          - eu-north-1
+          - eu-south-1
+          - eu-south-2
+          - eu-west-1
+          - eu-west-2
+          - eu-west-3
+          - il-central-1
+          - me-central-1
+          - me-south-1
+          - mx-central-1
+          - sa-east-1
+          - us-east-1
+          - us-east-2
+          - us-gov-east-1
+          - us-gov-west-1
+          - us-west-1
+          - us-west-2
+    - name: S3_PARTITION
+      displayName: Time granularity of S3 Bucket
+      componentType: dropdown
+      componentProps:
+        values:
+          - minute
+          - hour
+        required: true
+        tooltip: Wether a new subdirectory should be created every minute or every hour
+      initialValue: minute
+    - name: S3_MARSHALER
+      displayName: Marshaller (Data Format)
+      componentType: dropdown
+      componentProps:
+        values:
+          - otlp_json
+          - otlp_proto
+        required: true
+        tooltip: The format in which the data will be encoded. It can be either `otlp_json` or `otlp_proto`. Default is `otlp_json`
+      initialValue: otlp_json

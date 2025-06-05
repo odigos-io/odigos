@@ -1,22 +1,18 @@
 'use client';
+
 import React from 'react';
-import dynamic from 'next/dynamic';
-import { useSSE } from '@/hooks';
+import { useMetrics, useSourceCRUD } from '@/hooks';
+import { OVERVIEW_HEIGHT_WITHOUT_DATA_FLOW } from '@/utils';
+import { DataFlow, MultiSourceControl } from '@odigos/ui-kit/containers';
 
-const ToastList = dynamic(() => import('@/components/notification/toast-list'), { ssr: false });
-const AllDrawers = dynamic(() => import('@/components/overview/all-drawers'), { ssr: false });
-const AllModals = dynamic(() => import('@/components/overview/all-modals'), { ssr: false });
-const OverviewDataFlowContainer = dynamic(() => import('@/containers/main/overview/overview-data-flow'), { ssr: false });
-
-export default function MainPage() {
-  useSSE();
+export default function Page() {
+  const { metrics } = useMetrics();
+  const { sources, persistSources } = useSourceCRUD();
 
   return (
     <>
-      <ToastList />
-      <AllDrawers />
-      <AllModals />
-      <OverviewDataFlowContainer />
+      <DataFlow heightToRemove={OVERVIEW_HEIGHT_WITHOUT_DATA_FLOW} metrics={metrics} />
+      <MultiSourceControl totalSourceCount={sources.length} uninstrumentSources={(payload) => persistSources(payload, {})} />
     </>
   );
 }

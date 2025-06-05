@@ -2,12 +2,13 @@ package runtime_details
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -56,7 +57,6 @@ type InstrumentationConfigReconciler struct {
 }
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-
 	logger := log.FromContext(ctx)
 
 	var instrumentationConfig odigosv1.InstrumentationConfig
@@ -69,35 +69,48 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		return reconcile.Result{}, fmt.Errorf("InstrumentationConfig %s/%s has %d owner references, expected 1", instrumentationConfig.Namespace, instrumentationConfig.Name, len(instrumentationConfig.OwnerReferences))
 	}
 
-	workload, labels, err := getWorkloadAndLabelsfromOwner(ctx, r.Client, instrumentationConfig.Namespace, instrumentationConfig.OwnerReferences[0])
-	if err != nil {
-		logger.Error(err, "Failed to get workload and labels from owner")
-		return reconcile.Result{}, err
-	}
-
-	pods, err := kubeutils.GetRunningPods(ctx, labels, workload.GetNamespace(), r.Client)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, r.Client)
+	// find pods that are managed by the workload,
+	// filter out pods that are being deleted or not ready,
+	// note that the controller-runtime cache is assumed here to only contain pods in the same node as the odiglet
+	var podList corev1.PodList
+	err = r.List(ctx, &podList, client.InNamespace(instrumentationConfig.Namespace))
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	var selectedPods []corev1.Pod
-	if len(pods) > 0 {
-		selectedPods = append(selectedPods, pods[0])
+	for _, pod := range podList.Items {
+		// skip pods that are being deleted or not ready
+		if pod.DeletionTimestamp != nil || !k8scontainer.AllContainersReady(&pod) {
+			continue
+		}
+		podWorkload, err := getPodWorkloadObject(&pod)
+		if errors.Is(err, workload.ErrKindNotSupported) {
+			continue
+		}
+		if podWorkload == nil {
+			// pod is not managed by a workload, no runtime details detection needed
+			continue
+		}
+
+		// get instrumentation config name for the pod
+		instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
+		if instrumentationConfigName == instrumentationConfig.Name {
+			selectedPods = append(selectedPods, pod)
+		}
 	}
 
-	runtimeResults, err := runtimeInspection(ctx, selectedPods, odigosConfig.IgnoredContainers, r.CriClient)
+	if len(selectedPods) == 0 {
+		// this node is not running any pods managed by the workload, so nothing to do
+		return reconcile.Result{}, nil
+	}
+
+	runtimeResults, err := runtimeInspection(ctx, selectedPods, r.CriClient)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	err = persistRuntimeDetailsToInstrumentationConfig(ctx, r.Client, &instrumentationConfig, odigosv1.InstrumentationConfigStatus{
-		RuntimeDetailsByContainer: runtimeResults,
-	})
+	err = persistRuntimeDetailsToInstrumentationConfig(ctx, r.Client, &instrumentationConfig, runtimeResults)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

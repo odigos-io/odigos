@@ -1,67 +1,91 @@
 ---
-title: "Causely"
+title: 'Causely'
+description: 'Configuring the Causely backend (Managed)'
+sidebarTitle: 'Causely'
+icon: 'signal-stream'
 ---
 
-## Configuring the Causely Backend
+### Getting Started
 
-To complete adding a new Causely backend, input the following information into the Odigos UI
+<img src="https://d15jtxgb40qetw.cloudfront.net/causely.svg" alt="causely" className="not-prose h-20" />
 
-### Causely Destination Settings
+{/*
+    Add custom content here (under this comment)...
 
-To send Metrics/Traces to Causely, you need to configure the Causely URL in the Odigos UI.
-This destination is for the Causely Mediator Service, so you will need to have a Causely instance running and accessible from the k8s cluster running odigos.
+    e.g.
 
-#### Endpoint
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
 
-The endpoint URL is the combined `<protocol>://<hostname>:<port>` to access your Causely Mediator service.
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
 
-- Protocol should be `http`; using `https` or omitting it will automatically be converted to `http`
-- Hostname should typically follow the format: `mediator.<namespace>`
-    - `namespace` is the k8s namespace where the Causely Mediator service is deployed
-- Default port is `4317`; if no port is specified, it will be appended automatically
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
 
-Example: `http://mediator.causely:4317`
+This destination is for the Causely Mediator Service, so you will need to have a Causely instance running and accessible from the k8s cluster running Odigos.
 
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-## Adding a Destination to Odigos
+### Configuring Destination Fields
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ❌ Logs
+</Accordion>
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+- **CAUSELY_URL** `string` : Endpoint. The endpoint URL is the combined `<protocol>://<hostname>:<port>` to access your Causely Mediator service. Protocol should be `http`; using `https` or omitting it will automatically be converted to `http`. Hostname should typically follow the format: `mediator.<namespace>`. Namespace is the k8s namespace where the Causely Mediator service is deployed. Port is optional and defaults to the default OTLP gRPC port `4317`
+  - This field is required
+  - Example: `http://mediator.causely:4317`
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Causely` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `Causely` and follow the on-screen instructions.
-
-
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: causely-example
-  namespace: odigos-system
-spec:
-  data:
-    CAUSELY_URL: <Endpoint>
-  destinationName: causely
-  signals:
-  - TRACES
-  - METRICS
-  type: causely
-```
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `causely.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: causely-example
+      namespace: odigos-system
+    spec:
+      data:
+        CAUSELY_URL: <Endpoint>
+      destinationName: causely
+      signals:
+      - TRACES
+      - METRICS
+      type: causely
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f causely.yaml
+    ```
+  </Step>
+</Steps>

@@ -19,21 +19,40 @@ const (
 	endpoint = "https://349trlge22.execute-api.us-east-1.amazonaws.com/default/odigos_events_lambda"
 )
 
-func Start(c client.Client) {
+func Start(ctx context.Context, c client.Client) {
 	installationId := uuid.New().String()
-	time.Sleep(1 * time.Minute)
-	reportEvent(c, installationId)
 
-	time.Sleep(5 * time.Minute)
-	reportEvent(c, installationId)
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(1 * time.Minute):
+	}
 
-	for range time.Tick(24 * time.Hour) {
-		reportEvent(c, installationId)
+	reportEvent(ctx, c, installationId)
+
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(5 * time.Minute):
+	}
+
+	reportEvent(ctx, c, installationId)
+
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			reportEvent(ctx, c, installationId)
+		}
 	}
 }
 
-func reportEvent(c client.Client, installationId string) {
-	err := report(c, installationId)
+func reportEvent(ctx context.Context, c client.Client, installationId string) {
+	err := report(ctx, c, installationId)
 	if err != nil {
 		ctrl.Log.Error(err, "error reporting event")
 	}
@@ -54,8 +73,7 @@ type event struct {
 	InstallationID   string   `json:"installation_id"`
 }
 
-func report(c client.Client, installationId string) error {
-	ctx := context.Background()
+func report(ctx context.Context, c client.Client, installationId string) error {
 	var dests odigosv1.DestinationList
 	err := c.List(ctx, &dests)
 	if err != nil {
@@ -85,7 +103,7 @@ func report(c client.Client, installationId string) error {
 		return err
 	}
 
-	var apps odigosv1.InstrumentedApplicationList
+	var apps odigosv1.InstrumentationConfigList
 	err = c.List(ctx, &apps)
 	if err != nil {
 		return err
@@ -98,7 +116,7 @@ func report(c client.Client, installationId string) error {
 	jsApps := 0
 	unrecognizedApps := 0
 	for _, app := range apps.Items {
-		for _, l := range app.Spec.RuntimeDetails {
+		for _, l := range app.Status.RuntimeDetailsByContainer {
 			switch l.Language {
 			case common.GoProgrammingLanguage:
 				goApps++
@@ -115,7 +133,7 @@ func report(c client.Client, installationId string) error {
 			}
 		}
 
-		if len(app.Spec.RuntimeDetails) == 0 {
+		if len(app.Status.RuntimeDetailsByContainer) == 0 {
 			unrecognizedApps++
 		}
 	}

@@ -1,11 +1,13 @@
-FROM --platform=$BUILDPLATFORM golang:1.23 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24 AS builder
 ARG SERVICE_NAME
 
-# Copyy local modules required by the build
+# Copy local modules required by the build
 WORKDIR /workspace
 COPY api/ api/
 COPY common/ common/
 COPY k8sutils/ k8sutils/
+COPY profiles/ profiles/
+COPY distros/ distros/
 
 WORKDIR /workspace/$SERVICE_NAME
 RUN mkdir -p /workspace/build
@@ -17,11 +19,12 @@ RUN --mount=type=cache,target=/go/pkg \
 COPY $SERVICE_NAME/ .
 # Build for target architecture
 ARG TARGETARCH
+ARG LD_FLAGS
 RUN go mod tidy
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     CGO_ENABLED=0 GOARCH=$TARGETARCH \
-    go build -a -o /workspace/build/$SERVICE_NAME .
+    go build -ldflags="${LD_FLAGS}" -a -o /workspace/build/$SERVICE_NAME cmd/main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details

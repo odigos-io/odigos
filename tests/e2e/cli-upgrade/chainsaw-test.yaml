@@ -8,29 +8,12 @@ spec:
   steps:
     - name: Prepare destination
       try:
-        - script:
-            timeout: 60s
-            content: |
-              if helm status e2e-tests -n traces >/dev/null 2>&1; then
-                echo "e2e-tests helm already installed, probably from previous run. Skipping..."
-              else
-                helm repo add grafana https://grafana.github.io/helm-charts
-                helm repo update
-                helm install e2e-tests grafana/tempo -n traces --create-namespace --set tempo.storage.trace.block.version=vParquet4 \
-                --set tempo.ingester.trace_idle_period=5s \
-                --set tempo.ingester.max_block_duration=20s \
-                --version 1.10.1
-              fi
-        - assert:
-            file: ../../common/assert/tempo-running.yaml
-    - name: Wait for destination to be ready
-      try:
-        - script:
-            timeout: 60s
-            content: ../../common/wait_for_dest.sh
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
+            timeout: 6m # longer timeout since the images are being pulled from dockerhub
             content: |
               #!/bin/bash
 
@@ -68,128 +51,140 @@ spec:
               ./odigos uninstall --yes
               # Run the Odigos CLI installation
               ./odigos install --namespace odigos-test
-            timeout: 120s # longer timeout since the images are being pulled from dockerhub
         - assert:
+            timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
-    - name: Install Demo App
+    - name: Assert Trace DB is up
       try:
-        - script:
-            timeout: 100s
-            content: |
-              docker pull keyval/odigos-demo-inventory:v0.1
-              docker pull keyval/odigos-demo-membership:v0.1
-              docker pull keyval/odigos-demo-coupon:v0.1
-              docker pull keyval/odigos-demo-inventory:v0.1
-              docker pull keyval/odigos-demo-frontend:v0.2
-              kind load docker-image keyval/odigos-demo-inventory:v0.1
-              kind load docker-image keyval/odigos-demo-membership:v0.1
-              kind load docker-image keyval/odigos-demo-coupon:v0.1
-              kind load docker-image keyval/odigos-demo-inventory:v0.1
-              kind load docker-image keyval/odigos-demo-frontend:v0.2
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Install - Simple Demo Apps
+      try:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
+        - script:
+            timeout: 2m
+            content: |
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
+
     - name: Instrument Namespace
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
+
     - name: Assert Runtime Detected
       try:
         - assert:
-            timeout: 2m
+            timeout: 4m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
+
     - name: Add Destination
       try:
         - apply:
-            file: ../../common/apply/add-tempo-traces-destination.yaml
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
     - name: Odigos pipeline pods ready
-    # We make sure that the pipeline pods are ready before proceeding with the next steps
-    # This is intentionally different from pipeline-ready.yaml, which checks for the pipeline CRDs
-    # When adding a feature related to the pipeline, if we would use the same assert before the upgrade, the test would fail.
-    # Since the version installed here is latest official one.
+      # We make sure that the pipeline pods are ready before proceeding with the next steps
+      # This is intentionally different from pipeline-ready.yaml, which checks for the pipeline CRDs
+      # When adding a feature related to the pipeline, if we would use the same assert before the upgrade, the test would fail.
+      # Since the version installed here is latest official one.
       try:
         - script:
             content: ../../common/assert_pipeline_pods_ready.sh
-            timeout: 60s
+            timeout: 5m
+
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
+
     - name: Upgrade to HEAD version with the current compiled cli
       try:
         - script:
             content: ../../../cli/odigos upgrade --version e2e-test --skip-version-check # since the tag e2e-test is not a valid semantic version, we need to bypass it with --skip-version-check
-            timeout: 60s
+            timeout: 3m
         - assert:
-            file: assert-odigos-upgraded.yaml
-            timeout: 60s
+            file: ../../common/assert/odigos-upgraded.yaml
+            timeout: 3m
       catch:
-      - get:
-          apiVersion: v1
-          kind: Pod
+        - get:
+            apiVersion: v1
+            kind: Pod
+
     - name: Odigos pipeline ready after upgrade
       try:
         - assert:
-            file:  ../../common/assert/pipeline-ready.yaml
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
     - name: Simple-demo instrumented after upgrade
       try:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
+
     - name: Generate Traffic
       try:
+        - apply:
+            file: ../../common/apply/generate-traffic-job.yaml
         - script:
-            timeout: 300s
+            timeout: 1m
             content: |
-              # Apply the job
-              kubectl apply -f ../../common/apply/generate-traffic-job.yaml
+              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+        - delete:
+            file: ../../common/apply/generate-traffic-job.yaml
 
-              # Wait for the job to complete
-              job_name=$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-              kubectl wait --for=condition=complete job/$job_name
-
-              # Delete the job
-              kubectl delete -f ../../common/apply/generate-traffic-job.yaml      
-
+    - name: Wait For Trace
+      try:
+        - script:
+            timeout: 1m
+            content: |
               while true; do
-                # wait for traces to be available
-                sleep 8
-
-                # Run the wait-for-trace script
-                echo "Running TraceQL test at $(date)"
-                ../../common/traceql_runner.sh tracesql/wait-for-trace.yaml
-
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
                 if [ $? -eq 0 ]; then
                   break
-                else
-                  ../../common/flush_traces.sh
-                  sleep 5
                 fi
+                sleep 1
               done
+      catch:
+        - script:
+            content: |
+              java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
+              kubectl logs $java_pod_name -n default
+
     - name: Verify Trace - Context Propagation
       try:
         - script:
             content: |
-              ../../common/traceql_runner.sh tracesql/context-propagation.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation.yaml
       catch:
         - podLogs:
             name: odiglet
             namespace: odigos-test
+
     - name: Verify Trace - Resource Attributes
       try:
         - script:
             content: |
-              ../../common/traceql_runner.sh tracesql/resource-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/resource-attributes.yaml
       catch:
         - podLogs:
             name: odiglet
             namespace: odigos-test
+
     - name: Verify Trace - Span Attributes
       try:
         - script:
-            timeout: 60s
             content: |
-              ../../common/traceql_runner.sh tracesql/span-attributes.yaml
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/span-attributes.yaml
       catch:
         - podLogs:
             name: odiglet

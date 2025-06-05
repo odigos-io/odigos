@@ -9,6 +9,24 @@ export const DESCRIBE_ODIGOS = gql`
         status
         explain
       }
+      kubernetesVersion {
+        name
+        value
+        status
+        explain
+      }
+      tier {
+        name
+        value
+        status
+        explain
+      }
+      installationMethod {
+        name
+        value
+        status
+        explain
+      }
       numberOfDestinations
       numberOfSources
       clusterCollector {
@@ -162,7 +180,7 @@ export const DESCRIBE_SOURCE = gql`
         status
         explain
       }
-      labels {
+      sourceObjects {
         instrumented {
           name
           value
@@ -188,27 +206,7 @@ export const DESCRIBE_SOURCE = gql`
           explain
         }
       }
-      instrumentationConfig {
-        created {
-          name
-          value
-          status
-          explain
-        }
-        createTime {
-          name
-          value
-          status
-          explain
-        }
-      }
       runtimeInfo {
-        generation {
-          name
-          value
-          status
-          explain
-        }
         containers {
           containerName {
             name
@@ -236,7 +234,7 @@ export const DESCRIBE_SOURCE = gql`
           }
         }
       }
-      instrumentedApplication {
+      otelAgents {
         created {
           name
           value
@@ -256,47 +254,25 @@ export const DESCRIBE_SOURCE = gql`
             status
             explain
           }
-          language {
+          agentEnabled {
             name
             value
             status
             explain
           }
-          runtimeVersion {
+          reason {
             name
             value
             status
             explain
           }
-          envVars {
+          message {
             name
             value
             status
             explain
           }
-        }
-      }
-      instrumentationDevice {
-        statusText {
-          name
-          value
-          status
-          explain
-        }
-        containers {
-          containerName {
-            name
-            value
-            status
-            explain
-          }
-          devices {
-            name
-            value
-            status
-            explain
-          }
-          originalEnv {
+          otelDistroName {
             name
             value
             status

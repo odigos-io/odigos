@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-logr/logr"
@@ -17,6 +20,10 @@ var (
 	errFailedToGetDetails       = errors.New("failed to get details for process event")
 	errFailedToGetDistribution  = errors.New("failed to get otel distribution for details")
 	errFailedToGetConfigGroup   = errors.New("failed to get config group")
+)
+
+const (
+	shutdownCleanupTimeout = 10 * time.Second
 )
 
 // ConfigUpdate is used to send a configuration update request to the manager.
@@ -59,6 +66,10 @@ type ManagerOptions[processDetails ProcessDetails, configGroup ConfigGroup] stru
 	//
 	// The caller is responsible for closing the channel once no more updates are expected.
 	ConfigUpdates <-chan ConfigUpdate[configGroup]
+
+	// MeterProvider is used to create a meter for recording metrics.
+	// If non provided, a no-op provider will be used from the global OpenTelemetry API.
+	MeterProvider      metric.MeterProvider
 }
 
 // Manager is used to orchestrate the ebpf instrumentations lifecycle.
@@ -87,6 +98,8 @@ type manager[processDetails ProcessDetails, configGroup ConfigGroup] struct {
 	detailsByWorkload map[configGroup]map[int]*instrumentationDetails[processDetails, configGroup]
 
 	configUpdates <-chan ConfigUpdate[configGroup]
+
+	metrics *managerMetrics
 }
 
 func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options ManagerOptions[processDetails, configGroup]) (Manager, error) {
@@ -119,6 +132,16 @@ func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options 
 		return nil, errors.New("config updates channel is required for ebpf instrumentation manager")
 	}
 
+	mp := options.MeterProvider
+	if mp == nil {
+		mp = otel.GetMeterProvider()
+	}
+	meter := mp.Meter("github.com/odigos.io/odigos/instrumentation")
+	managerMetrics, err := newManagerMetrics(meter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ebpf instrumentation manager metrics: %w", err)
+	}
+
 	logger := options.Logger
 	procEvents := make(chan detector.ProcessEvent)
 	detector, err := detector.NewDetector(procEvents, options.DetectorOptions...)
@@ -135,38 +158,56 @@ func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options 
 		detailsByPid:      make(map[int]*instrumentationDetails[processDetails, configGroup]),
 		detailsByWorkload: map[configGroup]map[int]*instrumentationDetails[processDetails, configGroup]{},
 		configUpdates:     options.ConfigUpdates,
+		metrics:           managerMetrics,
 	}, nil
 }
 
 func (m *manager[ProcessDetails, ConfigGroup]) runEventLoop(ctx context.Context) {
+	// cleanup all instrumentations on shutdown
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), shutdownCleanupTimeout)
+		defer cancel()
+
+		for pid, details := range m.detailsByPid {
+			select {
+			case <-ctx.Done():
+				m.logger.Error(ctx.Err(), "context canceled while cleaning up instrumentations before shutdown")
+				return
+			default:
+				if details.inst == nil {
+					continue
+				}
+				if err := details.inst.Close(ctx); err != nil {
+					m.logger.Error(err, "failed to close instrumentation", "pid", pid)
+				}
+				if err := m.handler.Reporter.OnExit(ctx, pid, details.pd); err != nil {
+					m.logger.Error(err, "failed to report instrumentation exit")
+				}
+			}
+		}
+
+		m.detailsByPid = nil
+		m.detailsByWorkload = nil
+		m.logger.Info("all instrumentations cleaned up")
+	}()
+
 	// main event loop for handling instrumentations
 	for {
 		select {
 		case <-ctx.Done():
 			m.logger.Info("stopping eBPF instrumentation manager")
-			for pid, details := range m.detailsByPid {
-				if details.inst == nil {
-					continue
-				}
-				err := details.inst.Close(ctx)
-				if err != nil {
-					m.logger.Error(err, "failed to close instrumentation", "pid", pid)
-				}
-				// probably shouldn't remove instrumentation instance here
-				// as this flow is happening when Odiglet is shutting down
-			}
-			m.detailsByPid = nil
-			m.detailsByWorkload = nil
 			return
-		case e := <-m.procEvents:
+		case e, ok := <-m.procEvents:
+			if !ok {
+				m.logger.Info("process events channel closed, stopping eBPF instrumentation manager")
+				return
+			}
 			switch e.EventType {
-			case detector.ProcessExecEvent:
+			case detector.ProcessExecEvent, detector.ProcessForkEvent, detector.ProcessFileOpenEvent:
 				m.logger.V(1).Info("detected new process", "pid", e.PID, "cmd", e.ExecDetails.CmdLine)
-				err := m.handleProcessExecEvent(ctx, e)
-				// ignore the error if no instrumentation factory is found,
-				// as this is expected for some language and sdk combinations
-				if err != nil && !errors.Is(err, errNoInstrumentationFactory) {
-					m.logger.Error(err, "failed to handle process exec event")
+				err := m.tryInstrument(ctx, e)
+				if err != nil {
+					m.handleInstrumentError(err)
 				}
 			case detector.ProcessExitEvent:
 				m.cleanInstrumentation(ctx, e.PID)
@@ -179,6 +220,27 @@ func (m *manager[ProcessDetails, ConfigGroup]) runEventLoop(ctx context.Context)
 				}
 			}
 		}
+	}
+}
+
+func (m *manager[ProcessDetails, ConfigGroup]) handleInstrumentError(err error) {
+	// ignore the error if no instrumentation factory is found,
+	// as this is expected for some language and sdk combinations which don't have ebpf support.
+	if errors.Is(err, errNoInstrumentationFactory) {
+		return
+	}
+
+	// we might fail to get the distribution for the process details,
+	// in cases where we detected a certain language for a container, but multiple processes are running in it,
+	// only one or some of them are in the language we detected.
+	if errors.Is(err, errFailedToGetDistribution) {
+		m.logger.Info("failed to get otel distribution for process", "error", err)
+		return
+	}
+
+	// fallback to log an error
+	if err != nil {
+		m.logger.Error(err, "failed to handle process exec event")
 	}
 }
 
@@ -212,6 +274,7 @@ func (m *manager[ProcessDetails, ConfigGroup]) cleanInstrumentation(ctx context.
 		if err != nil {
 			m.logger.Error(err, "failed to close instrumentation")
 		}
+		m.metrics.instrumentedProcesses.Add(ctx, -1)
 	}
 
 	err := m.handler.Reporter.OnExit(ctx, pid, details.pd)
@@ -222,13 +285,13 @@ func (m *manager[ProcessDetails, ConfigGroup]) cleanInstrumentation(ctx context.
 	m.stopTrackInstrumentation(pid)
 }
 
-func (m *manager[ProcessDetails, ConfigGroup]) handleProcessExecEvent(ctx context.Context, e detector.ProcessEvent) error {
+func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context, e detector.ProcessEvent) error {
 	if details, found := m.detailsByPid[e.PID]; found && details.inst != nil {
 		// this can happen if we have multiple exec events for the same pid (chain loading)
 		// TODO: better handle this?
 		// this can be done by first closing the existing instrumentation,
 		// and then creating a new one
-		m.logger.Info("received exec event for process id which is already instrumented with ebpf, skipping it", "pid", e.PID)
+		m.logger.Info("received exec event for process id which is already instrumented with ebpf, skipping it", "pid", e.PID, "event type", e.EventType)
 		return nil
 	}
 
@@ -266,17 +329,24 @@ func (m *manager[ProcessDetails, ConfigGroup]) handleProcessExecEvent(ctx contex
 		// return nil
 	}
 
-	inst, err := factory.CreateInstrumentation(ctx, e.PID, settings)
-	if err != nil {
+	inst, initErr := factory.CreateInstrumentation(ctx, e.PID, settings)
+	reporterErr := m.handler.Reporter.OnInit(ctx, e.PID, err, pd)
+	if reporterErr != nil {
+		m.logger.Error(reporterErr, "failed to report instrumentation init", "initialized", initErr == nil, "pid", e.PID, "process group details", pd)
+	}
+	if initErr != nil {
+		// we need to track the instrumentation even if the initialization failed.
+		// consider a reporter which writes a persistent record for a failed/successful init
+		// we need to notify the reporter once that PID exits to clean up the resources - hence we track it.
+		m.startTrackInstrumentation(e.PID, nil, pd, configGroup)
 		m.logger.Error(err, "failed to initialize instrumentation", "language", otelDisto.Language, "sdk", otelDisto.OtelSdk)
-		err = m.handler.Reporter.OnInit(ctx, e.PID, err, pd)
+		m.metrics.failedInstrumentations.Add(ctx, 1)
 		// TODO: should we return here the initialize error? or the handler error? or both?
-		return err
+		return initErr
 	}
 
 	loadErr := inst.Load(ctx)
-
-	reporterErr := m.handler.Reporter.OnLoad(ctx, e.PID, loadErr, pd)
+	reporterErr = m.handler.Reporter.OnLoad(ctx, e.PID, loadErr, pd)
 	if reporterErr != nil {
 		m.logger.Error(reporterErr, "failed to report instrumentation load", "loaded", loadErr == nil, "pid", e.PID, "process group details", pd)
 	}
@@ -287,12 +357,14 @@ func (m *manager[ProcessDetails, ConfigGroup]) handleProcessExecEvent(ctx contex
 		// saving the inst as nil marking the instrumentation failed to load, and is not valid to run/configure/close.
 		m.startTrackInstrumentation(e.PID, nil, pd, configGroup)
 		m.logger.Error(err, "failed to load instrumentation", "language", otelDisto.Language, "sdk", otelDisto.OtelSdk)
+		m.metrics.failedInstrumentations.Add(ctx, 1)
 		// TODO: should we return here the load error? or the instance write error? or both?
-		return err
+		return loadErr
 	}
 
 	m.startTrackInstrumentation(e.PID, inst, pd, configGroup)
 	m.logger.Info("instrumentation loaded", "pid", e.PID, "process group details", pd)
+	m.metrics.instrumentedProcesses.Add(ctx, 1)
 
 	go func() {
 		err := inst.Run(ctx)

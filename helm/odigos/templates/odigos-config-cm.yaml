@@ -2,27 +2,39 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: odigos-config
-  namespace: {{ .Release.Namespace }}
+  namespace: '{{ .Release.Namespace }}'
   annotations:
-    "helm.sh/hook": post-install,post-upgrade
+    'helm.sh/hook': post-install,post-upgrade
   labels:
-    odigos.io/config: "1"
+    odigos.io/config: '1'
     odigos.io/system-object: "true"
 data:
   config.yaml: |
     configVersion: 1
-    autoscalerImage: {{ .Values.autoscaler.image.repository }}
-    {{- if .Values.imagePrefix }}
-    imagePrefix: {{ .Values.imagePrefix }}
+    {{- if .Values.clusterName }}
+    clusterName: {{ .Values.clusterName }}
+    {{- end }}
+    {{- if .Values.centralProxy.centralBackendURL }}
+    centralBackendURL: {{ .Values.centralProxy.centralBackendURL }}
+    {{- end }}
+    imagePrefix: {{ template "utils.imagePrefix" (dict "Values" .Values) }}
+    {{- if .Values.ui.uiMode }}
+    uiMode: {{ .Values.ui.uiMode }}
+    {{- end }}
+    {{- if .Values.ui.uiPaginationLimit }}
+    uiPaginationLimit: {{ .Values.ui.uiPaginationLimit }}
+    {{- end }}
+    {{- if .Values.ui.centralBackendURL }}
+    centralBackendURL: {{ .Values.ui.centralBackendURL }}
     {{- end }}
     {{- if .Values.collectorGateway }}
     collectorGateway:
       {{- with .Values.collectorGateway.minReplicas }}
       MinReplicas: {{ . }}
-      {{- end }}    
+      {{- end }}
       {{- with .Values.collectorGateway.maxReplicas }}
       MaxReplicas: {{ . }}
-      {{- end }}          
+      {{- end }}
       {{- with .Values.collectorGateway.requestMemoryMiB }}
       requestMemoryMiB: {{ . }}
       {{- end }}
@@ -34,7 +46,7 @@ data:
       {{- end }}
       {{- with .Values.collectorGateway.limitCPUm }}
       limitCPUm: {{ . }}
-      {{- end }}                 
+      {{- end }}
       {{- with .Values.collectorGateway.memoryLimiterLimitMiB }}
       memoryLimiterLimitMiB: {{ . }}
       {{- end }}
@@ -71,50 +83,58 @@ data:
       {{- with .Values.collectorNode.goMemLimitMiB }}
       goMemLimitMiB: {{ . }}
       {{- end }}
+      {{- with .Values.collectorNode.k8sNodeLogsDirectory }}
+      k8sNodeLogsDirectory: {{ . }}
+      {{- end }}
     {{- end }}
-    instrumentorImage: {{ .Values.instrumentor.image.repository }}
+    {{- if include "utils.shouldRenderUserInstrumentationEnvs" . | eq "true" }}
+    userInstrumentationEnvs:
+      languages:
+        {{- range $lang, $config := .Values.userInstrumentationEnvs.languages }}
+        {{- if or $config.enabled $config.env }}
+        {{ $lang }}:
+          enabled: {{ $config.enabled }}
+          {{- if $config.env }}
+          env:
+            {{- range $key, $value := $config.env }}
+            {{ $key }}: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- end }}
+    {{- end }}
+    {{- if .Values.profiles }}
+    profiles:
+      {{- toYaml .Values.profiles | nindent 6 }}
+    {{- end }}
     telemetryEnabled: {{ .Values.telemetry.enabled }}
     openshiftEnabled: {{ .Values.openshift.enabled }}
     psp: {{ .Values.psp.enabled }}
+    {{- if .Values.ignoredNamespaces }}
     ignoredNamespaces:
-      {{- toYaml .Values.ignoredNamespaces | nindent 8 }}
+      {{- toYaml .Values.ignoredNamespaces | nindent 6 }}
+    {{- end }}
+    {{- if .Values.ignoredContainers }}
     ignoredContainers:
-      {{- toYaml .Values.ignoredContainers | nindent 8 }}
-    {{- if .Values.onPremToken }}
-    defaultSDKs:
-      dotnet:
-        sdkTier: community
-        sdkType: native
-      go:
-        sdkTier: enterprise
-        sdkType: ebpf
-      java:
-        sdkTier: enterprise
-        sdkType: ebpf
-      javascript:
-        sdkTier: enterprise
-        sdkType: ebpf
-      python:
-        sdkTier: enterprise
-        sdkType: ebpf
-      mysql:
-        sdkTier: enterprise
-        sdkType: ebpf
-    {{- else }}
-    defaultSDKs:
-      dotnet:
-        sdkTier: community
-        sdkType: native
-      go:
-        sdkTier: community
-        sdkType: ebpf
-      java:
-        sdkTier: community
-        sdkType: native
-      javascript:
-        sdkTier: community
-        sdkType: native
-      python:
-        sdkTier: community
-        sdkType: native
+      {{- toYaml .Values.ignoredContainers | nindent 6 }}
+    {{- end }}
+    {{- if .Values.instrumentor.mountMethod }}
+      {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device") }}
+    mountMethod: {{ .Values.instrumentor.mountMethod }}
+      {{- else }}
+        {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path' and 'k8s-virtual-device'." }}
       {{- end }}
+    {{- end }}
+    {{- $envMethod := .Values.instrumentor.agentEnvVarsInjectionMethod }}
+    {{- if and $envMethod (not (has $envMethod (list "loader" "pod-manifest" "loader-fallback-to-pod-manifest"))) }}
+    {{- fail "Error: Invalid agentEnvVarsInjectionMethod. Supported values are 'loader', 'pod-manifest', and 'loader-fallback-to-pod-manifest'." }}
+    {{- else if $envMethod }}
+    agentEnvVarsInjectionMethod: {{ $envMethod }}
+    {{- end }}
+    {{- if .Values.nodeSelector }}
+    nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 6 }}
+    {{- end }}
+    {{- if .Values.karpenter.enabled }}
+    karpenterEnabled: {{ .Values.karpenter.enabled }}
+    {{- end }}

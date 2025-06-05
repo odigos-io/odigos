@@ -5,7 +5,6 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
   labels:
-    odigos.io/config: "1"
     odigos.io/system-object: "true"
   name: instrumentedapplications.odigos.io
 spec:
@@ -20,8 +19,10 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: InstrumentedApplication is the Schema for the instrumentedapplications
-          API
+        description: |-
+          InstrumentedApplication is the Schema for the instrumentedapplications API
+
+          Deprecated: in favour of InstrumentationConfig
         properties:
           apiVersion:
             description: |-
@@ -41,21 +42,27 @@ spec:
           metadata:
             type: object
           spec:
-            description: InstrumentedApplicationSpec defines the desired state of
-              InstrumentedApplication
+            description: |-
+              InstrumentedApplicationSpec defines the desired state of InstrumentedApplication
+
+              Deprecated: in favour of InstrumentationConfig
             properties:
               options:
                 items:
+                  description: 'Deprecated: configuration is done via InstrumentationConfig'
                   properties:
                     containerName:
                       type: string
                     instrumentationsLibraries:
                       items:
+                        description: 'Deprecated: configuration is done via InstrumentationConfig'
                         properties:
                           libraryName:
                             type: string
                           options:
                             items:
+                              description: 'Deprecated: configuration is done via
+                                InstrumentationConfig'
                               properties:
                                 optionKey:
                                   type: string
@@ -128,8 +135,13 @@ spec:
                       - go
                       - dotnet
                       - javascript
+                      - php
+                      - ruby
+                      - rust
                       - mysql
                       - nginx
+                      - redis
+                      - postgres
                       - unknown
                       - ignored
                       type: string
@@ -151,6 +163,11 @@ spec:
                       type: string
                     runtimeVersion:
                       type: string
+                    secureExecutionMode:
+                      description: |-
+                        Indicates whether the target process is running is secure-execution mode.
+                        nil means we were unable to determine the secure-execution mode.
+                      type: boolean
                   required:
                   - containerName
                   - language
@@ -158,8 +175,10 @@ spec:
                 type: array
             type: object
           status:
-            description: InstrumentedApplicationStatus defines the observed state
-              of InstrumentedApplication
+            description: |-
+              InstrumentedApplicationStatus defines the observed state of InstrumentedApplication
+
+              Deprecated: in favour of InstrumentationConfig
             properties:
               conditions:
                 description: Represents the observations of a nstrumentedApplication's

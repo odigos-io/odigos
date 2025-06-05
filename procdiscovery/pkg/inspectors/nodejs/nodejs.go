@@ -1,27 +1,40 @@
 package nodejs
 
 import (
+	"path/filepath"
+
 	"github.com/hashicorp/go-version"
-	"strings"
 
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
 type NodejsInspector struct{}
 
-const nodeProcessName = "node"
+var processNames = []string{
+	"node",
+	"npm",
+	"npx",
+	"yarn",
+}
 
-func (n *NodejsInspector) Inspect(proc *process.Details) (common.ProgrammingLanguage, bool) {
-	if strings.Contains(proc.ExeName, nodeProcessName) || strings.Contains(proc.CmdLine, nodeProcessName) {
+func (n *NodejsInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	baseExe := filepath.Base(pcx.ExePath)
+
+	if utils.IsBaseExeContainsProcessName(baseExe, processNames) {
 		return common.JavascriptProgrammingLanguage, true
 	}
 
 	return "", false
 }
 
-func (n *NodejsInspector) GetRuntimeVersion(proc *process.Details, containerURL string) *version.Version {
-	if value, exists := proc.GetDetailedEnvsValue(process.NodeVersionConst); exists {
+func (n *NodejsInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	return "", false
+}
+
+func (n *NodejsInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
+	if value, exists := pcx.GetDetailedEnvsValue(process.NodeVersionConst); exists {
 		return common.GetVersion(value)
 	}
 

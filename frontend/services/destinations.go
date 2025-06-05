@@ -7,55 +7,89 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services/destination_recognition"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
 	k8s "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func GetDestinationTypes() model.GetDestinationTypesResponse {
-	var resp model.GetDestinationTypesResponse
-	itemsByCategory := make(map[string][]model.DestinationTypesCategoryItem)
+func GetDestinationCategories() model.GetDestinationCategories {
+	var resp model.GetDestinationCategories
+	itemsByCategory := make(map[string][]*model.DestinationTypesCategoryItem)
+
 	for _, destConfig := range destinations.Get() {
 		item := DestinationTypeConfigToCategoryItem(destConfig)
-		itemsByCategory[destConfig.Metadata.Category] = append(itemsByCategory[destConfig.Metadata.Category], item)
+		itemsByCategory[destConfig.Metadata.Category] = append(itemsByCategory[destConfig.Metadata.Category], &item)
+	}
+
+	descriptions := map[string]string{
+		"managed":     "Effortless Monitoring with Scalable Performance Management",
+		"self hosted": "Full Control and Customization for Advanced Application Monitoring",
 	}
 
 	for category, items := range itemsByCategory {
-		resp.Categories = append(resp.Categories, model.DestinationsCategory{
-			Name:  category,
-			Items: items,
+		resp.Categories = append(resp.Categories, &model.DestinationsCategory{
+			Name:        category,
+			Description: descriptions[category],
+			Items:       items,
 		})
-
 	}
 
 	return resp
-
 }
 
 func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) model.DestinationTypesCategoryItem {
+	fields := []*model.DestinationFieldYamlProperties{}
+
+	for _, field := range destConfig.Spec.Fields {
+		componentPropsJSON, err := json.Marshal(field.ComponentProps)
+
+		var customReadDataLabels []*model.CustomReadDataLabel
+		for _, label := range field.CustomReadDataLabels {
+			customReadDataLabels = append(customReadDataLabels, &model.CustomReadDataLabel{
+				Condition: label.Condition,
+				Title:     label.Title,
+				Value:     label.Value,
+			})
+		}
+
+		if err == nil {
+			fields = append(fields, &model.DestinationFieldYamlProperties{
+				Name:                 field.Name,
+				DisplayName:          field.DisplayName,
+				ComponentType:        field.ComponentType,
+				ComponentProperties:  string(componentPropsJSON),
+				Secret:               field.Secret,
+				InitialValue:         field.InitialValue,
+				RenderCondition:      field.RenderCondition,
+				HideFromReadData:     field.HideFromReadData,
+				CustomReadDataLabels: customReadDataLabels,
+			})
+		}
+	}
 
 	return model.DestinationTypesCategoryItem{
 		Type:                    string(destConfig.Metadata.Type),
 		DisplayName:             destConfig.Metadata.DisplayName,
-		ImageUrl:                GetImageURL(destConfig.Spec.Image),
+		ImageURL:                GetImageURL(destConfig.Spec.Image),
 		TestConnectionSupported: destConfig.Spec.TestConnectionSupported,
-		SupportedSignals: model.SupportedSignals{
-			Traces: model.ObservabilitySignalSupport{
+		SupportedSignals: &model.SupportedSignals{
+			Traces: &model.ObservabilitySignalSupport{
 				Supported: destConfig.Spec.Signals.Traces.Supported,
 			},
-			Metrics: model.ObservabilitySignalSupport{
+			Metrics: &model.ObservabilitySignalSupport{
 				Supported: destConfig.Spec.Signals.Metrics.Supported,
 			},
-			Logs: model.ObservabilitySignalSupport{
+			Logs: &model.ObservabilitySignalSupport{
 				Supported: destConfig.Spec.Signals.Logs.Supported,
 			},
 		},
+		Fields: fields,
 	}
 
 }
@@ -167,27 +201,52 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 		fieldsJSON = []byte("{}") // Set to an empty JSON object in case of error
 	}
 
-	var conditions []metav1.Condition
+	var conditions []*model.Condition
 	for _, condition := range k8sDest.Status.Conditions {
-		conditions = append(conditions, metav1.Condition{
+		var status model.ConditionStatus
+
+		switch condition.Status {
+		case metav1.ConditionUnknown:
+			status = model.ConditionStatusLoading
+		case metav1.ConditionTrue:
+			status = model.ConditionStatusSuccess
+		case metav1.ConditionFalse:
+			status = model.ConditionStatusError
+		}
+
+		// force "disabled" status ovverrides for certain "reasons"
+		if v1alpha1.IsReasonStatusDisabled(condition.Reason) {
+			status = model.ConditionStatusDisabled
+		}
+
+		conditions = append(conditions, &model.Condition{
+			Status:             status,
 			Type:               condition.Type,
-			Status:             condition.Status,
-			Message:            condition.Message,
-			LastTransitionTime: condition.LastTransitionTime,
+			Reason:             &condition.Reason,
+			Message:            &condition.Message,
+			LastTransitionTime: func(s string) *string { return &s }(condition.LastTransitionTime.String()),
 		})
 	}
 
+	dataStreamNames := make([]*string, 0)
+	if k8sDest.Spec.SourceSelector != nil && k8sDest.Spec.SourceSelector.Groups != nil {
+		for _, streamName := range k8sDest.Spec.SourceSelector.Groups {
+			dataStreamNames = append(dataStreamNames, &streamName)
+		}
+	}
+
 	return model.Destination{
-		Id:   k8sDest.Name,
-		Name: destName,
-		Type: destType,
-		ExportedSignals: model.ExportedSignals{
+		ID:              k8sDest.Name,
+		Name:            destName,
+		Type:            string(destType),
+		DataStreamNames: dataStreamNames,
+		ExportedSignals: &model.ExportedSignals{
 			Traces:  isSignalExported(k8sDest, common.TracesObservabilitySignal),
 			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),
 			Logs:    isSignalExported(k8sDest, common.LogsObservabilitySignal),
 		},
 		Fields:          string(fieldsJSON),
-		DestinationType: destTypeConfig,
+		DestinationType: &destTypeConfig,
 		Conditions:      conditions,
 	}
 }
@@ -230,7 +289,7 @@ func ExportedSignalsObjectToSlice(signals *model.ExportedSignalsInput) []common.
 	return resp
 }
 
-func CreateDestinationSecret(ctx context.Context, destType common.DestinationType, secretFields map[string]string, odigosns string) (*k8s.LocalObjectReference, error) {
+func CreateDestinationSecret(ctx context.Context, destType common.DestinationType, secretFields map[string]string, ns string) (*k8s.LocalObjectReference, error) {
 	generateNamePrefix := "odigos.io.dest." + string(destType) + "-"
 	secret := k8s.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -238,7 +297,7 @@ func CreateDestinationSecret(ctx context.Context, destType common.DestinationTyp
 		},
 		StringData: secretFields,
 	}
-	newSecret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Create(ctx, &secret, metav1.CreateOptions{})
+	newSecret, err := kube.DefaultClient.CoreV1().Secrets(ns).Create(ctx, &secret, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +306,7 @@ func CreateDestinationSecret(ctx context.Context, destType common.DestinationTyp
 	}, nil
 }
 
-func AddDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, dest *v1alpha1.Destination) error {
+func AddDestinationOwnerReferenceToSecret(ctx context.Context, ns string, dest *v1alpha1.Destination) error {
 	destOwnerRef := metav1.OwnerReference{
 		APIVersion: "odigos.io/v1alpha1",
 		Kind:       "Destination",
@@ -271,7 +330,7 @@ func AddDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, 
 		return err
 	}
 
-	_, err = kube.DefaultClient.CoreV1().Secrets(odigosns).Patch(ctx, dest.Spec.SecretRef.Name, types.JSONPatchType, secretPatchBytes, metav1.PatchOptions{})
+	_, err = kube.DefaultClient.CoreV1().Secrets(ns).Patch(ctx, dest.Spec.SecretRef.Name, types.JSONPatchType, secretPatchBytes, metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}
@@ -279,14 +338,15 @@ func AddDestinationOwnerReferenceToSecret(ctx context.Context, odigosns string, 
 }
 
 func PotentialDestinations(ctx context.Context) []destination_recognition.DestinationDetails {
-	odigosns := consts.DefaultOdigosNamespace
-	relevantNamespaces, err := getRelevantNameSpaces(ctx, env.GetCurrentNamespace())
+	ns := env.GetCurrentNamespace()
+
+	relevantNamespaces, err := getRelevantNameSpaces(ctx, ns)
 	if err != nil {
 		return nil
 	}
 
 	// Existing Destinations
-	existingDestination, err := kube.DefaultClient.OdigosClient.Destinations(odigosns).List(ctx, metav1.ListOptions{})
+	existingDestination, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil
 	}
@@ -297,4 +357,36 @@ func PotentialDestinations(ctx context.Context) []destination_recognition.Destin
 	}
 
 	return destinationDetails
+}
+
+func deleteDestinationAndSecret(ctx context.Context, destination *v1alpha1.Destination) error {
+	ns := env.GetCurrentNamespace()
+
+	// Delete the destination
+	err := kube.DefaultClient.OdigosClient.Destinations(ns).Delete(ctx, destination.Name, metav1.DeleteOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to delete destination: %w", err)
+	}
+
+	// If the destination has a secret, delete it as well
+	if destination.Spec.SecretRef != nil {
+		err = kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, destination.Spec.SecretRef.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to delete secret: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func UpdateDestination(ctx context.Context, destination *v1alpha1.Destination) error {
+	ns := env.GetCurrentNamespace()
+
+	// Update the destination
+	_, err := kube.DefaultClient.OdigosClient.Destinations(ns).Update(ctx, destination, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to update destination: %w", err)
+	}
+
+	return nil
 }

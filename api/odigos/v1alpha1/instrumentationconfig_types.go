@@ -3,13 +3,14 @@ package v1alpha1
 import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
-	"go.opentelemetry.io/otel/attribute"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // InstrumentationConfig is the Schema for the instrumentationconfig API
 type InstrumentationConfig struct {
@@ -18,6 +19,153 @@ type InstrumentationConfig struct {
 
 	Spec   InstrumentationConfigSpec   `json:"spec,omitempty"`
 	Status InstrumentationConfigStatus `json:"status,omitempty"`
+}
+
+// conditions for the InstrumentationConfigStatus
+const (
+	// Define a status condition type that describes why the workload is marked for instrumentation or not.
+	MarkedForInstrumentationStatusConditionType = "MarkedForInstrumentation"
+	// Describe the runtime detection status of this workload.
+	RuntimeDetectionStatusConditionType = "RuntimeDetection"
+	// this const is the Type field in the conditions of the InstrumentationConfigStatus.
+	AgentEnabledStatusConditionType = "AgentEnabled"
+	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
+	// the rollout is needed to update the instrumentation done by the Pods webhook.
+	WorkloadRolloutStatusConditionType = "WorkloadRollout"
+)
+
+func StatusConditionTypeLogicalOrder(condType string) int {
+	switch condType {
+	case MarkedForInstrumentationStatusConditionType:
+		return 1
+	case RuntimeDetectionStatusConditionType:
+		return 2
+	case AgentEnabledStatusConditionType:
+		return 3
+	case WorkloadRolloutStatusConditionType:
+		return 4
+	default:
+		return 5
+	}
+}
+
+// +kubebuilder:validation:Enum=WorkloadSource;NamespaceSource;WorkloadSourceDisabled;NoSource;RetirableError
+type MarkedForInstrumentationReason string
+
+const (
+	// denotes that the workload is instrumented because of a source CR exists for this workload.
+	// and the source is not disabled..
+	MarkedForInstrumentationReasonWorkloadSource MarkedForInstrumentationReason = "WorkloadSource"
+
+	// denotes that the workload does not have a source CR, but the namespace has a source CR,
+	// so the workload is instrumented as inherited from the namespace.
+	MarkedForInstrumentationReasonNamespaceSource MarkedForInstrumentationReason = "NamespaceSource"
+
+	// the source object for workload exists, and it is disabled, thus uninstrumented.
+	MarkedForInstrumentationReasonWorkloadSourceDisabled MarkedForInstrumentationReason = "WorkloadSourceDisabled"
+
+	// this workload is not instrumented because no source CR exists for it or its namespace.
+	MarkedForInstrumentationReasonNoSource MarkedForInstrumentationReason = "NoSource"
+
+	// cannot determine the reason for the instrumentation due to a possible transient error.
+	MarkedForInstrumentationReasonError MarkedForInstrumentationReason = "RetirableError"
+)
+
+// +kubebuilder:validation:Enum=DetectedSuccessfully;WaitingForDetection;NoRunningPods;Error
+type RuntimeDetectionReason string
+
+const (
+	// when the runtime detection process is successful and runtime details are available for instrumentation.
+	RuntimeDetectionReasonDetectedSuccessfully RuntimeDetectionReason = "DetectedSuccessfully"
+	// when the runtime detection process is still ongoing and the runtime details are not yet available.
+	// this status should be visible only for a short period of time until the detection process is completed by one odiglet.
+	RuntimeDetectionReasonWaitingForDetection RuntimeDetectionReason = "WaitingForDetection"
+	// when the runtime detection process is not yet started because there are no running pods for this workload.
+	// runtime detection requires at least one running pod to inspect the runtime details from.
+	RuntimeDetectionReasonNoRunningPods RuntimeDetectionReason = "NoRunningPods"
+	// error occurred during the runtime detection process.
+	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
+)
+
+// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected
+type AgentEnabledReason string
+
+const (
+	AgentEnabledReasonEnabledSuccessfully            AgentEnabledReason = "EnabledSuccessfully"
+	AgentEnabledReasonWaitingForRuntimeInspection    AgentEnabledReason = "WaitingForRuntimeInspection"
+	AgentEnabledReasonWaitingForNodeCollector        AgentEnabledReason = "WaitingForNodeCollector"
+	AgentEnabledReasonIgnoredContainer               AgentEnabledReason = "IgnoredContainer"
+	AgentEnabledReasonUnsupportedProgrammingLanguage AgentEnabledReason = "UnsupportedProgrammingLanguage"
+	AgentEnabledReasonNoAvailableAgent               AgentEnabledReason = "NoAvailableAgent"
+	AgentEnabledReasonUnsupportedRuntimeVersion      AgentEnabledReason = "UnsupportedRuntimeVersion"
+	AgentEnabledReasonMissingDistroParameter         AgentEnabledReason = "MissingDistroParameter"
+	AgentEnabledReasonOtherAgentDetected             AgentEnabledReason = "OtherAgentDetected"
+	// if the source cannot be instrumented because there are no running pods,
+	// we want to show this reason to the user so it's not a spinner
+	AgentEnabledReasonRuntimeDetailsUnavailable AgentEnabledReason = "RuntimeDetailsUnavailable"
+)
+
+// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
+type WorkloadRolloutReason string
+
+const (
+	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
+	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
+	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
+)
+
+const (
+	// K8s workload status conditions, not set in the InstrumentationConfigStatus but used in the frontend to display the status.
+	K8sWorkloadRolloutReasonFailedCreate = "FailedCreate"
+)
+
+// givin multiple reasons for not injecting an agent, this function returns the priority of the reason.
+// which is - it allows choosing the most important reason to be displayed to the user in the aggregate status.
+func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
+	switch reason {
+	case AgentEnabledReasonEnabledSuccessfully:
+		return 0
+	case AgentEnabledReasonRuntimeDetailsUnavailable:
+		return 10
+	case AgentEnabledReasonWaitingForRuntimeInspection:
+		return 20
+	case AgentEnabledReasonWaitingForNodeCollector:
+		return 30
+	case AgentEnabledReasonIgnoredContainer:
+		return 40
+	case AgentEnabledReasonUnsupportedProgrammingLanguage:
+		return 50
+	case AgentEnabledReasonUnsupportedRuntimeVersion:
+		return 60
+	case AgentEnabledReasonNoAvailableAgent:
+		return 70
+	case AgentEnabledReasonMissingDistroParameter:
+		return 80
+	case AgentEnabledReasonOtherAgentDetected:
+		return 90
+	default:
+		return 100
+	}
+}
+
+// some conditions with "status: false" should be considered as "disabled" status.
+// this function returns true if the reason is considered as "disabled" status.
+func IsReasonStatusDisabled(reason string) bool {
+	switch reason {
+	// Agent-related reasons
+	case string(AgentEnabledReasonUnsupportedProgrammingLanguage),
+		string(AgentEnabledReasonUnsupportedRuntimeVersion),
+		string(RuntimeDetectionReasonNoRunningPods),
+		string(AgentEnabledReasonIgnoredContainer),
+		string(AgentEnabledReasonNoAvailableAgent),
+		string(AgentEnabledReasonOtherAgentDetected),
+		string(AgentEnabledReasonRuntimeDetailsUnavailable),
+		// K8s workload-related reasons
+		string(K8sWorkloadRolloutReasonFailedCreate):
+		return true
+	default:
+		return false
+	}
 }
 
 type OtherAgent struct {
@@ -30,6 +178,14 @@ type EnvVar struct {
 	Value string `json:"value"`
 }
 
+type ProcessingState string
+
+const (
+	ProcessingStateFailed    ProcessingState = "Failed"    // Used when CRI fails to detect the runtime envs
+	ProcessingStateSucceeded ProcessingState = "Succeeded" // Indicates that CRI successfully processed the runtime environments, even if no environments were detected.
+	ProcessingStateSkipped   ProcessingState = "Skipped"   // Used when env originally come from manifest
+)
+
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
 	ContainerName  string                     `json:"containerName"`
@@ -38,6 +194,9 @@ type RuntimeDetailsByContainer struct {
 	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
 	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
 	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+	// Indicates whether the target process is running is secure-execution mode.
+	// nil means we were unable to determine the secure-execution mode.
+	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
 
 	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
@@ -50,27 +209,80 @@ type RuntimeDetailsByContainer struct {
 type InstrumentationConfigStatus struct {
 	// Capture Runtime Details for the workloads that this CR applies to.
 	RuntimeDetailsByContainer []RuntimeDetailsByContainer `json:"runtimeDetailsByContainer,omitempty"`
+
+	// Represents the observations of a InstrumentationConfig's current state.
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
+
+	// This hash is recorded only after the rollout took place.
+	// it allows us to determine if the workload needs to be rollout based on previous rollout and the current config.
+	// if this field is different than the spec.AgentsDeploymentHash it means rollout is needed or not yet updated.
+	WorkloadRolloutHash string `json:"workloadRolloutHash,omitempty"`
+}
+
+func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v1.Container) *RuntimeDetailsByContainer {
+	for _, runtimeDetails := range in.RuntimeDetailsByContainer {
+		if runtimeDetails.ContainerName == container.Name {
+			return &runtimeDetails
+		}
+	}
+	return nil
+}
+
+// ContainerAgentConfig is a configuration for a specific container in a workload.
+type ContainerAgentConfig struct {
+	// The name of the container to which this configuration applies.
+	ContainerName string `json:"containerName"`
+
+	// boolean flag to indicate if the agent should be enabled for this container.
+	AgentEnabled bool `json:"agentEnabled"`
+
+	// An enum reason for the agent injection decision.
+	AgentEnabledReason AgentEnabledReason `json:"agentEnabledReason,omitempty"`
+
+	// free text message to provide more information about the instrumentation decision.
+	// can be left empty if reason is self-explanatory.
+	AgentEnabledMessage string `json:"agentEnabledMessage,omitempty"`
+
+	// The name of the otel distribution to use for this container.
+	// if the name is empty, this container should not be instrumented.
+	OtelDistroName string `json:"otelDistroName,omitempty"`
+
+	// Additional parameters to the distro that controls how it's being applied.
+	// Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
+	DistroParams map[string]string `json:"distroParams,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
 // The workload is identified by the owner reference
 type InstrumentationConfigSpec struct {
-
 	// the service.name property is used to populate the `service.name` resource attribute in the telemetry generated by this workload
 	ServiceName string `json:"serviceName,omitempty"`
 
-	// true when the runtime details are invalidated and should be recalculated
-	RuntimeDetailsInvalidated bool `json:"runtimeDetailsInvalidated,omitempty"`
+	// determines if odigos should inject agents to pods of this workload.
+	AgentInjectionEnabled bool `json:"agentInjectionEnabled"`
 
-	// config for this workload.
-	// the config is a list to allow for multiple config options and values to be applied.
-	// the list is processed in order, and the first matching config is applied.
-	Config []WorkloadInstrumentationConfig `json:"config,omitempty"`
+	// configuration for each instrumented container in the workload
+	Containers []ContainerAgentConfig `json:"containers,omitempty"`
+
+	// this hash is used to determine the deployment of the agents.
+	// e.g. when the distro for container changes, or it's compatibility version,
+	// or something else that requires rollout, the hash change will indicate that.
+	// if the hash is empty, it means that no agent should be enabled in any pod container.
+	AgentsMetaHash string `json:"agentsMetaHash,omitempty"`
 
 	// Configuration for the OpenTelemetry SDKs that this workload should use.
 	// The SDKs are identified by the programming language they are written in.
 	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
 	SdkConfigs []SdkConfig `json:"sdkConfigs,omitempty"`
+}
+
+func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName string) *ContainerAgentConfig {
+	for _, containerConfig := range in.Containers {
+		if containerConfig.ContainerName == containerName {
+			return &containerConfig
+		}
+	}
+	return nil
 }
 
 type SdkConfig struct {
@@ -86,13 +298,19 @@ type SdkConfig struct {
 	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
 	HeadSamplingConfig *HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
 
-	DefaultPayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection"`
+	DefaultPayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
+
+	// default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.
+	DefaultCodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	// default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.
+	DefaultHeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
 type AttributeCondition struct {
 	// attribute key (e.g. "url.path")
-	Key attribute.Key `json:"key"`
+	Key string `json:"key"`
 	// currently only string values are supported.
 	Val string `json:"val"`
 	// The operator to use to compare the attribute value.
@@ -147,6 +365,13 @@ type InstrumentationLibraryConfig struct {
 	TraceConfig *InstrumentationLibraryConfigTraces `json:"traceConfig,omitempty"`
 
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
+
+	// code attributes configuration for a specific library.
+	// if not set, the default code attributes configuration for the workload will be used.
+	// if set, but internal fields are empty, those fields will be used from the default configuration.
+	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
 type InstrumentationLibraryId struct {
@@ -164,37 +389,6 @@ type InstrumentationLibraryConfigTraces struct {
 	// When true, the instrumentation library should produce spans according to the other configuration options.
 	// If not specified, the default value for this signal should be used (whether to enable libraries by default or not).
 	Enabled *bool `json:"enabled,omitempty"`
-}
-
-// WorkloadInstrumentationConfig defined a single config option to apply
-// on a workload, along with it's value, filters and instrumentation libraries
-type WorkloadInstrumentationConfig struct {
-
-	// OptionKey is the name of the option
-	// This value is transparent to the CRD and is passed as-is to the SDK.
-	OptionKey string `json:"optionKey"`
-
-	// This option allow to specify the config option for a specific span kind
-	// for example, only to client spans or only to server spans.
-	// it the span kind is not specified, the option will apply to all spans.
-	SpanKind common.SpanKind `json:"spanKind,omitempty"`
-
-	// OptionValueBoolean is the boolean value of the option if it is a boolean
-	OptionValueBoolean bool `json:"optionValueBoolean,omitempty"`
-
-	// a list of instrumentation libraries to apply this setting to
-	// if a library is not in this list, the setting should not apply to it
-	// and should be cleared.
-	InstrumentationLibraries []InstrumentationLibrary `json:"instrumentationLibraries"`
-}
-
-// InstrumentationLibrary represents a library for instrumentation
-type InstrumentationLibrary struct {
-	// Language is the programming language of the library
-	Language common.ProgrammingLanguage `json:"language"`
-
-	// InstrumentationLibraryName is the name of the instrumentation library
-	InstrumentationLibraryName string `json:"instrumentationLibraryName"`
 }
 
 // +kubebuilder:object:root=true

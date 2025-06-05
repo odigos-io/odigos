@@ -3,22 +3,31 @@ package odiglet
 import (
 	"context"
 	"fmt"
+	"os"
 
-	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
+	"github.com/odigos-io/odigos/k8sutils/pkg/metrics"
+	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
+	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
+
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	controllerruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
 
 type Odiglet struct {
@@ -35,16 +44,10 @@ const (
 )
 
 // New creates a new Odiglet instance.
-func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory) (*Odiglet, error) {
-	// Init Kubernetes API client
-	cfg, err := rest.InClusterConfig()
+func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentation.OtelSdksLsf, instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (*Odiglet, error) {
+	err := feature.Setup()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create in-cluster config for Kubernetes client %w", err)
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Kubernetes client %w", err)
+		return nil, err
 	}
 
 	mgr, err := kube.CreateManager()
@@ -52,8 +55,24 @@ func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[com
 		return nil, fmt.Errorf("failed to create controller-runtime manager %w", err)
 	}
 
+	provider, err := metrics.NewMeterProviderForController(resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.K8SNodeName(env.Current.NodeName),
+	))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create OpenTelemetry MeterProvider: %w", err)
+	}
+	instrumentationMgrOpts.MeterProvider = provider
+
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		return nil, fmt.Errorf("unable to set up health check: %w", err)
+	}
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		return nil, fmt.Errorf("unable to set up ready check: %w", err)
+	}
+
 	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
-	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, factories, configUpdates)
+	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ebpf manager %w", err)
 	}
@@ -61,7 +80,6 @@ func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[com
 
 	kubeManagerOptions := kube.KubeManagerOptions{
 		Mgr:           mgr,
-		EbpfDirectors: nil,
 		Clientset:     clientset,
 		ConfigUpdates: configUpdates,
 		CriClient:     &criWrapper,
@@ -84,6 +102,7 @@ func New(deviceInjectionCallbacks instrumentation.OtelSdksLsf, factories map[com
 
 // Run starts the Odiglet components and blocks until the context is cancelled, or a critical error occurs.
 func (o *Odiglet) Run(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
 	g, groupCtx := errgroup.WithContext(ctx)
 
 	if err := o.criClient.Connect(ctx); err != nil {
@@ -108,11 +127,16 @@ func (o *Odiglet) Run(ctx context.Context) {
 	// Start device manager
 	// the device manager library doesn't support passing a context,
 	// however, internally it uses a context to cancel the device manager once SIGTERM or SIGINT is received.
-	g.Go(func() error {
+	// We run it outside of the error group to avoid blocking on Wait() in case of a fatal error.
+	go func() {
 		err := runDeviceManager(o.clientset, o.deviceInjectionCallbacks)
-		log.Logger.V(0).Info("Device manager exited")
-		return err
-	})
+		if err != nil {
+			log.Logger.Error(err, "Device manager exited with error")
+			cancel()
+		} else {
+			log.Logger.V(0).Info("Device manager exited")
+		}
+	}()
 
 	g.Go(func() error {
 		err := o.ebpfManager.Run(groupCtx)
@@ -165,7 +189,40 @@ func runDeviceManager(clientset *kubernetes.Clientset, otelSdkLsf instrumentatio
 		return fmt.Errorf("failed to create device manager lister %w", err)
 	}
 
-	manager := dpm.NewManager(lister)
+	manager := dpm.NewManager(lister, log.Logger)
 	manager.Run()
 	return nil
+}
+
+func OdigletInitPhase(clientset *kubernetes.Clientset) {
+	if err := log.Init(); err != nil {
+		panic(err)
+	}
+	err := fs.CopyAgentsDirectoryToHost()
+	if err != nil {
+		log.Logger.Error(err, "Failed to copy agents directory to host")
+		os.Exit(-1)
+	}
+
+	nn, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
+	if !ok {
+		log.Logger.Error(fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar), "Failed to load env")
+		os.Exit(-1)
+	}
+
+	if err := k8snode.PrepareNodeForOdigosInstallation(clientset, nn); err != nil {
+		log.Logger.Error(err, "Failed to prepare node for Odigos installation")
+		os.Exit(-1)
+	} else {
+		log.Logger.Info("Successfully prepared node for Odigos installation")
+	}
+
+	// SELinux settings should be applied last. This function chroot's to use the host's PATH for
+	// executing selinux commands to make agents readable by pods.
+	if err := fs.ApplyOpenShiftSELinuxSettings(); err != nil {
+		log.Logger.Error(err, "Failed to apply SELinux settings on RHEL host")
+		os.Exit(-1)
+	}
+
+	os.Exit(0)
 }

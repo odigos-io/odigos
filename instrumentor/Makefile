@@ -1,4 +1,3 @@
-
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24
 
@@ -36,7 +35,7 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test: fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -p 1 -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -v ./... -p 1 -coverprofile cover.out
 
 .PHONY: test-env-overwirte
 test-env-overwirte: fmt vet envtest ## Run tests.
@@ -66,3 +65,13 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: go-licenses
+go-licenses: $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install github.com/google/go-licenses@latest
+
+# collector/odigosotelcol has to be run separately due to current ambiguous import upstream
+.PHONY: licenses
+licenses: go-licenses
+	rm -rf $(PWD)/licenses
+	$(LOCALBIN)/go-licenses save . --save_path=licenses

@@ -3,10 +3,11 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: odigos-instrumentor
+    odigos.io/system-object: "true"
   name: odigos-instrumentor
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: odigos-instrumentor
@@ -17,6 +18,19 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-instrumentor
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: odigos-instrumentor
+                topologyKey: "kubernetes.io/hostname"
       containers:
       - args:
           - --health-probe-bind-address=:8081
@@ -24,10 +38,11 @@ spec:
           - --leader-elect
         command:
           - /app
-        {{- if .Values.imagePrefix }}
-        image: "{{ .Values.imagePrefix }}/{{ .Values.instrumentor.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+        {{- if .Values.onPremToken }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-instrumentor" "Tag" $imageTag) }}
         {{- else }}
-        image: "{{ .Values.instrumentor.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "instrumentor" "Tag" $imageTag) }}
         {{- end }}
         ports:
           - containerPort: 9443
@@ -40,22 +55,37 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          - name: ODIGOS_TIER
+            valueFrom:
+              configMapKeyRef:
+                key: ODIGOS_TIER
+                name: odigos-deployment
+          {{- if .Values.onPremToken }}
+          - name: ODIGOS_ONPREM_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: odigos-pro
+                key: odigos-onprem-token
+          {{- end }}
         volumeMounts:
-          - name: webhook-cert
+          - name: instrumentor-webhooks-cert
             mountPath: /tmp/k8s-webhook-server/serving-certs
             readOnly: true
         envFrom:
           - configMapRef:
               name: odigos-own-telemetry-otel-config
               optional: true
-          - configMapRef:
-              name: odigos-deployment
         livenessProbe:
           httpGet:
             path: /healthz
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          periodSeconds: 10
         name: manager
         resources:
           limits:
@@ -70,9 +100,9 @@ spec:
         runAsNonRoot: true
       serviceAccountName: odigos-instrumentor
       volumes:
-        - name: webhook-cert
+        - name: instrumentor-webhooks-cert
           secret:
-            secretName: instrumentor-webhook-cert
+            secretName: instrumentor-webhooks-cert
             defaultMode: 420
       terminationGracePeriodSeconds: 10
 {{- if .Values.imagePullSecrets }}

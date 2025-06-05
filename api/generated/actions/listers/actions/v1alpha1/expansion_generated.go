@@ -41,6 +41,14 @@ type ErrorSamplerListerExpansion interface{}
 // ErrorSamplerNamespaceLister.
 type ErrorSamplerNamespaceListerExpansion interface{}
 
+// K8sAttributesResolverListerExpansion allows custom methods to be added to
+// K8sAttributesResolverLister.
+type K8sAttributesResolverListerExpansion interface{}
+
+// K8sAttributesResolverNamespaceListerExpansion allows custom methods to be added to
+// K8sAttributesResolverNamespaceLister.
+type K8sAttributesResolverNamespaceListerExpansion interface{}
+
 // LatencySamplerListerExpansion allows custom methods to be added to
 // LatencySamplerLister.
 type LatencySamplerListerExpansion interface{}
@@ -72,3 +80,19 @@ type RenameAttributeListerExpansion interface{}
 // RenameAttributeNamespaceListerExpansion allows custom methods to be added to
 // RenameAttributeNamespaceLister.
 type RenameAttributeNamespaceListerExpansion interface{}
+
+// ServiceNameSamplerListerExpansion allows custom methods to be added to
+// ServiceNameSamplerLister.
+type ServiceNameSamplerListerExpansion interface{}
+
+// ServiceNameSamplerNamespaceListerExpansion allows custom methods to be added to
+// ServiceNameSamplerNamespaceLister.
+type ServiceNameSamplerNamespaceListerExpansion interface{}
+
+// SpanAttributeSamplerListerExpansion allows custom methods to be added to
+// SpanAttributeSamplerLister.
+type SpanAttributeSamplerListerExpansion interface{}
+
+// SpanAttributeSamplerNamespaceListerExpansion allows custom methods to be added to
+// SpanAttributeSamplerNamespaceLister.
+type SpanAttributeSamplerNamespaceListerExpansion interface{}

@@ -1,0 +1,10 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: 12-valid-workload-existing-ns
+  namespace: default
+spec:
+  workload:
+    name: 12-valid-workload-existing-ns
+    namespace: default
+    kind: Deployment

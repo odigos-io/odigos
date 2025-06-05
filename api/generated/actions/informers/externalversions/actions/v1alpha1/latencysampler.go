@@ -18,13 +18,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	apiactionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	versioned "github.com/odigos-io/odigos/api/generated/actions/clientset/versioned"
 	internalinterfaces "github.com/odigos-io/odigos/api/generated/actions/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/odigos-io/odigos/api/generated/actions/listers/actions/v1alpha1"
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/listers/actions/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -35,7 +35,7 @@ import (
 // LatencySamplers.
 type LatencySamplerInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.LatencySamplerLister
+	Lister() actionsv1alpha1.LatencySamplerLister
 }
 
 type latencySamplerInformer struct {
@@ -61,16 +61,28 @@ func NewFilteredLatencySamplerInformer(client versioned.Interface, namespace str
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ActionsV1alpha1().LatencySamplers(namespace).List(context.TODO(), options)
+				return client.ActionsV1alpha1().LatencySamplers(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ActionsV1alpha1().LatencySamplers(namespace).Watch(context.TODO(), options)
+				return client.ActionsV1alpha1().LatencySamplers(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.ActionsV1alpha1().LatencySamplers(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.ActionsV1alpha1().LatencySamplers(namespace).Watch(ctx, options)
 			},
 		},
-		&actionsv1alpha1.LatencySampler{},
+		&apiactionsv1alpha1.LatencySampler{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,9 +93,9 @@ func (f *latencySamplerInformer) defaultInformer(client versioned.Interface, res
 }
 
 func (f *latencySamplerInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&actionsv1alpha1.LatencySampler{}, f.defaultInformer)
+	return f.factory.InformerFor(&apiactionsv1alpha1.LatencySampler{}, f.defaultInformer)
 }
 
-func (f *latencySamplerInformer) Lister() v1alpha1.LatencySamplerLister {
-	return v1alpha1.NewLatencySamplerLister(f.Informer().GetIndexer())
+func (f *latencySamplerInformer) Lister() actionsv1alpha1.LatencySamplerLister {
+	return actionsv1alpha1.NewLatencySamplerLister(f.Informer().GetIndexer())
 }

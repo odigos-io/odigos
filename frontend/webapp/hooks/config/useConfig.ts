@@ -1,20 +1,33 @@
 'use client';
+
 import { useEffect } from 'react';
-import { Config } from '@/types';
 import { GET_CONFIG } from '@/graphql';
+import type { FetchedConfig } from '@/types';
 import { useSuspenseQuery } from '@apollo/client';
+import { useNotificationStore } from '@odigos/ui-kit/store';
+import { Crud, StatusType, Tier } from '@odigos/ui-kit/types';
 
 export const useConfig = () => {
-  const isServer = typeof window === 'undefined';
-  const { data, error } = useSuspenseQuery<Config>(GET_CONFIG, {
-    skip: isServer,
+  const { addNotification } = useNotificationStore();
+
+  const { data, error } = useSuspenseQuery<{ config?: FetchedConfig }>(GET_CONFIG, {
+    skip: typeof window === 'undefined',
   });
 
   useEffect(() => {
     if (error) {
-      console.error('Error fetching config:', error);
+      addNotification({
+        type: StatusType.Error,
+        title: error.name || Crud.Read,
+        message: error.cause?.message || error.message,
+      });
     }
   }, [error]);
 
-  return { data: data?.config, error };
+  const config = data?.config;
+  const isReadonly = data?.config?.readonly || false;
+  const isCommunity = (config?.tier && [Tier.Community].includes(config.tier)) || false;
+  const isEnterprise = (config?.tier && [Tier.Onprem].includes(config.tier)) || false;
+
+  return { config, isReadonly, isCommunity, isEnterprise };
 };

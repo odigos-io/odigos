@@ -1,44 +1,72 @@
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-nodejs-unsupported-version
 status:
   conditions:
-    - message: "javascript runtime version not supported by OpenTelemetry SDK. Found:
-        8.17.0, supports: 14.0.0"
-      observedGeneration: 1
-      reason: RuntimeVersionNotSupported
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "nodejs runtime not supported by OpenTelemetry. supported versions: '>= 14', found: 8.17.0"
+      reason: UnsupportedRuntimeVersion
       status: "False"
-      type: AppliedInstrumentationDevice
+      type: AgentEnabled
 ---
 # expecting injection of instrumentation device to be successful since the runtime version was not detected
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-nodejs-very-old-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [nodejs-very-old-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 # expecting injection of instrumentation device to be successful since the runtime version is supported
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-nodejs-minimum-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [nodejs-minimum-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -57,27 +85,38 @@ status:
       value: "14.0.0"
     - key: telemetry.distro.version
       value: e2e-test
-    - key: process.pid
+    - key: process.vpid
       (value != null): true
     - key: k8s.namespace.name
       (value != null): true
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true      
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-nodejs-latest-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [nodejs-latest-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -96,27 +135,38 @@ status:
       (value != null): true
     - key: telemetry.distro.version
       value: e2e-test
-    - key: process.pid
+    - key: process.vpid
       (value != null): true
     - key: k8s.namespace.name
       (value != null): true
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true      
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-nodejs-dockerfile-env
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [nodejs-dockerfile-env]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -135,27 +185,38 @@ status:
       value: "20.17.0"
     - key: telemetry.distro.version
       value: e2e-test
-    - key: process.pid
+    - key: process.vpid
       (value != null): true
     - key: k8s.namespace.name
       (value != null): true
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true      
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-nodejs-manifest-env
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [nodejs-manifest-env]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -174,197 +235,289 @@ status:
       value: "20.17.0"
     - key: telemetry.distro.version
       value: e2e-test
-    - key: process.pid
+    - key: process.vpid
       (value != null): true
     - key: k8s.namespace.name
       (value != null): true
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true      
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-cpp-http-server
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
-metadata:
-  namespace: default
-  name: deployment-language-change
-status:
-  conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: RuntimeDetection
+    - reason: UnsupportedProgrammingLanguage
+      status: "False"
+      type: AgentEnabled
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentationInstance
-metadata:
-  namespace: default
-  labels:
-    instrumented-app: deployment-language-change
-status:
-  healthy: true
-  # no need to verify all properties, as this is not the intent of this test
----
-
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-java-supported-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [java-supported-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-java-azul
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [java-azul]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-java-supported-docker-env
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [java-supported-docker-env]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-java-supported-manifest-env
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [java-supported-manifest-env]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-java-latest-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [java-latest-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-java-old-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [java-old-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-python-alpine
-spec:
-  runtimeDetails:
-    - containerName: python-alpine
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [python-alpine]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-python-latest-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [python-latest-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-python-min-version
 status:
   conditions:
-    - message: "Instrumentation device applied successfully"
-      observedGeneration: 1
-      reason: InstrumentationDeviceApplied
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
       status: "True"
-      type: AppliedInstrumentationDevice
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [python-min-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-python-not-supported
 status:
   conditions:
-    - message: "python runtime version not supported by OpenTelemetry SDK. Found: 3.6.15, supports: 3.8.0"
-      observedGeneration: 1
-      reason: RuntimeVersionNotSupported
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "python-runtime runtime not supported by OpenTelemetry. supported versions: '>= 3.8', found: 3.6.15"
+      reason: UnsupportedRuntimeVersion
       status: "False"
-      type: AppliedInstrumentationDevice
+      type: AgentEnabled
 ---
 apiVersion: odigos.io/v1alpha1
-kind: InstrumentedApplication
+kind: InstrumentationConfig
 metadata:
   namespace: default
   name: deployment-python-other-agent
 status:
   conditions:
-    - message: "device not added to any container due to the presence of another agent"
-      observedGeneration: 1
-      reason: ErrApplyingInstrumentationDevice
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "odigos agent not enabled due to other instrumentation agent 'New Relic Agent' detected running in the container"
+      reason: OtherAgentDetected
       status: "False"
-      type: AppliedInstrumentationDevice
+      type: AgentEnabled
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -377,16 +530,16 @@ status:
   identifyingAttributes:
     - key: service.instance.id
       (value != null): true
-    - key: process.pid
+    - key: process.vpid
       (value != null): true
     - key: telemetry.sdk.language
-      value: python      
+      value: python
     - key: k8s.namespace.name
       (value != null): true
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true         
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -399,7 +552,7 @@ status:
   identifyingAttributes:
     - key: service.instance.id
       (value != null): true
-    - key: process.pid
+    - key: process.vpid
       (value != null): true
     - key: telemetry.sdk.language
       value: python
@@ -408,7 +561,7 @@ status:
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true          
+      (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -421,7 +574,7 @@ status:
   identifyingAttributes:
     - key: service.instance.id
       (value != null): true
-    - key: process.pid
+    - key: process.vpid
       (value != null): true
     - key: telemetry.sdk.language
       value: python
@@ -430,4 +583,4 @@ status:
     - key: k8s.container.name
       (value != null): true
     - key: k8s.pod.name
-      (value != null): true          
+      (value != null): true

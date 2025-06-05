@@ -1,17 +1,32 @@
-{{- define "utils.certManagerApiVersion" -}}
-{{- if not (eq .Values.instrumentor.skipWebhookIssuerCreation true) -}} 
-  {{- if .Capabilities.APIVersions.Has "cert-manager.io/v1" -}}
-cert-manager.io/v1
-  {{- else if .Capabilities.APIVersions.Has "cert-manager.io/v1beta1" -}}
-cert-manager.io/v1beta1
-  {{- else if .Capabilities.APIVersions.Has "cert-manager.io/v1alpha2" -}}
-cert-manager.io/v1alpha2
-  {{- else if .Capabilities.APIVersions.Has "certmanager.k8s.io/v1alpha1" -}}
-certmanager.k8s.io/v1alpha1
-  {{- else -}}
-{{- print "" -}}
-  {{- end -}}
+{{- define "utils.imagePrefix" -}}
+{{- $defaultRegistry := "registry.odigos.io" -}}
+{{- $redHatRegistry := "registry.connect.redhat.com/odigos" -}}
+{{- if $.Values.imagePrefix -}}
+    {{- $.Values.imagePrefix -}}
 {{- else -}}
-{{- print "" -}}
+    {{- if $.Values.openshift.enabled -}}
+        {{- $redHatRegistry -}}
+    {{- else -}}
+        {{- $defaultRegistry -}}
+    {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "utils.imageName" -}}
+{{- printf "%s/odigos-%s%s:%s" (include "utils.imagePrefix" .) .Component (ternary "-ubi9" "" $.Values.openshift.enabled) .Tag }}
+{{- end -}}
+{{/*
+Returns "true" if any userInstrumentationEnvs.language is enabled or has env vars
+*/}}
+{{- define "utils.shouldRenderUserInstrumentationEnvs" -}}
+  {{- $languages := .Values.userInstrumentationEnvs.languages | default dict }}
+  {{- $shouldRender := false }}
+  {{- range $lang, $config := $languages }}
+    {{- if or $config.enabled $config.env }}
+      {{- $shouldRender = true }}
+    {{- end }}
+  {{- end }}
+  {{- print $shouldRender }}
+{{- end }}
+
+

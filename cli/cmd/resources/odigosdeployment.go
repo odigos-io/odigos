@@ -3,30 +3,34 @@ package resources
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/odigos-io/odigos/api"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier string) *corev1.ConfigMap {
+func NewOdigosDeploymentConfigMap(ns string, odigosVersion string, odigosTier string, installationMethod installationmethod.K8sInstallationMethod) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      consts.OdigosDeploymentConfigMapName,
+			Name:      k8sconsts.OdigosDeploymentConfigMapName,
 			Namespace: ns,
 		},
 		Data: map[string]string{
-			"ODIGOS_VERSION": odigosVersion,
-			"ODIGOS_TIER":    odigosTier,
+			k8sconsts.OdigosDeploymentConfigMapVersionKey:            odigosVersion,
+			k8sconsts.OdigosDeploymentConfigMapTierKey:               odigosTier,
+			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: string(installationMethod),
+			k8sconsts.OdigosDeploymentConfigMapOdigosDeploymentIDKey: uuid.New().String(),
 		},
 	}
 }
@@ -42,21 +46,6 @@ func NewLeaderElectionRole(ns string) *rbacv1.Role {
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-					"create",
-					"update",
-					"patch",
-					"delete",
-				},
-				APIGroups: []string{""},
-				Resources: []string{
-					"configmaps",
-				},
-			},
 			{
 				Verbs: []string{
 					"get",
@@ -89,22 +78,24 @@ func NewLeaderElectionRole(ns string) *rbacv1.Role {
 }
 
 type odigosDeploymentResourceManager struct {
-	client        *kube.Client
-	ns            string
-	config        *common.OdigosConfiguration
-	odigosTier    common.OdigosTier
-	odigosVersion string
+	client             *kube.Client
+	ns                 string
+	config             *common.OdigosConfiguration
+	odigosTier         common.OdigosTier
+	odigosVersion      string
+	installationMethod installationmethod.K8sInstallationMethod
+	managerOpts        resourcemanager.ManagerOpts
 }
 
-func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string) resourcemanager.ResourceManager {
-	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion}
+func NewOdigosDeploymentResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, odigosVersion string, installationMethod installationmethod.K8sInstallationMethod, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
+	return &odigosDeploymentResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, odigosVersion: odigosVersion, installationMethod: installationMethod, managerOpts: managerOpts}
 }
 
 func (a *odigosDeploymentResourceManager) Name() string { return "OdigosDeployment" }
 
 func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
-		NewOdigosDeploymentConfigMap(a.ns, a.odigosVersion, string(a.odigosTier)),
+		NewOdigosDeploymentConfigMap(a.ns, a.odigosVersion, string(a.odigosTier), a.installationMethod),
 		NewLeaderElectionRole(a.ns),
 	}
 
@@ -118,5 +109,5 @@ func (a *odigosDeploymentResourceManager) InstallFromScratch(ctx context.Context
 		resources = append(resources, c)
 	}
 
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

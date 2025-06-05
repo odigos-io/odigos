@@ -1,0 +1,49 @@
+---
+title: "odigos config"
+sidebarTitle: "odigos config"
+---
+## odigos config
+
+Manage Odigos configuration
+
+### Synopsis
+
+Manage Odigos configuration settings to customize system behavior.
+
+	Configurable properties:
+	- "telemetry-enabled": Enables or disables telemetry (true/false).
+	- "openshift-enabled": Enables or disables OpenShift support (true/false).
+	- "psp": Enables or disables Pod Security Policies (true/false).
+	- "skip-webhook-issuer-creation": Skips webhook issuer creation (true/false).
+	- "allow-concurrent-agents": Allows concurrent agents (true/false).
+	- "image-prefix": Sets the image prefix.
+	- "ui-mode": Sets the UI mode (normal/readonly).
+	- "ui-pagination-limit": Controls the number of items to fetch per paginated-batch in the UI.
+	- "ignored-namespaces": List of namespaces to be ignored.
+	- "ignored-containers": List of containers to be ignored.
+	- "mount-method": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
+	- "container-runtime-socket-path": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
+	- "k8s-node-logs-directory": Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log).
+	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., {"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}
+	- "agent-env-vars-injection-method": Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest.
+	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
+	
+
+### Options
+
+```
+  -h, --help   help for config
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos](/cli/odigos)	 - Automate OpenTelemetry Observability in Kubernetes
+* [odigos config set](/cli/odigos_config_set)	 - Set a configuration property in Odigos

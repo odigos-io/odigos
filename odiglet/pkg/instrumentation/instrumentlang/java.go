@@ -4,17 +4,16 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/envOverwrite"
+	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/consts"
+
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
 const (
-	otelResourceAttributesEnvVar  = "OTEL_RESOURCE_ATTRIBUTES"
-	otelResourceAttrPattern       = "service.name=%s,odigos.device=java"
-	javaToolOptionsEnvVar         = "JAVA_TOOL_OPTIONS"
-	javaOptsEnvVar                = "JAVA_OPTS"
+	otelResourceAttributesEnvVar = "OTEL_RESOURCE_ATTRIBUTES"
+	otelResourceAttrPattern      = "service.name=%s,odigos.device=java"
+
 	javaOtlpEndpointEnvVar        = "OTEL_EXPORTER_OTLP_ENDPOINT"
 	javaOtlpProtocolEnvVar        = "OTEL_EXPORTER_OTLP_PROTOCOL"
 	javaOtelLogsExporterEnvVar    = "OTEL_LOGS_EXPORTER"
@@ -24,10 +23,6 @@ const (
 )
 
 func Java(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
-	otlpEndpoint := fmt.Sprintf("http://%s:%d", env.Current.NodeIP, consts.OTLPPort)
-	javaOptsVal, _ := envOverwrite.ValToAppend(javaOptsEnvVar, common.OtelSdkNativeCommunity)
-	javaToolOptionsVal, _ := envOverwrite.ValToAppend(javaToolOptionsEnvVar, common.OtelSdkNativeCommunity)
-
 	logsExporter := "none"
 	metricsExporter := "none"
 	tracesExporter := "none"
@@ -45,10 +40,10 @@ func Java(deviceId string, uniqueDestinationSignals map[common.ObservabilitySign
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
-			otelResourceAttributesEnvVar:  fmt.Sprintf(otelResourceAttrPattern, deviceId),
-			javaToolOptionsEnvVar:         javaToolOptionsVal,
-			javaOptsEnvVar:                javaOptsVal,
-			javaOtlpEndpointEnvVar:        otlpEndpoint,
+			otelResourceAttributesEnvVar: fmt.Sprintf(otelResourceAttrPattern, deviceId),
+			// OTEL javaagent seems to expect the endpoint to be in the format http://<host>:<port>
+			// in go, we can pass the endpoint as <host>:<port>
+			javaOtlpEndpointEnvVar:        fmt.Sprintf("http://%s", service.LocalTrafficOTLPGrpcDataCollectionEndpoint(env.Current.NodeIP)),
 			javaOtlpProtocolEnvVar:        "grpc",
 			javaOtelLogsExporterEnvVar:    logsExporter,
 			javaOtelMetricsExporterEnvVar: metricsExporter,

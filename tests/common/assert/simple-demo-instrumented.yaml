@@ -1,4 +1,4 @@
-### Simple-demo Pods ### 
+### Simple-demo Pods ###
 apiVersion: v1
 kind: Pod
 metadata:
@@ -6,13 +6,22 @@ metadata:
   labels:
     app: frontend
 spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: odigos.io/odiglet-oss-installed
+                operator: In
+                values:
+                  - 'true'
   containers:
     - name: frontend
       resources:
         limits:
-          instrumentation.odigos.io/java-native-community: "1"
+          instrumentation.odigos.io/generic: '1'
         requests:
-          instrumentation.odigos.io/java-native-community: "1"
+          instrumentation.odigos.io/generic: '1'
 status:
   containerStatuses:
     - name: frontend
@@ -28,13 +37,22 @@ metadata:
   labels:
     app: coupon
 spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: odigos.io/odiglet-oss-installed
+                operator: In
+                values:
+                  - 'true'
   containers:
     - name: coupon
       resources:
         limits:
-          instrumentation.odigos.io/javascript-native-community: "1"
+          instrumentation.odigos.io/generic: '1'
         requests:
-          instrumentation.odigos.io/javascript-native-community: "1"
+          instrumentation.odigos.io/generic: '1'
 status:
   containerStatuses:
     - name: coupon
@@ -50,13 +68,22 @@ metadata:
   labels:
     app: inventory
 spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: odigos.io/odiglet-oss-installed
+                operator: In
+                values:
+                  - 'true'
   containers:
     - name: inventory
       resources:
         limits:
-          instrumentation.odigos.io/python-native-community: "1"
+          instrumentation.odigos.io/generic: '1'
         requests:
-          instrumentation.odigos.io/python-native-community: "1"
+          instrumentation.odigos.io/generic: '1'
 status:
   containerStatuses:
     - name: inventory
@@ -72,13 +99,18 @@ metadata:
   labels:
     app: membership
 spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: odigos.io/odiglet-oss-installed
+                operator: In
+                values:
+                  - 'true'
   containers:
     - name: membership
-      resources:
-        limits:
-          instrumentation.odigos.io/go-ebpf-community: "1"
-        requests:
-          instrumentation.odigos.io/go-ebpf-community: "1"
+    # !! no resources for Golang
 status:
   containerStatuses:
     - name: membership
@@ -94,16 +126,61 @@ metadata:
   labels:
     app: pricing
 spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: odigos.io/odiglet-oss-installed
+                operator: In
+                values:
+                  - 'true'
   containers:
     - name: pricing
       resources:
         limits:
-          instrumentation.odigos.io/dotnet-native-community: "1"
+          instrumentation.odigos.io/dotnet-native-community: '1'
         requests:
-          instrumentation.odigos.io/dotnet-native-community: "1"
+          instrumentation.odigos.io/dotnet-native-community: '1'
 status:
   containerStatuses:
     - name: pricing
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: currency
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: odigos.io/odiglet-oss-installed
+                operator: In
+                values:
+                  - 'true'
+  containers:
+    - name: currency
+      resources:
+        limits:
+          instrumentation.odigos.io/generic: '1'
+        requests:
+          instrumentation.odigos.io/generic: '1'
+    - name: nginx
+status:
+  containerStatuses:
+    - name: currency
+      ready: true
+      restartCount: 0
+      started: true
+    - name: nginx
       ready: true
       restartCount: 0
       started: true
@@ -124,8 +201,6 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: coupon
-      language: javascript
-      runtimeVersion: 18.3.0
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -141,8 +216,6 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: frontend
-      language: java
-      runtimeVersion: 17.0.11+9
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -158,8 +231,6 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: inventory
-      language: python
-      runtimeVersion: 3.11.9
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -175,8 +246,6 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: membership
-      language: go
-      runtimeVersion: 1.21.4
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -192,7 +261,23 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: pricing
-      language: dotnet
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-currency
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: currency
+status:
+  (runtimeDetailsByContainer[?containerName=='currency']):
+    - language: php
+  (runtimeDetailsByContainer[?containerName=='nginx']):
+    - language: nginx
 ---
 ### Instrumentation Instances ###
 apiVersion: odigos.io/v1alpha1
@@ -203,23 +288,6 @@ metadata:
     instrumented-app: deployment-coupon
 status:
   healthy: true
-  identifyingAttributes:
-    - key: service.instance.id
-      (value != null): true
-    - key: telemetry.sdk.language
-      value: nodejs
-    - key: process.runtime.version
-      (value != null): true
-    - key: telemetry.distro.version
-      (value != null): true
-    - key: process.pid
-      (value != null): true
-    - key: k8s.namespace.name
-      (value != null): true
-    - key: k8s.container.name
-      (value != null): true
-    - key: k8s.pod.name
-      (value != null): true      
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -229,19 +297,6 @@ metadata:
     instrumented-app: deployment-inventory
 status:
   healthy: true
-  identifyingAttributes:
-    - key: service.instance.id
-      (value != null): true
-    - key: process.pid
-      (value != null): true
-    - key: telemetry.sdk.language
-      value: python
-    - key: k8s.namespace.name
-      (value != null): true
-    - key: k8s.container.name
-      (value != null): true
-    - key: k8s.pod.name
-      (value != null): true        
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -251,4 +306,3 @@ metadata:
     instrumented-app: deployment-membership
 status:
   healthy: true
-  reason: LoadedSuccessfully

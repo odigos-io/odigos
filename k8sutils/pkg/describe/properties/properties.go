@@ -30,4 +30,8 @@ type EntityProperty struct {
 
 	// The status of the property actual state
 	Status PropertyStatus `json:"status,omitempty"`
+
+	// true if this property is the key in a list of items (like pod name in a list of pods)
+	// used for display purposes
+	ListKey bool `json:"listKey,omitempty"`
 }

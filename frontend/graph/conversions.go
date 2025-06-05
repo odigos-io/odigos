@@ -1,11 +1,13 @@
 package graph
 
 import (
+	"context"
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/services"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -21,19 +23,7 @@ func k8sKindToGql(k8sResourceKind string) model.K8sResourceKind {
 	return ""
 }
 
-func k8sConditionStatusToGql(status v1.ConditionStatus) model.ConditionStatus {
-	switch status {
-	case v1.ConditionTrue:
-		return model.ConditionStatusTrue
-	case v1.ConditionFalse:
-		return model.ConditionStatusFalse
-	case v1.ConditionUnknown:
-		return model.ConditionStatusUnknown
-	}
-	return model.ConditionStatusUnknown
-
-}
-
+// Convert LastTransitionTime to a string pointer if it's not nil
 func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	if t.IsZero() {
 		return nil
@@ -42,79 +32,70 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	return &str
 }
 
-func instrumentedApplicationToActualSource(instrumentedApp v1alpha1.InstrumentedApplication) *model.K8sActualSource {
-	// Map the container runtime details
-	var containers []*model.SourceContainerRuntimeDetails
-	for _, container := range instrumentedApp.Spec.RuntimeDetails {
-		var otherAgentName *string
-		if container.OtherAgent != nil {
-			otherAgentName = &container.OtherAgent.Name
+func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, source *v1alpha1.Source) (*model.K8sActualSource, error) {
+	selected := true
+	dataStreamNames := services.GetSourceDataStreamNames(source)
+	var containers []*model.SourceContainer
+
+	// Map the containers runtime details
+	for _, statusContainer := range instruConfig.Status.RuntimeDetailsByContainer {
+		var instrumented bool
+		var instrumentationMessage string
+		var otelDistroName string
+
+		for _, specContainer := range instruConfig.Spec.Containers {
+			if specContainer.ContainerName == statusContainer.ContainerName {
+				instrumented = specContainer.AgentEnabled
+				instrumentationMessage = specContainer.AgentEnabledMessage
+				if instrumentationMessage == "" {
+					instrumentationMessage = string(specContainer.AgentEnabledReason)
+				}
+				otelDistroName = specContainer.OtelDistroName
+			}
 		}
 
-		containers = append(containers, &model.SourceContainerRuntimeDetails{
-			ContainerName:  container.ContainerName,
-			Language:       string(container.Language),
-			RuntimeVersion: container.RuntimeVersion,
-			OtherAgent:     otherAgentName,
-		})
-	}
-
-	// Map the conditions of the application
-	var conditions []*model.Condition
-	for _, condition := range instrumentedApp.Status.Conditions {
-		conditions = append(conditions, &model.Condition{
-			Type:               condition.Type,
-			Status:             k8sConditionStatusToGql(condition.Status),
-			Reason:             &condition.Reason,
-			LastTransitionTime: k8sLastTransitionTimeToGql(condition.LastTransitionTime),
-			Message:            &condition.Message,
+		containers = append(containers, &model.SourceContainer{
+			ContainerName:          statusContainer.ContainerName,
+			Language:               string(statusContainer.Language),
+			RuntimeVersion:         statusContainer.RuntimeVersion,
+			Instrumented:           instrumented,
+			InstrumentationMessage: instrumentationMessage,
+			OtelDistroName:         &otelDistroName,
 		})
 	}
 
 	// Return the converted K8sActualSource object
 	return &model.K8sActualSource{
-		Namespace:         instrumentedApp.Namespace,
-		Kind:              k8sKindToGql(instrumentedApp.OwnerReferences[0].Kind),
-		Name:              instrumentedApp.OwnerReferences[0].Name,
-		ServiceName:       &instrumentedApp.Name,
+		Namespace:         instruConfig.Namespace,
+		Kind:              k8sKindToGql(instruConfig.OwnerReferences[0].Kind),
+		Name:              instruConfig.OwnerReferences[0].Name,
+		Selected:          &selected,
+		DataStreamNames:   dataStreamNames,
+		OtelServiceName:   &instruConfig.Spec.ServiceName,
 		NumberOfInstances: nil,
-		AutoInstrumented:  instrumentedApp.Spec.Options != nil,
-		InstrumentedApplicationDetails: &model.InstrumentedApplicationDetails{
-			Containers: containers,
-			Conditions: conditions,
-		},
-	}
-}
-
-func convertCustomReadDataLabels(labels []*destinations.CustomReadDataLabel) []*model.CustomReadDataLabel {
-	var result []*model.CustomReadDataLabel
-	for _, label := range labels {
-		result = append(result, &model.CustomReadDataLabel{
-			Condition: label.Condition,
-			Title:     label.Title,
-			Value:     label.Value,
-		})
-	}
-	return result
+		Containers:        containers,
+		Conditions:        convertConditions(instruConfig.Status.Conditions),
+	}, nil
 }
 
 func convertConditions(conditions []v1.Condition) []*model.Condition {
 	var result []*model.Condition
 	for _, c := range conditions {
-		// Convert LastTransitionTime to a string pointer if it's not nil
-		var lastTransitionTime *string
-		if !c.LastTransitionTime.IsZero() {
-			t := c.LastTransitionTime.Format(time.RFC3339)
-			lastTransitionTime = &t
-		}
+		if c.Type != "AppliedInstrumentationDevice" {
+			reason := c.Reason
+			message := c.Message
+			if message == "" {
+				message = string(c.Reason)
+			}
 
-		result = append(result, &model.Condition{
-			Status:             model.ConditionStatus(c.Status),
-			Type:               c.Type,
-			Reason:             &c.Reason,
-			Message:            &c.Message,
-			LastTransitionTime: lastTransitionTime,
-		})
+			result = append(result, &model.Condition{
+				Status:             services.TransformConditionStatus(c.Status, c.Type, reason),
+				Type:               c.Type,
+				Reason:             &reason,
+				Message:            &message,
+				LastTransitionTime: k8sLastTransitionTimeToGql(c.LastTransitionTime),
+			})
+		}
 	}
 	return result
 }

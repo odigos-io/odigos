@@ -1,7 +1,8 @@
 package graph
 
 import (
-	collectormetrics "github.com/odigos-io/odigos/frontend/endpoints/collector_metrics"
+	"github.com/go-logr/logr"
+	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
 )
 
 // This file will not be regenerated automatically.
@@ -9,4 +10,5 @@ import (
 
 type Resolver struct {
 	MetricsConsumer *collectormetrics.OdigosMetricsConsumer
+	Logger          logr.Logger
 }

@@ -1,0 +1,28 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: python-community
+spec:
+  name: python-community
+  language: python
+  runtimeEnvironments:
+    - name: python-runtime
+      supportedVersions: '>= 3.8'
+  displayName: Python Community Native Instrumentation
+  description: |
+    This distribution is for Python applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  environmentVariables:
+    opAmpClientEnvironments: true
+    otlpHttpLocalNode: true
+    staticVariables:
+      - envName: OTEL_PYTHON_CONFIGURATOR
+        envValue: 'odigos-python-configurator'
+  runtimeAgent:
+    directoryNames:
+      - "{{ODIGOS_AGENTS_DIR}}/python"
+    device: 'instrumentation.odigos.io/generic'
+    environmentVariables:
+      - envName: PYTHONPATH
+        envValue: '{{ODIGOS_AGENTS_DIR}}/python:{{ODIGOS_AGENTS_DIR}}/python/opentelemetry/instrumentation/auto_instrumentation'
+        delimiter: ':'
+      

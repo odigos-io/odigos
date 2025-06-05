@@ -1,8 +1,28 @@
 ---
-title: "Dynatrace"
+title: 'Dynatrace'
+description: 'Configuring the Dynatrace backend (Managed)'
+sidebarTitle: 'Dynatrace'
+icon: 'signal-stream'
 ---
 
-## Obtaining an Access Token
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/dynatrace.svg" alt="dynatrace" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
 
 On the left sidebar click on `Apps`, then under `Manage` select `Access Tokens`:
 
@@ -12,60 +32,82 @@ On the left sidebar click on `Apps`, then under `Manage` select `Access Tokens`:
 
 Make sure to add the required capabilities for the access tokens (e.g `Ingest OpenTelemetry traces` for traces).
 
-The URL is usually of the form `https://{your-environment-id}.live.dynatrace.com` [click her for more details](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/otlp-export)
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
 
-## Adding a Destination to Odigos
+### Configuring Destination Fields
 
-Odigos makes it simple to add and configure destinations, allowing you to select the specific signals [traces/logs/metrics] that you want to send to each destination. There are two primary methods for configuring destinations in Odigos:
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
 
-1. **Using the UI**  
-   To add a destination via the UI, follow these steps:
-   - Use the Odigos CLI to access the UI: [Odigos UI](https://docs.odigos.io/cli/odigos_ui)
-   ```bash
-   odigos ui
+- **DYNATRACE_URL** `string` : Tenant URL.
+  - This field is required
+  - Example: `https://{your-environment-id}.live.dynatrace.com`
+- **DYNATRACE_API_TOKEN** `string` : API Access Token.
+  - This field is required
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
     ```
-- In the left sidebar, navigate to the `Destination` page.
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Dynatrace` and follow the on-screen instructions
+  </Step>
+</Steps>
 
-- Click `Add New Destination`
+##### **Using Kubernetes manifests**
 
-- Select `Dynatrace` and follow the on-screen instructions.
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `dynatrace.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: dynatrace-example
+      namespace: odigos-system
+    spec:
+      data:
+        DYNATRACE_URL: <Tenant URL>
+      destinationName: dynatrace
+      secretRef:
+        name: dynatrace-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: dynatrace
 
+    ---
 
-
-2. **Using kubernetes manifests**
-
-Save the YAML below to a file (e.g., `destination.yaml`) and apply it using `kubectl`:
-
-```bash
-kubectl apply -f destination.yaml
-```
-
-
-```yaml
-apiVersion: odigos.io/v1alpha1
-kind: Destination
-metadata:
-  name: dynatrace-example
-  namespace: odigos-system
-spec:
-  data:
-    DYNATRACE_URL: <Tenant URL>
-  destinationName: dynatrace
-  secretRef:
-    name: dynatrace-secret
-  signals:
-  - TRACES
-  - METRICS
-  - LOGS
-  type: dynatrace
-
----
-apiVersion: v1
-data:
-  DYNATRACE_API_TOKEN: <base64 API Access Token>
-kind: Secret
-metadata:
-  name: dynatrace-secret
-  namespace: odigos-system
-type: Opaque
-```
+    apiVersion: v1
+    data:
+      DYNATRACE_API_TOKEN: <Base64 API Access Token>
+    kind: Secret
+    metadata:
+      name: dynatrace-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f dynatrace.yaml
+    ```
+  </Step>
+</Steps>

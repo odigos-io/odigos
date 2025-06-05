@@ -1,8 +1,8 @@
 {
   "name": "Odigos",
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/logo_black.svg",
+    "dark": "/logo/logo_white.svg"
   },
   "favicon": "/logo/icon.svg",
   "colors": {
@@ -62,15 +62,17 @@
             "setup/system-requirements",
             {
               "group": "Installation",
-              "pages": ["setup/installation", "setup/installation-options", "setup/docker-registry", "setup/odigos-with-argocd"]
+              "pages": [
+                "setup/installation",
+                "setup/installation-options",
+                "setup/docker-registry",
+                "setup/odigos-with-argocd",
+                "setup/odigos-with-karpenter"
+              ]
             },
             "setup/upgrade",
             "setup/uninstall"
           ]
-        },
-        {
-          "group": "Architecture",
-          "pages": ["architecture/components", "architecture/sources", "architecture/troubleshooting"]
         },
         {
           "group": "CLI Reference",
@@ -80,11 +82,22 @@
             "cli/odigos_describe",
             "cli/odigos_diagnose",
             "cli/odigos_install",
+            "cli/odigos_pro",
             "cli/odigos_profile",
             "cli/odigos_ui",
             "cli/odigos_uninstall",
             "cli/odigos_upgrade",
-            "cli/odigos_version"
+            "cli/odigos_version",
+            "cli/odigos_sources",
+            "cli/odigos_config"
+          ]
+        },
+        {
+          "group": "API Reference",
+          "pages": [
+            "api-reference/odigos.io.v1alpha1",
+            "api-reference/actions.odigos.io.v1alpha1",
+            "api-reference/operator.odigos.io.v1alpha1"
           ]
         }
       ]
@@ -95,23 +108,60 @@
         "instrumentations/overview",
         {
           "group": "Go",
-          "pages": ["instrumentations/golang/golang", "instrumentations/golang/enrichment"]
+          "icon": "golang",
+          "pages": [
+            "instrumentations/golang/ebpf",
+            "instrumentations/golang/enrichment"
+          ]
         },
         {
           "group": "Node.js",
-          "pages": ["instrumentations/nodejs/nodejs", "instrumentations/nodejs/enrichment", "instrumentations/nodejs/ebpf"]
+          "icon": "node-js",
+          "pages": [
+            "instrumentations/nodejs/native",
+            "instrumentations/nodejs/ebpf",
+            "instrumentations/nodejs/enrichment"
+          ]
         },
         {
           "group": "Python",
-          "pages": ["instrumentations/python/python", "instrumentations/python/enrichment"]
+          "icon": "python",
+          "pages": [
+            "instrumentations/python/native",
+            "instrumentations/python/enrichment"
+          ]
         },
         {
           "group": "Java",
-          "pages": ["instrumentations/java/java", "instrumentations/java/ebpf"]
+          "icon": "java",
+          "pages": [
+            "instrumentations/java/native",
+            "instrumentations/java/ebpf",
+            "instrumentations/java/enrichment"
+          ]
         },
         {
           "group": ".NET",
-          "pages": ["instrumentations/dotnet/dotnet"]
+          "icon": "code",
+          "pages": [
+            "instrumentations/dotnet/native",
+            "instrumentations/dotnet/enrichment"
+          ]
+        },
+        {
+          "group": "PHP",
+          "icon": "php",
+          "pages": [
+            "instrumentations/php/native",
+            "instrumentations/php/enrichment"
+          ]
+        },
+        {
+          "group": "Advanced",
+          "icon": "gear",
+          "pages": [
+            "instrumentations/configuration/mount-method"
+          ]
         }
       ]
     },
@@ -122,38 +172,50 @@
         "pipeline/configuration",
         {
           "group": "Sources",
+          "icon": "database",
           "pages": [
             "pipeline/sources/introduction",
-            "pipeline/sources/adding-sources",
-            "pipeline/sources/source-configuration",
+            "pipeline/sources/create",
+            "pipeline/sources/delete",
+            "pipeline/sources/update",
             "pipeline/sources/troubleshooting"
           ]
         },
         {
           "group": "Instrumentation Rules",
-          "pages": ["pipeline/rules/overview", "pipeline/rules/payloadcollection"]
+          "icon": "microchip",
+          "pages": [
+            "pipeline/rules/introduction",
+            "pipeline/rules/codeattributes",
+            "pipeline/rules/headerscollection",
+            "pipeline/rules/payloadcollection"
+          ]
         },
         {
           "group": "Actions",
+          "icon": "bolt",
           "pages": [
             "pipeline/actions/introduction",
             {
-              "group": "Sampling",
+              "group": "Attributes",
+              "icon": "layer-group",
               "pages": [
-                "pipeline/actions/sampling/introduction",
-                "pipeline/actions/sampling/probabilisticsampler",
-                "pipeline/actions/sampling/latencysampler",
-                "pipeline/actions/sampling/errorsampler"
+                "pipeline/actions/attributes/addclusterinfo",
+                "pipeline/actions/attributes/deleteattribute",
+                "pipeline/actions/attributes/renameattribute",
+                "pipeline/actions/attributes/piimasking",
+                "pipeline/actions/attributes/k8sattributes"
               ]
             },
             {
-              "group": "Attributes",
+              "group": "Sampling",
+              "icon": "tag",
               "pages": [
-                "pipeline/actions/attributes/introduction",
-                "pipeline/actions/attributes/addclusterinfo",
-                "pipeline/actions/attributes/deleteattribute",
-                "pipeline/actions/attributes/rename-attribute",
-                "pipeline/actions/attributes/piimasking"
+                "pipeline/actions/sampling/errorsampler",
+                "pipeline/actions/sampling/latencysampler",
+                "pipeline/actions/sampling/probabilisticsampler",
+                "pipeline/actions/sampling/servicenamesampler",
+                "pipeline/actions/sampling/spanattributesampler"
               ]
             },
             "pipeline/actions/crd",
@@ -163,74 +225,96 @@
       ]
     },
     {
-      "group": "Generated Data",
-      "pages": [
-        {
-          "group": "Enrich with OpenTelemetry APIs",
-          "pages": ["data/otel-apis", "data/java", "data/python", "data/javascript", "data/golang", "data/dotnet"]
-        }
-      ]
-    },
-    {
       "group": "Destinations",
       "pages": [
         "backends-overview",
         {
           "group": "Supported Backends",
+          "icon": "folder-tree",
           "pages": [
+            "backends/alibabacloud",
             "backends/appdynamics",
-            "backends/s3",
+            "backends/awscloudwatch",
+            "backends/awss3",
+            "backends/awsxray",
             "backends/axiom",
             "backends/azureblob",
             "backends/betterstack",
+            "backends/bonree",
             "backends/causely",
+            "backends/checkly",
             "backends/chronosphere",
             "backends/clickhouse",
             "backends/coralogix",
             "backends/dash0",
             "backends/datadog",
+            "backends/dynamic",
             "backends/dynatrace",
+            "backends/elasticapm",
             "backends/elasticsearch",
-            "backends/gcs",
             "backends/gigapipe",
-            "backends/googlecloud",
+            "backends/googlecloudmonitoring",
+            "backends/googlecloudstorage",
             "backends/grafanacloudloki",
             "backends/grafanacloudprometheus",
             "backends/grafanacloudtempo",
+            "backends/greptime",
             "backends/groundcover",
             "backends/highlight",
             "backends/honeycomb",
             "backends/hyperdx",
+            "backends/instana",
             "backends/jaeger",
+            "backends/kafka",
             "backends/kloudmate",
             "backends/last9",
             "backends/lightstep",
             "backends/logzio",
             "backends/loki",
             "backends/lumigo",
+            "backends/middleware",
             "backends/newrelic",
+            "backends/observe",
+            "backends/oneuptime",
+            "backends/openobserve",
             "backends/opsverse",
+            "backends/oracle",
             "backends/otlp",
             "backends/otlphttp",
             "backends/prometheus",
             "backends/qryn",
             "backends/quickwit",
             "backends/sentry",
+            "backends/seq",
             "backends/signoz",
             "backends/splunk",
             "backends/sumologic",
-            "backends/tempo"
+            "backends/telemetryhub",
+            "backends/tempo",
+            "backends/tingyun",
+            "backends/traceloop",
+            "backends/uptrace",
+            "backends/victoriametricscloud"
           ]
         }
       ]
     },
     {
       "group": "Concepts",
-      "pages": ["telemetry-types", "custom-resources", "uninstall", "usage-reports", "benchmarks"]
+      "pages": [
+        "telemetry-types",
+        "custom-resources",
+        "usage-reports",
+        "benchmarks",
+        "permissions"
+      ]
     },
     {
-      "group": "Contibution Guidelines",
-      "pages": ["adding-new-dest", "debugging"]
+      "group": "Contribution Guidelines",
+      "pages": [
+        "adding-new-dest",
+        "debugging"
+      ]
     },
     {
       "group": "VM Agent",
@@ -254,14 +338,20 @@
             "vmagent/setup/installation",
             {
               "group": "Configuration",
-              "pages": ["vmagent/setup/configuration/service", "vmagent/setup/configuration/agent"]
+              "pages": [
+                "vmagent/setup/configuration/service",
+                "vmagent/setup/configuration/agent"
+              ]
             },
             "vmagent/setup/uninstall"
           ]
         },
         {
           "group": "Configuration",
-          "pages": ["vmagent/configuration/reference", "vmagent/configuration/updating"]
+          "pages": [
+            "vmagent/configuration/reference",
+            "vmagent/configuration/updating"
+          ]
         }
       ]
     }

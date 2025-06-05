@@ -1,0 +1,13 @@
+Odigos will automatically instrument your {language} services and record semantic spans from popular modules. Many users find the automatic instrumentation data sufficient for their needs.
+
+However, if there is anything specific to your application that you want to record, you can enrich the data by adding custom spans to your code.
+
+This is sometimes referred to as `manual instrumentation`.
+
+## Use Cases
+
+Examples of custom spans you might want to add to your code include:
+
+- Spans for the execution of some potentially heavy or slow computation in you service.
+- Tracing for internal or third party libraries for which you don't have automatic or integrated instrumentation.
+- Spans to describe some logical operations in your business logic that are meaningful in your domain.

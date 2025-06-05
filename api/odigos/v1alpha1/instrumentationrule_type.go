@@ -17,9 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -50,7 +50,7 @@ type InstrumentationRuleSpec struct {
 	Disabled bool `json:"disabled,omitempty"`
 
 	// An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.
-	Workloads *[]workload.PodWorkload `json:"workloads,omitempty"`
+	Workloads *[]k8sconsts.PodWorkload `json:"workloads,omitempty"`
 
 	// For fine grained control, the user can specify the instrumentation library to use.
 	// One can specify same rule for multiple languages and libraries at the same time.
@@ -61,10 +61,17 @@ type InstrumentationRuleSpec struct {
 	// Allows to configure payload collection aspects for different types of payloads.
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 
-	// Set the OtelSdk to use for the workloads in this rule.
-	// instrumentation libraries will be ignored if set.
-	// the rule will be used only for languages which are specified, and ignored otherwise.
+	// Deprecated: use OtelDistros instead.
 	OtelSdks *instrumentationrules.OtelSdks `json:"otelSdks,omitempty"`
+
+	// Set the otel distros to use instead of the defaults.
+	OtelDistros *instrumentationrules.OtelDistros `json:"otelDistros,omitempty"`
+
+	// Configure which code attributes should be recorded as span attributes.
+	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	// Allows to configure the collection of http headers for different types of payloads.
+	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
 type InstrumentationRuleStatus struct {
@@ -80,8 +87,7 @@ type InstrumentationRuleStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 type InstrumentationRule struct {
 	metav1.TypeMeta   `json:",inline"`

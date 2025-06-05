@@ -1,7 +1,5 @@
 terraform {
-  backend "local" {
-    path = "terraform-${var.test_scenario}-${var.run_id}.tfstate"
-  }
+  required_version = ">= 1.0.0"
 }
 
 resource "azurerm_kubernetes_cluster" "aks" {

@@ -4,6 +4,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
+  labels:
+    odigos.io/system-object: "true"
   name: sources.odigos.io
 spec:
   group: odigos.io
@@ -23,6 +25,9 @@ spec:
       type: string
     - jsonPath: .spec.workload.namespace
       name: Namespace
+      type: string
+    - jsonPath: .spec.disableInstrumentation
+      name: Disabled
       type: string
     name: v1alpha1
     schema:
@@ -48,6 +53,15 @@ spec:
             type: object
           spec:
             properties:
+              disableInstrumentation:
+                description: DisableInstrumentation excludes this workload from auto-instrumentation.
+                type: boolean
+              otelServiceName:
+                description: |-
+                  OtelServiceName determines the "service.name" resource attribute which will be reported by the instrumentations of this source.
+                  If not set, the workload name will be used.
+                  It is not valid for namespace sources.
+                type: string
               workload:
                 description: |-
                   Workload represents the workload or namespace to be instrumented.

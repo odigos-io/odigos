@@ -1,8 +1,6 @@
 package sdks
 
 import (
-	"context"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
@@ -16,6 +14,7 @@ func otelSdkConfigCommunity() map[common.ProgrammingLanguage]common.OtelSdk {
 		common.GoProgrammingLanguage:         common.OtelSdkEbpfCommunity,
 		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
 		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+		common.PhpProgrammingLanguage:        common.OtelSdkNativeCommunity,
 	}
 }
 
@@ -26,22 +25,24 @@ func otelSdkConfigCloud() map[common.ProgrammingLanguage]common.OtelSdk {
 		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
 		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
 		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+		common.PhpProgrammingLanguage:        common.OtelSdkNativeCommunity,
 	}
 }
 
 func otelSdkConfigOnPrem() map[common.ProgrammingLanguage]common.OtelSdk {
 	return map[common.ProgrammingLanguage]common.OtelSdk{
-		common.JavaProgrammingLanguage:       common.OtelSdkEbpfEnterprise, // Notice - for onprem, the default for java is eBPF
+		common.JavaProgrammingLanguage:       common.OtelSdkNativeEnterprise,
 		common.PythonProgrammingLanguage:     common.OtelSdkEbpfEnterprise,
 		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
 		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
 		common.JavascriptProgrammingLanguage: common.OtelSdkEbpfEnterprise,
+		common.PhpProgrammingLanguage:        common.OtelSdkNativeCommunity,
 		common.MySQLProgrammingLanguage:      common.OtelSdkEbpfEnterprise,
 		common.NginxProgrammingLanguage:      common.OtelSdkNativeCommunity,
 	}
 }
 
-func SetDefaultSDKs(ctx context.Context) error {
+func SetDefaultSDKs() {
 	odigosTier := env.GetOdigosTierFromEnv()
 
 	switch odigosTier {
@@ -52,8 +53,6 @@ func SetDefaultSDKs(ctx context.Context) error {
 	case common.OnPremOdigosTier:
 		defaultOtelSdkPerLanguage = otelSdkConfigOnPrem()
 	}
-
-	return nil
 }
 
 func copyOtelSdkMap(m map[common.ProgrammingLanguage]common.OtelSdk) map[common.ProgrammingLanguage]common.OtelSdk {

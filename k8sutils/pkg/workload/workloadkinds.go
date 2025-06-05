@@ -5,31 +5,14 @@ import (
 	"strings"
 
 	v1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 // This go file contains utils to handle the kind of odigos workloads.
 // it allows transforming deployments / daemonsets / statefulsets from one representation to another
-
-// 1. the pascal case representation of the workload kind
-// it is used in k8s api objects as the `Kind` field.
-type WorkloadKind string
-
-const (
-	WorkloadKindDeployment  WorkloadKind = "Deployment"
-	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
-	WorkloadKindStatefulSet WorkloadKind = "StatefulSet"
-)
-
-// 2. the lower case representation of the workload kind
-// is used in odigos with the object name for instrumentation config and runtime details
-type WorkloadKindLowerCase string
-
-const (
-	WorkloadKindLowerCaseDeployment  WorkloadKindLowerCase = "deployment"
-	WorkloadKindLowerCaseDaemonSet   WorkloadKindLowerCase = "daemonset"
-	WorkloadKindLowerCaseStatefulSet WorkloadKindLowerCase = "statefulset"
-)
 
 var ErrKindNotSupported = errors.New("workload kind not supported")
 
@@ -44,51 +27,61 @@ func IgnoreErrorKindNotSupported(err error) error {
 	return err
 }
 
-func WorkloadKindLowerCaseFromKind(pascalCase WorkloadKind) WorkloadKindLowerCase {
+func IsValidWorkloadKind(kind k8sconsts.WorkloadKind) bool {
+	switch kind {
+	case k8sconsts.WorkloadKindDeployment, k8sconsts.WorkloadKindDaemonSet, k8sconsts.WorkloadKindStatefulSet, k8sconsts.WorkloadKindNamespace:
+		return true
+	}
+	return false
+}
+
+func WorkloadKindLowerCaseFromKind(pascalCase k8sconsts.WorkloadKind) k8sconsts.WorkloadKindLowerCase {
 	switch pascalCase {
-	case WorkloadKindDeployment:
-		return WorkloadKindLowerCaseDeployment
-	case WorkloadKindDaemonSet:
-		return WorkloadKindLowerCaseDaemonSet
-	case WorkloadKindStatefulSet:
-		return WorkloadKindLowerCaseStatefulSet
+	case k8sconsts.WorkloadKindDeployment:
+		return k8sconsts.WorkloadKindLowerCaseDeployment
+	case k8sconsts.WorkloadKindDaemonSet:
+		return k8sconsts.WorkloadKindLowerCaseDaemonSet
+	case k8sconsts.WorkloadKindStatefulSet:
+		return k8sconsts.WorkloadKindLowerCaseStatefulSet
+	case k8sconsts.WorkloadKindNamespace:
+		return k8sconsts.WorkloadKindLowerCaseNamespace
 	}
 	return ""
 }
 
-func WorkloadKindFromLowerCase(lowerCase WorkloadKindLowerCase) WorkloadKind {
+func WorkloadKindFromLowerCase(lowerCase k8sconsts.WorkloadKindLowerCase) k8sconsts.WorkloadKind {
 	switch lowerCase {
-	case WorkloadKindLowerCaseDeployment:
-		return WorkloadKindDeployment
-	case WorkloadKindLowerCaseDaemonSet:
-		return WorkloadKindDaemonSet
-	case WorkloadKindLowerCaseStatefulSet:
-		return WorkloadKindStatefulSet
+	case k8sconsts.WorkloadKindLowerCaseDeployment:
+		return k8sconsts.WorkloadKindDeployment
+	case k8sconsts.WorkloadKindLowerCaseDaemonSet:
+		return k8sconsts.WorkloadKindDaemonSet
+	case k8sconsts.WorkloadKindLowerCaseStatefulSet:
+		return k8sconsts.WorkloadKindStatefulSet
 	}
 	return ""
 }
 
-func WorkloadKindFromString(kind string) WorkloadKind {
+func WorkloadKindFromString(kind string) k8sconsts.WorkloadKind {
 	switch strings.ToLower(kind) {
-	case string(WorkloadKindLowerCaseDeployment):
-		return WorkloadKindDeployment
-	case string(WorkloadKindLowerCaseDaemonSet):
-		return WorkloadKindDaemonSet
-	case string(WorkloadKindLowerCaseStatefulSet):
-		return WorkloadKindStatefulSet
+	case string(k8sconsts.WorkloadKindLowerCaseDeployment):
+		return k8sconsts.WorkloadKindDeployment
+	case string(k8sconsts.WorkloadKindLowerCaseDaemonSet):
+		return k8sconsts.WorkloadKindDaemonSet
+	case string(k8sconsts.WorkloadKindLowerCaseStatefulSet):
+		return k8sconsts.WorkloadKindStatefulSet
 	default:
-		return WorkloadKind("")
+		return k8sconsts.WorkloadKind("")
 	}
 }
 
-func WorkloadKindFromClientObject(w client.Object) WorkloadKind {
+func WorkloadKindFromClientObject(w client.Object) k8sconsts.WorkloadKind {
 	switch w.(type) {
 	case *v1.Deployment:
-		return WorkloadKindDeployment
+		return k8sconsts.WorkloadKindDeployment
 	case *v1.DaemonSet:
-		return WorkloadKindDaemonSet
+		return k8sconsts.WorkloadKindDaemonSet
 	case *v1.StatefulSet:
-		return WorkloadKindStatefulSet
+		return k8sconsts.WorkloadKindStatefulSet
 	default:
 		return ""
 	}
@@ -96,14 +89,29 @@ func WorkloadKindFromClientObject(w client.Object) WorkloadKind {
 
 // ClientObjectFromWorkloadKind returns a new instance of the client object for the given workload kind
 // the returned instance is empty and should be used to fetch the actual object from the k8s api server
-func ClientObjectFromWorkloadKind(kind WorkloadKind) client.Object {
+func ClientObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object {
 	switch kind {
-	case WorkloadKindDeployment:
+	case k8sconsts.WorkloadKindDeployment:
 		return &v1.Deployment{}
-	case WorkloadKindDaemonSet:
+	case k8sconsts.WorkloadKindDaemonSet:
 		return &v1.DaemonSet{}
-	case WorkloadKindStatefulSet:
+	case k8sconsts.WorkloadKindStatefulSet:
 		return &v1.StatefulSet{}
+	case k8sconsts.WorkloadKindNamespace:
+		return &corev1.Namespace{}
+	default:
+		return nil
+	}
+}
+
+func ClientListObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.ObjectList {
+	switch kind {
+	case k8sconsts.WorkloadKindDeployment:
+		return &v1.DeploymentList{}
+	case k8sconsts.WorkloadKindDaemonSet:
+		return &v1.DaemonSetList{}
+	case k8sconsts.WorkloadKindStatefulSet:
+		return &v1.StatefulSetList{}
 	default:
 		return nil
 	}

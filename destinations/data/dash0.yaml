@@ -20,6 +20,7 @@ spec:
       componentProps:
         type: text
         required: true
+        tooltip: The format is `host:port`. Host is required, located in Dash0 UI (OpenTelemetry Collector). Port is optional and defaults to the default OTLP gRPC port `4317`.
     - name: DASH0_TOKEN
       displayName: Dash0 Bearer Token
       componentType: input
@@ -27,3 +28,4 @@ spec:
       componentProps:
         type: password
         required: true
+        tooltip: Located in Dash0 UI (OpenTelemetry Collector).

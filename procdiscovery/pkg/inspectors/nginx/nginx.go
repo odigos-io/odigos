@@ -1,10 +1,14 @@
 package nginx
 
 import (
-	"github.com/hashicorp/go-version"
+	"context"
+	"fmt"
 	"net/http"
+	"path/filepath"
 	"regexp"
-	"strings"
+	"time"
+
+	"github.com/hashicorp/go-version"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -21,15 +25,20 @@ const (
 
 var re = regexp.MustCompile(NginxVersionRegex)
 
-func (j *NginxInspector) Inspect(p *process.Details) (common.ProgrammingLanguage, bool) {
-	if strings.Contains(p.CmdLine, NginxProcessName) || strings.Contains(p.ExeName, NginxProcessName) {
+func (j *NginxInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	p := pcx.Details
+	if filepath.Base(p.ExePath) == NginxProcessName {
 		return common.NginxProgrammingLanguage, true
 	}
 
 	return "", false
 }
 
-func (j *NginxInspector) GetRuntimeVersion(p *process.Details, containerURL string) *version.Version {
+func (j *NginxInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	return "", false
+}
+
+func (j *NginxInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
 	nginxVersion, err := GetNginxVersion(containerURL)
 	if err != nil {
 		return nil
@@ -39,11 +48,19 @@ func (j *NginxInspector) GetRuntimeVersion(p *process.Details, containerURL stri
 }
 
 func GetNginxVersion(containerURL string) (string, error) {
-	resp, err := http.Get(containerURL)
+	pcx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(pcx, http.MethodGet, containerURL, http.NoBody)
 	if err != nil {
-		return "", nil
+		return "", fmt.Errorf("failed to create request: %w", err)
 	}
-	defer resp.Body.Close()
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close() // nolint:errcheck // we can't do anything if it fails
 
 	serverHeader := resp.Header.Get("Server")
 	if serverHeader == "" {

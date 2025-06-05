@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	k8sconsts "github.com/odigos-io/odigos/k8sutils/pkg/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,7 +19,6 @@ import (
 
 const (
 	mockNamespaceBase   = "test-namespace"
-	mockDeploymentName  = "test-deployment"
 	mockDaemonSetName   = "test-daemonset"
 	mockStatefulSetName = "test-statefulset"
 )
@@ -54,19 +53,19 @@ func NewMockOdigosConfig() *corev1.ConfigMap {
 	}
 }
 
-func NewMockTestDeployment(ns *corev1.Namespace) *appsv1.Deployment {
+func NewMockTestDeployment(ns *corev1.Namespace, name string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      mockDeploymentName,
+			Name:      name,
 			Namespace: ns.GetName(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": "test-dep"},
+				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app.kubernetes.io/name": "test-dep"},
+					Labels: map[string]string{"app.kubernetes.io/name": name},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -135,11 +134,40 @@ func NewMockTestStatefulSet(ns *corev1.Namespace) *appsv1.StatefulSet {
 	}
 }
 
+// NewMockSource returns a single source for a workload (deployment, daemonset, statefulset)
+func NewMockSource(workloadObject client.Object, disabled bool) *odigosv1.Source {
+	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
+	namespace := workloadObject.GetNamespace()
+	if gvk.Kind == string(k8sconsts.WorkloadKindNamespace) && len(namespace) == 0 {
+		namespace = workloadObject.GetName()
+	}
+	return &odigosv1.Source{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
+			Namespace: namespace,
+			Labels: map[string]string{
+				k8sconsts.WorkloadNameLabel:      workloadObject.GetName(),
+				k8sconsts.WorkloadNamespaceLabel: namespace,
+				k8sconsts.WorkloadKindLabel:      gvk.Kind,
+			},
+			Finalizers: []string{k8sconsts.DeleteInstrumentationConfigFinalizer},
+		},
+		Spec: odigosv1.SourceSpec{
+			Workload: k8sconsts.PodWorkload{
+				Name:      workloadObject.GetName(),
+				Namespace: namespace,
+				Kind:      k8sconsts.WorkloadKind(gvk.Kind),
+			},
+			DisableInstrumentation: disabled,
+		},
+	}
+}
+
 // givin a workload object (deployment, daemonset, statefulset) return a mock instrumented application
 // with a single container with the GoProgrammingLanguage
-func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.InstrumentedApplication {
+func NewMockInstrumentationConfig(workloadObject client.Object) *odigosv1.InstrumentationConfig {
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
-	return &odigosv1.InstrumentedApplication{
+	return &odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
 			Namespace: workloadObject.GetNamespace(),
@@ -152,8 +180,8 @@ func NewMockInstrumentedApplication(workloadObject client.Object) *odigosv1.Inst
 				},
 			},
 		},
-		Spec: odigosv1.InstrumentedApplicationSpec{
-			RuntimeDetails: []odigosv1.RuntimeDetailsByContainer{
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
 					ContainerName: "test",
 					Language:      common.GoProgrammingLanguage,

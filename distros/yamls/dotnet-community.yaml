@@ -1,0 +1,23 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: dotnet-community
+spec:
+  name: dotnet-community
+  language: dotnet
+  requireParameters:
+    - LIBC_TYPE
+  runtimeEnvironments:
+    - name: dotnet-version
+      supportedVersions: '>= 6.0'
+  framework:
+    - name: dotnet-framework
+      version: '>= 4.6.2'
+  displayName: 'Dotnet Community Native Instrumentation'
+  description: |
+    This distribution is for Dotnet applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  runtimeAgent:
+    directoryNames:
+      - '{{ODIGOS_AGENTS_DIR}}/dotnet'
+    k8sAttrsViaEnvVars: true
+    device: 'instrumentation.odigos.io/{{param.LIBC_TYPE}}dotnet-native-community'

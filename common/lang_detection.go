@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/hashicorp/go-version"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
@@ -10,7 +12,7 @@ type ProgramLanguageDetails struct {
 	RuntimeVersion *version.Version
 }
 
-// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;mysql;nginx;unknown;ignored
+// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;ruby;rust;mysql;nginx;redis;postgres;unknown;ignored
 type ProgrammingLanguage string
 
 const (
@@ -19,13 +21,18 @@ const (
 	GoProgrammingLanguage         ProgrammingLanguage = "go"
 	DotNetProgrammingLanguage     ProgrammingLanguage = "dotnet"
 	JavascriptProgrammingLanguage ProgrammingLanguage = "javascript"
+	PhpProgrammingLanguage        ProgrammingLanguage = "php"
+	RubyProgrammingLanguage       ProgrammingLanguage = "ruby"
+	RustProgrammingLanguage       ProgrammingLanguage = "rust"
 	// This is an experimental feature, It is not a language
 	// but in order to avoid huge refactoring we are adding it here for now
-	MySQLProgrammingLanguage ProgrammingLanguage = "mysql"
-	NginxProgrammingLanguage ProgrammingLanguage = "nginx"
+	MySQLProgrammingLanguage    ProgrammingLanguage = "mysql"
+	NginxProgrammingLanguage    ProgrammingLanguage = "nginx"
+	RedisProgrammingLanguage    ProgrammingLanguage = "redis"
+	PostgresProgrammingLanguage ProgrammingLanguage = "postgres"
 	// Used when the language detection is not successful for all the available inspectors
 	UnknownProgrammingLanguage ProgrammingLanguage = "unknown"
-	// Ignored is used when the odigos is configured to ignore the process/container
+	// Deprecated: This is no longer supported and will not be set be odiglet
 	IgnoredProgrammingLanguage ProgrammingLanguage = "ignored"
 )
 
@@ -46,4 +53,13 @@ func GetVersion(versionString string) *version.Version {
 		return nil
 	}
 	return runtimeVersion
+}
+
+func MajorMinorStringOnly(v *version.Version) string {
+	segments := v.Segments()
+	if len(segments) < 2 {
+		// fallback for malformed versions
+		return v.String()
+	}
+	return fmt.Sprintf("%d.%d", segments[0], segments[1])
 }

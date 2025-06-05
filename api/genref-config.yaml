@@ -1,0 +1,70 @@
+hiddenMemberFields:
+  - "TypeMeta"
+
+externalPackages:
+  - match: ^k8s\.io/apimachinery/pkg/apis/meta/v1\.Duration$
+    target: https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Duration
+  - match: ^k8s\.io/apimachinery/pkg/apis/meta/v1\.GroupVersionKind$
+    target: https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#GroupVersionKind
+  - match: ^k8s\.io/apimachinery/pkg/apis/meta/v1\.GroupVersionResource$
+    target: https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#GroupVersionResource
+  - match: ^k8s\.io/apimachinery/pkg/types\.UID$
+    target: https://pkg.go.dev/k8s.io/apimachinery/pkg/types#UID
+  - match: ^k8s\.io/apimachinery/pkg/runtime\.RawExtension$
+    target: https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime/#RawExtension
+  - match: ^k8s\.io/apimachinery/pkg/api/resource\.QuantityValue$
+    target: https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#QuantityValue
+  - match: ^k8s\.io/apimachinery/pkg/api/resource\.Quantity$
+    target: https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity
+  - match: ^k8s\.io/apimachinery/pkg/runtime\.Unknown$
+    target: https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime#Unknown
+  - match: ^time\.Duration$
+    target: https://pkg.go.dev/time#Duration
+  - match: ^io.Writer$
+    target: https://pkg.go.dev/io#Writer
+  - match: ^k8s\.io/(api|apimachinery/pkg/apis)/
+    target: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#{{- lower .TypeIdentifier -}}-{{- arrIndex .PackageSegments -1 -}}-{{- arrIndex .PackageSegments -2 -}}
+
+  - match: ^go\.opentelemetry\.io/otel/attribute\.Key$
+    target: https://pkg.go.dev/go.opentelemetry.io/otel/attribute#Key
+
+  - match: ^github\.com/odigos-io/odigos/common.(.*)$
+    target: https://pkg.go.dev/github.com/odigos-io/odigos/common#{{- .TypeIdentifier -}}
+  - match: ^github\.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules.(.*)$
+    target: https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#{{- .TypeIdentifier -}}
+  - match: ^github\.com/odigos-io/odigos/api/k8sconsts.(.*)$
+    target: https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#{{- .TypeIdentifier -}}
+
+hideTypePatterns:
+  - "ParseError$"
+  # - "List$"
+
+markdownDisabled: false
+
+stripPrefix:
+  - k8s.io/api/
+  - k8s.io/apimachinery/pkg/apis/
+  - github.com/tengqm/kubeconfig/config/kubeadm/v1beta3.
+  - github.com/tengqm/kubeconfig/config/kubeadm/v1beta4.
+  - github.com/tengqm/kubeconfig/config/bootstraptoken/v1.
+  - github.com/odigos-io/odigos/k8sutils/pkg/
+  - github.com/odigos-io/odigos/api/odigos/v1alpha1/
+  - github.com/odigos-io/odigos/api/actions/v1alpha1/
+  - github.com/odigos-io/odigos/api/
+  - github.com/odigos-io/odigos/
+
+apis:
+  - name: odigos.io
+    title: odigos.io/v1alpha1
+    package: github.com/odigos-io/odigos
+    path: api/odigos/v1alpha1
+
+  - name: actions.odigos.io
+    title: actions.odigos.io/v1alpha1
+    package: github.com/odigos-io/odigos
+    path: api/actions/v1alpha1
+
+  - name: operator.odigos.io
+    title: operator.odigos.io/v1alpha1
+    package: github.com/odigos-io/odigos/operator
+    path: api/v1alpha1

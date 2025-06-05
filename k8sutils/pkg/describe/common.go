@@ -19,10 +19,17 @@ func wrapTextInYellow(text string) string {
 	return "\033[33m" + text + "\033[0m"
 }
 
-func describeText(sb *strings.Builder, indent int, printftext string, args ...interface{}) {
+func describeText(sb *strings.Builder, indent int, isListKey bool, printftext string, args ...interface{}) {
 	indentText := strings.Repeat("  ", indent)
+	if isListKey {
+		listKeyIndent := indent - 1
+		if listKeyIndent < 0 {
+			listKeyIndent = 0
+		}
+		indentText = strings.Repeat("  ", listKeyIndent) + "- "
+	}
 	lineText := fmt.Sprintf(printftext, args...)
-	sb.WriteString(fmt.Sprintf("%s%s\n", indentText, lineText))
+	fmt.Fprintf(sb, "%s%s\n", indentText, lineText)
 }
 
 func printProperty(sb *strings.Builder, indent int, property *properties.EntityProperty) {
@@ -39,5 +46,5 @@ func printProperty(sb *strings.Builder, indent int, property *properties.EntityP
 		text = wrapTextInYellow(text)
 	}
 
-	describeText(sb, indent, text)
+	describeText(sb, indent, property.ListKey, "%s", text)
 }

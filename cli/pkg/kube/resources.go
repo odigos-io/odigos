@@ -34,14 +34,6 @@ func newCoreV1ConfigMaps() schema.GroupVersionResource {
 	}
 }
 
-func deprecatedOdigosConfigs() schema.GroupVersionResource {
-	return schema.GroupVersionResource{
-		Group:    "odigos.io",
-		Version:  "v1alpha1",
-		Resource: "odigosconfigurations",
-	}
-}
-
 func newCoreV1Services() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "", // core group is represented by an empty string
@@ -124,7 +116,6 @@ func GetManagedResources(odigosNamespace string) []ResourceAndNs {
 		{Resource: newApiExtensionsV1CustomResourceDefinition(), Namespace: ""},
 		{Resource: newAppsV1Deployments(), Namespace: odigosNamespace},
 		{Resource: newAppsV1DaemonSet(), Namespace: odigosNamespace},
-		{Resource: deprecatedOdigosConfigs(), Namespace: odigosNamespace},
 		{Resource: newCoreV1ConfigMaps(), Namespace: odigosNamespace},
 		{Resource: newCoreV1Services(), Namespace: odigosNamespace},
 		{Resource: newCoreV1Secrets(), Namespace: odigosNamespace},

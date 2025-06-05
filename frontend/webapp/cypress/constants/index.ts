@@ -1,54 +1,79 @@
 export const ROUTES = {
   ROOT: '/',
+  CHOOSE_STREAM: '/choose-stream',
   CHOOSE_SOURCES: '/choose-sources',
   CHOOSE_DESTINATION: '/choose-destination',
+  SETUP_SUMMARY: '/setup-summary',
   OVERVIEW: '/overview',
 };
 
 export const CRD_NAMES = {
-  SOURCE: 'instrumentationconfigs.odigos.io',
+  SOURCE: 'sources.odigos.io',
+  INSTRUMENTATION_CONFIG: 'instrumentationconfigs.odigos.io',
   DESTINATION: 'destinations.odigos.io',
-  ACTION: 'piimaskings.actions.odigos.io',
+  ACTIONS: [
+    'k8sattributesresolvers.actions.odigos.io',
+    'addclusterinfos.actions.odigos.io',
+    'deleteattributes.actions.odigos.io',
+    'renameattributes.actions.odigos.io',
+    'piimaskings.actions.odigos.io',
+    'errorsamplers.actions.odigos.io',
+    'latencysamplers.actions.odigos.io',
+    'probabilisticsamplers.actions.odigos.io',
+    'servicenamesamplers.actions.odigos.io',
+    'spanattributesamplers.actions.odigos.io',
+  ],
   INSTRUMENTATION_RULE: 'instrumentationrules.odigos.io',
-};
-
-export const CRD_IDS = {
-  SOURCE: 'deployment-frontend',
-  DESTINATION: '',
-  ACTION: '',
-  INSTRUMENTATION_RULE: '',
 };
 
 export const NAMESPACES = {
   DEFAULT: 'default',
   ODIGOS_SYSTEM: 'odigos-system',
+  ODIGOS_TEST: 'odigos-test',
 };
 
 export const SELECTED_ENTITIES = {
   NAMESPACE: NAMESPACES.DEFAULT,
-  SOURCE: 'frontend',
-  DESTINATION: 'Jaeger',
-  DESTINATION_AUTOFILL_FIELD: 'JAEGER_URL',
-  ACTION: 'PiiMasking',
-  INSTRUMENTATION_RULE: 'PayloadCollection',
+  NAMESPACE_SOURCES: ['coupon', 'currency', 'frontend', 'inventory', 'membership', 'pricing'],
+  DESTINATION: {
+    TYPE: 'jaeger',
+    DISPLAY_NAME: 'Jaeger',
+    AUTOFILL_FIELD: 'JAEGER_URL',
+    AUTOFILL_VALUE: 'jaeger.tracing:4317',
+  },
+  ACTIONS: [
+    'K8sAttributesResolver',
+    'AddClusterInfo',
+    'DeleteAttribute',
+    'RenameAttribute',
+    'PiiMasking',
+    'ErrorSampler',
+    'LatencySampler',
+    'ProbabilisticSampler',
+    'ServiceNameSampler',
+    'SpanAttributeSampler',
+  ],
+  INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };
 
 export const DATA_IDS = {
   SELECT_NAMESPACE: `[data-id=namespace-${SELECTED_ENTITIES.NAMESPACE}]`,
-  SELECT_DESTINATION: `[data-id=destination-${SELECTED_ENTITIES.DESTINATION}]`,
-  SELECT_DESTINATION_AUTOFILL_FIELD: `[data-id=${SELECTED_ENTITIES.DESTINATION_AUTOFILL_FIELD}]`,
+  SELECT_SOURCE: (sourceName: string) => `[data-id=source-${sourceName}]`,
+  SELECT_DESTINATION: `[data-id=select-DetectedbyOdigos-destination-${SELECTED_ENTITIES.DESTINATION.TYPE}]`,
+  SELECT_DESTINATION_AUTOFILL_FIELD: `[data-id=${SELECTED_ENTITIES.DESTINATION.AUTOFILL_FIELD}]`,
 
-  ADD_ENTITY: '[data-id=add-entity]',
-  ADD_SOURCE: '[data-id=add-source]',
-  ADD_DESTINATION: '[data-id=add-destination]',
-  ADD_ACTION: '[data-id=add-action]',
-  ADD_INSTRUMENTATION_RULE: '[data-id=add-rule]',
+  ADD_SOURCE: '[data-id=add-Source]',
+  ADD_DESTINATION: '[data-id=add-Destination]',
+  ADD_ACTION: '[data-id=add-Action]',
+  ADD_INSTRUMENTATION_RULE: '[data-id=add-InstrumentationRule]',
 
   MODAL: '[data-id=modal]',
   MODAL_ADD_SOURCE: '[data-id=modal-Add-Source]',
   MODAL_ADD_DESTINATION: '[data-id=modal-Add-Destination]',
   MODAL_ADD_ACTION: '[data-id=modal-Add-Action]',
   MODAL_ADD_INSTRUMENTATION_RULE: '[data-id=modal-Add-Instrumentation-Rule]',
+  ACTION_OPTION: (type: string) => `[data-id=option-${type}]`,
+  RULE_OPTION: (type: string) => `[data-id=option-${type}]`,
 
   DRAWER: '[data-id=drawer]',
   DRAWER_EDIT: '[data-id=drawer-edit]',
@@ -58,14 +83,16 @@ export const DATA_IDS = {
   APPROVE: '[data-id=approve]',
   DENY: '[data-id=deny]',
 
-  SOURCE_NODE_HEADER: '[data-id=source-header]',
-  SOURCE_NODE: '[data-id=source-1]',
-  DESTINATION_NODE: '[data-id=destination-0]',
-  ACTION_NODE: '[data-id=action-0]',
-  INSTRUMENTATION_RULE_NODE: '[data-id=rule-0]',
+  TOAST: '[data-id=toast]',
+  TOAST_CLOSE: '[data-id=toast-close]',
+  TOAST_ACTION: '[data-id=toast-action]',
 
-  ACTION_DROPDOWN_OPTION: '[data-id=option-pii-masking]',
   MULTI_SOURCE_CONTROL: '[data-id=multi-source-control]',
+  SOURCE_NODE_HEADER: '[data-id=Source-header]',
+  SOURCE_NODE: (index: number) => `[data-id=Source-${index}]`,
+  DESTINATION_NODE: (index: number) => `[data-id=Destination-${index}]`,
+  ACTION_NODE: (index: number) => `[data-id=Action-${index}]`,
+  INSTRUMENTATION_RULE_NODE: (index: number) => `[data-id=InstrumentationRule-${index}]`,
 
   TITLE: '[data-id=title]',
   SOURCE_TITLE: '[data-id=sourceName]',
@@ -76,14 +103,16 @@ export const DATA_IDS = {
 };
 
 export const BUTTONS = {
+  BACK: 'BACK',
   NEXT: 'NEXT',
   DONE: 'DONE',
-  ADD_DESTINATION: 'ADD DESTINATION',
+  ADD_DESTINATION: 'Add Destination',
   UNINSTRUMENT: 'Uninstrument',
 };
 
 export const INPUTS = {
   ACTION_DROPDOWN: 'Type to search...',
+  RULE_DROPDOWN: 'Type to search...',
 };
 
 const CYPRESS_TEST = 'Cypress Test';
@@ -92,14 +121,36 @@ export const TEXTS = {
   UPDATED_NAME: CYPRESS_TEST,
 
   NO_RESOURCES: (namespace: string) => `No resources found in ${namespace} namespace.`,
+  NO_SOURCES_SELECTED: 'No sources selected. Please go back to select sources.',
 
-  SOURCE_WARN_MODAL_TITLE: 'Uninstrument 5 sources',
-  SOURCE_WARN_MODAL_NOTE: "You're about to uninstrument the last source",
-  DESTINATION_WARN_MODAL_TITLE: `Delete destination (${CYPRESS_TEST})`,
-  DESTINATION_WARN_MODAL_NOTE: "You're about to delete the last destination",
-  ACTION_WARN_MODAL_TITLE: `Delete action (${CYPRESS_TEST})`,
-  INSTRUMENTATION_RULE_WARN_MODAL_TITLE: `Delete rule (${CYPRESS_TEST})`,
+  SOURCE_WARN_MODAL_TITLE: (count: number) => `Uninstrument ${count} sources`,
+  SOURCE_WARN_MODAL_NOTE: "You're about to uninstrument the last Source",
+  DESTINATION_WARN_MODAL_TITLE: `Delete Destination (${CYPRESS_TEST})`,
+  DESTINATION_WARN_MODAL_NOTE: "You're about to delete the last Destination",
+  ACTION_WARN_MODAL_TITLE: `Delete Action (${CYPRESS_TEST})`,
+  INSTRUMENTATION_RULE_WARN_MODAL_TITLE: `Delete InstrumentationRule (${CYPRESS_TEST})`,
 
-  NOTIF_SOURCES_CREATED: 'successfully added 5 sources',
-  NOTIF_SOURCES_DELETED: 'successfully deleted 5 sources',
+  NOTIF_CREATED: 'Successfully created',
+  NOTIF_UPDATED: 'Successfully updated',
+  NOTIF_DELETED: 'Successfully deleted',
+
+  NOTIF_SOURCES_PERSISTING: 'Persisting sources...',
+  NOTIF_SOURCE_UPDATING: 'Updating source...',
+  NOTIF_DESTINATION_UPDATING: 'Updating destination...',
+
+  NOTIF_SOURCES_CREATED: (amount: number) => `Successfully created ${amount} sources`,
+  NOTIF_SOURCES_UPDATED: (name: string) => `Successfully updated "${name}" source`,
+  NOTIF_SOURCES_DELETED: (amount: number) => `Successfully deleted ${amount} sources`,
+
+  NOTIF_DESTINATION_CREATED: (destinationType: string) => `Successfully created "${destinationType}" destination`,
+  NOTIF_DESTINATION_UPDATED: (destinationType: string) => `Successfully updated "${destinationType}" destination`,
+  NOTIF_DESTINATION_DELETED: (destinationType: string) => `Successfully deleted "${destinationType}" destination`,
+
+  NOTIF_ACTION_CREATED: (actionType: string) => `Successfully created "${actionType}" action`,
+  NOTIF_ACTION_UPDATED: (actionType: string) => `Successfully updated "${actionType}" action`,
+  NOTIF_ACTION_DELETED: (actionType: string) => `Successfully deleted "${actionType}" action`,
+
+  NOTIF_INSTRUMENTATION_RULE_CREATED: (ruleType: string) => `Successfully created "${ruleType}" rule`,
+  NOTIF_INSTRUMENTATION_RULE_UPDATED: (ruleType: string) => `Successfully updated "${ruleType}" rule`,
+  NOTIF_INSTRUMENTATION_RULE_DELETED: (ruleType: string) => `Successfully deleted "${ruleType}" rule`,
 };

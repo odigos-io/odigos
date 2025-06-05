@@ -18,22 +18,22 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"net/http"
+	http "net/http"
 
-	"github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	scheme "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	rest "k8s.io/client-go/rest"
 )
 
 type OdigosV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	ActionsGetter
 	CollectorsGroupsGetter
 	DestinationsGetter
 	InstrumentationConfigsGetter
 	InstrumentationInstancesGetter
 	InstrumentationRulesGetter
 	InstrumentedApplicationsGetter
-	OdigosConfigurationsGetter
 	ProcessorsGetter
 	SourcesGetter
 }
@@ -41,6 +41,10 @@ type OdigosV1alpha1Interface interface {
 // OdigosV1alpha1Client is used to interact with features provided by the odigos.io group.
 type OdigosV1alpha1Client struct {
 	restClient rest.Interface
+}
+
+func (c *OdigosV1alpha1Client) Actions(namespace string) ActionInterface {
+	return newActions(c, namespace)
 }
 
 func (c *OdigosV1alpha1Client) CollectorsGroups(namespace string) CollectorsGroupInterface {
@@ -67,10 +71,6 @@ func (c *OdigosV1alpha1Client) InstrumentedApplications(namespace string) Instru
 	return newInstrumentedApplications(c, namespace)
 }
 
-func (c *OdigosV1alpha1Client) OdigosConfigurations(namespace string) OdigosConfigurationInterface {
-	return newOdigosConfigurations(c, namespace)
-}
-
 func (c *OdigosV1alpha1Client) Processors(namespace string) ProcessorInterface {
 	return newProcessors(c, namespace)
 }
@@ -84,9 +84,7 @@ func (c *OdigosV1alpha1Client) Sources(namespace string) SourceInterface {
 // where httpClient was generated with rest.HTTPClientFor(c).
 func NewForConfig(c *rest.Config) (*OdigosV1alpha1Client, error) {
 	config := *c
-	if err := setConfigDefaults(&config); err != nil {
-		return nil, err
-	}
+	setConfigDefaults(&config)
 	httpClient, err := rest.HTTPClientFor(&config)
 	if err != nil {
 		return nil, err
@@ -98,9 +96,7 @@ func NewForConfig(c *rest.Config) (*OdigosV1alpha1Client, error) {
 // Note the http client provided takes precedence over the configured transport values.
 func NewForConfigAndClient(c *rest.Config, h *http.Client) (*OdigosV1alpha1Client, error) {
 	config := *c
-	if err := setConfigDefaults(&config); err != nil {
-		return nil, err
-	}
+	setConfigDefaults(&config)
 	client, err := rest.RESTClientForConfigAndClient(&config, h)
 	if err != nil {
 		return nil, err
@@ -123,17 +119,15 @@ func New(c rest.Interface) *OdigosV1alpha1Client {
 	return &OdigosV1alpha1Client{c}
 }
 
-func setConfigDefaults(config *rest.Config) error {
-	gv := v1alpha1.SchemeGroupVersion
+func setConfigDefaults(config *rest.Config) {
+	gv := odigosv1alpha1.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
-	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
+	config.NegotiatedSerializer = rest.CodecFactoryForGeneratedClient(scheme.Scheme, scheme.Codecs).WithoutConversion()
 
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
 	}
-
-	return nil
 }
 
 // RESTClient returns a RESTClient that is used to communicate

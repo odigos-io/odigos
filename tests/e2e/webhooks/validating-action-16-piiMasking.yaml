@@ -1,0 +1,11 @@
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: 06-action-piimasking
+  namespace: default
+spec:
+  signals:
+  - TRACES
+  piiMasking:
+    piiCategories:
+      - CREDIT_CARD

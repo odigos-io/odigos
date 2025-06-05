@@ -18,11 +18,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
+	applyconfigurationodigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
 	scheme "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/scheme"
-	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -37,36 +37,37 @@ type CollectorsGroupsGetter interface {
 
 // CollectorsGroupInterface has methods to work with CollectorsGroup resources.
 type CollectorsGroupInterface interface {
-	Create(ctx context.Context, collectorsGroup *v1alpha1.CollectorsGroup, opts v1.CreateOptions) (*v1alpha1.CollectorsGroup, error)
-	Update(ctx context.Context, collectorsGroup *v1alpha1.CollectorsGroup, opts v1.UpdateOptions) (*v1alpha1.CollectorsGroup, error)
+	Create(ctx context.Context, collectorsGroup *odigosv1alpha1.CollectorsGroup, opts v1.CreateOptions) (*odigosv1alpha1.CollectorsGroup, error)
+	Update(ctx context.Context, collectorsGroup *odigosv1alpha1.CollectorsGroup, opts v1.UpdateOptions) (*odigosv1alpha1.CollectorsGroup, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, collectorsGroup *v1alpha1.CollectorsGroup, opts v1.UpdateOptions) (*v1alpha1.CollectorsGroup, error)
+	UpdateStatus(ctx context.Context, collectorsGroup *odigosv1alpha1.CollectorsGroup, opts v1.UpdateOptions) (*odigosv1alpha1.CollectorsGroup, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.CollectorsGroup, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.CollectorsGroupList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*odigosv1alpha1.CollectorsGroup, error)
+	List(ctx context.Context, opts v1.ListOptions) (*odigosv1alpha1.CollectorsGroupList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.CollectorsGroup, err error)
-	Apply(ctx context.Context, collectorsGroup *odigosv1alpha1.CollectorsGroupApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.CollectorsGroup, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *odigosv1alpha1.CollectorsGroup, err error)
+	Apply(ctx context.Context, collectorsGroup *applyconfigurationodigosv1alpha1.CollectorsGroupApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.CollectorsGroup, err error)
 	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-	ApplyStatus(ctx context.Context, collectorsGroup *odigosv1alpha1.CollectorsGroupApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.CollectorsGroup, err error)
+	ApplyStatus(ctx context.Context, collectorsGroup *applyconfigurationodigosv1alpha1.CollectorsGroupApplyConfiguration, opts v1.ApplyOptions) (result *odigosv1alpha1.CollectorsGroup, err error)
 	CollectorsGroupExpansion
 }
 
 // collectorsGroups implements CollectorsGroupInterface
 type collectorsGroups struct {
-	*gentype.ClientWithListAndApply[*v1alpha1.CollectorsGroup, *v1alpha1.CollectorsGroupList, *odigosv1alpha1.CollectorsGroupApplyConfiguration]
+	*gentype.ClientWithListAndApply[*odigosv1alpha1.CollectorsGroup, *odigosv1alpha1.CollectorsGroupList, *applyconfigurationodigosv1alpha1.CollectorsGroupApplyConfiguration]
 }
 
 // newCollectorsGroups returns a CollectorsGroups
 func newCollectorsGroups(c *OdigosV1alpha1Client, namespace string) *collectorsGroups {
 	return &collectorsGroups{
-		gentype.NewClientWithListAndApply[*v1alpha1.CollectorsGroup, *v1alpha1.CollectorsGroupList, *odigosv1alpha1.CollectorsGroupApplyConfiguration](
+		gentype.NewClientWithListAndApply[*odigosv1alpha1.CollectorsGroup, *odigosv1alpha1.CollectorsGroupList, *applyconfigurationodigosv1alpha1.CollectorsGroupApplyConfiguration](
 			"collectorsgroups",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.CollectorsGroup { return &v1alpha1.CollectorsGroup{} },
-			func() *v1alpha1.CollectorsGroupList { return &v1alpha1.CollectorsGroupList{} }),
+			func() *odigosv1alpha1.CollectorsGroup { return &odigosv1alpha1.CollectorsGroup{} },
+			func() *odigosv1alpha1.CollectorsGroupList { return &odigosv1alpha1.CollectorsGroupList{} },
+		),
 	}
 }

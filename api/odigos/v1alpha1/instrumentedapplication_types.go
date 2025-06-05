@@ -22,38 +22,40 @@ import (
 )
 
 // +kubebuilder:object:generate=true
+//
+// Deprecated: configuration is done via InstrumentationConfig
 type ConfigOption struct {
 	OptionKey string          `json:"optionKey"`
 	SpanKind  common.SpanKind `json:"spanKind"`
 }
 
 // +kubebuilder:object:generate=true
+//
+// Deprecated: configuration is done via InstrumentationConfig
 type InstrumentationLibraryOptions struct {
 	LibraryName string         `json:"libraryName"`
 	Options     []ConfigOption `json:"options"`
 }
 
-type ProcessingState string
-
-const (
-	ProcessingStateFailed    ProcessingState = "Failed"    // Used when CRI fails to detect the runtime envs
-	ProcessingStateSucceeded ProcessingState = "Succeeded" // Indicates that CRI successfully processed the runtime environments, even if no environments were detected.
-	ProcessingStateSkipped   ProcessingState = "Skipped"   // Used when env originally come from manifest
-)
-
 // +kubebuilder:object:generate=true
+//
+// Deprecated: configuration is done via InstrumentationConfig
 type OptionByContainer struct {
 	ContainerName            string                          `json:"containerName"`
 	InstrumentationLibraries []InstrumentationLibraryOptions `json:"instrumentationsLibraries"`
 }
 
 // InstrumentedApplicationSpec defines the desired state of InstrumentedApplication
+//
+// Deprecated: in favour of InstrumentationConfig
 type InstrumentedApplicationSpec struct {
 	RuntimeDetails []RuntimeDetailsByContainer `json:"runtimeDetails,omitempty"`
 	Options        []OptionByContainer         `json:"options,omitempty"`
 }
 
 // InstrumentedApplicationStatus defines the observed state of InstrumentedApplication
+//
+// Deprecated: in favour of InstrumentationConfig
 type InstrumentedApplicationStatus struct {
 	// Represents the observations of a nstrumentedApplication's current state.
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" protobuf:"bytes,1,rep,name=conditions"`
@@ -62,10 +64,11 @@ type InstrumentedApplicationStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=odigos.io/config=1
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // InstrumentedApplication is the Schema for the instrumentedapplications API
+//
+// Deprecated: in favour of InstrumentationConfig
 type InstrumentedApplication struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -77,6 +80,8 @@ type InstrumentedApplication struct {
 //+kubebuilder:object:root=true
 
 // InstrumentedApplicationList contains a list of InstrumentedApplication
+//
+// Deprecated: in favour of InstrumentationConfigList
 type InstrumentedApplicationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

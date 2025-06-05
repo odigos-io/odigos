@@ -1,0 +1,98 @@
+name: Build and push images
+
+on:
+  workflow_call: # Workflow trigger
+    inputs:
+      target_tag:
+        description: 'The tag to use when pushing the images to the registry'
+        required: false
+        type: string
+      registry:
+        description: 'The registry to push images to'
+        required: false
+        type: string
+        default: public.ecr.aws/y2v0v6s7
+  workflow_dispatch: # Manual trigger
+    inputs:
+      target_tag:
+        description: 'The tag to use when pushing the images to the registry'
+        required: false
+        type: string
+      registry:
+        description: 'The registry to push images to'
+        required: false
+        type: string
+        default: public.ecr.aws/y2v0v6s7
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-images:
+    runs-on: warp-ubuntu-latest-x64-8x-spot
+
+    env:
+      # The expression checks for an input from either the workflow_call context (inputs) or from workflow_dispatch (github.event.inputs).
+      # If none is provided (as in pull_request), it defaults to github.sha for target_tag
+      TARGET_TAG: ${{ (inputs.target_tag || github.event.inputs.target_tag) || github.sha }}
+      # For REGISTRY, it falls back to the default value provided here if no input is available.
+      REGISTRY: ${{ (inputs.registry || github.event.inputs.registry) || 'public.ecr.aws/y2v0v6s7' }}
+      # TF_REGION: us-east-1
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials from OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Tag Docker Images
+        env:
+          COMMIT_HASH: ${{ github.sha }}
+          DOCKER_REGISTRY: registry.odigos.io
+        run: |
+          # Build images
+          make build-images TAG=${COMMIT_HASH}
+
+          # Tag images for public ECR
+          docker tag ${DOCKER_REGISTRY}/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-collector:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-instrumentor:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-ui:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-ui:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-scheduler:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-autoscaler:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-odiglet:${COMMIT_HASH}
+
+
+      - uses: ko-build/setup-ko@v0.9
+
+      - name: Build CLI Image
+        env:
+          COMMIT_HASH: ${{ github.sha }}
+          DOCKER_REGISTRY: registry.odigos.io
+        run: |
+          make build-cli-image TAG=${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-cli:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-cli:${COMMIT_HASH}
+
+
+      - name: Push Docker Images to ECR
+        env:
+          COMMIT_HASH: ${{ github.sha }}
+        run: |
+          docker push public.ecr.aws/y2v0v6s7/odigos-collector:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-instrumentor:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-ui:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-scheduler:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-autoscaler:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-odiglet:${COMMIT_HASH}
+          docker push public.ecr.aws/y2v0v6s7/odigos-cli:${COMMIT_HASH}

@@ -1,6 +1,12 @@
-apiVersion: v1
-kind: Namespace
+apiVersion: odigos.io/v1alpha1
+kind: Source
 metadata:
   name: default
+  namespace: default
   labels:
-    odigos-instrumentation: enabled
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: default
+    namespace: default
+    kind: Namespace

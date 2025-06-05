@@ -1,76 +1,113 @@
-import { useMutation } from '@apollo/client';
-import { useNotificationStore } from '@/store';
-import { ACTION, getSseTargetFromId } from '@/utils';
-import { useComputePlatform } from '../compute-platform';
+import { useEffect } from 'react';
+import { useConfig } from '../config';
+import { GET_ACTIONS } from '@/graphql';
+import type { ActionInput, FetchedAction } from '@/types';
+import { useLazyQuery, useMutation } from '@apollo/client';
+import { getSseTargetFromId } from '@odigos/ui-kit/functions';
+import { mapActionsFormToGqlInput, mapFetchedActions } from '@/utils';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import { useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
 import { CREATE_ACTION, DELETE_ACTION, UPDATE_ACTION } from '@/graphql/mutations';
-import { NOTIFICATION_TYPE, OVERVIEW_ENTITY_TYPES, type ActionInput, type ActionsType } from '@/types';
+import { ActionType, Crud, EntityTypes, StatusType, type Action, type ActionFormData } from '@odigos/ui-kit/types';
 
-interface UseActionCrudParams {
-  onSuccess?: (type: string) => void;
-  onError?: (type: string) => void;
+interface UseActionCrud {
+  actions: Action[];
+  actionsLoading: boolean;
+  fetchActions: () => void;
+  createAction: (action: ActionFormData) => void;
+  updateAction: (id: string, action: ActionFormData) => void;
+  deleteAction: (id: string, actionType: ActionType) => void;
 }
 
-export const useActionCRUD = (params?: UseActionCrudParams) => {
-  const removeNotifications = useNotificationStore((store) => store.removeNotifications);
-  const { data, refetch } = useComputePlatform();
+export const useActionCRUD = (): UseActionCrud => {
+  const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
+  const { actionsLoading, setEntitiesLoading, actions, addEntities, removeEntities } = useEntityStore();
 
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: string) => {
-    addNotification({
-      type,
-      title,
-      message,
-      crdType: OVERVIEW_ENTITY_TYPES.ACTION,
-      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.ACTION) : undefined,
-    });
+  const notifyUser = (type: StatusType, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
+    addNotification({ type, title, message, crdType: EntityTypes.Action, target: id ? getSseTargetFromId(id, EntityTypes.Action) : undefined, hideFromHistory });
   };
 
-  const handleError = (title: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, title, message, id);
-    params?.onError?.(title);
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { actions?: FetchedAction[] } }>(GET_ACTIONS);
+
+  const fetchActions = async () => {
+    setEntitiesLoading(EntityTypes.Action, true);
+    const { error, data } = await fetchAll();
+
+    if (error) {
+      notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
+    } else if (data?.computePlatform?.actions) {
+      const { actions: items } = data.computePlatform;
+
+      addEntities(EntityTypes.Action, mapFetchedActions(items));
+      setEntitiesLoading(EntityTypes.Action, false);
+    }
   };
 
-  const handleComplete = (title: string, message: string, id?: string) => {
-    notifyUser(NOTIFICATION_TYPE.SUCCESS, title, message, id);
-    refetch();
-    params?.onSuccess?.(title);
-  };
-
-  const [createAction, cState] = useMutation<{ createAction: { id: string } }>(CREATE_ACTION, {
-    onError: (error) => handleError(ACTION.CREATE, error.message),
-    onCompleted: (res, req) => {
+  const [mutateCreate] = useMutation<{ createAction: { id: string; type: ActionType } }, { action: ActionInput }>(CREATE_ACTION, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Create, error.cause?.message || error.message),
+    onCompleted: (res) => {
       const id = res.createAction.id;
-      const type = req?.variables?.action.type;
-      const name = req?.variables?.action.name;
-      const label = `${type}${!!name ? ` (${name})` : ''}`;
-      handleComplete(ACTION.CREATE, `action "${label}" was created`, id);
+      const type = res.createAction.type;
+      notifyUser(StatusType.Success, Crud.Create, `Successfully created "${type}" action`, id);
+      fetchActions();
     },
   });
-  const [updateAction, uState] = useMutation<{ updateAction: { id: string } }>(UPDATE_ACTION, {
-    onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: (res, req) => {
+
+  const [mutateUpdate] = useMutation<{ updateAction: { id: string; type: ActionType } }, { id: string; action: ActionInput }>(UPDATE_ACTION, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
+    onCompleted: (res) => {
       const id = res.updateAction.id;
-      const type = req?.variables?.action.type;
-      const name = req?.variables?.action.name;
-      const label = `${type}${!!name ? ` (${name})` : ''}`;
-      handleComplete(ACTION.UPDATE, `action "${label}" was updated`, id);
+      const type = res.updateAction.type;
+      notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${type}" action`, id);
+      fetchActions();
     },
   });
-  const [deleteAction, dState] = useMutation<{ deleteAction: boolean }>(DELETE_ACTION, {
-    onError: (error) => handleError(ACTION.DELETE, error.message),
+
+  const [mutateDelete] = useMutation<{ deleteAction: boolean }, { id: string; actionType: ActionType }>(DELETE_ACTION, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Delete, error.cause?.message || error.message),
     onCompleted: (res, req) => {
-      const id = req?.variables?.id;
-      removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.ACTION));
-      handleComplete(ACTION.DELETE, `action "${id}" was deleted`);
+      const id = req?.variables?.id as string;
+      const type = req?.variables?.actionType;
+      removeEntities(EntityTypes.Action, [id]);
+      notifyUser(StatusType.Success, Crud.Delete, `Successfully deleted "${type}" action`, id);
     },
   });
+
+  const createAction: UseActionCrud['createAction'] = (action) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      mutateCreate({ variables: { action: mapActionsFormToGqlInput({ ...action }) } });
+    }
+  };
+
+  const updateAction: UseActionCrud['updateAction'] = (id, action) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      mutateUpdate({ variables: { id, action: mapActionsFormToGqlInput({ ...action }) } });
+    }
+  };
+
+  const deleteAction: UseActionCrud['deleteAction'] = (id, actionType) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      mutateDelete({ variables: { id, actionType } });
+    }
+  };
+
+  useEffect(() => {
+    if (!actions.length && !actionsLoading) fetchActions();
+  }, []);
 
   return {
-    loading: cState.loading || uState.loading || dState.loading,
-    actions: data?.computePlatform.actions || [],
-
-    createAction: (action: ActionInput) => createAction({ variables: { action } }),
-    updateAction: (id: string, action: ActionInput) => updateAction({ variables: { id, action } }),
-    deleteAction: (id: string, actionType: ActionsType) => deleteAction({ variables: { id, actionType } }),
+    actions,
+    actionsLoading,
+    fetchActions,
+    createAction,
+    updateAction,
+    deleteAction,
   };
 };

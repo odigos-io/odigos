@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/config/configretry"
+	"go.opentelemetry.io/collector/exporter/exporterhelper"
 )
 
 // Config contains the main configuration options for the mockdestination exporter
@@ -18,6 +20,13 @@ type Config struct {
 	// Set to 0 to disable rejection, and to 1 to reject all exports.
 	// Can be used to simulate destinations that are back-pressuring the collector.
 	RejectFraction float64 `mapstructure:"reject_fraction"`
+
+	// these configs controls configures the various export options.
+	// default values (when not set) are used just like the otlp exporter.
+	TimeoutConfig exporterhelper.TimeoutConfig `mapstructure:",squash"` // squash ensures fields are correctly decoded in embedded struct.
+	QueueConfig   exporterhelper.QueueConfig   `mapstructure:"sending_queue"`
+	RetryConfig   configretry.BackOffConfig    `mapstructure:"retry_on_failure"`
+	BatcherConfig exporterhelper.BatcherConfig `mapstructure:"batcher"`
 }
 
 func (c *Config) Validate() error {

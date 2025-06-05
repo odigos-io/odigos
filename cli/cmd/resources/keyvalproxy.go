@@ -3,12 +3,12 @@ package resources
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/consts"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,22 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	odigosCloudProxyVersion = "v0.11.0"
-)
-
-const (
-	keyvalProxyServiceName            = "odigos-cloud-k8s"
-	keyvalProxyImage                  = "keyval/odigos-proxy-k8s"
-	keyvalProxyAppName                = "odigos-cloud-proxy"
-	KeyvalProxyDeploymentName         = "odigos-cloud-proxy"
-	keyvalProxyServiceAccountName     = "odigos-cloud-proxy"
-	keyvalProxyRoleName               = "odigos-cloud-proxy"
-	keyvalProxyRoleBindingName        = "odigos-cloud-proxy"
-	keyvalProxyClusterRoleName        = "odigos-cloud-proxy"
-	keyvalProxyClusterRoleBindingName = "odigos-cloud-proxy"
-)
-
 func NewKeyvalProxyServiceAccount(ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -41,7 +25,7 @@ func NewKeyvalProxyServiceAccount(ns string) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      keyvalProxyServiceAccountName,
+			Name:      k8sconsts.KeyvalProxyServiceAccountName,
 			Namespace: ns,
 		},
 	}
@@ -54,7 +38,7 @@ func NewKeyvalProxyRole(ns string) *rbacv1.Role {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      keyvalProxyRoleName,
+			Name:      k8sconsts.KeyvalProxyRoleName,
 			Namespace: ns,
 			Labels:    map[string]string{},
 		},
@@ -83,20 +67,20 @@ func NewKeyvalProxyRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      keyvalProxyRoleBindingName,
+			Name:      k8sconsts.KeyvalProxyRoleBindingName,
 			Namespace: ns,
 			Labels:    map[string]string{},
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      keyvalProxyServiceAccountName,
+				Name:      k8sconsts.KeyvalProxyServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "Role",
-			Name:     keyvalProxyRoleName,
+			Name:     k8sconsts.KeyvalProxyRoleName,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
@@ -109,7 +93,7 @@ func NewKeyvalProxyClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: keyvalProxyClusterRoleName,
+			Name: k8sconsts.KeyvalProxyClusterRoleName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -242,57 +226,61 @@ func NewKeyvalProxyClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: keyvalProxyClusterRoleBindingName,
+			Name: k8sconsts.KeyvalProxyClusterRoleBindingName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      keyvalProxyServiceAccountName,
+				Name:      k8sconsts.KeyvalProxyServiceAccountName,
 				Namespace: ns,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "ClusterRole",
-			Name:     keyvalProxyClusterRoleName,
+			Name:     k8sconsts.KeyvalProxyClusterRoleName,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
 }
 
-func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *appsv1.Deployment {
+func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string, nodeSelector map[string]string) *appsv1.Deployment {
+	if nodeSelector == nil {
+		nodeSelector = make(map[string]string)
+	}
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      KeyvalProxyDeploymentName,
+			Name:      k8sconsts.KeyvalProxyDeploymentName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": keyvalProxyAppName,
+				"app.kubernetes.io/name": k8sconsts.KeyvalProxyAppName,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": keyvalProxyAppName,
+					"app.kubernetes.io/name": k8sconsts.KeyvalProxyAppName,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": keyvalProxyAppName,
+						"app.kubernetes.io/name": k8sconsts.KeyvalProxyAppName,
 					},
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-container": keyvalProxyAppName,
+						"kubectl.kubernetes.io/default-container": k8sconsts.KeyvalProxyAppName,
 					},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector: nodeSelector,
 					Containers: []corev1.Container{
 						{
-							Name:  keyvalProxyAppName,
-							Image: containers.GetImageName(imagePrefix, keyvalProxyImage, version),
+							Name:  k8sconsts.KeyvalProxyAppName,
+							Image: containers.GetImageName(imagePrefix, k8sconsts.KeyvalProxyImage, version),
 							Args: []string{
 								"--health-probe-bind-address=:8081",
 								"--metrics-bind-address=127.0.0.1:8080",
@@ -309,7 +297,7 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: keyvalProxyServiceName,
+									Value: k8sconsts.KeyvalProxyServiceName,
 								},
 								odigospro.CloudTokenAsEnvVar(),
 							},
@@ -324,7 +312,7 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: consts.OdigosDeploymentConfigMapName,
+											Name: k8sconsts.OdigosDeploymentConfigMapName,
 										},
 									},
 								},
@@ -359,7 +347,7 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
-					ServiceAccountName:            keyvalProxyServiceAccountName,
+					ServiceAccountName:            k8sconsts.KeyvalProxyServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
 					},
@@ -372,13 +360,14 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string) *ap
 }
 
 type keyvalProxyResourceManager struct {
-	client *kube.Client
-	ns     string
-	config *common.OdigosConfiguration
+	client      *kube.Client
+	ns          string
+	config      *common.OdigosConfiguration
+	managerOpts resourcemanager.ManagerOpts
 }
 
-func NewKeyvalProxyResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration) resourcemanager.ResourceManager {
-	return &keyvalProxyResourceManager{client: client, ns: ns, config: config}
+func NewKeyvalProxyResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
+	return &keyvalProxyResourceManager{client: client, ns: ns, config: config, managerOpts: managerOpts}
 }
 
 func (a *keyvalProxyResourceManager) Name() string { return "CloudProxy" }
@@ -390,7 +379,7 @@ func (a *keyvalProxyResourceManager) InstallFromScratch(ctx context.Context) err
 		NewKeyvalProxyRoleBinding(a.ns),
 		NewKeyvalProxyClusterRole(),
 		NewKeyvalProxyClusterRoleBinding(a.ns),
-		NewKeyvalProxyDeployment(odigosCloudProxyVersion, a.ns, a.config.ImagePrefix),
+		NewKeyvalProxyDeployment(k8sconsts.OdigosCloudProxyVersion, a.ns, a.config.ImagePrefix, a.config.NodeSelector),
 	}
-	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources)
+	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

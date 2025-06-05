@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
 )
@@ -105,7 +105,7 @@ func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
 }
 
 // allow to completely overwrite the remote config for a set of keys for a given workload
-func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload workload.PodWorkload, sdkConfig *v1alpha1.SdkConfig) error {
+func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWorkload, sdkConfig *v1alpha1.SdkConfig) error {
 	sdkConfigProgrammingLang := common.MapOdigosToSemConv(sdkConfig.Language)
 	c.mux.Lock()
 	defer c.mux.Unlock()

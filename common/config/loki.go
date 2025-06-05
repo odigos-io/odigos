@@ -13,6 +13,7 @@ import (
 const (
 	lokiUrlKey    = "LOKI_URL"
 	lokiLabelsKey = "LOKI_LABELS"
+	lokiApiPath   = "/loki/api/v1/push"
 )
 
 type Loki struct{}
@@ -21,27 +22,26 @@ func (l *Loki) DestType() common.DestinationType {
 	return common.LokiDestinationType
 }
 
-func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
-
+func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	rawUrl, exists := dest.GetConfig()[lokiUrlKey]
 	if !exists {
-		return errors.New("Loki endpoint not specified, gateway will not be configured for Loki")
+		return nil, errors.New("Loki endpoint not specified, gateway will not be configured for Loki")
 	}
 
-	url, err := lokiUrlFromInput(rawUrl)
+	lokiUrl, err := lokiUrlFromInput(rawUrl)
 	if err != nil {
-		return errors.Join(err, errors.New("failed to parse loki endpoint, gateway will not be configured for Loki"))
+		return nil, errors.Join(err, errors.New("failed to parse loki endpoint, gateway will not be configured for Loki"))
 	}
 
 	rawLokiLabels, exists := dest.GetConfig()[lokiLabelsKey]
 	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.GetID())
 	if err != nil {
-		return errors.Join(err, errors.New("failed to parse loki labels, gateway will not be configured for Loki"))
+		return nil, errors.Join(err, errors.New("failed to parse loki labels, gateway will not be configured for Loki"))
 	}
 
 	lokiExporterName := "loki/loki-" + dest.GetID()
 	currentConfig.Exporters[lokiExporterName] = GenericMap{
-		"endpoint": url,
+		"endpoint": lokiUrl,
 	}
 
 	processorNames := []string{}
@@ -56,11 +56,10 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) erro
 		Exporters:  []string{lokiExporterName},
 	}
 
-	return nil
+	return []string{logsPipelineName}, nil
 }
 
 func lokiUrlFromInput(rawUrl string) (string, error) {
-
 	rawUrl = strings.TrimSpace(rawUrl)
 	urlWithScheme := rawUrl
 
@@ -80,7 +79,7 @@ func lokiUrlFromInput(rawUrl string) (string, error) {
 
 	// we allow the user to specify the path, but will fallback to the default loki path if not provided
 	if parsedUrl.Path == "" {
-		parsedUrl.Path = "/loki/api/v1/push"
+		parsedUrl.Path = lokiApiPath
 	}
 
 	// we allow the user to specify the port, but will fallback to the default loki port if not provided
@@ -88,7 +87,7 @@ func lokiUrlFromInput(rawUrl string) (string, error) {
 		if parsedUrl.Host == "" {
 			return "", fmt.Errorf("loki endpoint host is required")
 		}
-		parsedUrl.Host = parsedUrl.Host + ":3100"
+		parsedUrl.Host += ":3100"
 	}
 
 	return parsedUrl.String(), nil
@@ -98,7 +97,6 @@ func lokiUrlFromInput(rawUrl string) (string, error) {
 // loki architecture works with labels, where each combination of labels values is a stream.
 // This function creates processors to convert otel attributes to loki labels based on the user configuration.
 func lokiLabelsProcessors(rawLabels string, exists bool, destName string) (GenericMap, error) {
-
 	// backwards compatibility, if the user labels are not provided, we use the default
 	if !exists {
 		processorName := "attributes/loki-" + destName

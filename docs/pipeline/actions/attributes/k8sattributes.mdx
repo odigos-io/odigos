@@ -1,0 +1,112 @@
+---
+title: "Kubernetes Attributes"
+description: "This action adds kubernetes related resource attributes to spans, metrics data points and log records."
+sidebarTitle: "Kubernetes Attributes"
+icon: "layer-group"
+---
+
+import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
+
+## Overview
+
+By adding Kubernetes-specific attributes to telemetry signals, you can gain better visibility into workloads running in the cluster.
+
+Helps in correlating traces, logs and metrics with specific Kubernetes resources, such as pods, deployments, nodes and clusters.
+
+Adding resource attributes based on custom kubernetes annotations/labels can enrich the data with user defined aggregations and metadata corresponding to the originating pod that produced the telemetry.
+
+## Configuration Options
+
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the processor will act on.
+    - This field is *required*
+    - Supported values: `TRACES, LOGS, METRICS`
+  </Accordion>
+  <Accordion title="collectContainerAttributes">
+    **collectContainerAttributes** `boolean` : Collect the following container related attributes:
+        * `k8s.container.name`
+        * `container.id`
+        * `container.image.name`
+        * `container.image.tag`
+
+    This field is *optional* and defaults to `false`
+  </Accordion>
+  <Accordion title="collectReplicaSetAttributes">
+    **collectReplicaSetAttributes** `boolean` : Collect the following replica set related attributes:
+        * `k8s.replicaset.name`
+    if CollectWorkloadUID is set to true, the following attribute will be collected as well:
+        * `k8s.replicaset.uid`
+        
+    This field is *optional* and defaults to `false`
+  <Accordion title="CollectWorkloadUID">
+    **CollectWorkloadUID** `boolean` : Collect the workload UID:
+        * `k8s.deployment.uid`
+        * `k8s.daemonset.uid`
+        * `k8s.statefulset.uid`
+
+    Only one of these attributes can appear for a given span/log/metric - based on the workload it originated from.
+    This field is *optional* and defaults to `false`
+  </Accordion>
+  <Accordion title="CollectClusterUID">
+    **CollectClusterUID** `boolean` : Collect the `k8s.cluster.uid` attribute, which is set to the uid of the namespace "kube-system". This allows aggregating observability based on the cluster it originated from.
+
+    This field is *optional* and defaults to `false`
+  </Accordion>
+  <Accordion title="labelsAttributes">
+    **labelsAttributes** `K8sLabelAttribute[]` : Collect resource attributes based on the specified labels. The labels are taken from the Pod which emits the telemetry. Missing labels will be ignored.
+
+    This field is *optional* and can remain empty.
+  </Accordion>
+  <Accordion title="annotationsAttributes">
+    **labelsAttributes** `K8sAnnotationAttribute[]` : Collect resource attributes based on the specified annotation. The annotations are taken from the Pod which emits the telemetry. Missing annotations will be ignored.
+
+    This field is *optional* and can remain empty.
+  </Accordion>
+
+</AccordionGroup>
+
+## Basic Example
+
+The following example demonstrates how to collect Kubernetes attributes, including labels and annotations, and attach them to telemetry signals.
+
+```yaml k8s-attributes.yaml
+apiVersion: actions.odigos.io/v1alpha1
+kind: K8sAttributes
+metadata:
+  name: collect-k8s-attributes
+  namespace: odigos-system
+spec:
+  actionName: "Collect Kubernetes Attributes"
+  collectContainerAttributes: true
+  collectWorkloadUID: true
+  collectClusterUID: true
+  labelsAttributes:
+    - labelKey: "app.kubernetes.io/name"
+      attributeKey: "app.kubernetes.name"
+  annotationsAttributes:
+    - annotationKey: "kubectl.kubernetes.io/restartedAt"
+      attributeKey: "kubectl.kubernetes.restartedAt"
+  signals:
+    - TRACES
+    - METRICS
+    - LOGS
+```
+
+```bash
+kubectl apply -f k8s-attributes.yaml
+```

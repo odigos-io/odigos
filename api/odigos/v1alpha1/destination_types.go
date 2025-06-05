@@ -30,6 +30,11 @@ type DestinationSpec struct {
 	Data            map[string]string            `json:"data"`
 	SecretRef       *v1.LocalObjectReference     `json:"secretRef,omitempty"`
 	Signals         []common.ObservabilitySignal `json:"signals"`
+
+	// SourceSelector defines which sources can send data to this destination.
+	// If not specified, defaults to "all".
+	// +optional
+	SourceSelector *SourceSelector `json:"sourceSelector,omitempty"`
 }
 
 // DestinationStatus defines the observed state of Destination
@@ -41,7 +46,6 @@ type DestinationStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=odigos.io/config=1
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // Destination is the Schema for the destinations API

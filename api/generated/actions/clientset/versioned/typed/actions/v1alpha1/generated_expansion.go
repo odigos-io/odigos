@@ -23,6 +23,8 @@ type DeleteAttributeExpansion interface{}
 
 type ErrorSamplerExpansion interface{}
 
+type K8sAttributesResolverExpansion interface{}
+
 type LatencySamplerExpansion interface{}
 
 type PiiMaskingExpansion interface{}
@@ -30,3 +32,7 @@ type PiiMaskingExpansion interface{}
 type ProbabilisticSamplerExpansion interface{}
 
 type RenameAttributeExpansion interface{}
+
+type ServiceNameSamplerExpansion interface{}
+
+type SpanAttributeSamplerExpansion interface{}

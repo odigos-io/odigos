@@ -1,34 +1,39 @@
 'use client';
-import './globals.css';
-import React from 'react';
-import { METADATA } from '@/utils';
-import { ApolloWrapper } from '@/lib';
-import { ThemeProviderWrapper } from '@/styles';
 
-const LAYOUT_STYLE: React.CSSProperties = {
-  position: 'fixed',
-  width: '100vw',
-  height: '100vh',
-  margin: 0,
-  backgroundColor: '#111111',
-};
+import React, { type PropsWithChildren } from 'react';
+import dynamic from 'next/dynamic';
+import { useDarkMode } from '@odigos/ui-kit/store';
+import ApolloProvider from '@/lib/apollo-provider';
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+const ThemeProvider = dynamic(() => import('@/lib/theme-provider'), { ssr: false });
+
+function RootLayout({ children }: PropsWithChildren) {
+  const { darkMode } = useDarkMode();
+
   return (
     <html lang='en'>
       <head>
-        <meta name='description' content={METADATA.title} />
-        <link rel='icon' type='image/svg+xml' href={`/${METADATA.icon}`} />
         <link rel='manifest' href='/manifest.json' />
-        <title>{METADATA.title}</title>
+        <link rel='icon' href='/favicon.svg' type='image/svg' />
+        <meta name='description' content='Odigos' />
+        <title>Odigos</title>
       </head>
-      <ApolloWrapper>
-        <ThemeProviderWrapper>
-          <body suppressHydrationWarning={true} style={LAYOUT_STYLE}>
-            {children}
-          </body>
-        </ThemeProviderWrapper>
-      </ApolloWrapper>
+
+      <body
+        suppressHydrationWarning={true}
+        style={{
+          width: '100vw',
+          height: '100vh',
+          margin: 0,
+          backgroundColor: darkMode ? '#111111' : '#EEEEEE',
+        }}
+      >
+        <ThemeProvider>
+          <ApolloProvider>{children}</ApolloProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
+
+export default RootLayout;

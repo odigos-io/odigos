@@ -4,13 +4,24 @@ import (
 	"context"
 	"fmt"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
+)
+
+const (
+	// label key used to associate the instrumentation instance with the owner pod
+	ownerPodNameLabel = "ownerPodName"
+
+	// maxInstrumentationInstancesPerPod is the maximum number of instrumentation instances that can be created per pod
+	// this is required to bound the number of instrumentation instances that can be created.
+	maxInstrumentationInstancesPerPod = 16
 )
 
 type InstrumentationInstanceOption interface {
@@ -19,6 +30,7 @@ type InstrumentationInstanceOption interface {
 
 type updateInstrumentationInstanceStatusOpt func(odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus
 
+//nolint:all
 func (o updateInstrumentationInstanceStatusOpt) applyInstrumentationInstance(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
 	return o(s)
 }
@@ -45,6 +57,7 @@ func WithAttributes(identifying []odigosv1.Attribute, nonIdentifying []odigosv1.
 	})
 }
 
+//nolint:all
 func updateInstrumentationInstanceStatus(status odigosv1.InstrumentationInstanceStatus, options ...InstrumentationInstanceOption) odigosv1.InstrumentationInstanceStatus {
 	for _, option := range options {
 		status = option.applyInstrumentationInstance(status)
@@ -57,45 +70,91 @@ func InstrumentationInstanceName(ownerName string, pid int) string {
 	return fmt.Sprintf("%s-%d", ownerName, pid)
 }
 
-func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Object, containerName string, kubeClient client.Client, instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
+func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Object, containerName string, kubeClient client.Client,
+	instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
 	instrumentationInstanceName := InstrumentationInstanceName(owner.GetName(), pid)
-	updatedInstance := &odigosv1.InstrumentationInstance{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "odigos.io/v1alpha1",
-			Kind:       "InstrumentationInstance",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      instrumentationInstanceName,
-			Namespace: owner.GetNamespace(),
-			Labels: map[string]string{
-				consts.InstrumentedAppNameLabel: instrumentedAppName,
-			},
-		},
-		Spec: odigosv1.InstrumentationInstanceSpec{
-			ContainerName: containerName,
-		},
-	}
+	instance := odigosv1.InstrumentationInstance{}
 
-	err := controllerutil.SetControllerReference(owner, updatedInstance, scheme)
+	err := kubeClient.Get(ctx,
+		client.ObjectKey{Namespace: owner.GetNamespace(), Name: instrumentationInstanceName},
+		&instance,
+	)
 	if err != nil {
-		return err
-	}
-
-	if err = kubeClient.Create(ctx, updatedInstance); err != nil {
-		if !apierrors.IsAlreadyExists(err) {
+		if !apierrors.IsNotFound(err) {
 			return err
 		}
-		err := kubeClient.Get(ctx, client.ObjectKeyFromObject(updatedInstance), updatedInstance)
+
+		// check if we can create a new instance
+		if instrumentationInstancesCountReachedLimit(ctx, owner, kubeClient) {
+			return fmt.Errorf("instrumentation instances count per pod is over the limit of %d", maxInstrumentationInstancesPerPod)
+		}
+
+		// create new instance
+		instance = odigosv1.InstrumentationInstance{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "odigos.io/v1alpha1",
+				Kind:       "InstrumentationInstance",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      instrumentationInstanceName,
+				Namespace: owner.GetNamespace(),
+				Labels: map[string]string{
+					consts.InstrumentedAppNameLabel: instrumentedAppName,
+					ownerPodNameLabel:               owner.GetName(),
+				},
+			},
+			Spec: odigosv1.InstrumentationInstanceSpec{
+				ContainerName: containerName,
+			},
+		}
+
+		err := controllerutil.SetControllerReference(owner, &instance, scheme)
 		if err != nil {
 			return err
 		}
+
+		err = kubeClient.Create(ctx, &instance)
+		if err != nil && !apierrors.IsAlreadyExists(err) {
+			return err
+		}
 	}
 
-	updatedInstance.Status = updateInstrumentationInstanceStatus(updatedInstance.Status, options...)
+	instance.Status = updateInstrumentationInstanceStatus(instance.Status, options...)
+	err = kubeClient.Status().Update(ctx, &instance)
 
-	err = kubeClient.Status().Update(ctx, updatedInstance)
 	if err != nil {
-		return err
+		// Updating the instance may fail if the version is outdated or if the cached client hasn't been updated yet.
+		// If the update fails, apply a retry mechanism for any type of error.
+		retryBackoff := retry.DefaultBackoff
+		retryBackoff.Steps = 6
+		return retry.OnError(retryBackoff, func(err error) bool {
+			// retry on any error
+			return true
+		}, func() error {
+			// Re-fetch latest version to avoid conflict errors
+			instance := odigosv1.InstrumentationInstance{}
+			err := kubeClient.Get(ctx, client.ObjectKey{Namespace: owner.GetNamespace(), Name: instrumentationInstanceName}, &instance)
+			if err != nil {
+				return err
+			}
+
+			instance.Status = updateInstrumentationInstanceStatus(instance.Status, options...)
+
+			return kubeClient.Status().Update(ctx, &instance)
+		})
 	}
+
 	return nil
+}
+
+func instrumentationInstancesCountReachedLimit(ctx context.Context, owner client.Object, kubeClient client.Client) bool {
+	instances := &odigosv1.InstrumentationInstanceList{}
+	err := kubeClient.List(ctx, instances,
+		client.InNamespace(owner.GetNamespace()),
+		client.MatchingLabels{ownerPodNameLabel: owner.GetName()},
+	)
+	if err != nil {
+		return true
+	}
+	return len(instances.Items) >= maxInstrumentationInstancesPerPod
 }

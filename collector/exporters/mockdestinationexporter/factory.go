@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter/internal/metadata"
+	"go.opentelemetry.io/collector/config/configretry"
+	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/exporter"
 
 	"go.opentelemetry.io/collector/component"
@@ -25,6 +27,17 @@ func createDefaultConfig() component.Config {
 	return &Config{
 		ResponseDuration: time.Millisecond * 100,
 		RejectFraction:   0,
+		TimeoutConfig:    exporterhelper.NewDefaultTimeoutConfig(),
+		RetryConfig:      configretry.NewDefaultBackOffConfig(),
+		QueueConfig:      exporterhelper.NewDefaultQueueConfig(),
+		BatcherConfig: exporterhelper.BatcherConfig{
+			Enabled:      true,
+			FlushTimeout: 200 * time.Millisecond,
+			SizeConfig: exporterhelper.SizeConfig{
+				Sizer:   exporterhelper.RequestSizerTypeItems,
+				MinSize: 8192,
+			},
+		},
 	}
 }
 
@@ -39,11 +52,17 @@ func createLogsExporter(
 		return nil, err
 	}
 
-	return exporterhelper.NewLogsExporter(
+	return exporterhelper.NewLogs(
 		ctx,
 		set,
 		cfg,
-		gcsExporter.ConsumeLogs)
+		gcsExporter.ConsumeLogs,
+		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
+		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
+		exporterhelper.WithRetry(pCfg.RetryConfig),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
+		exporterhelper.WithBatcher(pCfg.BatcherConfig),
+	)
 }
 
 func createTracesExporter(
@@ -57,11 +76,16 @@ func createTracesExporter(
 		return nil, err
 	}
 
-	return exporterhelper.NewTracesExporter(
+	return exporterhelper.NewTraces(
 		ctx,
 		set,
 		cfg,
 		gcsExporter.ConsumeTraces,
+		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
+		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
+		exporterhelper.WithRetry(pCfg.RetryConfig),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
+		exporterhelper.WithBatcher(pCfg.BatcherConfig),
 	)
 }
 
@@ -76,10 +100,15 @@ func createMetricsExporter(
 		return nil, err
 	}
 
-	return exporterhelper.NewMetricsExporter(
+	return exporterhelper.NewMetrics(
 		ctx,
 		set,
 		cfg,
 		gcsExporter.ConsumeMetrics,
+		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
+		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
+		exporterhelper.WithRetry(pCfg.RetryConfig),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
+		exporterhelper.WithBatcher(pCfg.BatcherConfig),
 	)
 }

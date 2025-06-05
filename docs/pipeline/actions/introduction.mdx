@@ -1,24 +1,15 @@
 ---
-title: "Actions Introduction"
+title: "Introduction"
+description: "Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your destinations."
 sidebarTitle: "Introduction"
+icon: "hand-wave"
 ---
-
-Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your Odigos Destinations.
-
 
 ## What are Processors?
 
-Under the hood, Odigos uses the OpenTelemetry Collector Processors to implement actions.
+Under the hood, Odigos uses the [OpenTelemetry Collector Processors](https://opentelemetry.io/docs/collector/configuration/#processors) to implement actions.
 
-Processors are a [class of OpenTelemetry Collector component](https://opentelemetry.io/docs/collector/configuration/#processors).
-They are used to transform, filter, or enrich your OpenTelemetry data before it is sent to your destinations.
-
-Few examples of processors are:
-- Add a resource attribute to all spans, metrics and logs, describing the environment in which the data was collected.
-- Sample a percentage of spans to reduce the volume of data sent to your backend and your costs.
-- Filter out PII data from your signals which you don't want to send to your backend.
-
-and many more...
+Processors are a class of OpenTelemetry Collector component. They are used to transform, filter, or enrich your OpenTelemetry data before it is sent to your [destinations](/backends-overview).
 
 ## Benefits
 
@@ -29,11 +20,47 @@ and many more...
 
 Actions are a powerful tool to help you manage your observability data and ensure that you are sending the right data to your backend.
 
-## Adding Actions
+## Action Types
 
-Odigos supports a set of common actions grouped into the following categories:
+### Attribute Actions
 
-- [Sampling Actions](/pipeline/actions/sampling/introduction)
-- [Attributes Actions](/pipeline/actions/attributes/introduction)
+Attribute Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your destinations.
+  - [Add Cluster Info](/pipeline/actions/attributes/addclusterinfo)
+  - [Delete Attribute](/pipeline/actions/attributes/deleteattribute)
+  - [Rename Attribute](/pipeline/actions/attributes/renameattribute)
+  - [Pii Masking](/pipeline/actions/attributes/piimasking)
+  - [Kubernetes Attributes](/pipeline/actions/attributes/k8sattributes)
 
-Odigos also supports adding OpenTelemetry processors with [kuberenetes CRDs](/pipeline/actions/crd) which you can apply manually or through a GitOps workflow.
+### Sampling Actions
+
+Sampling Actions allow you to configure various types of sampling methods before exporting traces to your destinations.
+  - [Error Sampler](/pipeline/actions/sampling/errorsampler)
+  - [Latency Sampler](/pipeline/actions/sampling/latencysampler)
+  - [Service Name Sampler](/pipeline/actions/sampling/servicenamesampler)
+  - [Span Attribute Sampler](/pipeline/actions/sampling/spanattributesampler)
+  - [Probabilistic Sampler](/pipeline/actions/sampling/probabilisticsampler)
+
+<AccordionGroup>
+  <Accordion title="Scope Categories">
+    Odigos Sampling actions are divided into three main categories, each representing the action's scope. The action scope defines the range that the sampler covers. The categories are:
+
+    1. **Global Actions**: These actions sample all data without specificity. All traces flowing through Odigos will be sampled regardless of their source. For example, ErrorSampler.
+    2. **Service Actions**: These sample actions are applied only to traces coming from a specified service.
+    3. **Endpoint Actions**: These sample actions are applied to traces coming from a specific service and a specific endpoint. For example, LatencySampler.
+  </Accordion>
+  <Accordion title="Relation Between Sampling Actions">
+    When multiple sampling actions are configured, the most specific rule applies. For example:
+
+    - If two rules are configured: an Endpoint action for `Service: Frontend, Endpoint: /buy` with a latency threshold of 1 second and a fallback of 50%, and a Global ErrorSampler with a fallback of 20%:
+      1. Error traces will always be sampled due to the Global ErrorSampler, regardless of any Service or Endpoint rule.
+      2. Traces from `Frontend /buy` below 1 second latency will fall under the Endpoint action's fallback and retain 50% of these traces.
+      3. Traces from `Frontend /buy` above 1 second latency will always be retained.
+      4. Any other non-error traces that are not from `Frontend /buy` will be sampled at 20%.
+
+    Each rule ensures you get the specified sampling behavior for your conditions.
+  </Accordion>
+</AccordionGroup>
+
+### Custom Actions
+
+Odigos also supports adding OpenTelemetry processors with [Kuberenetes CRDs](/pipeline/actions/crd) which you can apply manually, or through a GitOps workflow.

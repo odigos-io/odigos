@@ -5,7 +5,6 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
   labels:
-    odigos.io/config: "1"
     odigos.io/system-object: "true"
   name: collectorsgroups.odigos.io
 spec:
@@ -48,6 +47,11 @@ spec:
                   This can be used to resolve conflicting ports when a collector is using the host network.
                 format: int32
                 type: integer
+              k8sNodeLogsDirectory:
+                description: |-
+                  Additional directory to mount in the node collector pod for logs.
+                  This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.
+                type: string
               resourcesSettings:
                 description: |-
                   Resources [memory/cpu] settings for the collectors group.
@@ -59,12 +63,12 @@ spec:
                   cpuLimitMillicores:
                     description: |-
                       CPU resource limit to be used on the pod template.
-                      it will be embedded in the as a resource limit of the form "cpu: <value>m"
+                      it will be embedded in the as a resource limit of the form `cpu: <value>m`
                     type: integer
                   cpuRequestMillicores:
                     description: |-
                       CPU resource request to be used on the pod template.
-                      it will be embedded in the as a resource request of the form "cpu: <value>m"
+                      it will be embedded in the as a resource request of the form `cpu: <value>m`
                     type: integer
                   gomemlimitMiB:
                     description: |-
@@ -102,7 +106,7 @@ spec:
                   memoryRequestMiB:
                     description: |-
                       MemoryRequestMiB is the memory resource request to be used on the pod template.
-                      it will be embedded in the as a resource request of the form "memory: <value>Mi"
+                      it will be embedded in the as a resource request of the form `memory: <value>Mi`
                     type: integer
                   minReplicas:
                     description: Minumum + Maximum number of replicas for the collector

@@ -1,122 +1,190 @@
-import { useCallback } from 'react';
-import { useMutation } from '@apollo/client';
-import { ACTION, getSseTargetFromId } from '@/utils';
-import { useAppStore, useNotificationStore } from '@/store';
-import { PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { useComputePlatform, useNamespace } from '../compute-platform';
-import { OVERVIEW_ENTITY_TYPES, type WorkloadId, type PatchSourceRequestInput, type K8sActualSource, NOTIFICATION_TYPE } from '@/types';
+import { useEffect } from 'react';
+import { useConfig } from '../config';
+import { useNamespace } from '../namespaces';
+import { useLazyQuery, useMutation } from '@apollo/client';
+import { getSseTargetFromId } from '@odigos/ui-kit/functions';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import type { PaginatedData, SourceConditions, SourceInstrumentInput } from '@/types';
+import { addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
+import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud } from '@odigos/ui-kit/types';
+import {
+  type NamespaceSelectionFormData,
+  type SourceSelectionFormData,
+  useDataStreamStore,
+  useEntityStore,
+  useInstrumentStore,
+  useNotificationStore,
+  usePendingStore,
+  useSetupStore,
+} from '@odigos/ui-kit/store';
 
-interface Params {
-  onSuccess?: (type: string) => void;
-  onError?: (type: string) => void;
+interface UseSourceCrud {
+  sources: Source[];
+  sourcesLoading: boolean;
+  fetchSourcesPaginated: (getAll?: boolean, nextPage?: string) => Promise<void>;
+  fetchSourceById: (id: WorkloadId, bypassPaginationLoader?: boolean) => Promise<void>;
+  persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
+  updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
 
-export const useSourceCRUD = (params?: Params) => {
-  const removeNotifications = useNotificationStore((store) => store.removeNotifications);
-  const { configuredSources, setConfiguredSources } = useAppStore();
-
+export const useSourceCRUD = (): UseSourceCrud => {
+  const { isReadonly } = useConfig();
   const { persistNamespace } = useNamespace();
-  const { data, refetch } = useComputePlatform();
   const { addNotification } = useNotificationStore();
+  const { selectedStreamName } = useDataStreamStore();
+  const { addPendingItems, removePendingItems } = usePendingStore();
+  const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
+  const { setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
+  const { sourcesLoading, setEntitiesLoading, sources, addEntities, removeEntities } = useEntityStore();
 
-  const startPolling = useCallback(async () => {
-    let retries = 0;
-    const maxRetries = 5;
-    const retryInterval = 1 * 1000; // time in milliseconds
-
-    while (retries < maxRetries) {
-      await new Promise((resolve) => setTimeout(resolve, retryInterval));
-      refetch();
-      retries++;
-    }
-  }, [refetch]);
-
-  const notifyUser = (type: NOTIFICATION_TYPE, title: string, message: string, id?: WorkloadId) => {
-    addNotification({
-      type,
-      title,
-      message,
-      crdType: OVERVIEW_ENTITY_TYPES.SOURCE,
-      target: id ? getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.SOURCE) : undefined,
-    });
+  const notifyUser = (type: StatusType, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
+    addNotification({ type, title, message, crdType: EntityTypes.Source, target: id ? getSseTargetFromId(id, EntityTypes.Source) : undefined, hideFromHistory });
   };
 
-  const handleError = (title: string, message: string, id?: WorkloadId) => {
-    notifyUser(NOTIFICATION_TYPE.ERROR, title, message, id);
-    params?.onError?.(title);
-  };
+  const [queryByPage] = useLazyQuery<{ computePlatform: { sources: PaginatedData<Source> } }, { nextPage: string }>(GET_SOURCES);
+  const [queryById] = useLazyQuery<{ computePlatform: { source: Source } }, { sourceId: WorkloadId }>(GET_SOURCE);
+  const [queryOtherConditions] = useLazyQuery<{ sourceConditions: SourceConditions[] }>(GET_SOURCE_CONDITIONS);
 
-  const handleComplete = (title: string, message: string, id?: WorkloadId) => {
-    notifyUser(NOTIFICATION_TYPE.SUCCESS, title, message, id);
-    startPolling();
-    params?.onSuccess?.(title);
-  };
-
-  const [createOrDeleteSources, cdState] = useMutation<{ persistK8sSources: boolean }>(PERSIST_SOURCE, {
-    onError: (error, req) => {
-      const { selected } = req?.variables?.sources?.[0] || {};
-      const action = selected ? ACTION.CREATE : ACTION.DELETE;
-
-      handleError(action, error.message);
+  const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCE, {
+    onError: (error) => {
+      setInstrumentCount('sourcesToCreate', 0);
+      setInstrumentCount('sourcesCreated', 0);
+      setInstrumentAwait(false);
+      notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message);
     },
-    onCompleted: (res, req) => {
-      const namespace = req?.variables?.namespace;
-      const { name, kind, selected } = req?.variables?.sources?.[0] || {};
+  });
 
-      const count = req?.variables?.sources.length;
-      const action = selected ? ACTION.CREATE : ACTION.DELETE;
-      const fromOrIn = selected ? 'in' : 'from';
+  const [mutateUpdate] = useMutation<{ updateK8sActualSource: boolean }, { sourceId: WorkloadId; patchSourceRequest: SourceFormData }>(UPDATE_K8S_ACTUAL_SOURCE, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
+  });
 
-      if (count > 1) {
-        handleComplete(action, `${count} sources were ${action.toLowerCase()}d ${fromOrIn} "${namespace}"`);
-      } else {
-        const id = { kind, name, namespace };
-        if (!selected) removeNotifications(getSseTargetFromId(id, OVERVIEW_ENTITY_TYPES.SOURCE));
-        if (!selected) setConfiguredSources({ ...configuredSources, [namespace]: configuredSources[namespace]?.filter((source) => source.name !== name) || [] });
-        handleComplete(action, `source "${name}" was ${action.toLowerCase()}d ${fromOrIn} "${namespace}"`, selected ? id : undefined);
+  const shouldFetchSource = (allowFetchDuringLoadTrue?: boolean) => {
+    // We should not fetch if we are already fetching.
+    const { sourcesLoading } = useEntityStore.getState();
+    // We should not fetch while sources are being instrumented.
+    const { isAwaitingInstrumentation } = useInstrumentStore.getState();
+
+    return !isAwaitingInstrumentation && (!sourcesLoading || (sourcesLoading && allowFetchDuringLoadTrue));
+  };
+
+  const handleInstrumentationCount = (toAddCount: number, toDeleteCount: number) => {
+    const { sourcesToCreate, sourcesToDelete } = useInstrumentStore.getState();
+
+    // TODO: estimate the number of instrumentationConfigs to create for future-apps
+
+    if (toDeleteCount > 0) setInstrumentCount('sourcesToDelete', sourcesToDelete + toDeleteCount);
+    if (toAddCount > 0) setInstrumentCount('sourcesToCreate', sourcesToCreate + toAddCount);
+
+    if (toDeleteCount > 0 || toAddCount > 0) setInstrumentAwait(true);
+  };
+
+  const fetchAllConditions = async () => {
+    const sourcesFromStore = useEntityStore.getState().sources;
+    const { data } = await queryOtherConditions();
+
+    if (data?.sourceConditions) {
+      const tempSources: Source[] = [];
+
+      for (const item of data.sourceConditions) {
+        const updatedSource = addConditionToSources(item, sourcesFromStore);
+        if (updatedSource) tempSources.push(updatedSource);
       }
-    },
-  });
 
-  const [updateSource, uState] = useMutation<{ updateK8sActualSource: boolean }>(UPDATE_K8S_ACTUAL_SOURCE, {
-    onError: (error) => handleError(ACTION.UPDATE, error.message),
-    onCompleted: (res, req) => {
-      const id = req?.variables?.sourceId;
-      const name = id?.name;
-      handleComplete(ACTION.UPDATE, `source "${name}" was updated`, id);
-    },
-  });
-
-  const persistNamespaces = async (items: { [key: string]: boolean }) => {
-    for (const [namespace, futureSelected] of Object.entries(items)) {
-      await persistNamespace({ name: namespace, futureSelected });
+      addEntities(EntityTypes.Source, tempSources);
     }
   };
 
-  const persistSources = async (items: { [key: string]: K8sActualSource[] }, selected: boolean) => {
-    for (const [namespace, sources] of Object.entries(items)) {
-      await createOrDeleteSources({
-        variables: {
-          namespace,
-          sources: sources.map((source) => ({
-            kind: source.kind,
-            name: source.name,
-            selected,
-          })),
-        },
-      });
+  const fetchSourcesPaginated = async (getAll: boolean = true, page: string = '') => {
+    if (!shouldFetchSource(!!page)) return;
+    setEntitiesLoading(EntityTypes.Source, true);
+
+    const { error, data } = await queryByPage({ variables: { nextPage: page } });
+
+    if (error) {
+      notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
+    } else if (data?.computePlatform?.sources) {
+      const { items, nextPage } = data.computePlatform.sources;
+
+      addEntities(EntityTypes.Source, items);
+
+      if (getAll && nextPage) {
+        fetchSourcesPaginated(true, nextPage);
+      } else if (useEntityStore.getState().sources.length >= useInstrumentStore.getState().sourcesToCreate) {
+        setEntitiesLoading(EntityTypes.Source, false);
+        setInstrumentCount('sourcesToCreate', 0);
+        setInstrumentCount('sourcesCreated', 0);
+        fetchAllConditions();
+      }
     }
   };
+
+  const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
+    if (!shouldFetchSource(bypassPaginationLoader)) return;
+
+    const { error, data } = await queryById({ variables: { sourceId: id } });
+
+    if (error) {
+      notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
+    } else if (data?.computePlatform?.source) {
+      addEntities(EntityTypes.Source, [data.computePlatform.source]);
+    }
+  };
+
+  const persistSources: UseSourceCrud['persistSources'] = async (selectAppsList, futureSelectAppsList) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      let alreadyNotified = false;
+      const { payloads: persistSourcesPayloads, isEmpty: sourcesEmpty } = prepareSourcePayloads(selectAppsList, sources, selectedStreamName, handleInstrumentationCount, removeEntities, addEntities);
+      const { payloads: persistNamespacesPayloads, isEmpty: futueAppsEmpty } = prepareNamespacePayloads(futureSelectAppsList);
+
+      if (!sourcesEmpty && !alreadyNotified) {
+        alreadyNotified = true;
+        notifyUser(StatusType.Default, 'Pending', 'Persisting sources...', undefined, true);
+      }
+      if (!futueAppsEmpty && !alreadyNotified) {
+        alreadyNotified = true;
+        notifyUser(StatusType.Default, 'Pending', 'Persisting namespaces...', undefined, true);
+      }
+
+      await Promise.all(persistSourcesPayloads.map((payload) => mutatePersistSources({ variables: payload })));
+      setConfiguredSources({});
+      await Promise.all(persistNamespacesPayloads.map(persistNamespace));
+      setConfiguredFutureApps({});
+
+      // !! no "fetch" and no "setInstrumentAwait(false)"
+      // !! we should wait for SSE to handle that
+    }
+  };
+
+  const updateSource: UseSourceCrud['updateSource'] = async (sourceId, payload) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      notifyUser(StatusType.Default, 'Pending', 'Updating source...', undefined, true);
+      addPendingItems([{ entityType: EntityTypes.Source, entityId: sourceId }]);
+
+      const { errors } = await mutateUpdate({ variables: { sourceId, patchSourceRequest: payload } });
+
+      if (!errors?.length) notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${sourceId.name}" source`, sourceId);
+      removePendingItems([{ entityType: EntityTypes.Source, entityId: sourceId }]);
+
+      // !! no "fetch"
+      // !! we should wait for SSE to handle that
+    }
+  };
+
+  useEffect(() => {
+    if (!sources.length && !sourcesLoading) fetchSourcesPaginated();
+  }, []);
 
   return {
-    loading: cdState.loading || uState.loading,
-    sources: data?.computePlatform.k8sActualSources || [],
-
-    createSources: async (selectAppsList: { [key: string]: K8sActualSource[] }, futureSelectAppsList: { [key: string]: boolean }) => {
-      await persistNamespaces(futureSelectAppsList);
-      await persistSources(selectAppsList, true);
-    },
-    updateSource: async (sourceId: WorkloadId, patchSourceRequest: PatchSourceRequestInput) => await updateSource({ variables: { sourceId, patchSourceRequest } }),
-    deleteSources: async (selectAppsList: { [key: string]: K8sActualSource[] }) => await persistSources(selectAppsList, false),
+    sources,
+    sourcesLoading,
+    fetchSourcesPaginated,
+    fetchSourceById,
+    persistSources,
+    updateSource,
   };
 };

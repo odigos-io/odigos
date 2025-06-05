@@ -2,54 +2,57 @@
 title: "odigos uninstall"
 sidebarTitle: "odigos uninstall"
 ---
-
-Unistall Odigos from your cluster
-
-## Synopsis
+## odigos uninstall
 
 Revert all the changes made by the `odigos install` command.
 This command will uninstall Odigos from your cluster. It will delete all Odigos objects
 and rollback any metadata changes made to your objects.
+ 
+Note: Namespaces created during Odigos CLI installation will be deleted during uninstallation. This applies only to CLI installs, not Helm.
 
 ```
 odigos uninstall [flags]
 ```
 
-Note: This command is not revertable and will delete any configuration you have made to your Odigos installation.
-
-## Examples
+### Examples
 
 ```
 
-    # Uninstall Odigos open-source or cloud from the cluster in your kubeconfig active context.
-    odigos uninstall
+# Uninstall Odigos open-source or cloud from the cluster in your kubeconfig active context.
+odigos uninstall
 
-    # Uninstall Odigos without confirmation
-    odigos uninstall --yes
-    
-    # Uninstall Odigos cloud from a specific cluster
-    odigos uninstall --kubeconfig <path-to-kubeconfig>
+# Uninstall Odigos without confirmation
+odigos uninstall --yes
 
-    # Install a fresh setup of Odigos
-    odigos uninstall
-    odigos install
-    
-```
+# Uninstall Odigos without waiting for pods to rollout without instrumentation
+odigos uninstall --no-wait
 
-## Options
+# Uninstall Odigos cloud from a specific cluster
+odigos uninstall --kubeconfig <path-to-kubeconfig>
 
-```
-      --yes              skip the confirmation prompt
-```
-
-## Options inherited from parent commands
+# Install a fresh setup of Odigos
+odigos uninstall
+odigos install
 
 ```
-        --kubeconfig string   (optional) absolute path to the kubeconfig file
+
+### Options
+
+```
+  -h, --help                   help for uninstall
+      --instrumentation-only   only remove instrumentation from workloads, without removing the entire Odigos setup
+      --no-wait                skip waiting for pods to rollout without instrumentation
+      --yes                    skip the confirmation prompt
 ```
 
-## SEE ALSO
+### Options inherited from parent commands
 
-* [odigos](/cli/odigos)	 - odigos CLI
-* [odigos install](/cli/odigos_install)	 - install Odigos on your cluster
-* [odigos upgrade](/cli/odigos_upgrade)	 - upgrade odigos version in your cluster.
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos](/cli/odigos)	 - Automate OpenTelemetry Observability in Kubernetes

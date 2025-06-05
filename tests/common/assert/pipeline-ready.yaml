@@ -69,17 +69,6 @@ spec:
             limits:
               (memory != null): true
               (cpu != null): true
-          volumeMounts:
-            - mountPath: /conf
-              name: collector-conf
-      volumes:
-        - configMap:
-            defaultMode: 420
-            items:
-              - key: collector-conf
-                path: collector-conf.yaml
-            name: odigos-gateway
-          name: collector-conf
 status:
   availableReplicas: 1
   readyReplicas: 1
@@ -138,16 +127,14 @@ spec:
           securityContext:
             privileged: true
           volumeMounts:
-            - mountPath: /conf
-              name: conf
             - mountPath: /var/lib/docker/containers
               name: varlibdockercontainers
               readOnly: true
             - mountPath: /var/log
               name: varlog
               readOnly: true
-            - mountPath: /var/lib/kubelet/pod-resources
-              name: kubeletpodresources
+            - mountPath: /hostfs
+              name: hostfs
               readOnly: true
           env:
             - name: NODE_NAME
@@ -162,25 +149,24 @@ spec:
                   fieldPath: metadata.name
             - name: GOMEMLIMIT
               (value != null): true
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: data-collection
+                  divisor: "0"
+                  resource: limits.cpu
           resources:
             requests:
               (memory != null): true
             limits:
               (memory != null): true
-      hostNetwork: true
+      (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
       nodeSelector:
         kubernetes.io/os: linux
       securityContext: {}
       serviceAccount: odigos-data-collection
       serviceAccountName: odigos-data-collection
       volumes:
-        - configMap:
-            defaultMode: 420
-            items:
-              - key: conf
-                path: conf.yaml
-            name: odigos-data-collection
-          name: conf
         - hostPath:
             path: /var/log
             type: ""
@@ -190,9 +176,9 @@ spec:
             type: ""
           name: varlibdockercontainers
         - hostPath:
-            path: /var/lib/kubelet/pod-resources
+            path: /
             type: ""
-          name: kubeletpodresources
+          name: hostfs
 status:
-  numberAvailable: 1
-  numberReady: 1
+  numberAvailable: 2
+  numberReady: 2

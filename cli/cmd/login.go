@@ -7,14 +7,16 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
-	"github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -25,9 +27,9 @@ import (
 func restartPodsAfterCloudLogin(ctx context.Context, client *kube.Client, ns string, configVersion int) error {
 
 	configVersionStr := strconv.Itoa(configVersion)
-	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"%s":"%s"}}}}}`, labels.OdigosSystemConfigLabelKey, configVersionStr)
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"%s":"%s"}}}}}`, k8sconsts.OdigosSystemConfigLabelKey, configVersionStr)
 
-	_, err := client.AppsV1().Deployments(ns).Patch(ctx, resources.KeyvalProxyDeploymentName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	_, err := client.AppsV1().Deployments(ns).Patch(ctx, k8sconsts.KeyvalProxyDeploymentName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}
@@ -37,7 +39,7 @@ func restartPodsAfterCloudLogin(ctx context.Context, client *kube.Client, ns str
 		return err
 	}
 
-	_, err = client.AppsV1().DaemonSets(ns).Patch(ctx, resources.OdigletDaemonSetName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	_, err = client.AppsV1().DaemonSets(ns).Patch(ctx, k8sconsts.OdigletDaemonSetName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}
@@ -80,7 +82,7 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 		odigosCloudApiKeyFlag = scanner.Text()
 	}
 
-	err = verifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
+	err = VerifyOdigosCloudApiKey(odigosCloudApiKeyFlag)
 	if err != nil {
 		fmt.Println("Odigos cloud login failed - invalid api-key format.")
 		os.Exit(1)
@@ -97,7 +99,11 @@ func updateApiKey(cmd *cobra.Command, args []string) {
 	}
 	isPrevOdigosCloud := currentTier == common.CloudOdigosTier
 
-	resourceManagers := resources.CreateResourceManagers(client, ns, common.CloudOdigosTier, &odigosCloudApiKeyFlag, config, currentOdigosVersion)
+	managerOpts := resourcemanager.ManagerOpts{
+		ImageReferences: GetImageReferences(currentTier, openshiftEnabled),
+	}
+
+	resourceManagers := resources.CreateResourceManagers(client, ns, common.CloudOdigosTier, &odigosCloudApiKeyFlag, config, currentOdigosVersion, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 	err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Updating")
 	if err != nil {
 		fmt.Println("Odigos cloud login failed - unable to apply Odigos resources.")

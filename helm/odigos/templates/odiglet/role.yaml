@@ -3,22 +3,14 @@ kind: Role
 metadata:
   name: odiglet
   namespace: '{{ .Release.Namespace }}'
+  labels:
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - odigos.io
     resources:
       - collectorsgroups
       - collectorsgroups/status
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ''
-    resourceNames:
-      - odigos-config
-    resources:
-      - configmaps
     verbs:
       - get
       - list
