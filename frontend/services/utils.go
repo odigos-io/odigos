@@ -16,7 +16,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
-	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/yaml"
@@ -118,12 +117,7 @@ func TransformConditionStatus(condStatus metav1.ConditionStatus, condType string
 	case metav1.ConditionUnknown:
 		status = model.ConditionStatusLoading
 	case metav1.ConditionTrue:
-		if condType == string(appsv1.DeploymentReplicaFailure) {
-			status = model.ConditionStatusError
-		} else {
-			status = model.ConditionStatusSuccess
-		}
-
+		status = model.ConditionStatusSuccess
 	case metav1.ConditionFalse:
 		status = model.ConditionStatusError
 	}

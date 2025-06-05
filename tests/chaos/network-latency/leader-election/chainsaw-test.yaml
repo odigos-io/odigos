@@ -40,6 +40,7 @@ spec:
               kubectl wait --for=condition=ready pods --all -n odigos-test --timeout=3m
 
         - assert:
+            timeout: 3m
             file: ../../../common/assert/odigos-installed.yaml
 
       catch:
