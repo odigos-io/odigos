@@ -424,8 +424,8 @@ func init() {
 		"JSON string to configure per-language instrumentation envs, e.g. '{\"languages\":{\"go\":{\"enabled\":true,\"env\":{\"OTEL_GO_ENABLED\":\"true\"}}}}'",
 	)
 	installCmd.Flags().BoolVar(&autoRollbackDisabled, consts.RollbackDisabledProperty, false, "Disabled the auto rollback feature")
-	installCmd.Flags().StringVar(&autoRollbackGraceTime, consts.DefaultAutoRollbackGraceTime, "5m", "Auto rollback grace time")
-	installCmd.Flags().StringVar(&autoRollbackStabilityWindows, consts.RollbackStabilityWindow, "1h", "Auto rollback stability windows time")
+	installCmd.Flags().StringVar(&autoRollbackGraceTime, consts.RollbackGraceTimeProperty, consts.DefaultAutoRollbackGraceTime, "Auto rollback grace time")
+	installCmd.Flags().StringVar(&autoRollbackStabilityWindows, consts.RollbackStabilityWindow, consts.DefaultAutoRollbackStabilityWindow, "Auto rollback stability windows time")
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
 	} else {
