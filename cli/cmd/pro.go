@@ -228,7 +228,6 @@ var centralInstallCmd = &cobra.Command{
 	},
 }
 
-// Replaced 'migrate' command with 'activate' to reflect activation of Enterprise tier
 var activateCmd = &cobra.Command{
 	Use:   "activate",
 	Short: "Activate the Odigos Enterprise tier from the Community Edition",
