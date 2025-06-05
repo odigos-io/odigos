@@ -1,0 +1,30 @@
+version: '2'
+run:
+  concurrency: 4
+  timeout: 2m
+  tests: false
+issues:
+  exclude-dirs:
+    - controllers
+    - internal
+  exclude-files:
+    - instrumentor.go
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/odigos-io
+
+linters:
+  default: none
+  enable:
+    - bodyclose
+    - ineffassign
+    - misspell
+    - unparam
+    - unconvert
+    - whitespace

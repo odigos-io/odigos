@@ -9,22 +9,22 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
 	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, client client.Client, config *common.OdigosConfiguration) error {
-
 	otelSignalExporterLanguages := []common.ProgrammingLanguage{
 		common.JavaProgrammingLanguage,
 		common.PhpProgrammingLanguage,
@@ -194,7 +194,6 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByC
 		return envVars
 	}
 	for _, envVar := range runtimeDetails.EnvFromContainerRuntime {
-
 		// Get the relevant envVar that we're iterating over
 		if envVar.Name != envVarName {
 			continue
@@ -243,7 +242,6 @@ func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []st
 }
 
 func shouldInject(runtimeDetails *odigosv1.RuntimeDetailsByContainer, logger logr.Logger, containerName string) bool {
-
 	// Skip injection if runtimeDetails.RuntimeUpdateState is nil.
 	// This indicates that either the new runtime detection or the new runtime detection migrator did not run for this container.
 	if runtimeDetails.RuntimeUpdateState == nil {

@@ -1,10 +1,11 @@
 package instrumentationconfig
 
 import (
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	instrumentorpredicate "github.com/odigos-io/odigos/instrumentor/controllers/utils/predicates"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	instrumentorpredicate "github.com/odigos-io/odigos/instrumentor/controllers/utils/predicates"
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {

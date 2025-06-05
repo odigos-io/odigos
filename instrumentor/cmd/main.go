@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	"github.com/go-logr/zapr"
+
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 
 	"github.com/odigos-io/odigos/instrumentor"

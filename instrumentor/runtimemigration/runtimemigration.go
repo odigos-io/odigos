@@ -7,6 +7,11 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
@@ -14,10 +19,6 @@ import (
 	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type MigrationRunnable struct {
@@ -31,7 +32,6 @@ func (m *MigrationRunnable) NeedLeaderElection() bool {
 }
 
 func (m *MigrationRunnable) Start(ctx context.Context) error {
-
 	var instrumentationConfigs v1alpha1.InstrumentationConfigList
 	err := m.KubeClient.List(ctx, &instrumentationConfigs, &client.ListOptions{})
 	if err != nil {
@@ -53,7 +53,6 @@ func (m *MigrationRunnable) Start(ctx context.Context) error {
 	//   },
 
 	for _, item := range instrumentationConfigs.Items {
-
 		IcName := item.GetName()
 		IcNamespace := item.GetNamespace()
 		workloadName, workloadType, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(IcName)
@@ -112,7 +111,6 @@ func (m *MigrationRunnable) fetchAndProcessDeployments(ctx context.Context, kube
 		}
 
 		for _, dep := range deployments.Items {
-
 			// Checking if the deployment is in the list of deployments that need to be processed
 			if !contains(workloadNames, dep.Name) {
 				continue
@@ -150,7 +148,6 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 		}
 
 		for _, sts := range statefulSets.Items {
-
 			// Checking if the statefulset is in the list of statefulsets that need to be processed
 			if !contains(workloadNames, sts.Name) {
 				continue
@@ -174,7 +171,6 @@ func (m *MigrationRunnable) fetchAndProcessStatefulSets(ctx context.Context, kub
 			if err != nil {
 				m.Logger.Error(err, "Failed to handle deployment with retries", "Name", sts.GetName(), "Namespace", sts.GetNamespace())
 			}
-
 		}
 	}
 	return nil
@@ -216,6 +212,8 @@ func (m *MigrationRunnable) fetchAndProcessDaemonSets(ctx context.Context, kubeC
 	}
 	return nil
 }
+
+//nolint:unparam
 func handleContainerRuntimeDetailsUpdate(
 	containerObject corev1.Container,
 	originalWorkloadEnvVar *envoverwrite.OrigWorkloadEnvValues,
@@ -242,7 +240,6 @@ func handleContainerRuntimeDetailsUpdate(
 		// This temporary fix addresses the current bug and will be removed once the `envOverwriter` logic is deprecated following the post-webhook injection release.
 		shouldChangeUpdateStateToSucceeded := false
 		for envKey, envValue := range annotationEnvVarsForContainer {
-
 			if envValue == nil {
 				continue
 			}
@@ -259,7 +256,6 @@ func handleContainerRuntimeDetailsUpdate(
 				containerRuntimeDetails.EnvFromContainerRuntime = append(containerRuntimeDetails.EnvFromContainerRuntime,
 					v1alpha1.EnvVar{Name: envKey, Value: cleanedEnvValue})
 				shouldChangeUpdateStateToSucceeded = true
-
 			}
 		}
 		if shouldChangeUpdateStateToSucceeded { // ProcessingStateSucceeded is when values originally came from the Dockerfile
@@ -271,7 +267,6 @@ func handleContainerRuntimeDetailsUpdate(
 		// This addresses a bug in the runtime inspection for environment variables originating from the device.
 		// If the "Generation runtime detection" failed EnvFromContainerRuntime will include odigos additions this code we clean it.
 		if containerRuntimeDetails.RuntimeUpdateState != nil {
-
 			if *containerRuntimeDetails.RuntimeUpdateState == v1alpha1.ProcessingStateSucceeded {
 				filteredEnvVars := []v1alpha1.EnvVar{}
 
@@ -296,7 +291,6 @@ func handleContainerRuntimeDetailsUpdate(
 		}
 
 		for envKey, envValue := range annotationEnvVarsForContainer {
-
 			// The containerRuntimeDetails might already include the EnvFromContainerRuntime if the runtime inspection was executed before the migration modified the environment variables.
 			// In this case, we want to avoid overwriting the value set by Odiglet.
 			// This check is only for safety, as we have already skipped processed containers.
@@ -318,7 +312,6 @@ func handleContainerRuntimeDetailsUpdate(
 						state := v1alpha1.ProcessingStateSucceeded
 						containerRuntimeDetails.RuntimeUpdateState = &state
 					}
-
 				}
 			} else {
 				// If envKey exists and != nil, it indicates that the environment variable originally came from the manifest.
@@ -365,7 +358,6 @@ func getPodManifestContainerByName(podSpec *corev1.PodSpec, containerName string
 
 func revertOriginalEnvAnnotationInPlace(originalWorkloadEnvVar *envoverwrite.OrigWorkloadEnvValues, podSpec *corev1.PodSpec) {
 	for containerName, envVars := range originalWorkloadEnvVar.OrigManifestValues {
-
 		// find the container to update in the pod manifest
 		containerManifest := getPodManifestContainerByName(podSpec, containerName)
 		if containerManifest == nil {
@@ -377,7 +369,6 @@ func revertOriginalEnvAnnotationInPlace(originalWorkloadEnvVar *envoverwrite.Ori
 		// iterate on all the existing envs in the manifest and either remove or update them
 		newContainerEnvs := []corev1.EnvVar{}
 		for _, manifestEnvVar := range containerManifest.Env {
-
 			if !strings.Contains(manifestEnvVar.Value, k8sconsts.OdigosAgentsDirectory) {
 				// we only revert values that odigos overwrote,
 				// if the value is not odigos value, keep it as is

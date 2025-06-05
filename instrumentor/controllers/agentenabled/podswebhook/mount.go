@@ -4,9 +4,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/distros/distro"
-	corev1 "k8s.io/api/core/v1"
 )
 
 func MountDirectory(containerSpec *corev1.Container, dir string) {
@@ -32,7 +33,6 @@ func MountDirectory(containerSpec *corev1.Container, dir string) {
 }
 
 func MountPodVolume(pod *corev1.Pod) {
-
 	// make sure we are idempotent, not adding ourselves multiple times
 	for _, volume := range pod.Spec.Volumes {
 		if volume.Name == k8sconsts.OdigosAgentMountVolumeName {

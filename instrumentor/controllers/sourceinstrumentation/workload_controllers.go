@@ -45,7 +45,6 @@ func reconcileWorkload(
 	objKind k8sconsts.WorkloadKind,
 	key client.ObjectKey,
 	scheme *runtime.Scheme) (ctrl.Result, error) {
-
 	obj := workload.ClientObjectFromWorkloadKind(objKind)
 	err := k8sClient.Get(ctx, key, obj)
 	if err != nil {

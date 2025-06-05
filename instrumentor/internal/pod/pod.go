@@ -1,9 +1,10 @@
 package pod
 
 import (
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
-	corev1 "k8s.io/api/core/v1"
 )
 
 func AddOdigletInstalledAffinity(pod *corev1.Pod) {

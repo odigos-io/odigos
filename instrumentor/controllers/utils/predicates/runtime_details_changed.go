@@ -1,9 +1,10 @@
 package predicates
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 // RuntimeDetailsChangedPredicate is a predicate that checks if the runtime details of an InstrumentationConfig have changed.

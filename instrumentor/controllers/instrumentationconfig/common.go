@@ -10,7 +10,6 @@ import (
 )
 
 func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList) error {
-
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name)
 	if err != nil {
 		return err
@@ -97,7 +96,6 @@ func findOrCreateSdkLibraryConfig(sdkConfig *odigosv1alpha1.SdkConfig, library o
 	for i, libConfig := range sdkConfig.InstrumentationLibraryConfigs {
 		if libConfig.InstrumentationLibraryId.InstrumentationLibraryName == library.Name &&
 			libConfig.InstrumentationLibraryId.SpanKind == library.SpanKind {
-
 			// if already present, return a pointer to it which can be modified by the caller
 			return &sdkConfig.InstrumentationLibraryConfigs[i]
 		}
@@ -150,7 +148,6 @@ func mergeHttpHeadersCollectionrules(rule1 *instrumentationrules.HttpHeadersColl
 }
 
 func mergeHttpPayloadCollectionRules(rule1 *instrumentationrules.HttpPayloadCollection, rule2 *instrumentationrules.HttpPayloadCollection) *instrumentationrules.HttpPayloadCollection {
-
 	// nil means a rules has not yet been set, so return the other rule
 	if rule1 == nil {
 		return rule2

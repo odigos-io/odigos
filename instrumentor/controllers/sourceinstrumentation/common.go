@@ -27,7 +27,6 @@ func syncNamespaceWorkloads(
 	k8sClient client.Client,
 	runtimeScheme *runtime.Scheme,
 	namespace string) (ctrl.Result, error) {
-
 	collectiveRes := ctrl.Result{}
 	var errs error
 	for _, kind := range []k8sconsts.WorkloadKind{

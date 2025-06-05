@@ -75,3 +75,21 @@ go-licenses: $(LOCALBIN)
 licenses: go-licenses
 	rm -rf $(PWD)/licenses
 	$(LOCALBIN)/go-licenses save . --save_path=licenses
+
+# golangci-lint
+GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
+GOLANGCI_LINT_VERSION ?= v1.59.1
+
+.PHONY: golangci-lint
+golangci-lint: $(GOLANGCI_LINT)
+
+$(GOLANGCI_LINT): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+
+.PHONY: lint
+lint: golangci-lint
+	$(GOLANGCI_LINT) run -c .golangci.yml
+
+.PHONY: lint-fix
+lint-fix: golangci-lint
+	$(GOLANGCI_LINT) run -c .golangci.yml --fix

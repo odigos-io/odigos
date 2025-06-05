@@ -13,9 +13,6 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 	"github.com/odigos-io/odigos/instrumentor/controllers/workloadmigrations"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,6 +25,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
@@ -203,13 +204,13 @@ func RegisterWebhooks(mgr manager.Manager, dp *distros.Provider) error {
 	}
 
 	err = builder.
-	WebhookManagedBy(mgr).
-	For(&corev1.Pod{}).
-	WithDefaulter(&agentenabled.PodsWebhook{
-		Client:        mgr.GetClient(),
-		DistrosGetter: dp.Getter,
-	}).
-	Complete()
+		WebhookManagedBy(mgr).
+		For(&corev1.Pod{}).
+		WithDefaulter(&agentenabled.PodsWebhook{
+			Client:        mgr.GetClient(),
+			DistrosGetter: dp.Getter,
+		}).
+		Complete()
 	if err != nil {
 		return err
 	}

@@ -3,8 +3,9 @@ package runtimemigration
 import (
 	"strings"
 
-	"github.com/odigos-io/odigos/common"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/odigos-io/odigos/common"
 )
 
 func revertInstrumentationDevices(original *corev1.PodTemplateSpec) bool {
@@ -29,7 +30,6 @@ func revertInstrumentationDevices(original *corev1.PodTemplateSpec) bool {
 
 // RemoveInjectInstrumentationLabel removes the "odigos.io/inject-instrumentation" label if it exists.
 func removeInjectInstrumentationLabel(original *corev1.PodTemplateSpec) bool {
-
 	// odigosInjectInstrumentationLabel is the label used to enable the mutating webhook.
 	// it is removed in favor of running pods webhook for all pods, and never mutating deployment objects.
 	odigosInjectInstrumentationLabel := "odigos.io/inject-instrumentation"
