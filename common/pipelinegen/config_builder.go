@@ -98,7 +98,7 @@ func CalculateGatewayConfig(
 			case strings.HasPrefix(pipelineName, "traces/"):
 				// relevant only for traces signal
 				if smallBatchesEnabled {
-					pipeline.Processors = append(pipeline.Processors, "batch/small-batches")
+					pipeline.Processors = append(pipeline.Processors, consts.SmallBatchesProcessor)
 				}
 				tracesEnabled = true
 			case strings.HasPrefix(pipelineName, "metrics/"):
@@ -258,7 +258,7 @@ func filterSmallBatchesProcessor(tracesProcessors []string) ([]string, bool) {
 	var filtered []string
 
 	for _, processor := range tracesProcessors {
-		if processor == "batch/small-batches" {
+		if processor == consts.SmallBatchesProcessor {
 			smallBatchesEnabled = true
 			continue // skip adding it to filtered slice
 		}
