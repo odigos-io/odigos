@@ -29,8 +29,7 @@ Below are the ClusterRoles used by Odigos components.
 
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
-| \* | configmaps | \* | list |
-| odigos.io | sources | \* | get<br />list<br />delete |
+| odigos.io | sources | \* | list<br />delete |
 
 ### odigos-data-collection
 
@@ -124,7 +123,8 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
-| \* | configmaps | \* | get<br />delete |
+| \* | configmaps | odigos-deployment | get |
+| \* | configmaps | odigos-config | delete |
 
 ### odigos-data-collection
 
