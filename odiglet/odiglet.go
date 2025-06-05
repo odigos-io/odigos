@@ -12,6 +12,7 @@ import (
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
+	"github.com/odigos-io/odigos/k8sutils/pkg/metrics"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -21,6 +22,9 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
+
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/client-go/kubernetes"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -50,6 +54,15 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 	if err != nil {
 		return nil, fmt.Errorf("failed to create controller-runtime manager %w", err)
 	}
+
+	provider, err := metrics.NewMeterProviderForController(resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.K8SNodeName(env.Current.NodeName),
+	))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create OpenTelemetry MeterProvider: %w", err)
+	}
+	instrumentationMgrOpts.MeterProvider = provider
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		return nil, fmt.Errorf("unable to set up health check: %w", err)
