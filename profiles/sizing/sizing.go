@@ -1,26 +1,9 @@
 package sizing
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	"github.com/odigos-io/odigos/common"
 	profiles "github.com/odigos-io/odigos/profiles/profile"
 )
-
-var SizeProfilePriority = map[common.ProfileName]int{
-	SizeLProfile.ProfileName:  -2,
-	SizeMProfile.ProfileName:  -1,
-	SizeSProfile.ProfileName:  0,
-	SizeXSProfile.ProfileName: 1,
-}
-
-var ResourceRequirementsByProfile = map[common.ProfileName]corev1.ResourceRequirements{
-	SizeLProfile.ProfileName:  sizeLargeResources,
-	SizeMProfile.ProfileName:  sizeMediumResources,
-	SizeSProfile.ProfileName:  sizeSmallResources,
-	SizeXSProfile.ProfileName: sizeXSmallResources,
-}
 
 // Core component resource configurations for each size profile
 var (
@@ -224,57 +207,6 @@ var (
 	}
 )
 
-// Component resource requirements for each size profile
-var (
-	// XSmall (75% of small)
-	sizeXSmallResources = corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			"cpu":    resource.MustParse("375m"),
-			"memory": *resource.NewQuantity(402653184, resource.BinarySI), // 384Mi
-		},
-		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse("8m"),
-			"memory": *resource.NewQuantity(50331648, resource.BinarySI), // 48Mi
-		},
-	}
-
-	// Small (base size)
-	sizeSmallResources = corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			"cpu":    resource.MustParse("500m"),
-			"memory": *resource.NewQuantity(536870912, resource.BinarySI), // 512Mi
-		},
-		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse("10m"),
-			"memory": *resource.NewQuantity(67108864, resource.BinarySI), // 64Mi
-		},
-	}
-
-	// Medium (1.25x small)
-	sizeMediumResources = corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			"cpu":    resource.MustParse("625m"),
-			"memory": *resource.NewQuantity(671088640, resource.BinarySI), // 640Mi
-		},
-		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse("13m"),
-			"memory": *resource.NewQuantity(83886080, resource.BinarySI), // 80Mi
-		},
-	}
-
-	// Large (1.5x small)
-	sizeLargeResources = corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			"cpu":    resource.MustParse("750m"),
-			"memory": *resource.NewQuantity(805306368, resource.BinarySI), // 768Mi
-		},
-		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse("15m"),
-			"memory": *resource.NewQuantity(100663296, resource.BinarySI), // 96Mi
-		},
-	}
-)
-
 func modifySizingConfig(c *common.OdigosConfiguration,
 	clusterCollectorConfig common.CollectorGatewayConfiguration,
 	nodeCollectorConfig common.CollectorNodeConfiguration,
@@ -332,25 +264,4 @@ func hasResourceSettings(rc *common.ResourceConfig) bool {
 		rc.LimitMemoryMiB != 0 ||
 		rc.RequestCPUm != 0 ||
 		rc.LimitCPUm != 0
-}
-
-// GetResourceRequirementsFromProfiles determines resource requirements based on the provided profiles
-func GetResourceRequirementsFromProfiles(profileList []common.ProfileName) corev1.ResourceRequirements {
-	if len(profileList) == 0 {
-		return sizeSmallResources // Default to small if no profiles
-	}
-
-	// Track the highest priority profile (lower number = higher priority)
-	// Default to small if no profiles are provided
-	highestPriority := 999
-	currentProfile := SizeSProfile.ProfileName
-	for _, profile := range profileList {
-		if priority, exists := SizeProfilePriority[profile]; exists && priority < highestPriority {
-			highestPriority = priority
-			currentProfile = profile
-		}
-	}
-
-	// Return resources based on the highest priority profile found
-	return ResourceRequirementsByProfile[currentProfile]
 }
