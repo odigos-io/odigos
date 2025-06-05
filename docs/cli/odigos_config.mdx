@@ -24,13 +24,13 @@ Manage Odigos configuration settings to customize system behavior.
 	- "mount-method": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
 	- "container-runtime-socket-path": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
 	- "k8s-node-logs-directory": Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log).
-	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., {"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}
+	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., `{"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}`
 	- "agent-env-vars-injection-method": Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest.
 	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
 	- "instrumentation-auto-rollback-disabled": Disable auto rollback feature for failing instrumentations.
 	- "instrumentation-auto-rollback-grace-time": Grace time before uninstrumenting an application [default: 5m].
 	- "instrumentation-auto-rollback-stability-window": Time windows where the auto rollback can happen [default: 1h].
-	
+
 
 ### Options
 
