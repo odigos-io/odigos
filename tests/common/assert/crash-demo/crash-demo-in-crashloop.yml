@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: otel-crash-demo
+status:
+  phase: Running
+  containerStatuses:
+    - name: api
+      state:
+        waiting:
+          reason: CrashLoopBackOff
+      ready: false
+      started: false
