@@ -6,6 +6,7 @@ metadata:
   labels:
     odigos.io/e2e: source
     odigos.io/data-stream-stream-1: "true"
+    odigos.io/data-stream-stream-2: "true"
 spec:
   workload:
     name: frontend
@@ -34,7 +35,6 @@ metadata:
   labels:
     odigos.io/e2e: source
     odigos.io/data-stream-stream-1: "true"
-    odigos.io/data-stream-stream-2: "true"
 spec:
   workload:
     name: inventory
