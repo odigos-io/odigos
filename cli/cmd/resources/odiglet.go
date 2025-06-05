@@ -519,6 +519,38 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								},
 							},
 							Resources: corev1.ResourceRequirements{},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/healthz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: 8081,
+										},
+									},
+								},
+								InitialDelaySeconds: 15,
+								TimeoutSeconds:      0,
+								PeriodSeconds:       20,
+								SuccessThreshold:    0,
+								FailureThreshold:    0,
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/readyz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: 8081,
+										},
+									},
+								},
+								InitialDelaySeconds: 15,
+								TimeoutSeconds:      0,
+								PeriodSeconds:       20,
+								SuccessThreshold:    0,
+								FailureThreshold:    0,
+							},
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
 									Name:      "run-dir",
@@ -551,12 +583,16 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					},
 					DNSPolicy:          "ClusterFirstWithHostNet",
 					ServiceAccountName: k8sconsts.OdigletServiceAccountName,
-					HostNetwork:        true,
 					HostPID:            true,
 					PriorityClassName:  "system-node-critical",
 				},
 			},
 		},
+	}
+
+	// if inetrnal trffic policy is not yet supported in the cluster, fall back to host network
+	if k8sversionInCluster == nil || k8sversionInCluster.LessThan(k8sversion.MustParse("v1.26")) {
+		ds.Spec.Template.Spec.HostNetwork = true
 	}
 
 	return ds
@@ -593,6 +629,33 @@ func NewOdigletGoOffsetsConfigMap(ctx context.Context, client *kube.Client, ns s
 			k8sconsts.GoOffsetsFileName: goOffsetContent,
 		},
 	}, nil
+}
+
+func NewOdigletLocalTrafficService(ns string) *corev1.Service {
+	localTrafficPolicy := v1.ServiceInternalTrafficPolicyLocal
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigletLocalTrafficServiceName,
+			Namespace: ns,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "op-amp",
+					Port:       int32(consts.OpAMPPort),
+					TargetPort: intstr.FromInt(consts.OpAMPPort),
+				},
+			},
+			InternalTrafficPolicy: &localTrafficPolicy,
+		},
+	}
 }
 
 // used to inject the host volumes into odigos components for selinux update
@@ -689,6 +752,11 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		goOffsetConfigMap,
 	}
 
+	k8sVersion := cmdcontext.K8SVersionFromContext(ctx)
+	if k8sVersion != nil && k8sVersion.AtLeast(k8sversion.MustParse("v1.26")) {
+		resources = append(resources, NewOdigletLocalTrafficService(a.ns))
+	}
+
 	clusterKind := cmdcontext.ClusterKindFromContext(ctx)
 
 	// if openshift is enabled, we need to create additional SCC cluster role binding first
@@ -707,7 +775,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.OdigletImage, a.odigosTier, a.config.OpenshiftEnabled,
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
-				K8SVersion: cmdcontext.K8SVersionFromContext(ctx),
+				K8SVersion: k8sVersion,
 			}, a.config.CustomContainerRuntimeSocketPath, a.config.NodeSelector))
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)

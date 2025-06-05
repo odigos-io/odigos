@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: odigos-scheduler
+    odigos.io/system-object: "true"
   name: odigos-scheduler
   namespace: {{ .Release.Namespace }}
 spec:
@@ -57,6 +58,11 @@ spec:
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          periodSeconds: 10
         name: manager
         resources:
           limits:

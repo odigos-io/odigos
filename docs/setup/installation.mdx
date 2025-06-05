@@ -72,9 +72,19 @@ Before proceeding with the installation, ensure that you are targeting the corre
 
 ### Install Odigos
 
-```shell
-odigos install
-```
+<Tabs>
+  <Tab title="Community">
+    ```shell
+    odigos install
+    ```
+  </Tab>
+  <Tab title="Enterprise">
+  The enterprise version of Odigos requires a license token. Please contact the Odigos team to inquire about access to the Pro version.    
+  ```shell
+    odigos install --onprem-token $ODIGOS_TOKEN
+    ```
+  </Tab>
+</Tabs>
 
 This will install odigos in the `odigos-system` namespace in your kubernetes cluster.
 
@@ -94,9 +104,25 @@ helm repo add odigos https://odigos-io.github.io/odigos/
 
 ### Install Odigos
 
+<Tabs>
+  <Tab title="Community">
+    ```shell
+    helm repo update
+    helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace
+    ```
+  </Tab>
+  <Tab title="Enterprise">
+  The enterprise version of Odigos requires a license token. Please contact the Odigos team to inquire about access to the Pro version.    
+  ```shell
+    helm repo update
+  helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace --set onPremToken=$ODIGOS_TOKEN
+    ```
+  </Tab>
+</Tabs>
+
+Once all the Odigos pods are online, you will need to port-forward the ui service to load the Odigos UI.
 ```shell
-helm repo update
-helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace
+kubectl -n odigos-system port-forward svc/ui 3000:3000
 ```
 
 ## OpenShift Operator

@@ -4,6 +4,6 @@ metadata:
   name: odigos-own-telemetry-otel-config
   namespace: {{ .Release.Namespace }}
   labels:
-    odigos.io/system-object: 'true'
+    odigos.io/system-object: "true"
 data:
   OTEL_SDK_DISABLED: "true"

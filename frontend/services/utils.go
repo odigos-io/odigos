@@ -5,17 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"slices"
 	"sort"
 	"time"
 
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"slices"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/yaml"
 )
@@ -107,6 +108,26 @@ func RemoveStringFromSlice(slice []string, target string) []string {
 		}
 	}
 	return result
+}
+
+func TransformConditionStatus(condStatus metav1.ConditionStatus, condType string, condReason string) model.ConditionStatus {
+	var status model.ConditionStatus
+
+	switch condStatus {
+	case metav1.ConditionUnknown:
+		status = model.ConditionStatusLoading
+	case metav1.ConditionTrue:
+		status = model.ConditionStatusSuccess
+	case metav1.ConditionFalse:
+		status = model.ConditionStatusError
+	}
+
+	// force "disabled" status ovverrides for certain "reasons"
+	if v1alpha1.IsReasonStatusDisabled(condReason) {
+		status = model.ConditionStatusDisabled
+	}
+
+	return status
 }
 
 func SortConditions(conditions []*model.Condition) {

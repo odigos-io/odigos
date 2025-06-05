@@ -16,10 +16,12 @@ export const CRD_NAMES = {
     'addclusterinfos.actions.odigos.io',
     'deleteattributes.actions.odigos.io',
     'renameattributes.actions.odigos.io',
+    'piimaskings.actions.odigos.io',
     'errorsamplers.actions.odigos.io',
     'latencysamplers.actions.odigos.io',
     'probabilisticsamplers.actions.odigos.io',
-    'piimaskings.actions.odigos.io',
+    'servicenamesamplers.actions.odigos.io',
+    'spanattributesamplers.actions.odigos.io',
   ],
   INSTRUMENTATION_RULE: 'instrumentationrules.odigos.io',
 };
@@ -27,6 +29,7 @@ export const CRD_NAMES = {
 export const NAMESPACES = {
   DEFAULT: 'default',
   ODIGOS_SYSTEM: 'odigos-system',
+  ODIGOS_TEST: 'odigos-test',
 };
 
 export const SELECTED_ENTITIES = {
@@ -38,7 +41,18 @@ export const SELECTED_ENTITIES = {
     AUTOFILL_FIELD: 'JAEGER_URL',
     AUTOFILL_VALUE: 'jaeger.tracing:4317',
   },
-  ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'RenameAttribute', 'ErrorSampler', 'LatencySampler', 'ProbabilisticSampler', 'PiiMasking'],
+  ACTIONS: [
+    'K8sAttributesResolver',
+    'AddClusterInfo',
+    'DeleteAttribute',
+    'RenameAttribute',
+    'PiiMasking',
+    'ErrorSampler',
+    'LatencySampler',
+    'ProbabilisticSampler',
+    'ServiceNameSampler',
+    'SpanAttributeSampler',
+  ],
   INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };
 
