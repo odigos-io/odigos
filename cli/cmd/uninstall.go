@@ -806,7 +806,7 @@ func uninstallNamespace(ctx context.Context, client *kube.Client, ns, _ string) 
 func uninstallOdigosConfiguration(ctx context.Context, client *kube.Client, ns string) error {
 	err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosConfigurationName, metav1.DeleteOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to delete ConfigMap %s in namespace %s: %w", consts.OdigosConfigurationName, ns, err)
+		return fmt.Errorf("failed to delete Odigos configuration ConfigMap %s in namespace %s: %w", consts.OdigosConfigurationName, ns, err)
 	}
 
 	fmt.Printf("Deleted Odigos configuration ConfigMap %s in namespace %s\n", consts.OdigosConfigurationName, ns)
