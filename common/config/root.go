@@ -45,6 +45,7 @@ var availableConfigers = []Configer{
 	&GrafanaCloudTempo{},
 	&Greptime{},
 	&Groundcover{},
+	&Highlight{},
 	&Honeycomb{},
 	&HyperDX{},
 	&Instana{},
