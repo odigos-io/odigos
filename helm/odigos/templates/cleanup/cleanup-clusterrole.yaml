@@ -5,10 +5,7 @@ metadata:
   labels:
     odigos.io/system-object: "true"
 rules:
-- apiGroups: [""]
-  resources: ["configmaps"]
-  verbs: ["list"]
 - apiGroups: ["odigos.io"]
   resources: ["sources"]
-  verbs: ["get", "list", "delete"]
+  verbs: ["list", "delete"]
 
