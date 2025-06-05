@@ -2,7 +2,6 @@ package resources
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -10,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/profiles/sizing"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -422,16 +422,12 @@ func NewUIService(ns string) *corev1.Service {
 }
 
 func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
-	// Get resource requirements from config
-	resourceReqs := corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			"cpu":    resource.MustParse(fmt.Sprintf("%dm", u.config.Ui.ResourceConfig.LimitCPUm)),
-			"memory": resource.MustParse(fmt.Sprintf("%dMi", u.config.Ui.ResourceConfig.LimitMemoryMiB)),
-		},
-		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse(fmt.Sprintf("%dm", u.config.Ui.ResourceConfig.RequestCPUm)),
-			"memory": resource.MustParse(fmt.Sprintf("%dMi", u.config.Ui.ResourceConfig.RequestMemoryMiB)),
-		},
+	var resourceReqs corev1.ResourceRequirements
+
+	if u.config.Ui == nil {
+		resourceReqs = sizing.GetDefaultResourceRequirements()
+	} else {
+		resourceReqs = sizing.GetResourceRequirementsWithDefaults(u.config.Ui.ResourceConfig)
 	}
 
 	resources := []kube.Object{

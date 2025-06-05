@@ -2,7 +2,6 @@ package resources
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
@@ -11,12 +10,12 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/profiles/sizing"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -702,16 +701,12 @@ func NewInstrumentorResourceManager(client *kube.Client, ns string, config *comm
 func (a *instrumentorResourceManager) Name() string { return "Instrumentor" }
 
 func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) error {
-	// Get resource requirements from config
-	resourceReqs := corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			"cpu":    resource.MustParse(fmt.Sprintf("%dm", a.config.Instrumentor.ResourceConfig.LimitCPUm)),
-			"memory": resource.MustParse(fmt.Sprintf("%dMi", a.config.Instrumentor.ResourceConfig.LimitMemoryMiB)),
-		},
-		Requests: corev1.ResourceList{
-			"cpu":    resource.MustParse(fmt.Sprintf("%dm", a.config.Instrumentor.ResourceConfig.RequestCPUm)),
-			"memory": resource.MustParse(fmt.Sprintf("%dMi", a.config.Instrumentor.ResourceConfig.RequestMemoryMiB)),
-		},
+	var resourceReqs corev1.ResourceRequirements
+
+	if a.config.Instrumentor == nil {
+		resourceReqs = sizing.GetDefaultResourceRequirements()
+	} else {
+		resourceReqs = sizing.GetResourceRequirementsWithDefaults(a.config.Instrumentor.ResourceConfig)
 	}
 
 	resources := []kube.Object{

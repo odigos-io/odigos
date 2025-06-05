@@ -1,8 +1,12 @@
 package sizing
 
 import (
+	"fmt"
+
 	"github.com/odigos-io/odigos/common"
 	profiles "github.com/odigos-io/odigos/profiles/profile"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // Core component resource configurations for each size profile
@@ -246,4 +250,54 @@ func hasResourceSettings(rc *common.ResourceConfig) bool {
 		rc.LimitMemoryMiB != 0 ||
 		rc.RequestCPUm != 0 ||
 		rc.LimitCPUm != 0
+}
+
+// GetDefaultResourceRequirements returns the size_s resource requirements.
+// This is used as a fallback when a component's configuration is nil.
+func GetDefaultResourceRequirements() corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			"cpu":    resource.MustParse(fmt.Sprintf("%dm", sizeSCoreResources.LimitCPUm)),
+			"memory": resource.MustParse(fmt.Sprintf("%dMi", sizeSCoreResources.LimitMemoryMiB)),
+		},
+		Requests: corev1.ResourceList{
+			"cpu":    resource.MustParse(fmt.Sprintf("%dm", sizeSCoreResources.RequestCPUm)),
+			"memory": resource.MustParse(fmt.Sprintf("%dMi", sizeSCoreResources.RequestMemoryMiB)),
+		},
+	}
+}
+
+// GetResourceRequirementsWithDefaults converts a ResourceConfig to ResourceRequirements,
+// using size_s values for any fields that are 0.
+func GetResourceRequirementsWithDefaults(rc common.ResourceConfig) corev1.ResourceRequirements {
+	limitCPU := rc.LimitCPUm
+	if limitCPU == 0 {
+		limitCPU = sizeSCoreResources.LimitCPUm
+	}
+
+	limitMem := rc.LimitMemoryMiB
+	if limitMem == 0 {
+		limitMem = sizeSCoreResources.LimitMemoryMiB
+	}
+
+	reqCPU := rc.RequestCPUm
+	if reqCPU == 0 {
+		reqCPU = sizeSCoreResources.RequestCPUm
+	}
+
+	reqMem := rc.RequestMemoryMiB
+	if reqMem == 0 {
+		reqMem = sizeSCoreResources.RequestMemoryMiB
+	}
+
+	return corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			"cpu":    resource.MustParse(fmt.Sprintf("%dm", limitCPU)),
+			"memory": resource.MustParse(fmt.Sprintf("%dMi", limitMem)),
+		},
+		Requests: corev1.ResourceList{
+			"cpu":    resource.MustParse(fmt.Sprintf("%dm", reqCPU)),
+			"memory": resource.MustParse(fmt.Sprintf("%dMi", reqMem)),
+		},
+	}
 }
