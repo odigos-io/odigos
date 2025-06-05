@@ -87,11 +87,6 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				Resources: []string{"collectorsgroups/status"},
 				Verbs:     []string{"get"},
 			},
-			{ // Needed to wake the gateway collector (based on the presence of any destination)
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
 			{ // apply profiles
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"processors", "instrumentationrules"},
