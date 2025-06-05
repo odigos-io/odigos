@@ -30,8 +30,8 @@ var (
 		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
 			modifySizingConfig(c,
 				common.CollectorGatewayConfiguration{
-					MinReplicas:      1,
-					MaxReplicas:      4,
+					MinReplicas: 1,
+					MaxReplicas: 4,
 					ResourceConfig: common.ResourceConfig{
 						RequestCPUm:      113,
 						LimitCPUm:        225,
@@ -56,8 +56,8 @@ var (
 		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
 			modifySizingConfig(c,
 				common.CollectorGatewayConfiguration{
-					MinReplicas:      1,
-					MaxReplicas:      5,
+					MinReplicas: 1,
+					MaxReplicas: 5,
 					ResourceConfig: common.ResourceConfig{
 						RequestCPUm:      150,
 						LimitCPUm:        300,
@@ -82,8 +82,8 @@ var (
 		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
 			modifySizingConfig(c,
 				common.CollectorGatewayConfiguration{
-					MinReplicas:      2,
-					MaxReplicas:      8,
+					MinReplicas: 2,
+					MaxReplicas: 8,
 					ResourceConfig: common.ResourceConfig{
 						RequestCPUm:      500,
 						LimitCPUm:        1000,
@@ -108,8 +108,8 @@ var (
 		ModifyConfigFunc: func(c *common.OdigosConfiguration) {
 			modifySizingConfig(c,
 				common.CollectorGatewayConfiguration{
-					MinReplicas:      3,
-					MaxReplicas:      12,
+					MinReplicas: 3,
+					MaxReplicas: 12,
 					ResourceConfig: common.ResourceConfig{
 						RequestCPUm:      750,
 						LimitCPUm:        1250,
@@ -183,28 +183,30 @@ var (
 func modifySizingConfig(c *common.OdigosConfiguration,
 	clusterCollectorConfig common.CollectorGatewayConfiguration,
 	nodeCollectorConfig common.CollectorNodeConfiguration) {
-	// do not modify the configuration if any of the values if they are already set
-	if c.CollectorGateway != nil {
-		return
-	}
-	// the following is not very elegant.
-	// we only care if the sizing parameters are set, if the port is set, we apply it nevertheless
-	if c.CollectorNode != nil &&
-		(c.CollectorNode.RequestMemoryMiB != 0 ||
-			c.CollectorNode.LimitMemoryMiB != 0 ||
-			c.CollectorNode.RequestCPUm != 0 ||
-			c.CollectorNode.LimitCPUm != 0) {
-		return
+
+	// Check and apply gateway config if needed
+	if c.CollectorGateway == nil || !hasResourceSettings(&c.CollectorGateway.ResourceConfig) {
+		c.CollectorGateway = &clusterCollectorConfig
 	}
 
-	c.CollectorGateway = &clusterCollectorConfig
-	collectorNodeConfig := nodeCollectorConfig
-	if c.CollectorNode != nil {
-		// make sure we keep values unrelated to sizing
-		collectorNodeConfig.CollectorOwnMetricsPort = c.CollectorNode.CollectorOwnMetricsPort
-		collectorNodeConfig.K8sNodeLogsDirectory = c.CollectorNode.K8sNodeLogsDirectory
+	// Check and apply node collector config if needed
+	if c.CollectorNode == nil || !hasResourceSettings(&c.CollectorNode.ResourceConfig) {
+		collectorNodeConfig := nodeCollectorConfig
+		if c.CollectorNode != nil {
+			// make sure we keep values unrelated to sizing
+			collectorNodeConfig.CollectorOwnMetricsPort = c.CollectorNode.CollectorOwnMetricsPort
+			collectorNodeConfig.K8sNodeLogsDirectory = c.CollectorNode.K8sNodeLogsDirectory
+		}
+		c.CollectorNode = &collectorNodeConfig
 	}
-	c.CollectorNode = &collectorNodeConfig
+}
+
+// hasResourceSettings checks if any resource setting is configured in the ResourceConfig
+func hasResourceSettings(rc *common.ResourceConfig) bool {
+	return rc.RequestMemoryMiB != 0 ||
+		rc.LimitMemoryMiB != 0 ||
+		rc.RequestCPUm != 0 ||
+		rc.LimitCPUm != 0
 }
 
 // GetResourceRequirementsFromProfiles determines resource requirements based on the provided profiles
