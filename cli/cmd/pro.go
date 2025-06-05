@@ -248,26 +248,22 @@ var migrateCmd = &cobra.Command{
 
 		odigosConfig, err := resources.GetCurrentConfig(ctx, client, ns)
 		if err != nil {
-			fmt.Printf("Error getting config maps: %v\n", err)
-			return
+			fmt.Printf("Error reading odigos configuration: %v\n", err)
+			os.Exit(1)
 		}
+
 		if odigosConfig.KarpenterEnabled != nil && *odigosConfig.KarpenterEnabled {
-			fmt.Println("\033[31mERROR\033[0m Migration is not supported when Karpenter is installed.")
+			fmt.Println("\033[31mERROR\033[0m Migration is not supported when odigos is installed with 'KarpenterEnabled' option. uninstall odigos community and reinstall odigos with enterprise onprem token")
 			os.Exit(1)
 		}
 
 		managerOpts := resourcemanager.ManagerOpts{
 			ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
 		}
-		config, err := resources.GetCurrentConfig(ctx, client, ns)
-		if err != nil {
-			fmt.Println("Odigos pro migrate failed - unable to read current config.")
-			os.Exit(1)
-		}
 
 		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 		if err != nil {
-			fmt.Println("Odigos pro migrate failed - unable to get version ConfigMap.")
+			fmt.Println("Odigos pro migrate failed - unable to get odigos deployment ConfigMap.")
 			os.Exit(1)
 		}
 		odigosVersion := cm.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
@@ -278,7 +274,7 @@ var migrateCmd = &cobra.Command{
 
 		onPremToken := cmd.Flag("onprem-token").Value.String()
 		resourceManagers := resources.CreateResourceManagers(
-			client, ns, common.OnPremOdigosTier, &onPremToken, config, odigosVersion,
+			client, ns, common.OnPremOdigosTier, &onPremToken, odigosConfig, odigosVersion,
 			installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Synching")
@@ -287,7 +283,7 @@ var migrateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Println("Migration completed successfully.")
+		fmt.Println("Migration completed successfully. Odigos is upgraded to enterprise tier")
 	},
 }
 
