@@ -53,6 +53,19 @@ func CalculateGatewayConfig(
 	metricsEnabled := false
 	logsEnabled := false
 
+	// Configure processors
+	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(processors)
+	if errs != nil {
+		status.Processor = errs
+	}
+	for processorKey, processorCfg := range processorsCfg {
+		currentConfig.Processors[processorKey] = processorCfg
+	}
+
+	// TODO: this is a temporary solution to add the small batches processor to the destination pipelines
+	// we need to remove this once we have a proper way to processors per pipeline.
+	tracesProcessors, smallBatchesEnabled := filterSmallBatchesProcessor(tracesProcessors)
+
 	unifiedDestinationPipelineNames := []string{}
 	for _, dest := range dests {
 		configer, exists := configers[dest.GetType()]
@@ -79,18 +92,24 @@ func CalculateGatewayConfig(
 			pipeline.Receivers = []string{connectorName}
 			// every destination pipeline should have a generic batch processor
 			pipeline.Processors = []string{consts.GenericBatchProcessor}
-			// save the updated pipeline with the new receiver
-			currentConfig.Service.Pipelines[pipelineName] = pipeline
 
 			// track which signals are enabled based on the destination pipeline names
 			switch {
 			case strings.HasPrefix(pipelineName, "traces/"):
+				// relevant only for traces signal
+				if smallBatchesEnabled {
+					pipeline.Processors = append(pipeline.Processors, "batch/small-batches")
+				}
 				tracesEnabled = true
 			case strings.HasPrefix(pipelineName, "metrics/"):
 				metricsEnabled = true
 			case strings.HasPrefix(pipelineName, "logs/"):
 				logsEnabled = true
 			}
+
+			// save the updated pipeline with the new receiver
+			currentConfig.Service.Pipelines[pipelineName] = pipeline
+
 		}
 	}
 
@@ -111,15 +130,6 @@ func CalculateGatewayConfig(
 	groupPipelines := buildDataStreamPipelines(groupDetails, destForwardConnectors)
 	for name, pipe := range groupPipelines {
 		currentConfig.Service.Pipelines[name] = pipe
-	}
-
-	// Configure processors
-	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(processors)
-	if errs != nil {
-		status.Processor = errs
-	}
-	for processorKey, processorCfg := range processorsCfg {
-		currentConfig.Processors[processorKey] = processorCfg
 	}
 
 	// Create root pipelines for each signal and connectors
@@ -243,4 +253,19 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 			Extensions: []string{"health_check", "pprof"},
 		},
 	}
+}
+
+func filterSmallBatchesProcessor(tracesProcessors []string) ([]string, bool) {
+	smallBatchesEnabled := false
+	var filtered []string
+
+	for _, processor := range tracesProcessors {
+		if processor == "batch/small-batches" {
+			smallBatchesEnabled = true
+			continue // skip adding it to filtered slice
+		}
+		filtered = append(filtered, processor)
+	}
+
+	return filtered, smallBatchesEnabled
 }
