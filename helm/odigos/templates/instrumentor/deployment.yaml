@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: odigos-instrumentor
+    odigos.io/system-object: "true"
   name: odigos-instrumentor
   namespace: {{ .Release.Namespace }}
 spec:
@@ -67,7 +68,7 @@ spec:
                 key: odigos-onprem-token
           {{- end }}
         volumeMounts:
-          - name: webhook-cert
+          - name: instrumentor-webhooks-cert
             mountPath: /tmp/k8s-webhook-server/serving-certs
             readOnly: true
         envFrom:
@@ -99,9 +100,9 @@ spec:
         runAsNonRoot: true
       serviceAccountName: odigos-instrumentor
       volumes:
-        - name: webhook-cert
+        - name: instrumentor-webhooks-cert
           secret:
-            secretName: webhook-cert
+            secretName: instrumentor-webhooks-cert
             defaultMode: 420
       terminationGracePeriodSeconds: 10
 {{- if .Values.imagePullSecrets }}

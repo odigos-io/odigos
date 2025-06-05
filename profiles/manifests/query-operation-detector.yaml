@@ -8,7 +8,9 @@ spec:
   processorName: query-operation-detector
   notes: "Auto generated rule from query-operation-detector profile. Do not edit."
   processorConfig: {}
+  # Should be after the semconv processor
+  orderHint: 150
   signals:
   - TRACES
   collectorRoles:
-  - CLUSTER_GATEWAY  
+  - CLUSTER_GATEWAY

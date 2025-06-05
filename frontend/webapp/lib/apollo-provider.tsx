@@ -4,7 +4,7 @@ import { type FC, type PropsWithChildren } from 'react';
 import { API } from '@/utils';
 import { onError } from '@apollo/client/link/error';
 import { ApolloLink, HttpLink } from '@apollo/client';
-import { ApolloNextAppProvider, InMemoryCache, ApolloClient, SSRMultipartLink } from '@apollo/experimental-nextjs-app-support';
+import { ApolloNextAppProvider, InMemoryCache, ApolloClient, SSRMultipartLink } from '@apollo/client-integration-nextjs';
 
 const makeClient = () => {
   const httpLink = new HttpLink({

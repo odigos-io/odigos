@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: otel-crash-demo
+status:
+  phase: Running
+  containerStatuses:
+    - name: api
+      state:
+        waiting:
+          reason: CrashLoopBackOff
+      ready: false
+      started: false
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-otel-crash-demo
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: otel-crash-demo
+spec:
+  agentInjectionEnabled: true
+  containers:
+  - agentEnabled: true
+    containerName: api
+    otelDistroName: nodejs-community
+  sdkConfigs:
+  - language: javascript
+    payloadCollection: {}
+  serviceName: otel-crash-demo
+status:
+  (status.rollbackOccurred || `false`): false
+  runtimeDetailsByContainer:
+  - containerName: api
+    language: javascript
+    runtimeUpdateState: Succeeded
+    runtimeVersion: 20.19.2
+    secureExecutionMode: false

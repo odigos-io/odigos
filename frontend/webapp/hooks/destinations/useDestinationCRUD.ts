@@ -5,22 +5,31 @@ import { mapFetchedDestinations } from '@/utils';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import { useEntityStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 import { CREATE_DESTINATION, DELETE_DESTINATION, UPDATE_DESTINATION } from '@/graphql/mutations';
+import { useDataStreamStore, useEntityStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 import { Crud, EntityTypes, StatusType, type Destination, type DestinationFormData } from '@odigos/ui-kit/types';
 
 interface UseDestinationCrud {
   destinations: Destination[];
   destinationsLoading: boolean;
   fetchDestinations: () => void;
-  createDestination: (destination: DestinationFormData) => void;
-  updateDestination: (id: string, destination: DestinationFormData) => void;
-  deleteDestination: (id: string) => void;
+  createDestination: (destination: DestinationFormData) => Promise<void>;
+  updateDestination: (id: string, destination: DestinationFormData) => Promise<void>;
+  deleteDestination: (id: string) => Promise<void>;
 }
+
+const mapNoUndefinedFields = (destination: DestinationFormData, selectedStreamName: string) => ({
+  ...destination,
+  fields: destination.fields.filter(({ value }) => value !== undefined),
+
+  // TODO: uncomment when Data Streams are ready to use
+  currentStreamName: '', // selectedStreamName,
+});
 
 export const useDestinationCRUD = (): UseDestinationCrud => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
+  const { selectedStreamName } = useDataStreamStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { destinationsLoading, setEntitiesLoading, destinations, addEntities, removeEntities } = useEntityStore();
 
@@ -28,7 +37,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     addNotification({ type, title, message, crdType: EntityTypes.Destination, target: id ? getSseTargetFromId(id, EntityTypes.Destination) : undefined, hideFromHistory });
   };
 
-  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }>(GET_DESTINATIONS);
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }, {}>(GET_DESTINATIONS);
 
   const fetchDestinations = async () => {
     setEntitiesLoading(EntityTypes.Destination, true);
@@ -65,7 +74,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     },
   });
 
-  const [mutateDelete] = useMutation<{ deleteDestination: boolean }, { id: string }>(DELETE_DESTINATION, {
+  const [mutateDelete] = useMutation<{ deleteDestination: boolean }, { id: string; currentStreamName: string }>(DELETE_DESTINATION, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Delete, error.cause?.message || error.message),
     onCompleted: (res, req) => {
       const id = req?.variables?.id as string;
@@ -75,29 +84,36 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     },
   });
 
-  const createDestination: UseDestinationCrud['createDestination'] = (destination) => {
+  const createDestination: UseDestinationCrud['createDestination'] = async (destination) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
-      mutateCreate({ variables: { destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+      await mutateCreate({ variables: { destination: mapNoUndefinedFields(destination, selectedStreamName) } });
     }
   };
 
-  const updateDestination: UseDestinationCrud['updateDestination'] = (id, destination) => {
+  const updateDestination: UseDestinationCrud['updateDestination'] = async (id, destination) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       notifyUser(StatusType.Default, 'Pending', 'Updating destination...', undefined, true);
       addPendingItems([{ entityType: EntityTypes.Destination, entityId: id }]);
-      mutateUpdate({ variables: { id, destination: { ...destination, fields: destination.fields.filter(({ value }) => value !== undefined) } } });
+      await mutateUpdate({ variables: { id, destination: mapNoUndefinedFields(destination, selectedStreamName) } });
     }
   };
 
-  const deleteDestination: UseDestinationCrud['deleteDestination'] = (id) => {
+  const deleteDestination: UseDestinationCrud['deleteDestination'] = async (id) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
-      mutateDelete({ variables: { id } });
+      await mutateDelete({
+        variables: {
+          id,
+
+          // TODO: uncomment when Data Streams are ready to use
+          currentStreamName: '', // selectedStreamName
+        },
+      });
     }
   };
 

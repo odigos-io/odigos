@@ -2,6 +2,7 @@ package centralodigos
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -11,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type centralBackendResourceManager struct {
@@ -29,6 +31,7 @@ func (m *centralBackendResourceManager) Name() string { return k8sconsts.Central
 func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) error {
 	return m.client.ApplyResources(ctx, 1, []kube.Object{
 		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion),
+		NewCentralBackendService(m.ns),
 	}, m.managerOpts)
 }
 
@@ -85,4 +88,40 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string) *ap
 			},
 		},
 	}
+}
+
+func NewCentralBackendService(ns string) *corev1.Service {
+	portInt, err := strconv.Atoi(k8sconsts.CentralBackendPort)
+	if err != nil {
+		portInt = 8081
+	}
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.CentralBackendName,
+			Namespace: ns,
+			Labels: map[string]string{
+				"app": k8sconsts.CentralBackendAppName,
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeClusterIP,
+			Selector: map[string]string{
+				"app": k8sconsts.CentralBackendAppName,
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Port:       int32(portInt),
+					TargetPort: intstrFromInt(portInt),
+				},
+			},
+		},
+	}
+}
+
+func intstrFromInt(val int) intstr.IntOrString {
+	return intstr.IntOrString{Type: intstr.Int, IntVal: int32(val)}
 }

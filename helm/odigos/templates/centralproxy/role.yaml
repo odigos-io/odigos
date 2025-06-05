@@ -4,6 +4,8 @@ kind: Role
 metadata:
   name: central-proxy
   namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]

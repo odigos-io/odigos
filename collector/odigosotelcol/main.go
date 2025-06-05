@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	envprovider "go.opentelemetry.io/collector/confmap/provider/envprovider"
-	odigosfileprovider "go.opentelemetry.io/collector/odigos/providers/odigosfileprovider"
+	odigosk8scmprovider "go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider"
 	"go.opentelemetry.io/collector/otelcol"
 )
 
@@ -17,7 +17,7 @@ func main() {
 	info := component.BuildInfo{
 		Command:     "odigosotelcol",
 		Description: "OpenTelemetry Collector for Odigos",
-		Version:     "0.121.0",
+		Version:     "0.126.0",
 	}
 
 	set := otelcol.CollectorSettings{
@@ -26,14 +26,14 @@ func main() {
 		ConfigProviderSettings: otelcol.ConfigProviderSettings{
 			ResolverSettings: confmap.ResolverSettings{
 				ProviderFactories: []confmap.ProviderFactory{
-					odigosfileprovider.NewFactory(),
 					envprovider.NewFactory(),
+					odigosk8scmprovider.NewFactory(),
 				},
 			},
 		},
 		ProviderModules: map[string]string{
-			odigosfileprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/odigos/providers/odigosfileprovider v0.121.0",
-			envprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme():        "go.opentelemetry.io/collector/confmap/provider/envprovider v0.121.0",
+			envprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme():         "go.opentelemetry.io/collector/confmap/provider/envprovider v0.126.0",
+			odigosk8scmprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider v0.126.0",
 		},
 		ConverterModules: []string{},
 	}

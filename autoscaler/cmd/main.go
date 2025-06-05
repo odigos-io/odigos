@@ -18,13 +18,21 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
+	"github.com/open-policy-agent/cert-controller/pkg/rotator"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
@@ -35,6 +43,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -42,6 +51,7 @@ import (
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 
@@ -53,6 +63,7 @@ import (
 
 	googlecloudmetadata "cloud.google.com/go/compute/metadata"
 
+	"net/http"
 	_ "net/http/pprof"
 )
 
@@ -123,6 +134,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// remove the deprecated webhook secret if it exists
+	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: logger, Secret: types.NamespacedName{
+		Namespace: env.GetCurrentNamespace(),
+		Name:      k8sconsts.DeprecatedAutoscalerWebhookSecretName,
+	}})
+
 	collectorImage := defaultCollectorImage
 	if collectorImageEnv, ok := os.LookupEnv("ODIGOS_COLLECTOR_IMAGE"); ok {
 		collectorImage = collectorImageEnv
@@ -140,26 +157,107 @@ func main() {
 		setupLog.Info("Running on GKE")
 	}
 
+	rotatorSetupFinished := make(chan struct{})
+	err = rotator.AddRotator(mgr, &rotator.CertRotator{
+		SecretKey: types.NamespacedName{
+			Namespace: env.GetCurrentNamespace(),
+			Name:      k8sconsts.AutoscalerWebhookSecretName,
+		},
+		CertDir: filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs"),
+		IsReady: rotatorSetupFinished,
+		CAName:  k8sconsts.AutoscalerCAName,
+		Webhooks: []rotator.WebhookInfo{
+			{Name: k8sconsts.AutoscalerActionValidatingWebhookName, Type: rotator.Validating},
+		},
+		DNSName: "serving-cert",
+		ExtraDNSNames: []string{
+			fmt.Sprintf("%s.%s.svc", k8sconsts.AutoScalerWebhookServiceName, env.GetCurrentNamespace()),
+			fmt.Sprintf("%s.%s.svc.cluster.local", k8sconsts.AutoScalerWebhookServiceName, env.GetCurrentNamespace()),
+		},
+		EnableReadinessCheck: true,
+
+		// marking the controller as the owner of the webhooks config updated fields.
+		// this avoid CI/CD systems overwriting the managed fields.
+		FieldOwner: k8sconsts.AutoScalerWebhookFieldOwner,
+
+		// these are the defaults, but we set them explicitly for clarity
+		CaCertDuration:         10 * 365 * 24 * time.Hour, // 10 years
+		ServerCertDuration:     1 * 365 * 24 * time.Hour,  // 1 year
+		RotationCheckFrequency: 12 * time.Hour,            // 12 hours
+		LookaheadInterval:      90 * 24 * time.Hour,       // 90 days
+	})
+	if err != nil {
+		setupLog.Error(err, "unable to add cert rotator")
+		os.Exit(1)
+	}
+
 	commonconfig.ControllerConfig = &controllerconfig.ControllerConfig{
 		K8sVersion:     k8sVersion,
 		CollectorImage: collectorImage,
 		OnGKE:          onGKE,
 	}
 
-	// wire up the controllers and webhooks
+	// wire up the controllers
 	err = controllers.SetupWithManager(mgr, imagePullSecrets, odigosVersion)
 	if err != nil {
 		setupLog.Error(err, "unable to create odigos controllers")
 		os.Exit(1)
 	}
 
+	webhooksRegistered := atomic.Bool{}
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error {
+		return mgr.GetWebhookServer().StartedChecker()(req)
+	}); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
+	}
+
+	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error {
+		if !webhooksRegistered.Load() {
+			return errors.New("webhooks not registered yet")
+		}
+		return nil
+	}); err != nil {
+		setupLog.Error(err, "unable to set up cert rotator check")
+		os.Exit(1)
+	}
+
+	g, groupCtx := errgroup.WithContext(ctx)
+	// start kube manager
+	g.Go(func() error {
+		err := mgr.Start(groupCtx)
+		if err != nil {
+			setupLog.Error(err, "error starting kube manager")
+		} else {
+			setupLog.V(0).Info("Kube manager exited")
+		}
+		return err
+	})
+
+	// register webhooks after the certificate is ready
+	g.Go(func() error {
+		select {
+		case <-rotatorSetupFinished:
+		case <-groupCtx.Done():
+			return nil
+		}
+		setupLog.V(0).Info("Cert rotator is ready")
+		err := controllers.RegisterWebhooks(mgr)
+		if err != nil {
+			return err
+		}
+		webhooksRegistered.Store(true)
+		setupLog.V(0).Info("Webhooks registered")
+		return nil
+	})
+
+	err = g.Wait()
+	if err != nil {
+		setupLog.Error(err, "Instrumentor exited with error")
 	}
 
 	setupLog.Info("starting manager")

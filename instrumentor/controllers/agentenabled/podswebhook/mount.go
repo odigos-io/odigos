@@ -1,6 +1,7 @@
 package podswebhook
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -11,8 +12,8 @@ import (
 func MountDirectory(containerSpec *corev1.Container, dir string) {
 	// TODO: assuming the directory always starts with {{ODIGOS_AGENTS_DIR}}. This should be validated.
 	// Should we return errors here to validate static values?
-	relativePath := strings.TrimPrefix(dir, distro.AgentPlaceholderDirectory+"/")
 	absolutePath := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, k8sconsts.OdigosAgentsDirectory)
+	relativePath := filepath.Base(absolutePath)
 
 	// make sure we are idempotent, not adding ourselves multiple times
 	for _, volumeMount := range containerSpec.VolumeMounts {

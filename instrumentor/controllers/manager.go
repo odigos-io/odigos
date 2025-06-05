@@ -139,6 +139,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 					// all instrumentation configs are managed by this controller
 					// and should be pulled into the cache
 				},
+				&corev1.Secret{}: {
+					Field: nsSelector,
+				},
 			},
 		},
 	}
@@ -181,10 +184,11 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider) error {
 		return fmt.Errorf("failed to create controller for workload migrations: %w", err)
 	}
 
-	// TODO: this webhook is relevant for both the startlangdetection and deleteinstrumentationconfig controllers
-	// we are planning to combine these controllers into a single controller in the future,
-	// so we can move this webhook to that combined controller
-	err = builder.
+	return nil
+}
+
+func RegisterWebhooks(mgr manager.Manager, dp *distros.Provider) error {
+	err := builder.
 		WebhookManagedBy(mgr).
 		For(&odigosv1.Source{}).
 		WithDefaulter(&SourcesDefaulter{
@@ -194,6 +198,18 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider) error {
 			Client: mgr.GetClient(),
 		}).
 		Complete()
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+	WebhookManagedBy(mgr).
+	For(&corev1.Pod{}).
+	WithDefaulter(&agentenabled.PodsWebhook{
+		Client:        mgr.GetClient(),
+		DistrosGetter: dp.Getter,
+	}).
+	Complete()
 	if err != nil {
 		return err
 	}

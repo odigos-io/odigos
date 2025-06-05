@@ -11,7 +11,7 @@ spec:
     trace_statements:
       - context: span
         statements:
-        - replace_pattern(name, "uid:[^\\s]+", "uid:{uid}") where instrumentation_scope.name == "io.opentelemetry.quartz-2.0"
+        - replace_pattern(span.name, "uid:[^\\s]+", "uid:{uid}") where instrumentation_scope.name == "io.opentelemetry.quartz-2.0"
   signals:
     - TRACES
   collectorRoles:

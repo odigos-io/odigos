@@ -61,13 +61,25 @@ func NewFilteredProcessorInformer(client versioned.Interface, namespace string, 
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.OdigosV1alpha1().Processors(namespace).List(context.TODO(), options)
+				return client.OdigosV1alpha1().Processors(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.OdigosV1alpha1().Processors(namespace).Watch(context.TODO(), options)
+				return client.OdigosV1alpha1().Processors(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.OdigosV1alpha1().Processors(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.OdigosV1alpha1().Processors(namespace).Watch(ctx, options)
 			},
 		},
 		&apiodigosv1alpha1.Processor{},

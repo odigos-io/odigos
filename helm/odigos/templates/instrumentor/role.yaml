@@ -3,6 +3,8 @@ kind: Role
 metadata:
   name: odigos-instrumentor
   namespace: '{{ .Release.Namespace }}'
+  labels:
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - ''
@@ -46,3 +48,28 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    resourceNames:
+      - instrumentor-webhooks-cert
+    verbs:
+      - update
+# migration from the old webhook cert - this can be removed once we are confident that the old secrets have been deleted
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    resourceNames:
+      - webhook-cert
+    verbs:
+      - delete

@@ -4,8 +4,8 @@ import React, { useCallback, useMemo, type PropsWithChildren } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import styled from 'styled-components';
-import { useSSE, useTokenTracker } from '@/hooks';
 import { EntityTypes } from '@odigos/ui-kit/types';
+import { useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
 import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
 import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
 import { DataFlowActionsMenu, NavIconIds, SideNav, ToastList } from '@odigos/ui-kit/containers';
@@ -13,7 +13,7 @@ import { DataFlowActionsMenu, NavIconIds, SideNav, ToastList } from '@odigos/ui-
 const PageContent = styled(FlexColumn)`
   width: 100%;
   height: 100vh;
-  background-color: ${({ theme }) => theme.colors.primary};
+  background-color: ${({ theme }) => theme.colors?.primary};
   align-items: center;
 `;
 
@@ -24,7 +24,7 @@ const ContentWithActions = styled.div`
 `;
 
 const ContentUnderActions = styled(FlexRow)`
-  align-items: flex-start;
+  align-items: flex-start !important;
   justify-content: space-between;
   padding-left: 12px;
   width: calc(100% - 12px);
@@ -68,6 +68,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
   // call important hooks that should run on page-mount
   useSSE();
   useTokenTracker();
+  const { updateDataStream, deleteDataStream } = useDataStreamsCRUD();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -89,7 +90,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
         <OverviewHeader />
 
         <ContentWithActions>
-          <DataFlowActionsMenu addEntity={entityType} />
+          <DataFlowActionsMenu addEntity={entityType} onClickNewDataStream={() => router.push(ROUTES.CHOOSE_STREAM)} updateDataStream={updateDataStream} deleteDataStream={deleteDataStream} />
           <ContentUnderActions>
             <SideNav defaultSelectedId={selectedId} onClickId={onClickId} />
             {children}

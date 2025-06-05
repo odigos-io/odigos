@@ -12,11 +12,11 @@ type ObjectNamePredicate struct {
 	AllowedObjectName string
 }
 
-func (o ObjectNamePredicate) Create(e event.CreateEvent) bool {
+func (i ObjectNamePredicate) Create(e event.CreateEvent) bool {
 	if e.Object == nil {
 		return false
 	}
-	return e.Object.GetName() == o.AllowedObjectName
+	return e.Object.GetName() == i.AllowedObjectName
 }
 
 func (i ObjectNamePredicate) Update(e event.UpdateEvent) bool {

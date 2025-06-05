@@ -1,12 +1,22 @@
 # TODO(edenfed): Commented out linters are good and we should enable them in the future.
 # Let's enable them one by one and fix the issues they find.
+version: "2"
 run:
   concurrency: 4
   timeout: 2m
   tests: false
 
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+      - github.com/odigos-io
+
 linters:
-  disable-all: true
+  default: none
   enable:
     - nilerr
     - nilnesserr
@@ -20,11 +30,8 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
     # - revive
     - gosec
-    - gosimple
     - govet
     - ineffassign
     - lll
@@ -32,59 +39,50 @@ linters:
     - nakedret
     - staticcheck
     # - stylecheck
-    - typecheck
     - unconvert
     - unparam
     - whitespace
     - unused
-
-linters-settings:
-  dupl:
-    threshold: 200
-  goconst:
-    min-len: 6
-    min-occurrences: 3
-  misspell:
-    locale: US
-  lll:
-    line-length: 150
-  goimports:
-    local-prefixes: github.com/odigos-io
-  gocritic:
-    settings:
-      hugeParam:
-        sizeThreshold: 100
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - ifElseChain
-      - unnamedResult
-      - paramTypeCombine
-  funlen:
-    lines: 110
-    statements: 60
-  whitespace:
-    multi-if: false
-    multi-func: false
-  gosec:
-    includes:
-      - G401
-      - G306
-      - G110
-      - G111
-      - G114
-      - G112
-    excludes:
-      - G204
-      - G101
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - unparam
-        - funlen
+  settings:
+    dupl:
+      threshold: 200
+    goconst:
+      min-len: 6
+      min-occurrences: 3
+    misspell:
+      locale: US
+    lll:
+      line-length: 150
+    staticcheck:
+      checks: ["all", "-ST1005", "-ST1003", "-ST1021", "-ST1022", "-ST1000", "-ST1008", "-ST1020"]
+    gocritic:
+      settings:
+        hugeParam:
+          sizeThreshold: 100
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+      disabled-checks:
+        - ifElseChain
+        - unnamedResult
+        - paramTypeCombine
+    funlen:
+      lines: 110
+      statements: 60
+    whitespace:
+      multi-if: false
+      multi-func: false
+    gosec:
+      includes:
+        - G401
+        - G306
+        - G110
+        - G111
+        - G114
+        - G112
+      excludes:
+        - G204
+        - G101

@@ -1,0 +1,19 @@
+{{- if .Values.onPremToken }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: central-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: central-backend
+spec:
+  selector:
+    app.kubernetes.io/name: central-backend
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8081
+      targetPort: 8081
+
+{{- end }}

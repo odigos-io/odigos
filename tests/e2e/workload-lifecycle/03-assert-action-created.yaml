@@ -75,17 +75,6 @@ spec:
               (memory != null): true
             limits:
               (memory != null): true
-          volumeMounts:
-            - mountPath: /conf
-              name: collector-conf
-      volumes:
-        - configMap:
-            defaultMode: 420
-            items:
-              - key: collector-conf
-                path: collector-conf.yaml
-            name: odigos-gateway
-          name: collector-conf
 status:
   availableReplicas: 1
   readyReplicas: 1

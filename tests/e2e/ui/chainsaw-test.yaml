@@ -11,7 +11,11 @@ spec:
         - script:
             timeout: 3m
             content: |
-              ../../../cli/odigos install --version e2e-test
+              ../../../cli/odigos install --version e2e-test --namespace odigos-test
+              ../../common/verify_odigos_installation.sh odigos-test
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
 
     - name: Install - Simple Demo Apps
       try:

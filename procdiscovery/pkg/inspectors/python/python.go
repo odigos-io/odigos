@@ -30,7 +30,7 @@ const (
 var pythonExeRegex = regexp.MustCompile(`^python(\d+(\.\d+)?)?$`)
 
 func (p *PythonInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	baseExe := filepath.Base(pcx.Details.ExePath)
+	baseExe := filepath.Base(pcx.ExePath)
 
 	if pythonExeRegex.MatchString(baseExe) {
 		return common.PythonProgrammingLanguage, true
@@ -66,7 +66,7 @@ func (p *PythonInspector) isLibPythonLinked(pcx *process.ProcessContext) bool {
 	if err != nil {
 		return false
 	}
-	defer elfFile.Close()
+	defer elfFile.Close() // nolint:errcheck // we can't do anything if it fails
 
 	dynamicSection, err := elfFile.DynString(elf.DT_NEEDED)
 	if err != nil {

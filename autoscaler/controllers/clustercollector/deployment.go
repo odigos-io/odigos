@@ -133,29 +133,17 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 				},
 				Spec: corev1.PodSpec{
 					NodeSelector: nodeSelector,
-					Volumes: []corev1.Volume{
-						{
-							Name: k8sconsts.OdigosClusterCollectorConfigMapKey,
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: gateway.Name,
-									},
-									Items: []corev1.KeyToPath{
-										{
-											Key:  k8sconsts.OdigosClusterCollectorConfigMapKey,
-											Path: fmt.Sprintf("%s.yaml", k8sconsts.OdigosClusterCollectorConfigMapKey),
-										},
-									},
-								},
-							},
-						},
-					},
+					ServiceAccountName: k8sconsts.OdigosClusterCollectorDeploymentName,
 					Containers: []corev1.Container{
 						{
-							Name:    containerName,
-							Image:   commonconfig.ControllerConfig.CollectorImage,
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosClusterCollectorConfigMapKey)},
+							Name:  containerName,
+							Image: commonconfig.ControllerConfig.CollectorImage,
+							Command: []string{containerCommand, fmt.Sprintf("--config=%s:%s/%s/%s",
+								k8sconsts.OdigosCollectorConfigMapProviderScheme,
+								gateway.Namespace,
+								k8sconsts.OdigosClusterCollectorConfigMapName,
+								k8sconsts.OdigosClusterCollectorConfigMapKey),
+							},
 							EnvFrom: getSecretsFromDests(dests),
 							// Add the ODIGOS_VERSION environment variable from the ConfigMap
 							Env: []corev1.EnvVar{
@@ -198,12 +186,6 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 							},
 							SecurityContext: &corev1.SecurityContext{
 								AllowPrivilegeEscalation: boolPtr(false),
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      k8sconsts.OdigosClusterCollectorConfigMapKey,
-									MountPath: confDir,
-								},
 							},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{

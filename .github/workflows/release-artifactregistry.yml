@@ -80,7 +80,7 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           access_token_lifetime: 1200s
-        
+
       - name: Login to Artifact Registry
         uses: docker/login-action@v3
         with:
@@ -90,7 +90,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.24"
 
       - uses: actions/setup-node@v4
         with:

@@ -229,24 +229,8 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					NodeSelector:       odigletDaemonsetPodSpec.NodeSelector,
 					Affinity:           odigletDaemonsetPodSpec.Affinity,
 					Tolerations:        odigletDaemonsetPodSpec.Tolerations,
-					ServiceAccountName: k8sconsts.OdigosNodeCollectorDaemonSetName,
+					ServiceAccountName: k8sconsts.OdigosNodeCollectorServiceAccountName,
 					Volumes: append([]corev1.Volume{
-						{
-							Name: k8sconsts.OdigosNodeCollectorConfigMapKey,
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: datacollection.Name,
-									},
-									Items: []corev1.KeyToPath{
-										{
-											Key:  k8sconsts.OdigosNodeCollectorConfigMapKey,
-											Path: fmt.Sprintf("%s.yaml", k8sconsts.OdigosNodeCollectorConfigMapKey),
-										},
-									},
-								},
-							},
-						},
 						{
 							Name: "varlog",
 							VolumeSource: corev1.VolumeSource{
@@ -274,14 +258,15 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					}, additionalVolumes...),
 					Containers: []corev1.Container{
 						{
-							Name:    containerName,
-							Image:   common.ControllerConfig.CollectorImage,
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s/%s.yaml", confDir, k8sconsts.OdigosNodeCollectorConfigMapKey)},
+							Name:  containerName,
+							Image: common.ControllerConfig.CollectorImage,
+							Command: []string{containerCommand, fmt.Sprintf("--config=%s:%s/%s/%s",
+								k8sconsts.OdigosCollectorConfigMapProviderScheme,
+								datacollection.Namespace,
+								k8sconsts.OdigosNodeCollectorConfigMapName,
+								k8sconsts.OdigosNodeCollectorConfigMapKey),
+							},
 							VolumeMounts: append([]corev1.VolumeMount{
-								{
-									Name:      k8sconsts.OdigosNodeCollectorConfigMapKey,
-									MountPath: confDir,
-								},
 								{
 									Name:      "varlibdockercontainers",
 									MountPath: "/var/lib/docker/containers",

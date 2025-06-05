@@ -179,8 +179,6 @@ status:
     - containerName: java-supported-docker-env
       language: java
       envFromContainerRuntime:
-        - name: JAVA_OPTS
-          value: "-Dthis.does.not.exist=true"
         - name: LD_PRELOAD
           value: ""
       runtimeVersion: 17.0.12+7

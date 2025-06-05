@@ -61,13 +61,25 @@ func NewFilteredSpanAttributeSamplerInformer(client versioned.Interface, namespa
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ActionsV1alpha1().SpanAttributeSamplers(namespace).List(context.TODO(), options)
+				return client.ActionsV1alpha1().SpanAttributeSamplers(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ActionsV1alpha1().SpanAttributeSamplers(namespace).Watch(context.TODO(), options)
+				return client.ActionsV1alpha1().SpanAttributeSamplers(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.ActionsV1alpha1().SpanAttributeSamplers(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.ActionsV1alpha1().SpanAttributeSamplers(namespace).Watch(ctx, options)
 			},
 		},
 		&apiactionsv1alpha1.SpanAttributeSampler{},

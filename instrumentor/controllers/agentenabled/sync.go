@@ -13,6 +13,7 @@ import (
 	distroTypes "github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -46,8 +47,13 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 		return ctrl.Result{}, listErr
 	}
 
+	conf, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	for _, ic := range allInstrumentationConfigs.Items {
-		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp)
+		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, &conf)
 		if err != nil || !res.IsZero() {
 			return res, err
 		}
@@ -56,7 +62,7 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 	return ctrl.Result{}, nil
 }
 
-func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider) (ctrl.Result, error) {
+func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, conf *common.OdigosConfiguration) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName)
@@ -76,7 +82,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		if apierrors.IsNotFound(err) {
 			// instrumentation config is deleted, trigger a rollout for the associated workload
 			// this should happen once per workload, as the instrumentation config is deleted
-			_, res, err := rollout.Do(ctx, c, nil, pw)
+			_, res, err := rollout.Do(ctx, c, nil, pw, nil)
 			return res, err
 		}
 		return ctrl.Result{}, err
@@ -102,7 +108,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	}
 
 	agentEnabledChanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
-	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw)
+	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw, conf)
 
 	if rolloutChanged || agentEnabledChanged {
 		updateErr := c.Status().Update(ctx, &ic)
@@ -122,7 +128,6 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider) (*agentInjectedStatusCondition, error) {
-
 	cg, irls, effectiveConfig, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
@@ -145,9 +150,12 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	defaultDistrosPerLanguage := distroProvider.GetDefaultDistroNames()
 	distroPerLanguage := applyRulesForDistros(defaultDistrosPerLanguage, irls, distroProvider.Getter)
 
+	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff we'd like to stop
+	// instrumentating it and to disable future instrumentation of this service
+	crashDetected := ic.Status.RollbackOccurred
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	for _, containerRuntimeDetails := range ic.Status.RuntimeDetailsByContainer {
-		currentContainerConfig := containerInstrumentationConfig(containerRuntimeDetails.ContainerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter)
+		currentContainerConfig := containerInstrumentationConfig(containerRuntimeDetails.ContainerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -172,7 +180,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	if len(instrumentedContainerNames) > 0 {
 		// if any instrumented containers are found, the pods webhook should process pods for this workload.
 		// set the AgentInjectionEnabled to true to signal that.
-		ic.Spec.AgentInjectionEnabled = true
+		ic.Spec.AgentInjectionEnabled = !crashDetected
 		agentsDeploymentHash, err := rollout.HashForContainersConfig(containersConfig)
 		if err != nil {
 			return nil, err
@@ -213,7 +221,8 @@ func containerInstrumentationConfig(containerName string,
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails odigosv1.RuntimeDetailsByContainer,
 	distroPerLanguage map[common.ProgrammingLanguage]string,
-	distroGetter *distros.Getter) odigosv1.ContainerAgentConfig {
+	distroGetter *distros.Getter,
+	crashDetected bool) odigosv1.ContainerAgentConfig {
 
 	// check unknown language first. if language is not supported, we can skip the rest of the checks.
 	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
@@ -331,6 +340,17 @@ func containerInstrumentationConfig(containerName string,
 		}
 	}
 
+	if crashDetected {
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:       containerName,
+			AgentEnabled:        false,
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonCrashLoopBackOff,
+			AgentEnabledMessage: "Pods entered CrashLoopBackOff; instrumentation disabled",
+			OtelDistroName:      distroName,
+			DistroParams:        distroParameters,
+		}
+	}
+
 	// check for presence of other agents
 	if runtimeDetails.OtherAgent != nil {
 		if effectiveConfig.AllowConcurrentAgents == nil || !*effectiveConfig.AllowConcurrentAgents {
@@ -341,6 +361,7 @@ func containerInstrumentationConfig(containerName string,
 				AgentEnabledMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent '%s' detected running in the container", runtimeDetails.OtherAgent.Name),
 			}
 		} else {
+
 			return odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
 				AgentEnabled:        true,
@@ -352,14 +373,13 @@ func containerInstrumentationConfig(containerName string,
 		}
 	}
 
-	containerConfig := odigosv1.ContainerAgentConfig{
+	return odigosv1.ContainerAgentConfig{
 		ContainerName:  containerName,
 		AgentEnabled:   true,
 		OtelDistroName: distroName,
 		DistroParams:   distroParameters,
 	}
 
-	return containerConfig
 }
 
 func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,

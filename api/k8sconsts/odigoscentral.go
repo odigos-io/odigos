@@ -54,3 +54,8 @@ const (
 const (
 	OdigosSystemLabelCentralKey = "odigos.io/central-system-object"
 )
+
+const (
+	CentralBackendPort = "8081"
+	CentralUIPort      = "3000"
+)

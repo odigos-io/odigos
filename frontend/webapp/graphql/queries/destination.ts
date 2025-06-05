@@ -58,6 +58,7 @@ export const GET_DESTINATIONS = gql`
       destinations {
         id
         name
+        dataStreamNames
         fields
         exportedSignals {
           logs

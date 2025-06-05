@@ -23,6 +23,9 @@ const (
 	GoOffsetsFileName  = "go_offset_results.json"
 	GoOffsetsEnvVar    = "OTEL_GO_OFFSETS_FILE"
 	OffsetFileMountPath = "/offsets"
+
+	OdigletLocalTrafficServiceName = "odiglet-local"
+	OdigletMetricsServerPort       = 8080
 )
 
 var OdigletOSSInstalled = map[string]string{

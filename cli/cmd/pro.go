@@ -8,6 +8,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -17,6 +20,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 
 	"github.com/spf13/cobra"
@@ -164,7 +168,12 @@ odigos pro update-offsets --default
 			cm.Data = make(map[string]string)
 		}
 
-		cm.Data[k8sconsts.GoOffsetsFileName] = string(data)
+		escaped, err := json.Marshal(string(data))
+		if err != nil {
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to encode json string: %s", err))
+			os.Exit(1)
+		}
+		cm.Data[k8sconsts.GoOffsetsFileName] = string(escaped)
 		_, err = client.Clientset.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
 		if err != nil {
 			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Go offsets ConfigMap: %s", err))
@@ -211,16 +220,73 @@ var centralInstallCmd = &cobra.Command{
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		onPremToken := cmd.Flag("onprem-token").Value.String()
-		if onPremToken == "" {
-			fmt.Println("\033[31mERROR\033[0m onprem-token is required")
-			os.Exit(1)
-		}
-
 		if err := installCentralBackendAndUI(ctx, client, proNamespaceFlag, onPremToken); err != nil {
 			fmt.Println("\033[31mERROR\033[0m Failed to install Odigos central:")
 			fmt.Println(err)
 			os.Exit(1)
 		}
+	},
+}
+
+var activateCmd = &cobra.Command{
+	Use:   "activate",
+	Short: "Activate the Odigos Enterprise tier from the Community Edition",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		ns, err := resources.GetOdigosNamespace(client, ctx)
+		if resources.IsErrNoOdigosNamespaceFound(err) {
+			fmt.Println("\033[31mERROR\033[0m no odigos installation found in the current cluster")
+			os.Exit(1)
+		} else if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Starting activation of Enterprise tier from Community...")
+
+		odigosConfig, err := resources.GetCurrentConfig(ctx, client, ns)
+		if err != nil {
+			fmt.Printf("Error reading odigos configuration: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Since Karpenter uses a different labeling system that has no separation between OSS and enterprise,
+		// we want to avoid potential user apps from crashing in case they are scheduled on a node where the
+		// enterprise files are not yet found in the /var/odigos mount.
+		if odigosConfig.KarpenterEnabled != nil && *odigosConfig.KarpenterEnabled {
+			fmt.Println("\033[31mERROR\033[0m Activation is not supported when odigos is installed with 'KarpenterEnabled' option. uninstall odigos community and reinstall odigos with enterprise onprem token")
+			os.Exit(1)
+		}
+
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+		}
+
+		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Println("Odigos pro activate failed - unable to get odigos deployment ConfigMap.")
+			os.Exit(1)
+		}
+		odigosVersion := cm.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
+		if odigosVersion == "" {
+			fmt.Println("Odigos pro activate failed - missing version info.")
+			os.Exit(1)
+		}
+
+		onPremToken := cmd.Flag("onprem-token").Value.String()
+		resourceManagers := resources.CreateResourceManagers(
+			client, ns, common.OnPremOdigosTier, &onPremToken, odigosConfig, odigosVersion,
+			installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
+
+		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Synching")
+		if err != nil {
+			fmt.Println("Odigos pro activate failed - unable to apply resources.")
+			os.Exit(1)
+		}
+
+		fmt.Println("Activation completed successfully. Odigos is upgraded to enterprise tier")
 	},
 }
 
@@ -262,13 +328,80 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 	if err := createOdigosCentralSecret(ctx, client, ns, onPremToken); err != nil {
 		return err
 	}
-	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, OdigosVersion)
+	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag)
 	if err := resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating"); err != nil {
 		return fmt.Errorf("failed to install Odigos central: %w", err)
 	}
 
 	fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos central installed.\n")
 	return nil
+}
+
+var portForwardCentralCmd = &cobra.Command{
+	Use:   "ui",
+	Short: "Port-forward Odigos Central UI and Backend to localhost",
+	Long:  "Port-forward the Central UI (port 3000) and Central Backend (port 8081) to localhost to enable local access to Odigos UI.",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx, cancel := context.WithCancel(cmd.Context())
+		defer cancel()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		var wg sync.WaitGroup
+
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+		backendPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralBackendAppName)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot find backend pod: %v\n", err)
+			os.Exit(1)
+		}
+		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend")
+		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUILabelAppValue)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot find UI pod: %v\n", err)
+			cancel()
+			wg.Wait()
+			os.Exit(1)
+		}
+
+		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI")
+
+		fmt.Printf("Odigos Central UI is available at: http://localhost:%s\n", k8sconsts.CentralUIPort)
+		fmt.Printf("Press Ctrl+C to stop\n")
+
+		<-sigCh
+		fmt.Println("\nReceived interrupt. Stopping port forwarding...")
+		cancel()
+		wg.Wait()
+	},
+}
+
+func startPortForward(wg *sync.WaitGroup, ctx context.Context, pod *corev1.Pod, client *kube.Client, port string, name string) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := kube.PortForwardWithContext(ctx, pod, client, port, "localhost"); err != nil {
+			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
+		}
+	}()
+}
+
+func findPodWithAppLabel(ctx context.Context, client *kube.Client, ns, appLabel string) (*corev1.Pod, error) {
+	pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("app=%s", appLabel),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(pods.Items) != 1 {
+		return nil, fmt.Errorf("expected 1 pod for app=%s, got %d", appLabel, len(pods.Items))
+	}
+	pod := &pods.Items[0]
+	if pod.Status.Phase != corev1.PodRunning {
+		return nil, fmt.Errorf("pod %s is not running", pod.Name)
+	}
+	return pod, nil
 }
 
 func init() {
@@ -280,11 +413,17 @@ func init() {
 
 	proCmd.AddCommand(offsetsCmd)
 	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
-
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
 	centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
+	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
+	centralCmd.AddCommand(portForwardCentralCmd)
+	// migrate subcommand
+	proCmd.AddCommand(activateCmd)
+	activateCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
+	activateCmd.MarkFlagRequired("onprem-token")
+
 }

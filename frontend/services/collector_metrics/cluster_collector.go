@@ -13,9 +13,9 @@ const (
 	// These metrics are added to each exporter. And are provided by the collector exporterhelper.
 	// These are not stable and may change in the future.
 	// Using these metrics, we can estimate the amount of data sent by each exporter.
-	exporterSentSpansMetricName   = "otelcol_exporter_sent_spans"
-	exporterSentMetricsMetricName = "otelcol_exporter_sent_metric_points"
-	exporterSentLogsMetricName    = "otelcol_exporter_sent_log_records"
+	exporterSentSpansMetricName   = "otelcol_exporter_sent_spans_total"
+	exporterSentMetricsMetricName = "otelcol_exporter_sent_metric_points_total"
+	exporterSentLogsMetricName    = "otelcol_exporter_sent_log_records_total"
 
 	// Each metrics from the exporters has this attribute which is the name of the exporter.
 	exporterMetricAttributesKey  = "exporter"
@@ -24,9 +24,9 @@ const (
 	// Each processor comes with `otelcol_processor_incoming_items` and `otelcol_processor_outgoing_items` metrics.
 	// but since we need our processor anyway, we use our custom metrics from it to reduce the handling of breaking changes by the collector.
 	// These metrics are used to estimate the average size of spans/metrics/logs.
-	processorAcceptedSpansMetricName   = "otelcol_odigos_accepted_spans"
-	processorAcceptedMetricsMetricName = "otelcol_odigos_accepted_metric_points"
-	processorAcceptedLogsMetricName    = "otelcol_odigos_accepted_log_records"
+	processorAcceptedSpansMetricName   = "otelcol_odigos_accepted_spans_total"
+	processorAcceptedMetricsMetricName = "otelcol_odigos_accepted_metric_points_total"
+	processorAcceptedLogsMetricName    = "otelcol_odigos_accepted_log_records_total"
 )
 
 type destinationsMetrics struct {
