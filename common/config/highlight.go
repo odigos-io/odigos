@@ -10,7 +10,8 @@ func (j *Highlight) DestType() common.DestinationType {
 	return common.HighlightDestinationType
 }
 
-func (j *Highlight) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) error {
+func (j *Highlight) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
+	var pipelineNames []string
 	uniqueUri := "highlight-" + dest.GetID()
 
 	exporterName := "otlp/" + uniqueUri
@@ -26,6 +27,7 @@ func (j *Highlight) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
 	if isLoggingEnabled(dest) {
@@ -33,7 +35,8 @@ func (j *Highlight) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		currentConfig.Service.Pipelines[pipeName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, pipeName)
 	}
 
-	return nil
+	return pipelineNames, nil
 }
