@@ -13,6 +13,7 @@ rules:
     verbs:
       - get
       - list
+  {{- if ne .Values.ui.uiMode "readonly" }}
   - apiGroups:
       - ''
     resources:
@@ -20,12 +21,11 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
       - create
       - patch
       - update
       - delete
-      {{- end }}
+  {{- end }}
   - apiGroups:
       - odigos.io
     resources:
