@@ -46,7 +46,22 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
-		ns, err := resources.GetOdigosNamespace(client, ctx)
+		nsFlag, err := cmd.Flags().GetString("namespace")
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
+			os.Exit(1)
+		}
+		var ns string
+		if nsFlag != "" {
+			ns = nsFlag
+		} else {
+			ns, err = resources.GetOdigosNamespace(client, ctx)
+			if err != nil && !resources.IsErrNoOdigosNamespaceFound(err) {
+				fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already uninstalled: %s\n", err)
+				os.Exit(1)
+			}
+		}
+
 		if err != nil && !resources.IsErrNoOdigosNamespaceFound(err) {
 			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already uninstalled: %s\n", err)
 			os.Exit(1)
@@ -90,8 +105,10 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 					// (or the corresponding effective-config).
 					// As a workaround, we explicitly delete it here, and let helm delete all other resources.
 					uninstallOdigosConfiguration(ctx, client, ns)
-					return 
+					fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources and odigos configuration ConfigMap successfuly\n")
+					return
 				}
+				fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources successfuly\n")
 				return
 			}
 
@@ -192,7 +209,7 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 func namespaceHasOdigosLabel(ctx context.Context, client *kube.Client, ns string) (bool, error) {
 	nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
-		return false, err 
+		return false, err
 	}
 
 	if nsObj.Labels != nil {
@@ -787,25 +804,12 @@ func uninstallNamespace(ctx context.Context, client *kube.Client, ns, _ string) 
 }
 
 func uninstallOdigosConfiguration(ctx context.Context, client *kube.Client, ns string) error {
-	list, err := client.CoreV1().ConfigMaps(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
-			MatchLabels: labels.OdigosSystem,
-		}),
-	})
+	err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosConfigurationName, metav1.DeleteOptions{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to delete ConfigMap %s in namespace %s: %w", consts.OdigosConfigurationName, ns, err)
 	}
 
-	for _, cm := range list.Items {
-		if cm.Name == consts.OdigosConfigurationName {
-			err := client.CoreV1().ConfigMaps(ns).Delete(ctx, cm.Name, metav1.DeleteOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to delete ConfigMap %s in namespace %s: %w", cm.Name, ns, err)
-			}
-			fmt.Printf("Deleted Odigos configuration ConfigMap %s in namespace %s\n", cm.Name, ns)
-		}
-	}
-
+	fmt.Printf("Deleted Odigos configuration ConfigMap %s in namespace %s\n", consts.OdigosConfigurationName, ns)
 	return nil
 }
 
@@ -822,4 +826,6 @@ func init() {
 	uninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	uninstallCmd.Flags().Bool("no-wait", false, "skip waiting for pods to rollout without instrumentation")
 	uninstallCmd.Flags().Bool("instrumentation-only", false, "only remove instrumentation from workloads, without removing the entire Odigos setup")
+	uninstallCmd.Flags().String("namespace", "", "namespace to uninstall Odigos from (overrides auto-detection)")
+
 }
