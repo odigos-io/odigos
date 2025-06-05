@@ -66,11 +66,11 @@ spec:
         name: manager
         resources:
           limits:
-            cpu: 500m
-            memory: 512Mi
+            cpu: {{ .Values.scheduler.limitCPUm }}m
+            memory: {{ .Values.scheduler.limitMemoryMiB }}Mi
           requests:
-            cpu: 10m
-            memory: 64Mi
+            cpu: {{ .Values.scheduler.requestCPUm }}m
+            memory: {{ .Values.scheduler.requestMemoryMiB }}Mi
         securityContext:
           allowPrivilegeEscalation: false
       securityContext:
