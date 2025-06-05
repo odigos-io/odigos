@@ -65,9 +65,6 @@ var (
 						LimitCPUm:        225,
 					},
 				},
-				common.OdigletConfiguration{
-					ResourceConfig: sizeXSCoreResources,
-				},
 				common.InstrumentorConfiguration{
 					ResourceConfig: sizeXSCoreResources,
 				},
@@ -105,9 +102,6 @@ var (
 						RequestCPUm:      150,
 						LimitCPUm:        300,
 					},
-				},
-				common.OdigletConfiguration{
-					ResourceConfig: sizeSCoreResources,
 				},
 				common.InstrumentorConfiguration{
 					ResourceConfig: sizeSCoreResources,
@@ -147,9 +141,6 @@ var (
 						LimitCPUm:        500,
 					},
 				},
-				common.OdigletConfiguration{
-					ResourceConfig: sizeMCoreResources,
-				},
 				common.InstrumentorConfiguration{
 					ResourceConfig: sizeMCoreResources,
 				},
@@ -188,9 +179,6 @@ var (
 						LimitCPUm:        750,
 					},
 				},
-				common.OdigletConfiguration{
-					ResourceConfig: sizeLCoreResources,
-				},
 				common.InstrumentorConfiguration{
 					ResourceConfig: sizeLCoreResources,
 				},
@@ -210,7 +198,6 @@ var (
 func modifySizingConfig(c *common.OdigosConfiguration,
 	clusterCollectorConfig common.CollectorGatewayConfiguration,
 	nodeCollectorConfig common.CollectorNodeConfiguration,
-	odigletConfig common.OdigletConfiguration,
 	instrumentorConfig common.InstrumentorConfiguration,
 	autoscalerConfig common.AutoscalerConfiguration,
 	schedulerConfig common.SchedulerConfiguration,
@@ -230,11 +217,6 @@ func modifySizingConfig(c *common.OdigosConfiguration,
 			collectorNodeConfig.K8sNodeLogsDirectory = c.CollectorNode.K8sNodeLogsDirectory
 		}
 		c.CollectorNode = &collectorNodeConfig
-	}
-
-	// Check and apply Odiglet config if needed
-	if c.Odiglet == nil || !hasResourceSettings(&c.Odiglet.ResourceConfig) {
-		c.Odiglet = &odigletConfig
 	}
 
 	// Check and apply Instrumentor config if needed

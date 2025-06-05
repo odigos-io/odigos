@@ -85,10 +85,6 @@ type CollectorGatewayConfiguration struct {
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 }
 
-type OdigletConfiguration struct {
-	ResourceConfig `json:",inline"`
-}
-
 type InstrumentorConfiguration struct {
 	ResourceConfig `json:",inline"`
 }
@@ -126,7 +122,6 @@ type OdigosConfiguration struct {
 	SkipWebhookIssuerCreation        bool                           `json:"skipWebhookIssuerCreation,omitempty"`
 	CollectorGateway                 *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
 	CollectorNode                    *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
-	Odiglet                          *OdigletConfiguration          `json:"odiglet,omitempty"`
 	Instrumentor                     *InstrumentorConfiguration     `json:"instrumentor,omitempty"`
 	Autoscaler                       *AutoscalerConfiguration       `json:"autoscaler,omitempty"`
 	Scheduler                        *SchedulerConfiguration        `json:"scheduler,omitempty"`
