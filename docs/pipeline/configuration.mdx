@@ -27,25 +27,7 @@ Odigos offers two main options for configuring the pipeline:
 To use profiles, you need to use the [Odigos CLI Command for Profiles](/cli/odigos_profile).<br />
 This simplifies the setup process and ensures optimized settings for typical use cases.
 
-Sizing Profiles `size_xs`, `size_s`, `size_m`, `size_l` are pre-defined configurations designed to simplify pipeline configurations. Each profile specifies the following parameters:
-
-**Cluster Gateway Collector**:
-
-| Profile  | Minimum Replicas      | HPA Maximum Replicas      | Request CPU (m)      | Limit CPU (m)      | Request Memory (Mi) | Limit Memory (Mi) |
-|----------|-----------------------|----------------------|-----------------|---------------|----------------------|-------------------|
-| `size_xs` | **1**                | **4**                | **113m**        | **225m**      | **225Mi**            | **225Mi**         |
-| `size_s` | **1**                 | **5**                | **150m**        | **300m**      | **300Mi**            | **300Mi**         |
-| `size_m` | **2**                 | **8**                | **500m**        | **1000m**     | **500Mi**            | **600Mi**         |
-| `size_l` | **3**                 | **12**               | **750m**        | **1250m**     | **750Mi**            | **850Mi**        |
-
-**Node Data Collection Collector**:
-
-| Profile  | Request Memory (Mi)  | Limit Memory (Mi) | Request CPU (m)      | Limit CPU (m)
-|----------|----------------------|-------------------| ---------------------|-------------------|
-| `size_xs` | **113Mi**            | **225Mi**         | **113m**             | **225m**         |
-| `size_s` | **150Mi**            | **300Mi**         | **150m**             | **300m**         |
-| `size_m` | **250Mi**            | **500Mi**         | **250m**             | **500m**         |
-| `size_l` | **500Mi**            | **750Mi**         | **500m**             | **750m**         |
+Sizing Profiles `size_xs`, `size_s`, `size_m`, `size_l` are pre-defined configurations designed to simplify pipeline configurations.
 
 <Note>
   These sizing profiles also affect the resource requirements of core Odigos components (autoscaler, instrumentor, scheduler, and UI).
