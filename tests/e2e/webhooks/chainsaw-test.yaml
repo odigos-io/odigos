@@ -19,6 +19,7 @@ spec:
               ../../common/verify_odigos_installation.sh odigos-test
             timeout: 4m
         - assert:
+            timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
     - name: "[Defaulting] - Source without labels has labels added"
       try:
