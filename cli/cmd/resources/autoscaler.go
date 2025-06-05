@@ -9,7 +9,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/profiles/sizing"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -546,9 +545,9 @@ func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) erro
 	var resourceReqs corev1.ResourceRequirements
 
 	if a.config.Autoscaler == nil {
-		resourceReqs = sizing.GetDefaultResourceRequirements()
+		resourceReqs = GetDefaultResourceRequirements()
 	} else {
-		resourceReqs = sizing.GetResourceRequirementsWithDefaults(a.config.Autoscaler.ResourceConfig)
+		resourceReqs = GetResourceRequirementsWithDefaults(a.config.Autoscaler.ResourceConfig)
 	}
 
 	resources := []kube.Object{

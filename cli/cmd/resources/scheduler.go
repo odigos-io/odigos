@@ -9,7 +9,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/profiles/sizing"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -326,9 +325,9 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 	var resourceReqs corev1.ResourceRequirements
 
 	if a.config.Scheduler == nil {
-		resourceReqs = sizing.GetDefaultResourceRequirements()
+		resourceReqs = GetDefaultResourceRequirements()
 	} else {
-		resourceReqs = sizing.GetResourceRequirementsWithDefaults(a.config.Scheduler.ResourceConfig)
+		resourceReqs = GetResourceRequirementsWithDefaults(a.config.Scheduler.ResourceConfig)
 	}
 
 	resources := []kube.Object{
