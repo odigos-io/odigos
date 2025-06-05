@@ -54,6 +54,16 @@ func PrepareNodeForOdigosInstallation(clientset *kubernetes.Clientset, nodeName 
 		if node.Labels == nil {
 			node.Labels = make(map[string]string)
 		}
+
+		// For migration between tiers: ensure only the correct odiglet label is set
+		// by removing the other tier's label if it exists.
+		switch labelKey {
+		case k8sconsts.OdigletOSSInstalledLabel:
+			delete(node.Labels, k8sconsts.OdigletEnterpriseInstalledLabel)
+		case k8sconsts.OdigletEnterpriseInstalledLabel:
+			delete(node.Labels, k8sconsts.OdigletOSSInstalledLabel)
+		}
+
 		node.Labels[labelKey] = k8sconsts.OdigletInstalledLabelValue
 
 		_, err = clientset.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})

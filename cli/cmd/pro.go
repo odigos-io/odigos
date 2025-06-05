@@ -20,6 +20,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 
 	"github.com/spf13/cobra"
@@ -219,16 +220,73 @@ var centralInstallCmd = &cobra.Command{
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		onPremToken := cmd.Flag("onprem-token").Value.String()
-		if onPremToken == "" {
-			fmt.Println("\033[31mERROR\033[0m onprem-token is required")
-			os.Exit(1)
-		}
-
 		if err := installCentralBackendAndUI(ctx, client, proNamespaceFlag, onPremToken); err != nil {
 			fmt.Println("\033[31mERROR\033[0m Failed to install Odigos central:")
 			fmt.Println(err)
 			os.Exit(1)
 		}
+	},
+}
+
+var activateCmd = &cobra.Command{
+	Use:   "activate",
+	Short: "Activate the Odigos Enterprise tier from the Community Edition",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		ns, err := resources.GetOdigosNamespace(client, ctx)
+		if resources.IsErrNoOdigosNamespaceFound(err) {
+			fmt.Println("\033[31mERROR\033[0m no odigos installation found in the current cluster")
+			os.Exit(1)
+		} else if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Starting activation of Enterprise tier from Community...")
+
+		odigosConfig, err := resources.GetCurrentConfig(ctx, client, ns)
+		if err != nil {
+			fmt.Printf("Error reading odigos configuration: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Since Karpenter uses a different labeling system that has no separation between OSS and enterprise,
+		// we want to avoid potential user apps from crashing in case they are scheduled on a node where the
+		// enterprise files are not yet found in the /var/odigos mount.
+		if odigosConfig.KarpenterEnabled != nil && *odigosConfig.KarpenterEnabled {
+			fmt.Println("\033[31mERROR\033[0m Activation is not supported when odigos is installed with 'KarpenterEnabled' option. uninstall odigos community and reinstall odigos with enterprise onprem token")
+			os.Exit(1)
+		}
+
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+		}
+
+		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Println("Odigos pro activate failed - unable to get odigos deployment ConfigMap.")
+			os.Exit(1)
+		}
+		odigosVersion := cm.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
+		if odigosVersion == "" {
+			fmt.Println("Odigos pro activate failed - missing version info.")
+			os.Exit(1)
+		}
+
+		onPremToken := cmd.Flag("onprem-token").Value.String()
+		resourceManagers := resources.CreateResourceManagers(
+			client, ns, common.OnPremOdigosTier, &onPremToken, odigosConfig, odigosVersion,
+			installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
+
+		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Synching")
+		if err != nil {
+			fmt.Println("Odigos pro activate failed - unable to apply resources.")
+			os.Exit(1)
+		}
+
+		fmt.Println("Activation completed successfully. Odigos is upgraded to enterprise tier")
 	},
 }
 
@@ -355,7 +413,6 @@ func init() {
 
 	proCmd.AddCommand(offsetsCmd)
 	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
-
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
@@ -364,4 +421,9 @@ func init() {
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
 	centralCmd.AddCommand(portForwardCentralCmd)
+	// migrate subcommand
+	proCmd.AddCommand(activateCmd)
+	activateCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
+	activateCmd.MarkFlagRequired("onprem-token")
+
 }
