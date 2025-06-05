@@ -16,6 +16,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -327,19 +328,17 @@ func resolveEnvInjectionMethod(odigosConfig *common.OdigosConfiguration) {
 }
 
 func (r *odigosConfigController) resolveResourceSizes(ctx context.Context, odigosConfig *common.OdigosConfiguration) error {
-	// Get resource requirements based on profiles
-	resourceReqs := sizing.GetResourceRequirementsFromProfiles(odigosConfig.Profiles)
-
 	// Components to update
 	components := []struct {
 		name string
 		ns   string
+		rc   *common.ResourceConfig
 	}{
-		{name: k8sconsts.UIDeploymentName, ns: env.GetCurrentNamespace()},
-		{name: k8sconsts.AutoScalerDeploymentName, ns: env.GetCurrentNamespace()},
-		{name: k8sconsts.InstrumentorDeploymentName, ns: env.GetCurrentNamespace()},
+		{name: k8sconsts.UIDeploymentName, ns: env.GetCurrentNamespace(), rc: &odigosConfig.Ui.ResourceConfig},
+		{name: k8sconsts.AutoScalerDeploymentName, ns: env.GetCurrentNamespace(), rc: &odigosConfig.Autoscaler.ResourceConfig},
+		{name: k8sconsts.InstrumentorDeploymentName, ns: env.GetCurrentNamespace(), rc: &odigosConfig.Instrumentor.ResourceConfig},
 		// Do scheduler last since it will restart the deployment
-		{name: k8sconsts.SchedulerDeploymentName, ns: env.GetCurrentNamespace()},
+		{name: k8sconsts.SchedulerDeploymentName, ns: env.GetCurrentNamespace(), rc: &odigosConfig.Scheduler.ResourceConfig},
 	}
 
 	// Update each component's deployment
@@ -355,7 +354,16 @@ func (r *odigosConfigController) resolveResourceSizes(ctx context.Context, odigo
 
 		// Update the main container's resources
 		if len(deployment.Spec.Template.Spec.Containers) > 0 {
-			deployment.Spec.Template.Spec.Containers[0].Resources = resourceReqs
+			deployment.Spec.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					"cpu":    resource.MustParse(fmt.Sprintf("%dm", component.rc.LimitCPUm)),
+					"memory": resource.MustParse(fmt.Sprintf("%dMi", component.rc.LimitMemoryMiB)),
+				},
+				Requests: corev1.ResourceList{
+					"cpu":    resource.MustParse(fmt.Sprintf("%dm", component.rc.RequestCPUm)),
+					"memory": resource.MustParse(fmt.Sprintf("%dMi", component.rc.RequestMemoryMiB)),
+				},
+			}
 
 			// Patch the deployment
 			if err := r.Client.Update(ctx, deployment); err != nil {

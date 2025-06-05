@@ -22,6 +22,41 @@ var ResourceRequirementsByProfile = map[common.ProfileName]corev1.ResourceRequir
 	SizeXSProfile.ProfileName: sizeXSmallResources,
 }
 
+// Core component resource configurations for each size profile
+var (
+	// XSmall (75% of small)
+	sizeXSCoreResources = common.ResourceConfig{
+		RequestMemoryMiB: 48,
+		LimitMemoryMiB:   384,
+		RequestCPUm:      8,
+		LimitCPUm:        375,
+	}
+
+	// Small (base size)
+	sizeSCoreResources = common.ResourceConfig{
+		RequestMemoryMiB: 64,
+		LimitMemoryMiB:   512,
+		RequestCPUm:      10,
+		LimitCPUm:        500,
+	}
+
+	// Medium (1.25x small)
+	sizeMCoreResources = common.ResourceConfig{
+		RequestMemoryMiB: 80,
+		LimitMemoryMiB:   640,
+		RequestCPUm:      13,
+		LimitCPUm:        625,
+	}
+
+	// Large (1.5x small)
+	sizeLCoreResources = common.ResourceConfig{
+		RequestMemoryMiB: 96,
+		LimitMemoryMiB:   768,
+		RequestCPUm:      15,
+		LimitCPUm:        750,
+	}
+)
+
 var (
 	SizeXSProfile = profiles.Profile{
 		ProfileName:      common.ProfileName("size_xs"),
@@ -46,6 +81,21 @@ var (
 						RequestCPUm:      113,
 						LimitCPUm:        225,
 					},
+				},
+				common.OdigletConfiguration{
+					ResourceConfig: sizeXSCoreResources,
+				},
+				common.InstrumentorConfiguration{
+					ResourceConfig: sizeXSCoreResources,
+				},
+				common.AutoscalerConfiguration{
+					ResourceConfig: sizeXSCoreResources,
+				},
+				common.SchedulerConfiguration{
+					ResourceConfig: sizeXSCoreResources,
+				},
+				common.UiConfiguration{
+					ResourceConfig: sizeXSCoreResources,
 				})
 		},
 	}
@@ -72,6 +122,21 @@ var (
 						RequestCPUm:      150,
 						LimitCPUm:        300,
 					},
+				},
+				common.OdigletConfiguration{
+					ResourceConfig: sizeSCoreResources,
+				},
+				common.InstrumentorConfiguration{
+					ResourceConfig: sizeSCoreResources,
+				},
+				common.AutoscalerConfiguration{
+					ResourceConfig: sizeSCoreResources,
+				},
+				common.SchedulerConfiguration{
+					ResourceConfig: sizeSCoreResources,
+				},
+				common.UiConfiguration{
+					ResourceConfig: sizeSCoreResources,
 				})
 		},
 	}
@@ -98,6 +163,21 @@ var (
 						RequestCPUm:      250,
 						LimitCPUm:        500,
 					},
+				},
+				common.OdigletConfiguration{
+					ResourceConfig: sizeMCoreResources,
+				},
+				common.InstrumentorConfiguration{
+					ResourceConfig: sizeMCoreResources,
+				},
+				common.AutoscalerConfiguration{
+					ResourceConfig: sizeMCoreResources,
+				},
+				common.SchedulerConfiguration{
+					ResourceConfig: sizeMCoreResources,
+				},
+				common.UiConfiguration{
+					ResourceConfig: sizeMCoreResources,
 				})
 		},
 	}
@@ -124,6 +204,21 @@ var (
 						RequestCPUm:      500,
 						LimitCPUm:        750,
 					},
+				},
+				common.OdigletConfiguration{
+					ResourceConfig: sizeLCoreResources,
+				},
+				common.InstrumentorConfiguration{
+					ResourceConfig: sizeLCoreResources,
+				},
+				common.AutoscalerConfiguration{
+					ResourceConfig: sizeLCoreResources,
+				},
+				common.SchedulerConfiguration{
+					ResourceConfig: sizeLCoreResources,
+				},
+				common.UiConfiguration{
+					ResourceConfig: sizeLCoreResources,
 				})
 		},
 	}
@@ -182,7 +277,12 @@ var (
 
 func modifySizingConfig(c *common.OdigosConfiguration,
 	clusterCollectorConfig common.CollectorGatewayConfiguration,
-	nodeCollectorConfig common.CollectorNodeConfiguration) {
+	nodeCollectorConfig common.CollectorNodeConfiguration,
+	odigletConfig common.OdigletConfiguration,
+	instrumentorConfig common.InstrumentorConfiguration,
+	autoscalerConfig common.AutoscalerConfiguration,
+	schedulerConfig common.SchedulerConfiguration,
+	uiConfig common.UiConfiguration) {
 
 	// Check and apply gateway config if needed
 	if c.CollectorGateway == nil || !hasResourceSettings(&c.CollectorGateway.ResourceConfig) {
@@ -198,6 +298,31 @@ func modifySizingConfig(c *common.OdigosConfiguration,
 			collectorNodeConfig.K8sNodeLogsDirectory = c.CollectorNode.K8sNodeLogsDirectory
 		}
 		c.CollectorNode = &collectorNodeConfig
+	}
+
+	// Check and apply Odiglet config if needed
+	if c.Odiglet == nil || !hasResourceSettings(&c.Odiglet.ResourceConfig) {
+		c.Odiglet = &odigletConfig
+	}
+
+	// Check and apply Instrumentor config if needed
+	if c.Instrumentor == nil || !hasResourceSettings(&c.Instrumentor.ResourceConfig) {
+		c.Instrumentor = &instrumentorConfig
+	}
+
+	// Check and apply Autoscaler config if needed
+	if c.Autoscaler == nil || !hasResourceSettings(&c.Autoscaler.ResourceConfig) {
+		c.Autoscaler = &autoscalerConfig
+	}
+
+	// Check and apply Scheduler config if needed
+	if c.Scheduler == nil || !hasResourceSettings(&c.Scheduler.ResourceConfig) {
+		c.Scheduler = &schedulerConfig
+	}
+
+	// Check and apply UI config if needed
+	if c.Ui == nil || !hasResourceSettings(&c.Ui.ResourceConfig) {
+		c.Ui = &uiConfig
 	}
 }
 

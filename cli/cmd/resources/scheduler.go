@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -9,11 +10,11 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/profiles/sizing"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -323,8 +324,17 @@ func NewSchedulerResourceManager(client *kube.Client, ns string, config *common.
 func (a *schedulerResourceManager) Name() string { return "Scheduler" }
 
 func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error {
-	// Get resource requirements based on profiles
-	resourceReqs := sizing.GetResourceRequirementsFromProfiles(a.config.Profiles)
+	// Get resource requirements from config
+	resourceReqs := corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			"cpu":    resource.MustParse(fmt.Sprintf("%dm", a.config.Scheduler.ResourceConfig.LimitCPUm)),
+			"memory": resource.MustParse(fmt.Sprintf("%dMi", a.config.Scheduler.ResourceConfig.LimitMemoryMiB)),
+		},
+		Requests: corev1.ResourceList{
+			"cpu":    resource.MustParse(fmt.Sprintf("%dm", a.config.Scheduler.ResourceConfig.RequestCPUm)),
+			"memory": resource.MustParse(fmt.Sprintf("%dMi", a.config.Scheduler.ResourceConfig.RequestMemoryMiB)),
+		},
+	}
 
 	resources := []kube.Object{
 		NewSchedulerServiceAccount(a.ns),
