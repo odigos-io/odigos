@@ -220,11 +220,6 @@ var centralInstallCmd = &cobra.Command{
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		onPremToken := cmd.Flag("onprem-token").Value.String()
-		if onPremToken == "" {
-			fmt.Println("\033[31mERROR\033[0m onprem-token is required")
-			os.Exit(1)
-		}
-
 		if err := installCentralBackendAndUI(ctx, client, proNamespaceFlag, onPremToken); err != nil {
 			fmt.Println("\033[31mERROR\033[0m Failed to install Odigos central:")
 			fmt.Println(err)
@@ -239,12 +234,6 @@ var migrateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
-
-		onPremToken := cmd.Flag("onprem-token").Value.String()
-		if onPremToken == "" {
-			fmt.Println("\033[31mERROR\033[0m onprem-token is required")
-			os.Exit(1)
-		}
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {
@@ -287,6 +276,7 @@ var migrateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		onPremToken := cmd.Flag("onprem-token").Value.String()
 		resourceManagers := resources.CreateResourceManagers(
 			client, ns, common.OnPremOdigosTier, &onPremToken, config, odigosVersion,
 			installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
