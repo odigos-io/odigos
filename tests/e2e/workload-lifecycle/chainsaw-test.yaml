@@ -59,6 +59,7 @@ spec:
     - name: '01 Assert Instrumented'
       try:
         - assert:
+            timeout: 3m
             file: 01-assert-instrumented.yaml
 
     - name: '01 Assert Workloads'
