@@ -332,13 +332,13 @@ func (r *odigosConfigController) resolveResourceSizes(ctx context.Context, odigo
 	components := []struct {
 		name string
 		ns   string
-		rc   *common.ResourceConfig
+		rc   common.ResourceConfig
 	}{
-		{name: k8sconsts.UIDeploymentName, ns: env.GetCurrentNamespace(), rc: &odigosConfig.Ui.ResourceConfig},
-		{name: k8sconsts.AutoScalerDeploymentName, ns: env.GetCurrentNamespace(), rc: &odigosConfig.Autoscaler.ResourceConfig},
-		{name: k8sconsts.InstrumentorDeploymentName, ns: env.GetCurrentNamespace(), rc: &odigosConfig.Instrumentor.ResourceConfig},
+		{name: k8sconsts.UIDeploymentName, ns: env.GetCurrentNamespace(), rc: odigosConfig.Ui.ResourceConfig},
+		{name: k8sconsts.AutoScalerDeploymentName, ns: env.GetCurrentNamespace(), rc: odigosConfig.Autoscaler.ResourceConfig},
+		{name: k8sconsts.InstrumentorDeploymentName, ns: env.GetCurrentNamespace(), rc: odigosConfig.Instrumentor.ResourceConfig},
 		// Do scheduler last since it will restart the deployment
-		{name: k8sconsts.SchedulerDeploymentName, ns: env.GetCurrentNamespace(), rc: &odigosConfig.Scheduler.ResourceConfig},
+		{name: k8sconsts.SchedulerDeploymentName, ns: env.GetCurrentNamespace(), rc: odigosConfig.Scheduler.ResourceConfig},
 	}
 
 	// Update each component's deployment

@@ -85,6 +85,7 @@ Below are the ClusterRoles used by Odigos components.
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
 | odigos.io | instrumentationconfigs | \* | get<br />list<br />watch |
+| apps | deployments | \* | list<br />watch |
 
 ### odigos-ui
 
@@ -178,6 +179,7 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 | odigos.io | collectorsgroups/status | \* | get |
 | odigos.io | instrumentationrules<br />processors | \* | get<br />list<br />watch<br />patch<br />delete<br />create |
 | \* | secrets | \* | get<br />list<br />watch |
+| apps | deployments | \* | get<br />list<br />update |
 
 ### odigos-ui
 

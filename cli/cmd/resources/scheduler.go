@@ -96,6 +96,11 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				Resources: []string{"secrets"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			{ // Needed to manage deployment resources
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments"},
+				Verbs:     []string{"get", "list", "update"},
+			},
 		},
 	}
 }
@@ -138,6 +143,11 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationconfigs"},
 				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Needed to list deployments across the cluster
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments"},
+				Verbs:     []string{"list", "watch"},
 			},
 		},
 	}
