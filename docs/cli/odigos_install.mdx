@@ -39,27 +39,30 @@ odigos install --cluster-name ${YOUR_CLUSTER_NAME} --central-backend-url ${YOUR_
 ### Options
 
 ```
-  -k, --api-key string                         api key for odigos cloud
-      --central-backend-url string             use to connect this cluster to the centralized odigos cluster
-      --cluster-name string                    name of the cluster to be used in the centralized backend
-      --container-runtime-socket-path string   custom configuration of a path to the container runtime socket path (e.g. /var/lib/rancher/rke2/agent/containerd/containerd.sock)
-  -h, --help                                   help for install
-      --ignore-container strings               container names to exclude from instrumentation (useful for sidecar container) (default [istio-proxy,vault-agent,filebeat,linkerd-proxy,fluentd,akeyless-init])
-      --ignore-namespace strings               namespaces not to show in odigos ui (default [kube-system,local-path-storage,istio-system,linkerd,kube-node-lease])
-      --image-prefix string                    prefix for all container images. (default "registry.odigos.io")
-      --k8s-node-logs-directory string         custom configuration of a path to the directory where Kubernetes logs are symlinked in a node (e.g. /mnt/var/log)
-  -n, --namespace string                       target k8s namespace for Odigos installation (default "odigos-system")
-      --node-selector string                   comma-separated key=value pair of Kubernetes NodeSelectors to set on Odigos components. Example: kubernetes.io/hostname=myhost
-      --nowait                                 skip waiting for odigos pods to be ready
-      --onprem-token string                    authentication token for odigos enterprise on-premises
-      --openshift                              configure requirements for OpenShift: required selinux settings, RBAC roles, and will use OpenShift certified images (if --image-prefix is not set)
-      --profile strings                        install preset profiles with a specific configuration
-      --psp                                    enable pod security policy
-      --skip-webhook-issuer-creation           Skip creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
-      --telemetry                              send general telemetry regarding Odigos usage (default true)
-      --ui-mode string                         set the UI mode (one-of: normal, readonly) (default "normal")
-      --user-instrumentation-envs string       JSON string to configure per-language instrumentation envs, e.g. '{"languages":{"go":{"enabled":true,"env":{"OTEL_GO_ENABLED":"true"}}}}'
-      --version string                         for development purposes only
+  -k, --api-key string                                          api key for odigos cloud
+      --central-backend-url string                              use to connect this cluster to the centralized odigos cluster
+      --cluster-name string                                     name of the cluster to be used in the centralized backend
+      --container-runtime-socket-path string                    custom configuration of a path to the container runtime socket path (e.g. /var/lib/rancher/rke2/agent/containerd/containerd.sock)
+  -h, --help                                                    help for install
+      --ignore-container strings                                container names to exclude from instrumentation (useful for sidecar container) (default [istio-proxy,vault-agent,filebeat,linkerd-proxy,fluentd,akeyless-init])
+      --ignore-namespace strings                                namespaces not to show in odigos ui (default [kube-system,local-path-storage,istio-system,linkerd,kube-node-lease])
+      --image-prefix string                                     prefix for all container images. (default "registry.odigos.io")
+      --instrumentation-auto-rollback-disabled                  Disabled the auto rollback feature
+      --instrumentation-auto-rollback-grace-time string         Auto rollback grace time (default "5m")
+      --instrumentation-auto-rollback-stability-window string   Auto rollback stability windows time (default "1h")
+      --k8s-node-logs-directory string                          custom configuration of a path to the directory where Kubernetes logs are symlinked in a node (e.g. /mnt/var/log)
+  -n, --namespace string                                        target k8s namespace for Odigos installation (default "odigos-system")
+      --node-selector string                                    comma-separated key=value pair of Kubernetes NodeSelectors to set on Odigos components. Example: kubernetes.io/hostname=myhost
+      --nowait                                                  skip waiting for odigos pods to be ready
+      --onprem-token string                                     authentication token for odigos enterprise on-premises
+      --openshift                                               configure requirements for OpenShift: required selinux settings, RBAC roles, and will use OpenShift certified images (if --image-prefix is not set)
+      --profile strings                                         install preset profiles with a specific configuration
+      --psp                                                     enable pod security policy
+      --skip-webhook-issuer-creation                            Skip creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
+      --telemetry                                               send general telemetry regarding Odigos usage (default true)
+      --ui-mode string                                          set the UI mode (one-of: normal, readonly) (default "normal")
+      --user-instrumentation-envs string                        JSON string to configure per-language instrumentation envs, e.g. '{"languages":{"go":{"enabled":true,"env":{"OTEL_GO_ENABLED":"true"}}}}'
+      --version string                                          for development purposes only
 ```
 
 ### Options inherited from parent commands

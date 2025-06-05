@@ -83,6 +83,7 @@ spec:
                       - UnsupportedRuntimeVersion
                       - MissingDistroParameter
                       - OtherAgentDetected
+                      - CrashLoopBackOff
                       type: string
                     containerName:
                       description: The name of the container to which this configuration
@@ -570,6 +571,15 @@ spec:
                   - type
                   type: object
                 type: array
+              instrumentationTime:
+                description: |-
+                  This time recorded only after the rollout took place.
+                  This allows us to determine whether a crashing application should be rolled back or not
+                format: date-time
+                type: string
+              rollbackOccurred:
+                description: Check if rollback happened to an application
+                type: boolean
               runtimeDetailsByContainer:
                 description: Capture Runtime Details for the workloads that this CR
                   applies to.
