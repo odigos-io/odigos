@@ -32,16 +32,20 @@ var (
 				common.CollectorGatewayConfiguration{
 					MinReplicas:      1,
 					MaxReplicas:      4,
-					RequestCPUm:      113,
-					LimitCPUm:        225,
-					RequestMemoryMiB: 225,
-					LimitMemoryMiB:   225,
+					ResourceConfig: common.ResourceConfig{
+						RequestCPUm:      113,
+						LimitCPUm:        225,
+						RequestMemoryMiB: 225,
+						LimitMemoryMiB:   225,
+					},
 				},
 				common.CollectorNodeConfiguration{
-					RequestMemoryMiB: 113,
-					LimitMemoryMiB:   225,
-					RequestCPUm:      113,
-					LimitCPUm:        225,
+					ResourceConfig: common.ResourceConfig{
+						RequestMemoryMiB: 113,
+						LimitMemoryMiB:   225,
+						RequestCPUm:      113,
+						LimitCPUm:        225,
+					},
 				})
 		},
 	}
@@ -54,16 +58,20 @@ var (
 				common.CollectorGatewayConfiguration{
 					MinReplicas:      1,
 					MaxReplicas:      5,
-					RequestCPUm:      150,
-					LimitCPUm:        300,
-					RequestMemoryMiB: 300,
-					LimitMemoryMiB:   300,
+					ResourceConfig: common.ResourceConfig{
+						RequestCPUm:      150,
+						LimitCPUm:        300,
+						RequestMemoryMiB: 300,
+						LimitMemoryMiB:   300,
+					},
 				},
 				common.CollectorNodeConfiguration{
-					RequestMemoryMiB: 150,
-					LimitMemoryMiB:   300,
-					RequestCPUm:      150,
-					LimitCPUm:        300,
+					ResourceConfig: common.ResourceConfig{
+						RequestMemoryMiB: 150,
+						LimitMemoryMiB:   300,
+						RequestCPUm:      150,
+						LimitCPUm:        300,
+					},
 				})
 		},
 	}
@@ -76,16 +84,20 @@ var (
 				common.CollectorGatewayConfiguration{
 					MinReplicas:      2,
 					MaxReplicas:      8,
-					RequestCPUm:      500,
-					LimitCPUm:        1000,
-					RequestMemoryMiB: 500,
-					LimitMemoryMiB:   600,
+					ResourceConfig: common.ResourceConfig{
+						RequestCPUm:      500,
+						LimitCPUm:        1000,
+						RequestMemoryMiB: 500,
+						LimitMemoryMiB:   600,
+					},
 				},
 				common.CollectorNodeConfiguration{
-					RequestMemoryMiB: 250,
-					LimitMemoryMiB:   500,
-					RequestCPUm:      250,
-					LimitCPUm:        500,
+					ResourceConfig: common.ResourceConfig{
+						RequestMemoryMiB: 250,
+						LimitMemoryMiB:   500,
+						RequestCPUm:      250,
+						LimitCPUm:        500,
+					},
 				})
 		},
 	}
@@ -98,16 +110,20 @@ var (
 				common.CollectorGatewayConfiguration{
 					MinReplicas:      3,
 					MaxReplicas:      12,
-					RequestCPUm:      750,
-					LimitCPUm:        1250,
-					RequestMemoryMiB: 750,
-					LimitMemoryMiB:   850,
+					ResourceConfig: common.ResourceConfig{
+						RequestCPUm:      750,
+						LimitCPUm:        1250,
+						RequestMemoryMiB: 750,
+						LimitMemoryMiB:   850,
+					},
 				},
 				common.CollectorNodeConfiguration{
-					RequestMemoryMiB: 500,
-					LimitMemoryMiB:   750,
-					RequestCPUm:      500,
-					LimitCPUm:        750,
+					ResourceConfig: common.ResourceConfig{
+						RequestMemoryMiB: 500,
+						LimitMemoryMiB:   750,
+						RequestCPUm:      500,
+						LimitCPUm:        750,
+					},
 				})
 		},
 	}

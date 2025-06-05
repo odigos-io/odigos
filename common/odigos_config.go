@@ -10,30 +10,31 @@ const (
 	ReadonlyUiMode UiMode = "readonly"
 )
 
+// ResourceConfig defines the common resource configuration fields used across components
+type ResourceConfig struct {
+	// RequestMemoryMiB is the memory request for the component.
+	// it will be embedded in the component as a resource request of the form "memory: <value>Mi"
+	RequestMemoryMiB int `json:"requestMemoryMiB,omitempty"`
+
+	// LimitMemoryMiB is the memory limit for the component.
+	// it will be embedded in the component as a resource limit of the form "memory: <value>Mi"
+	LimitMemoryMiB int `json:"limitMemoryMiB,omitempty"`
+
+	// RequestCPUm is the CPU request for the component.
+	// it will be embedded in the deployment/daemonset as a resource request of the form "cpu: <value>m"
+	RequestCPUm int `json:"requestCPUm,omitempty"`
+
+	// LimitCPUm is the CPU limit for the component.
+	// it will be embedded in the deployment/daemonset as a resource limit of the form "cpu: <value>m"
+	LimitCPUm int `json:"limitCPUm,omitempty"`
+}
+
 type CollectorNodeConfiguration struct {
+	ResourceConfig `json:",inline"`
+
 	// The port to use for exposing the collector's own metrics as a prometheus endpoint.
 	// This can be used to resolve conflicting ports when a collector is using the host network.
 	CollectorOwnMetricsPort int32 `json:"collectorOwnMetricsPort,omitempty"`
-
-	// RequestMemoryMiB is the memory request for the node collector daemonset.
-	// it will be embedded in the daemonset as a resource request of the form "memory: <value>Mi"
-	// default value is 250Mi
-	RequestMemoryMiB int `json:"requestMemoryMiB,omitempty"`
-
-	// LimitMemoryMiB is the memory limit for the node collector daemonset.
-	// it will be embedded in the daemonset as a resource limit of the form "memory: <value>Mi"
-	// default value is 2x the memory request.
-	LimitMemoryMiB int `json:"limitMemoryMiB,omitempty"`
-
-	// RequestCPUm is the CPU request for the node collector daemonset.
-	// it will be embedded in the daemonset as a resource request of the form "cpu: <value>m"
-	// default value is 250m
-	RequestCPUm int `json:"requestCPUm,omitempty"`
-
-	// LimitCPUm is the CPU limit for the node collector daemonset.
-	// it will be embedded in the daemonset as a resource limit of the form "cpu: <value>m"
-	// default value is 500m
-	LimitCPUm int `json:"limitCPUm,omitempty"`
 
 	// this parameter sets the "limit_mib" parameter in the memory limiter configuration for the node collector.
 	// it is the hard limit after which a force garbage collection will be performed.
@@ -59,32 +60,14 @@ type CollectorNodeConfiguration struct {
 }
 
 type CollectorGatewayConfiguration struct {
+	ResourceConfig `json:",inline"`
+
 	// MinReplicas is the number of replicas for the cluster gateway collector deployment.
 	// Also set the minReplicas for the HPA to this value.
 	MinReplicas int `json:"minReplicas,omitempty"`
 
 	// MaxReplicas set the maxReplicas for the HPA to this value.
 	MaxReplicas int `json:"maxReplicas,omitempty"`
-
-	// RequestMemoryMiB is the memory request for the cluster gateway collector deployment.
-	// it will be embedded in the deployment as a resource request of the form "memory: <value>Mi"
-	// default value is 500Mi
-	RequestMemoryMiB int `json:"requestMemoryMiB,omitempty"`
-
-	// LimitMemoryMiB is the memory limit for the cluster gateway collector deployment.
-	// it will be embedded in the deployment as a resource limit of the form "memory: <value>Mi"
-	// default value is 1.25 the memory request.
-	LimitMemoryMiB int `json:"limitMemoryMiB,omitempty"`
-
-	// RequestCPUm is the CPU request for the cluster gateway collector deployment.
-	// it will be embedded in the deployment as a resource request of the form "cpu: <value>m"
-	// default value is 500m
-	RequestCPUm int `json:"requestCPUm,omitempty"`
-
-	// LimitCPUm is the CPU limit for the cluster gateway collector deployment.
-	// it will be embedded in the deployment as a resource limit of the form "cpu: <value>m"
-	// default value is 1000m
-	LimitCPUm int `json:"limitCPUm,omitempty"`
 
 	// this parameter sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
 	// it is the hard limit after which a force garbage collection will be performed.
@@ -100,6 +83,26 @@ type CollectorGatewayConfiguration struct {
 	// this is when go runtime will start garbage collection.
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
+}
+
+type OdigletConfiguration struct {
+	ResourceConfig `json:",inline"`
+}
+
+type InstrumentorConfiguration struct {
+	ResourceConfig `json:",inline"`
+}
+
+type AutoscalerConfiguration struct {
+	ResourceConfig `json:",inline"`
+}
+
+type SchedulerConfiguration struct {
+	ResourceConfig `json:",inline"`
+}
+
+type UiConfiguration struct {
+	ResourceConfig `json:",inline"`
 }
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
@@ -123,6 +126,11 @@ type OdigosConfiguration struct {
 	SkipWebhookIssuerCreation        bool                           `json:"skipWebhookIssuerCreation,omitempty"`
 	CollectorGateway                 *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
 	CollectorNode                    *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
+	Odiglet                          *OdigletConfiguration          `json:"odiglet,omitempty"`
+	Instrumentor                     *InstrumentorConfiguration     `json:"instrumentor,omitempty"`
+	Autoscaler                       *AutoscalerConfiguration       `json:"autoscaler,omitempty"`
+	Scheduler                        *SchedulerConfiguration        `json:"scheduler,omitempty"`
+	Ui                               *UiConfiguration               `json:"ui,omitempty"`
 	Profiles                         []ProfileName                  `json:"profiles,omitempty"`
 	AllowConcurrentAgents            *bool                          `json:"allowConcurrentAgents,omitempty"`
 	UiMode                           UiMode                         `json:"uiMode,omitempty"`
