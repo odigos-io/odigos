@@ -284,8 +284,7 @@ func GetDataStreamsWithDestinations(
 	logger logr.Logger,
 ) ([]pipelinegen.DataStreams, error) {
 
-	dataStreamDetailsList := []pipelinegen.DataStreams{}
-	seenDataStreams := make(map[string]struct{})
+	dataStreamsMap := make(map[string]*pipelinegen.DataStreams)
 
 	for _, dest := range dests.Items {
 
@@ -299,7 +298,27 @@ func GetDataStreamsWithDestinations(
 		}
 
 		for _, dataStream := range dataStreams {
-			dataStreamDetails := findOrCreateDataStream(&dataStreamDetailsList, dataStream)
+			// Get or create data stream using map directly
+			dataStreamDetails, exists := dataStreamsMap[dataStream]
+			if !exists {
+				dataStreamDetails = &pipelinegen.DataStreams{
+					Name:         dataStream,
+					Sources:      []pipelinegen.SourceFilter{},
+					Destinations: []pipelinegen.Destination{},
+				}
+
+				// SourcesFilters and NamespacesFilters are attached to the DataStream itself.
+				// They are independent of the Destinations that point to the DataStream.
+				// Therefore, we only load them once per unique data stream.
+				sourcesFilters, namespacesFilters, err := getSourcesForDataStream(ctx, kubeClient, dataStream, logger)
+				if err != nil {
+					return nil, err
+				}
+				dataStreamDetails.Sources = sourcesFilters
+				dataStreamDetails.Namespaces = namespacesFilters
+
+				dataStreamsMap[dataStream] = dataStreamDetails
+			}
 
 			if !destinationExists(dataStreamDetails.Destinations, dest.Name) {
 				dataStreamDetails.Destinations = append(dataStreamDetails.Destinations, pipelinegen.Destination{
@@ -307,18 +326,13 @@ func GetDataStreamsWithDestinations(
 					ConfiguredSignals: dest.GetSignals(),
 				})
 			}
-
-			if _, alreadySeen := seenDataStreams[dataStream]; !alreadySeen {
-				seenDataStreams[dataStream] = struct{}{}
-
-				sourcesFilters, namespacesFilters, err := getSourcesForDataStream(ctx, kubeClient, dataStream, logger)
-				if err != nil {
-					return nil, err
-				}
-				dataStreamDetails.Sources = sourcesFilters
-				dataStreamDetails.Namespaces = namespacesFilters
-			}
 		}
+	}
+
+	// Convert map to slice, this is the final result as will be used in the configmap
+	var dataStreamDetailsList []pipelinegen.DataStreams
+	for _, ds := range dataStreamsMap {
+		dataStreamDetailsList = append(dataStreamDetailsList, *ds)
 	}
 
 	return dataStreamDetailsList, nil
@@ -390,21 +404,6 @@ func isOdigosTrafficMetricsProcessorRelevant(name string, rootPipelines []string
 		return true
 	}
 	return false
-}
-
-func findOrCreateDataStream(dataStreams *[]pipelinegen.DataStreams, name string) *pipelinegen.DataStreams {
-	for i := range *dataStreams {
-		if (*dataStreams)[i].Name == name {
-			return &(*dataStreams)[i]
-		}
-	}
-	newDataStream := pipelinegen.DataStreams{
-		Name:         name,
-		Sources:      []pipelinegen.SourceFilter{},
-		Destinations: []pipelinegen.Destination{},
-	}
-	*dataStreams = append(*dataStreams, newDataStream)
-	return &(*dataStreams)[len(*dataStreams)-1]
 }
 
 // For the default data stream, include all sources that don't have any data stream labels assigned

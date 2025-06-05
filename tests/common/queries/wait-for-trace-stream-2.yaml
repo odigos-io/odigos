@@ -4,7 +4,7 @@ description: This test waits for a trace that goes from frontend to pricing, inv
 query: |
   length([?span.serviceName == 'frontend']) == `0` &&
   length([?span.serviceName == 'pricing']) == `0` &&
-  length([?span.serviceName == 'inventory']) == `0` &&
+  length([?span.serviceName == 'inventory']) > `0` &&
   length([?span.serviceName == 'coupon']) == `0` &&
   length([?span.serviceName == 'membership']) == `0` &&
   length([?span.serviceName == 'currency']) > `0`
