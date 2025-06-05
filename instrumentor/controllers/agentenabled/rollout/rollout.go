@@ -8,10 +8,10 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +35,7 @@ const requeueWaitingForWorkloadRollout = 10 * time.Second
 // and a corresponding condition is set.
 //
 // Returns a boolean indicating if the status of the instrumentation config has changed, a ctrl.Result and an error.
-func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, rollbackDisabled bool) (bool, ctrl.Result, error) {
+func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, conf *common.OdigosConfiguration) (bool, ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
@@ -64,33 +64,47 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		return false, ctrl.Result{}, client.IgnoreNotFound(rolloutErr)
 	}
 
+	rollbackDisabled := false
+	if conf.RollbackDisabled != nil {
+		rollbackDisabled = *conf.RollbackDisabled
+	}
+
+	rollbackGraceTime, _ := time.ParseDuration(consts.DefaultAutoRollbackGraceTime)
+	if conf.RollbackGraceTime != "" {
+		rollbackGraceTime, err = time.ParseDuration(conf.RollbackGraceTime)
+		if err != nil {
+			return false, ctrl.Result{}, fmt.Errorf("invalid duration %q: %w", rollbackGraceTime, err)
+		}
+	}
+
+	rollbackStabilityWindow, _ := time.ParseDuration(consts.DefaultAutoRollbackStabilityWindow)
+	if conf.RollbackStabilityWindow != "" {
+		rollbackStabilityWindow, err = time.ParseDuration(conf.RollbackStabilityWindow)
+		if err != nil {
+			return false, ctrl.Result{}, fmt.Errorf("invalid duration %q: %w", rollbackGraceTime, err)
+		}
+	}
+
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash := ic.Spec.AgentsMetaHash
 	if savedRolloutHash == newRolloutHash {
 		if !isWorkloadRolloutDone(workloadObj) && !rollbackDisabled {
-			TimeSinceCrashLoopBackOff, err := crashLoopBackOffDuration(ctx, c, workloadObj)
+			timeSinceCrashLoopBackOff, err := crashLoopBackOffDuration(ctx, c, workloadObj)
 			if err != nil {
 				logger.Error(err, "Failed to check crashLoopBackOff")
 				return false, ctrl.Result{}, err
 			}
 
-			if TimeSinceCrashLoopBackOff > 0 && ic.Spec.AgentInjectionEnabled {
-				// Allow grace time for worklaod to stabelize before uninstrumenting it
-				conf, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
-				if err != nil {
-					return false, ctrl.Result{}, err
-				}
-				rollbackGraceTime := consts.AutoRollbackGraceTime
-				if conf.RollbackGraceTime != "" {
-					rollbackGraceTime = conf.RollbackGraceTime
-				}
-				graceTime, err := time.ParseDuration(rollbackGraceTime)
-				if err != nil {
-					return false, ctrl.Result{}, fmt.Errorf("invalid duration %q: %w", rollbackGraceTime, err)
-				}
+			if ic.Status.InstrumentationTime == nil {
+				return false, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+			}
+			now := time.Now()
+			timeSinceInstrumentation := now.Sub(ic.Status.InstrumentationTime.Time)
 
-				if TimeSinceCrashLoopBackOff < graceTime {
-					return false, ctrl.Result{RequeueAfter: graceTime - TimeSinceCrashLoopBackOff}, nil
+			if timeSinceCrashLoopBackOff > 0 && timeSinceInstrumentation < rollbackStabilityWindow && ic.Spec.AgentInjectionEnabled {
+				// Allow grace time for worklaod to stabelize before uninstrumenting it
+				if timeSinceCrashLoopBackOff < rollbackGraceTime {
+					return false, ctrl.Result{RequeueAfter: rollbackGraceTime - timeSinceCrashLoopBackOff}, nil
 				}
 
 				for i := range ic.Spec.Containers {
@@ -100,10 +114,11 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 				ic.Spec.AgentInjectionEnabled = false
 
 				if err := c.Update(ctx, ic); err != nil {
-					logger.Error(err, "failed to persist spec rollback")
 					res, err := utils.K8SUpdateErrorHandler(err)
 					return false, res, err
 				}
+
+				ic.Status.RollbackOccurred = true
 
 				rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
 				if rolloutErr != nil {
@@ -150,6 +165,12 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	ic.Status.WorkloadRolloutHash = newRolloutHash
+
+	// If we have new rollout hash and also, AgentInjectionEnabled is enabled, that means we're instrumenting a new app
+	if ic.Spec.AgentInjectionEnabled {
+		now := metav1.NewTime(time.Now())
+		ic.Status.InstrumentationTime = &now
+	}
 	meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(rolloutErr))
 
 	// at this point, the hashes are different, notify the caller the status has changed

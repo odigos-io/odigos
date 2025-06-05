@@ -48,16 +48,12 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 	}
 
 	conf, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
-	rollbackDisabled := false
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	if conf.RollbackDisabled != nil {
-		rollbackDisabled = *conf.RollbackDisabled
-	}
 
 	for _, ic := range allInstrumentationConfigs.Items {
-		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, rollbackDisabled)
+		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, &conf)
 		if err != nil || !res.IsZero() {
 			return res, err
 		}
@@ -66,7 +62,7 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 	return ctrl.Result{}, nil
 }
 
-func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, rollbackDisabled bool) (ctrl.Result, error) {
+func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, conf *common.OdigosConfiguration) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName)
@@ -86,7 +82,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		if apierrors.IsNotFound(err) {
 			// instrumentation config is deleted, trigger a rollout for the associated workload
 			// this should happen once per workload, as the instrumentation config is deleted
-			_, res, err := rollout.Do(ctx, c, nil, pw, rollbackDisabled)
+			_, res, err := rollout.Do(ctx, c, nil, pw, nil)
 			return res, err
 		}
 		return ctrl.Result{}, err
@@ -112,7 +108,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	}
 
 	agentEnabledChanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
-	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw, rollbackDisabled)
+	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw, conf)
 
 	if rolloutChanged || agentEnabledChanged {
 		updateErr := c.Status().Update(ctx, &ic)
@@ -156,13 +152,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 
 	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff we'd like to stop
 	// instrumentating it and to disable future instrumentation of this service
-	cond := meta.FindStatusCondition(ic.Status.Conditions, odigosv1.AgentEnabledStatusConditionType)
-	crashDetected := false
-	if cond != nil {
-		if cond.Reason == string(odigosv1.AgentEnabledReasonCrashLoopBackOff) {
-			crashDetected = true
-		}
-	}
+	crashDetected := ic.Status.RollbackOccurred
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	for _, containerRuntimeDetails := range ic.Status.RuntimeDetailsByContainer {
 		currentContainerConfig := containerInstrumentationConfig(containerRuntimeDetails.ContainerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected)

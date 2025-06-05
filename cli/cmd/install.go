@@ -57,6 +57,10 @@ var (
 	centralBackendURL string
 
 	userInstrumentationEnvsRaw string
+
+	autoRollbackDisabled         bool
+	autoRollbackGraceTime        string
+	autoRollbackStabilityWindows string
 )
 
 type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error
@@ -375,6 +379,9 @@ func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]st
 		CentralBackendURL:         centralBackendURL,
 		UserInstrumentationEnvs:   parsedUserJson,
 		NodeSelector:              nodeSelector,
+		RollbackDisabled:          &autoRollbackDisabled,
+		RollbackGraceTime:         autoRollbackGraceTime,
+		RollbackStabilityWindow:   autoRollbackStabilityWindows,
 	}
 
 }
@@ -416,7 +423,9 @@ func init() {
 		"",
 		"JSON string to configure per-language instrumentation envs, e.g. '{\"languages\":{\"go\":{\"enabled\":true,\"env\":{\"OTEL_GO_ENABLED\":\"true\"}}}}'",
 	)
-
+	installCmd.Flags().BoolVar(&autoRollbackDisabled, consts.RollbackDisabledProperty, false, "Disabled the auto rollback feature")
+	installCmd.Flags().StringVar(&autoRollbackGraceTime, consts.DefaultAutoRollbackGraceTime, "5m", "Auto rollback grace time")
+	installCmd.Flags().StringVar(&autoRollbackStabilityWindows, consts.RollbackStabilityWindow, "1h", "Auto rollback stability windows time")
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
 	} else {

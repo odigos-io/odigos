@@ -137,4 +137,5 @@ type OdigosConfiguration struct {
 	KarpenterEnabled                 *bool                          `json:"karpenterEnabled,omitempty"`
 	RollbackDisabled                 *bool                          `json:"rollbackDisabled,omitempty"`
 	RollbackGraceTime                string                         `json:"rollbackGraceTime,omitempty"`
+	RollbackStabilityWindow          string                         `json:"rollbackStabilityWindow,omitempty"`
 }

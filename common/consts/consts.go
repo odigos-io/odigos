@@ -81,6 +81,7 @@ const (
 	KarpenterEnabledProperty          = "karpenter-enabled"
 	RollbackDisabledProperty          = "instrumentation-auto-rollback-disabled"
 	RollbackGraceTimeProperty         = "instrumentation-auto-rollback-grace-time"
+	RollbackStabilityWindow           = "instrumentation-auto-rollback-stability-window"
 )
 
 var (
@@ -109,5 +110,6 @@ const (
 )
 
 const (
-	AutoRollbackGraceTime = "5m"
+	DefaultAutoRollbackGraceTime       = "5m"
+	DefaultAutoRollbackStabilityWindow = "1h"
 )

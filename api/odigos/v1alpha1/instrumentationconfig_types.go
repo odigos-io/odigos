@@ -225,6 +225,12 @@ type InstrumentationConfigStatus struct {
 	// it allows us to determine if the workload needs to be rollout based on previous rollout and the current config.
 	// if this field is different than the spec.AgentsDeploymentHash it means rollout is needed or not yet updated.
 	WorkloadRolloutHash string `json:"workloadRolloutHash,omitempty"`
+
+	// Check if rollback happened to an application
+	RollbackOccurred bool `json:"rollbackOccurred,omitempty"`
+	// This time recorded only after the rollout took place.
+	// This allows us to determine whether a crashing application should be rolled back or not
+	InstrumentationTime *metav1.Time `json:"instrumentationTime,omitempty"`
 }
 
 func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v1.Container) *RuntimeDetailsByContainer {

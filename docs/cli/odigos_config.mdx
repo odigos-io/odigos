@@ -29,6 +29,7 @@ Manage Odigos configuration settings to customize system behavior.
 	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
 	- "instrumentation-auto-rollback-disabled": Disable auto rollback feature for failing instrumentations.
 	- "instrumentation-auto-rollback-grace-time": Grace time before uninstrumenting an application [default: 5m].
+	- "instrumentation-auto-rollback-stability-window": Time windows where the auto rollback can happen [default: 1h].
 	
 
 ### Options

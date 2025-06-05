@@ -1,0 +1,124 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-rollback
+spec:
+  description: This test checks if a broken instrumentation is rolled back correctly.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
+              P="../../.."
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set nodeSelector."kubernetes\.io/os"=linux
+              else
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test  --set nodeSelector."kubernetes\.io/os"=linux
+              fi
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+
+    - name: Verify Odigos Installation
+      try:
+        - script:
+            timeout: 6m
+            content: |
+              echo "Starting Odigos version check..."
+              export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
+              echo "Actual Version: $ACTUAL_VERSION"
+              echo "Commit Hash: $COMMIT_HASH"
+
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                if [ "$ACTUAL_VERSION" != "$COMMIT_HASH" ]; then
+                  echo "❌ Odigos version is not the expected commit hash, got $ACTUAL_VERSION"
+                  exit 1
+                fi
+
+              else
+                if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
+                  echo "❌ Odigos version is not e2e-test, got $ACTUAL_VERSION"
+                  exit 1
+                fi
+              fi
+
+              ../../common/verify_odigos_installation.sh odigos-test
+        - assert:
+            timeout: 5m
+            file: ../../common/assert/odigos-installed.yaml
+      catch:
+        - script:
+            content: |
+              echo "🔍 Listing all resources in namespace 'odigos-test'..."
+              kubectl get all -n odigos-test
+
+              echo "📝 Describing all resources in namespace 'odigos-test'..."
+              kubectl describe all -n odigos-test
+
+    - name: Verify Node Odiglet label has been added
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Install - crash demo app
+      try:
+        - apply:
+            file: ../../common/apply/install-crash-demo.yaml
+        - script:
+            timeout: 3m
+            content: |
+              kubectl wait --for=condition=ready pod -l app=otel-crash-demo --timeout=120s
+        - assert:
+            file: ../../common/assert/crash-demo/crash-demo-installed.yaml
+
+    - name: Instrument Namespace
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Odigos pipeline ready
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Update rollback values
+      try:
+        - script:
+            content: ../../../cli/odigos config set instrumentation-auto-rollback-grace-time 90s
+
+    # Some services restart after updating configs
+    - name: Odigos pipeline ready
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Test crash demo in crashloop
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/crash-demo/crash-demo-in-crashloop.yml
+
+    - name: Test crash demo uninstrumented
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/crash-demo/crash-demo-uninstrumented.yaml

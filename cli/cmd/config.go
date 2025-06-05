@@ -43,6 +43,7 @@ var configCmd = &cobra.Command{
 	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
 	- "instrumentation-auto-rollback-disabled": Disable auto rollback feature for failing instrumentations.
 	- "instrumentation-auto-rollback-grace-time": Grace time before uninstrumenting an application [default: 5m].
+	- "instrumentation-auto-rollback-stability-window": Time windows where the auto rollback can happen [default: 1h].
 	`,
 }
 
@@ -248,6 +249,12 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			return fmt.Errorf("%s expects exactly one value", property)
 		}
 		config.RollbackGraceTime = value[0]
+
+	case consts.RollbackStabilityWindow:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		config.RollbackStabilityWindow = value[0]
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
