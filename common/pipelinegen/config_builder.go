@@ -109,10 +109,8 @@ func CalculateGatewayConfig(
 
 			// save the updated pipeline with the new receiver
 			currentConfig.Service.Pipelines[pipelineName] = pipeline
-
 		}
 	}
-
 	// track which signals are enabled
 	signals := []common.ObservabilitySignal{}
 
