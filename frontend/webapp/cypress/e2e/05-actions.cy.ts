@@ -5,7 +5,7 @@ import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, upda
 // Tests will fail if you have existing CRDs in the cluster.
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
-const namespace = NAMESPACES.ODIGOS_SYSTEM;
+const namespace = NAMESPACES.ODIGOS_TEST;
 const crdNames = CRD_NAMES.ACTIONS;
 const totalEntities = SELECTED_ENTITIES.ACTIONS.length;
 
