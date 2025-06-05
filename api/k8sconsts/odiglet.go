@@ -25,6 +25,7 @@ const (
 	OffsetFileMountPath = "/offsets"
 
 	OdigletLocalTrafficServiceName = "odiglet-local"
+	OdigletMetricsServerPort       = 8080
 )
 
 var OdigletOSSInstalled = map[string]string{
