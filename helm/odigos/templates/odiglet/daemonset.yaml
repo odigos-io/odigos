@@ -149,10 +149,8 @@ spec:
               readOnly: true
             - name: kernel-debug
               mountPath: /sys/kernel/debug
-            {{- if include "odigos.secretExists" . }}
             - name: odigos-go-offsets
               mountPath: /offsets
-            {{- end }}
       {{- if semverCompare "<1.26.0" .Capabilities.KubeVersion.Version }}
       hostNetwork: true
       {{- end}}
@@ -186,11 +184,9 @@ spec:
         - name: kernel-debug
           hostPath:
             path: /sys/kernel/debug
-        {{- if include "odigos.secretExists" . }}
         - name: odigos-go-offsets
           configMap:
             name: odigos-go-offsets
-        {{- end }}
 {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 6 }}
