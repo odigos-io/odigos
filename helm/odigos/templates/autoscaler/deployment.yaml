@@ -67,11 +67,11 @@ spec:
             readOnly: true
         resources:
           limits:
-            cpu: 500m
-            memory: 512Mi
+            cpu: {{ .Values.autoscaler.limitCPUm }}m
+            memory: {{ .Values.autoscaler.limitMemoryMiB }}Mi
           requests:
-            cpu: 10m
-            memory: 64Mi
+            cpu: {{ .Values.autoscaler.requestCPUm }}m
+            memory: {{ .Values.autoscaler.requestMemoryMiB }}Mi
         securityContext:
           allowPrivilegeEscalation: false
       securityContext:

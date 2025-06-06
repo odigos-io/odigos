@@ -146,12 +146,52 @@ autoscaler:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
+  # the memory request for the autoscaler deployment.
+  # it will be embedded in the deployment as a resource request
+  # of the form "memory: <value>Mi".
+  # default value is 64Mi
+  requestMemoryMiB: 64
+  # the memory limit for the autoscaler deployment.
+  # it will be embedded in the deployment as a resource limit
+  # of the form "memory: <value>Mi".
+  # default value is 512Mi
+  limitMemoryMiB: 512
+  # the CPU request for the autoscaler deployment.
+  # it will be embedded in the deployment as a resource request
+  # of the form "cpu: <value>m".
+  # default value is 10m
+  requestCPUm: 10
+  # the CPU limit for the autoscaler deployment.
+  # it will be embedded in the deployment as a resource limit
+  # of the form "cpu: <value>m".
+  # default value is 500m
+  limitCPUm: 500
 
 scheduler:
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
+  # the memory request for the scheduler deployment.
+  # it will be embedded in the deployment as a resource request
+  # of the form "memory: <value>Mi".
+  # default value is 64Mi
+  requestMemoryMiB: 64
+  # the memory limit for the scheduler deployment.
+  # it will be embedded in the deployment as a resource limit
+  # of the form "memory: <value>Mi".
+  # default value is 512Mi
+  limitMemoryMiB: 512
+  # the CPU request for the scheduler deployment.
+  # it will be embedded in the deployment as a resource request
+  # of the form "cpu: <value>m".
+  # default value is 10m
+  requestCPUm: 10
+  # the CPU limit for the scheduler deployment.
+  # it will be embedded in the deployment as a resource limit
+  # of the form "cpu: <value>m".
+  # default value is 500m
+  limitCPUm: 500
 
 ui:
   nodeSelector:
@@ -168,6 +208,26 @@ ui:
   #  - If not set, the UI will fetch 100 items per paginated-batch.
   uiPaginationLimit: 0
   centralBackendURL: ''
+  # the memory request for the UI deployment.
+  # it will be embedded in the deployment as a resource request
+  # of the form "memory: <value>Mi".
+  # default value is 64Mi
+  requestMemoryMiB: 64
+  # the memory limit for the UI deployment.
+  # it will be embedded in the deployment as a resource limit
+  # of the form "memory: <value>Mi".
+  # default value is 512Mi
+  limitMemoryMiB: 512
+  # the CPU request for the UI deployment.
+  # it will be embedded in the deployment as a resource request
+  # of the form "cpu: <value>m".
+  # default value is 10m
+  requestCPUm: 10
+  # the CPU limit for the UI deployment.
+  # it will be embedded in the deployment as a resource limit
+  # of the form "cpu: <value>m".
+  # default value is 500m
+  limitCPUm: 500
 
 instrumentor:
   # which mount method to use for odigos agent directory
@@ -194,6 +254,26 @@ instrumentor:
   # pod-manifest: add the environment variables to the container manifest.
   # loader-fallback-to-pod-manifest: try using the odigos loader first, and if it fails, fallback to adding the environment variables to the container manifest.
   agentEnvVarsInjectionMethod: ''
+  # the memory request for the instrumentor deployment.
+  # it will be embedded in the deployment as a resource request
+  # of the form "memory: <value>Mi".
+  # default value is 64Mi
+  requestMemoryMiB: 64
+  # the memory limit for the instrumentor deployment.
+  # it will be embedded in the deployment as a resource limit
+  # of the form "memory: <value>Mi".
+  # default value is 512Mi
+  limitMemoryMiB: 512
+  # the CPU request for the instrumentor deployment.
+  # it will be embedded in the deployment as a resource request
+  # of the form "cpu: <value>m".
+  # default value is 10m
+  requestCPUm: 10
+  # the CPU limit for the instrumentor deployment.
+  # it will be embedded in the deployment as a resource limit
+  # of the form "cpu: <value>m".
+  # default value is 500m
+  limitCPUm: 500
 
 odiglet:
   nodeSelector:

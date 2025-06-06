@@ -170,6 +170,7 @@
       "pages": [
         "pipeline/overview",
         "pipeline/configuration",
+        "profiles/available-profiles",
         {
           "group": "Sources",
           "icon": "database",
