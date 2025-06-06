@@ -26,6 +26,16 @@ docker pull registry.odigos.io/odigos-autoscaler:$VERSION
 docker pull registry.odigos.io/odigos-odiglet:$VERSION
 docker pull registry.odigos.io/odigos-collector:$VERSION
 ```
+In some cases, you will need to specify the processor architecture for the images.  For example, if you are deploying Odigos on Linux AMD64, but you are pulling the images to your laptop which uses ARM64, you will want to specify the platform in the `docker pull` commands:
+
+```bash
+docker pull --platform linux/amd64 registry.odigos.io/odigos-scheduler:$VERSION
+docker pull --platform linux/amd64 registry.odigos.io/odigos-instrumentor:$VERSION
+docker pull --platform linux/amd64 registry.odigos.io/odigos-ui:$VERSION
+docker pull --platform linux/amd64 registry.odigos.io/odigos-autoscaler:$VERSION
+docker pull --platform linux/amd64 registry.odigos.io/odigos-odiglet:$VERSION
+docker pull --platform linux/amd64 registry.odigos.io/odigos-collector:$VERSION
+```
 
 ### Step 3: Tag the Images
 Next, Tag each image with your custom Docker registry prefix:
