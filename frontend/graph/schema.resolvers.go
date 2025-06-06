@@ -652,7 +652,9 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 		k8sDestination.Spec.SecretRef = secretRef
 	}
 
-	dest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
+	dest, err := services.CreateResourceWithGenerateName(ctx, func() (*v1alpha1.Destination, error) {
+		return kube.DefaultClient.OdigosClient.Destinations(ns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
+	})
 	if err != nil {
 		if createSecret {
 			kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, destName, metav1.DeleteOptions{})
