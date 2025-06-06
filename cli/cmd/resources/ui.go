@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/sizing"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -424,9 +425,9 @@ func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 	var resourceReqs corev1.ResourceRequirements
 
 	if u.config.Ui == nil {
-		resourceReqs = GetDefaultResourceRequirements()
+		resourceReqs = sizing.GetDefaultResourceRequirements()
 	} else {
-		resourceReqs = GetResourceRequirementsWithDefaults(u.config.Ui.ResourceConfig)
+		resourceReqs = sizing.GetResourceRequirementsWithDefaults(u.config.Ui.ResourceConfig)
 	}
 
 	resources := []kube.Object{

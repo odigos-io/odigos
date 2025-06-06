@@ -7,10 +7,10 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8ssizing "github.com/odigos-io/odigos/k8sutils/pkg/sizing"
 	"github.com/odigos-io/odigos/profiles"
 	"github.com/odigos-io/odigos/profiles/manifests"
 	"github.com/odigos-io/odigos/profiles/sizing"
@@ -357,9 +357,9 @@ func (r *odigosConfigController) resolveResourceSizes(ctx context.Context, odigo
 
 			var resourceReqs corev1.ResourceRequirements
 			if component.rc == nil {
-				resourceReqs = resources.GetDefaultResourceRequirements()
+				resourceReqs = k8ssizing.GetDefaultResourceRequirements()
 			} else {
-				resourceReqs = resources.GetResourceRequirementsWithDefaults(*component.rc)
+				resourceReqs = k8ssizing.GetResourceRequirementsWithDefaults(*component.rc)
 			}
 
 			deployment.Spec.Template.Spec.Containers[0].Resources = resourceReqs
