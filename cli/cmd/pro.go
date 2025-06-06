@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -27,6 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -180,7 +182,13 @@ odigos pro update-offsets --default
 			os.Exit(1)
 		}
 
-		fmt.Println("Updated Go Offsets.")
+		fmt.Println("Updated Go Offsets, restarting Odiglet to use the new offsets.")
+		err = restartOdiglet(ctx, client, ns)
+		if err != nil {
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to restart Odiglet: %s", err))
+			os.Exit(1)
+		}
+		fmt.Println("Odiglet restarted successfully.")
 	},
 }
 
@@ -402,6 +410,22 @@ func findPodWithAppLabel(ctx context.Context, client *kube.Client, ns, appLabel 
 		return nil, fmt.Errorf("pod %s is not running", pod.Name)
 	}
 	return pod, nil
+}
+
+func restartOdiglet(ctx context.Context, client *kube.Client, ns string) error {
+	// Create patch to add/update the restartedAt annotation
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`,
+		time.Now().Format(time.RFC3339))
+
+	// Patch the Odiglet daemonset
+	_, err := client.AppsV1().DaemonSets(ns).Patch(
+		ctx,
+		k8sconsts.OdigletDaemonSetName,
+		types.StrategicMergePatchType,
+		[]byte(patch),
+		metav1.PatchOptions{},
+	)
+	return err
 }
 
 func init() {
