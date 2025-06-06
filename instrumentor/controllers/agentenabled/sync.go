@@ -2,6 +2,7 @@ package agentenabled
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -52,14 +53,23 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 		return ctrl.Result{}, err
 	}
 
+	var allErrs error
+	aggregatedResult := ctrl.Result{}
 	for _, ic := range allInstrumentationConfigs.Items {
-		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, &conf)
-		if err != nil || !res.IsZero() {
-			return res, err
+		res, workloadErr := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, &conf)
+		if workloadErr != nil {
+			allErrs = errors.Join(allErrs, workloadErr)
+		}
+		if !res.IsZero() {
+			if aggregatedResult.RequeueAfter == 0 {
+				aggregatedResult.RequeueAfter = res.RequeueAfter
+			} else if res.RequeueAfter < aggregatedResult.RequeueAfter {
+				aggregatedResult.RequeueAfter = res.RequeueAfter
+			}
 		}
 	}
 
-	return ctrl.Result{}, nil
+	return aggregatedResult, allErrs
 }
 
 func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, conf *common.OdigosConfiguration) (ctrl.Result, error) {
