@@ -229,8 +229,8 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 	}
 
 	dataStreamNames := make([]*string, 0)
-	if k8sDest.Spec.SourceSelector != nil && k8sDest.Spec.SourceSelector.Groups != nil {
-		for _, streamName := range k8sDest.Spec.SourceSelector.Groups {
+	if k8sDest.Spec.SourceSelector != nil && k8sDest.Spec.SourceSelector.DataStreams != nil {
+		for _, streamName := range k8sDest.Spec.SourceSelector.DataStreams {
 			dataStreamNames = append(dataStreamNames, &streamName)
 		}
 	}

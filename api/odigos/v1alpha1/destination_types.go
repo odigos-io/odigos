@@ -85,3 +85,25 @@ func (dest Destination) GetConfig() map[string]string {
 func (dest Destination) GetSignals() []common.ObservabilitySignal {
 	return dest.Spec.Signals
 }
+
+type SourceSelector struct {
+	// If a namespace is specified, all workloads (sources) within that namespace are allowed to send data.
+	// Example:
+	// namespaces: ["default", "production"]
+	// This means the destination will receive data from all sources in "default" and "production" namespaces.
+	// +optional
+	Namespaces []string `json:"namespaces,omitempty"`
+	// Workloads (sources) are assigned to Datastreams via labels (odigos.io/data-stream: true), allowing a more flexible selection mechanism.
+	// Example:
+	// dataStreams: ["backend", "monitoring"]
+	// This means the destination will receive data only from sources labeled with "backend" or "monitoring".
+	// +optional
+	DataStreams []string `json:"dataStreams,omitempty"`
+
+	// Selection Semantics:
+	// If both `Namespaces` and `Groups` are specified, the selection follows an **OR** logic:
+	// - A source is included **if** it belongs to **at least one** of the specified namespaces OR groups.
+	// - If `Namespaces` is empty but `Groups` is specified, only sources in those groups are included.
+	// - If `Groups` is empty but `Namespaces` is specified, all sources in those namespaces are included.
+	// - If SourceSelector is nil, the destination receives data from all sources.
+}

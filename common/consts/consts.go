@@ -109,6 +109,13 @@ const (
 	KarpenterStartupTaintKey = "odigos.io/needs-init"
 )
 
+// Batch processor related consts
+const (
+	GenericBatchProcessor = "batch/generic-batch-processor"
+	SmallBatchesProcessor = "batch/small-batches"
+)
+
+// Auto rollback related consts
 const (
 	DefaultAutoRollbackGraceTime       = "5m"
 	DefaultAutoRollbackStabilityWindow = "1h"
