@@ -297,7 +297,9 @@ func CreateDestinationSecret(ctx context.Context, destType common.DestinationTyp
 		},
 		StringData: secretFields,
 	}
-	newSecret, err := kube.DefaultClient.CoreV1().Secrets(ns).Create(ctx, &secret, metav1.CreateOptions{})
+	newSecret, err := CreateResourceWithGenerateName(ctx, func() (*k8s.Secret, error) {
+		return kube.DefaultClient.CoreV1().Secrets(ns).Create(ctx, &secret, metav1.CreateOptions{})
+	})
 	if err != nil {
 		return nil, err
 	}

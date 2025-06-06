@@ -93,6 +93,19 @@ var (
 	}
 )
 
+// https://github.com/kubernetes/enhancements/blob/master/keps/sig-api-machinery/4420-retry-generate-name/README.md
+var (
+	retryGenerateName = &featureSupport{
+		alphaVersion: "1.30.0",
+		betaVersion:  "1.31.0",
+		gaVersion:    "1.32.0",
+	}
+
+	RetryGenerateName = func(ml maturityLevel) bool {
+		return retryGenerateName.isEnabled(ml)
+	}
+)
+
 // K8sVersion returns the Kubernetes version detected once Setup is called.
 // It returns nil if Setup has not been called or failed.
 //
