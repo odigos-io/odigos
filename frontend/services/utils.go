@@ -19,8 +19,10 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 
 	"sigs.k8s.io/yaml"
 )
@@ -157,6 +159,7 @@ func SortConditions(conditions []*model.Condition) {
 	})
 }
 
+
 func randString(nByte int) (string, error) {
 	b := make([]byte, nByte)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
@@ -174,4 +177,22 @@ func setCallbackCookie(w http.ResponseWriter, r *http.Request, name, value strin
 		HttpOnly: true,
 	}
 	http.SetCookie(w, c)
+}
+
+// generated names can cause conflicts with k8s < 1.32.
+// the best practice is to retry the create operation if we got a conflict error (409).
+// this function takes care of checking the k8s version and retrying the create operation if needed.
+func CreateResourceWithGenerateName[T any](ctx context.Context, createFunc func() (T, error)) (T, error) {
+	if feature.RetryGenerateName(feature.GA) {
+		// in k8s 1.32+, the generate name is enabled by default in the api server, so we don't need to retry.
+		return createFunc()
+	} else {
+		var result T
+		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			var err error
+			result, err = createFunc()
+			return err
+		})
+		return result, err
+	}
 }

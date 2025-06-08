@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-crash-demo
+  namespace: default
+  labels:
+    app: otel-crash-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-crash-demo
+  template:
+    metadata:
+      labels:
+        app: otel-crash-demo
+    spec:
+      containers:
+        - name: api
+          image: registry.odigos.io/otel-crash-demo:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-crash-demo
+  namespace: default
+spec:
+  selector:
+    app: otel-crash-demo
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+      protocol: TCP

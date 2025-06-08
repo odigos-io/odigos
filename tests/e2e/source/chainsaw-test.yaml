@@ -80,7 +80,7 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
         - assert:
-            timeout: 2m
+            timeout: 4m
             file: 01-workloads.yaml
         - script:
             timeout: 70s

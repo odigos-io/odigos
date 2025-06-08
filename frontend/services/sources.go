@@ -310,7 +310,9 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		}
 	}
 
-	source, err = kube.DefaultClient.OdigosClient.Sources(nsName).Create(ctx, newSource, metav1.CreateOptions{})
+	source, err = CreateResourceWithGenerateName(ctx, func() (*v1alpha1.Source, error) {
+		return kube.DefaultClient.OdigosClient.Sources(nsName).Create(ctx, newSource, metav1.CreateOptions{})
+	})
 	return source, err
 }
 

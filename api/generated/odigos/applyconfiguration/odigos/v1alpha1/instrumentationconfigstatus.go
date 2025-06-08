@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
@@ -27,6 +28,8 @@ type InstrumentationConfigStatusApplyConfiguration struct {
 	RuntimeDetailsByContainer []RuntimeDetailsByContainerApplyConfiguration `json:"runtimeDetailsByContainer,omitempty"`
 	Conditions                []v1.ConditionApplyConfiguration              `json:"conditions,omitempty"`
 	WorkloadRolloutHash       *string                                       `json:"workloadRolloutHash,omitempty"`
+	RollbackOccurred          *bool                                         `json:"rollbackOccurred,omitempty"`
+	InstrumentationTime       *metav1.Time                                  `json:"instrumentationTime,omitempty"`
 }
 
 // InstrumentationConfigStatusApplyConfiguration constructs a declarative configuration of the InstrumentationConfigStatus type for use with
@@ -66,5 +69,21 @@ func (b *InstrumentationConfigStatusApplyConfiguration) WithConditions(values ..
 // If called multiple times, the WorkloadRolloutHash field is set to the value of the last call.
 func (b *InstrumentationConfigStatusApplyConfiguration) WithWorkloadRolloutHash(value string) *InstrumentationConfigStatusApplyConfiguration {
 	b.WorkloadRolloutHash = &value
+	return b
+}
+
+// WithRollbackOccurred sets the RollbackOccurred field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the RollbackOccurred field is set to the value of the last call.
+func (b *InstrumentationConfigStatusApplyConfiguration) WithRollbackOccurred(value bool) *InstrumentationConfigStatusApplyConfiguration {
+	b.RollbackOccurred = &value
+	return b
+}
+
+// WithInstrumentationTime sets the InstrumentationTime field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the InstrumentationTime field is set to the value of the last call.
+func (b *InstrumentationConfigStatusApplyConfiguration) WithInstrumentationTime(value metav1.Time) *InstrumentationConfigStatusApplyConfiguration {
+	b.InstrumentationTime = &value
 	return b
 }

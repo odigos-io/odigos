@@ -251,3 +251,12 @@ nodeSelector: {}
 # https://docs.odigos.io/setup/odigos-with-karpenter
 karpenter:
   enabled: false
+
+# Auto rollback settings
+# The auto‐rollback feature provides a stability window to test instrumented apps.
+# After an application is instrumented, a grace period begins during which we allow the app (and its dependencies) to stabilize and start working.
+# Once the grace period has passed and we are within the stability window, we can decide to uninstrument a crashing application.
+autoRollback:
+  disabled: false
+  graceTime: 5m
+  stabilityWindowTime: 1h

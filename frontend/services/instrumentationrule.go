@@ -311,7 +311,9 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	}
 
 	// Create the rule in Kubernetes
-	createdRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Create(ctx, newRule, metav1.CreateOptions{})
+	createdRule, err := CreateResourceWithGenerateName(ctx, func() (*v1alpha1.InstrumentationRule, error) {
+		return kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Create(ctx, newRule, metav1.CreateOptions{})
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating instrumentation rule: %w", err)
 	}
