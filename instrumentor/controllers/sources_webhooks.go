@@ -41,9 +41,7 @@ type SourcesDefaulter struct {
 }
 
 var _ webhook.CustomDefaulter = &SourcesDefaulter{}
-
-// TODO: uncomment when Data Streams are ready to use
-// var defaultDataStreamLabel = k8sconsts.SourceGroupLabelPrefix + consts.DefaultDataStream
+var defaultDataStreamLabel = k8sconsts.SourceGroupLabelPrefix + consts.DefaultDataStream
 
 func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	source, ok := obj.(*v1alpha1.Source)
@@ -64,10 +62,9 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 	if _, ok := source.Labels[k8sconsts.WorkloadKindLabel]; !ok {
 		source.Labels[k8sconsts.WorkloadKindLabel] = string(source.Spec.Workload.Kind)
 	}
-	// TODO: uncomment when Data Streams are ready to use
-	// if !doesSourceHaveDataStreamLabel(source) {
-	// 	source.Labels[defaultDataStreamLabel] = "true"
-	// }
+	if !doesSourceHaveDataStreamLabel(source) {
+		source.Labels[defaultDataStreamLabel] = "true"
+	}
 
 	// Remove old split finalizers
 	if controllerutil.ContainsFinalizer(source, k8sconsts.StartLangDetectionFinalizer) {
@@ -223,14 +220,13 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
-	// TODO: uncomment when Data Streams are ready to use
-	// if !doesSourceHaveDataStreamLabel(source) {
-	// 	allErrs = append(allErrs, field.Invalid(
-	// 		field.NewPath("metadata").Child("labels"),
-	// 		source.Labels[defaultDataStreamLabel],
-	// 		fmt.Sprintf("Source must have at least one %s* label to indicate a data stream group", k8sconsts.SourceGroupLabelPrefix),
-	// 	))
-	// }
+	if !doesSourceHaveDataStreamLabel(source) {
+		allErrs = append(allErrs, field.Invalid(
+			field.NewPath("metadata").Child("labels"),
+			source.Labels[defaultDataStreamLabel],
+			fmt.Sprintf("Source must have at least one %s* label to indicate a data stream group", k8sconsts.SourceGroupLabelPrefix),
+		))
+	}
 
 	err := s.validateSourceUniqueness(ctx, source)
 	if err != nil {
@@ -307,8 +303,8 @@ func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source 
 }
 
 func doesSourceHaveDataStreamLabel(source *v1alpha1.Source) bool {
-	for key := range source.Labels {
-		if strings.HasPrefix(key, k8sconsts.SourceGroupLabelPrefix) {
+	for labelKey, labelValue := range source.Labels {
+		if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
 			return true
 		}
 	}
