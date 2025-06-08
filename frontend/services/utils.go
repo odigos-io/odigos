@@ -159,7 +159,6 @@ func SortConditions(conditions []*model.Condition) {
 	})
 }
 
-
 func randString(nByte int) (string, error) {
 	b := make([]byte, nByte)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {

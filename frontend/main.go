@@ -121,7 +121,7 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	})
 
 	// OIDC/OAuth2 handlers
-	// r.GET("/oidc-test", func(c *gin.Context) { services.RedirectToOidcAuth(c, oauth2Config) })
+	r.GET("/oidc-callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c, oauth2Config, oauth2Config) })
 
 	// GraphQL handlers
 	gqlHandler := graph.GetGQLHandler(ctx, logger, odigosMetrics)
