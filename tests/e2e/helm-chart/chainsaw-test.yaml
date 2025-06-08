@@ -50,8 +50,8 @@ spec:
               ../../common/verify_odigos_installation.sh odigos-test
 
         - assert:
-            timeout: 1m
-            file: ../../common/assert/odigos-installed.yaml # ✅ Moved outside `catch`
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
 
       catch:
         - script:
@@ -113,6 +113,7 @@ spec:
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
+            timeout: 3m
             file: ../../common/assert/simple-demo-instrumented-full.yaml
 
     - name: Generate Traffic

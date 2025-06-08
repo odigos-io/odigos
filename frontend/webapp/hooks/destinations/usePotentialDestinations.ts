@@ -15,7 +15,7 @@ interface GetPotentialDestinationsData {
 }
 
 const checkIfConfigured = (configuredDest: ISetupState['configuredDestinations'][0], potentialDest: PotentialDestination, autoFilledFields: Record<string, any>) => {
-  const typesMatch = configuredDest.stored.type === potentialDest.type;
+  const typesMatch = configuredDest.type === potentialDest.type;
   if (!typesMatch) return false;
 
   let fieldsMatch = false;

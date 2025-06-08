@@ -38,9 +38,12 @@ var configCmd = &cobra.Command{
 	- "mount-method": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
 	- "container-runtime-socket-path": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
 	- "k8s-node-logs-directory": Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log).
-	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., {"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}
+	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., ` + "`" + `{"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}` + "`" + `
 	- "agent-env-vars-injection-method": Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest.
 	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
+	- "instrumentation-auto-rollback-disabled": Disable auto rollback feature for failing instrumentations.
+	- "instrumentation-auto-rollback-grace-time": Grace time before uninstrumenting an application [default: 5m].
+	- "instrumentation-auto-rollback-stability-window": Time windows where the auto rollback can happen [default: 1h].
 	`,
 }
 
@@ -116,7 +119,7 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 
 	case consts.TelemetryEnabledProperty, consts.OpenshiftEnabledProperty, consts.PspProperty,
 		consts.SkipWebhookIssuerCreationProperty, consts.AllowConcurrentAgentsProperty,
-		consts.KarpenterEnabledProperty:
+		consts.KarpenterEnabledProperty, consts.RollbackDisabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value (true/false)", property)
@@ -139,6 +142,8 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			config.AllowConcurrentAgents = &boolValue
 		case consts.KarpenterEnabledProperty:
 			config.KarpenterEnabled = &boolValue
+		case consts.RollbackDisabledProperty:
+			config.RollbackDisabled = &boolValue
 		}
 
 	case consts.ImagePrefixProperty, consts.UiModeProperty, consts.UiPaginationLimit:
@@ -214,7 +219,7 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			return fmt.Errorf("invalid JSON for %s: %w", property, err)
 		}
 		config.UserInstrumentationEnvs = &uie
-    
+
 	case consts.AgentEnvVarsInjectionMethod:
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -228,7 +233,6 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			return fmt.Errorf("invalid agent env vars injection method: %s (valid values: %s, %s, %s)", value[0],
 				common.LoaderEnvInjectionMethod, common.PodManifestEnvInjectionMethod, common.LoaderFallbackToPodManifestInjectionMethod)
 		}
-
 	case consts.NodeSelectorProperty:
 		nodeSelectorMap := make(map[string]string)
 		for _, v := range value {
@@ -240,6 +244,17 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 		}
 		config.NodeSelector = nodeSelectorMap
 
+	case consts.RollbackGraceTimeProperty:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		config.RollbackGraceTime = value[0]
+
+	case consts.RollbackStabilityWindow:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		config.RollbackStabilityWindow = value[0]
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)

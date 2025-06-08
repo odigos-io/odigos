@@ -3,6 +3,8 @@ kind: Role
 metadata:
   name: odigos-scheduler
   namespace: '{{ .Release.Namespace }}'
+  labels: 
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - ''
@@ -41,14 +43,6 @@ rules:
       - collectorsgroups/status
     verbs:
       - get
-  - apiGroups:
-      - odigos.io
-    resources:
-      - destinations
-    verbs:
-      - get
-      - list
-      - watch
   - apiGroups:
       - odigos.io
     resources:

@@ -267,7 +267,7 @@ func analyzePodsHealth(pods *corev1.PodList, expectedReplicas int) (*properties.
 }
 
 func analyzeClusterCollector(resources *OdigosResources) ClusterCollectorAnalyze {
-	isEnabled := len(resources.Destinations.Items) > 0
+	isEnabled := true // cluster collector is always enabled
 
 	enabled := properties.EntityProperty{
 		Name:    "Enabled",

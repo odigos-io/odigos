@@ -29,12 +29,7 @@ Below are the ClusterRoles used by Odigos components.
 
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
-| apps | deployments<br />statefulsets<br />daemonsets | \* | get<br />list<br />patch |
-| \* | namespaces<br />services<br />secrets<br />nodes<br />configmaps | \* | get<br />list<br />patch |
-| rbac.authorization.k8s.io | clusterroles<br />clusterrolebindings | \* | get<br />list<br />patch |
-| apiextensions.k8s.io | customresourcedefinitions | \* | list<br />get<br />patch<br />delete |
-| admissionregistration.k8s.io | mutatingwebhookconfigurations<br />validatingwebhookconfigurations | \* | get<br />list<br />delete |
-| odigos.io | sources | \* | get<br />list<br />delete |
+| odigos.io | sources | \* | list<br />delete |
 
 ### odigos-data-collection
 
@@ -128,7 +123,8 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
-| \* | namespaces<br />configmaps<br />secrets | \* | get<br />list<br />patch<br />delete |
+| \* | configmaps | odigos-deployment | get |
+| \* | configmaps | odigos-config | delete |
 
 ### odigos-data-collection
 
@@ -176,7 +172,6 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 | \* | configmaps | effective-config<br />odigos-deployment | patch<br />create<br />update |
 | odigos.io | collectorsgroups | \* | get<br />list<br />create<br />patch<br />update<br />watch<br />delete |
 | odigos.io | collectorsgroups/status | \* | get |
-| odigos.io | destinations | \* | get<br />list<br />watch |
 | odigos.io | instrumentationrules<br />processors | \* | get<br />list<br />watch<br />patch<br />delete<br />create |
 | \* | secrets | \* | get<br />list<br />watch |
 

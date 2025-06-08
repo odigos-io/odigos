@@ -1453,6 +1453,29 @@ it allows us to determine if the workload needs to be rollout based on previous 
 if this field is different than the spec.AgentsDeploymentHash it means rollout is needed or not yet updated.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>rollbackOccurred</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Check if rollback happened to an application</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>instrumentationTime</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>This time recorded only after the rollout took place.
+This allows us to determine whether a crashing application should be rolled back or not</p>
+</td>
+</tr>
 </tbody>
 </table>
 

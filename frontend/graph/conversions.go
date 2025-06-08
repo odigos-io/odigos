@@ -2,16 +2,13 @@ package graph
 
 import (
 	"context"
-	"fmt"
-	"sort"
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
-	"github.com/odigos-io/odigos/frontend/kube"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/odigos-io/odigos/frontend/services"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	appsv1 "k8s.io/api/apps/v1"
 )
 
 func k8sKindToGql(k8sResourceKind string) model.K8sResourceKind {
@@ -35,7 +32,9 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	return &str
 }
 
-func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig) (*model.K8sActualSource, error) {
+func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, source *v1alpha1.Source) (*model.K8sActualSource, error) {
+	selected := true
+	dataStreamNames := services.GetSourceDataStreamNames(source)
 	var containers []*model.SourceContainer
 
 	// Map the containers runtime details
@@ -65,80 +64,18 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 		})
 	}
 
-	workloadConditions, err := instrumentationConfigWorkloadConditions(ctx, instruConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	conditions := append(instruConfig.Status.Conditions, workloadConditions...)
-	sort.Slice(conditions, func(i, j int) bool {
-		return conditions[i].LastTransitionTime.Before(&conditions[j].LastTransitionTime)
-	})
-
 	// Return the converted K8sActualSource object
 	return &model.K8sActualSource{
 		Namespace:         instruConfig.Namespace,
 		Kind:              k8sKindToGql(instruConfig.OwnerReferences[0].Kind),
 		Name:              instruConfig.OwnerReferences[0].Name,
-		NumberOfInstances: nil,
+		Selected:          &selected,
+		DataStreamNames:   dataStreamNames,
 		OtelServiceName:   &instruConfig.Spec.ServiceName,
+		NumberOfInstances: nil,
 		Containers:        containers,
-		Conditions:        convertConditions(conditions),
+		Conditions:        convertConditions(instruConfig.Status.Conditions),
 	}, nil
-}
-
-func instrumentationConfigWorkloadConditions(ctx context.Context, ic v1alpha1.InstrumentationConfig) ([]v1.Condition, error) {
-	conditions := make([]v1.Condition, 0)
-	kind := k8sKindToGql(ic.OwnerReferences[0].Kind)
-	ns := ic.Namespace
-	name := ic.OwnerReferences[0].Name
-	switch kind {
-	case model.K8sResourceKindDeployment:
-		dep, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to get Deployment: %w", err)
-		}
-		for _, c := range dep.Status.Conditions {
-			conditions = append(conditions, v1.Condition{
-				Type:               string(c.Type),
-				Status:             v1.ConditionStatus(c.Status),
-				Reason:             c.Reason,
-				Message:            c.Message,
-				LastTransitionTime: c.LastTransitionTime,
-			})
-		}
-	case model.K8sResourceKindDaemonSet:
-		ds, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to get DaemonSet: %w", err)
-		}
-		for _, c := range ds.Status.Conditions {
-			conditions = append(conditions, v1.Condition{
-				Type:               string(c.Type),
-				Status:             v1.ConditionStatus(c.Status),
-				Reason:             c.Reason,
-				Message:            c.Message,
-				LastTransitionTime: c.LastTransitionTime,
-			})
-		}
-	case model.K8sResourceKindStatefulSet:
-		ss, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to get StatefulSet: %w", err)
-		}
-		for _, c := range ss.Status.Conditions {
-			conditions = append(conditions, v1.Condition{
-				Type:               string(c.Type),
-				Status:             v1.ConditionStatus(c.Status),
-				Reason:             c.Reason,
-				Message:            c.Message,
-				LastTransitionTime: c.LastTransitionTime,
-			})
-		}
-	default:
-		return nil, fmt.Errorf("unknown workload kind: %+v", kind)
-	}
-	return conditions, nil
 }
 
 func convertConditions(conditions []v1.Condition) []*model.Condition {
@@ -151,29 +88,8 @@ func convertConditions(conditions []v1.Condition) []*model.Condition {
 				message = string(c.Reason)
 			}
 
-			var status model.ConditionStatus
-
-			switch c.Status {
-			case v1.ConditionUnknown:
-				status = model.ConditionStatusLoading
-			case v1.ConditionTrue:
-				if c.Type == string(appsv1.DeploymentReplicaFailure) {
-					status = model.ConditionStatusError
-				} else {
-					status = model.ConditionStatusSuccess
-				}
-				
-			case v1.ConditionFalse:
-				status = model.ConditionStatusError
-			}
-
-			// force "disabled" status ovverrides for certain "reasons"
-			if v1alpha1.IsReasonStatusDisabled(reason) {
-				status = model.ConditionStatusDisabled
-			}
-
 			result = append(result, &model.Condition{
-				Status:             status,
+				Status:             services.TransformConditionStatus(c.Status, c.Type, reason),
 				Type:               c.Type,
 				Reason:             &reason,
 				Message:            &message,

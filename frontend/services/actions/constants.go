@@ -9,4 +9,6 @@ const (
 	ActionTypeErrorSampler         = "ErrorSampler"
 	ActionTypeLatencySampler       = "LatencySampler"
 	ActionTypeProbabilisticSampler = "ProbabilisticSampler"
+	ActionTypeServiceNameSampler   = "ServiceNameSampler"
+	ActionTypeSpanAttributeSampler = "SpanAttributeSampler"
 )

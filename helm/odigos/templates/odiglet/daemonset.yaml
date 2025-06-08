@@ -3,6 +3,7 @@ kind: DaemonSet
 metadata:
   labels:
     app.kubernetes.io/name: odiglet
+    odigos.io/system-object: "true"
   name: odiglet
   namespace: {{ .Release.Namespace }}
 spec:
@@ -115,6 +116,17 @@ spec:
             capabilities:
               add:
                 - SYS_PTRACE
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            periodSeconds: 10
           volumeMounts:
             - name: run-dir
               mountPath: /run
@@ -141,7 +153,9 @@ spec:
             - name: odigos-go-offsets
               mountPath: /offsets
             {{- end }}
+      {{- if semverCompare "<1.26.0" .Capabilities.KubeVersion.Version }}
       hostNetwork: true
+      {{- end}}
       hostPID: true
       dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical

@@ -25,6 +25,9 @@ const (
 	// Deprecated: Sources are used to mark workloads for instrumentation.
 	InstrumentationDisabled = "disabled"
 
+	// DefaultDataStream is the default data stream name used for telemetry data.
+	DefaultDataStream = "default"
+
 	// Deprecated: reported name is set via the Source CR.
 	OdigosReportedNameAnnotation = "odigos.io/reported-name"
 	RolloutTriggerAnnotation     = "rollout-trigger"
@@ -76,6 +79,9 @@ const (
 	UserInstrumentationEnvsProperty   = "user-instrumentation-envs"
 	NodeSelectorProperty              = "node-selector"
 	KarpenterEnabledProperty          = "karpenter-enabled"
+	RollbackDisabledProperty          = "instrumentation-auto-rollback-disabled"
+	RollbackGraceTimeProperty         = "instrumentation-auto-rollback-grace-time"
+	RollbackStabilityWindow           = "instrumentation-auto-rollback-stability-window"
 )
 
 var (
@@ -101,4 +107,9 @@ const (
 // Karpenter related consts
 const (
 	KarpenterStartupTaintKey = "odigos.io/needs-init"
+)
+
+const (
+	DefaultAutoRollbackGraceTime       = "5m"
+	DefaultAutoRollbackStabilityWindow = "1h"
 )
