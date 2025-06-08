@@ -101,9 +101,9 @@ type SourceSelector struct {
 	DataStreams []string `json:"dataStreams,omitempty"`
 
 	// Selection Semantics:
-	// If both `Namespaces` and `Groups` are specified, the selection follows an **OR** logic:
-	// - A source is included **if** it belongs to **at least one** of the specified namespaces OR groups.
-	// - If `Namespaces` is empty but `Groups` is specified, only sources in those groups are included.
-	// - If `Groups` is empty but `Namespaces` is specified, all sources in those namespaces are included.
+	// If both `Namespaces` and `dataStreams` are specified, the selection follows an **OR** logic:
+	// - A source is included **if** it belongs to **at least one** of the specified namespaces OR dataStreams.
+	// - If `Namespaces` is empty but `dataStreams` is specified, only sources in those dataStreams are included.
+	// - If `dataStreams` is empty but `Namespaces` is specified, all sources in those namespaces are included.
 	// - If SourceSelector is nil, the destination receives data from all sources.
 }
