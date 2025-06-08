@@ -9,6 +9,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -17,9 +18,9 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 
+	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
-
 	"sigs.k8s.io/yaml"
 )
 
@@ -171,4 +172,18 @@ func CreateResourceWithGenerateName[T any](ctx context.Context, createFunc func(
 		})
 		return result, err
 	}
+}
+
+func WithGoRoutine(ctx context.Context, limit int, run func(g.Go)) error {
+	g, ctx := errgroup.WithContext(ctx)
+	if limit > 0 {
+		g.SetLimit(limit)
+	}
+
+	run(g.Go)
+
+	if err := g.Wait(); err != nil {
+		return err
+	}
+	return nil
 }

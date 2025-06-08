@@ -15,11 +15,9 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	"golang.org/x/sync/errgroup"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-
 	"sigs.k8s.io/yaml"
 )
 
@@ -63,26 +61,27 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace
 		list         *v1.NamespaceList
 	)
 
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		var err error
-		configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
-		if err != nil {
+	err := WithGoRoutine(ctx, 0, func(goFunc) {
+		goFunc(func() error {
+			var err error
+			configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
+				return err
+			}
 			return err
-		}
-		if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
+		})
+
+		goFunc(func() error {
+			var err error
+			list, err = kube.DefaultClient.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 			return err
-		}
-		return err
+		})
 	})
 
-	g.Go(func() error {
-		var err error
-		list, err = kube.DefaultClient.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-		return err
-	})
-
-	if err := g.Wait(); err != nil {
+	if err != nil {
 		return []v1.Namespace{}, err
 	}
 
@@ -125,14 +124,9 @@ func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
 }
 
 func SyncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []model.PersistNamespaceSourceInput) error {
-	g, ctx := errgroup.WithContext(ctx)
-	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
-
-	for _, workload := range workloads {
-		g.Go(func() error {
+	return WithGoRoutine(ctx, k8sconsts.K8sClientDefaultBurst, func(goFunc) {
+		goFunc(func() error {
 			return ToggleSourceCRD(ctx, nsName, workload.Name, WorkloadKind(workload.Kind.String()), workload.Selected, workload.CurrentStreamName)
 		})
-	}
-
-	return g.Wait()
+	})
 }

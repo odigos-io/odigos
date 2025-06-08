@@ -26,8 +26,6 @@ import (
 	labels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-
-	"golang.org/x/sync/errgroup"
 )
 
 type WorkloadKind string
@@ -70,33 +68,33 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 		return nil, err
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
 	var (
 		deps []model.K8sActualSource
 		ss   []model.K8sActualSource
 		dss  []model.K8sActualSource
 	)
 
-	g.Go(func() error {
-		var err error
-		deps, err = getDeployments(ctx, *namespace)
-		return err
-	})
+	err := WithGoRoutine(ctx, 0, func(goFunc) {
+		goFunc(func() error {
+			var err error
+			deps, err = getDeployments(ctx, *namespace)
+			return err
+		})
 
-	g.Go(func() error {
-		var err error
-		ss, err = getStatefulSets(ctx, *namespace)
-		return err
-	})
+		goFunc(func() error {
+			var err error
+			ss, err = getStatefulSets(ctx, *namespace)
+			return err
+		})
 
-	g.Go(func() error {
-		var err error
-		dss, err = getDaemonSets(ctx, *namespace)
-		return err
+		goFunc(func() error {
+			var err error
+			dss, err = getDaemonSets(ctx, *namespace)
+			return err
+		})
 	})
-
-	if err := g.Wait(); err != nil {
-		return nil, err
+	if err != nil {
+		return err
 	}
 
 	items := make([]model.K8sActualSource, len(deps)+len(ss)+len(dss))
@@ -310,10 +308,9 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		}
 	}
 
-	source, err = CreateResourceWithGenerateName(ctx, func() (*v1alpha1.Source, error) {
+	return CreateResourceWithGenerateName(ctx, func() (*v1alpha1.Source, error) {
 		return kube.DefaultClient.OdigosClient.Sources(nsName).Create(ctx, newSource, metav1.CreateOptions{})
 	})
-	return source, err
 }
 
 func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, currentStreamName string) error {
@@ -335,41 +332,37 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	}
 
 	if nsSource != nil {
-		// namespace source exists.
-		// we need to create a workload source and add "DisableInstrumentation" label,
-		// or remove the relevant data-stream label (if source is in multiple streams)
-
-		// note: create will also return an existing crd (if exists) without throwing an error
+		// namespace source exists, we need to create a workload source, and toggle current data-stream label 'false'.
+		// note: ensure will also return an existing crd (if exists) without throwing an error
 		source, err := EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
 		if err != nil {
 			return err
 		}
 
+		// toggle current data-stream label 'false'
 		dataStreamNames := GetSourceDataStreamNames(source)
-
 		if len(dataStreamNames) > 1 && currentStreamName != "" {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "false")
 			return err
 		}
 
+		// if that was the last data-stream label, we add "DisableInstrumentation" label to the source
 		_, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, common.DisableInstrumentationJsonKey, true)
 		return err
-	} else {
-		// namespace source does not exist.
-		// we need to delete the workload source,
-		// or remove the relevant data-stream label (if source is in multiple streams)
-
-		dataStreamNames := GetSourceDataStreamNames(source)
-
-		if len(dataStreamNames) > 1 && currentStreamName != "" {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
-			return err
-		}
-
-		err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
-		return err
-
 	}
+
+	// namespace source does not exist, handle the workload source directly.
+	// we remove the current data-stream name label (if source is in multiple streams)
+	dataStreamNames := GetSourceDataStreamNames(source)
+	if len(dataStreamNames) > 1 && currentStreamName != "" {
+		_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
+		return err
+	}
+
+	// if that was the last data-stream label, we delete the source
+	err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
+	return err
+
 }
 
 func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, specField string, newValue any) (*v1alpha1.Source, error) {
@@ -708,7 +701,7 @@ func GetSourceDataStreamNames(source *v1alpha1.Source) []*string {
 
 	if source != nil {
 		for labelKey, labelValue := range source.Labels {
-			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
+			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue != "false" {
 				streamName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
 				dataStreamNames = append(dataStreamNames, &streamName)
 			}
