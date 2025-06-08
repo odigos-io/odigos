@@ -1,4 +1,3 @@
-import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
 import { TEST_CONNECTION_MUTATION } from '@/graphql';
 import { useNotificationStore } from '@odigos/ui-kit/store';
@@ -13,7 +12,6 @@ interface TestConnectionResponse {
 }
 
 export const useTestConnection = () => {
-  const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, hideFromHistory?: boolean) => {
