@@ -332,37 +332,46 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	}
 
 	if nsSource != nil {
-		// namespace source exists, we need to create a workload source, and toggle current data-stream label 'false'.
-		// note: ensure will also return an existing crd (if exists) without throwing an error
+		// namespace source exists, we need to create a workload source for handling.
+
+		// note: ensure will return an existing crd (if exists) without throwing an error
 		source, err := EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
 		if err != nil {
 			return err
 		}
 
-		// toggle current data-stream label 'false'
-		dataStreamNames := GetSourceDataStreamNames(source)
-		if len(dataStreamNames) > 1 && currentStreamName != "" {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "false")
-			return err
-		}
+		// get the data-stream names for the source
+		dataStreamNames := GetSourceDataStreamNames(source, nsSource)
 
+		// toggle current data-stream label 'false'
+		if currentStreamName != "" {
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "false")
+			// if there are more labels for data-streams, we exit and don't toggle disabled on the source
+			if len(dataStreamNames) > 1 {
+				return err
+			}
+		}
 		// if that was the last data-stream label, we add "DisableInstrumentation" label to the source
 		_, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, common.DisableInstrumentationJsonKey, true)
 		return err
-	}
+	} else {
+		// namespace source does not exist, handle the workload source directly.
 
-	// namespace source does not exist, handle the workload source directly.
-	// we remove the current data-stream name label (if source is in multiple streams)
-	dataStreamNames := GetSourceDataStreamNames(source)
-	if len(dataStreamNames) > 1 && currentStreamName != "" {
-		_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
+		// get the data-stream names for the source
+		dataStreamNames := GetSourceDataStreamNames(source)
+
+		// we remove the current data-stream name label
+		if currentStreamName != "" {
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
+			// if there are more labels for data-streams, we exit and don't delete the source
+			if len(dataStreamNames) > 1 {
+				return err
+			}
+		}
+		// if that was the last data-stream label, we delete the source
+		err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
 		return err
 	}
-
-	// if that was the last data-stream label, we delete the source
-	err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
-	return err
-
 }
 
 func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, specField string, newValue any) (*v1alpha1.Source, error) {
@@ -696,14 +705,32 @@ func GetOtherConditionsForSources(ctx context.Context, namespace string, name st
 	return result, nil
 }
 
-func GetSourceDataStreamNames(source *v1alpha1.Source) []*string {
+func GetSourceDataStreamNames(workloadSource *v1alpha1.Source, namespaceSource *v1alpha1.Source) []*string {
+	seen := make(map[string]bool)
 	dataStreamNames := make([]*string, 0)
 
-	if source != nil {
-		for labelKey, labelValue := range source.Labels {
-			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue != "false" {
-				streamName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
-				dataStreamNames = append(dataStreamNames, &streamName)
+	if workloadSource != nil {
+		for labelKey, labelValue := range workloadSource.Labels {
+			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
+				dsName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+
+				if _, exists := seen[dsName]; !exists {
+					seen[dsName] = true
+					dataStreamNames = append(dataStreamNames, &dsName)
+				}
+			}
+		}
+	}
+
+	if namespaceSource != nil {
+		for labelKey, labelValue := range namespaceSource.Labels {
+			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
+				dsName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+
+				if _, exists := seen[dsName]; !exists {
+					seen[dsName] = true
+					dataStreamNames = append(dataStreamNames, &dsName)
+				}
 			}
 		}
 	}
