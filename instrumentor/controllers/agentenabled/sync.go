@@ -234,16 +234,8 @@ func containerInstrumentationConfig(containerName string,
 	distroGetter *distros.Getter,
 	crashDetected bool) odigosv1.ContainerAgentConfig {
 
-	// check unknown language first. if language is not supported, we can skip the rest of the checks.
-	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
-		}
-	}
-
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
+	// This should be done first, because user should see workload not instrumented if container is ignored over unknown language in case both exist.
 	for _, ignoredContainer := range effectiveConfig.IgnoredContainers {
 		if ignoredContainer == containerName {
 			return odigosv1.ContainerAgentConfig{
@@ -251,6 +243,15 @@ func containerInstrumentationConfig(containerName string,
 				AgentEnabled:       false,
 				AgentEnabledReason: odigosv1.AgentEnabledReasonIgnoredContainer,
 			}
+		}
+	}
+
+	// check unknown language first. if language is not supported, we can skip the rest of the checks.
+	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:      containerName,
+			AgentEnabled:       false,
+			AgentEnabledReason: odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
 		}
 	}
 
