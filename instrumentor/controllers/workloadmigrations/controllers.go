@@ -122,7 +122,11 @@ func createOrUpdateSourceForObject(ctx context.Context,
 		namespace = obj.GetName()
 	}
 
-	sources, err := v1alpha1.GetSources(ctx, k8sClient, obj)
+	sources, err := v1alpha1.GetSources(ctx, k8sClient, k8sconsts.PodWorkload{
+		Name:      obj.GetName(),
+		Namespace: namespace,
+		Kind:      kind,
+	})
 	if err != nil {
 		return err
 	}
