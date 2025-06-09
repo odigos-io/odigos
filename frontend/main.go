@@ -14,13 +14,13 @@ import (
 	"sync"
 	"syscall"
 
-	_ "net/http/pprof"
-
-	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
+	"golang.org/x/oauth2"
+
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph"
@@ -82,7 +82,7 @@ func initKubernetesClient(flags *Flags) error {
 	return nil
 }
 
-func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetricsConsumer) (*gin.Engine, error) {
+func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer, oidcProvider *oidc.Provider, oidcVerifier *oidc.IDTokenVerifier, oauth2Config *oauth2.Config) (*gin.Engine, error) {
 	var r *gin.Engine
 	if flags.Debug {
 		r = gin.Default()
@@ -120,16 +120,12 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
 
+	// OIDC/OAuth2 handlers
+	r.GET("/oidc-callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c, oauth2Config, oauth2Config) })
+
 	// GraphQL handlers
-	gqlHandler := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
-		Resolvers: &graph.Resolver{
-			MetricsConsumer: odigosMetrics,
-			Logger:          logr.FromSlogHandler(slog.Default().Handler()),
-		},
-	}))
-	r.POST("/graphql", func(c *gin.Context) {
-		gqlHandler.ServeHTTP(c.Writer, c.Request)
-	})
+	gqlHandler := graph.GetGQLHandler(ctx, logger, odigosMetrics)
+	r.POST("/graphql", func(c *gin.Context) { gqlHandler.ServeHTTP(c.Writer, c.Request) })
 	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
 
 	// SSE handler
@@ -206,7 +202,8 @@ func main() {
 		cancel()
 	}()
 
-	go common.StartPprofServer(ctx, logr.FromSlogHandler(slog.Default().Handler()))
+	logger := logr.FromSlogHandler(slog.Default().Handler())
+	go common.StartPprofServer(ctx, logger)
 
 	// Start SQLite database
 	err := startDatabase()
@@ -234,8 +231,14 @@ func main() {
 		odigosMetrics.Run(ctx, flags.Namespace)
 	}()
 
+	// Initialize OIDC / OAuth2
+	oidcProvider, oidcVerifier, oauth2Config, err := services.InitOidc(ctx)
+	if err != nil {
+		log.Fatalf("Error initializing OIDC/OAuth2: %s", err)
+	}
+
 	// Start server
-	r, err := startHTTPServer(&flags, odigosMetrics)
+	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, oidcProvider, oidcVerifier, oauth2Config)
 	if err != nil {
 		log.Fatalf("Error starting server: %s", err)
 	}
