@@ -493,6 +493,7 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 
 	var namespaceSource *v1alpha1.Source
 	sourceObjects := make(map[string]*v1alpha1.Source)
+
 	for _, source := range sourceList.Items {
 		if services.WorkloadKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace {
 			namespaceSource = &source
@@ -517,9 +518,7 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 		sources[i].DataStreamNames = make([]*string, 0)
 
 		if workloadSource != nil {
-			for _, ds := range services.ExtractDataStreamsFromEntities([]v1alpha1.Source{*workloadSource}, make([]v1alpha1.Destination, 0)) {
-				sources[i].DataStreamNames = append(sources[i].DataStreamNames, &ds.Name)
-			}
+			sources[i].DataStreamNames = services.ExtractDataStreamsFromSource(workloadSource, namespaceSource)
 		}
 	}
 
