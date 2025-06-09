@@ -161,14 +161,7 @@ func determineRoutingPipelines(attrs pcommon.Map, m SignalRoutingMap, signal com
 
 	routingIndex, ok := m[key]
 	if !ok {
-		// still need to check for namespaces (future select) e.g. ns1/*/*
-		// this is done for the case where a namespace is selected as "future select"
-		// in that case a single source will be created for the namespace.
-		key = fmt.Sprintf("%s/*/*", ns)
-		routingIndex, ok = m[key]
-		if !ok {
-			return nil, ""
-		}
+		return nil, ""
 	}
 
 	pipelines, ok := routingIndex[signal]

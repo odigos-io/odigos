@@ -49,19 +49,6 @@ func BuildSignalRoutingMap(dataStreams []pipelinegen.DataStreams) SignalRoutingM
 				result[key][signal] = appendIfMissing(result[key][signal], pipeline)
 			}
 		}
-
-		// Build the keys for the namespaces (future select) e.g. ns1/*/*
-		for _, namespace := range dataStream.Namespaces {
-			key := fmt.Sprintf("%s/*/*", namespace.Namespace)
-			if _, exists := result[key]; !exists {
-				result[key] = make(RoutingIndex)
-			}
-
-			for _, signal := range signalsForDataStream {
-				pipeline := dataStream.Name
-				result[key][signal] = appendIfMissing(result[key][signal], pipeline)
-			}
-		}
 	}
 
 	return result

@@ -208,66 +208,6 @@ func TestCalculateDataStreamAndDestinations(t *testing.T) {
 	assert.Equal(t, len(signals), 1)
 }
 
-// TestCalculateDataStreamUsingNamespaceSources tests the case where we have a datastream with sources and a destination
-// The sources are configured using namespace source object
-func TestCalculateDataStreamUsingNamespaceSources(t *testing.T) {
-
-	want := openTestData(t, "testdata/namespacesource.yaml")
-	dummyDest := DummyDestination{
-		ID: "dummy",
-	}
-	dummyProcessors := []config.ProcessorConfigurer{
-		DummyProcessor{
-			ID: "dummy-processor",
-		},
-	}
-
-	dataStreamDetails := []pipelinegen.DataStreams{
-		{
-			Name:    "groupA",
-			Sources: []pipelinegen.SourceFilter{},
-			Namespaces: []pipelinegen.NamespaceFilter{
-				{Namespace: "default"},
-			},
-			Destinations: []pipelinegen.Destination{
-				{DestinationName: dummyDest.GetID(), ConfiguredSignals: dummyDest.GetSignals()},
-			},
-		},
-	}
-
-	config, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
-		&config.Config{
-			Receivers: config.GenericMap{
-				"otlp": config.GenericMap{
-					"protocols": config.GenericMap{
-						"grpc": empty,
-						"http": empty,
-					},
-				}},
-			Processors: config.GenericMap{
-				"batch/generic-batch-processor": config.GenericMap{},
-			},
-			Extensions: config.GenericMap{},
-			Exporters:  map[string]interface{}{},
-			Connectors: config.GenericMap{},
-			Service: config.Service{
-				Pipelines:  map[string]config.Pipeline{},
-				Extensions: []string{},
-			},
-		},
-		[]config.ExporterConfigurer{dummyDest},
-		dummyProcessors,
-		nil, dataStreamDetails,
-	)
-
-	assert.Equal(t, config, want)
-	assert.Nil(t, err)
-	assert.Equal(t, len(statuses.Destination), 0)
-	assert.Equal(t, len(statuses.Processor), 0)
-	assert.Equal(t, len(signals), 1)
-	assert.Equal(t, signals, []common.ObservabilitySignal{common.LogsObservabilitySignal})
-}
-
 // TestCalculateDataStreamMissingSources tests the case where we have a datastream with destination but no sources
 // This should test senario where user configures a destination and not yet configured sources
 func TestCalculateDataStreamMissingSources(t *testing.T) {

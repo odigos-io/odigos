@@ -19,6 +19,7 @@ import (
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -310,12 +311,11 @@ func GetDataStreamsWithDestinations(
 				// SourcesFilters and NamespacesFilters are attached to the DataStream itself.
 				// They are independent of the Destinations that point to the DataStream.
 				// Therefore, we only load them once per unique data stream.
-				sourcesFilters, namespacesFilters, err := getSourcesForDataStream(ctx, kubeClient, dataStream, logger)
+				sourcesFilters, err := getSourcesForDataStream(ctx, kubeClient, dataStream, logger)
 				if err != nil {
 					return nil, err
 				}
 				dataStreamDetails.Sources = sourcesFilters
-				dataStreamDetails.Namespaces = namespacesFilters
 
 				dataStreamsMap[dataStream] = dataStreamDetails
 			}
@@ -344,45 +344,42 @@ func getSourcesForDataStream(
 	kubeClient client.Client,
 	dataStream string,
 	logger logr.Logger,
-) ([]pipelinegen.SourceFilter, []pipelinegen.NamespaceFilter, error) {
+) ([]pipelinegen.SourceFilter, error) {
 
-	sourceList := &odigosv1.SourceList{}
-	namespacesSources := &odigosv1.SourceList{}
+	instrumentationConfigsList := &odigosv1.InstrumentationConfigList{}
 
 	if dataStream == consts.DefaultDataStream {
 		var err error
-		sourceList, namespacesSources, err = getSourcesForDefaultDataStream(ctx, kubeClient, dataStream)
+		instrumentationConfigsList, err = getSourcesForDefaultDataStream(ctx, kubeClient, dataStream)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	} else {
 		labelSelector := labels.Set{fmt.Sprintf("%s%s", k8sconsts.SourceDataStreamLabelPrefix, dataStream): "true"}.AsSelector()
-		err := kubeClient.List(ctx, sourceList, &client.ListOptions{
+		err := kubeClient.List(ctx, instrumentationConfigsList, &client.ListOptions{
 			LabelSelector: labelSelector,
 		})
 		if err != nil {
 			logger.Error(err, "Failed to fetch sources for DataStream", "dataStream", dataStream)
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
-	namespacesFilters := make([]pipelinegen.NamespaceFilter, 0, len(namespacesSources.Items))
-	for _, source := range namespacesSources.Items {
-		namespacesFilters = append(namespacesFilters, pipelinegen.NamespaceFilter{
-			Namespace: source.Spec.Workload.Namespace,
-		})
-	}
-
-	sourcesFilters := make([]pipelinegen.SourceFilter, 0, len(sourceList.Items))
-	for _, source := range sourceList.Items {
+	sourcesFilters := make([]pipelinegen.SourceFilter, 0, len(instrumentationConfigsList.Items))
+	for _, instrumentationConfig := range instrumentationConfigsList.Items {
+		workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instrumentationConfig.Name)
+		if err != nil {
+			logger.Error(err, "Failed to extract workload info from instrumentation config name", "instrumentationConfig", instrumentationConfig.Name)
+			continue
+		}
 		sourcesFilters = append(sourcesFilters, pipelinegen.SourceFilter{
-			Namespace: source.Spec.Workload.Namespace,
-			Kind:      string(source.Spec.Workload.Kind),
-			Name:      source.Spec.Workload.Name,
+			Namespace: instrumentationConfig.Namespace,
+			Kind:      string(workloadKind),
+			Name:      workloadName,
 		})
 	}
 
-	return sourcesFilters, namespacesFilters, nil
+	return sourcesFilters, nil
 }
 
 func destinationExists(list []pipelinegen.Destination, item string) bool {
@@ -408,31 +405,22 @@ func isOdigosTrafficMetricsProcessorRelevant(name string, rootPipelines []string
 
 // For the default data stream, include all sources that don't have any data stream labels assigned
 // and sources that have the default data stream label assigned
-func getSourcesForDefaultDataStream(ctx context.Context, kubeClient client.Client, group string) (*odigosv1.SourceList, *odigosv1.SourceList, error) {
+func getSourcesForDefaultDataStream(ctx context.Context, kubeClient client.Client, group string) (*odigosv1.InstrumentationConfigList, error) {
 
-	defaultStreamSources := &odigosv1.SourceList{}
+	defaultStreamSources := &odigosv1.InstrumentationConfigList{}
 	err := kubeClient.List(ctx, defaultStreamSources, &client.ListOptions{})
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to list all sources: %w", err)
+		return nil, fmt.Errorf("failed to list all instrumentation configs: %w", err)
 	}
 
-	workloadSources := []odigosv1.Source{}
+	workloadSources := []odigosv1.InstrumentationConfig{}
 
-	// this is done for namespace that were selected as "future select"
-	// in that case a single source will be created for the namespace.
-	namespacesSources := []odigosv1.Source{}
-
-	for _, src := range defaultStreamSources.Items {
-
-		if src.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
-			namespacesSources = append(namespacesSources, src)
-			continue
-		}
+	for _, instrumentationConfig := range defaultStreamSources.Items {
 
 		hasDataStreamLabel := false
 		explicitMatch := false
 
-		for key, value := range src.Labels {
+		for key, value := range instrumentationConfig.Labels {
 			if strings.HasPrefix(key, k8sconsts.SourceDataStreamLabelPrefix) {
 				hasDataStreamLabel = true
 				if key == fmt.Sprintf("%s%s", k8sconsts.SourceDataStreamLabelPrefix, group) && value == "true" {
@@ -443,9 +431,9 @@ func getSourcesForDefaultDataStream(ctx context.Context, kubeClient client.Clien
 
 		// If the source has no data stream labels assigned or has the default data stream label assigned, include it in the filtered list
 		if !hasDataStreamLabel || explicitMatch {
-			workloadSources = append(workloadSources, src)
+			workloadSources = append(workloadSources, instrumentationConfig)
 		}
 	}
 
-	return &odigosv1.SourceList{Items: workloadSources}, &odigosv1.SourceList{Items: namespacesSources}, nil
+	return &odigosv1.InstrumentationConfigList{Items: workloadSources}, nil
 }
