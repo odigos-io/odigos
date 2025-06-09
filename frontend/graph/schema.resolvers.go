@@ -82,38 +82,16 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 
 // K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
 func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
-	k8sNamespaces, err := services.GetK8SNamespaces(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	k8sActualNamespaces := make([]*model.K8sActualNamespace, len(k8sNamespaces.Namespaces))
-	for i, namespace := range k8sNamespaces.Namespaces {
-		k8sActualNamespaces[i] = &namespace
-	}
-
-	return k8sActualNamespaces, nil
+	return services.GetK8SNamespaces(ctx, nil)
 }
 
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
 func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
-	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
+	namespaces, err := services.GetK8SNamespaces(ctx, &name)
 	if err != nil {
 		return nil, err
 	}
-	nsName := namespace.Namespace
-
-	// check if entire namespace is instrumented
-	crd, err := services.GetSourceCRD(ctx, nsName, nsName, services.WorkloadKindNamespace)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return &model.K8sActualNamespace{}, err
-	}
-	instrumented := crd != nil && !crd.Spec.DisableInstrumentation
-
-	return &model.K8sActualNamespace{
-		Name:     namespace.Name,
-		Selected: instrumented,
-	}, nil
+	return namespaces[0], nil
 }
 
 // Sources is the resolver for the sources field.
@@ -542,20 +520,24 @@ func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bo
 	return err == nil, nil
 }
 
-// PersistK8sNamespace is the resolver for the persistK8sNamespace field.
-func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error) {
+// PersistK8sNamespaces is the resolver for the persistK8sNamespaces field.
+func (r *mutationResolver) PersistK8sNamespaces(ctx context.Context, namespaces []*model.PersistNamespaceItemInput) (bool, error) {
 	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
-	persistObjects := []model.PersistNamespaceSourceInput{}
-	persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
-		Name:     namespace.Name,
-		Kind:     model.K8sResourceKind(services.WorkloadKindNamespace),
-		Selected: namespace.FutureSelected,
-	})
+	persistObjects := []*model.PersistNamespaceSourceInput{}
+	for _, namespace := range namespaces {
+		persistObjects = append(persistObjects, &model.PersistNamespaceSourceInput{
+			Namespace:         namespace.Namespace,
+			Name:              namespace.Namespace,
+			Kind:              model.K8sResourceKind(services.WorkloadKindNamespace),
+			Selected:          namespace.Selected,
+			CurrentStreamName: namespace.CurrentStreamName,
+		})
+	}
 
-	err := services.SyncWorkloadsInNamespace(ctx, namespace.Name, persistObjects)
+	err := services.SyncWorkloadsInNamespace(ctx, persistObjects)
 	if err != nil {
 		return false, fmt.Errorf("failed to sync workloads: %v", err)
 	}
@@ -564,22 +546,12 @@ func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace mo
 }
 
 // PersistK8sSources is the resolver for the persistK8sSources field.
-func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace string, sources []*model.PersistNamespaceSourceInput) (bool, error) {
+func (r *mutationResolver) PersistK8sSources(ctx context.Context, sources []*model.PersistNamespaceSourceInput) (bool, error) {
 	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
 
-	var persistObjects []model.PersistNamespaceSourceInput
-	for _, source := range sources {
-		persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
-			Name:              source.Name,
-			Kind:              source.Kind,
-			Selected:          source.Selected,
-			CurrentStreamName: source.CurrentStreamName,
-		})
-	}
-
-	err := services.SyncWorkloadsInNamespace(ctx, namespace, persistObjects)
+	err := services.SyncWorkloadsInNamespace(ctx, sources)
 	if err != nil {
 		return false, fmt.Errorf("failed to sync workloads: %v", err)
 	}
@@ -1091,11 +1063,9 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 	if services.IsReadonlyMode(ctx) {
 		return false, services.ErrorIsReadonly
 	}
-
-	ns := env.GetCurrentNamespace()
 	kubeClient := kube.DefaultClient.OdigosClient
 
-	destinations, err := kubeClient.Destinations(ns).List(ctx, metav1.ListOptions{})
+	destinations, err := kubeClient.Destinations(env.GetCurrentNamespace()).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return false, err
 	}

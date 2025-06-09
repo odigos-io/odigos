@@ -2,10 +2,7 @@ import type { SelectedSource } from '@odigos/ui-kit/store';
 import type { Condition, WorkloadId } from '@odigos/ui-kit/types';
 
 export interface SourceInstrumentInput {
-  namespace: string;
   sources: Omit<SelectedSource, 'numberOfInstances'>[];
 }
 
-export type SourceConditions = WorkloadId & {
-  conditions: Condition[];
-};
+export type SourceConditions = WorkloadId & { conditions: Condition[] };

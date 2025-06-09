@@ -78,6 +78,7 @@ type Condition {
 type K8sActualNamespace {
   name: String!
   selected: Boolean!
+  dataStreamNames: [String]!
   sources: [K8sActualSource]!
 }
 
@@ -349,11 +350,13 @@ input ExportedSignalsInput {
 }
 
 input PersistNamespaceItemInput {
-  name: String!
-  futureSelected: Boolean!
+  namespace: String!
+  selected: Boolean!
+  currentStreamName: String!
 }
 
 input PersistNamespaceSourceInput {
+  namespace: String!
   name: String!
   kind: K8sResourceKind!
   selected: Boolean!
@@ -758,8 +761,8 @@ type Query {
 
 type Mutation {
   updateApiToken(token: String!): Boolean!
-  persistK8sNamespace(namespace: PersistNamespaceItemInput!): Boolean!
-  persistK8sSources(namespace: String!, sources: [PersistNamespaceSourceInput!]!): Boolean!
+  persistK8sNamespaces(namespaces: [PersistNamespaceItemInput!]!): Boolean!
+  persistK8sSources(sources: [PersistNamespaceSourceInput!]!): Boolean!
   updateK8sActualSource(sourceId: K8sSourceId!, patchSourceRequest: PatchSourceRequestInput!): Boolean!
   createNewDestination(destination: DestinationInput!): Destination!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!

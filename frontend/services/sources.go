@@ -314,61 +314,46 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 }
 
 func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, currentStreamName string) error {
-	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
+	// note: ensure will return an existing crd (if exists) without throwing an error
+	source, err := EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
 	if err != nil {
 		return err
 	}
 
+	// check for namespace source first
+	var nsSource *v1alpha1.Source
 	if workloadKind == WorkloadKindNamespace {
-		// if is a namespace source, then proceed to delete it
-		return kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
-	}
-
-	// if is a regular workload, then check for namespace source first
-	nsSource, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
-	if err != nil && !apierrors.IsNotFound(err) {
-		// unexpected error occurred while trying to get the namespace source
-		return err
-	}
-
-	if nsSource != nil {
-		// namespace source exists, we need to create a workload source for handling.
-
-		// note: ensure will return an existing crd (if exists) without throwing an error
-		source, err := EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
-		if err != nil {
+		nsSource = source
+	} else {
+		nsSource, err = GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
+		if err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
+	}
 
-		// get the data-stream names for the source
-		dataStreamNames := ExtractDataStreamsFromSource(source, nsSource)
+	dataStreamNames := ExtractDataStreamsFromSource(source, nsSource)
+	isWorkloadWithNamespace := workloadKind != WorkloadKindNamespace && nsSource != nil
 
-		// toggle current data-stream label 'false'
-		if currentStreamName != "" {
+	// we remove the current data-stream
+	if currentStreamName != "" {
+		if isWorkloadWithNamespace {
 			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "false")
-			// if there are more labels for data-streams, we exit and don't toggle disabled on the source
-			if len(dataStreamNames) > 1 {
-				return err
-			}
+		} else {
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
 		}
-		// if that was the last data-stream label, we add "DisableInstrumentation" label to the source
+
+		// if there are more labels for data-streams, we exit and don't delete the source
+		if len(dataStreamNames) > 1 {
+			return err
+		}
+	}
+
+	if isWorkloadWithNamespace {
+		// we add "DisableInstrumentation" label to the source
 		_, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, common.DisableInstrumentationJsonKey, true)
 		return err
 	} else {
-		// namespace source does not exist, handle the workload source directly.
-
-		// get the data-stream names for the source
-		dataStreamNames := ExtractDataStreamsFromSource(source, nil)
-
-		// we remove the current data-stream name label
-		if currentStreamName != "" {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
-			// if there are more labels for data-streams, we exit and don't delete the source
-			if len(dataStreamNames) > 1 {
-				return err
-			}
-		}
-		// if that was the last data-stream label, we delete the source
+		// we delete the source
 		err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
 		return err
 	}

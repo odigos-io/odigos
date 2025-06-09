@@ -21,32 +21,38 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-type GetNamespacesResponse struct {
-	Namespaces []model.K8sActualNamespace `json:"namespaces"`
-}
+func GetK8SNamespaces(ctx context.Context, namespaceName *string) ([]*model.K8sActualNamespace, error) {
+	var namespaces []corev1.Namespace
+	var response []*model.K8sActualNamespace
 
-func GetK8SNamespaces(ctx context.Context) (GetNamespacesResponse, error) {
-	ns := env.GetCurrentNamespace()
-
-	relevantNameSpaces, err := getRelevantNameSpaces(ctx, ns)
-	if err != nil {
-		return GetNamespacesResponse{}, err
+	if namespaceName == nil || *namespaceName == "" {
+		relevantNameSpaces, err := getRelevantNameSpaces(ctx, env.GetCurrentNamespace())
+		if err != nil {
+			return nil, err
+		}
+		namespaces = relevantNameSpaces
+	} else {
+		namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, *namespaceName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		namespaces = []corev1.Namespace{*namespace}
 	}
 
-	var response GetNamespacesResponse
-	for _, namespace := range relevantNameSpaces {
-		nsName := namespace.Name
+	for _, item := range namespaces {
+		nsName := item.Name
 
 		// check if entire namespace is instrumented
 		source, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
 		if err != nil && !strings.Contains(err.Error(), "not found") {
-			return GetNamespacesResponse{}, err
+			return nil, err
 		}
 
 		instrumented := source != nil && !source.Spec.DisableInstrumentation
-		response.Namespaces = append(response.Namespaces, model.K8sActualNamespace{
-			Name:     nsName,
-			Selected: instrumented,
+		response = append(response, &model.K8sActualNamespace{
+			Name:            nsName,
+			DataStreamNames: ExtractDataStreamsFromSource(source, nil),
+			Selected:        instrumented,
 		})
 	}
 
@@ -122,13 +128,13 @@ func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
 	return namespaceToAppsCount, nil
 }
 
-func SyncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []model.PersistNamespaceSourceInput) error {
+func SyncWorkloadsInNamespace(ctx context.Context, workloads []*model.PersistNamespaceSourceInput) error {
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
 
 	for _, workload := range workloads {
 		g.Go(func() error {
-			return ToggleSourceCRD(ctx, nsName, workload.Name, WorkloadKind(workload.Kind.String()), workload.Selected, workload.CurrentStreamName)
+			return ToggleSourceCRD(ctx, workload.Namespace, workload.Name, WorkloadKind(workload.Kind.String()), workload.Selected, workload.CurrentStreamName)
 		})
 	}
 

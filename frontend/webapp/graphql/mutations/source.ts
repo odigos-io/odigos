@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
-export const PERSIST_SOURCE = gql`
-  mutation PersistSources($namespace: String!, $sources: [PersistNamespaceSourceInput!]!) {
-    persistK8sSources(namespace: $namespace, sources: $sources)
+export const PERSIST_SOURCES = gql`
+  mutation PersistSources($sources: [PersistNamespaceSourceInput!]!) {
+    persistK8sSources(sources: $sources)
   }
 `;
 
