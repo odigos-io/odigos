@@ -14,7 +14,8 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
-	v1 "k8s.io/api/core/v1"
+	"golang.org/x/sync/errgroup"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/yaml"
@@ -54,37 +55,36 @@ func GetK8SNamespaces(ctx context.Context) (GetNamespacesResponse, error) {
 
 // getRelevantNameSpaces returns a list of namespaces that are relevant for instrumentation.
 // Taking into account the ignored namespaces from the OdigosConfiguration.
-func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace, error) {
+func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]corev1.Namespace, error) {
 	var (
 		odigosConfig *common.OdigosConfiguration
-		list         *v1.NamespaceList
+		list         *corev1.NamespaceList
 	)
 
-	err := WithGoRoutine(ctx, 0, func(goFunc func(func() error)) {
-		goFunc(func() error {
-			var err error
-			configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-			if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
-				return err
-			}
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		var err error
+		configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
+		if err != nil {
 			return err
-		})
-
-		goFunc(func() error {
-			var err error
-			list, err = kube.DefaultClient.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		}
+		if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
 			return err
-		})
+		}
+		return err
 	})
 
-	if err != nil {
-		return []v1.Namespace{}, err
+	g.Go(func() error {
+		var err error
+		list, err = kube.DefaultClient.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
+		return []corev1.Namespace{}, err
 	}
 
-	result := []v1.Namespace{}
+	result := []corev1.Namespace{}
 	for _, namespace := range list.Items {
 		if utils.IsItemIgnored(namespace.Name, odigosConfig.IgnoredNamespaces) {
 			continue
@@ -123,11 +123,14 @@ func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
 }
 
 func SyncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []model.PersistNamespaceSourceInput) error {
-	return WithGoRoutine(ctx, k8sconsts.K8sClientDefaultBurst, func(goFunc func(func() error)) {
-		for _, workload := range workloads {
-			goFunc(func() error {
-				return ToggleSourceCRD(ctx, nsName, workload.Name, WorkloadKind(workload.Kind.String()), workload.Selected, workload.CurrentStreamName)
-			})
-		}
-	})
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
+
+	for _, workload := range workloads {
+		g.Go(func() error {
+			return ToggleSourceCRD(ctx, nsName, workload.Name, WorkloadKind(workload.Kind.String()), workload.Selected, workload.CurrentStreamName)
+		})
+	}
+
+	return g.Wait()
 }

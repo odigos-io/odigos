@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"golang.org/x/sync/errgroup"
 )
 
 func ExtractDataStreamsFromEntities(sources []v1alpha1.Source, destinations []v1alpha1.Destination) []*model.DataStream {
@@ -132,23 +133,23 @@ func DeleteDestinationOrRemoveStreamName(ctx context.Context, dest *v1alpha1.Des
 }
 
 func DeleteDestinationsOrRemoveStreamName(ctx context.Context, destinations *v1alpha1.DestinationList, currentStreamName string) error {
-	err := WithGoRoutine(ctx, len(destinations.Items), func(goFunc func(func() error)) {
-		for _, dest := range destinations.Items {
-			dest := dest // capture range variable
+	g, ctx := errgroup.WithContext(ctx)
 
-			goFunc(func() error {
-				if destinationGroupsNotNull(&dest) && ArrayContains(dest.Spec.SourceSelector.Groups, currentStreamName) {
-					err := DeleteDestinationOrRemoveStreamName(ctx, &dest, currentStreamName)
-					if err != nil {
-						return fmt.Errorf("failed to delete destination or remove stream name: %v", err)
-					}
+	for _, dest := range destinations.Items {
+		dest := dest // capture range variable
+
+		g.Go(func() error {
+			if destinationGroupsNotNull(&dest) && ArrayContains(dest.Spec.SourceSelector.Groups, currentStreamName) {
+				err := DeleteDestinationOrRemoveStreamName(ctx, &dest, currentStreamName)
+				if err != nil {
+					return fmt.Errorf("failed to delete destination or remove stream name: %v", err)
 				}
-				return nil
-			})
-		}
-	})
+			}
+			return nil
+		})
+	}
 
-	if err != nil {
+	if err := g.Wait(); err != nil {
 		return err
 	}
 
@@ -156,31 +157,31 @@ func DeleteDestinationsOrRemoveStreamName(ctx context.Context, destinations *v1a
 }
 
 func UpdateDestinationsCurrentStreamName(ctx context.Context, destinations *v1alpha1.DestinationList, currentStreamName string, newStreamName string) error {
-	err := WithGoRoutine(ctx, len(destinations.Items), func(goFunc func(func() error)) {
-		for _, dest := range destinations.Items {
-			dest := dest // capture range variable
+	g, ctx := errgroup.WithContext(ctx)
 
-			goFunc(func() error {
-				if destinationGroupsNotNull(&dest) && ArrayContains(dest.Spec.SourceSelector.Groups, currentStreamName) {
-					// Remove the current stream name from the source selector
-					dest.Spec.SourceSelector.Groups = RemoveStringFromSlice(dest.Spec.SourceSelector.Groups, currentStreamName)
+	for _, dest := range destinations.Items {
+		dest := dest // capture range variable
 
-					// Add the new stream name to the source selector
-					if !ArrayContains(dest.Spec.SourceSelector.Groups, newStreamName) {
-						dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, newStreamName)
-					}
+		g.Go(func() error {
+			if destinationGroupsNotNull(&dest) && ArrayContains(dest.Spec.SourceSelector.Groups, currentStreamName) {
+				// Remove the current stream name from the source selector
+				dest.Spec.SourceSelector.Groups = RemoveStringFromSlice(dest.Spec.SourceSelector.Groups, currentStreamName)
 
-					err := UpdateDestination(ctx, &dest)
-					if err != nil {
-						return err
-					}
+				// Add the new stream name to the source selector
+				if !ArrayContains(dest.Spec.SourceSelector.Groups, newStreamName) {
+					dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, newStreamName)
 				}
-				return nil
-			})
-		}
-	})
 
-	if err != nil {
+				err := UpdateDestination(ctx, &dest)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
 		return err
 	}
 
@@ -188,32 +189,32 @@ func UpdateDestinationsCurrentStreamName(ctx context.Context, destinations *v1al
 }
 
 func DeleteSourcesOrRemoveStreamName(ctx context.Context, sources *v1alpha1.SourceList, currentStreamName string) error {
-	err := WithGoRoutine(ctx, len(sources.Items), func(goFunc func(func() error)) {
-		for _, source := range sources.Items {
-			source := source // capture range variable
+	g, ctx := errgroup.WithContext(ctx)
 
-			goFunc(func() error {
-				for labelKey := range source.Labels {
-					if strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) == currentStreamName {
-						toPersist := []model.PersistNamespaceSourceInput{{
-							Name:              source.Spec.Workload.Name,
-							Kind:              model.K8sResourceKind(source.Spec.Workload.Kind),
-							Selected:          false, // to remove label, or delete entirely
-							CurrentStreamName: currentStreamName,
-						}}
+	for _, source := range sources.Items {
+		source := source // capture range variable
 
-						err := SyncWorkloadsInNamespace(ctx, source.Namespace, toPersist)
-						if err != nil {
-							return fmt.Errorf("failed to sync workload %s: %v", source.Name, err)
-						}
+		g.Go(func() error {
+			for labelKey := range source.Labels {
+				if strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) == currentStreamName {
+					toPersist := []model.PersistNamespaceSourceInput{{
+						Name:              source.Spec.Workload.Name,
+						Kind:              model.K8sResourceKind(source.Spec.Workload.Kind),
+						Selected:          false, // to remove label, or delete entirely
+						CurrentStreamName: currentStreamName,
+					}}
+
+					err := SyncWorkloadsInNamespace(ctx, source.Namespace, toPersist)
+					if err != nil {
+						return fmt.Errorf("failed to sync workload %s: %v", source.Name, err)
 					}
 				}
-				return nil
-			})
-		}
-	})
+			}
+			return nil
+		})
+	}
 
-	if err != nil {
+	if err := g.Wait(); err != nil {
 		return err
 	}
 
@@ -221,34 +222,34 @@ func DeleteSourcesOrRemoveStreamName(ctx context.Context, sources *v1alpha1.Sour
 }
 
 func UpdateSourcesCurrentStreamName(ctx context.Context, sources *v1alpha1.SourceList, currentStreamName string, newStreamName string) error {
-	err := WithGoRoutine(ctx, len(sources.Items), func(goFunc func(func() error)) {
-		for _, source := range sources.Items {
-			source := source // capture range variable
+	g, ctx := errgroup.WithContext(ctx)
 
-			goFunc(func() error {
-				for labelKey := range source.Labels {
-					if strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) == currentStreamName {
-						// remove the old label
-						_, err := UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "false")
-						if err != nil {
-							return fmt.Errorf("failed to update source %s: %v", source.Name, err)
-						}
+	for _, source := range sources.Items {
+		source := source // capture range variable
 
-						// add the new label
-						_, err = UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+newStreamName, "true")
-						if err != nil {
-							return fmt.Errorf("failed to update source %s: %v", source.Name, err)
-						}
-
-						return nil
+		g.Go(func() error {
+			for labelKey := range source.Labels {
+				if strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) == currentStreamName {
+					// remove the old label
+					_, err := UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "false")
+					if err != nil {
+						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
 					}
-				}
-				return nil
-			})
-		}
-	})
 
-	if err != nil {
+					// add the new label
+					_, err = UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+newStreamName, "true")
+					if err != nil {
+						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
+					}
+
+					return nil
+				}
+			}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
 		return err
 	}
 

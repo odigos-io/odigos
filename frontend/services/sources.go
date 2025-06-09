@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
@@ -19,6 +17,8 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
+	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -68,29 +68,32 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 		return nil, err
 	}
 
+	g, ctx := errgroup.WithContext(ctx)
 	var (
 		deps []model.K8sActualSource
 		ss   []model.K8sActualSource
 		dss  []model.K8sActualSource
 	)
 
-	err = WithGoRoutine(ctx, 0, func(goFunc func(func() error)) {
-		goFunc(func() error {
-			deps, err = getDeployments(ctx, *namespace)
-			return err
-		})
-
-		goFunc(func() error {
-			ss, err = getStatefulSets(ctx, *namespace)
-			return err
-		})
-
-		goFunc(func() error {
-			dss, err = getDaemonSets(ctx, *namespace)
-			return err
-		})
+	g.Go(func() error {
+		var err error
+		deps, err = getDeployments(ctx, *namespace)
+		return err
 	})
-	if err != nil {
+
+	g.Go(func() error {
+		var err error
+		ss, err = getStatefulSets(ctx, *namespace)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		dss, err = getDaemonSets(ctx, *namespace)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 

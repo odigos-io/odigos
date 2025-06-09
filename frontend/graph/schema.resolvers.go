@@ -23,6 +23,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"golang.org/x/sync/errgroup"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -143,39 +144,39 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 	nsSources := make(map[string]*v1alpha1.Source)
 
 	// Get Source objects to extract stream names
-	err = services.WithGoRoutine(ctx, len(icList.Items), func(goFunc func(func() error)) {
-		for idx, ic := range icList.Items {
-			// Copy to avoid potential race conditions from capturing loop variables in the goroutines
-			idxCopy := idx
-			icCopy := ic
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(len(icList.Items))
+	for idx, ic := range icList.Items {
+		// Copy to avoid potential race conditions from capturing loop variables in the goroutines
+		idxCopy := idx
+		icCopy := ic
 
-			goFunc(func() error {
-				if len(icCopy.OwnerReferences) == 0 {
-					return fmt.Errorf("no owner reference found for InstrumentationConfig %s", icCopy.Name)
-				}
+		g.Go(func() error {
+			if len(icCopy.OwnerReferences) == 0 {
+				return fmt.Errorf("no owner reference found for InstrumentationConfig %s", icCopy.Name)
+			}
 
-				// Get workload source CRD
-				wkSource, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, services.WorkloadKind(icCopy.OwnerReferences[0].Kind))
+			// Get workload source CRD
+			wkSource, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, services.WorkloadKind(icCopy.OwnerReferences[0].Kind))
+			if err != nil && !apierrors.IsNotFound(err) {
+				return err
+			}
+
+			// Get namespace source CRD
+			nsSource := nsSources[icCopy.Namespace]
+			if nsSource == nil {
+				nsSource, err = services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.Namespace, services.WorkloadKindNamespace)
 				if err != nil && !apierrors.IsNotFound(err) {
 					return err
 				}
+				nsSources[icCopy.Namespace] = nsSource
+			}
 
-				// Get namespace source CRD
-				nsSource := nsSources[icCopy.Namespace]
-				if nsSource == nil {
-					nsSource, err = services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.Namespace, services.WorkloadKindNamespace)
-					if err != nil && !apierrors.IsNotFound(err) {
-						return err
-					}
-					nsSources[icCopy.Namespace] = nsSource
-				}
-
-				dataStreamNamesList[idxCopy] = services.ExtractDataStreamsFromSource(wkSource, nsSource)
-				return nil
-			})
-		}
-	})
-	if err != nil {
+			dataStreamNamesList[idxCopy] = services.ExtractDataStreamsFromSource(wkSource, nsSource)
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
