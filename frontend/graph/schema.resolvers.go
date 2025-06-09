@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -141,7 +142,8 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 	// Keep order based on idx
 	dataStreamNamesList := make([][]*string, len(icList.Items))
 	// Keep namespace sources (for cheaper queries)
-	nsSources := make(map[string]*v1alpha1.Source)
+	// nsSources := make(map[string]*v1alpha1.Source)
+	var nsSources sync.Map
 
 	// Get Source objects to extract stream names
 	g, ctx := errgroup.WithContext(ctx)
@@ -163,13 +165,16 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 			}
 
 			// Get namespace source CRD
-			nsSource := nsSources[icCopy.Namespace]
-			if nsSource == nil {
+			val, exists := nsSources.Load(icCopy.Namespace)
+			var nsSource *v1alpha1.Source
+			if exists {
+				nsSource = val.(*v1alpha1.Source)
+			} else {
 				nsSource, err = services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.Namespace, services.WorkloadKindNamespace)
 				if err != nil && !apierrors.IsNotFound(err) {
 					return err
 				}
-				nsSources[icCopy.Namespace] = nsSource
+				nsSources.Store(icCopy.Namespace, nsSource)
 			}
 
 			dataStreamNamesList[idxCopy] = services.ExtractDataStreamsFromSource(wkSource, nsSource)
