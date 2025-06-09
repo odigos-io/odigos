@@ -6,17 +6,17 @@ metadata:
   name: central-backend
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: central-backend
+    app: central-backend
     odigos.io/system-object: "true"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: central-backend
+      app: central-backend
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: central-backend
+        app: central-backend
     spec:
       containers:
         - name: central-backend

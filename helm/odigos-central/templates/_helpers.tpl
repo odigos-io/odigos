@@ -10,8 +10,11 @@
         {{- $defaultRegistry -}}/
     {{- end -}}
 {{- end -}}
-odigos-
-{{- .Component -}}
+{{- if or (eq .Component "central-backend") (eq .Component "central-ui") -}}
+odigos-enterprise-{{- .Component -}}
+{{- else -}}
+odigos-{{- .Component -}}
+{{- end -}}
 {{- if $.Values.openshift.enabled -}}
 -ubi9
 {{- end -}}
