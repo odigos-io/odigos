@@ -39,7 +39,7 @@ spec:
         command:
           - /app
         {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-        {{- if .Values.onPremToken }}
+        {{- if include "odigos.secretExists" . }}
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-instrumentor" "Tag" $imageTag) }}
         {{- else }}
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "instrumentor" "Tag" $imageTag) }}
@@ -60,7 +60,7 @@ spec:
               configMapKeyRef:
                 key: ODIGOS_TIER
                 name: odigos-deployment
-          {{- if .Values.onPremToken }}
+          {{- if include "odigos.secretExists" . }}
           - name: ODIGOS_ONPREM_TOKEN
             valueFrom:
               secretKeyRef:
