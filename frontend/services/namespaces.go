@@ -14,7 +14,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
-	"golang.org/x/sync/errgroup"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -125,8 +124,10 @@ func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
 
 func SyncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []model.PersistNamespaceSourceInput) error {
 	return WithGoRoutine(ctx, k8sconsts.K8sClientDefaultBurst, func(goFunc) {
-		goFunc(func() error {
-			return ToggleSourceCRD(ctx, nsName, workload.Name, WorkloadKind(workload.Kind.String()), workload.Selected, workload.CurrentStreamName)
-		})
+		for _, workload := range workloads {
+			goFunc(func() error {
+				return ToggleSourceCRD(ctx, nsName, workload.Name, WorkloadKind(workload.Kind.String()), workload.Selected, workload.CurrentStreamName)
+			})
+		}
 	})
 }
