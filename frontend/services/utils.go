@@ -174,7 +174,7 @@ func CreateResourceWithGenerateName[T any](ctx context.Context, createFunc func(
 }
 
 func WithGoRoutine(ctx context.Context, limit int, run func(goFunc func(func() error))) error {
-	g, ctx := errgroup.WithContext(ctx)
+	g, _ := errgroup.WithContext(ctx)
 	if limit > 0 {
 		g.SetLimit(limit)
 	}
