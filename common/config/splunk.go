@@ -20,7 +20,7 @@ const (
 type Splunk struct{}
 
 func (s *Splunk) DestType() common.DestinationType {
-	return common.SplunkSAPMDestinationType
+	return common.SplunkDestinationType
 }
 
 func (s *Splunk) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {

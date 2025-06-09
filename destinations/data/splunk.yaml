@@ -1,7 +1,7 @@
 apiVersion: internal.odigos.io/v1beta1
 kind: Destination
 metadata:
-  type: splunksapm
+  type: splunk
   displayName: Splunk (SAPM) (Deprecated)
   category: managed
 spec:

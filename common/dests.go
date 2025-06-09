@@ -60,7 +60,7 @@ const (
 	SentryDestinationType                 DestinationType = "sentry"
 	SeqDestinationType                    DestinationType = "seq"
 	SignozDestinationType                 DestinationType = "signoz"
-	SplunkSAPMDestinationType             DestinationType = "splunksapm"
+	SplunkDestinationType                 DestinationType = "splunk"
 	SplunkOTLPDestinationType             DestinationType = "splunkotlp"
 	SumoLogicDestinationType              DestinationType = "sumologic"
 	TelemetryHubDestinationType           DestinationType = "telemetryhub"
