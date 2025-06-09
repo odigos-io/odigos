@@ -3,8 +3,15 @@ package source
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -111,4 +118,43 @@ func GetClientObjectFromSource(ctx context.Context, kubeClient client.Client, so
 	}
 
 	return obj, nil
+}
+
+func GetSourceCRD(ctx context.Context, kubeClient client.Client, nsName string, workloadName string, workloadKind k8sconsts.WorkloadKind) (*v1alpha1.Source, error) {
+	sourceList := v1alpha1.SourceList{}
+	err := kubeClient.List(ctx, &sourceList, &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(labels.Set{
+			k8sconsts.WorkloadNamespaceLabel: nsName,
+			k8sconsts.WorkloadNameLabel:      workloadName,
+			k8sconsts.WorkloadKindLabel:      string(workloadKind),
+		}),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	if len(sourceList.Items) == 0 {
+		return nil, apierrors.NewNotFound(schema.GroupResource{Group: "", Resource: "source"}, workloadName)
+	}
+	if len(sourceList.Items) > 1 {
+		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(sourceList.Items))
+	}
+
+	return &sourceList.Items[0], err
+}
+
+func GetSourceDataStreamsLabels(source *odigosv1.Source) map[string]string {
+	sourceDataStreamsLabels := map[string]string{}
+	// iterate over the source labels and add them to the sourceDataStreamsLabels
+	for key, value := range source.Labels {
+		if strings.HasPrefix(key, k8sconsts.SourceDataStreamLabelPrefix) {
+			sourceDataStreamsLabels[key] = value
+		}
+	}
+	return sourceDataStreamsLabels
+}
+
+// IsDataStreamLabel returns true if the label is a datastream label.
+func IsDataStreamLabel(labelKey string) bool {
+	return strings.HasPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix)
 }
