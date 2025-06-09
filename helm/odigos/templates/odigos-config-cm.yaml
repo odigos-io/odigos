@@ -56,6 +56,7 @@ data:
       {{- with .Values.collectorGateway.goMemLimitMiB }}
       goMemLimitMiB: {{ . }}
       {{- end }}
+      {{- include "odigos.renderTopologySpreadConstraints" . | nindent 6 }}
     {{- end }}
     {{- if .Values.collectorNode }}
     collectorNode:
@@ -86,6 +87,7 @@ data:
       {{- with .Values.collectorNode.k8sNodeLogsDirectory }}
       k8sNodeLogsDirectory: {{ . }}
       {{- end }}
+      {{- include "odigos.renderTopologySpreadConstraints" . | nindent 6 }}
     {{- end }}
     {{- if include "utils.shouldRenderUserInstrumentationEnvs" . | eq "true" }}
     userInstrumentationEnvs:

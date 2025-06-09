@@ -44,5 +44,6 @@ spec:
       {{- with .Values.centralBackend.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
       {{- end }}
+      {{- include "odigos.renderTopologySpreadConstraints" . | indent 6 }}
 
 {{- end }}

@@ -18,6 +18,7 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-instrumentor
     spec:
+      {{- include "odigos.renderTopologySpreadConstraints" . | indent 6 }}
       {{- if .Values.nodeSelector }}
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}

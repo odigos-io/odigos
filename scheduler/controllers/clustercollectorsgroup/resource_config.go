@@ -84,6 +84,11 @@ func getGatewayResourceSettings(odigosConfig *common.OdigosConfiguration) *odigo
 		gomemlimitMiB = odigosConfig.CollectorGateway.GoMemLimitMib
 	}
 
+	var topologySpread *common.TopologySpread
+	if gatewayConfig != nil && gatewayConfig.TopologySpread != nil && gatewayConfig.TopologySpread.Enabled {
+		topologySpread = gatewayConfig.TopologySpread
+	}
+
 	return &odigosv1.CollectorsGroupResourcesSettings{
 		MinReplicas:                &gatewayMinReplicas,
 		MaxReplicas:                &gatewayMaxReplicas,
@@ -94,5 +99,6 @@ func getGatewayResourceSettings(odigosConfig *common.OdigosConfiguration) *odigo
 		MemoryLimiterLimitMiB:      memoryLimiterLimitMiB,
 		MemoryLimiterSpikeLimitMiB: memoryLimiterSpikeLimitMiB,
 		GomemlimitMiB:              gomemlimitMiB,
+		TopologySpread:             topologySpread,
 	}
 }

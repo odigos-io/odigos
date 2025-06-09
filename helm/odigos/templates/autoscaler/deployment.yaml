@@ -23,6 +23,7 @@ spec:
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
+      {{- include "odigos.renderTopologySpreadConstraints" . | indent 2 }}
       containers:
       - args:
           - --health-probe-bind-address=:8081

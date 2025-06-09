@@ -92,6 +92,11 @@ func getResourceSettings(odigosConfig common.OdigosConfiguration) odigosv1.Colle
 		cpuLimitm = nodeCollectorConfig.LimitCPUm
 	}
 
+	var topologySpread *common.TopologySpread
+	if nodeCollectorConfig != nil && nodeCollectorConfig.TopologySpread != nil && nodeCollectorConfig.TopologySpread.Enabled {
+		topologySpread = nodeCollectorConfig.TopologySpread
+	}
+
 	return odigosv1.CollectorsGroupResourcesSettings{
 		MemoryRequestMiB:           memoryRequestMiB,
 		MemoryLimitMiB:             memoryLimitMiB,
@@ -100,6 +105,7 @@ func getResourceSettings(odigosConfig common.OdigosConfiguration) odigosv1.Colle
 		GomemlimitMiB:              gomemlimitMiB,
 		CpuRequestMillicores:       cpuRequestm,
 		CpuLimitMillicores:         cpuLimitm,
+		TopologySpread:             topologySpread,
 	}
 }
 

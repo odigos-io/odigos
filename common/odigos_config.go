@@ -1,5 +1,7 @@
 package common
 
+import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 type ProfileName string
 
 // +kubebuilder:validation:Enum=normal;readonly
@@ -56,6 +58,10 @@ type CollectorNodeConfiguration struct {
 	// This field is used to specify this target directory in these cases.
 	// A common target directory is '/mnt/var/log'.
 	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
+
+	// Optional topology spread constraints for the node collector daemonset.
+	// Allows configuring pod distribution across topology domains.
+	TopologySpread *TopologySpread `json:"topologySpread,omitempty"`
 }
 
 type CollectorGatewayConfiguration struct {
@@ -100,6 +106,10 @@ type CollectorGatewayConfiguration struct {
 	// this is when go runtime will start garbage collection.
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
+
+	// Optional topology spread constraints for the collector gateway deployment.
+	// Allows configuring pod distribution across failure domains.
+	TopologySpread *TopologySpread `json:"topologySpread,omitempty"`
 }
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
@@ -109,6 +119,18 @@ type UserInstrumentationEnvs struct {
 type LanguageConfig struct {
 	Enabled bool              `json:"enabled"`
 	EnvVars map[string]string `json:"env,omitempty"`
+}
+
+type TopologySpreadConstraint struct {
+	MaxSkew           int                   `json:"maxSkew,omitempty"`
+	TopologyKey       string                `json:"topologyKey,omitempty"`
+	WhenUnsatisfiable string                `json:"whenUnsatisfiable,omitempty"`
+	LabelSelector     *metav1.LabelSelector `json:"labelSelector,omitempty"`
+}
+
+type TopologySpread struct {
+	Enabled     bool                       `json:"enabled,omitempty"`
+	Constraints []TopologySpreadConstraint `json:"constraints,omitempty"`
 }
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration

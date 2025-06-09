@@ -251,3 +251,13 @@ nodeSelector: {}
 # https://docs.odigos.io/setup/odigos-with-karpenter
 karpenter:
   enabled: false
+
+topologySpread:
+  enabled: false
+  constraints:
+    - maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: "ScheduleAnyway"
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/instance: odigos

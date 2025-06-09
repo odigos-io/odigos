@@ -19,6 +19,7 @@ spec:
         app.kubernetes.io/name: central-proxy
     spec:
       serviceAccountName: central-proxy
+      {{- include "odigos.renderTopologySpreadConstraints" . | indent 6 }}
       {{- if .Values.nodeSelector }}
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
@@ -50,5 +51,6 @@ spec:
       {{- with .Values.centralProxy.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
       {{- end }}
+  
 
 {{- end }}

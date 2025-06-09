@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -132,7 +133,7 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 					},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: nodeSelector,
+					NodeSelector:       nodeSelector,
 					ServiceAccountName: k8sconsts.OdigosClusterCollectorDeploymentName,
 					Containers: []corev1.Container{
 						{
@@ -224,6 +225,23 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 		desiredDeployment.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
 		for _, secret := range imagePullSecrets {
 			desiredDeployment.Spec.Template.Spec.ImagePullSecrets = append(desiredDeployment.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})
+		}
+	}
+
+	if gateway.Spec.ResourcesSettings.TopologySpread != nil && gateway.Spec.ResourcesSettings.TopologySpread.Enabled {
+		desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints = []corev1.TopologySpreadConstraint{}
+		for _, constraint := range gateway.Spec.ResourcesSettings.TopologySpread.Constraints {
+			desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints = append(
+				desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints,
+				corev1.TopologySpreadConstraint{
+					MaxSkew:           int32(constraint.MaxSkew),
+					TopologyKey:       constraint.TopologyKey,
+					WhenUnsatisfiable: corev1.UnsatisfiableConstraintAction(constraint.WhenUnsatisfiable),
+					LabelSelector: &metav1.LabelSelector{
+						MatchLabels: constraint.LabelSelector,
+					},
+				},
+			)
 		}
 	}
 
