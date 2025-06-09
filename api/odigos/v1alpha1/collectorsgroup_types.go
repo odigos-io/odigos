@@ -77,6 +77,12 @@ type CollectorsGroupResourcesSettings struct {
 	// this is when go runtime will start garbage collection.
 	// it is recommended to be set to 80% of the hard limit of the memory limiter.
 	GomemlimitMiB int `json:"gomemlimitMiB"`
+
+	// TopologySpread defines the topology spread constraints for the collector pods.
+	// It allows configuring pod distribution across failure domains.
+	// This is used to ensure that the collector pods are spread across different nodes or zones
+	// to avoid single points of failure.
+	TopologySpread *common.TopologySpread `json:"topologySpread,omitempty"`
 }
 
 // CollectorsGroupSpec defines the desired state of Collector

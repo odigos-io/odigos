@@ -17,18 +17,23 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	common "github.com/odigos-io/odigos/common"
+)
+
 // CollectorsGroupResourcesSettingsApplyConfiguration represents a declarative configuration of the CollectorsGroupResourcesSettings type for use
 // with apply.
 type CollectorsGroupResourcesSettingsApplyConfiguration struct {
-	MinReplicas                *int `json:"minReplicas,omitempty"`
-	MaxReplicas                *int `json:"maxReplicas,omitempty"`
-	MemoryRequestMiB           *int `json:"memoryRequestMiB,omitempty"`
-	MemoryLimitMiB             *int `json:"memoryLimitMiB,omitempty"`
-	CpuRequestMillicores       *int `json:"cpuRequestMillicores,omitempty"`
-	CpuLimitMillicores         *int `json:"cpuLimitMillicores,omitempty"`
-	MemoryLimiterLimitMiB      *int `json:"memoryLimiterLimitMiB,omitempty"`
-	MemoryLimiterSpikeLimitMiB *int `json:"memoryLimiterSpikeLimitMiB,omitempty"`
-	GomemlimitMiB              *int `json:"gomemlimitMiB,omitempty"`
+	MinReplicas                *int                   `json:"minReplicas,omitempty"`
+	MaxReplicas                *int                   `json:"maxReplicas,omitempty"`
+	MemoryRequestMiB           *int                   `json:"memoryRequestMiB,omitempty"`
+	MemoryLimitMiB             *int                   `json:"memoryLimitMiB,omitempty"`
+	CpuRequestMillicores       *int                   `json:"cpuRequestMillicores,omitempty"`
+	CpuLimitMillicores         *int                   `json:"cpuLimitMillicores,omitempty"`
+	MemoryLimiterLimitMiB      *int                   `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int                   `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GomemlimitMiB              *int                   `json:"gomemlimitMiB,omitempty"`
+	TopologySpread             *common.TopologySpread `json:"topologySpread,omitempty"`
 }
 
 // CollectorsGroupResourcesSettingsApplyConfiguration constructs a declarative configuration of the CollectorsGroupResourcesSettings type for use with
@@ -106,5 +111,13 @@ func (b *CollectorsGroupResourcesSettingsApplyConfiguration) WithMemoryLimiterSp
 // If called multiple times, the GomemlimitMiB field is set to the value of the last call.
 func (b *CollectorsGroupResourcesSettingsApplyConfiguration) WithGomemlimitMiB(value int) *CollectorsGroupResourcesSettingsApplyConfiguration {
 	b.GomemlimitMiB = &value
+	return b
+}
+
+// WithTopologySpread sets the TopologySpread field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TopologySpread field is set to the value of the last call.
+func (b *CollectorsGroupResourcesSettingsApplyConfiguration) WithTopologySpread(value common.TopologySpread) *CollectorsGroupResourcesSettingsApplyConfiguration {
+	b.TopologySpread = &value
 	return b
 }

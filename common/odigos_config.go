@@ -108,7 +108,7 @@ type CollectorGatewayConfiguration struct {
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 
 	// Optional topology spread constraints for the collector gateway deployment.
-	// Allows configuring pod distribution across failure domains.
+	// Allows configuring pod distribution across topology domains.
 	TopologySpread *TopologySpread `json:"topologySpread,omitempty"`
 }
 type UserInstrumentationEnvs struct {

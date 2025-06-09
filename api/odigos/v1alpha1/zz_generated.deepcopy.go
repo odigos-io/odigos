@@ -275,6 +275,8 @@ func (in *CollectorsGroupResourcesSettings) DeepCopyInto(out *CollectorsGroupRes
 	}
 	if in.TopologySpread != nil {
 		in, out := &in.TopologySpread, &out.TopologySpread
+		*out = new(common.TopologySpread)
+		(*in).DeepCopyInto(*out)
 	}
 }
 
