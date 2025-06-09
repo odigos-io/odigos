@@ -6,10 +6,10 @@ metadata:
   name: central-backend
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: central-backend
+    app: central-backend
 spec:
   selector:
-    app.kubernetes.io/name: central-backend
+    app: central-backend
   type: ClusterIP
   ports:
     - name: http

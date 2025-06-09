@@ -10,8 +10,7 @@
         {{- $defaultRegistry -}}/
     {{- end -}}
 {{- end -}}
-odigos-
-{{- .Component -}}
+odigos-enterprise-{{- .Component -}}
 {{- if $.Values.openshift.enabled -}}
 -ubi9
 {{- end -}}

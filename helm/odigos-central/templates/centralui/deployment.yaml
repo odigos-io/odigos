@@ -6,17 +6,17 @@ metadata:
   name: central-ui
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: central-ui
+    app: central-ui
     odigos.io/system-object: "true"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: central-ui
+      app: central-ui
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: central-ui
+        app: central-ui
     spec:
       containers:
         - name: central-ui
