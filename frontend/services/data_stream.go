@@ -52,6 +52,46 @@ func ExtractDataStreamsFromEntities(sources []v1alpha1.Source, destinations []v1
 	return dataStreams
 }
 
+func ExtractDataStreamsFromSource(workloadSource *v1alpha1.Source, namespaceSource *v1alpha1.Source) []*string {
+	seen := make(map[string]bool)
+	forbiddenNames := make(map[string]bool)
+	dataStreamNames := make([]*string, 0)
+
+	// Get all data stream names from the workload source
+	if workloadSource != nil {
+		for labelKey, labelValue := range workloadSource.Labels {
+			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) {
+				dsName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+
+				if labelValue == "false" {
+					forbiddenNames[dsName] = true
+				}
+
+				if _, exists := seen[dsName]; !exists && !forbiddenNames[dsName] {
+					seen[dsName] = true
+					dataStreamNames = append(dataStreamNames, &dsName)
+				}
+			}
+		}
+	}
+
+	// Get all data stream names from the namespace source (if it was not defined as 'false' in the workload source)
+	if namespaceSource != nil {
+		for labelKey, labelValue := range namespaceSource.Labels {
+			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
+				dsName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+
+				if _, exists := seen[dsName]; !exists && !forbiddenNames[dsName] {
+					seen[dsName] = true
+					dataStreamNames = append(dataStreamNames, &dsName)
+				}
+			}
+		}
+	}
+
+	return dataStreamNames
+}
+
 func destinationGroupsNotNull(destination *v1alpha1.Destination) bool {
 	if destination.Spec.SourceSelector != nil && destination.Spec.SourceSelector.Groups != nil {
 		return true

@@ -338,7 +338,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		}
 
 		// get the data-stream names for the source
-		dataStreamNames := GetSourceDataStreamNames(source, nsSource)
+		dataStreamNames := ExtractDataStreamsFromSource(source, nsSource)
 
 		// toggle current data-stream label 'false'
 		if currentStreamName != "" {
@@ -355,7 +355,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		// namespace source does not exist, handle the workload source directly.
 
 		// get the data-stream names for the source
-		dataStreamNames := GetSourceDataStreamNames(source, nil)
+		dataStreamNames := ExtractDataStreamsFromSource(source, nil)
 
 		// we remove the current data-stream name label
 		if currentStreamName != "" {
@@ -700,37 +700,4 @@ func GetOtherConditionsForSources(ctx context.Context, namespace string, name st
 	}
 
 	return result, nil
-}
-
-func GetSourceDataStreamNames(workloadSource *v1alpha1.Source, namespaceSource *v1alpha1.Source) []*string {
-	seen := make(map[string]bool)
-	dataStreamNames := make([]*string, 0)
-
-	if workloadSource != nil {
-		for labelKey, labelValue := range workloadSource.Labels {
-			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
-				dsName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
-
-				if _, exists := seen[dsName]; !exists {
-					seen[dsName] = true
-					dataStreamNames = append(dataStreamNames, &dsName)
-				}
-			}
-		}
-	}
-
-	if namespaceSource != nil {
-		for labelKey, labelValue := range namespaceSource.Labels {
-			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
-				dsName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
-
-				if _, exists := seen[dsName]; !exists {
-					seen[dsName] = true
-					dataStreamNames = append(dataStreamNames, &dsName)
-				}
-			}
-		}
-	}
-
-	return dataStreamNames
 }
