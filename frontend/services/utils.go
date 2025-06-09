@@ -9,7 +9,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -174,7 +173,7 @@ func CreateResourceWithGenerateName[T any](ctx context.Context, createFunc func(
 	}
 }
 
-func WithGoRoutine(ctx context.Context, limit int, run func(g.Go)) error {
+func WithGoRoutine(ctx context.Context, limit int, run func(goFunc func(func() error))) error {
 	g, ctx := errgroup.WithContext(ctx)
 	if limit > 0 {
 		g.SetLimit(limit)

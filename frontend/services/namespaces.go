@@ -60,7 +60,7 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]v1.Namespace
 		list         *v1.NamespaceList
 	)
 
-	err := WithGoRoutine(ctx, 0, func(goFunc) {
+	err := WithGoRoutine(ctx, 0, func(goFunc func(func() error)) {
 		goFunc(func() error {
 			var err error
 			configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
@@ -123,7 +123,7 @@ func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
 }
 
 func SyncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []model.PersistNamespaceSourceInput) error {
-	return WithGoRoutine(ctx, k8sconsts.K8sClientDefaultBurst, func(goFunc) {
+	return WithGoRoutine(ctx, k8sconsts.K8sClientDefaultBurst, func(goFunc func(func() error)) {
 		for _, workload := range workloads {
 			goFunc(func() error {
 				return ToggleSourceCRD(ctx, nsName, workload.Name, WorkloadKind(workload.Kind.String()), workload.Selected, workload.CurrentStreamName)

@@ -74,27 +74,24 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 		dss  []model.K8sActualSource
 	)
 
-	err := WithGoRoutine(ctx, 0, func(goFunc) {
+	err = WithGoRoutine(ctx, 0, func(goFunc func(func() error)) {
 		goFunc(func() error {
-			var err error
 			deps, err = getDeployments(ctx, *namespace)
 			return err
 		})
 
 		goFunc(func() error {
-			var err error
 			ss, err = getStatefulSets(ctx, *namespace)
 			return err
 		})
 
 		goFunc(func() error {
-			var err error
 			dss, err = getDaemonSets(ctx, *namespace)
 			return err
 		})
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	items := make([]model.K8sActualSource, len(deps)+len(ss)+len(dss))
@@ -358,7 +355,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		// namespace source does not exist, handle the workload source directly.
 
 		// get the data-stream names for the source
-		dataStreamNames := GetSourceDataStreamNames(source)
+		dataStreamNames := GetSourceDataStreamNames(source, nil)
 
 		// we remove the current data-stream name label
 		if currentStreamName != "" {

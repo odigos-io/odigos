@@ -91,7 +91,7 @@ func DeleteDestinationOrRemoveStreamName(ctx context.Context, dest *v1alpha1.Des
 }
 
 func DeleteDestinationsOrRemoveStreamName(ctx context.Context, destinations *v1alpha1.DestinationList, currentStreamName string) error {
-	err := WithGoRoutine(ctx, len(destinations.Items), func(goFunc) {
+	err := WithGoRoutine(ctx, len(destinations.Items), func(goFunc func(func() error)) {
 		for _, dest := range destinations.Items {
 			dest := dest // capture range variable
 
@@ -115,7 +115,7 @@ func DeleteDestinationsOrRemoveStreamName(ctx context.Context, destinations *v1a
 }
 
 func UpdateDestinationsCurrentStreamName(ctx context.Context, destinations *v1alpha1.DestinationList, currentStreamName string, newStreamName string) error {
-	err := WithGoRoutine(ctx, len(destinations.Items), func(goFunc) {
+	err := WithGoRoutine(ctx, len(destinations.Items), func(goFunc func(func() error)) {
 		for _, dest := range destinations.Items {
 			dest := dest // capture range variable
 
@@ -147,7 +147,7 @@ func UpdateDestinationsCurrentStreamName(ctx context.Context, destinations *v1al
 }
 
 func DeleteSourcesOrRemoveStreamName(ctx context.Context, sources *v1alpha1.SourceList, currentStreamName string) error {
-	err := WithGoRoutine(ctx, len(sources.Items), func(goFunc) {
+	err := WithGoRoutine(ctx, len(sources.Items), func(goFunc func(func() error)) {
 		for _, source := range sources.Items {
 			source := source // capture range variable
 
@@ -180,7 +180,7 @@ func DeleteSourcesOrRemoveStreamName(ctx context.Context, sources *v1alpha1.Sour
 }
 
 func UpdateSourcesCurrentStreamName(ctx context.Context, sources *v1alpha1.SourceList, currentStreamName string, newStreamName string) error {
-	err := WithGoRoutine(ctx, len(sources.Items), func(goFunc) {
+	err := WithGoRoutine(ctx, len(sources.Items), func(goFunc func(func() error)) {
 		for _, source := range sources.Items {
 			source := source // capture range variable
 
