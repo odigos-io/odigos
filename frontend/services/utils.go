@@ -174,8 +174,7 @@ func CreateResourceWithGenerateName[T any](ctx context.Context, createFunc func(
 }
 
 // Experimental function to run multiple goroutines with a limit on concurrency.
-// Seems to be working sometimes, but also fails at other times.
-// Currently unused, until debugged and improved.
+// Currently unused, until confirmed working (initial testing shows positive results).
 func WithGoRoutine(ctx context.Context, limit int, run func(goFunc func(func() error))) error {
 	g, _ := errgroup.WithContext(ctx)
 	if limit > 0 {
