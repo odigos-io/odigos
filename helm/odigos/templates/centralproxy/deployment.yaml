@@ -1,4 +1,4 @@
-{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName .Values.onPremToken}}
+{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .)}}
 
 apiVersion: apps/v1
 kind: Deployment
