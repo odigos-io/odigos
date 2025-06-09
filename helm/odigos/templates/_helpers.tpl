@@ -30,8 +30,8 @@ Returns "true" if any userInstrumentationEnvs.language is enabled or has env var
 {{- end }}
 
 {{- define "odigos.renderTopologySpreadConstraints" -}}
-{{- if and .Values.topologySpread.enabled .Values.topologySpread.constraints }}
+{{- if and .Values.topologySpread.enabled .Values.topologySpread.constraints -}}
 topologySpreadConstraints:
-  {{- toYaml .Values.topologySpread.constraints }}
-{{- end }}
-{{- end }}
+  {{- toYaml .Values.topologySpread.constraints | nindent 2 -}}
+{{- end -}}
+{{- end -}}
