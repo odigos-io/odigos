@@ -19,16 +19,8 @@ import (
 // 2) Is the object instrumentation disabled on the workload Source (overrides namespace instrumentation): false
 // 3) Is the object actively included by a namespace Source: true
 // 4) False
-func IsObjectInstrumentedBySource(ctx context.Context,
-	k8sClient client.Client,
-	obj client.Object) (bool, metav1.Condition, error) {
+func IsObjectInstrumentedBySource(ctx context.Context, sources *odigosv1.WorkloadSources, err error) (bool, metav1.Condition, error) {
 	// Check if a Source object exists for this object
-	pw := k8sconsts.PodWorkload{
-		Name:      obj.GetName(),
-		Namespace: obj.GetNamespace(),
-		Kind:      k8sconsts.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
-	}
-	sources, err := odigosv1.GetSources(ctx, k8sClient, pw)
 	if err != nil {
 		condition := metav1.Condition{
 			Type:    odigosv1.MarkedForInstrumentationStatusConditionType,

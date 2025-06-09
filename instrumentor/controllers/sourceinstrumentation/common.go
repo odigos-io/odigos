@@ -17,6 +17,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -83,7 +84,13 @@ func syncNamespaceWorkloads(
 func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, obj client.Object) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	enabled, markedForInstrumentationCondition, err := sourceutils.IsObjectInstrumentedBySource(ctx, k8sClient, obj)
+	pw := k8sconsts.PodWorkload{
+		Name:      obj.GetName(),
+		Namespace: obj.GetNamespace(),
+		Kind:      k8sconsts.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
+	}
+	sources, err := odigosv1.GetSources(ctx, k8sClient, pw)
+	enabled, markedForInstrumentationCondition, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, err)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
