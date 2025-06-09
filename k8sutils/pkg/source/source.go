@@ -23,12 +23,12 @@ func IsObjectInstrumentedBySource(ctx context.Context,
 	k8sClient client.Client,
 	obj client.Object) (bool, metav1.Condition, error) {
 	// Check if a Source object exists for this object
-	workloadObj := k8sconsts.PodWorkload{
+	pw := k8sconsts.PodWorkload{
 		Name:      obj.GetName(),
 		Namespace: obj.GetNamespace(),
 		Kind:      k8sconsts.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
 	}
-	sources, err := odigosv1.GetSources(ctx, k8sClient, workloadObj)
+	sources, err := odigosv1.GetSources(ctx, k8sClient, pw)
 	if err != nil {
 		condition := metav1.Condition{
 			Type:    odigosv1.MarkedForInstrumentationStatusConditionType,
@@ -90,12 +90,12 @@ func IsObjectInstrumentedBySource(ctx context.Context,
 // OTel service name is only valid for workload sources (not namespace sources).
 // If none is configured, it returns the default name which is the k8s workload resource name.
 func OtelServiceNameBySource(ctx context.Context, k8sClient client.Client, obj client.Object) (string, error) {
-	workloadObj := k8sconsts.PodWorkload{
+	pw := k8sconsts.PodWorkload{
 		Name:      obj.GetName(),
 		Namespace: obj.GetNamespace(),
 		Kind:      k8sconsts.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
 	}
-	sources, err := odigosv1.GetSources(ctx, k8sClient, workloadObj)
+	sources, err := odigosv1.GetSources(ctx, k8sClient, pw)
 	if err != nil {
 		return "", err
 	}
