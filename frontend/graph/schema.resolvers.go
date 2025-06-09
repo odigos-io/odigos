@@ -138,7 +138,10 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 	}
 
 	// Keep order based on idx
-	srcList := make([]*v1alpha1.Source, len(icList.Items))
+	dataStreamNamesList := make([][]*string, len(icList.Items))
+	// Keep namespace sources (for cheaper queries)
+	nsSources := make(map[string]*v1alpha1.Source)
+
 	// Get Source objects to extract stream names
 	err = services.WithGoRoutine(ctx, len(icList.Items), func(goFunc func(func() error)) {
 		for idx, ic := range icList.Items {
@@ -150,11 +153,24 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 				if len(icCopy.OwnerReferences) == 0 {
 					return fmt.Errorf("no owner reference found for InstrumentationConfig %s", icCopy.Name)
 				}
-				src, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, services.WorkloadKind(icCopy.OwnerReferences[0].Kind))
+
+				// Get workload source CRD
+				wkSource, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, services.WorkloadKind(icCopy.OwnerReferences[0].Kind))
 				if err != nil && !apierrors.IsNotFound(err) {
 					return err
 				}
-				srcList[idxCopy] = src
+
+				// Get namespace source CRD
+				nsSource := nsSources[icCopy.Namespace]
+				if nsSource == nil {
+					nsSource, err = services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.Namespace, services.WorkloadKindNamespace)
+					if err != nil && !apierrors.IsNotFound(err) {
+						return err
+					}
+					nsSources[icCopy.Namespace] = nsSource
+				}
+
+				dataStreamNamesList[idxCopy] = services.ExtractDataStreamsFromSource(wkSource, nsSource)
 				return nil
 			})
 		}
@@ -165,7 +181,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 
 	var actualSources []*model.K8sActualSource
 	for idx, ic := range icList.Items {
-		actualSource, err := instrumentationConfigToActualSource(ctx, ic, srcList[idx])
+		actualSource, err := instrumentationConfigToActualSource(ctx, ic, dataStreamNamesList[idx])
 		if err != nil {
 			return nil, err
 		}
@@ -192,13 +208,18 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 		return nil, fmt.Errorf("InstrumentationConfig not found for %s/%s in namespace %s", kind, name, ns)
 	}
 
-	// Get Source object to extract stream names
-	src, err := services.GetSourceCRD(ctx, ns, name, services.WorkloadKind(kind))
+	// Get Workload Source (to extract stream names)
+	wkSource, err := services.GetSourceCRD(ctx, ns, name, services.WorkloadKind(kind))
 	if err != nil && !apierrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to get Source: %w", err)
+		return nil, fmt.Errorf("failed to get Worklaod Source: %w", err)
+	}
+	// Get Namespace Source (to extract stream names))
+	nsSource, err := services.GetSourceCRD(ctx, ns, ns, services.WorkloadKindNamespace)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return nil, fmt.Errorf("failed to get Namespace Source: %w", err)
 	}
 
-	payload, err := instrumentationConfigToActualSource(ctx, *ic, src)
+	payload, err := instrumentationConfigToActualSource(ctx, *ic, services.ExtractDataStreamsFromSource(wkSource, nsSource))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}

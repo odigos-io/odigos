@@ -32,9 +32,8 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	return &str
 }
 
-func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, source *v1alpha1.Source) (*model.K8sActualSource, error) {
+func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, dataStreamNames []*string) (*model.K8sActualSource, error) {
 	selected := true
-	dataStreamNames := services.ExtractDataStreamsFromSource(source, nil)
 	var containers []*model.SourceContainer
 
 	// Map the containers runtime details
