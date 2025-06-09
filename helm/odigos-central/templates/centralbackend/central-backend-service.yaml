@@ -1,4 +1,4 @@
-{{- if .Values.onPremToken }}
+{{- if (include "odigos.secretExists" .) }}
 
 apiVersion: v1
 kind: Service

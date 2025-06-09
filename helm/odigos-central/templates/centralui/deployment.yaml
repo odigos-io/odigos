@@ -1,4 +1,4 @@
-{{- if .Values.onPremToken }}
+{{- if (include "odigos.secretExists" .) }}
 
 apiVersion: apps/v1
 kind: Deployment
@@ -21,7 +21,7 @@ spec:
       containers:
         - name: central-ui
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "central-ui" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-central-ui" "Tag" $imageTag) }}
           resources:
             requests:
               cpu: {{ .Values.centralUI.resources.requests.cpu }}
