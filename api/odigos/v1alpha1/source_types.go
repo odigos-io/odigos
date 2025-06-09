@@ -112,21 +112,21 @@ type SourceSelector struct {
 // GetSources returns a WorkloadSources listing the Workload and Namespace Source
 // that currently apply to the given object. In theory, this should only ever return at most
 // 1 Namespace and/or 1 Workload Source for an object. If more are found, an error is returned.
-func GetSources(ctx context.Context, kubeClient client.Client, workloadObj k8sconsts.PodWorkload) (*WorkloadSources, error) {
+func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodWorkload) (*WorkloadSources, error) {
 	var err error
 	workloadSources := &WorkloadSources{}
 
-	namespace := workloadObj.Namespace
-	if len(namespace) == 0 && workloadObj.Kind == k8sconsts.WorkloadKindNamespace {
-		namespace = workloadObj.Name
+	namespace := pw.Namespace
+	if len(namespace) == 0 && pw.Kind == k8sconsts.WorkloadKindNamespace {
+		namespace = pw.Name
 	}
 
-	if workloadObj.Kind != k8sconsts.WorkloadKindNamespace {
+	if pw.Kind != k8sconsts.WorkloadKindNamespace {
 		sourceList := SourceList{}
 		selector := labels.SelectorFromSet(labels.Set{
-			k8sconsts.WorkloadNameLabel:      workloadObj.Name,
+			k8sconsts.WorkloadNameLabel:      pw.Name,
 			k8sconsts.WorkloadNamespaceLabel: namespace,
-			k8sconsts.WorkloadKindLabel:      string(workloadObj.Kind),
+			k8sconsts.WorkloadKindLabel:      string(pw.Kind),
 		})
 		err := kubeClient.List(ctx, &sourceList, &client.ListOptions{LabelSelector: selector}, client.InNamespace(namespace))
 		if err != nil {
