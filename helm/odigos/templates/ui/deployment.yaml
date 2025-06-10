@@ -57,11 +57,11 @@ spec:
           periodSeconds: 10
         resources:
           limits:
-            cpu: 500m
-            memory: 512Mi
+            cpu: {{ .Values.ui.limitCPUm }}m
+            memory: {{ .Values.ui.limitMemoryMiB }}Mi
           requests:
-            cpu: 10m
-            memory: 64Mi
+            cpu: {{ .Values.ui.requestCPUm }}m
+            memory: {{ .Values.ui.requestMemoryMiB }}Mi
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
