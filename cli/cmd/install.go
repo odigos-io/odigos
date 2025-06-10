@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -54,6 +55,12 @@ var (
 
 	clusterName       string
 	centralBackendURL string
+
+	userInstrumentationEnvsRaw string
+
+	autoRollbackDisabled         bool
+	autoRollbackGraceTime        string
+	autoRollbackStabilityWindows string
 )
 
 type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error
@@ -194,7 +201,6 @@ func installOdigos(ctx context.Context, client *kube.Client, ns string, config *
 
 	resourceManagers := resources.CreateResourceManagers(client, ns, odigosTier, token, config, versionFlag, installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 	return resources.ApplyResourceManagers(ctx, client, resourceManagers, label)
-
 }
 
 func parseNodeSelectorFlag() (map[string]string, error) {
@@ -250,12 +256,9 @@ func arePodsReady(ctx context.Context, client *kube.Client, ns string) func() (b
 }
 
 func createNamespace(ctx context.Context, client *kube.Client, ns string, labelKey string) error {
-	nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	_, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err == nil {
-		val, exists := nsObj.Labels[labelKey]
-		if !exists || val != k8sconsts.OdigosSystemLabelValue {
-			return fmt.Errorf("namespace %s does not contain the expected label: %s", ns, labelKey)
-		}
+		// Namespace already exists, nothing to do
 		return nil
 	}
 
@@ -349,6 +352,14 @@ func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]st
 		autoScalerImage = k8sconsts.AutoScalerImageUBI9
 	}
 
+	var parsedUserJson *common.UserInstrumentationEnvs
+	if userInstrumentationEnvsRaw != "" {
+		parsedUserJson = &common.UserInstrumentationEnvs{}
+		if err := json.Unmarshal([]byte(userInstrumentationEnvsRaw), &parsedUserJson); err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to parse --user-instrumentation-envs: %v\n", err)
+		}
+	}
+
 	return common.OdigosConfiguration{
 		ConfigVersion:                    1, // config version starts at 1 and incremented on every config change
 		TelemetryEnabled:                 telemetryEnabled,
@@ -366,7 +377,11 @@ func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]st
 		UiMode:                    common.UiMode(uiMode),
 		ClusterName:               clusterName,
 		CentralBackendURL:         centralBackendURL,
+		UserInstrumentationEnvs:   parsedUserJson,
 		NodeSelector:              nodeSelector,
+		RollbackDisabled:          &autoRollbackDisabled,
+		RollbackGraceTime:         autoRollbackGraceTime,
+		RollbackStabilityWindow:   autoRollbackStabilityWindows,
 	}
 
 }
@@ -402,7 +417,15 @@ func init() {
 
 	installCmd.Flags().StringVar(&clusterName, "cluster-name", "", "name of the cluster to be used in the centralized backend")
 	installCmd.Flags().StringVar(&centralBackendURL, "central-backend-url", "", "use to connect this cluster to the centralized odigos cluster")
-
+	installCmd.Flags().StringVar(
+		&userInstrumentationEnvsRaw,
+		"user-instrumentation-envs",
+		"",
+		"JSON string to configure per-language instrumentation envs, e.g. '{\"languages\":{\"go\":{\"enabled\":true,\"env\":{\"OTEL_GO_ENABLED\":\"true\"}}}}'",
+	)
+	installCmd.Flags().BoolVar(&autoRollbackDisabled, consts.RollbackDisabledProperty, false, "Disabled the auto rollback feature")
+	installCmd.Flags().StringVar(&autoRollbackGraceTime, consts.RollbackGraceTimeProperty, consts.DefaultAutoRollbackGraceTime, "Auto rollback grace time")
+	installCmd.Flags().StringVar(&autoRollbackStabilityWindows, consts.RollbackStabilityWindow, consts.DefaultAutoRollbackStabilityWindow, "Auto rollback stability windows time")
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
 	} else {

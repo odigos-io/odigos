@@ -36,16 +36,6 @@ var EnvValuesMap = map[string]envValues{
 			common.OtelSdkEbpfEnterprise:  "/var/odigos/python-ebpf:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation:/var/odigos/python",
 		},
 	},
-	"JAVA_OPTS": {
-		delim:               " ",
-		programmingLanguage: common.JavaProgrammingLanguage,
-		values: map[common.OtelSdk]string{
-			common.OtelSdkNativeCommunity: "-javaagent:/var/odigos/java/javaagent.jar",
-			common.OtelSdkEbpfEnterprise:  "-javaagent:/var/odigos/java-ebpf/dtrace-injector.jar",
-			common.OtelSdkNativeEnterprise: "-javaagent:/var/odigos/java-ext-ebpf/javaagent.jar " +
-				"-Dotel.javaagent.extensions=/var/odigos/java-ext-ebpf/otel_agent_extension.jar",
-		},
-	},
 	"JAVA_TOOL_OPTIONS": {
 		delim:               " ",
 		programmingLanguage: common.JavaProgrammingLanguage,
@@ -62,7 +52,7 @@ var EnvValuesMap = map[string]envValues{
 var EnvVarsForLanguage = map[common.ProgrammingLanguage][]string{
 	common.JavascriptProgrammingLanguage: {"NODE_OPTIONS"},
 	common.PythonProgrammingLanguage:     {"PYTHONPATH"},
-	common.JavaProgrammingLanguage:       {"JAVA_OPTS", "JAVA_TOOL_OPTIONS"},
+	common.JavaProgrammingLanguage:       {"JAVA_TOOL_OPTIONS"},
 }
 
 func GetRelevantEnvVarsKeys() []string {

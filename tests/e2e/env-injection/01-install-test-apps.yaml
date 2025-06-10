@@ -82,48 +82,6 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: java-supported-empty-manifest-env
-  namespace: default
-  labels:
-    app: java-supported-empty-manifest-env
-spec:
-  selector:
-    matchLabels:
-      app: java-supported-empty-manifest-env
-  template:
-    metadata:
-      labels:
-        app: java-supported-empty-manifest-env
-    spec:
-      containers:
-        - name: java-supported-empty-manifest-env
-          image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 3000
-          env:
-            - name: JAVA_OPTS
-              value: ""
-          readinessProbe:
-            tcpSocket:
-              port: 3000
-            initialDelaySeconds: 20
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: java-supported-empty-manifest-env
-  namespace: default
-spec:
-  selector:
-    app: java-supported-empty-manifest-env
-  ports:
-    - protocol: TCP
-      port: 3000
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: java-latest-version
   namespace: default
   labels:

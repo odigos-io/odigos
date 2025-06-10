@@ -1,5 +1,6 @@
 export * from './actions';
 export * from './config';
+export * from './data-streams';
 export * from './describe';
 export * from './destination';
 export * from './instrumentation-rules';

@@ -7,7 +7,7 @@ spec:
   type: attributes
   processorName: semconv-attributes
   notes: "Auto generated rule from semconv profile. Do not edit."
-  processorConfig: 
+  processorConfig:
     actions:
       - key: network.peer.address
         from_attribute: net.peer.address
@@ -54,10 +54,15 @@ spec:
         action: upsert
       - key: db.operation
         action: delete
-        
+      - key: db.query.text
+        from_attribute: db.statement
+        action: upsert
+      - key: db.statement
+        action: delete
+
 
 
   signals:
   - TRACES
   collectorRoles:
-  - CLUSTER_GATEWAY  
+  - CLUSTER_GATEWAY

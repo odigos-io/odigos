@@ -8,3 +8,7 @@ type SourceID struct {
 	Kind      k8sconsts.WorkloadKind `json:"kind"`
 	Namespace string                 `json:"namespace"`
 }
+
+var (
+	DisableInstrumentationJsonKey = "disableInstrumentation"
+)

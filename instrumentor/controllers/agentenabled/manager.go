@@ -66,17 +66,5 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		return err
 	}
 
-	err = builder.
-		WebhookManagedBy(mgr).
-		For(&corev1.Pod{}).
-		WithDefaulter(&PodsWebhook{
-			Client:        mgr.GetClient(),
-			DistrosGetter: dp.Getter,
-		}).
-		Complete()
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

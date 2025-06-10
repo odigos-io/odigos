@@ -130,7 +130,7 @@ func SyncWorkloadsInNamespace(ctx context.Context, nsName string, workloads []mo
 
 	for _, workload := range workloads {
 		g.Go(func() error {
-			return ToggleSourceCRD(ctx, nsName, workload.Name, WorkloadKind(workload.Kind.String()), workload.Selected)
+			return ToggleSourceCRD(ctx, nsName, workload.Name, WorkloadKind(workload.Kind.String()), workload.Selected, workload.CurrentStreamName)
 		})
 	}
 

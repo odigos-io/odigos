@@ -10,7 +10,6 @@ import (
 	"go.opentelemetry.io/collector/exporter"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/exporter/exporterbatcher"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 )
 
@@ -31,7 +30,14 @@ func createDefaultConfig() component.Config {
 		TimeoutConfig:    exporterhelper.NewDefaultTimeoutConfig(),
 		RetryConfig:      configretry.NewDefaultBackOffConfig(),
 		QueueConfig:      exporterhelper.NewDefaultQueueConfig(),
-		BatcherConfig:    exporterbatcher.NewDefaultConfig(),
+		BatcherConfig: exporterhelper.BatcherConfig{
+			Enabled:      true,
+			FlushTimeout: 200 * time.Millisecond,
+			SizeConfig: exporterhelper.SizeConfig{
+				Sizer:   exporterhelper.RequestSizerTypeItems,
+				MinSize: 8192,
+			},
+		},
 	}
 }
 

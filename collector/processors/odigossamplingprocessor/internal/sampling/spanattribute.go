@@ -3,6 +3,7 @@ package sampling
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -113,7 +114,7 @@ func (s *SpanAttributeRule) Validate() error {
 			return errors.New("expected_value required for key comparison")
 		}
 	default:
-		return errors.New("unsupported condition type")
+		return fmt.Errorf("unsupported condition type: %q", s.ConditionType)
 	}
 	return nil
 }

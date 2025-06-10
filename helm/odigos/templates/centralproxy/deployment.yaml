@@ -1,4 +1,4 @@
-{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName .Values.onPremToken}}
+{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .)}}
 
 apiVersion: apps/v1
 kind: Deployment
@@ -7,6 +7,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: central-proxy
+    odigos.io/system-object: "true"
 spec:
   replicas: 1
   selector:

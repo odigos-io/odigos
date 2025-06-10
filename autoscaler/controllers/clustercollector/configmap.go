@@ -97,7 +97,18 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32) error {
 	}
 
 	c.Service.Telemetry.Metrics = config.GenericMap{
-		"address": fmt.Sprintf("0.0.0.0:%d", ownTelemetryPort),
+		"readers": []config.GenericMap{
+			{
+				"pull": config.GenericMap{
+					"exporter": config.GenericMap{
+						"prometheus": config.GenericMap{
+							"host": "0.0.0.0",
+							"port": ownTelemetryPort,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for pipelineName, pipeline := range c.Service.Pipelines {
