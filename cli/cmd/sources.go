@@ -141,7 +141,7 @@ var sourceCreateCmd = &cobra.Command{
 
 		if len(sourceGroupFlag) > 0 {
 			source.Labels = make(map[string]string)
-			source.Labels[k8sconsts.SourceGroupLabelPrefix+sourceGroupFlag] = "true"
+			source.Labels[k8sconsts.SourceDataStreamLabelPrefix+sourceGroupFlag] = "true"
 		}
 
 		_, err := client.OdigosClient.Sources(sourceNamespaceFlag).Create(ctx, source, v1.CreateOptions{})
@@ -305,8 +305,8 @@ It is important to note that if a Source [name] is provided, all --workload-* fl
 			source.Spec.DisableInstrumentation = disableInstrumentationFlag
 			if len(sourceRemoveGroupFlag) > 0 {
 				for label, value := range source.Labels {
-					if label == k8sconsts.SourceGroupLabelPrefix+sourceRemoveGroupFlag && value == "true" {
-						delete(source.Labels, k8sconsts.SourceGroupLabelPrefix+sourceRemoveGroupFlag)
+					if label == k8sconsts.SourceDataStreamLabelPrefix+sourceRemoveGroupFlag && value == "true" {
+						delete(source.Labels, k8sconsts.SourceDataStreamLabelPrefix+sourceRemoveGroupFlag)
 					}
 				}
 			}
@@ -314,7 +314,7 @@ It is important to note that if a Source [name] is provided, all --workload-* fl
 				if source.Labels == nil {
 					source.Labels = make(map[string]string)
 				}
-				source.Labels[k8sconsts.SourceGroupLabelPrefix+sourceSetGroupFlag] = "true"
+				source.Labels[k8sconsts.SourceDataStreamLabelPrefix+sourceSetGroupFlag] = "true"
 			}
 
 			if len(sourceOtelServiceFlag) > 0 {
@@ -537,7 +537,7 @@ func parseSourceLabelFlags() (string, string, string, labels.Set) {
 	}
 	if len(sourceGroupFlag) > 0 {
 		providedWorkloadFlags = fmt.Sprintf("%s Source Group: %s\n", providedWorkloadFlags, sourceGroupFlag)
-		labelSet[k8sconsts.SourceGroupLabelPrefix+sourceGroupFlag] = "true"
+		labelSet[k8sconsts.SourceDataStreamLabelPrefix+sourceGroupFlag] = "true"
 	}
 	namespaceList := sourceNamespaceFlag
 	namespaceText := fmt.Sprintf("namespace %s", sourceNamespaceFlag)
