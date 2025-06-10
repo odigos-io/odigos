@@ -19,7 +19,17 @@ spec:
         app.kubernetes.io/name: central-proxy
     spec:
       serviceAccountName: central-proxy
-      {{- include "odigos.renderTopologySpreadConstraints" . | nindent 6 }}
+      {{- if and .Values.topologySpread.enabled .Values.topologySpread.constraints }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpread.constraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: central-proxy
+        {{- end }}
+      {{- end }}
       {{- if .Values.nodeSelector }}
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}

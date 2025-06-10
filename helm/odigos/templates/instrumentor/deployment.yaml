@@ -7,7 +7,7 @@ metadata:
   name: odigos-instrumentor
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 2
+  replicas: 6
   selector:
     matchLabels:
       app.kubernetes.io/name: odigos-instrumentor
@@ -18,7 +18,17 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-instrumentor
     spec:
-      {{- include "odigos.renderTopologySpreadConstraints" . | nindent 6 }}
+      {{- if and .Values.topologySpread.enabled .Values.topologySpread.constraints }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpread.constraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: odigos-instrumentor
+        {{- end }}
+      {{- end }}
       {{- if .Values.nodeSelector }}
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}

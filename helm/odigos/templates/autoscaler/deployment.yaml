@@ -23,10 +23,15 @@ spec:
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
-      {{- define "odigos.renderTopologySpreadConstraints" -}}
       {{- if and .Values.topologySpread.enabled .Values.topologySpread.constraints }}
       topologySpreadConstraints:
-      {{ toYaml .Values.topologySpread.constraints | nindent 2 }}
+      {{- range .Values.topologySpread.constraints }}
+              - maxSkew: {{ .maxSkew }}
+                topologyKey: {{ .topologyKey | quote }}
+                whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: odigos-autoscaler
       {{- end }}
       {{- end }}
       containers:
