@@ -49,8 +49,8 @@ func (s *Splunk) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 // SplunkOTLP configures an OTLPHTTP exporter configured for Splunk ingestion.
 type SplunkOTLP struct{}
 
-func (s *SplunkOTLP) DestType() common.DestinationType {
-	return common.SplunkOTLPDestinationType
+func (s *SplunkOTLP) DestType() destinations.DestinationType {
+	return destinations.SplunkOTLPDestinationType
 }
 
 func (s *SplunkOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
