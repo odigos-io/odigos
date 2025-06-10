@@ -29,7 +29,7 @@ spec:
       initContainers:
         - name: init
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          {{- if .Values.onPremToken }}
+          {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
           {{- else }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
@@ -73,7 +73,7 @@ spec:
       containers:
         - name: odiglet
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          {{- if .Values.onPremToken }}
+          {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
           {{- else }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
@@ -97,7 +97,7 @@ spec:
                   fieldPath: metadata.namespace
             - name: OTEL_LOG_LEVEL
               value: info
-            {{- if .Values.onPremToken }}
+            {{- if include "odigos.secretExists" . }}
             - name: OTEL_GO_OFFSETS_FILE
               value: /offsets/go_offset_results.json
             - name: ODIGOS_ONPREM_TOKEN
@@ -149,7 +149,7 @@ spec:
               readOnly: true
             - name: kernel-debug
               mountPath: /sys/kernel/debug
-            {{- if .Values.onPremToken }}
+            {{- if include "odigos.secretExists" . }}
             - name: odigos-go-offsets
               mountPath: /offsets
             {{- end }}
@@ -186,7 +186,7 @@ spec:
         - name: kernel-debug
           hostPath:
             path: /sys/kernel/debug
-        {{- if .Values.onPremToken }}
+        {{- if include "odigos.secretExists" . }}
         - name: odigos-go-offsets
           configMap:
             name: odigos-go-offsets

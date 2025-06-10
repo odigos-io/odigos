@@ -15,6 +15,11 @@ export CUSTOM_DOCKER_REGISTRY=<YOUR-CUSTOM-DOCKER-REGISTRY>
 ```
 Replace `<YOUR-DESIRED-VERSION>` with the version of the Odigos images you want to use, and `<YOUR-CUSTOM-DOCKER-REGISTRY>` with the URL of your custom Docker registry.
 
+---
+
+<Tabs>
+<Tab title="Open Source">
+
 ### Step 2: Pull the Images
 Start by pulling the required images from the official Odigos registry onto your local machine or CI environment:
 
@@ -39,10 +44,11 @@ docker tag registry.odigos.io/odigos-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/od
 docker tag registry.odigos.io/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
 ```
 
+
 > **Note:** Prior to v1.0.155, Odigos images were prefixed with `keyval/` (such as `keyval/odigos-scheduler`) In v1.0.155+, this is no longer the case, and Odigos does not assume this prefix. If you were hosting custom images prior to this version, you may have to re-tag your images to remove the `keyval/` prefix.
 
 ### Step 4: Push the Images
-Now, push the tagged images to your custom Docker registry:  
+Now, push the tagged images to your custom Docker registry:
 ```bash
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-instrumentor:$VERSION
@@ -52,14 +58,61 @@ docker push $CUSTOM_DOCKER_REGISTRY/odigos-odiglet:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
 ```
 
+
+</Tab>
+
+<Tab title="Enterprise">
+
+### Step 2: Pull the Images
+Start by pulling the required images from the official Odigos registry onto your local machine or CI environment:
+
+```bash
+docker pull registry.odigos.io/odigos-scheduler:$VERSION
+docker pull registry.odigos.io/odigos-enterprise-instrumentor:$VERSION
+docker pull registry.odigos.io/odigos-ui:$VERSION
+docker pull registry.odigos.io/odigos-autoscaler:$VERSION
+docker pull registry.odigos.io/odigos-enterprise-odiglet:$VERSION
+docker pull registry.odigos.io/odigos-collector:$VERSION
+```
+
+### Step 3: Tag the Images
+Next, Tag each image with your custom Docker registry prefix:
+
+```bash
+docker tag registry.odigos.io/odigos-scheduler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
+docker tag registry.odigos.io/odigos-enterprise-instrumentor:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-instrumentor:$VERSION
+docker tag registry.odigos.io/odigos-ui:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
+docker tag registry.odigos.io/odigos-autoscaler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
+docker tag registry.odigos.io/odigos-enterprise-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-odiglet:$VERSION
+docker tag registry.odigos.io/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
+```
+
+
+> **Note:** Prior to v1.0.155, Odigos images were prefixed with `keyval/` (such as `keyval/odigos-scheduler`) In v1.0.155+, this is no longer the case, and Odigos does not assume this prefix. If you were hosting custom images prior to this version, you may have to re-tag your images to remove the `keyval/` prefix.
+
+### Step 4: Push the Images
+Now, push the tagged images to your custom Docker registry:
+```bash
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-instrumentor:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-odiglet:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
+```
+
+
+</Tab>
+</Tabs>
+
 ### Step 5: Configure Access for Private Registries
 
 If your Docker registry is private, configure your Kubernetes cluster to pull images from it. Refer to the official Kubernetes documentation for guidance: [Pull an Image from a Private Registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
 
 > **Note: To ensure your Odigos deployments and daemonsets can pull images from a private registry, patch them to add the image pull secret.**
-> 
-> **Use the following commands:**  
-> ``` 
+>
+> **Use the following commands:**
+> ```
 > export ODIGOS_NAMESPACE=<NAMESPACE-WHERE-ODIGOS-IS-INSTALLED>
 > export IMAGE_PULL_SECRET=<NAME-OF-IMAGE-PULL-SECRET>
 > kubectl patch deployment odigos-ui -n $ODIGOS_NAMESPACE \
@@ -93,7 +146,7 @@ odigos install --image-prefix=$CUSTOM_DOCKER_REGISTRY
 helm repo update
 helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace --set imagePrefix=$CUSTOM_DOCKER_REGISTRY
 kubectl label namespace odigos-system odigos.io/system-object="true"
-```  
+```
   </Tab>
 
 </Tabs>
