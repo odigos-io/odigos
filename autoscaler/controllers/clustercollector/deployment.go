@@ -44,6 +44,12 @@ func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Collector
 	}
 	odigletNodeSelector := odigletDaemonset.Spec.Template.Spec.NodeSelector
 
+	autoScalerDeployment := &appsv1.Deployment{}
+	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: k8sconsts.AutoScalerDeploymentName}, autoScalerDeployment); err != nil {
+		return nil, err
+	}
+	autoScalerTopologySpreadConstraints := autoScalerDeployment.Spec.Template.Spec.TopologySpreadConstraints
+
 	secretsVersionHash, err := destinationsSecretsVersionsHash(ctx, c, dests)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get secrets hash"))
@@ -51,7 +57,7 @@ func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Collector
 
 	// Use the hash of the secrets  to make sure the gateway will restart when the secrets (mounted as environment variables) changes
 	configDataHash := common.Sha256Hash(secretsVersionHash)
-	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, odigletNodeSelector)
+	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, odigletNodeSelector, autoScalerTopologySpreadConstraints)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
 	}
@@ -95,7 +101,7 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 }
 
 func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string,
-	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, nodeSelector map[string]string) (*appsv1.Deployment, error) {
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, nodeSelector map[string]string, topologySpreadConstraints []corev1.TopologySpreadConstraint) (*appsv1.Deployment, error) {
 
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
@@ -243,6 +249,17 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 				},
 			)
 		}
+	}
+
+	if topologySpreadConstraints != nil && len(topologySpreadConstraints) > 0 {
+		adjusted := make([]corev1.TopologySpreadConstraint, 0, len(topologySpreadConstraints))
+		for _, c := range topologySpreadConstraints {
+			c.LabelSelector = &metav1.LabelSelector{
+				MatchLabels: ClusterCollectorGateway,
+			}
+			adjusted = append(adjusted, c)
+		}
+		desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints = adjusted
 	}
 
 	err := ctrl.SetControllerReference(gateway, desiredDeployment, scheme)
