@@ -652,14 +652,6 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 		k8sDestination.Spec.SecretRef = secretRef
 	}
 
-	for _, fieldName := range secretFiles {
-		k8sDestination.Spec.SecretFiles = append(k8sDestination.Spec.SecretFiles, v1alpha1.SecretFileConfig{Key: fieldName, MountPath: "/secrets"})
-	}
-
-	for key, val := range envVars {
-		k8sDestination.Spec.EnvVars[key] = val
-	}
-
 	dest, err := services.CreateResourceWithGenerateName(ctx, func() (*v1alpha1.Destination, error) {
 		return kube.DefaultClient.OdigosClient.Destinations(ns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
 	})
