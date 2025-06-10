@@ -34,3 +34,12 @@ Returns "true" if any userInstrumentationEnvs.language is enabled or has env var
 {{- toYaml .Values.topologySpread.constraints }}
 {{- end }}
 {{- end }}
+
+{{- define "odigos.secretExists" -}}
+  {{- $sec   := lookup "v1" "Secret" .Release.Namespace "odigos-pro" -}}
+  {{- $token := default "" .Values.onPremToken -}}
+  {{- if or $sec (ne $token "") -}}
+true
+  {{- end -}}
+{{- end -}}
+

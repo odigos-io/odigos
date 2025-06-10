@@ -7,7 +7,7 @@ icon: 'signal-stream'
 
 ### Getting Started
 
-<img src="https://d15jtxgb40qetw.cloudfront.net/splunk.svg" alt="splunk" className="not-prose h-20" />
+<img src="https://d15jtxgb40qetw.cloudfront.net/splunk.svg" alt="splunksapm" className="not-prose h-20" />
 
 {/*
     Add custom content here (under this comment)...
@@ -23,19 +23,6 @@ icon: 'signal-stream'
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
     !! START CUSTOM EDIT !!
 */}
-
-**Obtaining Access Token**<br />
-Go to **Settings** then **Access Tokens**. and click **Create New Token**
-
-<Frame>
-  <img src="/backends/images/splunk1.png" alt="Splunk Access Tokens menu" />
-</Frame>
-
-Give the token a name and select **Ingest Token** for the authorization scope and click create.
-
-<Frame>
-  <img src="/backends/images/splunk2.png" alt="Create Access Token form in Splunk" />
-</Frame>
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
@@ -77,22 +64,22 @@ There are two primary methods for configuring destinations in Odigos:
 
 <Steps>
   <Step>
-    Save the YAML below to a file (e.g. `splunk.yaml`)
+    Save the YAML below to a file (e.g. `splunksapm.yaml`)
     ```yaml
     apiVersion: odigos.io/v1alpha1
     kind: Destination
     metadata:
-      name: splunk-example
+      name: splunksapm-example
       namespace: odigos-system
     spec:
       data:
         SPLUNK_REALM: <Realm>
-      destinationName: splunk
+      destinationName: splunksapm
       secretRef:
-        name: splunk-secret
+        name: splunksapm-secret
       signals:
       - TRACES
-      type: splunk
+      type: splunksapm
 
     ---
 
@@ -101,7 +88,7 @@ There are two primary methods for configuring destinations in Odigos:
       SPLUNK_ACCESS_TOKEN: <Base64 Access Token>
     kind: Secret
     metadata:
-      name: splunk-secret
+      name: splunksapm-secret
       namespace: odigos-system
     type: Opaque
     ```
@@ -109,7 +96,7 @@ There are two primary methods for configuring destinations in Odigos:
   <Step>
     Apply the YAML using `kubectl`
     ```bash
-    kubectl apply -f splunk.yaml
+    kubectl apply -f splunksapm.yaml
     ```
   </Step>
 </Steps>
