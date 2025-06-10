@@ -21,7 +21,7 @@ func ExtractDataStreamsFromEntities(sources []v1alpha1.Source, destinations []v1
 
 	for _, src := range sources {
 		for labelKey, labelValue := range src.Labels {
-			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
+			if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
 				name := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
 				if !seen[name] {
 					seen[name] = true
@@ -62,16 +62,17 @@ func ExtractDataStreamsFromSource(primarySource *v1alpha1.Source, secondarySourc
 	// Get all data stream names from the workload source
 	if primarySource != nil {
 		for labelKey, labelValue := range primarySource.Labels {
-			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) {
-				dsName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+			if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) {
+				nameFromLabel := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+				ds := nameFromLabel
 
 				if labelValue == "false" {
-					forbidden[dsName] = true
+					forbidden[ds] = true
 				}
 
-				if !seen[dsName] && !forbidden[dsName] {
-					seen[dsName] = true
-					result = append(result, &dsName)
+				if !seen[ds] && !forbidden[ds] {
+					seen[ds] = true
+					result = append(result, &ds)
 				}
 			}
 		}
@@ -80,16 +81,17 @@ func ExtractDataStreamsFromSource(primarySource *v1alpha1.Source, secondarySourc
 	// Get all data stream names from the namespace source (if it was not defined as 'false' in the workload source)
 	if secondarySource != nil {
 		for labelKey, labelValue := range secondarySource.Labels {
-			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) {
-				dsName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+			if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) {
+				nameFromLabel := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+				ds := nameFromLabel
 
 				if labelValue == "false" {
 					continue
 				}
 
-				if !seen[dsName] && !forbidden[dsName] {
-					seen[dsName] = true
-					result = append(result, &dsName)
+				if !seen[ds] && !forbidden[ds] {
+					seen[ds] = true
+					result = append(result, &ds)
 				}
 			}
 		}
@@ -229,13 +231,15 @@ func UpdateSourcesCurrentStreamName(ctx context.Context, sources *v1alpha1.Sourc
 			for labelKey, labelValue := range source.Labels {
 				if strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) == currentStreamName {
 					// remove the old label
-					_, err := UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
+					dataStreamLabelKey := k8sconsts.SourceGroupLabelPrefix + currentStreamName
+					_, err := UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, dataStreamLabelKey, "")
 					if err != nil {
 						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
 					}
 
 					// add the new label
-					_, err = UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+newStreamName, labelValue)
+					dataStreamLabelKey = k8sconsts.SourceGroupLabelPrefix + newStreamName
+					_, err = UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, dataStreamLabelKey, labelValue)
 					if err != nil {
 						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
 					}

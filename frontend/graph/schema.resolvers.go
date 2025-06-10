@@ -146,7 +146,11 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 			val, exists := nsSources.Load(icCopy.Namespace)
 			var nsSource *v1alpha1.Source
 			if exists {
-				nsSource = val.(*v1alpha1.Source)
+				src, ok := val.(*v1alpha1.Source)
+				if !ok {
+					return fmt.Errorf("invalid value in nsSources map")
+				}
+				nsSource = src
 			} else {
 				nsSource, err = services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.Namespace, services.WorkloadKindNamespace)
 				if err != nil && !apierrors.IsNotFound(err) {

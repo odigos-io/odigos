@@ -336,10 +336,12 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	// we remove the current data-stream
 	if currentStreamName != "" {
+		dataStreamLabelKey := k8sconsts.SourceGroupLabelPrefix + currentStreamName
+
 		if isWorkloadWithNamespace {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "false")
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, dataStreamLabelKey, "false")
 		} else {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, dataStreamLabelKey, "")
 		}
 
 		// if there are more labels for data-streams, we exit and don't delete the source
