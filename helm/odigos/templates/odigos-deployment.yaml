@@ -7,6 +7,6 @@ metadata:
     odigos.io/system-object: "true"
 data:
   ODIGOS_VERSION: '{{ .Values.image.tag | default .Chart.AppVersion }}'
-  ODIGOS_TIER: '{{- if .Values.onPremToken }}onprem{{- else }}community{{- end }}'
+  ODIGOS_TIER: '{{- if include "odigos.secretExists" . }}onprem{{- else }}community{{- end }}'
   installation-method: helm
   odigos-deployment-id: '{{ uuidv4 }}'
