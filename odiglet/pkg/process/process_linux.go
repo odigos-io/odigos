@@ -11,7 +11,11 @@ import (
 )
 
 func isPodContainerPredicate(podUID string, containerName string) func(string) bool {
-	expectedMountRoot := fmt.Sprintf("%s/containers/%s", podUID, containerName)
+
+	// Added trailing slash to avoid substring collisions like "membership" matching "membership1".
+	// Real m.Root ends with runtime ID (e.g., .../containers/membership/<runtime-id>), so exact match fails.
+	// Using slash ensures we only match full "containers/<name>/" segments in mount paths.
+	expectedMountRoot := fmt.Sprintf("%s/containers/%s/", podUID, containerName)
 
 	return func(procDirName string) bool {
 		mountInfoFile := path.Join("/proc", procDirName, "mountinfo")
