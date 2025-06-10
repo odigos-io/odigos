@@ -1,10 +1,7 @@
 package instrumentlang
 
 import (
-	"fmt"
-
 	"github.com/odigos-io/odigos/common"
-	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
@@ -19,7 +16,7 @@ const (
 )
 
 func NodeJS(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
-	opampServerHost := fmt.Sprintf("%s:%d", env.Current.NodeIP, commonconsts.OpAMPPort)
+	opampServerHost := service.LocalTrafficOpAmpOdigletEndpoint(env.Current.NodeIP)
 
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{

@@ -1,7 +1,6 @@
 package podswebhook
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -75,7 +74,7 @@ func InjectStaticEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Conta
 
 func InjectOpampServerEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
 	existingEnvNames = injectNodeIpEnvVar(existingEnvNames, container)
-	opAmpServerHost := fmt.Sprintf("$(NODE_IP):%d", commonconsts.OpAMPPort)
+	opAmpServerHost := service.LocalTrafficOpAmpOdigletEndpoint("$(NODE_IP)")
 	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OpampServerHostEnvName, opAmpServerHost, nil)
 	return existingEnvNames
 }

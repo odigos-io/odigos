@@ -8,14 +8,17 @@ spec:
   steps:
     - name: Prepare destination
       try:
-        - apply: 
+        - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
     - name: Install Odigos
       try:
         - script:
-            content: ../../../cli/odigos install --namespace odigos-test --version e2e-test
-            timeout: 2m
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+            timeout: 4m
         - assert:
+            timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
     - name: Verify Node Odiglet label has been added
       try:
@@ -56,6 +59,7 @@ spec:
     - name: '01 Assert Instrumented'
       try:
         - assert:
+            timeout: 3m
             file: 01-assert-instrumented.yaml
 
     - name: '01 Assert Workloads'

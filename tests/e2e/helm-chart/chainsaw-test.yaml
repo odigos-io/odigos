@@ -40,8 +40,6 @@ spec:
                   exit 1
                 fi
 
-                kubectl wait --for=condition=ready pods --all -n odigos-test --timeout=4m
-
               else
                 if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
                   echo "❌ Odigos version is not e2e-test, got $ACTUAL_VERSION"
@@ -49,9 +47,11 @@ spec:
                 fi
               fi
 
+              ../../common/verify_odigos_installation.sh odigos-test
+
         - assert:
-            timeout: 1m
-            file: ../../common/assert/odigos-installed.yaml # ✅ Moved outside `catch`
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
 
       catch:
         - script:
@@ -113,6 +113,7 @@ spec:
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
+            timeout: 3m
             file: ../../common/assert/simple-demo-instrumented-full.yaml
 
     - name: Generate Traffic
@@ -186,3 +187,34 @@ spec:
                 fi
                 sleep 5
               done
+
+    - name: Uninstall Odigos
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              helm uninstall odigos -n odigos-test
+
+    - name: Verify Odigos Uninstallation
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              for i in $(seq 1 10); do
+                if ../../common/assert_odigos_uninstalled.sh; then
+                  exit 0
+                fi
+                echo "Attempt $i: Odigos uninstallation verification failed, retrying in 5 seconds..."
+                sleep 5
+              done
+
+              echo "Failed to verify Odigos uninstallation after 12 attempts"
+              exit 1
+      catch:
+        - script:
+            content: |
+              echo "🔍 Listing all resources in namespace 'odigos-test'..."
+              kubectl get all -n odigos-test
+
+              echo "📝 Describing all resources in namespace 'odigos-test'..."
+              kubectl describe all -n odigos-test

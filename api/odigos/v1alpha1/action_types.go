@@ -82,7 +82,7 @@ type ActionStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 type Action struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -64,7 +64,7 @@ and apply any required migrations and adaptations.`,
 				os.Exit(1)
 			}
 			if sourceVersion.LessThan(version.Must(version.NewVersion("1.0.0"))) {
-				fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0' current version is %s.\n", currOdigosVersion)
+				fmt.Printf("Unable to upgrade from Odigos version older than 'v1.0.0'. Current version is %s.\n", currOdigosVersion)
 				fmt.Printf("To upgrade, please use 'odigos uninstall' and 'odigos install'.\n")
 				os.Exit(1)
 			}
@@ -93,7 +93,7 @@ and apply any required migrations and adaptations.`,
 				}
 			}
 		} else {
-			operation = "Focefully upgrading"
+			operation = "Forcefully upgrading"
 		}
 
 		config, err := resources.GetCurrentConfig(ctx, client, ns)

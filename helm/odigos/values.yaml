@@ -21,7 +21,7 @@ ignoredContainers:
 # Name of the cluster, will be used to identify this cluster in the centralized backend
 clusterName: ''
 
-UserInstrumentationEnvs:
+userInstrumentationEnvs:
   # Configuration for OpenTelemetry (OTEL) agents instrumentation.
   # These settings enable and configure OTEL agents for programming languages supported by Odigos.
   # See the official OTEL documentation for language-specific configuration details:
@@ -241,11 +241,6 @@ gke:
 
 profiles: []
 
-# Used for migration - we are migrating away from using the JAVA_OPTS env var
-# to only using the JAVA_TOOL_OPTIONS env var.
-# When this is true, we will not inject the JAVA_OPTS env var into the container.
-# when false or not set the original behavior will be used and the JAVA_OPTS env var will be injected.
-avoidInjectingJavaOptsEnvVar: null
 # Optional NodeSelector to apply to all Odigos components
 # Note: Odigos will only be able to instrument workloads on the same nodes.
 nodeSelector: {}
@@ -256,3 +251,13 @@ nodeSelector: {}
 # https://docs.odigos.io/setup/odigos-with-karpenter
 karpenter:
   enabled: false
+
+# Auto rollback settings
+# The auto‐rollback feature provides a stability window to test instrumented apps.
+# After an application is instrumented, a grace period begins during which we allow the app (and its dependencies) to stabilize and start working.
+# Once the grace period has passed and we are within the stability window, we can decide to uninstrument a crashing application.
+autoRollback:
+  disabled: false
+  graceTime: 5m
+  stabilityWindowTime: 1h
+

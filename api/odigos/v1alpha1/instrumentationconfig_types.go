@@ -87,7 +87,7 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected
+// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;CrashLoopBackOff
 type AgentEnabledReason string
 
 const (
@@ -103,6 +103,9 @@ const (
 	// if the source cannot be instrumented because there are no running pods,
 	// we want to show this reason to the user so it's not a spinner
 	AgentEnabledReasonRuntimeDetailsUnavailable AgentEnabledReason = "RuntimeDetailsUnavailable"
+	// used for the rollback feature, when an application was instrumented and it caused a CrashLoopBackOff
+	// We're marking it as that and rolling back the instrumentation
+	AgentEnabledReasonCrashLoopBackOff AgentEnabledReason = "CrashLoopBackOff"
 )
 
 // +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
@@ -112,6 +115,11 @@ const (
 	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
+)
+
+const (
+	// K8s workload status conditions, not set in the InstrumentationConfigStatus but used in the frontend to display the status.
+	K8sWorkloadRolloutReasonFailedCreate = "FailedCreate"
 )
 
 // givin multiple reasons for not injecting an agent, this function returns the priority of the reason.
@@ -138,6 +146,8 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 80
 	case AgentEnabledReasonOtherAgentDetected:
 		return 90
+	case AgentEnabledReasonCrashLoopBackOff:
+		return 95
 	default:
 		return 100
 	}
@@ -147,12 +157,16 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 // this function returns true if the reason is considered as "disabled" status.
 func IsReasonStatusDisabled(reason string) bool {
 	switch reason {
+	// Agent-related reasons
 	case string(AgentEnabledReasonUnsupportedProgrammingLanguage),
 		string(AgentEnabledReasonUnsupportedRuntimeVersion),
 		string(RuntimeDetectionReasonNoRunningPods),
 		string(AgentEnabledReasonIgnoredContainer),
 		string(AgentEnabledReasonNoAvailableAgent),
 		string(AgentEnabledReasonOtherAgentDetected),
+		string(AgentEnabledReasonCrashLoopBackOff),
+		// K8s workload-related reasons
+		string(K8sWorkloadRolloutReasonFailedCreate),
 		string(AgentEnabledReasonRuntimeDetailsUnavailable):
 
 		return true
@@ -181,15 +195,15 @@ const (
 
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
-	ContainerName       string                     `json:"containerName"`
-	Language            common.ProgrammingLanguage `json:"language"`
-	RuntimeVersion      string                     `json:"runtimeVersion,omitempty"`
-	EnvVars             []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent          *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType            *common.LibCType           `json:"libCType,omitempty"`
+	ContainerName  string                     `json:"containerName"`
+	Language       common.ProgrammingLanguage `json:"language"`
+	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
+	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
+	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
+	LibCType       *common.LibCType           `json:"libCType,omitempty"`
 	// Indicates whether the target process is running is secure-execution mode.
 	// nil means we were unable to determine the secure-execution mode.
-	SecureExecutionMode *bool                      `json:"secureExecutionMode,omitempty"`
+	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
 
 	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
@@ -210,6 +224,12 @@ type InstrumentationConfigStatus struct {
 	// it allows us to determine if the workload needs to be rollout based on previous rollout and the current config.
 	// if this field is different than the spec.AgentsDeploymentHash it means rollout is needed or not yet updated.
 	WorkloadRolloutHash string `json:"workloadRolloutHash,omitempty"`
+
+	// Check if rollback happened to an application
+	RollbackOccurred bool `json:"rollbackOccurred,omitempty"`
+	// This time recorded only after the rollout took place.
+	// This allows us to determine whether a crashing application should be rolled back or not
+	InstrumentationTime *metav1.Time `json:"instrumentationTime,omitempty"`
 }
 
 func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v1.Container) *RuntimeDetailsByContainer {

@@ -68,6 +68,9 @@ var (
 
 	// matches email addresses
 	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+
+	// assume any invalid unicode character is not a static path segment
+	replacementChar = regexp.MustCompile(`�`)
 )
 
 type RulePathSegment struct {
@@ -208,7 +211,8 @@ func getSegmentTemplatizationString(segment string, customIds []internalCustomId
 	if noLettersRegex.MatchString(segment) ||
 		longNumberAnywhereRegex.MatchString(segment) ||
 		uuidRegex.MatchString(segment) ||
-		hexEncodedRegex.MatchString(segment) {
+		hexEncodedRegex.MatchString(segment) ||
+		replacementChar.MatchString(segment) {
 		return "id"
 	}
 

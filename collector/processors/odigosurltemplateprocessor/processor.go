@@ -143,16 +143,16 @@ func getFullUrl(attr pcommon.Map) (string, bool) {
 }
 
 func (p *urlTemplateProcessor) applyTemplatizationOnPath(path string) string {
-	inputPathSegments := strings.Split(path, "/")
-	if len(inputPathSegments) == 0 {
-		// if the path is empty, we can't generate a templated url
-		return path
-	}
 	hasLeadingSlash := strings.HasPrefix(path, "/")
-	if hasLeadingSlash {
-		// if the path has a leading slash, we need to remove it
-		// to avoid empty segments in the inputPathSegments
-		inputPathSegments = inputPathSegments[1:]
+	if !hasLeadingSlash {
+		path = "/" + path
+	}
+
+	inputPathSegments := strings.Split(path, "/")
+	inputPathSegments = inputPathSegments[1:]
+	if len(inputPathSegments) == 1 && inputPathSegments[0] == "" {
+		// if the path is empty, we can't generate a templated url
+		return "/" // always set a leading slash even if missing
 	}
 
 	for _, rule := range p.templatizationRules {
@@ -229,7 +229,16 @@ func (p *urlTemplateProcessor) enhanceSpan(span ptrace.Span, httpMethod string, 
 
 	attr := span.Attributes()
 
-	if _, found := attr.Get(targetAttribute); found {
+	// edge case: target attribute (http.route) exists but is empty (e.g. no path)
+	// in this case, we align and normalize the value to "/" to denote that.
+	if val, found := attr.Get(targetAttribute); found {
+		if val.Type() != pcommon.ValueTypeStr {
+			// should not happen.
+			return
+		}
+		if val.Str() == "" {
+			updateHttpSpanName(span, httpMethod, "/")
+		}
 		// avoid overriding the attribute if it is already set
 		return
 	}

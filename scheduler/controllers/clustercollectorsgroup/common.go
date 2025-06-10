@@ -33,27 +33,21 @@ func sync(ctx context.Context, c client.Client) error {
 
 	namespace := env.GetCurrentNamespace()
 
-	var dests odigosv1.DestinationList
-	err := c.List(ctx, &dests, client.InNamespace(namespace))
-	if err != nil {
-		return err
-	}
-
 	odigosConfig, err := utils.GetCurrentOdigosConfig(ctx, c)
 	if err != nil {
 		return err
 	}
-
 	resourceSettings := getGatewayResourceSettings(&odigosConfig)
 
-	if len(dests.Items) > 0 {
-		err := utils.ApplyCollectorGroup(ctx, c, newClusterCollectorGroup(namespace, resourceSettings))
-		if err != nil {
-			return err
-		}
+	// cluster collector is always set and never deleted at the moment.
+	// this is to accelerate spinup time and avoid errors while things are gradually being reconciled
+	// and started.
+	// in the future we might want to support a deployment of instrumentations only and allow user
+	// to setup their own collectors, then we would avoid adding the cluster collector by default.
+	err = utils.ApplyCollectorGroup(ctx, c, newClusterCollectorGroup(namespace, resourceSettings))
+	if err != nil {
+		return err
 	}
-	// once the gateway is created, it is not deleted, even if there are no destinations.
-	// we might want to re-consider this behavior.
 
 	return nil
 }

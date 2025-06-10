@@ -334,7 +334,86 @@ func TestProcessor_Traces(t *testing.T) {
 			expectedAttrKey:   "http.route",
 			expectedAttrValue: "/user/inc_654321",
 		},
+		{
+			name:          "invalid utf-8 char",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/foo/this_text_includes_invalid_char�",
+			},
+			expectedSpanName:  "GET /foo/{id}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/foo/{id}",
+		},
+		{
+			name:          "invalid full url",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.full":            "invalidurl/#@%@##%$@%@",
+			},
+			expectedSpanName:  "GET",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "", // should not exist
+		},
 	}
+
+	runProcessorTests(t, tt, processor)
+}
+
+func TestProcessor_EmptyPath(t *testing.T) {
+	tt := []processorTestManifest{
+		{
+			name:          "empty path",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "",
+			},
+			expectedSpanName:  "GET /",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/",
+		},
+		{
+			name:          "path is only slash",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/",
+			},
+			expectedSpanName:  "GET /",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/",
+		},
+		{
+			name:          "route exists and is empty",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"http.route":          "",
+			},
+			expectedSpanName: "GET /",
+		},
+		{
+			name:          "client span with empty template",
+			spanKind:      ptrace.SpanKindClient,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.template":        "",
+			},
+			expectedSpanName: "GET /",
+		},
+	}
+
+	set := processortest.NewNopSettings(processortest.NopType)
+	processor, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
 
 	runProcessorTests(t, tt, processor)
 }
@@ -565,9 +644,9 @@ func TestDefaultDateTemplatization(t *testing.T) {
 				"http.request.method": "GET",
 				"url.path":            "04-12-2025T14:15:16",
 			},
-			expectedSpanName:  "GET 04-12-2025T14:15:16",
+			expectedSpanName:  "GET /04-12-2025T14:15:16",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "04-12-2025T14:15:16",
+			expectedAttrValue: "/04-12-2025T14:15:16",
 		},
 	}
 

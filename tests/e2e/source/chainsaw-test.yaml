@@ -13,14 +13,17 @@ spec:
     - name: '[1 - Setup] Install Odigos'
       try:
         - script:
-            timeout: 2m
+            timeout: 4m
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 ../../../cli/odigos install --namespace odigos-test --version "$COMMIT_HASH" --image-prefix=public.ecr.aws/y2v0v6s7
               else
                 ../../../cli/odigos install --namespace odigos-test --version e2e-test
               fi
+
+              ../../common/verify_odigos_installation.sh odigos-test
         - assert:
+            timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
 
     - name: '[1 - Setup] Verify Node Odiglet label has been added'
@@ -77,7 +80,7 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
         - assert:
-            timeout: 2m
+            timeout: 4m
             file: 01-workloads.yaml
         - script:
             timeout: 70s
@@ -123,7 +126,7 @@ spec:
             name: odiglet
             namespace: odigos-test
 
-    - name: '[2 - Workload Instrumentation] Verify Trace - Resource Attributes'
+    - name: "[2 - Workload Instrumentation] Verify Trace - Resource Attributes"
       try:
         - script:
             timeout: 3m
@@ -253,3 +256,22 @@ spec:
             content: kubectl get instrumentationconfigs/deployment-inventory
             check:
               ($error != null): true
+
+    - name: 'Uninstall Odigos'
+      try:
+        - script:
+            timeout: 2m
+            content: ../../../cli/odigos uninstall --yes
+        - script:
+            timeout: 1m
+            content: |
+              for i in $(seq 1 10); do
+                if ../../common/assert_odigos_uninstalled.sh; then
+                  exit 0
+                fi
+                echo "Attempt $i: Odigos uninstallation verification failed, retrying in 5 seconds..."
+                sleep 5
+              done
+
+              echo "Failed to verify Odigos uninstallation after 12 attempts"
+              exit 1

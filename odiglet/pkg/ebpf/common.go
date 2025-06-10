@@ -12,13 +12,14 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/detector"
 
 	processdetector "github.com/odigos-io/runtime-detector"
-
+	"go.opentelemetry.io/otel/metric"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type InstrumentationManagerOptions struct {
 	Factories          map[instrumentation.OtelDistribution]instrumentation.Factory
 	DistributionGetter *distros.Getter
+	MeterProvider      metric.MeterProvider
 }
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
@@ -39,6 +40,7 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 		Handler:         newHandler(client),
 		DetectorOptions: detector.DefaultK8sDetectorOptions(logger),
 		ConfigUpdates:   configUpdates,
+		MeterProvider:   opts.MeterProvider,
 	}
 
 	// Add file open triggers from all distributions.
