@@ -1,5 +1,12 @@
 package utils
 
+import (
+	"bufio"
+	"strings"
+
+	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
+)
+
 func IsBaseExeContainsProcessName(baseExe string, processNames []string) bool {
 	for _, processName := range processNames {
 		baseLen := len(baseExe)
@@ -24,4 +31,20 @@ func IsDigitsOnly(s string) bool {
 		}
 	}
 	return true
+}
+
+func IsMapsFileContainsBinary(mapsFile process.ProcessFile, binaries []string) bool {
+	scanner := bufio.NewScanner(mapsFile)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		for _, binary := range binaries {
+			if strings.Contains(line, binary) {
+				return true
+			}
+		}
+	}
+
+	return false
 }

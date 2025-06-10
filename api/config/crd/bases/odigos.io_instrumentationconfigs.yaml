@@ -408,6 +408,7 @@ spec:
                       - php
                       - ruby
                       - rust
+                      - cplusplus
                       - mysql
                       - nginx
                       - redis
@@ -628,6 +629,7 @@ spec:
                       - php
                       - ruby
                       - rust
+                      - cplusplus
                       - mysql
                       - nginx
                       - redis
