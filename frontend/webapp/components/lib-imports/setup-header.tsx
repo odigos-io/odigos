@@ -15,7 +15,6 @@ interface SetupHeaderProps {
   sourceFormRef?: RefObject<SourceSelectionFormRef | null>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getFormDataFromDestination = (dest: Destination, selectedStreamName: string): DestinationFormData => {
   const parsedFields = safeJsonParse(dest.fields, {});
   const fieldsArray = Object.entries(parsedFields).map(([key, value]) => ({ key, value: String(value) }));
@@ -23,10 +22,7 @@ const getFormDataFromDestination = (dest: Destination, selectedStreamName: strin
   const payload: DestinationFormData = {
     type: dest.destinationType.type,
     name: dest.destinationType.displayName,
-
-    // TODO: uncomment when Data Streams are ready to use
-    currentStreamName: '', // selectedStreamName,
-
+    currentStreamName: selectedStreamName,
     exportedSignals: dest.exportedSignals,
     fields: fieldsArray,
   };
@@ -70,9 +66,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
         Object.entries(configuredSources).reduce((current, [ns, items]) => {
           current[ns] = items.map((item) => ({
             ...item,
-
-            // TODO: uncomment when Data Streams are ready to use
-            currentStreamName: '', // name,
+            currentStreamName: name,
           }));
 
           return current;

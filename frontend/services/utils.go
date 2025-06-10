@@ -17,9 +17,9 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 
+	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
-
 	"sigs.k8s.io/yaml"
 )
 
@@ -171,4 +171,20 @@ func CreateResourceWithGenerateName[T any](ctx context.Context, createFunc func(
 		})
 		return result, err
 	}
+}
+
+// Experimental function to run multiple goroutines with a limit on concurrency.
+// Currently unused, until confirmed working (initial testing shows positive results).
+func WithGoRoutine(ctx context.Context, limit int, run func(goFunc func(func() error))) error {
+	g, _ := errgroup.WithContext(ctx)
+	if limit > 0 {
+		g.SetLimit(limit)
+	}
+
+	run(g.Go)
+
+	if err := g.Wait(); err != nil {
+		return err
+	}
+	return nil
 }

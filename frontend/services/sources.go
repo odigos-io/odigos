@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
@@ -19,6 +17,8 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
+	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,8 +26,6 @@ import (
 	labels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-
-	"golang.org/x/sync/errgroup"
 )
 
 type WorkloadKind string
@@ -310,65 +308,54 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		}
 	}
 
-	source, err = CreateResourceWithGenerateName(ctx, func() (*v1alpha1.Source, error) {
+	return CreateResourceWithGenerateName(ctx, func() (*v1alpha1.Source, error) {
 		return kube.DefaultClient.OdigosClient.Sources(nsName).Create(ctx, newSource, metav1.CreateOptions{})
 	})
-	return source, err
 }
 
 func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind, currentStreamName string) error {
-	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
+	// note: ensure will return an existing crd (if exists) without throwing an error
+	source, err := EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
 	if err != nil {
 		return err
 	}
 
-	if workloadKind == WorkloadKindNamespace {
-		// if is a namespace source, then proceed to delete it
-		return kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
-	}
-
-	// if is a regular workload, then check for namespace source first
-	nsSource, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
-	if err != nil && !apierrors.IsNotFound(err) {
-		// unexpected error occurred while trying to get the namespace source
-		return err
-	}
-
-	if nsSource != nil {
-		// namespace source exists.
-		// we need to create a workload source and add "DisableInstrumentation" label,
-		// or remove the relevant data-stream label (if source is in multiple streams)
-
-		// note: create will also return an existing crd (if exists) without throwing an error
-		source, err := EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
-		if err != nil {
+	// check for namespace source first
+	var nsSource *v1alpha1.Source
+	if workloadKind != WorkloadKindNamespace {
+		nsSource, err = GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
+		if err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
+	}
 
-		dataStreamNames := GetSourceDataStreamNames(source)
+	dataStreamNames := ExtractDataStreamsFromSource(source, nsSource)
+	isWorkloadWithNamespace := workloadKind != WorkloadKindNamespace && nsSource != nil
 
-		if len(dataStreamNames) > 1 && currentStreamName != "" {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
-			return err
+	// we remove the current data-stream
+	if currentStreamName != "" {
+		dataStreamLabelKey := k8sconsts.SourceGroupLabelPrefix + currentStreamName
+
+		if isWorkloadWithNamespace {
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, dataStreamLabelKey, "false")
+		} else {
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, dataStreamLabelKey, "")
 		}
 
+		// if there are more labels for data-streams, we exit and don't delete the source
+		if len(dataStreamNames) > 1 {
+			return err
+		}
+	}
+
+	if isWorkloadWithNamespace {
+		// we add "DisableInstrumentation" label to the source
 		_, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, common.DisableInstrumentationJsonKey, true)
 		return err
 	} else {
-		// namespace source does not exist.
-		// we need to delete the workload source,
-		// or remove the relevant data-stream label (if source is in multiple streams)
-
-		dataStreamNames := GetSourceDataStreamNames(source)
-
-		if len(dataStreamNames) > 1 && currentStreamName != "" {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
-			return err
-		}
-
+		// we delete the source
 		err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
 		return err
-
 	}
 }
 
@@ -701,19 +688,4 @@ func GetOtherConditionsForSources(ctx context.Context, namespace string, name st
 	}
 
 	return result, nil
-}
-
-func GetSourceDataStreamNames(source *v1alpha1.Source) []*string {
-	dataStreamNames := make([]*string, 0)
-
-	if source != nil {
-		for labelKey, labelValue := range source.Labels {
-			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
-				streamName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
-				dataStreamNames = append(dataStreamNames, &streamName)
-			}
-		}
-	}
-
-	return dataStreamNames
 }

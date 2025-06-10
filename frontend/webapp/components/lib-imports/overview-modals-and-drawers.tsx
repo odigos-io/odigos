@@ -16,6 +16,7 @@ import {
 const OverviewModalsAndDrawers = () => {
   const { isEnterprise } = useConfig();
 
+  const { fetchNamespace } = useNamespace();
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
   const { categories } = useDestinationCategories();
@@ -24,8 +25,6 @@ const OverviewModalsAndDrawers = () => {
   const { createAction, updateAction, deleteAction } = useActionCRUD();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
   const { createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
-
-  const { fetchNamespace } = useNamespace();
 
   return (
     <>

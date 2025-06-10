@@ -8,7 +8,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
-
 	"golang.org/x/sync/errgroup"
 )
 
@@ -21,30 +20,27 @@ func ExtractDataStreamsFromEntities(sources []v1alpha1.Source, destinations []v1
 	seen["default"] = true
 
 	for _, src := range sources {
-		var sourceStreamNames []string
-		for key := range src.Labels {
-			if strings.Contains(key, k8sconsts.SourceGroupLabelPrefix) {
-				sourceStreamNames = append(sourceStreamNames, strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix))
+		for labelKey, labelValue := range src.Labels {
+			if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
+				name := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+				if !seen[name] {
+					seen[name] = true
+					dataStreams = append(dataStreams, &model.DataStream{
+						Name: name,
+					})
+				}
 			}
 		}
 
-		for _, streamName := range sourceStreamNames {
-			if _, exists := seen[streamName]; !exists {
-				seen[streamName] = true
-				dataStreams = append(dataStreams, &model.DataStream{
-					Name: streamName,
-				})
-			}
-		}
 	}
 
 	for _, dest := range destinations {
-		if dest.Spec.SourceSelector != nil && dest.Spec.SourceSelector.Groups != nil {
-			for _, streamName := range dest.Spec.SourceSelector.Groups {
-				if _, exists := seen[streamName]; !exists {
-					seen[streamName] = true
+		if destinationGroupsNotNull(&dest) {
+			for _, name := range dest.Spec.SourceSelector.Groups {
+				if !seen[name] {
+					seen[name] = true
 					dataStreams = append(dataStreams, &model.DataStream{
-						Name: streamName,
+						Name: name,
 					})
 				}
 			}
@@ -52,6 +48,56 @@ func ExtractDataStreamsFromEntities(sources []v1alpha1.Source, destinations []v1
 	}
 
 	return dataStreams
+}
+
+// ExtractDataStreamsFromSource extracts data stream names from the given primary and secondary sources.
+// It ensures that the data stream names are unique and that the 'false' labels are respected.
+// - The 'primarySource' is expected to be a Workload source (or a Namespace source when alone).
+// - The 'secondarySource' is expected to be a Namespace source.
+func ExtractDataStreamsFromSource(primarySource *v1alpha1.Source, secondarySource *v1alpha1.Source) []*string {
+	seen := make(map[string]bool)
+	forbidden := make(map[string]bool)
+	result := make([]*string, 0)
+
+	// Get all data stream names from the workload source
+	if primarySource != nil {
+		for labelKey, labelValue := range primarySource.Labels {
+			if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) {
+				nameFromLabel := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+				ds := nameFromLabel
+
+				if labelValue == "false" {
+					forbidden[ds] = true
+				}
+
+				if !seen[ds] && !forbidden[ds] {
+					seen[ds] = true
+					result = append(result, &ds)
+				}
+			}
+		}
+	}
+
+	// Get all data stream names from the namespace source (if it was not defined as 'false' in the workload source)
+	if secondarySource != nil {
+		for labelKey, labelValue := range secondarySource.Labels {
+			if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) {
+				nameFromLabel := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+				ds := nameFromLabel
+
+				if labelValue == "false" {
+					continue
+				}
+
+				if !seen[ds] && !forbidden[ds] {
+					seen[ds] = true
+					result = append(result, &ds)
+				}
+			}
+		}
+	}
+
+	return result
 }
 
 func destinationGroupsNotNull(destination *v1alpha1.Destination) bool {
@@ -93,7 +139,7 @@ func DeleteDestinationOrRemoveStreamName(ctx context.Context, dest *v1alpha1.Des
 }
 
 func DeleteDestinationsOrRemoveStreamName(ctx context.Context, destinations *v1alpha1.DestinationList, currentStreamName string) error {
-	var g errgroup.Group
+	g, ctx := errgroup.WithContext(ctx)
 
 	for _, dest := range destinations.Items {
 		dest := dest // capture range variable
@@ -117,7 +163,7 @@ func DeleteDestinationsOrRemoveStreamName(ctx context.Context, destinations *v1a
 }
 
 func UpdateDestinationsCurrentStreamName(ctx context.Context, destinations *v1alpha1.DestinationList, currentStreamName string, newStreamName string) error {
-	var g errgroup.Group
+	g, ctx := errgroup.WithContext(ctx)
 
 	for _, dest := range destinations.Items {
 		dest := dest // capture range variable
@@ -144,58 +190,56 @@ func UpdateDestinationsCurrentStreamName(ctx context.Context, destinations *v1al
 	if err := g.Wait(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func DeleteSourcesOrRemoveStreamName(ctx context.Context, sources *v1alpha1.SourceList, currentStreamName string) error {
-	var g errgroup.Group
+	toPersist := make([]*model.PersistNamespaceSourceInput, 0)
 
 	for _, source := range sources.Items {
 		source := source // capture range variable
 
-		g.Go(func() error {
-			for key := range source.Labels {
-				if strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix) == currentStreamName {
-					toPersist := []model.PersistNamespaceSourceInput{{
-						Name:              source.Spec.Workload.Name,
-						Kind:              model.K8sResourceKind(source.Spec.Workload.Kind),
-						Selected:          false, // to remove label, or delete entirely
-						CurrentStreamName: currentStreamName,
-					}}
-
-					err := SyncWorkloadsInNamespace(ctx, source.Namespace, toPersist)
-					if err != nil {
-						return fmt.Errorf("failed to sync workload %s: %v", source.Name, err)
-					}
-				}
+		for labelKey := range source.Labels {
+			if strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) == currentStreamName {
+				toPersist = append(toPersist, &model.PersistNamespaceSourceInput{
+					Namespace:         source.Spec.Workload.Namespace,
+					Name:              source.Spec.Workload.Name,
+					Kind:              model.K8sResourceKind(source.Spec.Workload.Kind),
+					Selected:          false, // to remove label, or delete entirely
+					CurrentStreamName: currentStreamName,
+				})
 			}
-			return nil
-		})
+		}
 	}
 
-	if err := g.Wait(); err != nil {
-		return err
+	err := SyncWorkloadsInNamespace(ctx, toPersist)
+	if err != nil {
+		return fmt.Errorf("failed to sync workloads: %v", err)
 	}
+
 	return nil
 }
 
 func UpdateSourcesCurrentStreamName(ctx context.Context, sources *v1alpha1.SourceList, currentStreamName string, newStreamName string) error {
-	var g errgroup.Group
+	g, ctx := errgroup.WithContext(ctx)
 
 	for _, source := range sources.Items {
 		source := source // capture range variable
 
 		g.Go(func() error {
-			for key := range source.Labels {
-				if strings.TrimPrefix(key, k8sconsts.SourceGroupLabelPrefix) == currentStreamName {
+			for labelKey, labelValue := range source.Labels {
+				if strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) == currentStreamName {
 					// remove the old label
-					_, err := UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
+					dataStreamLabelKey := k8sconsts.SourceGroupLabelPrefix + currentStreamName
+					_, err := UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, dataStreamLabelKey, "")
 					if err != nil {
 						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
 					}
 
 					// add the new label
-					_, err = UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, k8sconsts.SourceGroupLabelPrefix+newStreamName, "true")
+					dataStreamLabelKey = k8sconsts.SourceGroupLabelPrefix + newStreamName
+					_, err = UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, dataStreamLabelKey, labelValue)
 					if err != nil {
 						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
 					}
@@ -210,5 +254,6 @@ func UpdateSourcesCurrentStreamName(ctx context.Context, sources *v1alpha1.Sourc
 	if err := g.Wait(); err != nil {
 		return err
 	}
+
 	return nil
 }

@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 
-export const PERSIST_NAMESPACE = gql`
-  mutation PersistNamespace($namespace: PersistNamespaceItemInput!) {
-    persistK8sNamespace(namespace: $namespace)
+export const PERSIST_NAMESPACES = gql`
+  mutation PersistNamespaces($namespaces: [PersistNamespaceItemInput!]!) {
+    persistK8sNamespaces(namespaces: $namespaces)
   }
 `;
