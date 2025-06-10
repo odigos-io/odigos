@@ -120,7 +120,6 @@ func GetClientObjectFromSource(ctx context.Context, kubeClient client.Client, so
 
 func HandleInstrumentationConfigDataStreamsLabels(ctx context.Context,
 	workloadSources *odigosv1.WorkloadSources, ic *odigosv1.InstrumentationConfig) bool {
-
 	logger := log.FromContext(ctx)
 
 	workloadSource := workloadSources.Workload
