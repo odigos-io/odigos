@@ -234,23 +234,6 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 		}
 	}
 
-	if gateway.Spec.ResourcesSettings.TopologySpread != nil && gateway.Spec.ResourcesSettings.TopologySpread.Enabled {
-		desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints = []corev1.TopologySpreadConstraint{}
-		for _, constraint := range gateway.Spec.ResourcesSettings.TopologySpread.Constraints {
-			desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints = append(
-				desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints,
-				corev1.TopologySpreadConstraint{
-					MaxSkew:           int32(constraint.MaxSkew),
-					TopologyKey:       constraint.TopologyKey,
-					WhenUnsatisfiable: corev1.UnsatisfiableConstraintAction(constraint.WhenUnsatisfiable),
-					LabelSelector: &metav1.LabelSelector{
-						MatchLabels: constraint.LabelSelector,
-					},
-				},
-			)
-		}
-	}
-
 	if topologySpreadConstraints != nil && len(topologySpreadConstraints) > 0 {
 		adjusted := make([]corev1.TopologySpreadConstraint, 0, len(topologySpreadConstraints))
 		for _, c := range topologySpreadConstraints {
