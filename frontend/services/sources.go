@@ -322,9 +322,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	// check for namespace source first
 	var nsSource *v1alpha1.Source
-	if workloadKind == WorkloadKindNamespace {
-		nsSource = source
-	} else {
+	if workloadKind != WorkloadKindNamespace {
 		nsSource, err = GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return err
