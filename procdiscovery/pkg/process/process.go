@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/odigos-io/odigos/common/consts"
@@ -44,7 +45,8 @@ var OtherAgentEnvs = map[string]string{
 }
 
 var OtherAgentCmdSubString = map[string]string{
-	"newrelic.jar": "New Relic Agent",
+	"newrelic.jar":      "New Relic Agent",
+	"oneagentdynamizer": "Dynatrace OneAgent",
 }
 
 type Details struct {
@@ -119,6 +121,22 @@ func (pcx *ProcessContext) GetMapsFile() (ProcessFile, error) {
 		}
 	}
 	return pcx.mapsFile, nil
+}
+
+// GetOriginalExeFile tries to open the real application binary. When Dynatrace
+// OneAgent is used for Go applications the /proc/<pid>/exe symlink points to
+// oneagentdynamizer. In this case the command line contains the actual binary
+// path as the next argument. This method resolves the path and opens the
+// original binary so language detection can read build information.
+func (pcx *ProcessContext) GetOriginalExeFile() (ProcessFile, error) {
+	exePath := pcx.ExePath
+	if strings.Contains(filepath.Base(exePath), "oneagentdynamizer") {
+		args := strings.Split(pcx.CmdLine, "\x00")
+		if len(args) > 1 && args[1] != "" {
+			exePath = fmt.Sprintf("/proc/%d/root/%s", pcx.ProcessID, args[1])
+		}
+	}
+	return os.Open(exePath)
 }
 
 type ProcessEnvs struct {
