@@ -44,11 +44,11 @@ func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Collector
 	}
 	odigletNodeSelector := odigletDaemonset.Spec.Template.Spec.NodeSelector
 
-	autoScalerDeployment := &appsv1.Deployment{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: k8sconsts.AutoScalerDeploymentName}, autoScalerDeployment); err != nil {
+	InstrumentorDeployment := &appsv1.Deployment{}
+	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: k8sconsts.AutoScalerDeploymentName}, InstrumentorDeployment); err != nil {
 		return nil, err
 	}
-	autoScalerTopologySpreadConstraints := autoScalerDeployment.Spec.Template.Spec.TopologySpreadConstraints
+	autoScalerTopologySpreadConstraints := InstrumentorDeployment.Spec.Template.Spec.TopologySpreadConstraints
 
 	secretsVersionHash, err := destinationsSecretsVersionsHash(ctx, c, dests)
 	if err != nil {
