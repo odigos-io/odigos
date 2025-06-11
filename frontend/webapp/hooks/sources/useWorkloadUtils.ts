@@ -19,7 +19,7 @@ export const useWorkloadUtils = (): UseWorkloadUtils => {
     addNotification({ type, title, message, crdType: EntityTypes.Source, target: id ? getSseTargetFromId(id, EntityTypes.Source) : undefined, hideFromHistory });
   };
 
-  const [mutateRestartWorkloads] = useMutation<{ persistK8sSources: boolean }, { sourceIds: WorkloadId[] }>(RESTART_WORKLOADS, {
+  const [mutateRestartWorkloads] = useMutation<{ restartWorkloads: boolean }, { sourceIds: WorkloadId[] }>(RESTART_WORKLOADS, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
   });
 

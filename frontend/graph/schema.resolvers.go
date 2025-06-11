@@ -1093,7 +1093,7 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 
 // RestartWorkloads is the resolver for the restartWorkloads field.
 func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error) {
-	err := services.WithGoRoutine(ctx, 0, func(goFunc func(func() error)) {
+	err := services.WithGoroutine(ctx, len(sourceIds), func(goFunc func(func() error)) {
 		for _, sourceID := range sourceIds {
 			goFunc(func() error {
 				err := services.RolloutRestartWorkload(ctx, sourceID.Namespace, sourceID.Name, string(sourceID.Kind))
