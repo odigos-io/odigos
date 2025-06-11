@@ -132,19 +132,8 @@ func HandleInstrumentationConfigDataStreamsLabels(ctx context.Context,
 	}
 
 	// Extract labels from both sources (may be nil)
-	var workloadLabels map[string]string
-	if workloadSource != nil {
-		workloadLabels = getSourceDataStreamsLabels(workloadSource)
-	} else {
-		workloadLabels = map[string]string{}
-	}
-
-	var namespaceLabels map[string]string
-	if namespaceSource != nil {
-		namespaceLabels = getSourceDataStreamsLabels(namespaceSource)
-	} else {
-		namespaceLabels = map[string]string{}
-	}
+	workloadLabels := getSourceDataStreamsLabels(workloadSource)
+	namespaceLabels := getSourceDataStreamsLabels(namespaceSource)
 
 	// Start merging logic:
 	mergedLabels := make(map[string]string)
@@ -169,10 +158,10 @@ func HandleInstrumentationConfigDataStreamsLabels(ctx context.Context,
 	}
 
 	// Apply merged labels into InstrumentationConfig, and return true if changed
-	return mergeInstrumentationConfigLabels(ic, mergedLabels)
+	return setInstrumentationConfigDataStreamLabels(ic, mergedLabels)
 }
 
-func mergeInstrumentationConfigLabels(instConfig *odigosv1.InstrumentationConfig, desiredLabels map[string]string) (updated bool) {
+func setInstrumentationConfigDataStreamLabels(instConfig *odigosv1.InstrumentationConfig, desiredLabels map[string]string) (updated bool) {
 	if instConfig.Labels == nil {
 		instConfig.Labels = make(map[string]string)
 	}
@@ -205,8 +194,12 @@ func isDataStreamLabel(labelKey string) bool {
 func getSourceDataStreamsLabels(source *odigosv1.Source) map[string]string {
 	result := make(map[string]string)
 
+	if source == nil {
+		return result
+	}
+
 	for k, v := range source.Labels {
-		if strings.HasPrefix(k, k8sconsts.SourceDataStreamLabelPrefix) {
+		if isDataStreamLabel(k) {
 			result[k] = v
 		}
 	}
