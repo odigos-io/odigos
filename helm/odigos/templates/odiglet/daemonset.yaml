@@ -117,6 +117,10 @@ spec:
             capabilities:
               add:
                 - SYS_PTRACE
+          {{- if .Values.odiglet.resources }}
+          resources:
+{{ toYaml .Values.odiglet.resources | indent 12 }}
+          {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
