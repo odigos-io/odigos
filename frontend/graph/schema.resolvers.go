@@ -1091,6 +1091,26 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 	return true, nil
 }
 
+// RestartWorkloads is the resolver for the restartWorkloads field.
+func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error) {
+	err := services.WithGoroutine(ctx, len(sourceIds), func(goFunc func(func() error)) {
+		for _, sourceID := range sourceIds {
+			goFunc(func() error {
+				err := services.RolloutRestartWorkload(ctx, sourceID.Namespace, sourceID.Name, string(sourceID.Kind))
+				if err != nil {
+					return fmt.Errorf("failed to restart workload %s/%s/%s: %v", sourceID.Namespace, sourceID.Name, sourceID.Kind, err)
+				}
+				return nil
+			})
+		}
+	})
+
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
 	return &model.ComputePlatform{
