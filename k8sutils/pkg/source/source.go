@@ -22,6 +22,17 @@ import (
 func IsObjectInstrumentedBySource(ctx context.Context,
 	k8sClient client.Client,
 	obj client.Object) (bool, metav1.Condition, error) {
+	labels := obj.GetLabels()
+	if val, exists := labels[k8sconsts.OdigosSystemLabelKey]; exists && val == k8sconsts.OdigosSystemLabelValue {
+		condition := metav1.Condition{
+			Type:    odigosv1.MarkedForInstrumentationStatusConditionType,
+			Status:  metav1.ConditionUnknown,
+			Reason:  string(odigosv1.MarkedForInstrumentationReasonError),
+			Message: "cannot instrument Odigos system components",
+		}
+		return false, condition, fmt.Errorf("cannot instrument Odigos system components")
+	}
+
 	// Check if a Source object exists for this object
 	pw := k8sconsts.PodWorkload{
 		Name:      obj.GetName(),

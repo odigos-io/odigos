@@ -77,7 +77,6 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 
 	// make sure the default ignored namespaces are always present
 	odigosConfig.IgnoredNamespaces = mergeIgnoredItemLists(odigosConfig.IgnoredNamespaces, k8sconsts.DefaultIgnoredNamespaces)
-	odigosConfig.IgnoredNamespaces = append(odigosConfig.IgnoredNamespaces, env.GetCurrentNamespace())
 
 	// make sure the default ignored containers are always present
 	odigosConfig.IgnoredContainers = mergeIgnoredItemLists(odigosConfig.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
