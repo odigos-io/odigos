@@ -11,3 +11,9 @@ export const UPDATE_K8S_ACTUAL_SOURCE = gql`
     updateK8sActualSource(sourceId: $sourceId, patchSourceRequest: $patchSourceRequest)
   }
 `;
+
+export const RESTART_WORKLOADS = gql`
+  mutation RestartWorkloads($sourceIds: [K8sSourceId!]!) {
+    restartWorkloads(sourceIds: $sourceIds)
+  }
+`;

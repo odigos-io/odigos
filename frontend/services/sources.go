@@ -19,6 +19,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
+	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,8 +27,6 @@ import (
 	labels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-
-	"golang.org/x/sync/errgroup"
 )
 
 type WorkloadKind string
@@ -38,31 +37,6 @@ const (
 	WorkloadKindStatefulSet WorkloadKind = "StatefulSet"
 	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
 )
-
-func GetWorkload(c context.Context, ns string, kind string, name string) (metav1.Object, int) {
-	switch kind {
-	case "Deployment":
-		deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(c, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, 0
-		}
-		return deployment, int(deployment.Status.AvailableReplicas)
-	case "StatefulSet":
-		statefulSet, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(c, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, 0
-		}
-		return statefulSet, int(statefulSet.Status.ReadyReplicas)
-	case "DaemonSet":
-		daemonSet, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(c, name, metav1.GetOptions{})
-		if err != nil {
-			return nil, 0
-		}
-		return daemonSet, int(daemonSet.Status.NumberReady)
-	default:
-		return nil, 0
-	}
-}
 
 func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
 	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, nsName, metav1.GetOptions{})
@@ -183,6 +157,65 @@ func k8sKindToGql(k8sResourceKind string) model.K8sResourceKind {
 		return model.K8sResourceKindDaemonSet
 	}
 	return ""
+}
+
+func RolloutRestartWorkload(ctx context.Context, namespace string, name string, kind string) error {
+	now := time.Now().Format(time.RFC3339)
+
+	switch kind {
+	case string(WorkloadKindDeployment):
+		dep, err := kube.DefaultClient.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to get deployment: %w", err)
+		}
+
+		if dep.Spec.Template.Annotations == nil {
+			dep.Spec.Template.Annotations = map[string]string{}
+		}
+		dep.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = now
+
+		_, err = kube.DefaultClient.AppsV1().Deployments(namespace).Update(ctx, dep, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to update deployment: %w", err)
+		}
+
+	case string(WorkloadKindStatefulSet):
+		sts, err := kube.DefaultClient.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to get statefulset: %w", err)
+		}
+
+		if sts.Spec.Template.Annotations == nil {
+			sts.Spec.Template.Annotations = map[string]string{}
+		}
+		sts.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = now
+
+		_, err = kube.DefaultClient.AppsV1().StatefulSets(namespace).Update(ctx, sts, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to update statefulset: %w", err)
+		}
+
+	case string(WorkloadKindDaemonSet):
+		ds, err := kube.DefaultClient.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to get daemonset: %w", err)
+		}
+
+		if ds.Spec.Template.Annotations == nil {
+			ds.Spec.Template.Annotations = map[string]string{}
+		}
+		ds.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = now
+
+		_, err = kube.DefaultClient.AppsV1().DaemonSets(namespace).Update(ctx, ds, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to update daemonset: %w", err)
+		}
+
+	default:
+		return fmt.Errorf("unsupported kind: %s (must be Deployment, StatefulSet, or DaemonSet)", kind)
+	}
+
+	return nil
 }
 
 func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind WorkloadKind) (*v1alpha1.Source, error) {

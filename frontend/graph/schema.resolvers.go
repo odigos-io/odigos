@@ -1091,6 +1091,26 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 	return true, nil
 }
 
+// RestartWorkloads is the resolver for the restartWorkloads field.
+func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error) {
+	err := services.WithGoRoutine(ctx, 0, func(goFunc func(func() error)) {
+		for _, sourceID := range sourceIds {
+			goFunc(func() error {
+				err := services.RolloutRestartWorkload(ctx, sourceID.Namespace, sourceID.Name, string(sourceID.Kind))
+				if err != nil {
+					return fmt.Errorf("failed to restart workload %s/%s/%s: %v", sourceID.Namespace, sourceID.Name, sourceID.Kind, err)
+				}
+				return nil
+			})
+		}
+	})
+
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
 	return &model.ComputePlatform{
@@ -1205,3 +1225,15 @@ type computePlatformResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *mutationResolver) RestartWorkload(ctx context.Context, sourceID model.K8sSourceID) (bool, error) {
+
+}
+*/
