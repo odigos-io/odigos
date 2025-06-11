@@ -252,6 +252,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		logger.Info("Detected OpenShift cluster, enabling required configuration")
 		odigos.Spec.OpenShiftEnabled = true
 	}
+	ctx = cmdcontext.ContextWithClusterDetails(ctx, details)
 
 	k8sVersion := cmdcontext.K8SVersionFromContext(ctx)
 	if k8sVersion != nil {
