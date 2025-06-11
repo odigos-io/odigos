@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:4a0147ddb95746339a48755975a404770da878bd6a65ded3789bbaae60bc8bd4
-    createdAt: "2025-06-10T19:38:17Z"
+    createdAt: "2025-06-11T14:51:25Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and eBPF.
     features.operators.openshift.io/disconnected: "false"
     features.operators.openshift.io/fips-compliant: "true"
@@ -151,11 +151,20 @@ spec:
                 - ""
               resources:
                 - namespaces
+              verbs:
+                - get
+                - list
+                - patch
+                - watch
+            - apiGroups:
+                - ""
+              resources:
                 - nodes
               verbs:
                 - get
                 - list
                 - patch
+                - update
                 - watch
             - apiGroups:
                 - ""
@@ -553,16 +562,22 @@ spec:
     name: Odigos
     url: https://odigos.io
   relatedImages:
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:65530eca77086bab9184d69186201f55aab2e8f944c905abe4f5ae52703bc06f
+      name: enterprise_instrumentor
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:52e55817ead6980fa4fa111f2462942a28f496d8ee428c784db10b0f14db1d42
+      name: enterprise_odiglet
+    - image: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:343d1b51fa3db73395faeb615d12baaea40b4127fae0d9b3cc6a114ebd00db79
+      name: collector
+    - image: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:fe8f7e558f319e31fb01f4cb2caaaa7a098da20608674a4f5866a66ba6424ba0
+      name: frontend
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:65530eca77086bab9184d69186201f55aab2e8f944c905abe4f5ae52703bc06f
+      name: enterprise-instrumentor
     - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:4a0147ddb95746339a48755975a404770da878bd6a65ded3789bbaae60bc8bd4
       name: odigos-certified-operator-ubi9-4a0147ddb95746339a48755975a404770da878bd6a65ded3789bbaae60bc8bd4-annotation
     - image: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:08bcc8cbf6666ec2135f03eace1f6f5f5e1f45e0647220aea11a5839741093b7
       name: autoscaler
-    - image: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:343d1b51fa3db73395faeb615d12baaea40b4127fae0d9b3cc6a114ebd00db79
-      name: collector
     - image: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:01da227e6b9461885ee4b8fb422666cc6a8b8e03f5046c75b897beeaf1e23cd8
       name: instrumentor
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:65530eca77086bab9184d69186201f55aab2e8f944c905abe4f5ae52703bc06f
-      name: enterprise-instrumentor
     - image: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9@sha256:d8258a7c887eb0d83a34062aa5438e8cf8c0870a2fe57d6ab2cfabb167f0b620
       name: odiglet
     - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:52e55817ead6980fa4fa111f2462942a28f496d8ee428c784db10b0f14db1d42
@@ -571,10 +586,4 @@ spec:
       name: scheduler
     - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:4a0147ddb95746339a48755975a404770da878bd6a65ded3789bbaae60bc8bd4
       name: manager
-    - image: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:fe8f7e558f319e31fb01f4cb2caaaa7a098da20608674a4f5866a66ba6424ba0
-      name: frontend
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:65530eca77086bab9184d69186201f55aab2e8f944c905abe4f5ae52703bc06f
-      name: enterprise_instrumentor
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:52e55817ead6980fa4fa111f2462942a28f496d8ee428c784db10b0f14db1d42
-      name: enterprise_odiglet
   version: 1.0.193
