@@ -146,18 +146,39 @@ autoscaler:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 scheduler:
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 ui:
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
   # uiMode: 'normal' or 'readonly'
   #  - This flag controls whether the UI should be in read-only mode.
   #  - Setting this to "readonly" will disable the ability to create, update, or delete objects in the UI.
@@ -178,6 +199,13 @@ instrumentor:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
   # skipWebhookIssuerCreation:
   #   - This flag controls whether the chart should skip creating an Issuer
   #     and associated Certificate for securing the mutating webhook communication.
@@ -204,6 +232,15 @@ odiglet:
     ## regardless of its taints (including master/control-plane nodes)
     - operator: Exists
   affinity: {}
+  # Resource configuration for the odiglet daemonset
+  # resources:
+  #   requests:
+  #     cpu: 10m
+  #     memory: 64Mi
+  #   limits:
+  #     cpu: 500m
+  #     memory: 512Mi
+
   # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
   # into the Odiglet to ensure it can access the container runtime unix socket.
@@ -260,3 +297,4 @@ autoRollback:
   disabled: false
   graceTime: 5m
   stabilityWindowTime: 1h
+

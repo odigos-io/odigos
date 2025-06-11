@@ -61,7 +61,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 			var secureExecutionMode *bool
 
 			if inspectProc == nil {
-				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace, "processes", processes)
 				programLanguageDetails.Language = common.UnknownProgrammingLanguage
 			} else {
 				if len(processes) > 1 {
