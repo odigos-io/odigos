@@ -13,7 +13,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // IsObjectInstrumentedBySource returns true if the given object has an active, non-excluding Source.
@@ -120,20 +119,10 @@ func GetClientObjectFromSource(ctx context.Context, kubeClient client.Client, so
 
 func HandleInstrumentationConfigDataStreamsLabels(ctx context.Context,
 	workloadSources *odigosv1.WorkloadSources, ic *odigosv1.InstrumentationConfig) bool {
-	logger := log.FromContext(ctx)
-
-	workloadSource := workloadSources.Workload
-	namespaceSource := workloadSources.Namespace
-
-	// Case 1: no workload source and no namespace source — nothing to do
-	if workloadSource == nil && namespaceSource == nil {
-		logger.Info("No workload source and no namespace source found, skipping")
-		return false
-	}
 
 	// Extract labels from both sources (may be nil)
-	workloadLabels := getSourceDataStreamsLabels(workloadSource)
-	namespaceLabels := getSourceDataStreamsLabels(namespaceSource)
+	workloadLabels := getSourceDataStreamsLabels(workloadSources.Workload)
+	namespaceLabels := getSourceDataStreamsLabels(workloadSources.Namespace)
 
 	// Start merging logic:
 	mergedLabels := make(map[string]string)
@@ -143,18 +132,9 @@ func HandleInstrumentationConfigDataStreamsLabels(ctx context.Context,
 		mergedLabels[k] = v
 	}
 
-	// Add any workload keys not present in namespace
+	// Add any workload, override namespace labels
 	for k, v := range workloadLabels {
-		if _, exists := mergedLabels[k]; !exists {
-			mergedLabels[k] = v
-		}
-	}
-
-	// Apply overrides from workload source (force false where set)
-	for k, v := range workloadLabels {
-		if v == "false" {
-			mergedLabels[k] = "false"
-		}
+		mergedLabels[k] = v
 	}
 
 	// Apply merged labels into InstrumentationConfig, and return true if changed
