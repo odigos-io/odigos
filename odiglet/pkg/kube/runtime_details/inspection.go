@@ -298,7 +298,7 @@ func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkloa
 }
 
 func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigosv1.RuntimeDetailsByContainer, podIdentintifier string) bool {
-	if new.Language != existing.Language && existing.Language != common.UnknownProgrammingLanguage {
+	if new.Language != existing.Language {
 		log.Logger.V(0).Info("detected different language, skiping merge runtime details", "pod_identintifier", podIdentintifier, "container_name", new.ContainerName, "new.Language", new.Language, "existing.Language", existing.Language)
 		return false
 	}
