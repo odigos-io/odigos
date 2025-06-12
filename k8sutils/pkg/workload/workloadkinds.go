@@ -30,7 +30,8 @@ func IgnoreErrorKindNotSupported(err error) error {
 
 func IsValidWorkloadKind(kind k8sconsts.WorkloadKind) bool {
 	switch kind {
-	case k8sconsts.WorkloadKindDeployment, k8sconsts.WorkloadKindDaemonSet, k8sconsts.WorkloadKindStatefulSet, k8sconsts.WorkloadKindNamespace, k8sconsts.WorkloadKindCronJob:
+	case k8sconsts.WorkloadKindDeployment, k8sconsts.WorkloadKindDaemonSet,
+		k8sconsts.WorkloadKindStatefulSet, k8sconsts.WorkloadKindNamespace, k8sconsts.WorkloadKindCronJob:
 		return true
 	}
 	return false
