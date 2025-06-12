@@ -26,6 +26,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,6 +54,12 @@ func getObjectByOwnerReference(ctx context.Context, k8sClient client.Client, own
 		ss := &appsv1.StatefulSet{}
 		err := k8sClient.Get(ctx, key, ss)
 		return ss, err
+	}
+
+	if ownerRef.Kind == "CronJob" {
+		cj := &batchv1.CronJob{}
+		err := k8sClient.Get(ctx, key, cj)
+		return cj, err
 	}
 
 	return nil, fmt.Errorf("unsupported owner kind %s", ownerRef.Kind)

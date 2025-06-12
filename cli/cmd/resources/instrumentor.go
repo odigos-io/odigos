@@ -178,6 +178,11 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			{ // Read instrumentation labels from statefulsets and apply pod spec changes
+				APIGroups: []string{"batch"},
+				Resources: []string{"cronjobs"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
 			{ // Read instrumentation labels from daemonsets and apply pod spec changes
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets"},

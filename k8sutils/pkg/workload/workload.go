@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 
 	v1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,6 +23,7 @@ type Workload interface {
 var _ Workload = &DeploymentWorkload{}
 var _ Workload = &DaemonSetWorkload{}
 var _ Workload = &StatefulSetWorkload{}
+var _ Workload = &CronJobWorkload{}
 
 type DeploymentWorkload struct {
 	*v1.Deployment
@@ -47,6 +49,14 @@ func (s *StatefulSetWorkload) AvailableReplicas() int32 {
 	return s.Status.ReadyReplicas
 }
 
+type CronJobWorkload struct {
+	*batchv1.CronJob
+}
+
+func (c *CronJobWorkload) AvailableReplicas() int32 {
+	return int32(len(c.Status.Active))
+}
+
 func ObjectToWorkload(obj client.Object) (Workload, error) {
 	switch t := obj.(type) {
 	case *v1.Deployment:
@@ -55,6 +65,8 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 		return &DaemonSetWorkload{DaemonSet: t}, nil
 	case *v1.StatefulSet:
 		return &StatefulSetWorkload{StatefulSet: t}, nil
+	case *batchv1.CronJob:
+		return &CronJobWorkload{CronJob: t}, nil
 	default:
 		return nil, errors.New("unknown kind")
 	}
