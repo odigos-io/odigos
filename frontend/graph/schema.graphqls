@@ -773,4 +773,5 @@ type Mutation {
   deleteInstrumentationRule(ruleId: ID!): Boolean!
   updateDataStream(id: ID!, dataStream: DataStreamInput!): DataStream!
   deleteDataStream(id: ID!): Boolean!
+  restartWorkloads(sourceIds: [K8sSourceId!]!): Boolean!
 }
