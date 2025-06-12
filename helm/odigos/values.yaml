@@ -297,7 +297,7 @@ karpenter:
 #   Refer to the official Kubernetes documentation for structure and field details:
 #   https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
 topologySpread:
-  enabled: true
+  enabled: false
   constraints:
     - maxSkew: 1
       topologyKey: "topology.kubernetes.io/zone"
