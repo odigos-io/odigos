@@ -383,7 +383,7 @@ func analyzePods(resources *OdigosSourceResources) ([]PodAnalyze, string) {
 		}
 		_, hasAgentHash := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]
 		agentInjected := properties.EntityProperty{
-			Name:    "Instrumentation Agent Injected",
+			Name:    "Odigos Agent Injected",
 			Value:   hasAgentHash,
 			Explain: "whether the odigos instrumentation agent was injected into this pod",
 		}
