@@ -26,7 +26,7 @@ func (g *GolangInspector) QuickScan(pcx *process.ProcessContext) (common.Program
 	// Try reading the build info. If successful, this is a Go binary.
 	if _, err := buildinfo.Read(exeFile); err != nil {
 		// DynatraceDynamizerExeSubString is wrapper exe for dynatrace agent for go only
-		if pcx != nil && strings.Contains(pcx.Details.ExePath, process.DynatraceDynamizerExeSubString) {
+		if pcx != nil && strings.Contains(pcx.ExePath, process.DynatraceDynamizerExeSubString) {
 			return common.GoProgrammingLanguage, true
 		}
 		return "", false
