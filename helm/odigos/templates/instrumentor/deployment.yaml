@@ -18,9 +18,9 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-instrumentor
     spec:
-      {{- if and .Values.topologySpread.enabled .Values.topologySpread.constraints }}
+      {{- if and .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
-        {{- range .Values.topologySpread.constraints }}
+        {{- range .Values.topologySpreadConstraints }}
         - maxSkew: {{ .maxSkew }}
           topologyKey: {{ .topologyKey | quote }}
           whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
