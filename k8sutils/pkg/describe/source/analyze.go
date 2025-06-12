@@ -55,6 +55,8 @@ type InstrumentationInstanceAnalyze struct {
 type PodContainerAnalyze struct {
 	ContainerName            properties.EntityProperty        `json:"containerName"`
 	ActualDevices            properties.EntityProperty        `json:"actualDevices"`
+	Started                  properties.EntityProperty        `json:"started"`
+	Ready                    properties.EntityProperty        `json:"ready"`
 	InstrumentationInstances []InstrumentationInstanceAnalyze `json:"instrumentationInstances"`
 }
 
@@ -364,6 +366,15 @@ func podPhaseToStatus(phase corev1.PodPhase) properties.PropertyStatus {
 	}
 }
 
+func getContainerStatus(pod *corev1.Pod, containerName string) *corev1.ContainerStatus {
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if containerStatus.Name == containerName {
+			return &containerStatus
+		}
+	}
+	return nil
+}
+
 func analyzePods(resources *OdigosSourceResources) ([]PodAnalyze, string) {
 	pods := make([]PodAnalyze, 0, len(resources.Pods.Items))
 	podsStatuses := make(map[corev1.PodPhase]int)
@@ -389,7 +400,7 @@ func analyzePods(resources *OdigosSourceResources) ([]PodAnalyze, string) {
 			Explain: "whether the odigos instrumentation agent was injected into this pod",
 		}
 
-		isActiveRevisionBool := pod.Annotations["odigos.io/is-latest-revision"] == "true"
+		isActiveRevisionBool := pod.Annotations[OdigosIsLatestRevisionAnnotation] == "true"
 		isActiveRevision := properties.EntityProperty{
 			Name:    "Is Active Revision",
 			Value:   isActiveRevisionBool,
@@ -418,6 +429,7 @@ func analyzePods(resources *OdigosSourceResources) ([]PodAnalyze, string) {
 		containers := make([]PodContainerAnalyze, 0, len(pod.Spec.Containers))
 		for i := range pod.Spec.Containers {
 			container := pod.Spec.Containers[i]
+			containerStatus := getContainerStatus(&pod, container.Name)
 			containerName := properties.EntityProperty{
 				Name:    "Container Name",
 				Value:   container.Name,
@@ -456,11 +468,30 @@ func analyzePods(resources *OdigosSourceResources) ([]PodAnalyze, string) {
 				thisPodInstrumentationInstances = append(thisPodInstrumentationInstances, instanceAnalyze)
 			}
 
-			containers = append(containers, PodContainerAnalyze{
+			podContainerAnalyze := PodContainerAnalyze{
 				ContainerName:            containerName,
 				ActualDevices:            actualDevices,
 				InstrumentationInstances: thisPodInstrumentationInstances,
-			})
+			}
+			if containerStatus != nil {
+				startedValue := containerStatus.Started != nil && *containerStatus.Started
+				podContainerAnalyze.Started = properties.EntityProperty{
+					Name:    "Started",
+					Value:   startedValue,
+					Status:  properties.GetSuccessOrError(startedValue),
+					Explain: "whether the container has passed it's startup check",
+				}
+
+				readyValue := containerStatus.Ready
+				podContainerAnalyze.Ready = properties.EntityProperty{
+					Name:    "Ready",
+					Value:   readyValue,
+					Status:  properties.GetSuccessOrError(readyValue),
+					Explain: "whether the container passes it's readiness check",
+				}
+			}
+
+			containers = append(containers, podContainerAnalyze)
 		}
 
 		pods = append(pods, PodAnalyze{

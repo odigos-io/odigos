@@ -80,6 +80,8 @@ func printPodsInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
 			container := pod.Containers[i]
 			printProperty(sb, 2, &container.ContainerName)
 			printProperty(sb, 2, &container.ActualDevices)
+			printProperty(sb, 2, &container.Started)
+			printProperty(sb, 2, &container.Ready)
 			describeText(sb, 2, false, "")
 			describeText(sb, 2, false, "Instrumentation Instances:")
 			for _, ii := range container.InstrumentationInstances {

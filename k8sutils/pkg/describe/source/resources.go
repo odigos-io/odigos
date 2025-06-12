@@ -16,6 +16,14 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
+const (
+	// this annotation is not really set on the pod object itself.
+	// it is used as a patch to signal if the pod is running the latest revision of the deployment.
+	// this is useful so we know to ignore pods that are from previous revisions which are in the process of being terminated
+	// during a rolling update.
+	OdigosIsLatestRevisionAnnotation = "odigos.io/is-latest-revision"
+)
+
 type OdigosSourceResources struct {
 	Namespace                *corev1.Namespace
 	Sources                  *odigosv1.WorkloadSources
