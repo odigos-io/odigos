@@ -22,7 +22,7 @@ spec:
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
-      {{- if and .Values.topologySpreadConstraints }}
+      {{- if .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- range .Values.topologySpreadConstraints }}
         - maxSkew: {{ .maxSkew }}
