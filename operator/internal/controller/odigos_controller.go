@@ -336,6 +336,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	odigosConfig.Profiles = odigos.Spec.Profiles
 	odigosConfig.UiMode = common.UiMode(odigos.Spec.UIMode)
 	odigosConfig.NodeSelector = nodeSelector
+	odigosConfig.AgentEnvVarsInjectionMethod = &odigos.Spec.AgentEnvVarsInjectionMethod
 
 	ownerReference := metav1.OwnerReference{
 		APIVersion: odigos.APIVersion,
