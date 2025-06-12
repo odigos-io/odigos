@@ -3,7 +3,7 @@ package common
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
-	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/destinations/config"
 )
 
 var ControllerConfig *controllerconfig.ControllerConfig

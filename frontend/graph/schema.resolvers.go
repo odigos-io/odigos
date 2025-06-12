@@ -12,7 +12,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -604,7 +604,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 	}
 
 	ns := env.GetCurrentNamespace()
-	destType := common.DestinationType(destination.Type)
+	destType := destinations.DestinationType(destination.Type)
 	destName := destination.Name
 
 	destTypeConfig, err := services.GetDestinationTypeConfig(destType)
@@ -685,7 +685,7 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	}
 
 	ns := env.GetCurrentNamespace()
-	destType := common.DestinationType(destination.Type)
+	destType := destinations.DestinationType(destination.Type)
 	destName := destination.Name
 
 	// Get the destination type configuration
@@ -737,6 +737,7 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 			return nil, fmt.Errorf("failed to create secret: %v", err)
 		}
 		dest.Spec.SecretRef = secretRef
+
 		// Add owner reference to the secret
 		err = services.AddDestinationOwnerReferenceToSecret(ctx, ns, dest)
 		if err != nil {
@@ -824,7 +825,7 @@ func (r *mutationResolver) DeleteDestination(ctx context.Context, id string, cur
 
 // TestConnectionForDestination is the resolver for the testConnectionForDestination field.
 func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, destination model.DestinationInput) (*model.TestConnectionResponse, error) {
-	destType := common.DestinationType(destination.Type)
+	destType := destinations.DestinationType(destination.Type)
 
 	destConfig, err := services.GetDestinationTypeConfig(destType)
 	if err != nil {
@@ -845,7 +846,7 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 	// "Permanent error: rpc error: code = InvalidArgument desc = request body should not be empty"
 	// TODO: remove once honeycomb fixes the issue
 	var res testconnection.TestConnectionResult
-	if destType == common.HoneycombDestinationType {
+	if destType == destinations.HoneycombDestinationType {
 		res = testconnection.TestConnectionHoneycomb(ctx, configurer)
 	} else {
 		res = testconnection.TestConnection(ctx, configurer)

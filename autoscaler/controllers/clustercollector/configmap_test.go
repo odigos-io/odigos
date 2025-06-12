@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/destinations/config"
 	"github.com/stretchr/testify/assert"
 )
 

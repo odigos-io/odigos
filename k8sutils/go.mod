@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/common v1.0.189
 	github.com/stretchr/testify v1.10.0
 	github.com/tj/assert v0.0.3
 	go.opentelemetry.io/otel/exporters/prometheus v0.57.0
@@ -28,7 +28,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
-	github.com/goccy/go-yaml v1.17.1 // indirect
+	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -36,6 +36,8 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/odigos-io/odigos/destinations v0.0.0-20250530103639-c5df85572bd9 // indirect
+	github.com/odigos-io/odigos/destinations/config v0.0.0-00010101000000-000000000000 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.22.0 // indirect
@@ -81,4 +83,6 @@ require (
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/destinations => ../destinations
+	github.com/odigos-io/odigos/destinations/config => ../destinations/config
 )
