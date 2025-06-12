@@ -6,6 +6,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
@@ -58,10 +59,11 @@ type PodContainerAnalyze struct {
 }
 
 type PodAnalyze struct {
-	PodName    properties.EntityProperty `json:"podName"`
-	NodeName   properties.EntityProperty `json:"nodeName"`
-	Phase      properties.EntityProperty `json:"phase"`
-	Containers []PodContainerAnalyze     `json:"containers"`
+	PodName       properties.EntityProperty `json:"podName"`
+	NodeName      properties.EntityProperty `json:"nodeName"`
+	Phase         properties.EntityProperty `json:"phase"`
+	AgentInjected properties.EntityProperty `json:"agentInjected"`
+	Containers    []PodContainerAnalyze     `json:"containers"`
 }
 
 type SourceAnalyze struct {
@@ -379,6 +381,12 @@ func analyzePods(resources *OdigosSourceResources) ([]PodAnalyze, string) {
 			Value:   pod.Spec.NodeName,
 			Explain: "the name of the k8s node where the current pod being described is scheduled",
 		}
+		_, hasAgentHash := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]
+		agentInjected := properties.EntityProperty{
+			Name:    "Instrumentation Agent Injected",
+			Value:   hasAgentHash,
+			Explain: "whether the odigos instrumentation agent was injected into this pod",
+		}
 
 		var phase properties.EntityProperty
 
@@ -447,10 +455,11 @@ func analyzePods(resources *OdigosSourceResources) ([]PodAnalyze, string) {
 		}
 
 		pods = append(pods, PodAnalyze{
-			PodName:    name,
-			NodeName:   nodeName,
-			Phase:      phase,
-			Containers: containers,
+			PodName:       name,
+			NodeName:      nodeName,
+			AgentInjected: agentInjected,
+			Phase:         phase,
+			Containers:    containers,
 		})
 	}
 
