@@ -59,11 +59,12 @@ type PodContainerAnalyze struct {
 }
 
 type PodAnalyze struct {
-	PodName       properties.EntityProperty `json:"podName"`
-	NodeName      properties.EntityProperty `json:"nodeName"`
-	Phase         properties.EntityProperty `json:"phase"`
-	AgentInjected properties.EntityProperty `json:"agentInjected"`
-	Containers    []PodContainerAnalyze     `json:"containers"`
+	PodName          properties.EntityProperty `json:"podName"`
+	NodeName         properties.EntityProperty `json:"nodeName"`
+	Phase            properties.EntityProperty `json:"phase"`
+	AgentInjected    properties.EntityProperty `json:"agentInjected"`
+	IsActiveRevision properties.EntityProperty `json:"isActiveRevision"`
+	Containers       []PodContainerAnalyze     `json:"containers"`
 }
 
 type SourceAnalyze struct {
@@ -388,6 +389,14 @@ func analyzePods(resources *OdigosSourceResources) ([]PodAnalyze, string) {
 			Explain: "whether the odigos instrumentation agent was injected into this pod",
 		}
 
+		isActiveRevisionBool := pod.Annotations["odigos.io/is-latest-revision"] == "true"
+		isActiveRevision := properties.EntityProperty{
+			Name:    "Is Active Revision",
+			Value:   isActiveRevisionBool,
+			Status:  properties.GetSuccessOrError(isActiveRevisionBool),
+			Explain: "whether the current pod is the latest revision of the deployment",
+		}
+
 		var phase properties.EntityProperty
 
 		if pod.DeletionTimestamp != nil {
@@ -455,11 +464,12 @@ func analyzePods(resources *OdigosSourceResources) ([]PodAnalyze, string) {
 		}
 
 		pods = append(pods, PodAnalyze{
-			PodName:       name,
-			NodeName:      nodeName,
-			AgentInjected: agentInjected,
-			Phase:         phase,
-			Containers:    containers,
+			PodName:          name,
+			NodeName:         nodeName,
+			AgentInjected:    agentInjected,
+			IsActiveRevision: isActiveRevision,
+			Phase:            phase,
+			Containers:       containers,
 		})
 	}
 
