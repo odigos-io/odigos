@@ -44,6 +44,13 @@ spec:
       {{- with .Values.centralBackend.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
       {{- end }}
-      {{- include "odigos.renderTopologySpreadConstraints" . | nindent 6 }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: central-proxy
 
 {{- end }}

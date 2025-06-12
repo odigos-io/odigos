@@ -17,6 +17,14 @@ spec:
       labels:
         app: redis
     spec:
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app: redis
       containers:
         - name: redis
           image: {{ .Values.redis.image | quote }}
