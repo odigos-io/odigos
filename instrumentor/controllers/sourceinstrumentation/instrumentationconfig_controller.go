@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -83,7 +84,14 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, r.Client, workloadObject)
+	pw := k8sconsts.PodWorkload{
+		Name:      workloadObject.GetName(),
+		Namespace: workloadObject.GetNamespace(),
+		Kind:      k8sconsts.WorkloadKind(workloadObject.GetObjectKind().GroupVersionKind().Kind),
+	}
+	sources, err := odigosv1.GetSources(ctx, r.Client, pw)
+
+	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, err)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

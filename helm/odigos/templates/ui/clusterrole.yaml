@@ -24,6 +24,10 @@ rules:
     verbs:
       - get
       - list
+      {{- if ne .Values.ui.uiMode "readonly" }}
+      - update
+      - patch
+      {{- end }}
   - apiGroups:
       - apps
     resources:
