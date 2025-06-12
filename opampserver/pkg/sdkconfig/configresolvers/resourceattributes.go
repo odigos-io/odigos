@@ -61,6 +61,10 @@ func CalculateServerAttributes(k8sAttributes *K8sResourceAttributes, nodeName st
 		objectNameKey = string(semconv.K8SDaemonSetNameKey)
 	case "Pod":
 		objectNameKey = string(semconv.K8SPodNameKey)
+	case "Job":
+		objectNameKey = string(semconv.K8SJobNameKey)
+	case "CronJob":
+		objectNameKey = string(semconv.K8SCronJobNameKey)
 	default:
 		return serverOfferResourceAttributes, errors.New("unsupported workload kind")
 	}
