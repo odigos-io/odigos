@@ -11,21 +11,22 @@ import {
   usePotentialDestinations,
   useSourceCRUD,
   useTestConnection,
+  useWorkloadUtils,
 } from '@/hooks';
 
 const OverviewModalsAndDrawers = () => {
   const { isEnterprise } = useConfig();
 
+  const { fetchNamespace } = useNamespace();
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
+  const { restartWorkloads } = useWorkloadUtils();
   const { categories } = useDestinationCategories();
   const { persistSources, updateSource } = useSourceCRUD();
   const { potentialDestinations } = usePotentialDestinations();
   const { createAction, updateAction, deleteAction } = useActionCRUD();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
   const { createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
-
-  const { fetchNamespace } = useNamespace();
 
   return (
     <>
@@ -43,7 +44,7 @@ const OverviewModalsAndDrawers = () => {
       <ActionModal createAction={createAction} />
 
       {/* drawers */}
-      <SourceDrawer persistSources={persistSources} updateSource={updateSource} fetchDescribeSource={fetchDescribeSource} />
+      <SourceDrawer persistSources={persistSources} updateSource={updateSource} fetchDescribeSource={fetchDescribeSource} restartWorkloads={restartWorkloads} />
       <DestinationDrawer categories={categories} updateDestination={updateDestination} deleteDestination={deleteDestination} testConnection={testConnection} />
       <InstrumentationRuleDrawer updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />
       <ActionDrawer updateAction={updateAction} deleteAction={deleteAction} />
