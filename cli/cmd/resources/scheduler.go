@@ -125,7 +125,23 @@ func NewSchedulerRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewSchedulerClusterRole() *rbacv1.ClusterRole {
+func NewSchedulerClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
+	rules := []rbacv1.PolicyRule{
+		{ // Needed to track presence/status of configs to wake the data/gateway collectors
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"instrumentationconfigs"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+	}
+
+	if openshiftEnabled {
+		rules = append(rules, rbacv1.PolicyRule{
+			APIGroups: []string{""},
+			Resources: []string{"configmaps/finalizers"},
+			Verbs:     []string{"update"},
+		})
+	}
+
 	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
@@ -134,13 +150,7 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.SchedulerClusterRoleName,
 		},
-		Rules: []rbacv1.PolicyRule{
-			{ // Needed to track presence/status of configs to wake the data/gateway collectors
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentationconfigs"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		},
+		Rules: rules,
 	}
 }
 
@@ -337,7 +347,7 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 		NewSchedulerLeaderElectionRoleBinding(a.ns),
 		NewSchedulerRole(a.ns),
 		NewSchedulerRoleBinding(a.ns),
-		NewSchedulerClusterRole(),
+		NewSchedulerClusterRole(a.config.OpenshiftEnabled),
 		NewSchedulerClusterRoleBinding(a.ns),
 		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.SchedulerImage, a.config.NodeSelector),
 	}

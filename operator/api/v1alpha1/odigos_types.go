@@ -53,6 +53,12 @@ type OdigosSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	Profiles []common.ProfileName `json:"profiles,omitempty"`
 
+	// (Optional) AgentEnvVarsInjectionMethod is the method to inject the Odigos agent env vars into the pod.
+	// Default=pod-manifest
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	// +kubebuilder:default=pod-manifest
+	AgentEnvVarsInjectionMethod common.EnvInjectionMethod `json:"agentEnvVarsInjectionMethod,omitempty"`
+
 	// (Optional) NodeSelector is a map of key-value Kubernetes NodeSelector labels to apply to all Odigos components.
 	// Note that Odigos will only be able to instrument applications on the same node.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=3

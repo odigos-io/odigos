@@ -39,6 +39,16 @@ spec:
           spec:
             description: OdigosSpec defines the desired state of Odigos
             properties:
+              agentEnvVarsInjectionMethod:
+                default: pod-manifest
+                description: |-
+                  (Optional) AgentEnvVarsInjectionMethod is the method to inject the Odigos agent env vars into the pod.
+                  Default=pod-manifest
+                enum:
+                - loader
+                - pod-manifest
+                - loader-fallback-to-pod-manifest
+                type: string
               ignoredContainers:
                 description: (Optional) IgnoredContainers is a list of container names
                   to exclude from instrumentation (useful for ignoring sidecars).

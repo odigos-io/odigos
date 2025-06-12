@@ -29,11 +29,20 @@ rules:
   - ""
   resources:
   - namespaces
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - nodes
   verbs:
   - get
   - list
   - patch
+  - update
   - watch
 - apiGroups:
   - ""
