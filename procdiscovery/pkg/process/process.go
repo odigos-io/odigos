@@ -36,11 +36,14 @@ var LangsVersionEnvs = map[string]struct{}{
 }
 
 const (
-	NewRelicAgentEnv = "NEW_RELIC_CONFIG_FILE"
+	NewRelicAgentEnv               = "NEW_RELIC_CONFIG_FILE"
+	DynatraceDynamizerEnv          = "DT_DYNAMIZER_TARGET_EXE"
+	DynatraceDynamizerExeSubString = "oneagentdynamizer"
 )
 
 var OtherAgentEnvs = map[string]string{
-	NewRelicAgentEnv: "New Relic Agent",
+	NewRelicAgentEnv:      "New Relic Agent",
+	DynatraceDynamizerEnv: "Dynatrace Agent",
 }
 
 var OtherAgentCmdSubString = map[string]string{
