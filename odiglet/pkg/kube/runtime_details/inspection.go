@@ -281,7 +281,10 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 }
 
 func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigosv1.RuntimeDetailsByContainer, podIdentintifier string) bool {
-	if new.Language != existing.Language {
+
+	// Skip merging if languages are different, except when updating from unknown to known language.
+	if new.Language != existing.Language &&
+		!(new.Language != common.UnknownProgrammingLanguage && existing.Language == common.UnknownProgrammingLanguage) {
 		log.Logger.V(0).Info("detected different language, skipping merge runtime details", "pod_identifier", podIdentintifier, "container_name", new.ContainerName, "new.Language", new.Language, "existing.Language", existing.Language)
 		return false
 	}
@@ -304,6 +307,12 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 	// 4. Update RuntimeVersion if different
 	if new.RuntimeVersion != "" && new.RuntimeVersion != existing.RuntimeVersion {
 		existing.RuntimeVersion = new.RuntimeVersion
+		updated = true
+	}
+
+	// 5. Update Language if different
+	if new.Language != existing.Language {
+		existing.Language = new.Language
 		updated = true
 	}
 
