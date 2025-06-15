@@ -53,7 +53,6 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	sourceDataStreamsLabels := sourceutils.GetSourceDataStreamsLabels(source)
-	// for the example: sourceDataStreamsLabels = {datastream-A: true, datastream-B: true}
 
 	// Namespace Source Reconciliation
 	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
