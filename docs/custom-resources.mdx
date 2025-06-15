@@ -43,14 +43,6 @@ The destination object holds any data that is needed to connect to the backend
 system. Notice that sensitive fields such as API keys are stored in a Kubernetes
 secret and referenced by the destination object.
 
-## InstrumentedApplication
-
-This object is used to define the applications that should be instrumented.
-There is a single InstrumentedApplication object per selected Deployment /
-StatefulSet. The InstrumentedApplication object holds information about the
-application that should be instrumented, such as the detected programming
-language. InstrumentedApplication objects are created and managed by the
-instrumentor.
 
 ## CollectorsGroup
 
