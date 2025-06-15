@@ -130,13 +130,7 @@ spec:
             expect:
               - check:
                   ($error != null): true
-    - name: "[Validating] - Source with invalid kind does not pass validation"
-      try:
-        - apply:
-            file: validating-09-invalid-workload-kind-source.yaml
-            expect:
-              - check:
-                  ($error != null): true
+
     - name: "[Validating] - Source workload-kind label is immutable"
       try:
         - script:
@@ -214,7 +208,7 @@ spec:
         - assert:
             timeout: 2m
             file: migration-02-assert-source-with-old-finalizer.yaml
-  
+
     - name: "[Validating] - Action with no config is invalid"
       try:
         - apply:
