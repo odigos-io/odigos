@@ -73,7 +73,7 @@ func printPodsInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {
 		printProperty(sb, 1, &pod.PodName)
 		printProperty(sb, 1, &pod.NodeName)
 		printProperty(sb, 1, &pod.AgentInjected)
-		printProperty(sb, 1, pod.LatestWorkloadRevision)
+		printProperty(sb, 1, pod.RunningLatestWorkloadRevision)
 		printProperty(sb, 1, &pod.Phase)
 		describeText(sb, 1, false, "Containers:")
 		for i := range pod.Containers {

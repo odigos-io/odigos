@@ -61,12 +61,12 @@ type PodContainerAnalyze struct {
 }
 
 type PodAnalyze struct {
-	PodName                properties.EntityProperty  `json:"podName"`
-	NodeName               properties.EntityProperty  `json:"nodeName"`
-	Phase                  properties.EntityProperty  `json:"phase"`
-	AgentInjected          properties.EntityProperty  `json:"agentInjected"`
-	LatestWorkloadRevision *properties.EntityProperty `json:"latestWorkloadRevision"`
-	Containers             []PodContainerAnalyze      `json:"containers"`
+	PodName                       properties.EntityProperty  `json:"podName"`
+	NodeName                      properties.EntityProperty  `json:"nodeName"`
+	Phase                         properties.EntityProperty  `json:"phase"`
+	AgentInjected                 properties.EntityProperty  `json:"agentInjected"`
+	RunningLatestWorkloadRevision *properties.EntityProperty `json:"latestWorkloadRevision"`
+	Containers                    []PodContainerAnalyze      `json:"containers"`
 }
 
 type SourceAnalyze struct {
@@ -462,15 +462,15 @@ func analyzePod(pod *corev1.Pod, resources *OdigosSourceResources) PodAnalyze {
 		Explain: "whether the odigos instrumentation agent was injected into this pod",
 	}
 
-	var latestWorkloadRevision *properties.EntityProperty
-	latestWorkloadRevisionAnnotationValue, hasLatestWorkloadRevisionAnnotation := pod.Annotations[OdigosLatestWorkloadRevisionAnnotation]
-	if hasLatestWorkloadRevisionAnnotation {
-		latestWorkloadRevisionBool := latestWorkloadRevisionAnnotationValue == "true"
-		latestWorkloadRevision = &properties.EntityProperty{
-			Name:    "Latest Workload Revision",
-			Value:   latestWorkloadRevisionBool,
-			Status:  properties.GetSuccessOrError(latestWorkloadRevisionBool),
-			Explain: "whether the current pod is the latest revision of the workload",
+	var runningLatestWorkloadRevision *properties.EntityProperty
+	runningLatestWorkloadRevisionAnnotationValue, hasRunningLatestWorkloadRevisionAnnotation := pod.Annotations[OdigosRunningLatestWorkloadRevisionAnnotation]
+	if hasRunningLatestWorkloadRevisionAnnotation {
+		runningLatestWorkloadRevisionBool := runningLatestWorkloadRevisionAnnotationValue == "true"
+		runningLatestWorkloadRevision = &properties.EntityProperty{
+			Name:    "Running Latest Workload Revision",
+			Value:   runningLatestWorkloadRevisionBool,
+			Status:  properties.GetSuccessOrError(runningLatestWorkloadRevisionBool),
+			Explain: "whether the current pod is running the latest revision of the workload",
 		}
 	}
 
@@ -500,12 +500,12 @@ func analyzePod(pod *corev1.Pod, resources *OdigosSourceResources) PodAnalyze {
 	}
 
 	return PodAnalyze{
-		PodName:                name,
-		NodeName:               nodeName,
-		AgentInjected:          agentInjected,
-		LatestWorkloadRevision: latestWorkloadRevision,
-		Phase:                  phase,
-		Containers:             containers,
+		PodName:                       name,
+		NodeName:                      nodeName,
+		AgentInjected:                 agentInjected,
+		RunningLatestWorkloadRevision: runningLatestWorkloadRevision,
+		Phase:                         phase,
+		Containers:                    containers,
 	}
 }
 
