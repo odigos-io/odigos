@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	collectorpipeline "go.opentelemetry.io/collector/pipeline"
-	semconv1_21 "go.opentelemetry.io/otel/semconv/v1.21.0"
+	semconv1_26 "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/zap"
 
 	"github.com/odigos-io/odigos/common"
@@ -146,7 +146,7 @@ func createLogsConnector(
 }
 
 func determineRoutingPipelines(attrs pcommon.Map, m SignalRoutingMap, signal common.ObservabilitySignal) ([]string, string) {
-	nsAttr, ok := attrs.Get(string(semconv1_21.K8SNamespaceNameKey))
+	nsAttr, ok := attrs.Get(string(semconv1_26.K8SNamespaceNameKey))
 	if !ok {
 		return nil, ""
 	}
@@ -358,9 +358,9 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 // If none are found, it returns empty strings for both.
 
 var kindKeyMap = map[string]string{
-	string(semconv1_21.K8SDeploymentNameKey):  "Deployment",
-	string(semconv1_21.K8SStatefulSetNameKey): "StatefulSet",
-	string(semconv1_21.K8SDaemonSetNameKey):   "DaemonSet",
+	string(semconv1_26.K8SDeploymentNameKey):  "Deployment",
+	string(semconv1_26.K8SStatefulSetNameKey): "StatefulSet",
+	string(semconv1_26.K8SDaemonSetNameKey):   "DaemonSet",
 }
 
 func getDynamicNameAndKind(attrs pcommon.Map) (name string, kind string) {
