@@ -30,6 +30,14 @@ rules:
       - watch
       - get
   - apiGroups:
+      - 'batch'
+    resources:
+      - cronjobs
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
       - apps
     resources:
       - daemonsets

@@ -16,6 +16,14 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
+const (
+	// this annotation is not really set on the pod object itself.
+	// it is used as a patch to signal if the pod is running the latest revision of the deployment.
+	// this is useful so we know to ignore pods that are from previous revisions which are in the process of being terminated
+	// during a rolling update.
+	OdigosRunningLatestWorkloadRevisionAnnotation = "odigos.io/running-latest-workload-revision"
+)
+
 type OdigosSourceResources struct {
 	Namespace                *corev1.Namespace
 	Sources                  *odigosv1.WorkloadSources
@@ -72,7 +80,7 @@ func GetRelevantSourceResources(ctx context.Context, kubeClient kubernetes.Inter
 func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloadObj *K8sSourceObject) (*corev1.PodList, error) {
 	podLabelSelector := metav1.FormatLabelSelector(workloadObj.LabelSelector)
 
-	if workloadObj.Kind == "deployment" {
+	if workloadObj.Kind == "Deployment" {
 		// In case 2 deployment have the same podLabelselector and namespace, we need to get the specific pods
 		// for the deployment, get the pods by listing the replica-sets owned by the deployment and then listing the pods
 		replicaSets, err := kubeClient.AppsV1().ReplicaSets(workloadObj.Namespace).List(ctx, metav1.ListOptions{
@@ -82,25 +90,40 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 			return nil, fmt.Errorf("error listing replicasets: %v", err)
 		}
 
+		deploymentRevision := workloadObj.Annotations["deployment.kubernetes.io/revision"]
+
 		pods := &corev1.PodList{}
 
 		for i := range replicaSets.Items {
 			rs := &replicaSets.Items[i]
 			// Check if this ReplicaSet is owned by the deployment
 			for _, ownerRef := range rs.OwnerReferences {
-				if string(ownerRef.UID) == string(workloadObj.UID) && ownerRef.Kind == "Deployment" {
-					// List pods for this specific ReplicaSet
-					podList, err := kubeClient.CoreV1().Pods(workloadObj.Namespace).List(ctx, metav1.ListOptions{
-						LabelSelector: metav1.FormatLabelSelector(rs.Spec.Selector),
-					})
-					if err != nil {
-						return nil, fmt.Errorf("error listing pods for replicaset: %v", err)
-					}
-
-					// Add these pods to our specific pods list
-					pods.Items = append(pods.Items, podList.Items...)
-					break
+				if ownerRef.Kind != "Deployment" {
+					continue
 				}
+				if string(ownerRef.UID) != string(workloadObj.UID) {
+					continue
+				}
+
+				rsRevision := rs.Annotations["deployment.kubernetes.io/revision"]
+				activeReplicaSet := deploymentRevision == rsRevision && deploymentRevision != ""
+				// List pods for this specific ReplicaSet
+				podList, err := kubeClient.CoreV1().Pods(workloadObj.Namespace).List(ctx, metav1.ListOptions{
+					LabelSelector: metav1.FormatLabelSelector(rs.Spec.Selector),
+				})
+				if err != nil {
+					return nil, fmt.Errorf("error listing pods for replicaset: %v", err)
+				}
+
+				if activeReplicaSet {
+					for i := range podList.Items {
+						podList.Items[i].Annotations[OdigosRunningLatestWorkloadRevisionAnnotation] = "true"
+					}
+				}
+
+				// Add these pods to our specific pods list
+				pods.Items = append(pods.Items, podList.Items...)
+				break
 			}
 		}
 		return pods, nil
