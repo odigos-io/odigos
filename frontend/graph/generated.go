@@ -458,16 +458,20 @@ type ComplexityRoot struct {
 	}
 
 	PodAnalyze struct {
-		Containers func(childComplexity int) int
-		NodeName   func(childComplexity int) int
-		Phase      func(childComplexity int) int
-		PodName    func(childComplexity int) int
+		AgentInjected                 func(childComplexity int) int
+		Containers                    func(childComplexity int) int
+		NodeName                      func(childComplexity int) int
+		Phase                         func(childComplexity int) int
+		PodName                       func(childComplexity int) int
+		RunningLatestWorkloadRevision func(childComplexity int) int
 	}
 
 	PodContainerAnalyze struct {
 		ActualDevices            func(childComplexity int) int
 		ContainerName            func(childComplexity int) int
 		InstrumentationInstances func(childComplexity int) int
+		Ready                    func(childComplexity int) int
+		Started                  func(childComplexity int) int
 	}
 
 	PodWorkload struct {
@@ -2527,6 +2531,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PipelineAction.Type(childComplexity), true
 
+	case "PodAnalyze.agentInjected":
+		if e.complexity.PodAnalyze.AgentInjected == nil {
+			break
+		}
+
+		return e.complexity.PodAnalyze.AgentInjected(childComplexity), true
+
 	case "PodAnalyze.containers":
 		if e.complexity.PodAnalyze.Containers == nil {
 			break
@@ -2555,6 +2566,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PodAnalyze.PodName(childComplexity), true
 
+	case "PodAnalyze.runningLatestWorkloadRevision":
+		if e.complexity.PodAnalyze.RunningLatestWorkloadRevision == nil {
+			break
+		}
+
+		return e.complexity.PodAnalyze.RunningLatestWorkloadRevision(childComplexity), true
+
 	case "PodContainerAnalyze.actualDevices":
 		if e.complexity.PodContainerAnalyze.ActualDevices == nil {
 			break
@@ -2575,6 +2593,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PodContainerAnalyze.InstrumentationInstances(childComplexity), true
+
+	case "PodContainerAnalyze.ready":
+		if e.complexity.PodContainerAnalyze.Ready == nil {
+			break
+		}
+
+		return e.complexity.PodContainerAnalyze.Ready(childComplexity), true
+
+	case "PodContainerAnalyze.started":
+		if e.complexity.PodContainerAnalyze.Started == nil {
+			break
+		}
+
+		return e.complexity.PodContainerAnalyze.Started(childComplexity), true
 
 	case "PodWorkload.kind":
 		if e.complexity.PodWorkload.Kind == nil {
@@ -16500,6 +16532,111 @@ func (ec *executionContext) fieldContext_PodAnalyze_phase(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _PodAnalyze_agentInjected(ctx context.Context, field graphql.CollectedField, obj *model.PodAnalyze) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PodAnalyze_agentInjected(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentInjected, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.EntityProperty)
+	fc.Result = res
+	return ec.marshalNEntityProperty2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEntityProperty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PodAnalyze_agentInjected(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PodAnalyze",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_EntityProperty_name(ctx, field)
+			case "value":
+				return ec.fieldContext_EntityProperty_value(ctx, field)
+			case "status":
+				return ec.fieldContext_EntityProperty_status(ctx, field)
+			case "explain":
+				return ec.fieldContext_EntityProperty_explain(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EntityProperty", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PodAnalyze_runningLatestWorkloadRevision(ctx context.Context, field graphql.CollectedField, obj *model.PodAnalyze) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PodAnalyze_runningLatestWorkloadRevision(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RunningLatestWorkloadRevision, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.EntityProperty)
+	fc.Result = res
+	return ec.marshalOEntityProperty2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEntityProperty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PodAnalyze_runningLatestWorkloadRevision(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PodAnalyze",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_EntityProperty_name(ctx, field)
+			case "value":
+				return ec.fieldContext_EntityProperty_value(ctx, field)
+			case "status":
+				return ec.fieldContext_EntityProperty_status(ctx, field)
+			case "explain":
+				return ec.fieldContext_EntityProperty_explain(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EntityProperty", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PodAnalyze_containers(ctx context.Context, field graphql.CollectedField, obj *model.PodAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PodAnalyze_containers(ctx, field)
 	if err != nil {
@@ -16543,6 +16680,10 @@ func (ec *executionContext) fieldContext_PodAnalyze_containers(_ context.Context
 				return ec.fieldContext_PodContainerAnalyze_containerName(ctx, field)
 			case "actualDevices":
 				return ec.fieldContext_PodContainerAnalyze_actualDevices(ctx, field)
+			case "started":
+				return ec.fieldContext_PodContainerAnalyze_started(ctx, field)
+			case "ready":
+				return ec.fieldContext_PodContainerAnalyze_ready(ctx, field)
 			case "instrumentationInstances":
 				return ec.fieldContext_PodContainerAnalyze_instrumentationInstances(ctx, field)
 			}
@@ -16638,6 +16779,108 @@ func (ec *executionContext) _PodContainerAnalyze_actualDevices(ctx context.Conte
 }
 
 func (ec *executionContext) fieldContext_PodContainerAnalyze_actualDevices(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PodContainerAnalyze",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_EntityProperty_name(ctx, field)
+			case "value":
+				return ec.fieldContext_EntityProperty_value(ctx, field)
+			case "status":
+				return ec.fieldContext_EntityProperty_status(ctx, field)
+			case "explain":
+				return ec.fieldContext_EntityProperty_explain(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EntityProperty", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PodContainerAnalyze_started(ctx context.Context, field graphql.CollectedField, obj *model.PodContainerAnalyze) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PodContainerAnalyze_started(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Started, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.EntityProperty)
+	fc.Result = res
+	return ec.marshalOEntityProperty2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEntityProperty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PodContainerAnalyze_started(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PodContainerAnalyze",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_EntityProperty_name(ctx, field)
+			case "value":
+				return ec.fieldContext_EntityProperty_value(ctx, field)
+			case "status":
+				return ec.fieldContext_EntityProperty_status(ctx, field)
+			case "explain":
+				return ec.fieldContext_EntityProperty_explain(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EntityProperty", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PodContainerAnalyze_ready(ctx context.Context, field graphql.CollectedField, obj *model.PodContainerAnalyze) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PodContainerAnalyze_ready(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ready, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.EntityProperty)
+	fc.Result = res
+	return ec.marshalOEntityProperty2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEntityProperty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PodContainerAnalyze_ready(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PodContainerAnalyze",
 		Field:      field,
@@ -19386,6 +19629,10 @@ func (ec *executionContext) fieldContext_SourceAnalyze_pods(_ context.Context, f
 				return ec.fieldContext_PodAnalyze_nodeName(ctx, field)
 			case "phase":
 				return ec.fieldContext_PodAnalyze_phase(ctx, field)
+			case "agentInjected":
+				return ec.fieldContext_PodAnalyze_agentInjected(ctx, field)
+			case "runningLatestWorkloadRevision":
+				return ec.fieldContext_PodAnalyze_runningLatestWorkloadRevision(ctx, field)
 			case "containers":
 				return ec.fieldContext_PodAnalyze_containers(ctx, field)
 			}
@@ -26659,6 +26906,13 @@ func (ec *executionContext) _PodAnalyze(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "agentInjected":
+			out.Values[i] = ec._PodAnalyze_agentInjected(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "runningLatestWorkloadRevision":
+			out.Values[i] = ec._PodAnalyze_runningLatestWorkloadRevision(ctx, field, obj)
 		case "containers":
 			out.Values[i] = ec._PodAnalyze_containers(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -26708,6 +26962,10 @@ func (ec *executionContext) _PodContainerAnalyze(ctx context.Context, sel ast.Se
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "started":
+			out.Values[i] = ec._PodContainerAnalyze_started(ctx, field, obj)
+		case "ready":
+			out.Values[i] = ec._PodContainerAnalyze_ready(ctx, field, obj)
 		case "instrumentationInstances":
 			out.Values[i] = ec._PodContainerAnalyze_instrumentationInstances(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

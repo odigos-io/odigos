@@ -2,6 +2,8 @@ name: go mod tidy
 on:
   merge_group:
   pull_request:
+    paths-ignore:
+      - "docs/**"
 
 jobs:
   go-mod-tidy:
