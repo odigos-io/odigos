@@ -372,6 +372,7 @@ type ComplexityRoot struct {
 		DeleteInstrumentationRule    func(childComplexity int, ruleID string) int
 		PersistK8sNamespace          func(childComplexity int, namespace model.PersistNamespaceItemInput) int
 		PersistK8sSources            func(childComplexity int, namespace string, sources []*model.PersistNamespaceSourceInput) int
+		RestartWorkloads             func(childComplexity int, sourceIds []*model.K8sSourceID) int
 		TestConnectionForDestination func(childComplexity int, destination model.DestinationInput) int
 		UpdateAPIToken               func(childComplexity int, token string) int
 		UpdateAction                 func(childComplexity int, id string, action model.ActionInput) int
@@ -630,6 +631,7 @@ type MutationResolver interface {
 	DeleteInstrumentationRule(ctx context.Context, ruleID string) (bool, error)
 	UpdateDataStream(ctx context.Context, id string, dataStream model.DataStreamInput) (*model.DataStream, error)
 	DeleteDataStream(ctx context.Context, id string) (bool, error)
+	RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error)
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
@@ -2113,6 +2115,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.PersistK8sSources(childComplexity, args["namespace"].(string), args["sources"].([]*model.PersistNamespaceSourceInput)), true
+
+	case "Mutation.restartWorkloads":
+		if e.complexity.Mutation.RestartWorkloads == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_restartWorkloads_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RestartWorkloads(childComplexity, args["sourceIds"].([]*model.K8sSourceID)), true
 
 	case "Mutation.testConnectionForDestination":
 		if e.complexity.Mutation.TestConnectionForDestination == nil {
@@ -3681,6 +3695,34 @@ func (ec *executionContext) field_Mutation_persistK8sSources_argsSources(
 	}
 
 	var zeroVal []*model.PersistNamespaceSourceInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_restartWorkloads_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_restartWorkloads_argsSourceIds(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sourceIds"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_restartWorkloads_argsSourceIds(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*model.K8sSourceID, error) {
+	if _, ok := rawArgs["sourceIds"]; !ok {
+		var zeroVal []*model.K8sSourceID
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceIds"))
+	if tmp, ok := rawArgs["sourceIds"]; ok {
+		return ec.unmarshalNK8sSourceId2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceIDᚄ(ctx, tmp)
+	}
+
+	var zeroVal []*model.K8sSourceID
 	return zeroVal, nil
 }
 
@@ -14007,6 +14049,61 @@ func (ec *executionContext) fieldContext_Mutation_deleteDataStream(ctx context.C
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deleteDataStream_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_restartWorkloads(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_restartWorkloads(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RestartWorkloads(rctx, fc.Args["sourceIds"].([]*model.K8sSourceID))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_restartWorkloads(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_restartWorkloads_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -25989,6 +26086,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "restartWorkloads":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_restartWorkloads(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -29331,6 +29435,26 @@ func (ec *executionContext) marshalNK8sResourceKind2githubᚗcomᚋodigosᚑio�
 func (ec *executionContext) unmarshalNK8sSourceId2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceID(ctx context.Context, v any) (model.K8sSourceID, error) {
 	res, err := ec.unmarshalInputK8sSourceId(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNK8sSourceId2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceIDᚄ(ctx context.Context, v any) ([]*model.K8sSourceID, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.K8sSourceID, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNK8sSourceId2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceID(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNK8sSourceId2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceID(ctx context.Context, v any) (*model.K8sSourceID, error) {
+	res, err := ec.unmarshalInputK8sSourceId(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNNodeCollectorAnalyze2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNodeCollectorAnalyze(ctx context.Context, sel ast.SelectionSet, v *model.NodeCollectorAnalyze) graphql.Marshaler {

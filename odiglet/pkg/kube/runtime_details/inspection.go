@@ -11,13 +11,11 @@ import (
 
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
@@ -61,7 +59,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 			var secureExecutionMode *bool
 
 			if inspectProc == nil {
-				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace, "processes", processes)
 				programLanguageDetails.Language = common.UnknownProgrammingLanguage
 			} else {
 				if len(processes) > 1 {
@@ -251,7 +249,8 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 			for j := range currentConfig.Status.RuntimeDetailsByContainer {
 				existingDetail := &currentConfig.Status.RuntimeDetailsByContainer[j]
 				if newDetail.ContainerName == existingDetail.ContainerName {
-					if mergeRuntimeDetails(existingDetail, newDetail) {
+					podKey := strings.Join([]string{currentConfig.Namespace, currentConfig.Name}, "/")
+					if mergeRuntimeDetails(existingDetail, newDetail, podKey) {
 						updated = true
 					}
 				}
@@ -281,30 +280,20 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 	return nil
 }
 
-func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *k8sconsts.PodWorkload) (*odigosv1.InstrumentationConfig, error) {
-	instrumentedApplicationName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
-
-	var runtimeDetails odigosv1.InstrumentationConfig
-	err := kubeClient.Get(ctx, client.ObjectKey{
-		Namespace: podWorkload.Namespace,
-		Name:      instrumentedApplicationName,
-	}, &runtimeDetails)
-	if err != nil {
-		return nil, err
+func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigosv1.RuntimeDetailsByContainer, podIdentintifier string) bool {
+	if new.Language != existing.Language {
+		log.Logger.V(0).Info("detected different language, skipping merge runtime details", "pod_identifier", podIdentintifier, "container_name", new.ContainerName, "new.Language", new.Language, "existing.Language", existing.Language)
+		return false
 	}
-
-	return &runtimeDetails, nil
-}
-
-func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigosv1.RuntimeDetailsByContainer) bool {
-	updated := false
 
 	// 1. Merge LD_PRELOAD from EnvVars [/proc/pid/environ]
 	odigosStr := "odigos"
-	updated = mergeLdPreloadEnvVars(new.EnvVars, &existing.EnvVars, &odigosStr)
+	updatedEnviron := mergeLdPreloadEnvVars(new.EnvVars, &existing.EnvVars, &odigosStr)
 
 	// 2. Merge LD_PRELOAD from EnvFromContainerRuntime [DockerFile]
-	updated = mergeLdPreloadEnvVars(new.EnvFromContainerRuntime, &existing.EnvFromContainerRuntime, nil)
+	updatedDocker := mergeLdPreloadEnvVars(new.EnvFromContainerRuntime, &existing.EnvFromContainerRuntime, nil)
+
+	updated := updatedEnviron || updatedDocker
 
 	// 3. Update SecureExecutionMode if needed
 	if existing.SecureExecutionMode == nil && new.SecureExecutionMode != nil {

@@ -51,8 +51,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.CollectorsGroupSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupStatus"):
 		return &odigosv1alpha1.CollectorsGroupStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("ConfigOption"):
-		return &odigosv1alpha1.ConfigOptionApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ContainerAgentConfig"):
 		return &odigosv1alpha1.ContainerAgentConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Destination"):
@@ -85,8 +83,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationLibraryGlobalIdApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryId"):
 		return &odigosv1alpha1.InstrumentationLibraryIdApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryOptions"):
-		return &odigosv1alpha1.InstrumentationLibraryOptionsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationLibraryStatus"):
 		return &odigosv1alpha1.InstrumentationLibraryStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationRule"):
@@ -95,14 +91,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationRuleSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationRuleStatus"):
 		return &odigosv1alpha1.InstrumentationRuleStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentedApplication"):
-		return &odigosv1alpha1.InstrumentedApplicationApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentedApplicationSpec"):
-		return &odigosv1alpha1.InstrumentedApplicationSpecApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentedApplicationStatus"):
-		return &odigosv1alpha1.InstrumentedApplicationStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("OptionByContainer"):
-		return &odigosv1alpha1.OptionByContainerApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OtherAgent"):
 		return &odigosv1alpha1.OtherAgentApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Processor"):
