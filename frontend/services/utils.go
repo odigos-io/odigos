@@ -90,7 +90,7 @@ func Metav1TimeToString(latestStatusTime metav1.Time) string {
 	return latestStatusTime.Time.Format(time.RFC3339)
 }
 
-func CheckWorkloadKind(kind WorkloadKind) error {
+func CheckWorkloadKind(kind model.K8sResourceKind) error {
 	switch kind {
 	case WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
 		return nil
