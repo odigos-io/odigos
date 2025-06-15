@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/destinations/config"
 )
 
 // replacePlaceholders replaces placeholder values in the given GenericMap with values from the fields map.
@@ -14,7 +14,7 @@ import (
 func replacePlaceholders(gmap config.GenericMap, fields map[string]string) {
 	// Regular expression to match the ${KEY} pattern
 	re := regexp.MustCompile(`\$\{([^}]+)\}`)
-	
+
 	for key, value := range gmap {
 		switch v := value.(type) {
 		case string:

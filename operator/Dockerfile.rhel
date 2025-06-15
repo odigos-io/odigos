@@ -9,6 +9,7 @@ COPY k8sutils/ k8sutils/
 COPY cli/ cli/
 COPY common/ common/
 COPY profiles/ profiles/
+COPY destinations/ destinations/
 
 WORKDIR /go/src/github.com/odigos-io/odigos/operator
 COPY operator/ .
