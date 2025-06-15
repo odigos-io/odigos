@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
@@ -18,16 +17,17 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-
 	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/version"
 )
 
 const (
@@ -157,18 +157,42 @@ func getStatefulSets(ctx context.Context, namespace corev1.Namespace) ([]model.K
 
 func getCronJobs(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
-	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.BatchV1().CronJobs(namespace.Name).List, ctx, &metav1.ListOptions{}, func(cjs *batchv1.CronJobList) error {
-		for _, cj := range cjs.Items {
-			numberOfInstances := len(cj.Status.Active)
-			response = append(response, model.K8sActualSource{
-				Namespace:         cj.Namespace,
-				Name:              cj.Name,
-				Kind:              WorkloadKindCronJob,
-				NumberOfInstances: &numberOfInstances,
-			})
-		}
-		return nil
-	})
+
+	ver, err := getKubeVersion()
+	if err != nil {
+		return nil, fmt.Errorf("failed to detect Kubernetes version: %w", err)
+	}
+
+	// Note: batchv1beta1 is deprecated in Kubernetes 1.21 and removed in 1.25
+	// so we use batchv1beta1 for versions < 1.21 and batchv1 for >= 1.21
+	// this is to ensure compatibility with older Kubernetes versions.
+	if ver.LessThan(version.MustParseSemantic("1.21.0")) {
+		err = client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.BatchV1beta1().CronJobs(namespace.Name).List, ctx, &metav1.ListOptions{}, func(cjs *batchv1beta1.CronJobList) error {
+			for _, cj := range cjs.Items {
+				numberOfInstances := len(cj.Status.Active)
+				response = append(response, model.K8sActualSource{
+					Namespace:         cj.Namespace,
+					Name:              cj.Name,
+					Kind:              WorkloadKindCronJob,
+					NumberOfInstances: &numberOfInstances,
+				})
+			}
+			return nil
+		})
+	} else {
+		err = client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.BatchV1().CronJobs(namespace.Name).List, ctx, &metav1.ListOptions{}, func(cjs *batchv1.CronJobList) error {
+			for _, cj := range cjs.Items {
+				numberOfInstances := len(cj.Status.Active)
+				response = append(response, model.K8sActualSource{
+					Namespace:         cj.Namespace,
+					Name:              cj.Name,
+					Kind:              WorkloadKindCronJob,
+					NumberOfInstances: &numberOfInstances,
+				})
+			}
+			return nil
+		})
+	}
 
 	if err != nil {
 		return nil, err

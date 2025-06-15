@@ -16,10 +16,9 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"golang.org/x/sync/errgroup"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/util/retry"
-
 	"sigs.k8s.io/yaml"
 )
 
@@ -177,4 +176,19 @@ func WithGoroutine(ctx context.Context, limit int, run func(goFunc func(func() e
 		return err
 	}
 	return nil
+}
+
+// getKubeVersion retrieves and parses the Kubernetes server version.
+func getKubeVersion() (*version.Version, error) {
+	verInfo, err := kube.DefaultClient.Discovery().ServerVersion()
+	if err != nil {
+		return nil, err
+	}
+
+	parsedVer, err := version.ParseGeneric(verInfo.GitVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	return parsedVer, nil
 }
