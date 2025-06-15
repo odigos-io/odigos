@@ -29,8 +29,6 @@ type InstrumentationInstanceExpansion interface{}
 
 type InstrumentationRuleExpansion interface{}
 
-type InstrumentedApplicationExpansion interface{}
-
 type ProcessorExpansion interface{}
 
 type SourceExpansion interface{}

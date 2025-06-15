@@ -47,12 +47,12 @@ Below are the ClusterRoles used by Odigos components.
 | \* | nodes | \* | list<br />watch<br />get |
 | \* | namespaces | \* | list<br />watch<br />get |
 | \* | pods | \* | list<br />watch<br />get |
+| batch | cronjobs | \* | list<br />watch<br />get |
 | apps | daemonsets | \* | get<br />list<br />watch<br />update<br />patch |
 | apps | deployments | \* | get<br />list<br />watch<br />update<br />patch |
 | apps | statefulsets | \* | get<br />list<br />watch<br />update<br />patch |
 | apps | statefulsets/finalizers<br />deployments/finalizers<br />daemonsets/finalizers | \* | update |
 | operator.odigos.io | odigos/finalizers | \* | update |
-| odigos.io | instrumentedapplications | \* | delete<br />get<br />list<br />watch |
 | odigos.io | instrumentationconfigs/status | \* | get<br />patch<br />update |
 | odigos.io | instrumentationconfigs | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | odigos.io | sources | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
