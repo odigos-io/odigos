@@ -53,10 +53,6 @@ var CRDsList = []map[string]string{
 		CRDGroup: actionGroupName,
 	},
 	{
-		CRDName:  "instrumentedapplications",
-		CRDGroup: odigosGroupName,
-	},
-	{
 		CRDName:  "instrumentationconfigs",
 		CRDGroup: odigosGroupName,
 	},

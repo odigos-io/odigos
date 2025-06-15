@@ -11,13 +11,11 @@ import (
 
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
@@ -280,21 +278,6 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 	}
 
 	return nil
-}
-
-func GetRuntimeDetails(ctx context.Context, kubeClient client.Client, podWorkload *k8sconsts.PodWorkload) (*odigosv1.InstrumentationConfig, error) {
-	instrumentedApplicationName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
-
-	var runtimeDetails odigosv1.InstrumentationConfig
-	err := kubeClient.Get(ctx, client.ObjectKey{
-		Namespace: podWorkload.Namespace,
-		Name:      instrumentedApplicationName,
-	}, &runtimeDetails)
-	if err != nil {
-		return nil, err
-	}
-
-	return &runtimeDetails, nil
 }
 
 func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigosv1.RuntimeDetailsByContainer, podIdentintifier string) bool {
