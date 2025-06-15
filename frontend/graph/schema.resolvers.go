@@ -652,7 +652,9 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 		k8sDestination.Spec.SecretRef = secretRef
 	}
 
-	dest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
+	dest, err := services.CreateResourceWithGenerateName(ctx, func() (*v1alpha1.Destination, error) {
+		return kube.DefaultClient.OdigosClient.Destinations(ns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
+	})
 	if err != nil {
 		if createSecret {
 			kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, destName, metav1.DeleteOptions{})
@@ -1086,6 +1088,30 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 		return false, fmt.Errorf("failed to delete sources or remove stream name: %v", err)
 	}
 
+	return true, nil
+}
+
+// RestartWorkloads is the resolver for the restartWorkloads field.
+func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error) {
+	if services.IsReadonlyMode(ctx) {
+		return false, services.ErrorIsReadonly
+	}
+
+	err := services.WithGoroutine(ctx, len(sourceIds), func(goFunc func(func() error)) {
+		for _, sourceID := range sourceIds {
+			goFunc(func() error {
+				err := services.RolloutRestartWorkload(ctx, sourceID.Namespace, sourceID.Name, string(sourceID.Kind))
+				if err != nil {
+					return fmt.Errorf("failed to restart workload %s/%s/%s: %v", sourceID.Namespace, sourceID.Name, sourceID.Kind, err)
+				}
+				return nil
+			})
+		}
+	})
+
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 

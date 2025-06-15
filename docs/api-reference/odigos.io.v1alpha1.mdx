@@ -16,7 +16,6 @@ auto_generated: true
 - [InstrumentationConfig](#odigos-io-v1alpha1-InstrumentationConfig)
 - [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)
 - [InstrumentationRule](#odigos-io-v1alpha1-InstrumentationRule)
-- [InstrumentedApplication](#odigos-io-v1alpha1-InstrumentedApplication)
 - [Processor](#odigos-io-v1alpha1-Processor)
 - [Source](#odigos-io-v1alpha1-Source)
   
@@ -303,56 +302,6 @@ auto_generated: true
 </td>
 <td>
 <a href="#odigos-io-v1alpha1-InstrumentationRuleStatus"><code>InstrumentationRuleStatus</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-</tbody>
-</table>
-
-## `InstrumentedApplication` <a id="odigos-io-v1alpha1-InstrumentedApplication"></a>
-    
-<p>InstrumentedApplication is the Schema for the instrumentedapplications API</p>
-<p>Deprecated: in favour of InstrumentationConfig</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
-<tr><td><code>kind</code></td><td>string</td><td><code>InstrumentedApplication</code></td></tr>
-    
-  
-<tr>
-<td>
-<code>metadata</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
-   </td>
-</tr>
-<tr>
-<td>
-<code>spec</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-InstrumentedApplicationSpec"><code>InstrumentedApplicationSpec</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>status</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-InstrumentedApplicationStatus"><code>InstrumentedApplicationStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -1006,45 +955,6 @@ this list is calculated based on the odigos destinations that were configured</p
    <p>Represents the observations of a collectorsroup's current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
 </td>
-</tr>
-</tbody>
-</table>
-
-## `ConfigOption` <a id="odigos-io-v1alpha1-ConfigOption"></a>
-    
-
-**Appears in:**
-
-- [InstrumentationLibraryOptions](#odigos-io-v1alpha1-InstrumentationLibraryOptions)
-
-<p>Deprecated: configuration is done via InstrumentationConfig</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>optionKey</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>spanKind</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#SpanKind"><code>common.SpanKind</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
 </tr>
 </tbody>
 </table>
@@ -1749,45 +1659,6 @@ In Go, SpanKind is used because the same instrumentation library can be utilized
 </tbody>
 </table>
 
-## `InstrumentationLibraryOptions` <a id="odigos-io-v1alpha1-InstrumentationLibraryOptions"></a>
-    
-
-**Appears in:**
-
-- [OptionByContainer](#odigos-io-v1alpha1-OptionByContainer)
-
-<p>Deprecated: configuration is done via InstrumentationConfig</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>libraryName</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>options</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-ConfigOption"><code>[]ConfigOption</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-</tbody>
-</table>
-
 ## `InstrumentationLibraryStatus` <a id="odigos-io-v1alpha1-InstrumentationLibraryStatus"></a>
     
 
@@ -2064,75 +1935,6 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `InstrumentedApplicationSpec` <a id="odigos-io-v1alpha1-InstrumentedApplicationSpec"></a>
-    
-
-**Appears in:**
-
-- [InstrumentedApplication](#odigos-io-v1alpha1-InstrumentedApplication)
-
-<p>InstrumentedApplicationSpec defines the desired state of InstrumentedApplication</p>
-<p>Deprecated: in favour of InstrumentationConfig</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>runtimeDetails</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-RuntimeDetailsByContainer"><code>[]RuntimeDetailsByContainer</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>options</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-OptionByContainer"><code>[]OptionByContainer</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-</tbody>
-</table>
-
-## `InstrumentedApplicationStatus` <a id="odigos-io-v1alpha1-InstrumentedApplicationStatus"></a>
-    
-
-**Appears in:**
-
-- [InstrumentedApplication](#odigos-io-v1alpha1-InstrumentedApplication)
-
-<p>InstrumentedApplicationStatus defines the observed state of InstrumentedApplication</p>
-<p>Deprecated: in favour of InstrumentationConfig</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>conditions</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
-</td>
-<td>
-   <p>Represents the observations of a nstrumentedApplication's current state.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
 ## `Operator` <a id="odigos-io-v1alpha1-Operator"></a>
     
 (Alias of `string`)
@@ -2142,45 +1944,6 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 - [AttributeCondition](#odigos-io-v1alpha1-AttributeCondition)
 
 
-
-## `OptionByContainer` <a id="odigos-io-v1alpha1-OptionByContainer"></a>
-    
-
-**Appears in:**
-
-- [InstrumentedApplicationSpec](#odigos-io-v1alpha1-InstrumentedApplicationSpec)
-
-<p>Deprecated: configuration is done via InstrumentationConfig</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>containerName</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>instrumentationsLibraries</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-InstrumentationLibraryOptions"><code>[]InstrumentationLibraryOptions</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-</tbody>
-</table>
 
 ## `OtherAgent` <a id="odigos-io-v1alpha1-OtherAgent"></a>
     
@@ -2348,7 +2111,6 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 **Appears in:**
 
 - [InstrumentationConfigStatus](#odigos-io-v1alpha1-InstrumentationConfigStatus)
-- [InstrumentedApplicationSpec](#odigos-io-v1alpha1-InstrumentedApplicationSpec)
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>

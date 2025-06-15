@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -25,11 +26,8 @@ import (
 // 2) Is the object instrumentation disabled on the workload Source (overrides namespace instrumentation): false
 // 3) Is the object actively included by a namespace Source: true
 // 4) False
-func IsObjectInstrumentedBySource(ctx context.Context,
-	k8sClient client.Client,
-	obj client.Object) (bool, metav1.Condition, error) {
+func IsObjectInstrumentedBySource(ctx context.Context, sources *odigosv1.WorkloadSources, err error) (bool, metav1.Condition, error) {
 	// Check if a Source object exists for this object
-	sources, err := odigosv1.GetSources(ctx, k8sClient, obj)
 	if err != nil {
 		condition := metav1.Condition{
 			Type:    odigosv1.MarkedForInstrumentationStatusConditionType,
@@ -91,7 +89,12 @@ func IsObjectInstrumentedBySource(ctx context.Context,
 // OTel service name is only valid for workload sources (not namespace sources).
 // If none is configured, it returns the default name which is the k8s workload resource name.
 func OtelServiceNameBySource(ctx context.Context, k8sClient client.Client, obj client.Object) (string, error) {
-	sources, err := odigosv1.GetSources(ctx, k8sClient, obj)
+	pw := k8sconsts.PodWorkload{
+		Name:      obj.GetName(),
+		Namespace: obj.GetNamespace(),
+		Kind:      k8sconsts.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
+	}
+	sources, err := odigosv1.GetSources(ctx, k8sClient, pw)
 	if err != nil {
 		return "", err
 	}
@@ -120,41 +123,72 @@ func GetClientObjectFromSource(ctx context.Context, kubeClient client.Client, so
 	return obj, nil
 }
 
-func GetSourceCRD(ctx context.Context, kubeClient client.Client, nsName string, workloadName string, workloadKind k8sconsts.WorkloadKind) (*v1alpha1.Source, error) {
-	sourceList := v1alpha1.SourceList{}
-	err := kubeClient.List(ctx, &sourceList, &client.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labels.Set{
-			k8sconsts.WorkloadNamespaceLabel: nsName,
-			k8sconsts.WorkloadNameLabel:      workloadName,
-			k8sconsts.WorkloadKindLabel:      string(workloadKind),
-		}),
-	})
 
-	if err != nil {
-		return nil, err
-	}
-	if len(sourceList.Items) == 0 {
-		return nil, apierrors.NewNotFound(schema.GroupResource{Group: "", Resource: "source"}, workloadName)
-	}
-	if len(sourceList.Items) > 1 {
-		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(sourceList.Items))
+func HandleInstrumentationConfigDataStreamsLabels(ctx context.Context,
+	workloadSources *odigosv1.WorkloadSources, ic *odigosv1.InstrumentationConfig) bool {
+	// Extract labels from both sources (may be nil)
+	workloadLabels := getSourceDataStreamsLabels(workloadSources.Workload)
+	namespaceLabels := getSourceDataStreamsLabels(workloadSources.Namespace)
+
+	// Start merging logic:
+	mergedLabels := make(map[string]string)
+
+	// Start from namespace labels (if any)
+	for k, v := range namespaceLabels {
+		mergedLabels[k] = v
 	}
 
-	return &sourceList.Items[0], err
+	// Add any workload, override namespace labels
+	for k, v := range workloadLabels {
+		mergedLabels[k] = v
+	}
+
+	// Apply merged labels into InstrumentationConfig, and return true if changed
+	return setInstrumentationConfigDataStreamLabels(ic, mergedLabels)
 }
 
-func GetSourceDataStreamsLabels(source *odigosv1.Source) map[string]string {
-	sourceDataStreamsLabels := map[string]string{}
-	// iterate over the source labels and add them to the sourceDataStreamsLabels
-	for key, value := range source.Labels {
-		if strings.HasPrefix(key, k8sconsts.SourceDataStreamLabelPrefix) {
-			sourceDataStreamsLabels[key] = value
+func setInstrumentationConfigDataStreamLabels(instConfig *odigosv1.InstrumentationConfig, desiredLabels map[string]string) (updated bool) {
+	if instConfig.Labels == nil {
+		instConfig.Labels = make(map[string]string)
+	}
+
+	// Add / update labels
+	for key, value := range desiredLabels {
+		if instConfig.Labels[key] != value {
+			instConfig.Labels[key] = value
+			updated = true
 		}
 	}
-	return sourceDataStreamsLabels
+
+	// Remove datastream labels not present in desiredLabels
+	for key := range instConfig.Labels {
+		if _, exists := desiredLabels[key]; !exists && isDataStreamLabel(key) {
+			delete(instConfig.Labels, key)
+			updated = true
+		}
+	}
+
+	return updated
 }
 
 // IsDataStreamLabel returns true if the label is a datastream label.
-func IsDataStreamLabel(labelKey string) bool {
+func isDataStreamLabel(labelKey string) bool {
 	return strings.HasPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix)
+}
+
+// GetSourceDataStreamsLabels extracts only datastream labels from the Source object.
+func getSourceDataStreamsLabels(source *odigosv1.Source) map[string]string {
+	result := make(map[string]string)
+
+	if source == nil {
+		return result
+	}
+
+	for k, v := range source.Labels {
+		if isDataStreamLabel(k) {
+			result[k] = v
+		}
+	}
+
+	return result
 }

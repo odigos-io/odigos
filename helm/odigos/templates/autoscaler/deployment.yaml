@@ -66,12 +66,7 @@ spec:
             mountPath: /tmp/k8s-webhook-server/serving-certs
             readOnly: true
         resources:
-          limits:
-            cpu: 500m
-            memory: 512Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
+{{ toYaml .Values.autoscaler.resources | indent 10 }}
         securityContext:
           allowPrivilegeEscalation: false
       securityContext:
