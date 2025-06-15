@@ -198,11 +198,6 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 				Resources: []string{"odigos/finalizers"},
 				Verbs:     []string{"update"},
 			},
-			{ // React to runtime detection in user workloads in all namespaces
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications"},
-				Verbs:     []string{"delete", "get", "list", "watch"},
-			},
 			{ // Update the status of the instrumentation configs after device injection
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationconfigs/status"},
