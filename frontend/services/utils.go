@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"path"
 	"slices"
@@ -88,15 +87,6 @@ func Metav1TimeToString(latestStatusTime metav1.Time) string {
 		return ""
 	}
 	return latestStatusTime.Time.Format(time.RFC3339)
-}
-
-func CheckWorkloadKind(kind model.K8sResourceKind) error {
-	switch kind {
-	case WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
-		return nil
-	default:
-		return errors.New("unsupported workload kind: " + string(kind))
-	}
 }
 
 func ArrayContains(arr []string, str string) bool {

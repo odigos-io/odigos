@@ -323,7 +323,7 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	switch workloadKind {
 	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
-	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
+	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet, WorkloadKindCronJob:
 		break
 	default:
 		return nil, errors.New("unsupported workload kind: " + string(workloadKind))
