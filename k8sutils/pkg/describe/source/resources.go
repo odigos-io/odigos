@@ -111,7 +111,7 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 
 					if activeReplicaSet {
 						for _, pod := range podList.Items {
-							pod.Annotations["odigos.io/is-latest-revision"] = "true"
+							pod.Annotations[OdigosIsLatestRevisionAnnotation] = "true"
 						}
 					}
 
