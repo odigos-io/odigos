@@ -12,8 +12,9 @@ First, export the `VERSION` and `CUSTOM-DOCKER-REGISTRY` environment variables i
 ```bash
 export VERSION=<YOUR-DESIRED-VERSION>
 export CUSTOM_DOCKER_REGISTRY=<YOUR-CUSTOM-DOCKER-REGISTRY>
+export PLATFORM=<YOUR-PLATFORM-ARCHITECTURE>
 ```
-Replace `<YOUR-DESIRED-VERSION>` with the version of the Odigos images you want to use, and `<YOUR-CUSTOM-DOCKER-REGISTRY>` with the URL of your custom Docker registry.
+Replace `<YOUR-DESIRED-VERSION>` with the version of the Odigos images you want to use, `<YOUR-CUSTOM-DOCKER-REGISTRY>` with the URL of your custom Docker registry, and `<YOUR-PLATFORM-ARCHITECTURE>` with the platform architecture of the environment where you are deploying Odigos (linux/amd64, linux/arm64).
 
 ---
 
@@ -30,6 +31,19 @@ docker pull registry.odigos.io/odigos-ui:$VERSION
 docker pull registry.odigos.io/odigos-autoscaler:$VERSION
 docker pull registry.odigos.io/odigos-odiglet:$VERSION
 docker pull registry.odigos.io/odigos-collector:$VERSION
+```
+
+<Warning>
+Odigos component images are published in multi-arch for ARM64 and AMD64 architectures. When pulling these images, be sure to specify the correct architecture *for the environment they will be deployed*.
+</Warning>
+
+```bash
+docker pull --platform $PLATFORM registry.odigos.io/odigos-scheduler:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-instrumentor:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-ui:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-autoscaler:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-odiglet:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-collector:$VERSION
 ```
 
 ### Step 3: Tag the Images
@@ -73,6 +87,18 @@ docker pull registry.odigos.io/odigos-ui:$VERSION
 docker pull registry.odigos.io/odigos-autoscaler:$VERSION
 docker pull registry.odigos.io/odigos-enterprise-odiglet:$VERSION
 docker pull registry.odigos.io/odigos-collector:$VERSION
+```
+<Warning>
+Odigos component images are published in multi-arch for ARM64 and AMD64 architectures. When pulling these images, be sure to specify the correct architecture *for the environment they will be deployed*.
+</Warning>
+
+```bash
+docker pull --platform $PLATFORM registry.odigos.io/odigos-scheduler:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-enterprise-instrumentor:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-ui:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-autoscaler:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-enterprise-odiglet:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-collector:$VERSION
 ```
 
 ### Step 3: Tag the Images
