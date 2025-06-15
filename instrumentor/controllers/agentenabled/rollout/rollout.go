@@ -43,6 +43,16 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		return false, ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if pw.Kind == k8sconsts.WorkloadKindCronJob || pw.Kind == k8sconsts.WorkloadKindJob {
+		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+			Status:  metav1.ConditionTrue,
+			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonWaitingForRestart),
+			Message: "Waiting for job to trigger by itself",
+		})
+		return statusChanged, ctrl.Result{}, nil
+	}
+
 	if ic == nil {
 		// If ic is nil and the PodWorkload is missing the odigos.io/agents-meta-hash label,
 		// it means it is a rolled back application that shouldn't be rolled out again.
