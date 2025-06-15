@@ -1,8 +1,6 @@
 package redis
 
 import (
-	"path/filepath"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -15,9 +13,7 @@ var (
 )
 
 func (n *RedisInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	baseExe := filepath.Base(pcx.ExePath)
-
-	if utils.IsBaseExeContainsProcessName(baseExe, processNames) {
+	if utils.IsProcessEqualProcessNames(pcx, processNames) {
 		return common.RedisProgrammingLanguage, true
 	}
 

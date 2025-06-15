@@ -1,27 +1,19 @@
 package utils
 
-func IsBaseExeContainsProcessName(baseExe string, processNames []string) bool {
-	for _, processName := range processNames {
-		baseLen := len(baseExe)
-		procLen := len(processName)
+import (
+	"path/filepath"
 
-		// Check if baseExe starts with processName
-		if baseLen >= procLen && baseExe[:procLen] == processName {
-			// If it's exactly processName, or only digits follow
-			if baseLen == procLen || IsDigitsOnly(baseExe[procLen:]) {
-				return true
-			}
+	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
+)
+
+func IsProcessEqualProcessNames(pcx *process.ProcessContext, processNames []string) bool {
+	baseExe := filepath.Base(pcx.ExePath)
+
+	for _, processName := range processNames {
+		if baseExe == processName {
+			return true
 		}
 	}
 
 	return false
-}
-
-func IsDigitsOnly(s string) bool {
-	for i := 0; i < len(s); i++ {
-		if s[i] < '0' || s[i] > '9' {
-			return false
-		}
-	}
-	return true
 }

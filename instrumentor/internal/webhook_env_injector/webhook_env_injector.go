@@ -28,6 +28,7 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorklo
 	otelSignalExporterLanguages := []common.ProgrammingLanguage{
 		common.JavaProgrammingLanguage,
 		common.PhpProgrammingLanguage,
+		common.RubyProgrammingLanguage,
 	}
 
 	if slices.Contains(otelSignalExporterLanguages, runtimeDetails.Language) && otelsdk == common.OtelSdkNativeCommunity {

@@ -2,7 +2,6 @@ package java
 
 import (
 	"bufio"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -24,9 +23,7 @@ var processNames = []string{
 }
 
 func (j *JavaInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	baseExe := filepath.Base(pcx.ExePath)
-
-	if utils.IsBaseExeContainsProcessName(baseExe, processNames) {
+	if utils.IsProcessEqualProcessNames(pcx, processNames) {
 		return common.JavaProgrammingLanguage, true
 	}
 
