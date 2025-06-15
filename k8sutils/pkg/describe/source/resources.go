@@ -21,7 +21,7 @@ const (
 	// it is used as a patch to signal if the pod is running the latest revision of the deployment.
 	// this is useful so we know to ignore pods that are from previous revisions which are in the process of being terminated
 	// during a rolling update.
-	OdigosIsLatestRevisionAnnotation = "odigos.io/is-latest-revision"
+	OdigosLatestWorkloadRevisionAnnotation = "odigos.io/latest-workload-revision"
 )
 
 type OdigosSourceResources struct {
@@ -117,7 +117,7 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 
 				if activeReplicaSet {
 					for i := range podList.Items {
-						podList.Items[i].Annotations[OdigosIsLatestRevisionAnnotation] = "true"
+						podList.Items[i].Annotations[OdigosLatestWorkloadRevisionAnnotation] = "true"
 					}
 				}
 
