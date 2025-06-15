@@ -633,15 +633,19 @@ type PipelineAction struct {
 }
 
 type PodAnalyze struct {
-	PodName    *EntityProperty        `json:"podName"`
-	NodeName   *EntityProperty        `json:"nodeName"`
-	Phase      *EntityProperty        `json:"phase"`
-	Containers []*PodContainerAnalyze `json:"containers"`
+	PodName                       *EntityProperty        `json:"podName"`
+	NodeName                      *EntityProperty        `json:"nodeName"`
+	Phase                         *EntityProperty        `json:"phase"`
+	AgentInjected                 *EntityProperty        `json:"agentInjected"`
+	RunningLatestWorkloadRevision *EntityProperty        `json:"runningLatestWorkloadRevision,omitempty"`
+	Containers                    []*PodContainerAnalyze `json:"containers"`
 }
 
 type PodContainerAnalyze struct {
 	ContainerName            *EntityProperty                   `json:"containerName"`
 	ActualDevices            *EntityProperty                   `json:"actualDevices"`
+	Started                  *EntityProperty                   `json:"started,omitempty"`
+	Ready                    *EntityProperty                   `json:"ready,omitempty"`
 	InstrumentationInstances []*InstrumentationInstanceAnalyze `json:"instrumentationInstances"`
 }
 
