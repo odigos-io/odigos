@@ -102,7 +102,7 @@ var relatedImageEnvVars = map[string]string{
 // +kubebuilder:rbac:groups="",resources=configmaps;endpoints;secrets,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;get;list;watch;patch;delete
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;patch
-// +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch;patch
+// +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch;patch;update
 // +kubebuilder:rbac:groups="",resources=nodes/proxy,verbs=get;list
 // +kubebuilder:rbac:groups="",resources=nodes/stats,verbs=get;list
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
@@ -252,6 +252,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		logger.Info("Detected OpenShift cluster, enabling required configuration")
 		odigos.Spec.OpenShiftEnabled = true
 	}
+	ctx = cmdcontext.ContextWithClusterDetails(ctx, details)
 
 	k8sVersion := cmdcontext.K8SVersionFromContext(ctx)
 	if k8sVersion != nil {
@@ -335,6 +336,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	odigosConfig.Profiles = odigos.Spec.Profiles
 	odigosConfig.UiMode = common.UiMode(odigos.Spec.UIMode)
 	odigosConfig.NodeSelector = nodeSelector
+	odigosConfig.AgentEnvVarsInjectionMethod = &odigos.Spec.AgentEnvVarsInjectionMethod
 
 	ownerReference := metav1.OwnerReference{
 		APIVersion: odigos.APIVersion,

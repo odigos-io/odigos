@@ -80,6 +80,7 @@ Below are the ClusterRoles used by Odigos components.
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
 | odigos.io | instrumentationconfigs | \* | get<br />list<br />watch |
+| \* | configmaps/finalizers | \* | update |
 
 ### odigos-ui
 
@@ -197,7 +198,8 @@ This section lists the RBAC policies used by the Odigos Operator. Many of these 
 |---|---|---|---|
 | \* | configmaps<br />endpoints<br />secrets | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | \* | events | \* | create<br />patch |
-| \* | namespaces<br />nodes | \* | get<br />list<br />patch<br />watch |
+| \* | namespaces | \* | get<br />list<br />patch<br />watch |
+| \* | nodes | \* | get<br />list<br />patch<br />update<br />watch |
 | \* | nodes/proxy<br />nodes/stats | \* | get<br />list |
 | \* | pods | \* | get<br />list<br />watch |
 | \* | pods/finalizers | \* | update |
