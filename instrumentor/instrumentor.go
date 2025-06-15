@@ -16,7 +16,6 @@ import (
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/report"
-	"github.com/odigos-io/odigos/instrumentor/runtimemigration"
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
@@ -45,10 +44,6 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 	if err != nil {
 		return nil, err
 	}
-
-	// This temporary migration step ensures the runtimeDetails migration in the instrumentationConfig is performed.
-	// This code can be removed once the migration is confirmed to be successful.
-	mgr.Add(&runtimemigration.MigrationRunnable{KubeClient: mgr.GetClient(), Logger: opts.Logger})
 
 	// remove the deprecated webhook secret if it exists
 	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: opts.Logger, Secret: types.NamespacedName{
