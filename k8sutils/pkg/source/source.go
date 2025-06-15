@@ -6,14 +6,9 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -122,7 +117,6 @@ func GetClientObjectFromSource(ctx context.Context, kubeClient client.Client, so
 
 	return obj, nil
 }
-
 
 func HandleInstrumentationConfigDataStreamsLabels(ctx context.Context,
 	workloadSources *odigosv1.WorkloadSources, ic *odigosv1.InstrumentationConfig) bool {
