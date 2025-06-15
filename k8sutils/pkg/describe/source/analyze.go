@@ -463,9 +463,9 @@ func analyzePod(pod *corev1.Pod, resources *OdigosSourceResources) PodAnalyze {
 	}
 
 	var runningLatestWorkloadRevision *properties.EntityProperty
-	runningLatestWorkloadRevisionAnnotationValue, hasRunningLatestWorkloadRevisionAnnotation := pod.Annotations[OdigosRunningLatestWorkloadRevisionAnnotation]
-	if hasRunningLatestWorkloadRevisionAnnotation {
-		runningLatestWorkloadRevisionBool := runningLatestWorkloadRevisionAnnotationValue == "true"
+	runningLatestValue, hasRunningLatestAnnotation := pod.Annotations[OdigosRunningLatestWorkloadRevisionAnnotation]
+	if hasRunningLatestAnnotation {
+		runningLatestWorkloadRevisionBool := runningLatestValue == "true"
 		runningLatestWorkloadRevision = &properties.EntityProperty{
 			Name:    "Running Latest Workload Revision",
 			Value:   runningLatestWorkloadRevisionBool,
