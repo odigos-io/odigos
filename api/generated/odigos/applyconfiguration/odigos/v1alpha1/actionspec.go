@@ -33,6 +33,7 @@ type ActionSpecApplyConfiguration struct {
 	DeleteAttribute *actionsv1alpha1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
 	RenameAttribute *actionsv1alpha1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
 	PiiMasking      *actionsv1alpha1.PiiMaskingConfig      `json:"piiMasking,omitempty"`
+	K8sAttributes   *actionsv1alpha1.K8sAttributesConfig   `json:"k8sAttributes,omitempty"`
 }
 
 // ActionSpecApplyConfiguration constructs a declarative configuration of the ActionSpec type for use with
@@ -104,5 +105,13 @@ func (b *ActionSpecApplyConfiguration) WithRenameAttribute(value actionsv1alpha1
 // If called multiple times, the PiiMasking field is set to the value of the last call.
 func (b *ActionSpecApplyConfiguration) WithPiiMasking(value actionsv1alpha1.PiiMaskingConfig) *ActionSpecApplyConfiguration {
 	b.PiiMasking = &value
+	return b
+}
+
+// WithK8sAttributes sets the K8sAttributes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the K8sAttributes field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithK8sAttributes(value actionsv1alpha1.K8sAttributesConfig) *ActionSpecApplyConfiguration {
+	b.K8sAttributes = &value
 	return b
 }
