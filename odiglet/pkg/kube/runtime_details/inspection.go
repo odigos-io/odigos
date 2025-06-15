@@ -327,6 +327,12 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 		updated = true
 	}
 
+	// 5. Update Language if different
+	if new.Language != existing.Language {
+		existing.Language = new.Language
+		updated = true
+	}
+
 	return updated
 }
 
