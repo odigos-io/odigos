@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/go-version"
 
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/cplusplus"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/dotnet"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/golang"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/java"
@@ -52,6 +53,7 @@ var inspectorsByLanguage = map[common.ProgrammingLanguage]Inspector{
 	common.PhpProgrammingLanguage:        &php.PhpInspector{},
 	common.RubyProgrammingLanguage:       &ruby.RubyInspector{},
 	common.RustProgrammingLanguage:       &rust.RustInspector{},
+	common.CPlusPlusProgrammingLanguage:  &cplusplus.CPlusPlusInspector{},
 	common.MySQLProgrammingLanguage:      &mysql.MySQLInspector{},
 	common.NginxProgrammingLanguage:      &nginx.NginxInspector{},
 	common.RedisProgrammingLanguage:      &redis.RedisInspector{},

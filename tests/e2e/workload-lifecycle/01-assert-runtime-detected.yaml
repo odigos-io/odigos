@@ -126,7 +126,7 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: cpp-http-server
-      language: unknown
+      language: cplusplus
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
