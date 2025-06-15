@@ -114,10 +114,9 @@ helm repo add odigos https://odigos-io.github.io/odigos/
   <Tab title="Enterprise">
   The enterprise version of Odigos requires a license token. Please contact the Odigos team to inquire about access to the Pro version.
   ```shell
-    helm repo update
+  helm repo update
   helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace --set onPremToken=$ODIGOS_TOKEN
-    ```
-  </Tab>
+  ```
 
   The license token can also be provided by creating a secret in kubernetes before installing Odigos.
   ```yaml
@@ -131,6 +130,7 @@ helm repo add odigos https://odigos-io.github.io/odigos/
   stringData:
     odigos-onprem-token: <TOKEN>
   ```
+  </Tab>
 </Tabs>
 
 Once all the Odigos pods are online, you will need to port-forward the ui service to load the Odigos UI.
