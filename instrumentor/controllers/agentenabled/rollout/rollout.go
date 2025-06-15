@@ -37,6 +37,7 @@ const requeueWaitingForWorkloadRollout = 10 * time.Second
 // Returns a boolean indicating if the status of the instrumentation config has changed, a ctrl.Result and an error.
 func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, conf *common.OdigosConfiguration) (bool, ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+	automaticRolloutDisabled := conf.RolloutConfiguration != nil && conf.RolloutConfiguration.AutomaticRolloutDisabled != nil && *conf.RolloutConfiguration.AutomaticRolloutDisabled
 	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
 	if err != nil {
@@ -53,6 +54,12 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		}
 		if !hasAgents {
 			logger.Info("skipping rollout - workload already runs without odigos agents",
+				"workload", pw.Name, "namespace", pw.Namespace)
+			return false, ctrl.Result{}, nil
+		}
+
+		if automaticRolloutDisabled {
+			logger.Info("skipping rollout to uninstrument workload source - automatic rollout is disabled",
 				"workload", pw.Name, "namespace", pw.Namespace)
 			return false, ctrl.Result{}, nil
 		}
@@ -116,6 +123,12 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 				if err := c.Update(ctx, ic); err != nil {
 					res, err := utils.K8SUpdateErrorHandler(err)
 					return false, res, err
+				}
+
+				if automaticRolloutDisabled {
+					logger.Info("skipping rollback to uninstrument workload source which are CrashLoopBackOff - automatic rollout is disabled",
+						"workload", pw.Name, "namespace", pw.Namespace)
+					return false, ctrl.Result{}, nil
 				}
 
 				ic.Status.RollbackOccurred = true
