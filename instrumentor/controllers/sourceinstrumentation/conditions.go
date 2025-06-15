@@ -45,14 +45,30 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 		return true
 	}
 
-	ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
-		Type:               v1alpha1.RuntimeDetectionStatusConditionType,
-		Status:             metav1.ConditionUnknown,
-		Reason:             string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
-		Message:            "Waiting for odiglet to initiate runtime detection in a node with running pod",
-		LastTransitionTime: metav1.NewTime(time.Now()),
-	})
-
+	isCronJob := false
+	for _, ref := range ic.OwnerReferences {
+		if ref.Controller != nil && *ref.Controller && ref.Kind == "CronJob" {
+			isCronJob = true
+			break
+		}
+	}
+	if isCronJob {
+		ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
+			Type:               v1alpha1.RuntimeDetectionStatusConditionType,
+			Status:             metav1.ConditionUnknown,
+			Reason:             string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
+			Message:            "Runtime detection pending Job to start",
+			LastTransitionTime: metav1.NewTime(time.Now()),
+		})
+	} else {
+		ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
+			Type:               v1alpha1.RuntimeDetectionStatusConditionType,
+			Status:             metav1.ConditionUnknown,
+			Reason:             string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
+			Message:            "Waiting for odiglet to initiate runtime detection in a node with running pod",
+			LastTransitionTime: metav1.NewTime(time.Now()),
+		})
+	}
 	return true
 }
 

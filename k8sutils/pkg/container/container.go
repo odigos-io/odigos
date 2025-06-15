@@ -140,7 +140,7 @@ func AllContainersReady(pod *v1.Pod) bool {
 
 		// For long-running pods (RestartPolicy=Always) ensure the container
 		// has actually entered the running state (`Started == true`).
-		if !skipStarted && containerStatus.Started != nil && !*containerStatus.Started {
+		if !skipStarted && (containerStatus.Started == nil || !*containerStatus.Started) {
 			return false
 		}
 	}

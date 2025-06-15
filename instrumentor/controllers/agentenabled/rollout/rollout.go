@@ -48,7 +48,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonWaitingForRestart),
-			Message: "Waiting to job to trigger on itself",
+			Message: "Waiting for job to trigger by itself",
 		})
 		return statusChanged, ctrl.Result{}, nil
 	}
