@@ -152,7 +152,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 			if len(icCopy.OwnerReferences) == 0 {
 				return fmt.Errorf("no owner reference found for InstrumentationConfig %s", icCopy.Name)
 			}
-			src, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, services.WorkloadKind(icCopy.OwnerReferences[0].Kind))
+			src, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, model.K8sResourceKind(icCopy.OwnerReferences[0].Kind))
 			if err != nil && !apierrors.IsNotFound(err) {
 				return err
 			}
@@ -194,7 +194,7 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 	}
 
 	// Get Source object to extract stream names
-	src, err := services.GetSourceCRD(ctx, ns, name, services.WorkloadKind(kind))
+	src, err := services.GetSourceCRD(ctx, ns, name, kind)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
@@ -474,7 +474,7 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 	var namespaceSource *v1alpha1.Source
 	sourceObjects := make(map[string]*v1alpha1.Source)
 	for _, source := range sourceList.Items {
-		if services.WorkloadKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace {
+		if model.K8sResourceKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace {
 			namespaceSource = &source
 		} else {
 			key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
@@ -570,7 +570,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 
 	nsName := sourceID.Namespace
 	workloadName := sourceID.Name
-	workloadKind := services.WorkloadKind(sourceID.Kind)
+	workloadKind := sourceID.Kind
 	otelServiceName := patchSourceRequest.OtelServiceName
 	streamName := patchSourceRequest.CurrentStreamName
 
@@ -1100,7 +1100,7 @@ func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*mo
 	err := services.WithGoroutine(ctx, len(sourceIds), func(goFunc func(func() error)) {
 		for _, sourceID := range sourceIds {
 			goFunc(func() error {
-				err := services.RolloutRestartWorkload(ctx, sourceID.Namespace, sourceID.Name, string(sourceID.Kind))
+				err := services.RolloutRestartWorkload(ctx, sourceID.Namespace, sourceID.Name, sourceID.Kind)
 				if err != nil {
 					return fmt.Errorf("failed to restart workload %s/%s/%s: %v", sourceID.Namespace, sourceID.Name, sourceID.Kind, err)
 				}
