@@ -27,7 +27,7 @@ require (
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
-	sigs.k8s.io/controller-runtime v0.20.4 // indirect
+	sigs.k8s.io/controller-runtime v0.21.0 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 )
 
