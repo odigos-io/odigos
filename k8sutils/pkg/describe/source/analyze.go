@@ -367,145 +367,157 @@ func podPhaseToStatus(phase corev1.PodPhase) properties.PropertyStatus {
 }
 
 func getContainerStatus(pod *corev1.Pod, containerName string) *corev1.ContainerStatus {
-	for _, containerStatus := range pod.Status.ContainerStatuses {
+	for i := range pod.Status.ContainerStatuses {
+		containerStatus := &pod.Status.ContainerStatuses[i]
 		if containerStatus.Name == containerName {
-			return &containerStatus
+			return containerStatus
 		}
 	}
 	return nil
+}
+
+func analyzePodContainer(pod *corev1.Pod, container *corev1.Container, resources *OdigosSourceResources) PodContainerAnalyze {
+	containerStatus := getContainerStatus(pod, container.Name)
+	containerName := properties.EntityProperty{
+		Name:    "Container Name",
+		Value:   container.Name,
+		Explain: "the unique name of a container being described in the pod",
+		ListKey: true,
+	}
+
+	deviceNames := make([]string, 0)
+	for resourceName := range container.Resources.Limits {
+		deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
+		if found {
+			deviceNames = append(deviceNames, deviceName)
+		}
+	}
+
+	actualDevices := properties.EntityProperty{
+		Name:    "Actual Devices",
+		Value:   deviceNames,
+		Explain: "the odigos instrumentation devices that were found on this pod container instance",
+	}
+
+	// find the instrumentation instances for this pod
+	thisPodInstrumentationInstances := make([]InstrumentationInstanceAnalyze, 0)
+	for i := range resources.InstrumentationInstances.Items {
+		instance := resources.InstrumentationInstances.Items[i]
+		if len(instance.OwnerReferences) != 1 || instance.OwnerReferences[0].Kind != "Pod" {
+			continue
+		}
+		if instance.OwnerReferences[0].Name != pod.GetName() {
+			continue
+		}
+		if instance.Spec.ContainerName != container.Name {
+			continue
+		}
+		instanceAnalyze := analyzeInstrumentationInstance(&instance)
+		thisPodInstrumentationInstances = append(thisPodInstrumentationInstances, instanceAnalyze)
+	}
+
+	podContainerAnalyze := PodContainerAnalyze{
+		ContainerName:            containerName,
+		ActualDevices:            actualDevices,
+		InstrumentationInstances: thisPodInstrumentationInstances,
+	}
+	if containerStatus != nil {
+		startedValue := containerStatus.Started != nil && *containerStatus.Started
+		podContainerAnalyze.Started = properties.EntityProperty{
+			Name:    "Started",
+			Value:   startedValue,
+			Status:  properties.GetSuccessOrError(startedValue),
+			Explain: "whether the container has passed it's startup check",
+		}
+
+		readyValue := containerStatus.Ready
+		podContainerAnalyze.Ready = properties.EntityProperty{
+			Name:    "Ready",
+			Value:   readyValue,
+			Status:  properties.GetSuccessOrError(readyValue),
+			Explain: "whether the container passes it's readiness check",
+		}
+	}
+
+	return podContainerAnalyze
+}
+
+func analyzePod(pod *corev1.Pod, resources *OdigosSourceResources) PodAnalyze {
+	name := properties.EntityProperty{
+		Name:    "Pod Name",
+		Value:   pod.GetName(),
+		Explain: "the name of the k8s pod object that is part of the source workload",
+		ListKey: true,
+	}
+
+	nodeName := properties.EntityProperty{
+		Name:    "Node Name",
+		Value:   pod.Spec.NodeName,
+		Explain: "the name of the k8s node where the current pod being described is scheduled",
+	}
+	_, hasAgentHash := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]
+	agentInjected := properties.EntityProperty{
+		Name:    "Odigos Agent Injected",
+		Value:   hasAgentHash,
+		Explain: "whether the odigos instrumentation agent was injected into this pod",
+	}
+
+	var isActiveRevision *properties.EntityProperty
+	isActiveRevisionAnnotationValue, hasIsActiveRevisionAnnotation := pod.Annotations[OdigosIsLatestRevisionAnnotation]
+	if hasIsActiveRevisionAnnotation {
+		isActiveRevisionBool := isActiveRevisionAnnotationValue == "true"
+		isActiveRevision = &properties.EntityProperty{
+			Name:    "Is Active Revision",
+			Value:   isActiveRevisionBool,
+			Status:  properties.GetSuccessOrError(isActiveRevisionBool),
+			Explain: "whether the current pod is the latest revision of the workload",
+		}
+	}
+
+	var phase properties.EntityProperty
+
+	if pod.DeletionTimestamp != nil {
+		phase = properties.EntityProperty{
+			Name:    "Phase",
+			Value:   "Terminating",
+			Status:  properties.PropertyStatusTransitioning,
+			Explain: "the current pod phase for the pod being described",
+		}
+	} else {
+		phase = properties.EntityProperty{
+			Name:    "Phase",
+			Value:   pod.Status.Phase,
+			Status:  podPhaseToStatus(pod.Status.Phase),
+			Explain: "the current pod phase for the pod being described",
+		}
+	}
+
+	containers := make([]PodContainerAnalyze, 0, len(pod.Spec.Containers))
+	for i := range pod.Spec.Containers {
+		container := &pod.Spec.Containers[i]
+		containerAnalyze := analyzePodContainer(pod, container, resources)
+		containers = append(containers, containerAnalyze)
+	}
+
+	return PodAnalyze{
+		PodName:          name,
+		NodeName:         nodeName,
+		AgentInjected:    agentInjected,
+		IsActiveRevision: isActiveRevision,
+		Phase:            phase,
+		Containers:       containers,
+	}
 }
 
 func analyzePods(resources *OdigosSourceResources) ([]PodAnalyze, string) {
 	pods := make([]PodAnalyze, 0, len(resources.Pods.Items))
 	podsStatuses := make(map[corev1.PodPhase]int)
 	for i := range resources.Pods.Items {
-		pod := resources.Pods.Items[i]
+		pod := &resources.Pods.Items[i]
 		podsStatuses[pod.Status.Phase]++
 
-		name := properties.EntityProperty{
-			Name:    "Pod Name",
-			Value:   pod.GetName(),
-			Explain: "the name of the k8s pod object that is part of the source workload",
-			ListKey: true,
-		}
-		nodeName := properties.EntityProperty{
-			Name:    "Node Name",
-			Value:   pod.Spec.NodeName,
-			Explain: "the name of the k8s node where the current pod being described is scheduled",
-		}
-		_, hasAgentHash := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]
-		agentInjected := properties.EntityProperty{
-			Name:    "Odigos Agent Injected",
-			Value:   hasAgentHash,
-			Explain: "whether the odigos instrumentation agent was injected into this pod",
-		}
-
-		var isActiveRevision *properties.EntityProperty
-		isActiveRevisionAnnotationValue, hasIsActiveRevisionAnnotation := pod.Annotations[OdigosIsLatestRevisionAnnotation]
-		if hasIsActiveRevisionAnnotation {
-			isActiveRevisionBool := isActiveRevisionAnnotationValue == "true"
-			isActiveRevision = &properties.EntityProperty{
-				Name:    "Is Active Revision",
-				Value:   isActiveRevisionBool,
-				Status:  properties.GetSuccessOrError(isActiveRevisionBool),
-				Explain: "whether the current pod is the latest revision of the workload",
-			}
-		}
-
-		var phase properties.EntityProperty
-
-		if pod.DeletionTimestamp != nil {
-			phase = properties.EntityProperty{
-				Name:    "Phase",
-				Value:   "Terminating",
-				Status:  properties.PropertyStatusTransitioning,
-				Explain: "the current pod phase for the pod being described",
-			}
-		} else {
-			phase = properties.EntityProperty{
-				Name:    "Phase",
-				Value:   pod.Status.Phase,
-				Status:  podPhaseToStatus(pod.Status.Phase),
-				Explain: "the current pod phase for the pod being described",
-			}
-		}
-
-		containers := make([]PodContainerAnalyze, 0, len(pod.Spec.Containers))
-		for i := range pod.Spec.Containers {
-			container := pod.Spec.Containers[i]
-			containerStatus := getContainerStatus(&pod, container.Name)
-			containerName := properties.EntityProperty{
-				Name:    "Container Name",
-				Value:   container.Name,
-				Explain: "the unique name of a container being described in the pod",
-				ListKey: true,
-			}
-
-			deviceNames := make([]string, 0)
-			for resourceName := range container.Resources.Limits {
-				deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
-				if found {
-					deviceNames = append(deviceNames, deviceName)
-				}
-			}
-
-			actualDevices := properties.EntityProperty{
-				Name:    "Actual Devices",
-				Value:   deviceNames,
-				Explain: "the odigos instrumentation devices that were found on this pod container instance",
-			}
-
-			// find the instrumentation instances for this pod
-			thisPodInstrumentationInstances := make([]InstrumentationInstanceAnalyze, 0)
-			for i := range resources.InstrumentationInstances.Items {
-				instance := resources.InstrumentationInstances.Items[i]
-				if len(instance.OwnerReferences) != 1 || instance.OwnerReferences[0].Kind != "Pod" {
-					continue
-				}
-				if instance.OwnerReferences[0].Name != pod.GetName() {
-					continue
-				}
-				if instance.Spec.ContainerName != container.Name {
-					continue
-				}
-				instanceAnalyze := analyzeInstrumentationInstance(&instance)
-				thisPodInstrumentationInstances = append(thisPodInstrumentationInstances, instanceAnalyze)
-			}
-
-			podContainerAnalyze := PodContainerAnalyze{
-				ContainerName:            containerName,
-				ActualDevices:            actualDevices,
-				InstrumentationInstances: thisPodInstrumentationInstances,
-			}
-			if containerStatus != nil {
-				startedValue := containerStatus.Started != nil && *containerStatus.Started
-				podContainerAnalyze.Started = properties.EntityProperty{
-					Name:    "Started",
-					Value:   startedValue,
-					Status:  properties.GetSuccessOrError(startedValue),
-					Explain: "whether the container has passed it's startup check",
-				}
-
-				readyValue := containerStatus.Ready
-				podContainerAnalyze.Ready = properties.EntityProperty{
-					Name:    "Ready",
-					Value:   readyValue,
-					Status:  properties.GetSuccessOrError(readyValue),
-					Explain: "whether the container passes it's readiness check",
-				}
-			}
-
-			containers = append(containers, podContainerAnalyze)
-		}
-
-		pods = append(pods, PodAnalyze{
-			PodName:          name,
-			NodeName:         nodeName,
-			AgentInjected:    agentInjected,
-			IsActiveRevision: isActiveRevision,
-			Phase:            phase,
-			Containers:       containers,
-		})
+		podAnalyze := analyzePod(pod, resources)
+		pods = append(pods, podAnalyze)
 	}
 
 	podPhasesTexts := make([]string, 0)

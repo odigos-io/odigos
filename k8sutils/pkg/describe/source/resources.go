@@ -98,27 +98,32 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 			rs := &replicaSets.Items[i]
 			// Check if this ReplicaSet is owned by the deployment
 			for _, ownerRef := range rs.OwnerReferences {
-				if string(ownerRef.UID) == string(workloadObj.UID) && ownerRef.Kind == "Deployment" {
-					rsRevision := rs.Annotations["deployment.kubernetes.io/revision"]
-					activeReplicaSet := deploymentRevision == rsRevision && deploymentRevision != ""
-					// List pods for this specific ReplicaSet
-					podList, err := kubeClient.CoreV1().Pods(workloadObj.Namespace).List(ctx, metav1.ListOptions{
-						LabelSelector: metav1.FormatLabelSelector(rs.Spec.Selector),
-					})
-					if err != nil {
-						return nil, fmt.Errorf("error listing pods for replicaset: %v", err)
-					}
-
-					if activeReplicaSet {
-						for _, pod := range podList.Items {
-							pod.Annotations[OdigosIsLatestRevisionAnnotation] = "true"
-						}
-					}
-
-					// Add these pods to our specific pods list
-					pods.Items = append(pods.Items, podList.Items...)
-					break
+				if ownerRef.Kind != "Deployment" {
+					continue
 				}
+				if string(ownerRef.UID) != string(workloadObj.UID) {
+					continue
+				}
+
+				rsRevision := rs.Annotations["deployment.kubernetes.io/revision"]
+				activeReplicaSet := deploymentRevision == rsRevision && deploymentRevision != ""
+				// List pods for this specific ReplicaSet
+				podList, err := kubeClient.CoreV1().Pods(workloadObj.Namespace).List(ctx, metav1.ListOptions{
+					LabelSelector: metav1.FormatLabelSelector(rs.Spec.Selector),
+				})
+				if err != nil {
+					return nil, fmt.Errorf("error listing pods for replicaset: %v", err)
+				}
+
+				if activeReplicaSet {
+					for i := range podList.Items {
+						podList.Items[i].Annotations[OdigosIsLatestRevisionAnnotation] = "true"
+					}
+				}
+
+				// Add these pods to our specific pods list
+				pods.Items = append(pods.Items, podList.Items...)
+				break
 			}
 		}
 		return pods, nil
