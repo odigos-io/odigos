@@ -109,7 +109,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		// If manual rollout is required, we can mention this for better UX.
 		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
-			Status:  metav1.ConditionUnknown,
+			Status:  metav1.ConditionTrue, // this might not be a success, need to refine into multiple discrete states
 			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonDisabled),
 			Message: "odigos automatic rollout is disabled",
 		})

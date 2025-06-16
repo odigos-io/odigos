@@ -44,6 +44,7 @@ var configCmd = &cobra.Command{
 	- "instrumentation-auto-rollback-disabled": Disable auto rollback feature for failing instrumentations.
 	- "instrumentation-auto-rollback-grace-time": Grace time before uninstrumenting an application [default: 5m].
 	- "instrumentation-auto-rollback-stability-window": Time windows where the auto rollback can happen [default: 1h].
+	- "rollout-configuration.automatic-rollout-disabled": Disable auto rollout feature for workloads when instrumenting or uninstrumenting.
 	`,
 }
 
