@@ -301,6 +301,18 @@ export const DESCRIBE_SOURCE = gql`
           status
           explain
         }
+        agentInjected {
+          name
+          value
+          status
+          explain
+        }
+        runningLatestWorkloadRevision {
+          name
+          value
+          status
+          explain
+        }
         containers {
           containerName {
             name
@@ -309,6 +321,18 @@ export const DESCRIBE_SOURCE = gql`
             explain
           }
           actualDevices {
+            name
+            value
+            status
+            explain
+          }
+          started {
+            name
+            value
+            status
+            explain
+          }
+          ready {
             name
             value
             status

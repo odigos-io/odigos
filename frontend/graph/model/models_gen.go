@@ -633,15 +633,19 @@ type PipelineAction struct {
 }
 
 type PodAnalyze struct {
-	PodName    *EntityProperty        `json:"podName"`
-	NodeName   *EntityProperty        `json:"nodeName"`
-	Phase      *EntityProperty        `json:"phase"`
-	Containers []*PodContainerAnalyze `json:"containers"`
+	PodName                       *EntityProperty        `json:"podName"`
+	NodeName                      *EntityProperty        `json:"nodeName"`
+	Phase                         *EntityProperty        `json:"phase"`
+	AgentInjected                 *EntityProperty        `json:"agentInjected"`
+	RunningLatestWorkloadRevision *EntityProperty        `json:"runningLatestWorkloadRevision,omitempty"`
+	Containers                    []*PodContainerAnalyze `json:"containers"`
 }
 
 type PodContainerAnalyze struct {
 	ContainerName            *EntityProperty                   `json:"containerName"`
 	ActualDevices            *EntityProperty                   `json:"actualDevices"`
+	Started                  *EntityProperty                   `json:"started,omitempty"`
+	Ready                    *EntityProperty                   `json:"ready,omitempty"`
 	InstrumentationInstances []*InstrumentationInstanceAnalyze `json:"instrumentationInstances"`
 }
 
@@ -1114,17 +1118,19 @@ const (
 	K8sResourceKindDeployment  K8sResourceKind = "Deployment"
 	K8sResourceKindDaemonSet   K8sResourceKind = "DaemonSet"
 	K8sResourceKindStatefulSet K8sResourceKind = "StatefulSet"
+	K8sResourceKindCronJob     K8sResourceKind = "CronJob"
 )
 
 var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindDeployment,
 	K8sResourceKindDaemonSet,
 	K8sResourceKindStatefulSet,
+	K8sResourceKindCronJob,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob:
 		return true
 	}
 	return false

@@ -47,6 +47,7 @@ Below are the ClusterRoles used by Odigos components.
 | \* | nodes | \* | list<br />watch<br />get |
 | \* | namespaces | \* | list<br />watch<br />get |
 | \* | pods | \* | list<br />watch<br />get |
+| batch | cronjobs | \* | list<br />watch<br />get |
 | apps | daemonsets | \* | get<br />list<br />watch<br />update<br />patch |
 | apps | deployments | \* | get<br />list<br />watch<br />update<br />patch |
 | apps | statefulsets | \* | get<br />list<br />watch<br />update<br />patch |
@@ -79,6 +80,7 @@ Below are the ClusterRoles used by Odigos components.
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
 | odigos.io | instrumentationconfigs | \* | get<br />list<br />watch |
+| \* | configmaps/finalizers | \* | update |
 
 ### odigos-ui
 
@@ -86,6 +88,7 @@ Below are the ClusterRoles used by Odigos components.
 |---|---|---|---|
 | \* | namespaces | \* | get<br />list<br />patch |
 | apps | deployments<br />statefulsets<br />daemonsets | \* | get<br />list<br />update<br />patch |
+| batch | cronjobs | \* | get<br />list<br />update<br />patch |
 | apps | replicasets | \* | get<br />list |
 | \* | services | \* | get<br />list |
 | \* | pods | \* | get<br />list<br />watch |
@@ -195,7 +198,8 @@ This section lists the RBAC policies used by the Odigos Operator. Many of these 
 |---|---|---|---|
 | \* | configmaps<br />endpoints<br />secrets | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | \* | events | \* | create<br />patch |
-| \* | namespaces<br />nodes | \* | get<br />list<br />patch<br />watch |
+| \* | namespaces | \* | get<br />list<br />patch<br />watch |
+| \* | nodes | \* | get<br />list<br />patch<br />update<br />watch |
 | \* | nodes/proxy<br />nodes/stats | \* | get<br />list |
 | \* | pods | \* | get<br />list<br />watch |
 | \* | pods/finalizers | \* | update |

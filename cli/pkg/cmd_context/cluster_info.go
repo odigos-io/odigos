@@ -26,7 +26,7 @@ func ContextWithClusterDetails(parent context.Context, clusterDetails *autodetec
 // ClusterDetailsFromContextOrExit returns the current cluster details from ctx.
 //
 // If no details are currently set in ctx the program will exit with an error message.
-func ClusterDetailsFromContextOrExit(ctx context.Context)  *autodetect.ClusterDetails {
+func ClusterDetailsFromContextOrExit(ctx context.Context) *autodetect.ClusterDetails {
 	details, err := ClusterDetailsFromContext(ctx)
 	if err != nil {
 		kube.PrintClientErrorAndExit(err)
@@ -35,11 +35,11 @@ func ClusterDetailsFromContextOrExit(ctx context.Context)  *autodetect.ClusterDe
 }
 
 // ClusterDetailsFromContext returns the current cluster details from ctx.
-func ClusterDetailsFromContext(ctx context.Context) ( *autodetect.ClusterDetails, error) {
+func ClusterDetailsFromContext(ctx context.Context) (*autodetect.ClusterDetails, error) {
 	if ctx == nil {
 		return nil, ErrCtxIsNil
 	}
-	if details, ok := ctx.Value(currentClusterDetailsKey).( *autodetect.ClusterDetails); ok {
+	if details, ok := ctx.Value(currentClusterDetailsKey).(*autodetect.ClusterDetails); ok {
 		return details, nil
 	}
 	return nil, ErrCtxWithoutClusterDetails

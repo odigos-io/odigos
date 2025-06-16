@@ -9,6 +9,8 @@ const (
 	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
 	WorkloadKindStatefulSet WorkloadKind = "StatefulSet"
 	WorkloadKindNamespace   WorkloadKind = "Namespace"
+	WorkloadKindCronJob     WorkloadKind = "CronJob"
+	WorkloadKindJob         WorkloadKind = "Job"
 )
 
 // 2. the lower case representation of the workload kind
@@ -20,6 +22,8 @@ const (
 	WorkloadKindLowerCaseDaemonSet   WorkloadKindLowerCase = "daemonset"
 	WorkloadKindLowerCaseStatefulSet WorkloadKindLowerCase = "statefulset"
 	WorkloadKindLowerCaseNamespace   WorkloadKindLowerCase = "namespace"
+	WorkloadKindLowerCaseCronJob     WorkloadKindLowerCase = "cronjob"
+	WorkloadKindLowerCaseJob         WorkloadKindLowerCase = "job"
 )
 
 // PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
