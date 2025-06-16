@@ -151,11 +151,10 @@ func CalculateGatewayConfig(
 
 func insertRootPipelinesToConfig(currentConfig *config.Config, dataStreamsDetails []DataStreams,
 	tracesProcessors, metricsProcessors, logsProcessors []string, signals []common.ObservabilitySignal) {
-
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
 		applyRootPipelineForSignal(
 			currentConfig,
-			"traces",
+			common.TracesObservabilitySignal,
 			tracesProcessors,
 			dataStreamsDetails,
 		)
@@ -164,7 +163,7 @@ func insertRootPipelinesToConfig(currentConfig *config.Config, dataStreamsDetail
 	if slices.Contains(signals, common.MetricsObservabilitySignal) {
 		applyRootPipelineForSignal(
 			currentConfig,
-			"metrics",
+			common.MetricsObservabilitySignal,
 			metricsProcessors,
 			dataStreamsDetails,
 		)
@@ -173,18 +172,18 @@ func insertRootPipelinesToConfig(currentConfig *config.Config, dataStreamsDetail
 	if slices.Contains(signals, common.LogsObservabilitySignal) {
 		applyRootPipelineForSignal(
 			currentConfig,
-			"logs",
+			common.LogsObservabilitySignal,
 			logsProcessors,
 			dataStreamsDetails,
 		)
 	}
 }
 
-func applyRootPipelineForSignal(currentConfig *config.Config, signal string, processors []string, dataStreamsDetails []DataStreams) {
+func applyRootPipelineForSignal(currentConfig *config.Config, signal common.ObservabilitySignal, processors []string, dataStreamsDetails []DataStreams) {
 	rootPipelineName := GetTelemetryRootPipeline(signal)
 	fullProcessors := append([]string{"memory_limiter", "resource/odigos-version"}, processors...)
 
-	connectorName := fmt.Sprintf("odigosrouterconnector/%s", signal)
+	connectorName := fmt.Sprintf("odigosrouterconnector/%s", strings.ToLower(string(signal)))
 	currentConfig.Connectors[connectorName] = config.GenericMap{
 		"datastreams": dataStreamsDetails,
 	}

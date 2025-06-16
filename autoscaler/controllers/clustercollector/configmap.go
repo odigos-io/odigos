@@ -133,7 +133,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
-	dataStreams, err := getDataStreamsWithDestinations(ctx, c, dests)
+	dataStreams, err := calculateDataStreams(ctx, c, dests)
 	if err != nil {
 		logger.Error(err, "Failed to build group details")
 		return nil, err
@@ -250,7 +250,7 @@ func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.C
 	return updated, nil
 }
 
-// getDataStreamsWithDestinations generates a slice of data streams.
+// calculateDataStreams generates a slice of data streams.
 //
 // Example return structure:
 //
@@ -277,7 +277,7 @@ func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.C
 //	        },
 //	    },
 //	}
-func getDataStreamsWithDestinations(
+func calculateDataStreams(
 	ctx context.Context,
 	kubeClient client.Client,
 	dests *odigosv1.DestinationList,
@@ -328,7 +328,7 @@ func getDataStreamsWithDestinations(
 	}
 
 	// Convert map to slice, this is the final result as will be used in the configmap
-	var dataStreamDetailsList []pipelinegen.DataStreams
+	dataStreamDetailsList := make([]pipelinegen.DataStreams, 0, len(dataStreamsMap))
 	for _, ds := range dataStreamsMap {
 		dataStreamDetailsList = append(dataStreamDetailsList, *ds)
 	}
@@ -380,9 +380,9 @@ func getSourcesForDataStream(
 	return sourcesFilters, nil
 }
 
-func destinationExists(list []pipelinegen.Destination, item string) bool {
-	for _, v := range list {
-		if v.DestinationName == item {
+func destinationExists(existingDestinations []pipelinegen.Destination, destinationName string) bool {
+	for _, v := range existingDestinations {
+		if v.DestinationName == destinationName {
 			return true
 		}
 	}
