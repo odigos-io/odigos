@@ -92,6 +92,20 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		}
 	}
 
+	if automaticRolloutDisabled {
+		// TODO: add more fine grained status conditions for this case.
+		// For example: if the workload has already been rolled out, we can set the status to true
+		// and signal that the process is considered completed.
+		// If manual rollout is required, we can mention this for better UX.
+		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+			Status:  metav1.ConditionUnknown,
+			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonDisabled),
+			Message: "odigos automatic rollout is disabled",
+		})
+		return statusChanged, ctrl.Result{}, nil
+	}
+
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash := ic.Spec.AgentsMetaHash
 	if savedRolloutHash == newRolloutHash {
@@ -123,12 +137,6 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 				if err := c.Update(ctx, ic); err != nil {
 					res, err := utils.K8SUpdateErrorHandler(err)
 					return false, res, err
-				}
-
-				if automaticRolloutDisabled {
-					logger.Info("skipping rollback to uninstrument workload source which are CrashLoopBackOff - automatic rollout is disabled",
-						"workload", pw.Name, "namespace", pw.Namespace)
-					return false, ctrl.Result{}, nil
 				}
 
 				ic.Status.RollbackOccurred = true
