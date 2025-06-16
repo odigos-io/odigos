@@ -22,7 +22,7 @@ func buildDataStreamPipelines(
 
 			pipeline := config.Pipeline{
 				Receivers:  []string{fmt.Sprintf("odigosrouterconnector/%s", signal)},
-				Processors: []string{consts.GenericBatchProcessor}, // every group pipeline should have a generic batch processor
+				Processors: []string{consts.GenericBatchProcessorConfigKey}, // every group pipeline should have a generic batch processor
 				Exporters:  []string{},
 			}
 

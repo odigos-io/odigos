@@ -91,7 +91,7 @@ func CalculateGatewayConfig(
 			// add the forward connector as a receiver to the pipeline
 			pipeline.Receivers = []string{connectorName}
 			// every destination pipeline should have a generic batch processor
-			pipeline.Processors = []string{consts.GenericBatchProcessor}
+			pipeline.Processors = []string{consts.GenericBatchProcessorConfigKey}
 
 			// track which signals are enabled based on the destination pipeline names
 			switch {
@@ -235,7 +235,7 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 					},
 				},
 			},
-			"batch/generic-batch-processor": config.GenericMap{}, // Currently configured with default values
+			consts.GenericBatchProcessorConfigKey: config.GenericMap{}, // Currently configured with default values
 		},
 		Extensions: config.GenericMap{
 			"health_check": config.GenericMap{

@@ -111,8 +111,8 @@ const (
 
 // Batch processor related consts
 const (
-	GenericBatchProcessor = "batch/generic-batch-processor"
-	SmallBatchesProcessor = "batch/small-batches"
+	GenericBatchProcessorConfigKey = "batch/generic-batch-processor"
+	SmallBatchesProcessor          = "batch/small-batches"
 )
 
 // Auto rollback related consts
