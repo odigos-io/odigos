@@ -16,7 +16,6 @@ connectors:
   odigosrouterconnector/logs:
     datastreams:
     - name: dummy-group
-      namespaces: []
       sources:
       - namespace: dummy-namespace
         kind: dummy-kind
