@@ -89,7 +89,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
 				&appsv1.Deployment{}: {
-					Label: clusterCollectorLabelSelector,
 					Field: nsSelector,
 				},
 				&corev1.Service{}: {

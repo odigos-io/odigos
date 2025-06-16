@@ -78,14 +78,28 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 				}
 			}
 
+			config, err := resources.GetCurrentConfig(ctx, client, ns)
+			if err != nil {
+				fmt.Println("Failed to get current Odigos configuration, assuming default values for uninstallation...")
+			}
+
+			autoRolloutDisabled := false
+			if config != nil {
+				autoRolloutDisabled = config.Rollout != nil &&
+					config.Rollout.AutomaticRolloutDisabled != nil &&
+					*config.Rollout.AutomaticRolloutDisabled
+			}
+
 			// delete all sources, and wait for the pods to rollout without instrumentation
 			// this is done before the instrumentor is removed, to ensure that the instrumentation is removed
-			err := removeAllSources(ctx, client)
+			err = removeAllSources(ctx, client)
 			if err != nil {
 				fmt.Printf("\033[31mERROR\033[0m Failed to remove all sources: %s\n", err)
 				os.Exit(1)
 			}
-			if !cmd.Flag("no-wait").Changed {
+			if autoRolloutDisabled {
+				fmt.Println("Odigos is configured to NOT rollout workloads automatically; existing pods will remain instrumented until a manual rollout is triggered.")
+			} else if !cmd.Flag("no-wait").Changed {
 				waitForPodsToRolloutWithoutInstrumentation(ctx, client)
 			}
 

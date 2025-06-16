@@ -115,10 +115,12 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 					return nil, fmt.Errorf("error listing pods for replicaset: %v", err)
 				}
 
+				isLatestRevisionText := "false"
 				if activeReplicaSet {
-					for i := range podList.Items {
-						podList.Items[i].Annotations[OdigosRunningLatestWorkloadRevisionAnnotation] = "true"
-					}
+					isLatestRevisionText = "true"
+				}
+				for i := range podList.Items {
+					podList.Items[i].Annotations[OdigosRunningLatestWorkloadRevisionAnnotation] = isLatestRevisionText
 				}
 
 				// Add these pods to our specific pods list
