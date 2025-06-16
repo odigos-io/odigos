@@ -1,6 +1,6 @@
 image:
-  tag: ''
-imagePrefix: ''
+  tag: ""
+imagePrefix: ""
 imagePullSecrets: []
 
 centralBackend:
@@ -11,7 +11,6 @@ centralBackend:
     limits:
       cpu: 500m
       memory: 512Mi
-
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
@@ -20,8 +19,7 @@ centralBackend:
 centralUI:
   uiMode: normal
   uiPaginationLimit: 0
-  centralBackendURL: ''
-
+  centralBackendURL: ""
   resources:
     requests:
       cpu: 100m
@@ -29,7 +27,6 @@ centralUI:
     limits:
       cpu: 500m
       memory: 512Mi
-
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
