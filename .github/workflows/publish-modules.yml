@@ -193,8 +193,8 @@ jobs:
   publish-images:
     needs: verify-dependencies-sync
     permissions:
-      contents: read
-      id-token: write
+      contents: 'read'
+      id-token: 'write'
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
