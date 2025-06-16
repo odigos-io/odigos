@@ -434,6 +434,11 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 		objName = obj.GetName()
 		objNamespace = obj.GetName()
 		sourceNamespace = obj.GetName()
+	case k8sconsts.WorkloadKindCronJob:
+		obj, err = client.Clientset.BatchV1().CronJobs(sourceNamespaceFlag).Get(ctx, argName, metav1.GetOptions{})
+		objName = obj.GetName()
+		objNamespace = obj.GetNamespace()
+		sourceNamespace = sourceNamespaceFlag
 	}
 	if err != nil {
 		return nil, err
@@ -570,6 +575,7 @@ func init() {
 		k8sconsts.WorkloadKindDaemonSet,
 		k8sconsts.WorkloadKindStatefulSet,
 		k8sconsts.WorkloadKindNamespace,
+		k8sconsts.WorkloadKindCronJob,
 	} {
 		enableCmd := enableOrDisableSourceCmd(kind, false)
 		disableCmd := enableOrDisableSourceCmd(kind, true)

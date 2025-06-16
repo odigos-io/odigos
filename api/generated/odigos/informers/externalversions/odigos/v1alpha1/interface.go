@@ -35,8 +35,6 @@ type Interface interface {
 	InstrumentationInstances() InstrumentationInstanceInformer
 	// InstrumentationRules returns a InstrumentationRuleInformer.
 	InstrumentationRules() InstrumentationRuleInformer
-	// InstrumentedApplications returns a InstrumentedApplicationInformer.
-	InstrumentedApplications() InstrumentedApplicationInformer
 	// Processors returns a ProcessorInformer.
 	Processors() ProcessorInformer
 	// Sources returns a SourceInformer.
@@ -82,11 +80,6 @@ func (v *version) InstrumentationInstances() InstrumentationInstanceInformer {
 // InstrumentationRules returns a InstrumentationRuleInformer.
 func (v *version) InstrumentationRules() InstrumentationRuleInformer {
 	return &instrumentationRuleInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// InstrumentedApplications returns a InstrumentedApplicationInformer.
-func (v *version) InstrumentedApplications() InstrumentedApplicationInformer {
-	return &instrumentedApplicationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Processors returns a ProcessorInformer.

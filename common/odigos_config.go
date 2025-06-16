@@ -111,6 +111,18 @@ type LanguageConfig struct {
 	EnvVars map[string]string `json:"env,omitempty"`
 }
 
+type RolloutConfiguration struct {
+
+	// When set to true, Odigos will never trigger a rollout for workloads when instrumenting or uninstrumenting.
+	// It is expected that users will manually trigger a rollout to apply the changes when needed,
+	// but it gives them the option to control the process.
+	// Any new pods that are created after agent is enabled or disabled (via manual rollout or auto scaling)
+	// will be have agent injection regardless of this setting.
+	// This setting does not control manual rollouts executed from the UI or via the API.
+	// Any additional configuration regarding rollouts and rollbacks are ignored when this is set to true.
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
 	ConfigVersion                    int                            `json:"configVersion"`
@@ -135,6 +147,7 @@ type OdigosConfiguration struct {
 	UserInstrumentationEnvs          *UserInstrumentationEnvs       `json:"UserInstrumentationEnvs,omitempty"`
 	NodeSelector                     map[string]string              `json:"nodeSelector,omitempty"`
 	KarpenterEnabled                 *bool                          `json:"karpenterEnabled,omitempty"`
+	Rollout                          *RolloutConfiguration          `json:"rollout,omitempty"`
 	RollbackDisabled                 *bool                          `json:"rollbackDisabled,omitempty"`
 	RollbackGraceTime                string                         `json:"rollbackGraceTime,omitempty"`
 	RollbackStabilityWindow          string                         `json:"rollbackStabilityWindow,omitempty"`

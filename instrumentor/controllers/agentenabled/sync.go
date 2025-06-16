@@ -92,7 +92,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		if apierrors.IsNotFound(err) {
 			// instrumentation config is deleted, trigger a rollout for the associated workload
 			// this should happen once per workload, as the instrumentation config is deleted
-			_, res, err := rollout.Do(ctx, c, nil, pw, nil)
+			_, res, err := rollout.Do(ctx, c, nil, pw, conf)
 			return res, err
 		}
 		return ctrl.Result{}, err

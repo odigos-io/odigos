@@ -110,10 +110,12 @@ func convertPodsToGQL(pods []source.PodAnalyze) []*model.PodAnalyze {
 	gqlPods := make([]*model.PodAnalyze, 0, len(pods))
 	for _, pod := range pods {
 		gqlPods = append(gqlPods, &model.PodAnalyze{
-			PodName:    describe_utils.ConvertEntityPropertyToGQL(&pod.PodName),
-			NodeName:   describe_utils.ConvertEntityPropertyToGQL(&pod.NodeName),
-			Phase:      describe_utils.ConvertEntityPropertyToGQL(&pod.Phase),
-			Containers: convertPodContainersToGQL(pod.Containers),
+			PodName:                       describe_utils.ConvertEntityPropertyToGQL(&pod.PodName),
+			NodeName:                      describe_utils.ConvertEntityPropertyToGQL(&pod.NodeName),
+			Phase:                         describe_utils.ConvertEntityPropertyToGQL(&pod.Phase),
+			AgentInjected:                 describe_utils.ConvertEntityPropertyToGQL(&pod.AgentInjected),
+			RunningLatestWorkloadRevision: describe_utils.ConvertEntityPropertyToGQL(pod.RunningLatestWorkloadRevision),
+			Containers:                    convertPodContainersToGQL(pod.Containers),
 		})
 	}
 	return gqlPods
@@ -125,6 +127,8 @@ func convertPodContainersToGQL(containers []source.PodContainerAnalyze) []*model
 		gqlContainers = append(gqlContainers, &model.PodContainerAnalyze{
 			ContainerName:            describe_utils.ConvertEntityPropertyToGQL(&container.ContainerName),
 			ActualDevices:            describe_utils.ConvertEntityPropertyToGQL(&container.ActualDevices),
+			Started:                  describe_utils.ConvertEntityPropertyToGQL(&container.Started),
+			Ready:                    describe_utils.ConvertEntityPropertyToGQL(&container.Ready),
 			InstrumentationInstances: convertInstrumentationInstancesToGQL(container.InstrumentationInstances),
 		})
 	}

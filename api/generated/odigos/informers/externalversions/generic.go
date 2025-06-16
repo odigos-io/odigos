@@ -64,8 +64,6 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().InstrumentationInstances().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("instrumentationrules"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().InstrumentationRules().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("instrumentedapplications"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().InstrumentedApplications().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("processors"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Odigos().V1alpha1().Processors().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("sources"):

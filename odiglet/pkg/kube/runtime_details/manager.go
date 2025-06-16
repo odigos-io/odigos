@@ -12,11 +12,11 @@ import (
 )
 
 func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClient *criwrapper.CriClient) error {
+	readyPred := &odigospredicate.AllContainersReadyPredicate{}
 	err := builder.
 		ControllerManagedBy(mgr).
 		Named("Odiglet-RuntimeDetails-Pods").
-		For(&corev1.Pod{}).
-		WithEventFilter(&odigospredicate.AllContainersReadyPredicate{}).
+		For(&corev1.Pod{}, builder.WithPredicates(readyPred)).
 		Complete(&PodsReconciler{
 			Client:    mgr.GetClient(),
 			Scheme:    mgr.GetScheme(),
