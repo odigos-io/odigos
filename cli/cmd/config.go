@@ -119,7 +119,8 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 
 	case consts.TelemetryEnabledProperty, consts.OpenshiftEnabledProperty, consts.PspProperty,
 		consts.SkipWebhookIssuerCreationProperty, consts.AllowConcurrentAgentsProperty,
-		consts.KarpenterEnabledProperty, consts.RollbackDisabledProperty:
+		consts.KarpenterEnabledProperty, consts.RollbackDisabledProperty,
+		consts.RolloutConfigurationAutomaticRolloutDisabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value (true/false)", property)
@@ -144,6 +145,11 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			config.KarpenterEnabled = &boolValue
 		case consts.RollbackDisabledProperty:
 			config.RollbackDisabled = &boolValue
+		case consts.RolloutConfigurationAutomaticRolloutDisabledProperty:
+			if config.RolloutConfiguration == nil {
+				config.RolloutConfiguration = &common.RolloutConfiguration{}
+			}
+			config.RolloutConfiguration.AutomaticRolloutDisabled = &boolValue
 		}
 
 	case consts.ImagePrefixProperty, consts.UiModeProperty, consts.UiPaginationLimit:

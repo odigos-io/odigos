@@ -120,7 +120,7 @@ type RolloutConfiguration struct {
 	// will be have agent injection regardless of this setting.
 	// This setting does not control manual rollouts executed from the UI or via the API.
 	// Any additional configuration regarding rollouts and rollbacks are ignored when this is set to true.
-	AutomaticRolloutDisabled *bool `json:"rolloutDisabled,omitempty"`
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
 }
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
