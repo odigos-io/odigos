@@ -17,6 +17,7 @@ spec:
       labels:
         app: redis
     spec:
+      {{- if .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- range .Values.topologySpreadConstraints }}
         - maxSkew: {{ .maxSkew }}
@@ -25,6 +26,7 @@ spec:
           labelSelector:
             matchLabels:
               app: redis
+        {{- end }}
         {{- end }}
       containers:
         - name: redis
