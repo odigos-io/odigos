@@ -7,6 +7,7 @@ enum K8sResourceKind {
   Deployment
   DaemonSet
   StatefulSet
+  CronJob
 }
 
 enum ConditionStatus {
@@ -667,6 +668,8 @@ type InstrumentationInstanceAnalyze {
 type PodContainerAnalyze {
   containerName: EntityProperty!
   actualDevices: EntityProperty!
+  started: EntityProperty
+  ready: EntityProperty
   instrumentationInstances: [InstrumentationInstanceAnalyze!]!
 }
 
@@ -674,6 +677,8 @@ type PodAnalyze {
   podName: EntityProperty!
   nodeName: EntityProperty!
   phase: EntityProperty!
+  agentInjected: EntityProperty!
+  runningLatestWorkloadRevision: EntityProperty
   containers: [PodContainerAnalyze!]!
 }
 

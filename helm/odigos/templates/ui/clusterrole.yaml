@@ -29,6 +29,17 @@ rules:
       - patch
       {{- end }}
   - apiGroups:
+      - batch
+    resources:
+      - cronjobs
+    verbs:
+      - get
+      - list
+      {{- if ne .Values.ui.uiMode "readonly" }}
+      - update
+      - patch
+      {{- end }}
+  - apiGroups:
       - apps
     resources:
       - replicasets

@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"path"
 	"slices"
@@ -17,10 +16,9 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"golang.org/x/sync/errgroup"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/util/retry"
-
 	"sigs.k8s.io/yaml"
 )
 
@@ -88,15 +86,6 @@ func Metav1TimeToString(latestStatusTime metav1.Time) string {
 		return ""
 	}
 	return latestStatusTime.Time.Format(time.RFC3339)
-}
-
-func CheckWorkloadKind(kind WorkloadKind) error {
-	switch kind {
-	case WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
-		return nil
-	default:
-		return errors.New("unsupported workload kind: " + string(kind))
-	}
 }
 
 func ArrayContains(arr []string, str string) bool {
@@ -187,4 +176,19 @@ func WithGoroutine(ctx context.Context, limit int, run func(goFunc func(func() e
 		return err
 	}
 	return nil
+}
+
+// getKubeVersion retrieves and parses the Kubernetes server version.
+func getKubeVersion() (*version.Version, error) {
+	verInfo, err := kube.DefaultClient.Discovery().ServerVersion()
+	if err != nil {
+		return nil, err
+	}
+
+	parsedVer, err := version.ParseGeneric(verInfo.GitVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	return parsedVer, nil
 }

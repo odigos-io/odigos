@@ -108,13 +108,15 @@ const (
 	AgentEnabledReasonCrashLoopBackOff AgentEnabledReason = "CrashLoopBackOff"
 )
 
-// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
+// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart
 type WorkloadRolloutReason string
 
 const (
 	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
+	WorkloadRolloutReasonDisabled               WorkloadRolloutReason = "Disabled"
+	WorkloadRolloutReasonWaitingForRestart      WorkloadRolloutReason = "WaitingForRestart"
 )
 
 const (
@@ -165,11 +167,15 @@ func IsReasonStatusDisabled(reason string) bool {
 		string(AgentEnabledReasonNoAvailableAgent),
 		string(AgentEnabledReasonOtherAgentDetected),
 		string(AgentEnabledReasonCrashLoopBackOff),
-		// K8s workload-related reasons
-		string(K8sWorkloadRolloutReasonFailedCreate),
 		string(AgentEnabledReasonRuntimeDetailsUnavailable):
 
 		return true
+
+	// rollout-related reasons
+	case string(K8sWorkloadRolloutReasonFailedCreate):
+
+		return true
+
 	default:
 		return false
 	}
