@@ -299,13 +299,11 @@ autoRollback:
   stabilityWindowTime: 1h
 
 rolloutConfiguration:
-# Odigos will by default trigger a rollout for workloads once when instrumenting or uninstrumenting, to apply the changes.
-# In clusters where full control over the rollout process is desired, this setting can be used to disable the automatic rollout.
-# 
-# It is expected that users will manually trigger a rollout to apply the changes when adding or removing sources.
-# Any new pods that are created regardless of automatic rollout after agent is enabled or disabled (manual rollout, auto scaling, etc.)
-# will be have agent injection regardless of this setting.
-# This setting does not control manual rollouts executed from the UI or via the API.
-# Any additional configuration regarding rollouts and rollbacks are ignored when this is set to true. 
+# Odigos automatically triggers a one-time rollout for workloads when instrumenting or uninstrumenting, to apply changes.
+# If workload restarts are sensitive, this setting can be used to disable the automatic rollout.
+# When disabled, users are responsible for manually triggering rollouts after adding or removing sources.
+# Any new pods created after enabling or disabling the agent (via manual rollout, autoscaling, etc.)
+# will still have the agent injected, regardless of this setting.
+# When set to true, all additional configurations related to automated rollouts or rollbacks are ignored.
   automaticRolloutDisabled: false
 
