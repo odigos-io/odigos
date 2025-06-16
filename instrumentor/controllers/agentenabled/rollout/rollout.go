@@ -37,7 +37,7 @@ const requeueWaitingForWorkloadRollout = 10 * time.Second
 // Returns a boolean indicating if the status of the instrumentation config has changed, a ctrl.Result and an error.
 func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, conf *common.OdigosConfiguration) (bool, ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	automaticRolloutDisabled := conf.RolloutConfiguration != nil && conf.RolloutConfiguration.AutomaticRolloutDisabled != nil && *conf.RolloutConfiguration.AutomaticRolloutDisabled
+	automaticRolloutDisabled := conf.Rollout != nil && conf.Rollout.AutomaticRolloutDisabled != nil && *conf.Rollout.AutomaticRolloutDisabled
 	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
 	if err != nil {
