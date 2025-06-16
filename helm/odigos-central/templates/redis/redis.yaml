@@ -34,3 +34,5 @@ spec:
           ports:
             - containerPort: {{ .Values.redis.port }}
               name: {{ .Values.redis.portName }}
+{{- end }}
+             
