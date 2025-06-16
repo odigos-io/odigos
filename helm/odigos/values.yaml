@@ -289,6 +289,19 @@ nodeSelector: {}
 karpenter:
   enabled: false
 
+
+# Refer to the official Kubernetes documentation for structure and field details:
+# https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+#
+# Example: Odigos components should be evenly spread across zones.
+# No need to set labelSelector manually — the Odigos Helm chart will apply it automatically.
+# topologySpreadConstraints:
+#   - maxSkew: 1
+#     topologyKey: "topology.kubernetes.io/zone"
+#     whenUnsatisfiable: "ScheduleAnyway"
+topologySpreadConstraints: []
+
+
 # Auto rollback settings
 # The auto‐rollback feature provides a stability window to test instrumented apps.
 # After an application is instrumented, a grace period begins during which we allow the app (and its dependencies) to stabilize and start working.
