@@ -85,7 +85,9 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 
 			autoRolloutDisabled := false
 			if config != nil {
-				autoRolloutDisabled = config.RolloutConfiguration != nil && config.RolloutConfiguration.AutomaticRolloutDisabled != nil && *config.RolloutConfiguration.AutomaticRolloutDisabled
+				autoRolloutDisabled = config.Rollout != nil &&
+					config.Rollout.AutomaticRolloutDisabled != nil &&
+					*config.Rollout.AutomaticRolloutDisabled
 			}
 
 			// delete all sources, and wait for the pods to rollout without instrumentation

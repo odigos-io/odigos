@@ -44,7 +44,7 @@ var configCmd = &cobra.Command{
 	- "instrumentation-auto-rollback-disabled": Disable auto rollback feature for failing instrumentations.
 	- "instrumentation-auto-rollback-grace-time": Grace time before uninstrumenting an application [default: 5m].
 	- "instrumentation-auto-rollback-stability-window": Time windows where the auto rollback can happen [default: 1h].
-	- "rollout-configuration.automatic-rollout-disabled": Disable auto rollout feature for workloads when instrumenting or uninstrumenting.
+	- "automatic-rollout-disabled": Disable auto rollout feature for workloads when instrumenting or uninstrumenting.
 	`,
 }
 
@@ -121,7 +121,7 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 	case consts.TelemetryEnabledProperty, consts.OpenshiftEnabledProperty, consts.PspProperty,
 		consts.SkipWebhookIssuerCreationProperty, consts.AllowConcurrentAgentsProperty,
 		consts.KarpenterEnabledProperty, consts.RollbackDisabledProperty,
-		consts.RolloutConfigurationAutomaticRolloutDisabledProperty:
+		consts.AutomaticRolloutDisabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value (true/false)", property)
@@ -146,11 +146,11 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			config.KarpenterEnabled = &boolValue
 		case consts.RollbackDisabledProperty:
 			config.RollbackDisabled = &boolValue
-		case consts.RolloutConfigurationAutomaticRolloutDisabledProperty:
-			if config.RolloutConfiguration == nil {
-				config.RolloutConfiguration = &common.RolloutConfiguration{}
+		case consts.AutomaticRolloutDisabledProperty:
+			if config.Rollout == nil {
+				config.Rollout = &common.RolloutConfiguration{}
 			}
-			config.RolloutConfiguration.AutomaticRolloutDisabled = &boolValue
+			config.Rollout.AutomaticRolloutDisabled = &boolValue
 		}
 
 	case consts.ImagePrefixProperty, consts.UiModeProperty, consts.UiPaginationLimit:

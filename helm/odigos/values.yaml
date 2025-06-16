@@ -298,7 +298,7 @@ autoRollback:
   graceTime: 5m
   stabilityWindowTime: 1h
 
-rolloutConfiguration:
+rollout:
 # Odigos automatically triggers a one-time rollout for workloads when instrumenting or uninstrumenting, to apply changes.
 # If workload restarts are sensitive, this setting can be used to disable the automatic rollout.
 # When disabled, users are responsible for manually triggering rollouts after adding or removing sources.
