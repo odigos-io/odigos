@@ -1,7 +1,7 @@
 TAG ?= $(shell odigos version --cluster)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
-CENTRAL_BACKEND_URL ?= 
+CENTRAL_BACKEND_URL ?=
 ORG ?= registry.odigos.io
 GOLANGCI_LINT_VERSION ?= v2.1.6
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
@@ -101,7 +101,7 @@ build-scheduler:
 
 .PHONY: build-collector
 build-collector:
-	$(MAKE) build-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) build-image/collector DOCKERFILE=collector/$(DOCKERFILE) SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: build-ui
 build-ui:
@@ -390,7 +390,7 @@ dev-nop-destination:
 
 .PHONY: dev-add-dynamic-destination
 dev-dynamic-destination:
-	kubectl apply -f ./tests/dynamic-exporter.yaml	
+	kubectl apply -f ./tests/dynamic-exporter.yaml
 
 .PHONY: dev-add-backpressue-destination
 dev-backpressue-destination:

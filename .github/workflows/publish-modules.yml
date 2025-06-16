@@ -296,11 +296,6 @@ jobs:
                 matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
                 matrix.service == 'operator' && format('operator/{0}', matrix.dockerfile) ||
                 matrix.dockerfile }}
-          context: >-
-            ${{
-              (matrix.service == 'collector' && 'collector') ||
-              '.'
-            }}
 
       - name: Notify Slack End
         env:

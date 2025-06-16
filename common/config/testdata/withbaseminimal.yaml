@@ -5,8 +5,12 @@ receivers:
       http: {}
 exporters: {}
 processors:
-  batch: {}
+  batch/generic-batch-processor: {}
 extensions: {}
+connectors: {}
 service:
   extensions: []
   pipelines: {}
+  telemetry:
+    metrics: {}
+    resource: {}

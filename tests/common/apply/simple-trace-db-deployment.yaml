@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: simple-trace-db
-          image: registry.odigos.io/simple-trace-db:0.0.6
+          image: registry.odigos.io/simple-trace-db:0.0.7
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 4318
