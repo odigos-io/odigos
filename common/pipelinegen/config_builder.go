@@ -17,10 +17,10 @@ func GetGatewayConfig(
 	processors []config.ProcessorConfigurer,
 	memoryLimiterConfig config.GenericMap,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
-	groupDetails []DataStreams,
+	dataStreamsDetails []DataStreams,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig := GetBasicConfig(memoryLimiterConfig)
-	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, groupDetails)
+	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails)
 }
 
 func CalculateGatewayConfig(
@@ -28,7 +28,7 @@ func CalculateGatewayConfig(
 	dests []config.ExporterConfigurer,
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
-	groupDetails []DataStreams,
+	dataStreamsDetails []DataStreams,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := config.LoadConfigers()
 	if err != nil {
@@ -45,7 +45,7 @@ func CalculateGatewayConfig(
 	}
 
 	// map of destination ID to list of forward connectors
-	// this is used to build the group pipelines
+	// this is used to build the data stream pipelines
 	// e.g. { "destination-1": ["forward/traces/destination-1", "forward/metrics/destination-1", "forward/logs/destination-1"] }
 	destForwardConnectors := make(map[string][]string)
 
@@ -125,13 +125,13 @@ func CalculateGatewayConfig(
 	}
 
 	//  Add pipelines that receive from routing connectors and forward to destinations
-	groupPipelines := buildDataStreamPipelines(groupDetails, destForwardConnectors)
-	for name, pipe := range groupPipelines {
+	dataStreamPipelines := buildDataStreamPipelines(dataStreamsDetails, destForwardConnectors)
+	for name, pipe := range dataStreamPipelines {
 		currentConfig.Service.Pipelines[name] = pipe
 	}
 
 	// Create root pipelines for each signal and connectors
-	insertRootPipelinesToConfig(currentConfig, groupDetails, tracesProcessors, metricsProcessors, logsProcessors, enabledSignals)
+	insertRootPipelinesToConfig(currentConfig, dataStreamsDetails, tracesProcessors, metricsProcessors, logsProcessors, enabledSignals)
 
 	// Optional: Add collector self-observability
 	if applySelfTelemetry != nil {
@@ -149,7 +149,7 @@ func CalculateGatewayConfig(
 	return string(data), nil, status, enabledSignals
 }
 
-func insertRootPipelinesToConfig(currentConfig *config.Config, groupDetails []DataStreams,
+func insertRootPipelinesToConfig(currentConfig *config.Config, dataStreamsDetails []DataStreams,
 	tracesProcessors, metricsProcessors, logsProcessors []string, signals []common.ObservabilitySignal) {
 
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
@@ -157,7 +157,7 @@ func insertRootPipelinesToConfig(currentConfig *config.Config, groupDetails []Da
 			currentConfig,
 			"traces",
 			tracesProcessors,
-			groupDetails,
+			dataStreamsDetails,
 		)
 	}
 
@@ -166,7 +166,7 @@ func insertRootPipelinesToConfig(currentConfig *config.Config, groupDetails []Da
 			currentConfig,
 			"metrics",
 			metricsProcessors,
-			groupDetails,
+			dataStreamsDetails,
 		)
 	}
 
@@ -175,18 +175,18 @@ func insertRootPipelinesToConfig(currentConfig *config.Config, groupDetails []Da
 			currentConfig,
 			"logs",
 			logsProcessors,
-			groupDetails,
+			dataStreamsDetails,
 		)
 	}
 }
 
-func applyRootPipelineForSignal(currentConfig *config.Config, signal string, processors []string, groupDetails []DataStreams) {
+func applyRootPipelineForSignal(currentConfig *config.Config, signal string, processors []string, dataStreamsDetails []DataStreams) {
 	rootPipelineName := GetTelemetryRootPipeline(signal)
 	fullProcessors := append([]string{"memory_limiter", "resource/odigos-version"}, processors...)
 
 	connectorName := fmt.Sprintf("odigosrouterconnector/%s", signal)
 	currentConfig.Connectors[connectorName] = config.GenericMap{
-		"datastreams": groupDetails,
+		"datastreams": dataStreamsDetails,
 	}
 
 	currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
