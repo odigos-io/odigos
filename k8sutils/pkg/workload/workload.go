@@ -8,6 +8,7 @@ import (
 
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,7 +24,8 @@ type Workload interface {
 var _ Workload = &DeploymentWorkload{}
 var _ Workload = &DaemonSetWorkload{}
 var _ Workload = &StatefulSetWorkload{}
-var _ Workload = &CronJobWorkload{}
+var _ Workload = &CronJobWorkloadV1{}
+var _ Workload = &CronJobWorkloadBeta{}
 
 type DeploymentWorkload struct {
 	*v1.Deployment
@@ -49,11 +51,19 @@ func (s *StatefulSetWorkload) AvailableReplicas() int32 {
 	return s.Status.ReadyReplicas
 }
 
-type CronJobWorkload struct {
+type CronJobWorkloadV1 struct {
 	*batchv1.CronJob
 }
 
-func (c *CronJobWorkload) AvailableReplicas() int32 {
+type CronJobWorkloadBeta struct {
+	*batchv1beta1.CronJob
+}
+
+func (c *CronJobWorkloadV1) AvailableReplicas() int32 {
+	return int32(len(c.Status.Active))
+}
+
+func (c *CronJobWorkloadBeta) AvailableReplicas() int32 {
 	return int32(len(c.Status.Active))
 }
 
@@ -66,7 +76,9 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 	case *v1.StatefulSet:
 		return &StatefulSetWorkload{StatefulSet: t}, nil
 	case *batchv1.CronJob:
-		return &CronJobWorkload{CronJob: t}, nil
+		return &CronJobWorkloadV1{CronJob: t}, nil
+	case *batchv1beta1.CronJob:
+		return &CronJobWorkloadBeta{CronJob: t}, nil
 	default:
 		return nil, errors.New("unknown kind")
 	}
