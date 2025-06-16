@@ -44,6 +44,7 @@ spec:
       {{- with .Values.centralBackend.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- range .Values.topologySpreadConstraints }}
         - maxSkew: {{ .maxSkew }}
@@ -51,6 +52,7 @@ spec:
           whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
           labelSelector:
             matchLabels:
-              app.kubernetes.io/name: central-proxy
-
+              app.kubernetes.io/name: central-backend
+      {{- end }}
+      {{- end }}
 {{- end }}
