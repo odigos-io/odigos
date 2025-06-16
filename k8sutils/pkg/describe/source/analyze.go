@@ -459,6 +459,7 @@ func analyzePod(pod *corev1.Pod, resources *OdigosSourceResources) PodAnalyze {
 	agentInjected := properties.EntityProperty{
 		Name:    "Odigos Agent Injected",
 		Value:   hasAgentHash,
+		Status:  properties.GetSuccessOrError(hasAgentHash),
 		Explain: "whether the odigos instrumentation agent was injected into this pod",
 	}
 

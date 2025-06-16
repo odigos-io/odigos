@@ -298,3 +298,12 @@ autoRollback:
   graceTime: 5m
   stabilityWindowTime: 1h
 
+rollout:
+# Odigos automatically triggers a one-time rollout for workloads when instrumenting or uninstrumenting, to apply changes.
+# If workload restarts are sensitive, this setting can be used to disable the automatic rollout.
+# When disabled, users are responsible for manually triggering rollouts after adding or removing sources.
+# Any new pods created after enabling or disabling the agent (via manual rollout, autoscaling, etc.)
+# will still have the agent injected, regardless of this setting.
+# When set to true, all additional configurations related to automated rollouts or rollbacks are ignored.
+  automaticRolloutDisabled: false
+
