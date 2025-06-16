@@ -25,6 +25,7 @@ spec:
           labelSelector:
             matchLabels:
               app: redis
+        {{- end }}
       containers:
         - name: redis
           image: {{ .Values.redis.image | quote }}
@@ -33,4 +34,3 @@ spec:
           ports:
             - containerPort: {{ .Values.redis.port }}
               name: {{ .Values.redis.portName }}
-{{- end }}
