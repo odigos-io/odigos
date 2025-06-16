@@ -7,3 +7,5 @@ const (
 	ProfileDir = "Profile"
 	MetricsDir = "Metrics"
 )
+
+const CliImageName = "odigos-cli"
