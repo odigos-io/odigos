@@ -179,7 +179,8 @@ func insertRootPipelinesToConfig(currentConfig *config.Config, dataStreamsDetail
 	}
 }
 
-func applyRootPipelineForSignal(currentConfig *config.Config, signal common.ObservabilitySignal, processors []string, dataStreamsDetails []DataStreams) {
+func applyRootPipelineForSignal(currentConfig *config.Config, signal common.ObservabilitySignal,
+	processors []string, dataStreamsDetails []DataStreams) {
 	rootPipelineName := GetTelemetryRootPipeline(signal)
 	fullProcessors := append([]string{"memory_limiter", "resource/odigos-version"}, processors...)
 
