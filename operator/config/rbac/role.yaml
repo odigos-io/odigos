@@ -21,6 +21,13 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps/finalizers
+  - pods/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
   - events
   verbs:
   - create
@@ -60,12 +67,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods/finalizers
-  verbs:
-  - update
 - apiGroups:
   - ""
   resources:
