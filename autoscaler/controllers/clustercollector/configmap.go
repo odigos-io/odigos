@@ -119,7 +119,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 
 	// Add the odigostrafficmetrics processor to both root and destination pipelines to track telemetry data flow
 	for pipelineName, pipeline := range c.Service.Pipelines {
-		if !isOdigosTrafficMetricsProcessorRelevant(pipelineName, signalsRootPipelines, destinationPipelineNames) {
+		if !isOdigosTrafficMetricsProcessorRelevant(pipelineName, destinationPipelineNames) {
 			continue
 		}
 		pipeline.Processors = append(pipeline.Processors, "odigostrafficmetrics")
@@ -133,7 +133,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
-	dataStreams, err := GetDataStreamsWithDestinations(ctx, c, dests)
+	dataStreams, err := getDataStreamsWithDestinations(ctx, c, dests)
 	if err != nil {
 		logger.Error(err, "Failed to build group details")
 		return nil, err
@@ -250,7 +250,7 @@ func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.C
 	return updated, nil
 }
 
-// GetDataStreamsWithDestinations generates a slice of data streams.
+// getDataStreamsWithDestinations generates a slice of data streams.
 //
 // Example return structure:
 //
@@ -277,7 +277,7 @@ func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.C
 //	        },
 //	    },
 //	}
-func GetDataStreamsWithDestinations(
+func getDataStreamsWithDestinations(
 	ctx context.Context,
 	kubeClient client.Client,
 	dests *odigosv1.DestinationList,
@@ -389,7 +389,7 @@ func destinationExists(list []pipelinegen.Destination, item string) bool {
 	return false
 }
 
-func isOdigosTrafficMetricsProcessorRelevant(name string, rootPipelines []string, destinationPipelines []string) bool {
+func isOdigosTrafficMetricsProcessorRelevant(name string, destinationPipelines []string) bool {
 	// we should not add the odigostrafficmetrics processor to the metrics/otelcol pipeline
 	if name == "metrics/otelcol" {
 		return false

@@ -112,16 +112,16 @@ func CalculateGatewayConfig(
 		}
 	}
 	// track which signals are enabled
-	signals := []common.ObservabilitySignal{}
+	enabledSignals := []common.ObservabilitySignal{}
 
 	if tracesEnabled {
-		signals = append(signals, common.TracesObservabilitySignal)
+		enabledSignals = append(enabledSignals, common.TracesObservabilitySignal)
 	}
 	if metricsEnabled {
-		signals = append(signals, common.MetricsObservabilitySignal)
+		enabledSignals = append(enabledSignals, common.MetricsObservabilitySignal)
 	}
 	if logsEnabled {
-		signals = append(signals, common.LogsObservabilitySignal)
+		enabledSignals = append(enabledSignals, common.LogsObservabilitySignal)
 	}
 
 	//  Add pipelines that receive from routing connectors and forward to destinations
@@ -131,7 +131,7 @@ func CalculateGatewayConfig(
 	}
 
 	// Create root pipelines for each signal and connectors
-	prepareRootPipelines(currentConfig, groupDetails, tracesProcessors, metricsProcessors, logsProcessors, signals)
+	insertRootPipelinesToConfig(currentConfig, groupDetails, tracesProcessors, metricsProcessors, logsProcessors, enabledSignals)
 
 	// Optional: Add collector self-observability
 	if applySelfTelemetry != nil {
@@ -146,54 +146,53 @@ func CalculateGatewayConfig(
 		return "", err, status, nil
 	}
 
-	return string(data), nil, status, signals
+	return string(data), nil, status, enabledSignals
 }
 
-func prepareRootPipelines(currentConfig *config.Config, groupDetails []DataStreams, tracesProcessors,
-	metricsProcessors, logsProcessors []string, signals []common.ObservabilitySignal) {
-	// for each signal, create a root pipeline and a connector
-	if slices.Contains(signals, common.TracesObservabilitySignal) {
-		tracesRootPipelineName := GetTelemetryRootPipeline("traces")
-		processors := append([]string{"memory_limiter", "resource/odigos-version"}, tracesProcessors...)
+func insertRootPipelinesToConfig(currentConfig *config.Config, groupDetails []DataStreams,
+	tracesProcessors, metricsProcessors, logsProcessors []string, signals []common.ObservabilitySignal) {
 
-		currentConfig.Service.Pipelines[tracesRootPipelineName] = config.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: processors,
-			Exporters:  []string{"odigosrouterconnector/traces"},
-		}
-		currentConfig.Connectors["odigosrouterconnector/traces"] = config.GenericMap{
-			"datastreams": groupDetails,
-		}
+	if slices.Contains(signals, common.TracesObservabilitySignal) {
+		applyRootPipelineForSignal(
+			currentConfig,
+			"traces",
+			tracesProcessors,
+			groupDetails,
+		)
 	}
 
 	if slices.Contains(signals, common.MetricsObservabilitySignal) {
-		metricsRootPipelineName := GetTelemetryRootPipeline("metrics")
-		processors := append([]string{"memory_limiter", "resource/odigos-version"}, metricsProcessors...)
-
-		currentConfig.Connectors["odigosrouterconnector/metrics"] = config.GenericMap{
-			"datastreams": groupDetails,
-		}
-
-		currentConfig.Service.Pipelines[metricsRootPipelineName] = config.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: processors,
-			Exporters:  []string{"odigosrouterconnector/metrics"},
-		}
+		applyRootPipelineForSignal(
+			currentConfig,
+			"metrics",
+			metricsProcessors,
+			groupDetails,
+		)
 	}
 
 	if slices.Contains(signals, common.LogsObservabilitySignal) {
-		logsRootPipelineName := GetTelemetryRootPipeline("logs")
-		processors := append([]string{"memory_limiter", "resource/odigos-version"}, logsProcessors...)
+		applyRootPipelineForSignal(
+			currentConfig,
+			"logs",
+			logsProcessors,
+			groupDetails,
+		)
+	}
+}
 
-		currentConfig.Connectors["odigosrouterconnector/logs"] = config.GenericMap{
-			"datastreams": groupDetails,
-		}
+func applyRootPipelineForSignal(currentConfig *config.Config, signal string, processors []string, groupDetails []DataStreams) {
+	rootPipelineName := GetTelemetryRootPipeline(signal)
+	fullProcessors := append([]string{"memory_limiter", "resource/odigos-version"}, processors...)
 
-		currentConfig.Service.Pipelines[logsRootPipelineName] = config.Pipeline{
-			Receivers:  []string{"otlp"},
-			Processors: processors,
-			Exporters:  []string{"odigosrouterconnector/logs"},
-		}
+	connectorName := fmt.Sprintf("odigosrouterconnector/%s", signal)
+	currentConfig.Connectors[connectorName] = config.GenericMap{
+		"datastreams": groupDetails,
+	}
+
+	currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
+		Receivers:  []string{"otlp"},
+		Processors: fullProcessors,
+		Exporters:  []string{connectorName},
 	}
 }
 
