@@ -184,6 +184,15 @@ rules:
   - patch
   - update
 - apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
