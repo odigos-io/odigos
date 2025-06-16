@@ -1,8 +1,6 @@
 name: verify api CRDs
 on:
   pull_request:
-    paths-ignore:
-      - "docs/**"
 
 jobs:
   verify-api-crds:
@@ -45,3 +43,4 @@ jobs:
             echo "Helm CRDs are not up to date. Please run 'make sync-helm-crd' and commit the changes."
             exit 1
           fi
+

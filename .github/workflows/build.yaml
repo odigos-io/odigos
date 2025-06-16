@@ -7,8 +7,6 @@ on:
       - main
       - stable
       - greatwall
-    paths-ignore:
-      - 'docs/**'
 
 jobs:
   build-autoscaler:
