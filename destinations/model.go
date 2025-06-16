@@ -1,7 +1,5 @@
 package destinations
 
-import "github.com/odigos-io/odigos/common"
-
 type Destination struct {
 	ApiVersion string   `yaml:"apiVersion"`
 	Kind       string   `yaml:"kind"`
@@ -10,9 +8,9 @@ type Destination struct {
 }
 
 type Metadata struct {
-	Type        common.DestinationType `yaml:"type"`
-	DisplayName string                 `yaml:"displayName"`
-	Category    string                 `yaml:"category"`
+	Type        DestinationType `yaml:"type"`
+	DisplayName string          `yaml:"displayName"`
+	Category    string          `yaml:"category"`
 }
 
 type Spec struct {

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	k8s "k8s.io/api/core/v1"
@@ -13,7 +13,7 @@ import (
 )
 
 type DestinationDetails struct {
-	Type   common.DestinationType `json:"type"`
+	Type   destinations.DestinationType `json:"type"`
 	Fields map[string]string      `json:"fields"`
 }
 
@@ -55,11 +55,11 @@ func GetAllPotentialDestinationDetails(ctx context.Context, namespaces []k8s.Nam
 }
 
 func getDestinationFinder(serviceName string) IDestinationFinder {
-	if strings.Contains(serviceName, string(common.JaegerDestinationType)) {
+	if strings.Contains(serviceName, string(destinations.JaegerDestinationType)) {
 		return &JaegerDestinationFinder{}
 	}
 
-	if strings.Contains(serviceName, string(common.ElasticsearchDestinationType)) {
+	if strings.Contains(serviceName, string(destinations.ElasticsearchDestinationType)) {
 		return &ElasticSearchDestinationFinder{}
 	}
 

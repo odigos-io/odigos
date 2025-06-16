@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/destinations"
+	"github.com/odigos-io/odigos/destinations/config"
 	k8s "k8s.io/api/core/v1"
 )
 
@@ -25,7 +25,7 @@ func (j *JaegerDestinationFinder) isPotentialService(service k8s.Service) bool {
 }
 
 func isJaegerService(portNumber int32, name string) bool {
-	return portNumber == JaegerGrpcOtlpPort && strings.Contains(name, string(common.JaegerDestinationType))
+	return portNumber == JaegerGrpcOtlpPort && strings.Contains(name, string(destinations.JaegerDestinationType))
 }
 
 func (j *JaegerDestinationFinder) fetchDestinationDetails(service k8s.Service) DestinationDetails {
@@ -36,7 +36,7 @@ func (j *JaegerDestinationFinder) fetchDestinationDetails(service k8s.Service) D
 	fields[jaegerServiceURL] = urlString
 
 	return DestinationDetails{
-		Type:   common.JaegerDestinationType,
+		Type:   destinations.JaegerDestinationType,
 		Fields: fields,
 	}
 }
