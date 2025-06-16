@@ -255,7 +255,7 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 
 func filterSmallBatchesProcessor(tracesProcessors []string) ([]string, bool) {
 	smallBatchesEnabled := false
-	var filtered []string
+	filtered := make([]string, 0, len(tracesProcessors))
 
 	for _, processor := range tracesProcessors {
 		if processor == consts.SmallBatchesProcessor {

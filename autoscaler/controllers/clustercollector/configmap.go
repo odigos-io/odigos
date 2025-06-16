@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
@@ -134,7 +133,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
-	dataStreams, err := GetDataStreamsWithDestinations(ctx, c, dests, logger)
+	dataStreams, err := GetDataStreamsWithDestinations(ctx, c, dests)
 	if err != nil {
 		logger.Error(err, "Failed to build group details")
 		return nil, err
@@ -282,7 +281,6 @@ func GetDataStreamsWithDestinations(
 	ctx context.Context,
 	kubeClient client.Client,
 	dests *odigosv1.DestinationList,
-	logger logr.Logger,
 ) ([]pipelinegen.DataStreams, error) {
 
 	dataStreamsMap := make(map[string]*pipelinegen.DataStreams)
@@ -311,7 +309,7 @@ func GetDataStreamsWithDestinations(
 				// SourcesFilters and NamespacesFilters are attached to the DataStream itself.
 				// They are independent of the Destinations that point to the DataStream.
 				// Therefore, we only load them once per unique data stream.
-				sourcesFilters, err := getSourcesForDataStream(ctx, kubeClient, dataStream, logger)
+				sourcesFilters, err := getSourcesForDataStream(ctx, kubeClient, dataStream)
 				if err != nil {
 					return nil, err
 				}
@@ -343,8 +341,8 @@ func getSourcesForDataStream(
 	ctx context.Context,
 	kubeClient client.Client,
 	dataStream string,
-	logger logr.Logger,
 ) ([]pipelinegen.SourceFilter, error) {
+	logger := ctrl.LoggerFrom(ctx)
 
 	instrumentationConfigsList := &odigosv1.InstrumentationConfigList{}
 
