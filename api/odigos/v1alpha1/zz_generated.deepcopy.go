@@ -594,6 +594,13 @@ func (in *InstrumentationConfigSpec) DeepCopyInto(out *InstrumentationConfigSpec
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.ContainersOverrides != nil {
+		in, out := &in.ContainersOverrides, &out.ContainersOverrides
+		*out = make([]ContainerOverride, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.SdkConfigs != nil {
 		in, out := &in.SdkConfigs, &out.SdkConfigs
 		*out = make([]SdkConfig, len(*in))

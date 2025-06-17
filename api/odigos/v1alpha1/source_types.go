@@ -71,10 +71,11 @@ type SourceSpec struct {
 	// +optional
 	OtelServiceName string `json:"otelServiceName,omitempty"`
 
-	// Specify specific override values for containers.
-	// For example, allow to set the runtime info in case the automatic detection fails.
-	// Containers are listed by their names.
-	// Any container not in this list will retain it's default behavior.
+	// Specify specific override values for containers in a workload source.
+	// Not valid for namespace sources.
+	// Can be used to set the runtime info in case the automatic detection fails or produce wrong results.
+	// Containers are identified by their names.
+	// All containers not listed will retain their default behavior.
 	// +kubebuilder:validation:Optional
 	// +optional
 	ContainerOverrides []ContainerOverride `json:"containerOverrides,omitempty"`
