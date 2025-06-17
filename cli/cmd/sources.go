@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/version"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -434,6 +435,16 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 		objName = obj.GetName()
 		objNamespace = obj.GetName()
 		sourceNamespace = obj.GetName()
+	case k8sconsts.WorkloadKindCronJob:
+		ver := cmdcontext.K8SVersionFromContext(ctx)
+		if ver.LessThan(version.MustParseSemantic("1.21.0")) {
+			obj, err = client.Clientset.BatchV1beta1().CronJobs(sourceNamespaceFlag).Get(ctx, argName, metav1.GetOptions{})
+		} else {
+			obj, err = client.Clientset.BatchV1().CronJobs(sourceNamespaceFlag).Get(ctx, argName, metav1.GetOptions{})
+		}
+		objName = obj.GetName()
+		objNamespace = obj.GetNamespace()
+		sourceNamespace = sourceNamespaceFlag
 	}
 	if err != nil {
 		return nil, err
@@ -570,6 +581,7 @@ func init() {
 		k8sconsts.WorkloadKindDaemonSet,
 		k8sconsts.WorkloadKindStatefulSet,
 		k8sconsts.WorkloadKindNamespace,
+		k8sconsts.WorkloadKindCronJob,
 	} {
 		enableCmd := enableOrDisableSourceCmd(kind, false)
 		disableCmd := enableOrDisableSourceCmd(kind, true)

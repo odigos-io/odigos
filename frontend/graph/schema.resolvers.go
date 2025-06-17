@@ -137,7 +137,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 			}
 
 			// Get workload source CRD
-			wkSource, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, services.WorkloadKind(icCopy.OwnerReferences[0].Kind))
+			wkSource, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, model.K8sResourceKind(icCopy.OwnerReferences[0].Kind))
 			if err != nil && !apierrors.IsNotFound(err) {
 				return err
 			}
@@ -197,7 +197,7 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 	}
 
 	// Get Workload Source (to extract stream names)
-	wkSource, err := services.GetSourceCRD(ctx, ns, name, services.WorkloadKind(kind))
+	wkSource, err := services.GetSourceCRD(ctx, ns, name, kind)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get Worklaod Source: %w", err)
 	}
@@ -483,7 +483,7 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 	sourceObjects := make(map[string]*v1alpha1.Source)
 
 	for _, source := range sourceList.Items {
-		if services.WorkloadKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace {
+		if model.K8sResourceKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace {
 			namespaceSource = &source
 		} else {
 			key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
@@ -571,7 +571,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 
 	nsName := sourceID.Namespace
 	workloadName := sourceID.Name
-	workloadKind := services.WorkloadKind(sourceID.Kind)
+	workloadKind := sourceID.Kind
 	otelServiceName := patchSourceRequest.OtelServiceName
 	streamName := patchSourceRequest.CurrentStreamName
 
@@ -1087,6 +1087,30 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 		return false, fmt.Errorf("failed to delete sources or remove stream name: %v", err)
 	}
 
+	return true, nil
+}
+
+// RestartWorkloads is the resolver for the restartWorkloads field.
+func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error) {
+	if services.IsReadonlyMode(ctx) {
+		return false, services.ErrorIsReadonly
+	}
+
+	err := services.WithGoroutine(ctx, len(sourceIds), func(goFunc func(func() error)) {
+		for _, sourceID := range sourceIds {
+			goFunc(func() error {
+				err := services.RolloutRestartWorkload(ctx, sourceID.Namespace, sourceID.Name, sourceID.Kind)
+				if err != nil {
+					return fmt.Errorf("failed to restart workload %s/%s/%s: %v", sourceID.Namespace, sourceID.Name, sourceID.Kind, err)
+				}
+				return nil
+			})
+		}
+	})
+
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 

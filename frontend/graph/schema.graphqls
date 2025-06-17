@@ -7,6 +7,7 @@ enum K8sResourceKind {
   Deployment
   DaemonSet
   StatefulSet
+  CronJob
 }
 
 enum ConditionStatus {
@@ -670,6 +671,8 @@ type InstrumentationInstanceAnalyze {
 type PodContainerAnalyze {
   containerName: EntityProperty!
   actualDevices: EntityProperty!
+  started: EntityProperty
+  ready: EntityProperty
   instrumentationInstances: [InstrumentationInstanceAnalyze!]!
 }
 
@@ -677,6 +680,8 @@ type PodAnalyze {
   podName: EntityProperty!
   nodeName: EntityProperty!
   phase: EntityProperty!
+  agentInjected: EntityProperty!
+  runningLatestWorkloadRevision: EntityProperty
   containers: [PodContainerAnalyze!]!
 }
 
@@ -776,4 +781,5 @@ type Mutation {
   deleteInstrumentationRule(ruleId: ID!): Boolean!
   updateDataStream(id: ID!, dataStream: DataStreamInput!): DataStream!
   deleteDataStream(id: ID!): Boolean!
+  restartWorkloads(sourceIds: [K8sSourceId!]!): Boolean!
 }
