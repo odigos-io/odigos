@@ -55,6 +55,11 @@ spec:
                   or something else that requires rollout, the hash change will indicate that.
                   if the hash is empty, it means that no agent should be enabled in any pod container.
                 type: string
+              containerOverridesHash:
+                description: |-
+                  An hash of the containers overrides, used to determine if the overrides have changed for event filtering.
+                  this is updated only when the overrides are changed, and not when some other change in the source occurs.
+                type: string
               containers:
                 description: configuration for each instrumented container in the
                   workload

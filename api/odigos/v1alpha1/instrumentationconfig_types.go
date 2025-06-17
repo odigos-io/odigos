@@ -287,6 +287,9 @@ type InstrumentationConfigSpec struct {
 	// and override data in case it is configured on the source.
 	// this peoperty can be used to know all container names in the workload, even if other controllers did not yet run.
 	ContainersOverrides []ContainerOverride `json:"containersOverrides,omitempty"`
+	// An hash of the containers overrides, used to determine if the overrides have changed for event filtering.
+	// this is updated only when the overrides are changed, and not when some other change in the source occurs.
+	ContainerOverridesHash string `json:"containerOverridesHash,omitempty"`
 
 	// this hash is used to determine the deployment of the agents.
 	// e.g. when the distro for container changes, or it's compatibility version,
