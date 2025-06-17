@@ -35,6 +35,8 @@ var (
 	updateRemoteFlag bool
 	proNamespaceFlag string
 	useDefault       bool
+	downloadFile     string
+	fromFile         string
 )
 
 var proCmd = &cobra.Command{
@@ -134,6 +136,12 @@ odigos pro update-offsets
 
 # Revert to using the default offsets data shipped with Odigos
 odigos pro update-offsets --default
+
+# Download the offsets file to a specific location without updating the cluster
+odigos pro update-offsets --download-file /path/to/save/offsets.json
+
+# Use a local offsets file instead of downloading it
+odigos pro update-offsets --from-file /path/to/local/offsets.json
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
@@ -158,6 +166,17 @@ odigos pro update-offsets --default
 		if err != nil {
 			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m %+s", err))
 			os.Exit(1)
+		}
+
+		// If download file is specified, just save the file and exit
+		if downloadFile != "" {
+			err = os.WriteFile(downloadFile, data, 0644)
+			if err != nil {
+				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to write offsets file: %s", err))
+				os.Exit(1)
+			}
+			fmt.Printf("Successfully downloaded offsets to %s\n", downloadFile)
+			return
 		}
 
 		cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
@@ -195,6 +214,15 @@ odigos pro update-offsets --default
 func getLatestOffsets(revert bool) ([]byte, error) {
 	if revert {
 		return []byte{}, nil
+	}
+
+	// If fromFile is specified, read from local file
+	if fromFile != "" {
+		data, err := os.ReadFile(fromFile)
+		if err != nil {
+			return nil, fmt.Errorf("cannot read offsets file: %s", err)
+		}
+		return data, nil
 	}
 
 	resp, err := http.Get(consts.GoOffsetsPublicURL)
@@ -437,6 +465,8 @@ func init() {
 
 	proCmd.AddCommand(offsetsCmd)
 	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
+	offsetsCmd.Flags().StringVar(&downloadFile, "download-file", "", "download the offsets file to the specified location without updating the cluster")
+	offsetsCmd.Flags().StringVar(&fromFile, "from-file", "", "use the offsets file from the specified location instead of downloading it")
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
