@@ -205,7 +205,7 @@ metadata:
   namespace: default
 type: Opaque
 stringData:
-  master.key: 'b28f0011734d7ca9d6092292bd2b9199'
+  master.key: 'df0300c20246e24d331787f6540a72fa'
 ---
 apiVersion: v1
 kind: Service
