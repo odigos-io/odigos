@@ -24,10 +24,9 @@ import (
 // SourceSpecApplyConfiguration represents a declarative configuration of the SourceSpec type for use
 // with apply.
 type SourceSpecApplyConfiguration struct {
-	Workload               *k8sconsts.PodWorkload                `json:"workload,omitempty"`
-	DisableInstrumentation *bool                                 `json:"disableInstrumentation,omitempty"`
-	OtelServiceName        *string                               `json:"otelServiceName,omitempty"`
-	ContainerOverrides     []ContainerOverrideApplyConfiguration `json:"containerOverrides,omitempty"`
+	Workload               *k8sconsts.PodWorkload `json:"workload,omitempty"`
+	DisableInstrumentation *bool                  `json:"disableInstrumentation,omitempty"`
+	OtelServiceName        *string                `json:"otelServiceName,omitempty"`
 }
 
 // SourceSpecApplyConfiguration constructs a declarative configuration of the SourceSpec type for use with
@@ -57,18 +56,5 @@ func (b *SourceSpecApplyConfiguration) WithDisableInstrumentation(value bool) *S
 // If called multiple times, the OtelServiceName field is set to the value of the last call.
 func (b *SourceSpecApplyConfiguration) WithOtelServiceName(value string) *SourceSpecApplyConfiguration {
 	b.OtelServiceName = &value
-	return b
-}
-
-// WithContainerOverrides adds the given value to the ContainerOverrides field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the ContainerOverrides field.
-func (b *SourceSpecApplyConfiguration) WithContainerOverrides(values ...*ContainerOverrideApplyConfiguration) *SourceSpecApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithContainerOverrides")
-		}
-		b.ContainerOverrides = append(b.ContainerOverrides, *values[i])
-	}
 	return b
 }

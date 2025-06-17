@@ -186,6 +186,37 @@ status:
       started: true
   phase: Running
 ---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: geolocation
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: odigos.io/odiglet-oss-installed
+                operator: In
+                values:
+                  - 'true'
+  containers:
+    - name: geolocation
+      resources:
+        limits:
+          instrumentation.odigos.io/generic: '1'
+        requests:
+          instrumentation.odigos.io/generic: '1'
+status:
+  containerStatuses:
+    - name: geolocation
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
 #### Instrumentation Configs ####
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -278,6 +309,21 @@ status:
     - language: php
   (runtimeDetailsByContainer[?containerName=='nginx']):
     - language: nginx
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-geolocation
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: geolocation
+status:
+  (runtimeDetailsByContainer[?containerName=='currency']):
+    - language: ruby
 ---
 ### Instrumentation Instances ###
 apiVersion: odigos.io/v1alpha1

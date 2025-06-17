@@ -24,12 +24,13 @@ import (
 // ContainerAgentConfigApplyConfiguration represents a declarative configuration of the ContainerAgentConfig type for use
 // with apply.
 type ContainerAgentConfigApplyConfiguration struct {
-	ContainerName       *string                            `json:"containerName,omitempty"`
-	AgentEnabled        *bool                              `json:"agentEnabled,omitempty"`
-	AgentEnabledReason  *odigosv1alpha1.AgentEnabledReason `json:"agentEnabledReason,omitempty"`
-	AgentEnabledMessage *string                            `json:"agentEnabledMessage,omitempty"`
-	OtelDistroName      *string                            `json:"otelDistroName,omitempty"`
-	DistroParams        map[string]string                  `json:"distroParams,omitempty"`
+	ContainerName           *string                            `json:"containerName,omitempty"`
+	AgentEnabled            *bool                              `json:"agentEnabled,omitempty"`
+	AgentEnabledShouldRetry *bool                              `json:"agentEnabledShouldRetry,omitempty"`
+	AgentEnabledReason      *odigosv1alpha1.AgentEnabledReason `json:"agentEnabledReason,omitempty"`
+	AgentEnabledMessage     *string                            `json:"agentEnabledMessage,omitempty"`
+	OtelDistroName          *string                            `json:"otelDistroName,omitempty"`
+	DistroParams            map[string]string                  `json:"distroParams,omitempty"`
 }
 
 // ContainerAgentConfigApplyConfiguration constructs a declarative configuration of the ContainerAgentConfig type for use with
@@ -51,6 +52,14 @@ func (b *ContainerAgentConfigApplyConfiguration) WithContainerName(value string)
 // If called multiple times, the AgentEnabled field is set to the value of the last call.
 func (b *ContainerAgentConfigApplyConfiguration) WithAgentEnabled(value bool) *ContainerAgentConfigApplyConfiguration {
 	b.AgentEnabled = &value
+	return b
+}
+
+// WithAgentEnabledShouldRetry sets the AgentEnabledShouldRetry field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AgentEnabledShouldRetry field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithAgentEnabledShouldRetry(value bool) *ContainerAgentConfigApplyConfiguration {
+	b.AgentEnabledShouldRetry = &value
 	return b
 }
 

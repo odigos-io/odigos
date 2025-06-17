@@ -178,9 +178,12 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	// at this point we know we have containers, since the runtime is completed.
 	aggregatedCondition := containerConfigToStatusCondition(ic.Spec.Containers[0])
 	instrumentedContainerNames := []string{}
+	retryContainerNames := []string{}
 	for _, containerConfig := range ic.Spec.Containers {
 		if containerConfig.AgentEnabled {
 			instrumentedContainerNames = append(instrumentedContainerNames, containerConfig.ContainerName)
+		} else if containerConfig.AgentEnabledShouldRetry {
+			retryContainerNames = append(retryContainerNames, containerConfig.ContainerName)
 		}
 		if odigosv1.AgentInjectionReasonPriority(containerConfig.AgentEnabledReason) > odigosv1.AgentInjectionReasonPriority(aggregatedCondition.Reason) {
 			// set to the most specific (highest priority) reason from multiple containers.
@@ -205,7 +208,15 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// if none of the containers are instrumented, we can set the status to false
 		// to signal to the webhook that those pods should not be processed.
 		ic.Spec.AgentInjectionEnabled = false
-		ic.Spec.AgentsMetaHash = ""
+		if len(retryContainerNames) > 0 {
+			agentsDeploymentHash, err := rollout.HashForContainersConfig(containersConfig)
+			if err != nil {
+				return nil, err
+			}
+			ic.Spec.AgentsMetaHash = string(agentsDeploymentHash)
+		} else {
+			ic.Spec.AgentsMetaHash = ""
+		}
 		return aggregatedCondition, nil
 	}
 }
@@ -318,10 +329,11 @@ func containerInstrumentationConfig(containerName string,
 			// This is a placeholder for the runtime version, disable the agent
 			if strings.Contains(staticVariable.EnvValue, distroTypes.RuntimeVersionPlaceholderMajorMinor) {
 				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-					AgentEnabledMessage: "runtime version is not available, but the distribution requires it to be set",
+					ContainerName:           containerName,
+					AgentEnabled:            false,
+					AgentEnabledShouldRetry: true,
+					AgentEnabledReason:      odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
+					AgentEnabledMessage:     "runtime version is not available, but the distribution requires it to be set",
 				}
 			}
 		}
@@ -385,10 +397,11 @@ func containerInstrumentationConfig(containerName string,
 	}
 
 	return odigosv1.ContainerAgentConfig{
-		ContainerName:  containerName,
-		AgentEnabled:   true,
-		OtelDistroName: distroName,
-		DistroParams:   distroParameters,
+		ContainerName:           containerName,
+		AgentEnabled:            true,
+		AgentEnabledShouldRetry: false,
+		OtelDistroName:          distroName,
+		DistroParams:            distroParameters,
 	}
 
 }

@@ -67,12 +67,13 @@ spec:
         - script:
             timeout: 2m
             content: |
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
               kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=120s
               kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
               kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
               kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 
@@ -134,6 +135,7 @@ spec:
     - name: Generate Traffic
       try:
         - apply:
+            timeout: 1m
             file: ../../common/apply/generate-traffic-job.yaml
         - script:
             timeout: 1m
