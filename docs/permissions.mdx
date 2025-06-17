@@ -197,12 +197,12 @@ This section lists the RBAC policies used by the Odigos Operator. Many of these 
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
 | \* | configmaps<br />endpoints<br />secrets | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
+| \* | configmaps/finalizers<br />pods/finalizers | \* | update |
 | \* | events | \* | create<br />patch |
 | \* | namespaces | \* | get<br />list<br />patch<br />watch |
 | \* | nodes | \* | get<br />list<br />patch<br />update<br />watch |
 | \* | nodes/proxy<br />nodes/stats | \* | get<br />list |
 | \* | pods | \* | get<br />list<br />watch |
-| \* | pods/finalizers | \* | update |
 | \* | pods/status | \* | get |
 | \* | serviceaccounts | \* | create<br />delete<br />get<br />list<br />patch<br />watch |
 | \* | services | \* | create<br />delete<br />deletecollection<br />get<br />list<br />patch<br />update<br />watch |
@@ -214,6 +214,7 @@ This section lists the RBAC policies used by the Odigos Operator. Many of these 
 | apps | daemonsets/finalizers<br />deployments/finalizers<br />replicasets/finalizers<br />statefulsets/finalizers | \* | update |
 | apps | daemonsets/status<br />deployments/status<br />statefulsets/status | \* | get |
 | autoscaling | horizontalpodautoscalers | \* | create<br />delete<br />patch<br />update |
+| batch | cronjobs | \* | get<br />list<br />patch<br />update<br />watch |
 | coordination.k8s.io | leases | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | odigos.io | \* | \* | \* |
 | odigos.io | collectorsgroups/finalizers<br />sources/finalizers | \* | update |
