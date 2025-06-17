@@ -18,6 +18,7 @@ import (
 type Workload interface {
 	client.Object
 	AvailableReplicas() int32
+	PodTemplateSpec() *corev1.PodTemplateSpec
 }
 
 // compile time check for interface implementation
@@ -35,6 +36,10 @@ func (d *DeploymentWorkload) AvailableReplicas() int32 {
 	return d.Status.AvailableReplicas
 }
 
+func (d *DeploymentWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
+	return &d.Spec.Template
+}
+
 type DaemonSetWorkload struct {
 	*v1.DaemonSet
 }
@@ -43,12 +48,20 @@ func (d *DaemonSetWorkload) AvailableReplicas() int32 {
 	return d.Status.NumberReady
 }
 
+func (d *DaemonSetWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
+	return &d.Spec.Template
+}
+
 type StatefulSetWorkload struct {
 	*v1.StatefulSet
 }
 
 func (s *StatefulSetWorkload) AvailableReplicas() int32 {
 	return s.Status.ReadyReplicas
+}
+
+func (s *StatefulSetWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
+	return &s.Spec.Template
 }
 
 type CronJobWorkloadV1 struct {
@@ -63,8 +76,16 @@ func (c *CronJobWorkloadV1) AvailableReplicas() int32 {
 	return int32(len(c.Status.Active))
 }
 
+func (c *CronJobWorkloadV1) PodTemplateSpec() *corev1.PodTemplateSpec {
+	return &c.Spec.JobTemplate.Spec.Template
+}
+
 func (c *CronJobWorkloadBeta) AvailableReplicas() int32 {
 	return int32(len(c.Status.Active))
+}
+
+func (c *CronJobWorkloadBeta) PodTemplateSpec() *corev1.PodTemplateSpec {
+	return &c.Spec.JobTemplate.Spec.Template
 }
 
 func ObjectToWorkload(obj client.Object) (Workload, error) {
