@@ -20,11 +20,13 @@ package v1alpha1
 // InstrumentationConfigSpecApplyConfiguration represents a declarative configuration of the InstrumentationConfigSpec type for use
 // with apply.
 type InstrumentationConfigSpecApplyConfiguration struct {
-	ServiceName           *string                                  `json:"serviceName,omitempty"`
-	AgentInjectionEnabled *bool                                    `json:"agentInjectionEnabled,omitempty"`
-	Containers            []ContainerAgentConfigApplyConfiguration `json:"containers,omitempty"`
-	AgentsMetaHash        *string                                  `json:"agentsMetaHash,omitempty"`
-	SdkConfigs            []SdkConfigApplyConfiguration            `json:"sdkConfigs,omitempty"`
+	ServiceName            *string                                  `json:"serviceName,omitempty"`
+	AgentInjectionEnabled  *bool                                    `json:"agentInjectionEnabled,omitempty"`
+	Containers             []ContainerAgentConfigApplyConfiguration `json:"containers,omitempty"`
+	ContainersOverrides    []ContainerOverrideApplyConfiguration    `json:"containersOverrides,omitempty"`
+	ContainerOverridesHash *string                                  `json:"containerOverridesHash,omitempty"`
+	AgentsMetaHash         *string                                  `json:"agentsMetaHash,omitempty"`
+	SdkConfigs             []SdkConfigApplyConfiguration            `json:"sdkConfigs,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -59,6 +61,27 @@ func (b *InstrumentationConfigSpecApplyConfiguration) WithContainers(values ...*
 		}
 		b.Containers = append(b.Containers, *values[i])
 	}
+	return b
+}
+
+// WithContainersOverrides adds the given value to the ContainersOverrides field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the ContainersOverrides field.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithContainersOverrides(values ...*ContainerOverrideApplyConfiguration) *InstrumentationConfigSpecApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithContainersOverrides")
+		}
+		b.ContainersOverrides = append(b.ContainersOverrides, *values[i])
+	}
+	return b
+}
+
+// WithContainerOverridesHash sets the ContainerOverridesHash field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ContainerOverridesHash field is set to the value of the last call.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithContainerOverridesHash(value string) *InstrumentationConfigSpecApplyConfiguration {
+	b.ContainerOverridesHash = &value
 	return b
 }
 
