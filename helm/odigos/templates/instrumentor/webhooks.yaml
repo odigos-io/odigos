@@ -1,16 +1,16 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: mutating-webhook-configuration
+  name: odigos-mutating-webhook-configuration
   labels:
-    app.kubernetes.io/name: pod-mutating-webhook
-    app.kubernetes.io/instance: mutating-webhook-configuration
+    app.kubernetes.io/name: odigos-pod-mutating-webhook
+    app.kubernetes.io/instance: odigos-mutating-webhook-configuration
     app.kubernetes.io/component: webhook
     app.kubernetes.io/created-by: instrumentor
     app.kubernetes.io/part-of: odigos
     odigos.io/system-object: "true"
 webhooks:
-  - name: pod-mutating-webhook.odigos.io
+  - name: odigos-pod-mutating-webhook.odigos.io
     clientConfig:
       service:
         name: odigos-instrumentor
@@ -34,15 +34,15 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: source-mutating-webhook-configuration
+  name: odigos-source-mutating-webhook-configuration
   labels:
-    app.kubernetes.io/name: source-mutating-webhook
-    app.kubernetes.io/instance: source-mutating-webhook-configuration
+    app.kubernetes.io/name: odigos-source-mutating-webhook
+    app.kubernetes.io/instance: odigos-source-mutating-webhook-configuration
     app.kubernetes.io/component: webhook
     app.kubernetes.io/created-by: instrumentor
     app.kubernetes.io/part-of: odigos
 webhooks:
-  - name: source-mutating-webhook.odigos.io
+  - name: odigos-source-mutating-webhook.odigos.io
     clientConfig:
       service:
         name: odigos-instrumentor
@@ -66,15 +66,15 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: source-validating-webhook-configuration
+  name: odigos-source-validating-webhook-configuration
   labels:
-    app.kubernetes.io/name: source-validating-webhook
-    app.kubernetes.io/instance: source-validating-webhook-configuration
+    app.kubernetes.io/name: odigos-source-validating-webhook
+    app.kubernetes.io/instance: odigos-source-validating-webhook-configuration
     app.kubernetes.io/component: webhook
     app.kubernetes.io/created-by: instrumentor
     app.kubernetes.io/part-of: odigos
 webhooks:
-  - name: source-validating-webhook.odigos.io
+  - name: odigos-source-validating-webhook.odigos.io
     clientConfig:
       service:
         name: odigos-instrumentor

@@ -307,7 +307,7 @@ func NewSourceValidatingWebhookConfiguration(ns string) *admissionregistrationv1
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.InstrumentorSourceValidatingWebhookName,
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       "source-validating-webhook",
+				"app.kubernetes.io/name":       "odigos-source-validating-webhook",
 				"app.kubernetes.io/instance":   k8sconsts.InstrumentorSourceValidatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "instrumentor",
@@ -361,7 +361,7 @@ func NewSourceMutatingWebhookConfiguration(ns string) *admissionregistrationv1.M
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.InstrumentorSourceMutatingWebhookName,
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       "source-mutating-webhook",
+				"app.kubernetes.io/name":       "odigos-source-mutating-webhook",
 				"app.kubernetes.io/instance":   k8sconsts.InstrumentorSourceMutatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "instrumentor",
@@ -416,11 +416,12 @@ func NewPodMutatingWebhookConfiguration(ns string) *admissionregistrationv1.Muta
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.InstrumentorMutatingWebhookName,
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       "pod-mutating-webhook",
+				"app.kubernetes.io/name":       "odigos-pod-mutating-webhook",
 				"app.kubernetes.io/instance":   k8sconsts.InstrumentorMutatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "instrumentor",
 				"app.kubernetes.io/part-of":    "odigos",
+				"odigos.io/system-object":      "true",
 			},
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
