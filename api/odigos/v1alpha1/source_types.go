@@ -46,6 +46,16 @@ type Source struct {
 	Status SourceStatus `json:"status,omitempty"`
 }
 
+type ContainerOverride struct {
+	// The name of the container to override.
+	ContainerName string `json:"containerName"`
+
+	// RuntimeInfo to use for agent enabling.
+	// If set for a container, the automatic detection will not be used for this container,
+	// and the distro to use will be calculated based on this value.
+	RuntimeInfo *RuntimeDetailsByContainer `json:"runtimeInfo,omitempty"`
+}
+
 type SourceSpec struct {
 	// Workload represents the workload or namespace to be instrumented.
 	// This field is required upon creation and cannot be modified.
@@ -60,6 +70,14 @@ type SourceSpec struct {
 	// +kubebuilder:validation:Optional
 	// +optional
 	OtelServiceName string `json:"otelServiceName,omitempty"`
+
+	// Specify specific override values for containers.
+	// For example, allow to set the runtime info in case the automatic detection fails.
+	// Containers are listed by their names.
+	// Any container not in this list will retain it's default behavior.
+	// +kubebuilder:validation:Optional
+	// +optional
+	ContainerOverrides []ContainerOverride `json:"containerOverrides,omitempty"`
 }
 
 type SourceStatus struct {
