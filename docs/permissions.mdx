@@ -80,6 +80,8 @@ Below are the ClusterRoles used by Odigos components.
 |---|---|---|---|
 | odigos.io | instrumentationconfigs | \* | get<br />list<br />watch |
 | \* | configmaps/finalizers | \* | update |
+| batch | cronjobs | \* | list |
+| \* | configmaps | \* | list |
 
 ### odigos-ui
 
@@ -167,12 +169,14 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
 | \* | configmaps | \* | get<br />list<br />watch |
-| \* | configmaps | effective-config<br />odigos-deployment | patch<br />create<br />update |
+| \* | configmaps | effective-config<br />odigos-deployment<br />odigos-go-offsets | patch<br />create<br />update |
 | \* | configmaps | odigos-config | delete |
 | odigos.io | collectorsgroups | \* | get<br />list<br />create<br />patch<br />update<br />watch<br />delete |
 | odigos.io | collectorsgroups/status | \* | get |
 | odigos.io | instrumentationrules<br />processors | \* | get<br />list<br />watch<br />patch<br />delete<br />create |
 | \* | secrets | \* | get<br />list<br />watch |
+| batch | cronjobs | \* | get<br />list<br />watch<br />create<br />update<br />patch<br />delete |
+| apps | daemonsets | \* | patch |
 
 ### odigos-ui
 
