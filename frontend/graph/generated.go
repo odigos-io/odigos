@@ -23578,13 +23578,20 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"otelServiceName", "currentStreamName", "containerName", "language", "version"}
+	fieldsInOrder := [...]string{"currentStreamName", "otelServiceName", "containerName", "language", "version"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "currentStreamName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("currentStreamName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CurrentStreamName = data
 		case "otelServiceName":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("otelServiceName"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -23592,13 +23599,6 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 				return it, err
 			}
 			it.OtelServiceName = data
-		case "currentStreamName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("currentStreamName"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CurrentStreamName = data
 		case "containerName":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("containerName"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)

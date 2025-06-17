@@ -578,7 +578,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 			// unexpected error occurred while trying to get the source
 			return false, err
 		}
-		source, err = services.EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, *patchSourceRequest.CurrentStreamName)
+		source, err = services.EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, patchSourceRequest.CurrentStreamName)
 		if err != nil {
 			// unexpected error occurred while trying to create the source
 			return false, err
