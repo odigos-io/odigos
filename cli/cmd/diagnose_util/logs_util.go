@@ -4,19 +4,23 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"github.com/odigos-io/odigos/cli/cmd/resources"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"io"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 )
 
 const logBufferSize = 1024 * 1024 // 1MB buffer size for reading logs in chunks
 
 func FetchOdigosComponentsLogs(ctx context.Context, client *kube.Client, logDir string) error {
+	fmt.Printf("Fetching Odigos Components Logs...\n")
+
 	odigosNamespace, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {
 		return err
@@ -60,15 +64,14 @@ func fetchPodLogs(ctx context.Context, client *kube.Client, odigosNamespace stri
 }
 
 func fetchingContainerLogs(ctx context.Context, client *kube.Client, odigosNamespace string, pod v1.Pod, container v1.Container, logDir string, previous bool) {
-	logPrefix := fmt.Sprintf("Fetching logs for Pod: %s, Container: %s, Node: %s", pod.Name, container.Name, pod.Spec.NodeName)
-	fmt.Printf(logPrefix + "\n")
+	klog.V(2).InfoS("Fetching logs for Pod", "podName", pod.Name, "containerName", container.Name, "node", pod.Spec.NodeName)
 
 	// Define the log file path for saving compressed logs
 	logFileName := getLogFileName(pod, container, previous)
 	logFilePath := filepath.Join(logDir, logFileName)
 	logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		fmt.Printf(logPrefix+" - Failed - Error creating log file: %v\n", err)
+		klog.V(1).ErrorS(err, "Failed to create log file", "logFilePath", logFilePath)
 		return
 	}
 	defer logFile.Close()
@@ -76,13 +79,13 @@ func fetchingContainerLogs(ctx context.Context, client *kube.Client, odigosNames
 	req := client.CoreV1().Pods(odigosNamespace).GetLogs(pod.Name, &v1.PodLogOptions{Previous: previous})
 	logStream, err := req.Stream(ctx)
 	if err != nil {
-		fmt.Printf(logPrefix+" - Failed - Error creating log stream: %v\n", err)
+		klog.V(1).ErrorS(err, "Failed to create log stream", "logFilePath", logFilePath)
 		return
 	}
 	defer logStream.Close()
 
 	if err = saveLogsToGzipFileInBatches(logFile, logStream, logBufferSize); err != nil {
-		fmt.Printf(logPrefix+" - Failed - Error saving logs to file: %v\n", err)
+		klog.V(1).ErrorS(err, "Failed to save logs to file", "logFilePath", logFilePath)
 		return
 	}
 }
