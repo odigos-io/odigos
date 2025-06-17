@@ -36,3 +36,4 @@ Returns "true" if any userInstrumentationEnvs.language is enabled or has env var
 true
   {{- end -}}
 {{- end -}}
+
