@@ -132,10 +132,17 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
 
+    # Note: we sleep here because some sources (e.g. Ruby) take time to start up after rollout restart
+    - name: Grab a Coffee ☕️
+      try:
+        - script:
+            timeout: 35s
+            content: |
+              sleep 30
+
     - name: Generate Traffic
       try:
         - apply:
-            timeout: 1m
             file: ../../common/apply/generate-traffic-job.yaml
         - script:
             timeout: 1m

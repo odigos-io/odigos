@@ -322,7 +322,7 @@ metadata:
       kind: Deployment
       name: geolocation
 status:
-  (runtimeDetailsByContainer[?containerName=='currency']):
+  (runtimeDetailsByContainer[?containerName=='geolocation']):
     - language: ruby
 ---
 ### Instrumentation Instances ###

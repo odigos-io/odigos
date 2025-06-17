@@ -87,10 +87,17 @@ spec:
             timeout: 70s
             content: ./wait_for_rollout.sh
 
+    # Note: we sleep here because some sources (e.g. Ruby) take time to start up after rollout restart
+    - name: Grab a Coffee ☕️
+      try:
+        - script:
+            timeout: 35s
+            content: |
+              sleep 30
+
     - name: '[2 - Workload Instrumentation] Generate Traffic'
       try:
         - apply:
-            timeout: 1m
             file: ../../common/apply/generate-traffic-job.yaml
         - script:
             timeout: 1m
