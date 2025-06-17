@@ -307,15 +307,16 @@ type ComplexityRoot struct {
 	}
 
 	K8sActualSource struct {
-		Conditions        func(childComplexity int) int
-		Containers        func(childComplexity int) int
-		DataStreamNames   func(childComplexity int) int
-		Kind              func(childComplexity int) int
-		Name              func(childComplexity int) int
-		Namespace         func(childComplexity int) int
-		NumberOfInstances func(childComplexity int) int
-		OtelServiceName   func(childComplexity int) int
-		Selected          func(childComplexity int) int
+		Conditions          func(childComplexity int) int
+		Containers          func(childComplexity int) int
+		ContainersOverrides func(childComplexity int) int
+		DataStreamNames     func(childComplexity int) int
+		Kind                func(childComplexity int) int
+		Name                func(childComplexity int) int
+		Namespace           func(childComplexity int) int
+		NumberOfInstances   func(childComplexity int) int
+		OtelServiceName     func(childComplexity int) int
+		Selected            func(childComplexity int) int
 	}
 
 	K8sAnnotationAttribute struct {
@@ -572,6 +573,10 @@ type ComplexityRoot struct {
 		Language               func(childComplexity int) int
 		OtelDistroName         func(childComplexity int) int
 		RuntimeVersion         func(childComplexity int) int
+	}
+
+	SourceContainerOverride struct {
+		ContainerName func(childComplexity int) int
 	}
 
 	SpanAttributeSamplerAction struct {
@@ -1780,6 +1785,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sActualSource.Containers(childComplexity), true
+
+	case "K8sActualSource.containersOverrides":
+		if e.complexity.K8sActualSource.ContainersOverrides == nil {
+			break
+		}
+
+		return e.complexity.K8sActualSource.ContainersOverrides(childComplexity), true
 
 	case "K8sActualSource.dataStreamNames":
 		if e.complexity.K8sActualSource.DataStreamNames == nil {
@@ -3060,6 +3072,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SourceContainer.RuntimeVersion(childComplexity), true
+
+	case "SourceContainerOverride.containerName":
+		if e.complexity.SourceContainerOverride.ContainerName == nil {
+			break
+		}
+
+		return e.complexity.SourceContainerOverride.ContainerName(childComplexity), true
 
 	case "SpanAttributeSamplerAction.details":
 		if e.complexity.SpanAttributeSamplerAction.Details == nil {
@@ -6415,6 +6434,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_source(ctx context.Cont
 				return ec.fieldContext_K8sActualSource_otelServiceName(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sActualSource_containers(ctx, field)
+			case "containersOverrides":
+				return ec.fieldContext_K8sActualSource_containersOverrides(ctx, field)
 			case "conditions":
 				return ec.fieldContext_K8sActualSource_conditions(ctx, field)
 			}
@@ -11535,6 +11556,8 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_sources(_ context.Co
 				return ec.fieldContext_K8sActualSource_otelServiceName(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sActualSource_containers(ctx, field)
+			case "containersOverrides":
+				return ec.fieldContext_K8sActualSource_containersOverrides(ctx, field)
 			case "conditions":
 				return ec.fieldContext_K8sActualSource_conditions(ctx, field)
 			}
@@ -11893,6 +11916,51 @@ func (ec *executionContext) fieldContext_K8sActualSource_containers(_ context.Co
 				return ec.fieldContext_SourceContainer_otelDistroName(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SourceContainer", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sActualSource_containersOverrides(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sActualSource_containersOverrides(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContainersOverrides, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.SourceContainerOverride)
+	fc.Result = res
+	return ec.marshalOSourceContainerOverride2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerOverrideᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sActualSource_containersOverrides(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sActualSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "containerName":
+				return ec.fieldContext_SourceContainerOverride_containerName(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SourceContainerOverride", field.Name)
 		},
 	}
 	return fc, nil
@@ -15685,6 +15753,8 @@ func (ec *executionContext) fieldContext_PaginatedSources_items(_ context.Contex
 				return ec.fieldContext_K8sActualSource_otelServiceName(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sActualSource_containers(ctx, field)
+			case "containersOverrides":
+				return ec.fieldContext_K8sActualSource_containersOverrides(ctx, field)
 			case "conditions":
 				return ec.fieldContext_K8sActualSource_conditions(ctx, field)
 			}
@@ -20091,6 +20161,50 @@ func (ec *executionContext) fieldContext_SourceContainer_otelDistroName(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _SourceContainerOverride_containerName(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainerOverride) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainerOverride_containerName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContainerName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceContainerOverride_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceContainerOverride",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _SpanAttributeSamplerAction_id(ctx context.Context, field graphql.CollectedField, obj *model.SpanAttributeSamplerAction) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SpanAttributeSamplerAction_id(ctx, field)
 	if err != nil {
@@ -23464,20 +23578,13 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"otelServiceName", "currentStreamName"}
+	fieldsInOrder := [...]string{"currentStreamName", "otelServiceName", "containerName", "language", "version"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "otelServiceName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("otelServiceName"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.OtelServiceName = data
 		case "currentStreamName":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("currentStreamName"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -23485,6 +23592,34 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 				return it, err
 			}
 			it.CurrentStreamName = data
+		case "otelServiceName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("otelServiceName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OtelServiceName = data
+		case "containerName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("containerName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ContainerName = data
+		case "language":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("language"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Language = data
+		case "version":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Version = data
 		}
 	}
 
@@ -25861,6 +25996,8 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._K8sActualSource_otelServiceName(ctx, field, obj)
 		case "containers":
 			out.Values[i] = ec._K8sActualSource_containers(ctx, field, obj)
+		case "containersOverrides":
+			out.Values[i] = ec._K8sActualSource_containersOverrides(ctx, field, obj)
 		case "conditions":
 			out.Values[i] = ec._K8sActualSource_conditions(ctx, field, obj)
 		default:
@@ -27821,6 +27958,45 @@ func (ec *executionContext) _SourceContainer(ctx context.Context, sel ast.Select
 			}
 		case "otelDistroName":
 			out.Values[i] = ec._SourceContainer_otelDistroName(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var sourceContainerOverrideImplementors = []string{"SourceContainerOverride"}
+
+func (ec *executionContext) _SourceContainerOverride(ctx context.Context, sel ast.SelectionSet, obj *model.SourceContainerOverride) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sourceContainerOverrideImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SourceContainerOverride")
+		case "containerName":
+			out.Values[i] = ec._SourceContainerOverride_containerName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -30323,6 +30499,16 @@ func (ec *executionContext) marshalNSourceContainer2ᚖgithubᚗcomᚋodigosᚑi
 	return ec._SourceContainer(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNSourceContainerOverride2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerOverride(ctx context.Context, sel ast.SelectionSet, v *model.SourceContainerOverride) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SourceContainerOverride(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -31110,6 +31296,53 @@ func (ec *executionContext) marshalOSourceContainer2ᚕᚖgithubᚗcomᚋodigos�
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNSourceContainer2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainer(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOSourceContainerOverride2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerOverrideᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SourceContainerOverride) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSourceContainerOverride2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerOverride(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

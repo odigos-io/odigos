@@ -20,6 +20,9 @@ export const GET_SOURCES = gql`
             instrumentationMessage
             otelDistroName
           }
+          containersOverrides {
+            containerName
+          }
           conditions {
             status
             type
@@ -50,6 +53,9 @@ export const GET_SOURCE = gql`
           instrumented
           instrumentationMessage
           otelDistroName
+        }
+        containersOverrides {
+          containerName
         }
         conditions {
           status
