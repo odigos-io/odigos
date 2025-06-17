@@ -188,7 +188,7 @@ spec:
           image: registry.odigos.io/odigos-demo-geolocation:v0.1.23
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 80
+            - containerPort: 3000
           env:
             - name: RAILS_ENV
               value: 'production'
@@ -218,7 +218,7 @@ spec:
   ports:
     - protocol: TCP
       port: 8080
-      targetPort: 80
+      targetPort: 3000
   type: LoadBalancer
 
 ---
