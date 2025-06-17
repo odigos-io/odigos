@@ -429,10 +429,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@^0.0.41":
-  version "0.0.41"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.41.tgz#cbb80cbc2d895aa09d59a0ea2d9c55f48eaa4b1e"
-  integrity sha512-LK+eiStyXMdoOKD4/FqK+NHQ5T4QyVIy5J9hvyuMLx0SPEOCe5Wogq3U68vhJjfE6PDR8QMzYqgvDMiCpfCKFw==
+"@odigos/ui-kit@^0.0.42":
+  version "0.0.42"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.42.tgz#b7802bb9381168274e7e68569b4de501e8800369"
+  integrity sha512-8FSAGBpXzpqDzjdq06iQ/UxD0bVk/Ks+T0/P8EEIgOZQE1w4prHlfEAM6D7XCQMgdotXg2s8WNn2cMxxwlbTUg==
   dependencies:
     "@xyflow/react" "^12.6.4"
     javascript-time-ago "^2.5.11"
@@ -534,10 +534,10 @@
   dependencies:
     undici-types "~6.21.0"
 
-"@types/node@24.0.1":
-  version "24.0.1"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-24.0.1.tgz#e9bfcb1c35547437c294403b7bec497772a88b0a"
-  integrity sha512-MX4Zioh39chHlDJbKmEgydJDS3tspMP/lnQC67G3SWsTnb9NeYVWOjkxpOSy4oMfPs4StcWHwBrvUb4ybfnuaw==
+"@types/node@24.0.3":
+  version "24.0.3"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-24.0.3.tgz#f935910f3eece3a3a2f8be86b96ba833dc286cab"
+  integrity sha512-R4I/kzCYAdRLzfiCabn9hxWfbuHS573x+r0dJMkkzThEa7pbrcDWK+9zu3e7aBOouf+rQAciqPFMnxwr0aWgKg==
   dependencies:
     undici-types "~7.8.0"
 

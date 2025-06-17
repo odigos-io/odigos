@@ -400,15 +400,16 @@ type K8sActualNamespace struct {
 }
 
 type K8sActualSource struct {
-	Namespace         string             `json:"namespace"`
-	Name              string             `json:"name"`
-	Kind              K8sResourceKind    `json:"kind"`
-	DataStreamNames   []*string          `json:"dataStreamNames"`
-	NumberOfInstances *int               `json:"numberOfInstances,omitempty"`
-	Selected          *bool              `json:"selected,omitempty"`
-	OtelServiceName   *string            `json:"otelServiceName,omitempty"`
-	Containers        []*SourceContainer `json:"containers,omitempty"`
-	Conditions        []*Condition       `json:"conditions,omitempty"`
+	Namespace           string                     `json:"namespace"`
+	Name                string                     `json:"name"`
+	Kind                K8sResourceKind            `json:"kind"`
+	DataStreamNames     []*string                  `json:"dataStreamNames"`
+	NumberOfInstances   *int                       `json:"numberOfInstances,omitempty"`
+	Selected            *bool                      `json:"selected,omitempty"`
+	OtelServiceName     *string                    `json:"otelServiceName,omitempty"`
+	Containers          []*SourceContainer         `json:"containers,omitempty"`
+	ContainersOverrides []*SourceContainerOverride `json:"containersOverrides,omitempty"`
+	Conditions          []*Condition               `json:"conditions,omitempty"`
 }
 
 type K8sAnnotationAttribute struct {
@@ -568,8 +569,11 @@ type PaginatedSources struct {
 }
 
 type PatchSourceRequestInput struct {
-	OtelServiceName   string `json:"otelServiceName"`
-	CurrentStreamName string `json:"currentStreamName"`
+	CurrentStreamName string  `json:"currentStreamName"`
+	OtelServiceName   *string `json:"otelServiceName,omitempty"`
+	ContainerName     *string `json:"containerName,omitempty"`
+	Language          *string `json:"language,omitempty"`
+	Version           *string `json:"version,omitempty"`
 }
 
 type PayloadCollection struct {
@@ -796,6 +800,10 @@ type SourceContainer struct {
 	Instrumented           bool    `json:"instrumented"`
 	InstrumentationMessage string  `json:"instrumentationMessage"`
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
+}
+
+type SourceContainerOverride struct {
+	ContainerName string `json:"containerName"`
 }
 
 type SpanAttributeSamplerAction struct {
