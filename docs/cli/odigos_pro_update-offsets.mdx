@@ -33,13 +33,21 @@ odigos pro update-offsets
 # Revert to using the default offsets data shipped with Odigos
 odigos pro update-offsets --default
 
+# Download the offsets file to a specific location without updating the cluster
+odigos pro update-offsets --download-file /path/to/save/offsets.json
+
+# Use a local offsets file instead of downloading it
+odigos pro update-offsets --from-file /path/to/local/offsets.json
+
 ```
 
 ### Options
 
 ```
-      --default   revert to using the default offsets data shipped with the current version of Odigos
-  -h, --help      help for update-offsets
+      --default                revert to using the default offsets data shipped with the current version of Odigos
+      --download-file string   download the offsets file to the specified location without updating the cluster
+      --from-file string       use the offsets file from the specified location instead of downloading it
+  -h, --help                   help for update-offsets
 ```
 
 ### Options inherited from parent commands
