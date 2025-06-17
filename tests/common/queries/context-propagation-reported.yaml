@@ -12,6 +12,14 @@ query: |
 
   length(
     [?
+      span.resourceAttributes."telemetry.sdk.language" == 'ruby' && span.serviceName == 'geolocation-reported' && span.kind == 'server'
+        && 
+      parent.span.serviceName == 'frontend-reported' && parent.span.resourceAttributes."telemetry.sdk.language" == 'java'
+    ]
+  ) > `0` &&
+
+  length(
+    [?
       span.resourceAttributes."telemetry.sdk.language" == 'dotnet' && span.serviceName == 'pricing-reported' && span.kind == 'server'
         && 
       parent.span.serviceName == 'frontend-reported' && parent.span.resourceAttributes."telemetry.sdk.language" == 'java'

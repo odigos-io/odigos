@@ -60,5 +60,16 @@ query: |
     span.spanAttributes."url.path" == '/rate/usd-eur'
   )]) > `0`
 
+  &&
+
+  length([?(
+    span.resourceAttributes."telemetry.sdk.language" == 'ruby' &&
+    span.serviceName == 'geolocation-reported' &&
+    span.kind == 'server' &&
+    span.spanAttributes."http.request.method" == 'GET' &&
+    span.spanAttributes."http.response.status_code" == `200` &&
+    span.spanAttributes."url.path" == '/location/gbp'
+  )]) > `0`
+
 expected:
   count: 1

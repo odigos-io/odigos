@@ -39,3 +39,10 @@ metadata:
   generation: 2
   name: currency
   namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 2
+  name: geolocation
+  namespace: default
