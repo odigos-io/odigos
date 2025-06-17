@@ -571,8 +571,14 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 	nsName := sourceID.Namespace
 	workloadName := sourceID.Name
 	workloadKind := sourceID.Kind
+
+	streamName := *patchSourceRequest.CurrentStreamName
 	otelServiceName := patchSourceRequest.OtelServiceName
-	streamName := patchSourceRequest.CurrentStreamName
+
+	// for runtime override
+	cont := patchSourceRequest.ContainerName
+	lang := patchSourceRequest.Language
+	vers := patchSourceRequest.Version
 
 	source, err := services.GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
@@ -588,10 +594,41 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 		}
 	}
 
-	_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", fmt.Sprintf("\"%s\"", otelServiceName))
-	if err != nil {
-		// unexpected error occurred while trying to update the source
-		return false, err
+	if otelServiceName != nil {
+		_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", fmt.Sprintf("\"%s\"", *otelServiceName))
+		if err != nil {
+			// unexpected error occurred while trying to update the source
+			return false, err
+		}
+	}
+
+	if cont != nil {
+		containerOverrides := make([]v1alpha1.ContainerOverride, 0)
+
+		// get previous overrides (except the one we are updating)
+		if source.Spec.ContainerOverrides != nil {
+			for _, override := range source.Spec.ContainerOverrides {
+				if override.ContainerName != *cont {
+					containerOverrides = append(containerOverrides, override)
+				}
+			}
+		}
+
+		// add the new override
+		containerOverrides = append(containerOverrides, v1alpha1.ContainerOverride{
+			ContainerName: *cont,
+			RuntimeInfo: &v1alpha1.RuntimeDetailsByContainer{
+				ContainerName:  *cont,
+				Language:       common.ProgrammingLanguage(*lang),
+				RuntimeVersion: common.GetVersion(*vers).String(),
+			},
+		})
+
+		_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "containerOverrides", containerOverrides)
+		if err != nil {
+			// unexpected error occurred while trying to update the source
+			return false, err
+		}
 	}
 
 	return true, nil
