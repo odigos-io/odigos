@@ -145,7 +145,7 @@ func NewSchedulerClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
 		{ // manage go offsets CronJob
 			APIGroups: []string{"batch"},
 			Resources: []string{"cronjobs"},
-			Verbs:     []string{"list"},
+			Verbs:     []string{"list", "watch"},
 		},
 		{ // Needed to get Odigos namespace for update offsets cronjob
 			APIGroups: []string{""},

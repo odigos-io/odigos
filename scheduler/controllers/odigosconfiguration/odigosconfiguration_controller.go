@@ -15,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/profiles/sizing"
 
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -181,22 +182,6 @@ func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Conte
 func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Context, config *common.OdigosConfiguration, ns string) error {
 	cronJobName := k8sconsts.OffsetCronJobName
 
-	// If no cron schedule is set, delete the CronJob if it exists
-	if config.GoAutoOffsetsCron == "" {
-		cronJob := &batchv1.CronJob{}
-		err := r.Client.Get(ctx, types.NamespacedName{Namespace: ns, Name: cronJobName}, cronJob)
-		if err == nil {
-			// CronJob exists, delete it
-			err = r.Client.Delete(ctx, cronJob)
-			if err != nil {
-				return fmt.Errorf("failed to delete go offsets CronJob: %v", err)
-			}
-		} else if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to check for go offsets CronJob: %v", err)
-		}
-		return nil
-	}
-
 	// Get the Kubernetes server version to determine the API version to use for the CronJob
 	cfg := ctrl.GetConfigOrDie()
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
@@ -210,6 +195,17 @@ func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Conte
 	apiVersion := "batch/v1beta1"
 	if verInfo.Minor >= "21" {
 		apiVersion = "batch/v1"
+	}
+
+	// If no cron schedule is set, delete the CronJob if it exists
+	if config.GoAutoOffsetsCron == "" {
+		if apiVersion == "batch/v1" {
+			cronJob := &batchv1.CronJob{}
+			return deleteCronJob(ctx, r.Client, ns, cronJobName, cronJob)
+		} else {
+			cronJob := &batchv1beta1.CronJob{}
+			return deleteCronJob(ctx, r.Client, ns, cronJobName, cronJob)
+		}
 	}
 
 	// Create or update the CronJob
@@ -256,6 +252,21 @@ func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Conte
 	err = r.Client.Patch(ctx, cronJob, client.RawPatch(types.ApplyYAMLPatchType, objApplyBytes), client.ForceOwnership, client.FieldOwner("scheduler-odigosconfig"))
 	if err != nil {
 		return fmt.Errorf("failed to apply go offsets CronJob: %v", err)
+	}
+
+	return nil
+}
+
+func deleteCronJob(ctx context.Context, client client.Client, ns string, cronJobName string, cronJob client.Object) error {
+	err := client.Get(ctx, types.NamespacedName{Namespace: ns, Name: cronJobName}, cronJob)
+	if err == nil {
+		// CronJob exists, delete it
+		err = client.Delete(ctx, cronJob)
+		if err != nil {
+			return fmt.Errorf("failed to delete go offsets CronJob: %v", err)
+		}
+	} else if !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to check for go offsets CronJob: %v", err)
 	}
 
 	return nil

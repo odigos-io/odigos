@@ -27,6 +27,7 @@ rules:
       - cronjobs
     verbs:
       - list
+      - watch
   - apiGroups:
       - ''
     resources:
