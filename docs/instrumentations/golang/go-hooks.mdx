@@ -11,23 +11,23 @@ This is useful when you need to correlate your application's logs with the distr
 ### Get W3C Trace Context
 
 ```go
-traceContextBytes := gohooks.GetW3CTraceContext(context.Context) []byte
+traceContext := gohooks.GetW3CTraceContext(context.Context) string
 ```
 This function returns the full [W3C Trace Context](https://www.w3.org/TR/trace-context/) for the current function.
 
 ### Get Current Trace ID
 
 ```go
-traceIdBytes := gohooks.GetTraceID(context.Context) []byte
+traceId := gohooks.GetTraceID(context.Context) string
 ```
-Returns the current trace ID as a byte slice. If there is no active trace, it returns a zero value.
+Returns the current trace ID. If there is no active trace, it returns a zero value.
 
 ### Get Current Span ID
 
 ```go
-spanIdBytes := gohooks.GetSpanID(context.Context) []byte
+spanId := gohooks.GetSpanID(context.Context) string
 ```
-Returns the current span ID as a byte slice. If there is no active span, it returns a zero value.
+Returns the current span ID. If there is no active span, it returns a zero value.
 
 ### Check for zero values
 
@@ -35,9 +35,9 @@ The following helper functions can be used to check if the hooks returned a zero
 values indicate that no trace is currently active at the call site of the hook.
 
 ```go
-isZeroTraceContext := gohooks.IsZeroTraceContext(traceContextBytes)
-isZeroTraceId := gohooks.IsZeroTraceId(traceIdBytes)
-isZeroSpanId := gohooks.IsZeroSpanId(spanIdBytes)
+isZeroTraceContext := gohooks.IsZeroTraceContext(traceContext)
+isZeroTraceId := gohooks.IsZeroTraceId(traceId)
+isZeroSpanId := gohooks.IsZeroSpanId(spanId)
 ```
 
 ## Example Application
@@ -74,10 +74,10 @@ func main() {
     spanID := gohooks.GetSpanID(r.Context())
 
     // Log the IDs
-    log.Printf("Current Trace ID: %s", string(traceID))
-    log.Printf("Current Span ID: %s", string(spanID))
+    log.Printf("Current Trace ID: %s", traceID)
+    log.Printf("Current Span ID: %s", spanID)
 
-    fmt.Fprintf(w, "Trace ID: %s\nSpan ID: %s\n", string(traceID), string(spanID))
+    fmt.Fprintf(w, "Trace ID: %s\nSpan ID: %s\n", traceID, spanID)
 	})
 
   // Start the server

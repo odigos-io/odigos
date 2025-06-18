@@ -17,40 +17,58 @@ const (
 // If no span is found in the context, it returns a zero trace context.
 //
 //go:noinline
-func GetW3CTraceContext(ctx context.Context) []byte {
-	traceContext := []byte(ZeroTraceContext)
-	return traceContext
+func GetW3CTraceContext(ctx context.Context) string {
+	traceContext := getW3CTraceContextBytes(ctx)
+	return string(traceContext)
 }
 
 // GetTraceID returns the current trace ID from the provided Go context.
 // If no span is found in the context, it returns a zero ID.
 //
 //go:noinline
-func GetTraceID(ctx context.Context) []byte {
-	traceId := []byte(ZeroTraceId)
-	return traceId
+func GetTraceID(ctx context.Context) string {
+	traceId := getTraceIDBytes(ctx)
+	return string(traceId)
 }
 
 // GetSpanID returns the current span ID from the provided Go context.
 // If no span is found in the context, it returns a zero ID.
 //
 //go:noinline
-func GetSpanID(ctx context.Context) []byte {
-	spanId := []byte(ZeroSpanId)
-	return spanId
+func GetSpanID(ctx context.Context) string {
+	spanId := getSpanIDBytes(ctx)
+	return string(spanId)
 }
 
 // IsZeroTraceContext checks if the provided trace context is a zero trace context.
-func IsZeroTraceContext(traceContext []byte) bool {
-	return string(traceContext) == ZeroTraceContext
+func IsZeroTraceContext(traceContext string) bool {
+	return traceContext == ZeroTraceContext
 }
 
 // IsZeroTraceId checks if the provided trace ID is a zero trace ID.
-func IsZeroTraceId(traceId []byte) bool {
-	return string(traceId) == ZeroTraceId
+func IsZeroTraceId(traceId string) bool {
+	return traceId == ZeroTraceId
 }
 
 // IsZeroSpanId checks if the provided span ID is a zero span ID.
-func IsZeroSpanId(spanId []byte) bool {
-	return string(spanId) == ZeroSpanId
+func IsZeroSpanId(spanId string) bool {
+	return spanId == ZeroSpanId
+}
+
+//go:noinline
+func getW3CTraceContextBytes(ctx context.Context) []byte {
+	traceContext := []byte(ZeroTraceContext)
+	return traceContext
+}
+
+//go:noinline
+func getTraceIDBytes(ctx context.Context) []byte {
+	traceId := []byte(ZeroTraceId)
+	return traceId
+}
+
+//go:noinline
+func getSpanIDBytes(ctx context.Context) []byte {
+	spanId := []byte(ZeroSpanId)
+	return spanId
 }
