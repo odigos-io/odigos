@@ -180,8 +180,6 @@ func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Conte
 }
 
 func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Context, config *common.OdigosConfiguration, ns string) error {
-	cronJobName := k8sconsts.OffsetCronJobName
-
 	// Get the Kubernetes server version to determine the API version to use for the CronJob
 	cfg := ctrl.GetConfigOrDie()
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
@@ -197,12 +195,16 @@ func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Conte
 		apiVersion = "batch/v1"
 	}
 
+	if config.GoAutoOffsetsCron == "" {
+		return deleteCronJob(ctx, r.Client, ns, apiVersion)
+	}
+
 	typeMeta := metav1.TypeMeta{
 		Kind:       "CronJob",
 		APIVersion: apiVersion,
 	}
 	objectMeta := metav1.ObjectMeta{
-		Name:      cronJobName,
+		Name:      k8sconsts.OffsetCronJobName,
 		Namespace: ns,
 		Labels: map[string]string{
 			k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue,
@@ -235,7 +237,7 @@ func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Conte
 				},
 			},
 		}
-		return reconcileCronJob(ctx, r.Client, ns, cronJobName, cronJob, config)
+		return reconcileCronJob(ctx, r.Client, ns, cronJob, config)
 	}
 	cronJob := &batchv1.CronJob{
 		TypeMeta:   typeMeta,
@@ -249,25 +251,34 @@ func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Conte
 			},
 		},
 	}
-	return reconcileCronJob(ctx, r.Client, ns, cronJobName, cronJob, config)
+	return reconcileCronJob(ctx, r.Client, ns, cronJob, config)
+}
 
+func deleteCronJob(ctx context.Context, kubeClient client.Client, ns string, apiVersion string) error {
+	var cronJob client.Object
+	if apiVersion == "batch/v1" {
+		cronJob = &batchv1.CronJob{}
+	} else {
+		cronJob = &batchv1beta1.CronJob{}
+	}
+	err := kubeClient.Get(ctx, types.NamespacedName{Namespace: ns, Name: k8sconsts.OffsetCronJobName}, cronJob)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	err = kubeClient.Delete(ctx, cronJob)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete go offsets CronJob: %v", err)
+		}
+		return nil
+	}
 	return nil
 }
 
-func reconcileCronJob(ctx context.Context, kubeClient client.Client, ns string, cronJobName string, cronJob client.Object, config *common.OdigosConfiguration) error {
-	if config.GoAutoOffsetsCron == "" {
-		err := kubeClient.Get(ctx, types.NamespacedName{Namespace: ns, Name: cronJobName}, cronJob)
-		if err == nil {
-			// CronJob exists, delete it
-			err = kubeClient.Delete(ctx, cronJob)
-			if err != nil {
-				return fmt.Errorf("failed to delete go offsets CronJob: %v", err)
-			}
-		} else if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to check for go offsets CronJob: %v", err)
-		}
-	}
-
+func reconcileCronJob(ctx context.Context, kubeClient client.Client, ns string, cronJob client.Object, config *common.OdigosConfiguration) error {
 	// Apply the CronJob
 	objApplyBytes, err := yaml.Marshal(cronJob)
 	if err != nil {
