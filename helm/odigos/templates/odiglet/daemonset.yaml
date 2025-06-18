@@ -12,7 +12,8 @@ spec:
       app.kubernetes.io/name: odiglet
   updateStrategy:
     rollingUpdate:
-      {{- if semverCompare ">=1.22.0" .Capabilities.KubeVersion.Version }}
+      {{- $version := include "utils.cleanKubeVersion" . }}
+      {{- if semverCompare ">=1.22.0" $version }}
       maxSurge: 0
       {{- end }}
       maxUnavailable: 50%
@@ -156,7 +157,8 @@ spec:
               mountPath: /sys/kernel/debug
             - name: odigos-go-offsets
               mountPath: /offsets
-      {{- if semverCompare "<1.26.0" .Capabilities.KubeVersion.Version }}
+      {{- $version := include "utils.cleanKubeVersion" . }}
+      {{- if semverCompare "<1.26.0" $version }}
       hostNetwork: true
       {{- end}}
       hostPID: true

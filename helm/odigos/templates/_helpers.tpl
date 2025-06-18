@@ -37,3 +37,10 @@ true
   {{- end -}}
 {{- end -}}
 
+
+{{/*
+  Return the cleaned Kubernetes version (e.g., "1.30.13" from "v1.30.13-eks-5d4a308")
+  */}}
+  {{- define "utils.cleanKubeVersion" -}}
+  {{- regexReplaceAll "-.*" .Capabilities.KubeVersion.Version "" | trimPrefix "v" -}}
+  {{- end }}
