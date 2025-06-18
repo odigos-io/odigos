@@ -1,4 +1,5 @@
-{{- if semverCompare ">=1.26.0" .Capabilities.KubeVersion.Version }}
+{{- $version := include "utils.cleanKubeVersion" . }}
+{{- if semverCompare ">=1.26.0" $version }}
 apiVersion: v1
 kind: Service
 metadata:
