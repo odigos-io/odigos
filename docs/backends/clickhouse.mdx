@@ -60,7 +60,7 @@ To use it:
 - Odigos UI - When adding a new ClickHouse destination, select the `Create Scheme` checkbox field.
 - Destination K8s Manifest - Set the `CLICKHOUSE_CREATE_SCHEME` setting to value `true`.
 
-The schema which will be used by default can be found [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/clickhouseexporter/example/default_ddl).
+The schema which will be used by default can be found [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/a80fdb94cecb1cd3c1fbd7fbe3000396cd588970/exporter/clickhouseexporter/example/default_ddl).
 
 - Indexes - The default schema includes indexes for the data, including trace_id, resource and scope attributes, span/metric/log attributes etc.
 - TTL is set to 180 days. This means data will be kept in the database for this period of time and then deleted.
@@ -82,7 +82,7 @@ To use it:
 The benefit of this option is that you have full control over the schema, and can optimize it for your specific use case.
 
 How it works?
-- Browse to the [default DDL example](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/clickhouseexporter/example/default_ddl).
+- Browse to the [default DDL example](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/a80fdb94cecb1cd3c1fbd7fbe3000396cd588970/exporter/clickhouseexporter/example/default_ddl).
 - Copy the `sql` files to your local machine.
 - Make any changes you need to the schema.
 - Run the SQL files in your ClickHouse database to create the schema.

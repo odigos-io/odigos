@@ -386,8 +386,12 @@ type PipelineAction {
 }
 
 input PatchSourceRequestInput {
-  otelServiceName: String!
   currentStreamName: String!
+  otelServiceName: String
+  # for runtime override
+  containerName: String
+  language: String
+  version: String
 }
 
 interface Action {

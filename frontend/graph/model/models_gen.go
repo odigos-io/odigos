@@ -569,8 +569,11 @@ type PaginatedSources struct {
 }
 
 type PatchSourceRequestInput struct {
-	OtelServiceName   string `json:"otelServiceName"`
-	CurrentStreamName string `json:"currentStreamName"`
+	CurrentStreamName string  `json:"currentStreamName"`
+	OtelServiceName   *string `json:"otelServiceName,omitempty"`
+	ContainerName     *string `json:"containerName,omitempty"`
+	Language          *string `json:"language,omitempty"`
+	Version           *string `json:"version,omitempty"`
 }
 
 type PayloadCollection struct {
