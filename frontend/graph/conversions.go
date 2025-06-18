@@ -2,6 +2,7 @@ package graph
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -11,14 +12,16 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func k8sKindToGql(k8sResourceKind string) model.K8sResourceKind {
-	switch k8sResourceKind {
-	case "Deployment":
+func kindToGql(kind string) model.K8sResourceKind {
+	switch strings.ToLower(kind) {
+	case "deployment":
 		return model.K8sResourceKindDeployment
-	case "StatefulSet":
+	case "statefulset":
 		return model.K8sResourceKindStatefulSet
-	case "DaemonSet":
+	case "daemonset":
 		return model.K8sResourceKindDaemonSet
+	case "cronjob":
+		return model.K8sResourceKindCronJob
 	}
 	return ""
 }
@@ -36,6 +39,7 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 	selected := true
 	dataStreamNames := services.GetSourceDataStreamNames(source)
 	var containers []*model.SourceContainer
+	var containersOverrides []*model.SourceContainerOverride
 
 	// Map the containers runtime details
 	for _, statusContainer := range instruConfig.Status.RuntimeDetailsByContainer {
@@ -64,17 +68,24 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 		})
 	}
 
+	for _, override := range instruConfig.Spec.ContainersOverrides {
+		containersOverrides = append(containersOverrides, &model.SourceContainerOverride{
+			ContainerName: override.ContainerName,
+		})
+	}
+
 	// Return the converted K8sActualSource object
 	return &model.K8sActualSource{
-		Namespace:         instruConfig.Namespace,
-		Kind:              k8sKindToGql(instruConfig.OwnerReferences[0].Kind),
-		Name:              instruConfig.OwnerReferences[0].Name,
-		Selected:          &selected,
-		DataStreamNames:   dataStreamNames,
-		OtelServiceName:   &instruConfig.Spec.ServiceName,
-		NumberOfInstances: nil,
-		Containers:        containers,
-		Conditions:        convertConditions(instruConfig.Status.Conditions),
+		Namespace:           instruConfig.Namespace,
+		Kind:                kindToGql(instruConfig.OwnerReferences[0].Kind),
+		Name:                instruConfig.OwnerReferences[0].Name,
+		Selected:            &selected,
+		DataStreamNames:     dataStreamNames,
+		OtelServiceName:     &instruConfig.Spec.ServiceName,
+		NumberOfInstances:   nil,
+		Containers:          containers,
+		ContainersOverrides: containersOverrides,
+		Conditions:          convertConditions(instruConfig.Status.Conditions),
 	}, nil
 }
 

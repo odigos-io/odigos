@@ -178,6 +178,11 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			{ // Read instrumentation labels from statefulsets and apply pod spec changes
+				APIGroups: []string{"batch"},
+				Resources: []string{"cronjobs"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
 			{ // Read instrumentation labels from daemonsets and apply pod spec changes
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets"},
@@ -197,11 +202,6 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 				APIGroups: []string{"operator.odigos.io"},
 				Resources: []string{"odigos/finalizers"},
 				Verbs:     []string{"update"},
-			},
-			{ // React to runtime detection in user workloads in all namespaces
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications"},
-				Verbs:     []string{"delete", "get", "list", "watch"},
 			},
 			{ // Update the status of the instrumentation configs after device injection
 				APIGroups: []string{"odigos.io"},

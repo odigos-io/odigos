@@ -26,6 +26,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // APITokens is the resolver for the apiTokens field.
@@ -152,7 +153,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 			if len(icCopy.OwnerReferences) == 0 {
 				return fmt.Errorf("no owner reference found for InstrumentationConfig %s", icCopy.Name)
 			}
-			src, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, services.WorkloadKind(icCopy.OwnerReferences[0].Kind))
+			src, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, model.K8sResourceKind(icCopy.OwnerReferences[0].Kind))
 			if err != nil && !apierrors.IsNotFound(err) {
 				return err
 			}
@@ -194,7 +195,7 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 	}
 
 	// Get Source object to extract stream names
-	src, err := services.GetSourceCRD(ctx, ns, name, services.WorkloadKind(kind))
+	src, err := services.GetSourceCRD(ctx, ns, name, kind)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
@@ -474,7 +475,7 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 	var namespaceSource *v1alpha1.Source
 	sourceObjects := make(map[string]*v1alpha1.Source)
 	for _, source := range sourceList.Items {
-		if services.WorkloadKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace {
+		if model.K8sResourceKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace {
 			namespaceSource = &source
 		} else {
 			key := fmt.Sprintf("%s/%s/%s", source.Spec.Workload.Namespace, source.Spec.Workload.Name, source.Spec.Workload.Kind)
@@ -570,28 +571,69 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 
 	nsName := sourceID.Namespace
 	workloadName := sourceID.Name
-	workloadKind := services.WorkloadKind(sourceID.Kind)
-	otelServiceName := patchSourceRequest.OtelServiceName
-	streamName := patchSourceRequest.CurrentStreamName
-
+	workloadKind := sourceID.Kind
 	source, err := services.GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			// unexpected error occurred while trying to get the source
 			return false, err
 		}
-
-		source, err = services.EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, streamName)
+		source, err = services.EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, patchSourceRequest.CurrentStreamName)
 		if err != nil {
 			// unexpected error occurred while trying to create the source
 			return false, err
 		}
 	}
 
-	_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", fmt.Sprintf("\"%s\"", otelServiceName))
-	if err != nil {
-		// unexpected error occurred while trying to update the source
-		return false, err
+	otelServiceName := patchSourceRequest.OtelServiceName
+	if otelServiceName != nil {
+		_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", fmt.Sprintf("\"%s\"", *otelServiceName))
+		if err != nil {
+			// unexpected error occurred while trying to update the source
+			return false, err
+		}
+	}
+
+	cont := patchSourceRequest.ContainerName
+	lang := patchSourceRequest.Language
+	vers := patchSourceRequest.Version
+	if cont != nil && lang != nil {
+		containerOverrides := make([]v1alpha1.ContainerOverride, 0)
+		// get previous overrides (except the one we are updating)
+		if source.Spec.ContainerOverrides != nil {
+			for _, override := range source.Spec.ContainerOverrides {
+				if override.ContainerName != *cont {
+					containerOverrides = append(containerOverrides, override)
+				}
+			}
+		}
+		// add the new override
+		runtimeInfo := v1alpha1.RuntimeDetailsByContainer{
+			ContainerName: *cont,
+			Language:      common.ProgrammingLanguage(*lang),
+		}
+		if vers != nil && *vers != "" {
+			runtimeInfo.RuntimeVersion = common.GetVersion(*vers).String()
+		}
+		containerOverrides = append(containerOverrides, v1alpha1.ContainerOverride{
+			ContainerName: *cont,
+			RuntimeInfo:   &runtimeInfo,
+		})
+		// patch the source with the new container overrides
+		patchBytes, err := json.Marshal([]map[string]interface{}{
+			{
+				"op":    "replace",
+				"path":  "/spec/containerOverrides",
+				"value": containerOverrides,
+			},
+		})
+		if err != nil {
+			return false, err
+		}
+		_, err = kube.DefaultClient.OdigosClient.Sources(nsName).Patch(ctx, source.Name, types.JSONPatchType, []byte(patchBytes), metav1.PatchOptions{})
+		if err != nil {
+			return false, err
+		}
 	}
 
 	return true, nil
@@ -652,7 +694,9 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 		k8sDestination.Spec.SecretRef = secretRef
 	}
 
-	dest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
+	dest, err := services.CreateResourceWithGenerateName(ctx, func() (*v1alpha1.Destination, error) {
+		return kube.DefaultClient.OdigosClient.Destinations(ns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
+	})
 	if err != nil {
 		if createSecret {
 			kube.DefaultClient.CoreV1().Secrets(ns).Delete(ctx, destName, metav1.DeleteOptions{})
@@ -1086,6 +1130,30 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 		return false, fmt.Errorf("failed to delete sources or remove stream name: %v", err)
 	}
 
+	return true, nil
+}
+
+// RestartWorkloads is the resolver for the restartWorkloads field.
+func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error) {
+	if services.IsReadonlyMode(ctx) {
+		return false, services.ErrorIsReadonly
+	}
+
+	err := services.WithGoroutine(ctx, len(sourceIds), func(goFunc func(func() error)) {
+		for _, sourceID := range sourceIds {
+			goFunc(func() error {
+				err := services.RolloutRestartWorkload(ctx, sourceID.Namespace, sourceID.Name, sourceID.Kind)
+				if err != nil {
+					return fmt.Errorf("failed to restart workload %s/%s/%s: %v", sourceID.Namespace, sourceID.Name, sourceID.Kind, err)
+				}
+				return nil
+			})
+		}
+	})
+
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 

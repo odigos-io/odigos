@@ -87,7 +87,7 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected
+// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;CrashLoopBackOff
 type AgentEnabledReason string
 
 const (
@@ -103,15 +103,20 @@ const (
 	// if the source cannot be instrumented because there are no running pods,
 	// we want to show this reason to the user so it's not a spinner
 	AgentEnabledReasonRuntimeDetailsUnavailable AgentEnabledReason = "RuntimeDetailsUnavailable"
+	// used for the rollback feature, when an application was instrumented and it caused a CrashLoopBackOff
+	// We're marking it as that and rolling back the instrumentation
+	AgentEnabledReasonCrashLoopBackOff AgentEnabledReason = "CrashLoopBackOff"
 )
 
-// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
+// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart
 type WorkloadRolloutReason string
 
 const (
 	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
+	WorkloadRolloutReasonDisabled               WorkloadRolloutReason = "Disabled"
+	WorkloadRolloutReasonWaitingForRestart      WorkloadRolloutReason = "WaitingForRestart"
 )
 
 const (
@@ -143,6 +148,8 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 80
 	case AgentEnabledReasonOtherAgentDetected:
 		return 90
+	case AgentEnabledReasonCrashLoopBackOff:
+		return 95
 	default:
 		return 100
 	}
@@ -159,10 +166,16 @@ func IsReasonStatusDisabled(reason string) bool {
 		string(AgentEnabledReasonIgnoredContainer),
 		string(AgentEnabledReasonNoAvailableAgent),
 		string(AgentEnabledReasonOtherAgentDetected),
-		string(AgentEnabledReasonRuntimeDetailsUnavailable),
-		// K8s workload-related reasons
-		string(K8sWorkloadRolloutReasonFailedCreate):
+		string(AgentEnabledReasonCrashLoopBackOff),
+		string(AgentEnabledReasonRuntimeDetailsUnavailable):
+
 		return true
+
+	// rollout-related reasons
+	case string(K8sWorkloadRolloutReasonFailedCreate):
+
+		return true
+
 	default:
 		return false
 	}
@@ -217,6 +230,12 @@ type InstrumentationConfigStatus struct {
 	// it allows us to determine if the workload needs to be rollout based on previous rollout and the current config.
 	// if this field is different than the spec.AgentsDeploymentHash it means rollout is needed or not yet updated.
 	WorkloadRolloutHash string `json:"workloadRolloutHash,omitempty"`
+
+	// Check if rollback happened to an application
+	RollbackOccurred bool `json:"rollbackOccurred,omitempty"`
+	// This time recorded only after the rollout took place.
+	// This allows us to determine whether a crashing application should be rolled back or not
+	InstrumentationTime *metav1.Time `json:"instrumentationTime,omitempty"`
 }
 
 func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v1.Container) *RuntimeDetailsByContainer {
@@ -263,6 +282,14 @@ type InstrumentationConfigSpec struct {
 
 	// configuration for each instrumented container in the workload
 	Containers []ContainerAgentConfig `json:"containers,omitempty"`
+
+	// will always list all containers of this workload by name,
+	// and override data in case it is configured on the source.
+	// this peoperty can be used to know all container names in the workload, even if other controllers did not yet run.
+	ContainersOverrides []ContainerOverride `json:"containersOverrides,omitempty"`
+	// An hash of the containers overrides, used to determine if the overrides have changed for event filtering.
+	// this is updated only when the overrides are changed, and not when some other change in the source occurs.
+	ContainerOverridesHash string `json:"containerOverridesHash,omitempty"`
 
 	// this hash is used to determine the deployment of the agents.
 	// e.g. when the distro for container changes, or it's compatibility version,

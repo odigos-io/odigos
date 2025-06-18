@@ -307,25 +307,23 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 	additionalVolumes = append(additionalVolumes, customContainerRuntimeSocketVolumes...)
 	additionalVolumeMounts = append(additionalVolumeMounts, customContainerRunetimeSocketVolumeMounts...)
 
-	if odigosTier == common.OnPremOdigosTier {
-		goOffsetsVolume := corev1.Volume{
-			Name: k8sconsts.GoOffsetsConfigMap,
-			VolumeSource: v1.VolumeSource{
-				ConfigMap: &v1.ConfigMapVolumeSource{
-					LocalObjectReference: v1.LocalObjectReference{
-						Name: k8sconsts.GoOffsetsConfigMap,
-					},
+	goOffsetsVolume := corev1.Volume{
+		Name: k8sconsts.GoOffsetsConfigMap,
+		VolumeSource: v1.VolumeSource{
+			ConfigMap: &v1.ConfigMapVolumeSource{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: k8sconsts.GoOffsetsConfigMap,
 				},
 			},
-		}
-		goOffsetsVolumeMount := corev1.VolumeMount{
-			Name:      k8sconsts.GoOffsetsConfigMap,
-			MountPath: k8sconsts.OffsetFileMountPath,
-		}
-		additionalVolumes = append(additionalVolumes, goOffsetsVolume)
-		additionalVolumeMounts = append(additionalVolumeMounts, goOffsetsVolumeMount)
-		dynamicEnv = append(dynamicEnv, v1.EnvVar{Name: k8sconsts.GoOffsetsEnvVar, Value: k8sconsts.OffsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName})
+		},
 	}
+	goOffsetsVolumeMount := corev1.VolumeMount{
+		Name:      k8sconsts.GoOffsetsConfigMap,
+		MountPath: k8sconsts.OffsetFileMountPath,
+	}
+	additionalVolumes = append(additionalVolumes, goOffsetsVolume)
+	additionalVolumeMounts = append(additionalVolumeMounts, goOffsetsVolumeMount)
+	dynamicEnv = append(dynamicEnv, v1.EnvVar{Name: k8sconsts.GoOffsetsEnvVar, Value: k8sconsts.OffsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName})
 
 	// 50% of the nodes can be unavailable during the update.
 	// if we do not set it, the default value is 1.
