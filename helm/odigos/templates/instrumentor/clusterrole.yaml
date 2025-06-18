@@ -30,6 +30,14 @@ rules:
       - watch
       - get
   - apiGroups:
+      - 'batch'
+    resources:
+      - cronjobs
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
       - apps
     resources:
       - daemonsets
@@ -75,15 +83,6 @@ rules:
       - odigos/finalizers
     verbs:
       - update
-  - apiGroups:
-      - odigos.io
-    resources:
-      - instrumentedapplications
-    verbs:
-      - delete
-      - get
-      - list
-      - watch
   - apiGroups:
       - odigos.io
     resources:

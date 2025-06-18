@@ -13,3 +13,11 @@ rules:
       - get
       - list
       - watch
+{{- if .Values.openshift.enabled }}
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps/finalizers
+    verbs:
+      - update
+{{- end }}

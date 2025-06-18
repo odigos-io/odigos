@@ -101,6 +101,27 @@ RUN for v in ${PHP_VERSIONS}; do \
     done
 
 
+# Ruby
+FROM --platform=$BUILDPLATFORM maniator/gh AS ruby-agents
+WORKDIR /ruby-agents
+ARG TARGETARCH
+ARG RUBY_AGENT_VERSION="v0.0.4"
+ARG RUBY_VERSIONS="3.1 3.2 3.3 3.4"
+ENV RUBY_VERSIONS=${RUBY_VERSIONS}
+# Clone agents repo (contains pre-compiled binaries, and pre-installed dependencies for each Ruby version)
+RUN git clone https://github.com/odigos-io/opentelemetry-ruby \
+    && cd opentelemetry-ruby \
+    && git checkout tags/${RUBY_AGENT_VERSION}
+# Move the gems & binaries to the correct directories
+RUN for v in ${RUBY_VERSIONS}; do \
+    mv opentelemetry-ruby/$v/${TARGETARCH}/* opentelemetry-ruby/$v/; \
+    cp opentelemetry-ruby/Gemfile opentelemetry-ruby/$v/Gemfile; \
+    cp opentelemetry-ruby/index.rb opentelemetry-ruby/$v/index.rb; \
+    rm -rf opentelemetry-ruby/$v/amd64; \
+    rm -rf opentelemetry-ruby/$v/arm64; \
+    done
+
+
 ######### ODIGLET #########
 FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
@@ -145,6 +166,12 @@ COPY --from=php-agents /php-agents/opentelemetry-php/8.1 /instrumentations/php/8
 COPY --from=php-agents /php-agents/opentelemetry-php/8.2 /instrumentations/php/8.2
 COPY --from=php-agents /php-agents/opentelemetry-php/8.3 /instrumentations/php/8.3
 COPY --from=php-agents /php-agents/opentelemetry-php/8.4 /instrumentations/php/8.4
+
+# Ruby
+COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.1 /instrumentations/ruby/3.1
+COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.2 /instrumentations/ruby/3.2
+COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.3 /instrumentations/ruby/3.3
+COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.4 /instrumentations/ruby/3.4
 
 # loader
 ARG ODIGOS_LOADER_VERSION=v0.0.3

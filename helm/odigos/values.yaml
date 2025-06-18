@@ -289,6 +289,19 @@ nodeSelector: {}
 karpenter:
   enabled: false
 
+
+# Refer to the official Kubernetes documentation for structure and field details:
+# https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+#
+# Example: Odigos components should be evenly spread across zones.
+# No need to set labelSelector manually — the Odigos Helm chart will apply it automatically.
+# topologySpreadConstraints:
+#   - maxSkew: 1
+#     topologyKey: "topology.kubernetes.io/zone"
+#     whenUnsatisfiable: "ScheduleAnyway"
+topologySpreadConstraints: []
+
+
 # Auto rollback settings
 # The auto‐rollback feature provides a stability window to test instrumented apps.
 # After an application is instrumented, a grace period begins during which we allow the app (and its dependencies) to stabilize and start working.
@@ -297,4 +310,13 @@ autoRollback:
   disabled: false
   graceTime: 5m
   stabilityWindowTime: 1h
+
+rollout:
+# Odigos automatically triggers a one-time rollout for workloads when instrumenting or uninstrumenting, to apply changes.
+# If workload restarts are sensitive, this setting can be used to disable the automatic rollout.
+# When disabled, users are responsible for manually triggering rollouts after adding or removing sources.
+# Any new pods created after enabling or disabling the agent (via manual rollout, autoscaling, etc.)
+# will still have the agent injected, regardless of this setting.
+# When set to true, all additional configurations related to automated rollouts or rollbacks are ignored.
+  automaticRolloutDisabled: false
 
