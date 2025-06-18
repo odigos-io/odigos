@@ -35,57 +35,93 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	return &str
 }
 
+func getContainerAgentInfo(ic *v1alpha1.InstrumentationConfig, containerName string) (bool, string, string) {
+	for _, specContainer := range ic.Spec.Containers {
+		if specContainer.ContainerName == containerName {
+			instrumented := specContainer.AgentEnabled
+			instrumentationMessage := specContainer.AgentEnabledMessage
+			if instrumentationMessage == "" {
+				instrumentationMessage = string(specContainer.AgentEnabledReason)
+			}
+			otelDistroName := specContainer.OtelDistroName
+			return instrumented, instrumentationMessage, otelDistroName
+		}
+	}
+	return false, "", ""
+}
+
 func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, source *v1alpha1.Source) (*model.K8sActualSource, error) {
 	selected := true
 	dataStreamNames := services.GetSourceDataStreamNames(source)
 	var containers []*model.SourceContainer
-	var containersOverrides []*model.SourceContainerOverride
 
 	// Map the containers runtime details
-	for _, statusContainer := range instruConfig.Status.RuntimeDetailsByContainer {
+	for i := range instruConfig.Status.RuntimeDetailsByContainer {
 		var instrumented bool
 		var instrumentationMessage string
 		var otelDistroName string
 
-		for _, specContainer := range instruConfig.Spec.Containers {
-			if specContainer.ContainerName == statusContainer.ContainerName {
-				instrumented = specContainer.AgentEnabled
-				instrumentationMessage = specContainer.AgentEnabledMessage
-				if instrumentationMessage == "" {
-					instrumentationMessage = string(specContainer.AgentEnabledReason)
+		statusContainer := instruConfig.Status.RuntimeDetailsByContainer[i]
+		containerName := statusContainer.ContainerName
+
+		instrumented, instrumentationMessage, otelDistroName = getContainerAgentInfo(&instruConfig, containerName)
+
+		resolvedRuntimeInfo := &statusContainer
+		for _, override := range instruConfig.Spec.ContainersOverrides {
+			if override.ContainerName == containerName {
+				if override.RuntimeInfo != nil {
+					resolvedRuntimeInfo = override.RuntimeInfo
 				}
-				otelDistroName = specContainer.OtelDistroName
+				break
 			}
 		}
 
 		containers = append(containers, &model.SourceContainer{
-			ContainerName:          statusContainer.ContainerName,
-			Language:               string(statusContainer.Language),
-			RuntimeVersion:         statusContainer.RuntimeVersion,
+			ContainerName:          containerName,
+			Language:               string(resolvedRuntimeInfo.Language),
+			RuntimeVersion:         resolvedRuntimeInfo.RuntimeVersion,
 			Instrumented:           instrumented,
 			InstrumentationMessage: instrumentationMessage,
 			OtelDistroName:         &otelDistroName,
 		})
 	}
 
-	for _, override := range instruConfig.Spec.ContainersOverrides {
-		containersOverrides = append(containersOverrides, &model.SourceContainerOverride{
-			ContainerName: override.ContainerName,
-		})
+	if len(containers) == 0 {
+		// then take the containers from the overrides
+		for _, override := range instruConfig.Spec.ContainersOverrides {
+
+			language := ""
+			if override.RuntimeInfo != nil {
+				language = string(override.RuntimeInfo.Language)
+			}
+			runtimeVersion := ""
+			if override.RuntimeInfo != nil {
+				runtimeVersion = override.RuntimeInfo.RuntimeVersion
+			}
+			instrumented, instrumentationMessage, otelDistroName := getContainerAgentInfo(&instruConfig, override.ContainerName)
+
+			containers = append(containers, &model.SourceContainer{
+				ContainerName:          override.ContainerName,
+				Language:               language,
+				RuntimeVersion:         runtimeVersion,
+				Instrumented:           instrumented,
+				InstrumentationMessage: instrumentationMessage,
+				OtelDistroName:         &otelDistroName,
+			})
+		}
 	}
 
 	// Return the converted K8sActualSource object
 	return &model.K8sActualSource{
-		Namespace:           instruConfig.Namespace,
-		Kind:                kindToGql(instruConfig.OwnerReferences[0].Kind),
-		Name:                instruConfig.OwnerReferences[0].Name,
-		Selected:            &selected,
-		DataStreamNames:     dataStreamNames,
-		OtelServiceName:     &instruConfig.Spec.ServiceName,
-		NumberOfInstances:   nil,
-		Containers:          containers,
-		ContainersOverrides: containersOverrides,
-		Conditions:          convertConditions(instruConfig.Status.Conditions),
+		Namespace:         instruConfig.Namespace,
+		Kind:              kindToGql(instruConfig.OwnerReferences[0].Kind),
+		Name:              instruConfig.OwnerReferences[0].Name,
+		Selected:          &selected,
+		DataStreamNames:   dataStreamNames,
+		OtelServiceName:   &instruConfig.Spec.ServiceName,
+		NumberOfInstances: nil,
+		Containers:        containers,
+		Conditions:        convertConditions(instruConfig.Status.Conditions),
 	}, nil
 }
 

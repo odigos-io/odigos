@@ -68,10 +68,6 @@ type SourceContainer {
   otelDistroName: String
 }
 
-type SourceContainerOverride {
-  containerName: String!
-}
-
 type Condition {
   status: ConditionStatus!
   type: String!
@@ -103,7 +99,6 @@ type K8sActualSource {
   selected: Boolean
   otelServiceName: String
   containers: [SourceContainer!]
-  containersOverrides: [SourceContainerOverride!]
   conditions: [Condition!]
 }
 
