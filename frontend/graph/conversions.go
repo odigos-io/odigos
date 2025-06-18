@@ -35,6 +35,21 @@ func k8sLastTransitionTimeToGql(t v1.Time) *string {
 	return &str
 }
 
+func getContainerAgentInfo(ic *v1alpha1.InstrumentationConfig, containerName string) (bool, string, string) {
+	for _, specContainer := range ic.Spec.Containers {
+		if specContainer.ContainerName == containerName {
+			instrumented := specContainer.AgentEnabled
+			instrumentationMessage := specContainer.AgentEnabledMessage
+			if instrumentationMessage == "" {
+				instrumentationMessage = string(specContainer.AgentEnabledReason)
+			}
+			otelDistroName := specContainer.OtelDistroName
+			return instrumented, instrumentationMessage, otelDistroName
+		}
+	}
+	return false, "", ""
+}
+
 func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, source *v1alpha1.Source) (*model.K8sActualSource, error) {
 	selected := true
 	dataStreamNames := services.GetSourceDataStreamNames(source)
@@ -49,16 +64,7 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 		statusContainer := instruConfig.Status.RuntimeDetailsByContainer[i]
 		containerName := statusContainer.ContainerName
 
-		for _, specContainer := range instruConfig.Spec.Containers {
-			if specContainer.ContainerName == containerName {
-				instrumented = specContainer.AgentEnabled
-				instrumentationMessage = specContainer.AgentEnabledMessage
-				if instrumentationMessage == "" {
-					instrumentationMessage = string(specContainer.AgentEnabledReason)
-				}
-				otelDistroName = specContainer.OtelDistroName
-			}
-		}
+		instrumented, instrumentationMessage, otelDistroName = getContainerAgentInfo(&instruConfig, containerName)
 
 		resolvedRuntimeInfo := &statusContainer
 		for _, override := range instruConfig.Spec.ContainersOverrides {
@@ -92,14 +98,15 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 			if override.RuntimeInfo != nil {
 				runtimeVersion = override.RuntimeInfo.RuntimeVersion
 			}
+			instrumented, instrumentationMessage, otelDistroName := getContainerAgentInfo(&instruConfig, override.ContainerName)
 
 			containers = append(containers, &model.SourceContainer{
 				ContainerName:          override.ContainerName,
 				Language:               language,
 				RuntimeVersion:         runtimeVersion,
-				Instrumented:           false,
-				InstrumentationMessage: "",
-				OtelDistroName:         nil,
+				Instrumented:           instrumented,
+				InstrumentationMessage: instrumentationMessage,
+				OtelDistroName:         &otelDistroName,
 			})
 		}
 	}
