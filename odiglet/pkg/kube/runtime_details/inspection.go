@@ -88,6 +88,12 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 					}
 				}
 
+				// Agent that can be detected using environment variables
+				val, ok := inspectProc.Environments.OverwriteEnvs[consts.LdPreloadEnvVarName]
+				if ok && strings.HasPrefix(val, procdiscovery.DynatraceFullStackEnvValuePrefix) {
+					detectedAgent = &odigosv1.OtherAgent{Name: procdiscovery.OtherAgentEnvs[procdiscovery.DynatraceFullStackEnvValuePrefix]}
+				}
+
 				// Inspecting libc type is expensive and not relevant for all languages
 				if libc.ShouldInspectForLanguage(programLanguageDetails.Language) {
 					typeFound, err := libc.InspectType(inspectProc)
