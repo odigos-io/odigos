@@ -50,6 +50,18 @@ func (i RuntimeDetailsChangedPredicate) Update(e event.UpdateEvent) bool {
 		return true
 	}
 
+	for i, oldDetails := range oldIc.Status.RuntimeDetailsByContainer {
+		if i >= len(newIc.Status.RuntimeDetailsByContainer) {
+			return true // container was removed
+		}
+		newDetails := newIc.Status.RuntimeDetailsByContainer[i]
+
+		if oldDetails.Language != newDetails.Language ||
+			oldDetails.RuntimeVersion != newDetails.RuntimeVersion {
+			return true // runtime details have changed
+		}
+	}
+
 	return false
 }
 

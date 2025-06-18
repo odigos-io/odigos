@@ -48,6 +48,8 @@ func LanguageAndSdk(pod *v1.Pod, containerName string, distroName string) (commo
 			return common.DotNetProgrammingLanguage, common.OtelSdkNativeEnterprise, nil
 		case "php-community":
 			return common.PhpProgrammingLanguage, common.OtelSdkNativeCommunity, nil
+		case "ruby-community":
+			return common.RubyProgrammingLanguage, common.OtelSdkNativeCommunity, nil
 		}
 	}
 
