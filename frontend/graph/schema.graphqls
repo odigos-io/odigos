@@ -68,6 +68,10 @@ type SourceContainer {
   otelDistroName: String
 }
 
+type SourceContainerOverride {
+  containerName: String!
+}
+
 type Condition {
   status: ConditionStatus!
   type: String!
@@ -99,6 +103,7 @@ type K8sActualSource {
   selected: Boolean
   otelServiceName: String
   containers: [SourceContainer!]
+  containersOverrides: [SourceContainerOverride!]
   conditions: [Condition!]
 }
 
@@ -383,8 +388,12 @@ type PipelineAction {
 }
 
 input PatchSourceRequestInput {
-  otelServiceName: String!
   currentStreamName: String!
+  otelServiceName: String
+  # for runtime override
+  containerName: String
+  language: String
+  version: String
 }
 
 interface Action {

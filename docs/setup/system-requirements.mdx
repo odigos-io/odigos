@@ -44,7 +44,7 @@ The following components runs as Deployment and request the following resources 
 | odigos-schedualer      | 64Mi         | 512Mi       | 10m       | 500m     |
 | odigos-ui | 64Mi         | 512Mi       | 10m       | 500m     |
 
-In addition, Odigos deploys OpenTelemetry Collector Deployment, 
+In addition, Odigos deploys OpenTelemetry Collector Deployment,
 with auto scaling (multiple replicas) and configurable resources requests and limits.
 The default values (unless overridden) are:
 
@@ -68,3 +68,28 @@ Read more [here](/pipeline/configuration).
 You can override these values by providing a custom configuration (read more [here](/pipeline/configuration)).
 
 
+## Network Requirements
+
+<Warning>
+Ensure that any network-layer components are properly configured to allow the required connectivity between Odigos components. Improper configuration may impact the correct operation of Odigos.
+</Warning>
+To ensure proper operation of Odigos components and instrumented applications, the following network connectivity must be allowed inside the Kubernetes cluster:
+
+### Core Network Connectivity
+
+| Source | Destination Service | Ports | Purpose |
+|--------|----------------------|-------|---------|
+| Instrumented Application Pods | `odiglet-local` | `4320` | Retrieve instrumentation configuration from Odiglet |
+| Instrumented Application Pods | `odigos-data-collection-local-traffic` | `4317` (gRPC), `4318` (HTTP) | Export application telemetry data (OTLP protocol) |
+| Odiglet Pods | `odigos-data-collection-local-traffic` | `4318` | Export eBPF-collected telemetry data |
+
+
+### Network Layer Considerations
+
+In some environments, the following network components may affect traffic between these services:
+
+- Service meshes (e.g. Istio, Linkerd, Cilium, Consul)
+- HTTP proxies or egress gateways
+- Transparent proxies (corporate or cluster-level)
+- Network security appliances (WAFs, L7 firewalls, DPI systems)
+- Kubernetes NetworkPolicies
