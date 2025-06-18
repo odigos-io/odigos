@@ -111,6 +111,7 @@ spec:
                       - php
                       - ruby
                       - rust
+                      - cplusplus
                       - mysql
                       - nginx
                       - redis

@@ -1,9 +1,7 @@
 package java
 
 import (
-	"bufio"
 	"regexp"
-	"strings"
 
 	"github.com/hashicorp/go-version"
 
@@ -14,13 +12,15 @@ import (
 
 type JavaInspector struct{}
 
-const JavaVersionRegex = `\d+\.\d+\.\d+\+\d+`
-
-var versionRegex = regexp.MustCompile(JavaVersionRegex)
-
-var processNames = []string{
-	"java",
-}
+var (
+	processNames = []string{
+		"java",
+	}
+	binaries = []string{
+		"/libjvm.so", // Ensures "libjvm.so" appears within a path (because of the "/" prefix)
+	}
+	versionRegex = regexp.MustCompile(`\d+\.\d+\.\d+\+\d+`)
+)
 
 func (j *JavaInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	if utils.IsProcessEqualProcessNames(pcx, processNames) {
@@ -35,14 +35,11 @@ func (j *JavaInspector) DeepScan(pcx *process.ProcessContext) (common.Programmin
 	if err != nil {
 		return "", false
 	}
-	scanner := bufio.NewScanner(mapsFile)
-	for scanner.Scan() {
-		// Check if the shared library "libjvm.so" is loaded in the process memory
-		// Ensures "libjvm.so" appears within a path (because of the "/" prefix)
-		if strings.Contains(scanner.Text(), "/libjvm.so") {
-			return common.JavaProgrammingLanguage, true
-		}
+
+	if utils.IsMapsFileContainsBinary(mapsFile, binaries) {
+		return common.JavaProgrammingLanguage, true
 	}
+
 	return "", false
 }
 
