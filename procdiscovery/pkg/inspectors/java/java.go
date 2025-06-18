@@ -1,7 +1,6 @@
 package java
 
 import (
-	"path/filepath"
 	"regexp"
 
 	"github.com/hashicorp/go-version"
@@ -24,9 +23,7 @@ var (
 )
 
 func (j *JavaInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	baseExe := filepath.Base(pcx.ExePath)
-
-	if utils.IsBaseExeContainsProcessName(baseExe, processNames) {
+	if utils.IsProcessEqualProcessNames(pcx, processNames) {
 		return common.JavaProgrammingLanguage, true
 	}
 
