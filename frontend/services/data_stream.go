@@ -11,7 +11,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func ExtractDataStreamsFromEntities(sources []v1alpha1.Source, destinations []v1alpha1.Destination) []*model.DataStream {
+func ExtractDataStreamsFromEntities(instrumentationConfigs []v1alpha1.InstrumentationConfig, destinations []v1alpha1.Destination) []*model.DataStream {
 	var dataStreams []*model.DataStream
 	dataStreams = append(dataStreams, &model.DataStream{Name: "default"})
 
@@ -19,8 +19,8 @@ func ExtractDataStreamsFromEntities(sources []v1alpha1.Source, destinations []v1
 	seen := make(map[string]bool)
 	seen["default"] = true
 
-	for _, src := range sources {
-		for labelKey, labelValue := range src.Labels {
+	for _, ic := range instrumentationConfigs {
+		for labelKey, labelValue := range ic.Labels {
 			if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
 				name := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
 				if !seen[name] {
@@ -90,6 +90,27 @@ func ExtractDataStreamsFromSource(primarySource *v1alpha1.Source, secondarySourc
 				}
 
 				if !seen[ds] && !forbidden[ds] {
+					seen[ds] = true
+					result = append(result, &ds)
+				}
+			}
+		}
+	}
+
+	return result
+}
+
+func ExtractDataStreamsFromInstrumentationConfig(ic *v1alpha1.InstrumentationConfig) []*string {
+	seen := make(map[string]bool)
+	result := make([]*string, 0)
+
+	if ic != nil {
+		for labelKey, labelValue := range ic.Labels {
+			if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) {
+				nameFromLabel := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+				ds := nameFromLabel
+
+				if !seen[ds] && labelValue != "false" {
 					seen[ds] = true
 					result = append(result, &ds)
 				}
