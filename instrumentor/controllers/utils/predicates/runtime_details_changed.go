@@ -60,3 +60,35 @@ func (i RuntimeDetailsChangedPredicate) Delete(e event.DeleteEvent) bool {
 func (i RuntimeDetailsChangedPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
+
+type ContainerOverridesChangedPredicate struct{}
+
+var _ predicate.Predicate = &ContainerOverridesChangedPredicate{}
+
+var InstrumentationConfigContainerOverridesChangedPredicate = ContainerOverridesChangedPredicate{}
+
+func (i ContainerOverridesChangedPredicate) Create(e event.CreateEvent) bool {
+	return true
+}
+
+func (i ContainerOverridesChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+
+	oldIc, oldOk := e.ObjectOld.(*odigosv1.InstrumentationConfig)
+	newIc, newOk := e.ObjectNew.(*odigosv1.InstrumentationConfig)
+	if !oldOk || !newOk {
+		return false
+	}
+
+	return oldIc.Spec.ContainerOverridesHash != newIc.Spec.ContainerOverridesHash
+}
+
+func (i ContainerOverridesChangedPredicate) Delete(e event.DeleteEvent) bool {
+	return false
+}
+
+func (i ContainerOverridesChangedPredicate) Generic(e event.GenericEvent) bool {
+	return false
+}
