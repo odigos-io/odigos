@@ -21,8 +21,8 @@ func ExtractDataStreamsFromEntities(instrumentationConfigs []v1alpha1.Instrument
 
 	for _, ic := range instrumentationConfigs {
 		for labelKey, labelValue := range ic.Labels {
-			if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
-				name := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+			if strings.HasPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) && labelValue == "true" {
+				name := strings.TrimPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix)
 				if !seen[name] {
 					seen[name] = true
 					dataStreams = append(dataStreams, &model.DataStream{
@@ -62,8 +62,8 @@ func ExtractDataStreamsFromSource(primarySource *v1alpha1.Source, secondarySourc
 	// Get all data stream names from the workload source
 	if primarySource != nil {
 		for labelKey, labelValue := range primarySource.Labels {
-			if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) {
-				nameFromLabel := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+			if strings.HasPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) {
+				nameFromLabel := strings.TrimPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix)
 				ds := nameFromLabel
 
 				if labelValue == "false" {
@@ -81,8 +81,8 @@ func ExtractDataStreamsFromSource(primarySource *v1alpha1.Source, secondarySourc
 	// Get all data stream names from the namespace source (if it was not defined as 'false' in the workload source)
 	if secondarySource != nil {
 		for labelKey, labelValue := range secondarySource.Labels {
-			if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) {
-				nameFromLabel := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+			if strings.HasPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) {
+				nameFromLabel := strings.TrimPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix)
 				ds := nameFromLabel
 
 				if labelValue == "false" {
@@ -106,8 +106,8 @@ func ExtractDataStreamsFromInstrumentationConfig(ic *v1alpha1.InstrumentationCon
 
 	if ic != nil {
 		for labelKey, labelValue := range ic.Labels {
-			if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) {
-				nameFromLabel := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+			if strings.HasPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) {
+				nameFromLabel := strings.TrimPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix)
 				ds := nameFromLabel
 
 				if !seen[ds] && labelValue != "false" {
@@ -222,7 +222,7 @@ func DeleteSourcesOrRemoveStreamName(ctx context.Context, sources *v1alpha1.Sour
 		source := source // capture range variable
 
 		for labelKey := range source.Labels {
-			if strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) == currentStreamName {
+			if strings.TrimPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) == currentStreamName {
 				toPersist = append(toPersist, &model.PersistNamespaceSourceInput{
 					Namespace:         source.Spec.Workload.Namespace,
 					Name:              source.Spec.Workload.Name,
@@ -250,16 +250,16 @@ func UpdateSourcesCurrentStreamName(ctx context.Context, sources *v1alpha1.Sourc
 
 		g.Go(func() error {
 			for labelKey, labelValue := range source.Labels {
-				if strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) == currentStreamName {
+				if strings.TrimPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) == currentStreamName {
 					// remove the old label
-					dataStreamLabelKey := k8sconsts.SourceGroupLabelPrefix + currentStreamName
+					dataStreamLabelKey := k8sconsts.SourceDataStreamLabelPrefix + currentStreamName
 					_, err := UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, dataStreamLabelKey, "")
 					if err != nil {
 						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
 					}
 
 					// add the new label
-					dataStreamLabelKey = k8sconsts.SourceGroupLabelPrefix + newStreamName
+					dataStreamLabelKey = k8sconsts.SourceDataStreamLabelPrefix + newStreamName
 					_, err = UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, dataStreamLabelKey, labelValue)
 					if err != nil {
 						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
