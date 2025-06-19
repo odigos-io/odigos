@@ -36,7 +36,7 @@ ARG ODIGOS_VERSION
 WORKDIR /opentelemetry-node
 COPY --from=nodejs-agent-src package.json yarn.lock ./
 # install dependencies with dev so we can build the agent
-RUN yarn --frozen-lockfile --production
+RUN yarn --frozen-lockfile
 COPY --from=nodejs-agent-src / .
 RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
 RUN yarn compile
