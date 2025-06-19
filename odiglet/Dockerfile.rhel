@@ -44,7 +44,6 @@ RUN yarn compile
 RUN rm -rf .github .git src tsconfig.json yarn.lock
 
 
-
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.9.0
@@ -144,7 +143,7 @@ COPY --from=python-builder /python-instrumentation/workspace /instrumentations/p
 
 # NodeJS
 COPY ./agents/nodejs-community/autoinstrumentation.js /instrumentations/nodejs-community/autoinstrumentation.js
-COPY --from=nodejs-agent-build /opentelemetry-node /instrumentations/nodejs-base
+COPY --from=nodejs-agent-build /opentelemetry-node /instrumentations/opentelemetry-node
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet

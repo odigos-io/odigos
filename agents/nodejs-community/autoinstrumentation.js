@@ -8,7 +8,7 @@ try {
         console.error('Odigos: Unsupported Node.js version for OpenTelemetry auto-instrumentation');
     } else {
         // Import the necessary functions using traditional require syntax.
-        var opentelemetryNode = require('../nodejs-base');
+        var opentelemetryNode = require('../opentelemetry-node');
         var createNativeCommunitySpanProcessor = opentelemetryNode.createNativeCommunitySpanProcessor;
         var startOpenTelemetryAgent = opentelemetryNode.startOpenTelemetryAgent;
 
