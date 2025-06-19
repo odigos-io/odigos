@@ -39,11 +39,13 @@ const (
 	NewRelicAgentEnv               = "NEW_RELIC_CONFIG_FILE"
 	DynatraceDynamizerEnv          = "DT_DYNAMIZER_TARGET_EXE"
 	DynatraceDynamizerExeSubString = "oneagentdynamizer"
+	DataDogAgentEnv                = "DD_TRACE_AGENT_URL"
 )
 
 var OtherAgentEnvs = map[string]string{
 	NewRelicAgentEnv:      "New Relic Agent",
 	DynatraceDynamizerEnv: "Dynatrace Agent",
+	DataDogAgentEnv:       "Datadog Agent",
 }
 
 var OtherAgentCmdSubString = map[string]string{
