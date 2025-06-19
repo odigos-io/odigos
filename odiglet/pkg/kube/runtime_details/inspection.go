@@ -88,7 +88,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 
 				// Agent that can be detected using environment variables
 				val, ok := inspectProc.Environments.OverwriteEnvs[consts.LdPreloadEnvVarName]
-				if ok && strings.HasPrefix(val, procdiscovery.DynatraceFullStackEnvValuePrefix) {
+				if ok && strings.Contains(val, procdiscovery.DynatraceFullStackEnvValuePrefix) {
 					detectedAgent = &odigosv1.OtherAgent{Name: procdiscovery.OtherAgentEnvs[procdiscovery.DynatraceFullStackEnvValuePrefix]}
 				}
 

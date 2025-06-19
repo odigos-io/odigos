@@ -39,7 +39,7 @@ const (
 	NewRelicAgentEnv                 = "NEW_RELIC_CONFIG_FILE"
 	DynatraceDynamizerEnv            = "DT_DYNAMIZER_TARGET_EXE"
 	DynatraceDynamizerExeSubString   = "oneagentdynamizer"
-	DynatraceFullStackEnvValuePrefix = "/opt/dynatrace/"
+	DynatraceFullStackEnvValuePrefix = "/dynatrace/"
 )
 
 var OtherAgentEnvs = map[string]string{
