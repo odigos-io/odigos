@@ -1029,6 +1029,11 @@ func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, data
 		return nil, services.ErrorIsReadonly
 	}
 
+	idNew := dataStream.Name
+	if id == idNew {
+		return &model.DataStream{Name: idNew}, nil
+	}
+
 	ns := env.GetCurrentNamespace()
 	kubeClient := kube.DefaultClient.OdigosClient
 
@@ -1036,7 +1041,7 @@ func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, data
 	if err != nil {
 		return nil, err
 	}
-	err = services.UpdateDestinationsCurrentStreamName(ctx, destinations, id, dataStream.Name)
+	err = services.UpdateDestinationsCurrentStreamName(ctx, destinations, id, idNew)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update destinations: %v", err)
 	}
@@ -1045,12 +1050,12 @@ func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, data
 	if err != nil {
 		return nil, err
 	}
-	err = services.UpdateSourcesCurrentStreamName(ctx, sources, id, dataStream.Name)
+	err = services.UpdateSourcesCurrentStreamName(ctx, sources, id, idNew)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update sources: %v", err)
 	}
 
-	return &model.DataStream{Name: dataStream.Name}, nil
+	return &model.DataStream{Name: idNew}, nil
 }
 
 // DeleteDataStream is the resolver for the deleteDataStream field.
