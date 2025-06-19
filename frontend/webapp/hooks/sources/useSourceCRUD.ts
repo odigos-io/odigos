@@ -6,7 +6,7 @@ import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import type { PaginatedData, SourceConditions, SourceInstrumentInput } from '@/types';
 import { addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
-import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCES, PERSIST_SOURCE, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCES, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud } from '@odigos/ui-kit/types';
 import {
   type NamespaceSelectionFormData,
@@ -30,7 +30,7 @@ interface UseSourceCrud {
 
 export const useSourceCRUD = (): UseSourceCrud => {
   const { isReadonly } = useConfig();
-  const { persistNamespace } = useNamespace();
+  const { persistNamespaces } = useNamespace();
   const { addNotification } = useNotificationStore();
   const { selectedStreamName } = useDataStreamStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
@@ -46,7 +46,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const [queryById] = useLazyQuery<{ computePlatform: { source: Source } }, { sourceId: WorkloadId }>(GET_SOURCE);
   const [queryOtherConditions] = useLazyQuery<{ sourceConditions: SourceConditions[] }>(GET_SOURCE_CONDITIONS);
 
-  const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCE, {
+  const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCES, {
     onError: (error) => {
       setInstrumentCount('sourcesToCreate', 0);
       setInstrumentCount('sourcesCreated', 0);
@@ -136,8 +136,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       let alreadyNotified = false;
-      const { payloads: persistSourcesPayloads, isEmpty: sourcesEmpty } = prepareSourcePayloads(selectAppsList, sources, selectedStreamName, handleInstrumentationCount, removeEntities, addEntities);
-      const { payloads: persistNamespacesPayloads, isEmpty: futueAppsEmpty } = prepareNamespacePayloads(futureSelectAppsList);
+      const { payload: persistSourcesPayloads, isEmpty: sourcesEmpty } = prepareSourcePayloads(selectAppsList, sources, selectedStreamName, handleInstrumentationCount, removeEntities, addEntities);
+      const { payload: persistNamespacesPayloads, isEmpty: futueAppsEmpty } = prepareNamespacePayloads(futureSelectAppsList, selectedStreamName);
 
       if (!sourcesEmpty && !alreadyNotified) {
         alreadyNotified = true;
@@ -148,9 +148,9 @@ export const useSourceCRUD = (): UseSourceCrud => {
         notifyUser(StatusType.Default, 'Pending', 'Persisting namespaces...', undefined, true);
       }
 
-      await Promise.all(persistSourcesPayloads.map((payload) => mutatePersistSources({ variables: payload })));
+      await mutatePersistSources({ variables: persistSourcesPayloads });
       setConfiguredSources({});
-      await Promise.all(persistNamespacesPayloads.map(persistNamespace));
+      await persistNamespaces(persistNamespacesPayloads);
       setConfiguredFutureApps({});
 
       // !! no "fetch" and no "setInstrumentAwait(false)"

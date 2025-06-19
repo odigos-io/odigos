@@ -21,9 +21,7 @@ interface UseDestinationCrud {
 const mapNoUndefinedFields = (destination: DestinationFormData, selectedStreamName: string) => ({
   ...destination,
   fields: destination.fields.filter(({ value }) => value !== undefined),
-
-  // TODO: uncomment when Data Streams are ready to use
-  currentStreamName: '', // selectedStreamName,
+  currentStreamName: selectedStreamName,
 });
 
 export const useDestinationCRUD = (): UseDestinationCrud => {
@@ -109,9 +107,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       await mutateDelete({
         variables: {
           id,
-
-          // TODO: uncomment when Data Streams are ready to use
-          currentStreamName: '', // selectedStreamName
+          currentStreamName: selectedStreamName,
         },
       });
     }
