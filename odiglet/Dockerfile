@@ -36,10 +36,14 @@ ARG ODIGOS_VERSION
 WORKDIR /opentelemetry-node
 COPY --from=nodejs-agent-src package.json yarn.lock ./
 # install dependencies with dev so we can build the agent
-RUN yarn --frozen-lockfile
+RUN yarn --frozen-lockfile --production
 COPY --from=nodejs-agent-src / .
 RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
 RUN yarn compile
+RUN rm -rf .github .git src tsconfig.json yarn.lock
+
+FROM node:18 AS nodejs-community
+
 
 # The fourth step 'nodejs-agent-native-community-src' prepares the agent sources for the native-community agent.
 # it COPY the nodejs agent source from 'nodejs-agent-build' stage and then build the agent in the 'agents/nodejs-native-community' directory.
@@ -47,13 +51,13 @@ RUN yarn compile
 #    - package source code in '/nodejs-instrumentation/build/src' directory.
 #    - all required dependencies in '/nodejs-instrumentation/prod_node_modules' directory.
 # These artifacts are later copied into the odiglet final image to be mounted into auto-instrumented pods at runtime.
-FROM node:18 AS nodejs-agent-native-community-builder
-ARG ODIGOS_VERSION
-WORKDIR /repos
-COPY ./agents/nodejs-native-community ./odigos/agents/nodejs-native-community
-COPY --from=nodejs-agent-build /opentelemetry-node opentelemetry-node
-# prepare the production node_modules content in a separate directory
-RUN yarn --cwd ./odigos/agents/nodejs-native-community --production --frozen-lockfile
+# FROM node:18 AS nodejs-agent-native-community-builder
+# ARG ODIGOS_VERSION
+# WORKDIR /repos
+# COPY ./agents/nodejs-native-community ./odigos/agents/nodejs-native-community
+# COPY --from=nodejs-agent-build /opentelemetry-node opentelemetry-node
+# # prepare the production node_modules content in a separate directory
+# RUN yarn --cwd ./odigos/agents/nodejs-native-community --production --frozen-lockfile
 
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
@@ -153,7 +157,9 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
-COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-native-community /instrumentations/nodejs
+# COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-native-community /instrumentations/nodejs
+COPY ./agents/nodejs-community/autoinstrumentation.js /instrumentations/nodejs-community/autoinstrumentation.js
+COPY --from=nodejs-agent-build /opentelemetry-node /instrumentations/nodejs-base
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
