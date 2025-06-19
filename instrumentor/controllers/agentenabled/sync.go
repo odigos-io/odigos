@@ -92,7 +92,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		if apierrors.IsNotFound(err) {
 			// instrumentation config is deleted, trigger a rollout for the associated workload
 			// this should happen once per workload, as the instrumentation config is deleted
-			_, res, err := rollout.Do(ctx, c, nil, pw, nil)
+			_, res, err := rollout.Do(ctx, c, nil, pw, conf)
 			return res, err
 		}
 		return ctrl.Result{}, err
@@ -164,8 +164,25 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	// instrumentating it and to disable future instrumentation of this service
 	crashDetected := ic.Status.RollbackOccurred
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
-	for _, containerRuntimeDetails := range ic.Status.RuntimeDetailsByContainer {
-		currentContainerConfig := containerInstrumentationConfig(containerRuntimeDetails.ContainerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected)
+	// ContainersOverrides will always list all containers of the workloads, so we can use it to iterate.
+	for i := range ic.Spec.ContainersOverrides {
+		containerName := ic.Spec.ContainersOverrides[i].ContainerName
+		var containerRuntimeDetails *odigosv1.RuntimeDetailsByContainer
+		// always take the override if it exists, before taking the automatic runtime detection.
+		if ic.Spec.ContainersOverrides[i].RuntimeInfo != nil {
+			containerRuntimeDetails = ic.Spec.ContainersOverrides[i].RuntimeInfo
+		} else {
+			// find this container by name in the automatic runtime detection
+			for j := range ic.Status.RuntimeDetailsByContainer {
+				if ic.Status.RuntimeDetailsByContainer[j].ContainerName == containerName {
+					containerRuntimeDetails = &ic.Status.RuntimeDetailsByContainer[j]
+					break
+				}
+			}
+		}
+		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
+		// from automatic runtime detection or overrides.
+		currentContainerConfig := containerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -229,7 +246,7 @@ func containerConfigToStatusCondition(containerConfig odigosv1.ContainerAgentCon
 
 func containerInstrumentationConfig(containerName string,
 	effectiveConfig *common.OdigosConfiguration,
-	runtimeDetails odigosv1.RuntimeDetailsByContainer,
+	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
 	distroPerLanguage map[common.ProgrammingLanguage]string,
 	distroGetter *distros.Getter,
 	crashDetected bool) odigosv1.ContainerAgentConfig {
@@ -243,6 +260,14 @@ func containerInstrumentationConfig(containerName string,
 				AgentEnabled:       false,
 				AgentEnabledReason: odigosv1.AgentEnabledReasonIgnoredContainer,
 			}
+		}
+	}
+
+	if runtimeDetails == nil {
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:      containerName,
+			AgentEnabled:       false,
+			AgentEnabledReason: odigosv1.AgentEnabledReasonRuntimeDetailsUnavailable,
 		}
 	}
 
@@ -445,7 +470,15 @@ func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.Instru
 		return false, odigosv1.AgentEnabledReasonWaitingForNodeCollector, message
 	}
 
-	if len(ic.Status.RuntimeDetailsByContainer) == 0 {
+	// if there are any overrides, we use them (and exist early)
+	for _, containerOverride := range ic.Spec.ContainersOverrides {
+		if containerOverride.RuntimeInfo != nil {
+			return true, odigosv1.AgentEnabledReasonEnabledSuccessfully, ""
+		}
+	}
+
+	hasAutomaticRuntimeDetection := len(ic.Status.RuntimeDetailsByContainer) > 0
+	if !hasAutomaticRuntimeDetection {
 		// differentiate between the case where we expect runtime detection to be completed soon,
 		// vs the case where we know it is staled due to no running pods preventing the runtime inspection
 		for _, condition := range ic.Status.Conditions {

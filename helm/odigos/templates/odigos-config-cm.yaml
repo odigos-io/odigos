@@ -147,4 +147,10 @@ data:
     {{- if .Values.autoRollback.stabilityWindowTime }}
     rollbackStabilityWindow: {{ .Values.autoRollback.stabilityWindowTime }}
     {{- end }}
+    {{- if .Values.rollout }}
+    rollout:
+      {{- if .Values.rollout.automaticRolloutDisabled }}
+      automaticRolloutDisabled: {{ .Values.rollout.automaticRolloutDisabled }}
+      {{- end }}
+    {{- end }}
 

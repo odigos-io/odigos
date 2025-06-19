@@ -7,6 +7,7 @@ query: |
   length([?span.serviceName == 'inventory-reported']) > `0` &&
   length([?span.serviceName == 'coupon-reported']) > `0` &&
   length([?span.serviceName == 'membership-reported']) > `0` &&
-  length([?span.serviceName == 'currency-reported']) > `0`
+  length([?span.serviceName == 'currency-reported']) > `0` &&
+  length([?span.serviceName == 'geolocation-reported']) > `0`
 expected:
   count: 1

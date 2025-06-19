@@ -1,0 +1,29 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: ruby-community
+spec:
+  name: ruby-community
+  language: ruby
+  runtimeEnvironments:
+    - name: ruby
+      supportedVersions: '>=3.1,<3.5'
+  displayName: 'Ruby Community Native Instrumentation'
+  description: |
+    This distribution is for Ruby applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  environmentVariables:
+    otlpHttpLocalNode: true
+    staticVariables:
+      - envName: RUBYOPT
+        envValue: '-r /var/odigos/ruby/{{RUNTIME_VERSION_MAJOR_MINOR}}/index'
+      - envName: ADDITIONAL_GEM_PATH
+        envValue: '/var/odigos/ruby/{{RUNTIME_VERSION_MAJOR_MINOR}}/bundle'
+      - envName: OTEL_EXPORTER_OTLP_PROTOCOL
+        envValue: 'http/protobuf'
+      - envName: OTEL_PROPAGATORS
+        envValue: 'tracecontext,baggage'
+  runtimeAgent:
+    directoryNames:
+      - '{{ODIGOS_AGENTS_DIR}}/ruby'
+    device: 'instrumentation.odigos.io/generic'
+    k8sAttrsViaEnvVars: true

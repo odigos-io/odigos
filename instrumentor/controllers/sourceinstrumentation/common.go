@@ -2,6 +2,9 @@ package sourceinstrumentation
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 
 	v1 "k8s.io/api/apps/v1"
@@ -107,6 +110,33 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 			return ctrl.Result{}, err
 		}
 
+		containers := make([]odigosv1.ContainerOverride, 0, len(workloadObj.PodTemplateSpec().Spec.Containers))
+		for _, container := range workloadObj.PodTemplateSpec().Spec.Containers {
+			// search if there is an override in the source for this container.
+			// list is expected to be short (1-5 containers, so linear search is fine)
+			var runtimeInfoOverride *odigosv1.RuntimeDetailsByContainer
+			if sources.Workload != nil {
+				for _, containerOverride := range sources.Workload.Spec.ContainerOverrides {
+					if containerOverride.ContainerName == container.Name {
+						runtimeInfoOverride = containerOverride.RuntimeInfo
+						break
+					}
+				}
+			}
+			containers = append(containers, odigosv1.ContainerOverride{
+				ContainerName: container.Name,
+				RuntimeInfo:   runtimeInfoOverride,
+			})
+		}
+		// calculate the hash for the containers overrides
+		// convert to json string
+		json, err := json.Marshal(containers)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		hash := sha256.Sum256(json)
+		hashString := hex.EncodeToString(hash[:16])
+
 		instConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
 		ic := &v1alpha1.InstrumentationConfig{}
 		err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: podWorkload.Namespace}, ic)
@@ -114,13 +144,23 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 			if !apierrors.IsNotFound(err) {
 				return ctrl.Result{}, err
 			}
-			ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, podWorkload.Namespace, obj, scheme)
+			ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, podWorkload.Namespace, obj, scheme, containers, hashString)
 			if err != nil {
 				if apierrors.IsAlreadyExists(err) {
 					// If we hit AlreadyExists here, we just hit a race in the api/cache and want to requeue. No need to log an error
 					return ctrl.Result{Requeue: true}, nil
 				}
 				return ctrl.Result{}, err
+			}
+		} else {
+			// update the instrumentation config with the new containers overrides only if it changed.
+			if ic.Spec.ContainerOverridesHash != hashString {
+				ic.Spec.ContainersOverrides = containers
+				ic.Spec.ContainerOverridesHash = hashString
+				err = k8sClient.Update(ctx, ic)
+				if err != nil {
+					return k8sutils.K8SUpdateErrorHandler(err)
+				}
 			}
 		}
 
@@ -154,7 +194,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	return ctrl.Result{}, nil
 }
 
-func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme) (*v1alpha1.InstrumentationConfig, error) {
+func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string) (*v1alpha1.InstrumentationConfig, error) {
 	logger := log.FromContext(ctx)
 	instConfig := v1alpha1.InstrumentationConfig{
 		TypeMeta: metav1.TypeMeta{
@@ -172,6 +212,8 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 		return nil, err
 	}
 	instConfig.Spec.ServiceName = serviceName
+	instConfig.Spec.ContainersOverrides = containers
+	instConfig.Spec.ContainerOverridesHash = containersOverridesHash
 
 	if err := ctrl.SetControllerReference(obj, &instConfig, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference", "name", instConfigName, "namespace", namespace)
