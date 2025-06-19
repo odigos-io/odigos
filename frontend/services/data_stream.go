@@ -36,7 +36,7 @@ func ExtractDataStreamsFromEntities(instrumentationConfigs []v1alpha1.Instrument
 
 	for _, dest := range destinations {
 		if destinationGroupsNotNull(&dest) {
-			for _, name := range dest.Spec.SourceSelector.Groups {
+			for _, name := range dest.Spec.SourceSelector.DataStreams {
 				if !seen[name] {
 					seen[name] = true
 					dataStreams = append(dataStreams, &model.DataStream{

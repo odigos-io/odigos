@@ -426,8 +426,6 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		}
 
 		// if there are more labels for data-streams, we exit and don't delete the source
-		dataStreamNames := GetSourceDataStreamNames(source)
-
 		if len(dataStreamNames) > 1 && currentStreamName != "" {
 			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceDataStreamLabelPrefix+currentStreamName, "")
 			return err
@@ -442,8 +440,6 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		// namespace source does not exist.
 		// we need to delete the workload source,
 		// or remove the relevant data-stream label (if source is in multiple streams)
-		dataStreamNames := GetSourceDataStreamNames(source)
-
 		if len(dataStreamNames) > 1 && currentStreamName != "" {
 			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceDataStreamLabelPrefix+currentStreamName, "")
 			return err

@@ -42,7 +42,7 @@ type SourcesDefaulter struct {
 }
 
 var _ webhook.CustomDefaulter = &SourcesDefaulter{}
-var defaultDataStreamLabel = k8sconsts.SourceGroupLabelPrefix + consts.DefaultDataStream
+var defaultDataStreamLabel = k8sconsts.SourceDataStreamLabelPrefix + consts.DefaultDataStream
 
 func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	source, ok := obj.(*v1alpha1.Source)
@@ -225,7 +225,7 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("labels"),
 			source.Labels[defaultDataStreamLabel],
-			fmt.Sprintf("Source must have at least one %s* label to indicate a data stream group", k8sconsts.SourceGroupLabelPrefix),
+			fmt.Sprintf("Source must have at least one %s* label to indicate a data stream group", k8sconsts.SourceDataStreamLabelPrefix),
 		))
 	}
 
@@ -305,7 +305,7 @@ func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source 
 
 func doesSourceHaveDataStreamLabel(source *v1alpha1.Source) bool {
 	for labelKey, labelValue := range source.Labels {
-		if strings.HasPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
+		if strings.HasPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) && labelValue == "true" {
 			return true
 		}
 	}
