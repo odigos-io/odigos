@@ -426,7 +426,10 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		}
 
 		// if there are more labels for data-streams, we exit and don't delete the source
-		if len(dataStreamNames) > 1 {
+		dataStreamNames := GetSourceDataStreamNames(source)
+
+		if len(dataStreamNames) > 1 && currentStreamName != "" {
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceDataStreamLabelPrefix+currentStreamName, "")
 			return err
 		}
 	}
@@ -436,7 +439,16 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		_, err = UpdateSourceCRDSpec(ctx, nsName, source.Name, common.DisableInstrumentationJsonKey, true)
 		return err
 	} else {
-		// we delete the source
+		// namespace source does not exist.
+		// we need to delete the workload source,
+		// or remove the relevant data-stream label (if source is in multiple streams)
+		dataStreamNames := GetSourceDataStreamNames(source)
+
+		if len(dataStreamNames) > 1 && currentStreamName != "" {
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceDataStreamLabelPrefix+currentStreamName, "")
+			return err
+		}
+
 		err = kube.DefaultClient.OdigosClient.Sources(nsName).Delete(ctx, source.Name, metav1.DeleteOptions{})
 		return err
 	}

@@ -47,7 +47,6 @@ export const prepareSourcePayloads = (
         // (for example - if we want to have a single page to manage all groups, then we need to override the selected)
         currentStreamName: currentStreamName || selectedStreamName,
       }));
-
       const toDeleteFromStore: WorkloadId[] = [];
       const toUpdateInStore: Source[] = [];
 

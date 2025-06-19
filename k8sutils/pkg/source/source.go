@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -120,8 +121,8 @@ func GetClientObjectFromSource(ctx context.Context, kubeClient client.Client, so
 func HandleInstrumentationConfigDataStreamsLabels(ctx context.Context,
 	workloadSources *odigosv1.WorkloadSources, ic *odigosv1.InstrumentationConfig) bool {
 	// Extract labels from both sources (may be nil)
-	workloadLabels := getSourceDataStreamsLabels(workloadSources.Workload)
-	namespaceLabels := getSourceDataStreamsLabels(workloadSources.Namespace)
+	workloadLabels := GetSourceDataStreamsLabels(workloadSources.Workload)
+	namespaceLabels := GetSourceDataStreamsLabels(workloadSources.Namespace)
 
 	// Start merging logic:
 	mergedLabels := make(map[string]string)
@@ -155,7 +156,7 @@ func setInstrumentationConfigDataStreamLabels(instConfig *odigosv1.Instrumentati
 
 	// Remove datastream labels not present in desiredLabels
 	for key := range instConfig.Labels {
-		if _, exists := desiredLabels[key]; !exists && isDataStreamLabel(key) {
+		if _, exists := desiredLabels[key]; !exists && IsDataStreamLabel(key) {
 			delete(instConfig.Labels, key)
 			updated = true
 		}
@@ -165,12 +166,12 @@ func setInstrumentationConfigDataStreamLabels(instConfig *odigosv1.Instrumentati
 }
 
 // IsDataStreamLabel returns true if the label is a datastream label.
-func isDataStreamLabel(labelKey string) bool {
+func IsDataStreamLabel(labelKey string) bool {
 	return strings.HasPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix)
 }
 
 // GetSourceDataStreamsLabels extracts only datastream labels from the Source object.
-func getSourceDataStreamsLabels(source *odigosv1.Source) map[string]string {
+func GetSourceDataStreamsLabels(source *odigosv1.Source) map[string]string {
 	result := make(map[string]string)
 
 	if source == nil {
@@ -178,7 +179,7 @@ func getSourceDataStreamsLabels(source *odigosv1.Source) map[string]string {
 	}
 
 	for k, v := range source.Labels {
-		if isDataStreamLabel(k) {
+		if IsDataStreamLabel(k) {
 			result[k] = v
 		}
 	}
