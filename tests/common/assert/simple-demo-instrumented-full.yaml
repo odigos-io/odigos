@@ -98,7 +98,7 @@ spec:
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
         - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
       (env[?name == 'NODE_OPTIONS']):
-        - value: '--require /var/odigos/nodejs/autoinstrumentation.js'
+        - value: '--require /var/odigos/nodejs-community/autoinstrumentation.js'
 status:
   containerStatuses:
     - name: coupon
