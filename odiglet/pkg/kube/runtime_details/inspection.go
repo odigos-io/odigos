@@ -49,7 +49,14 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL, log.Logger)
 				if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
 					inspectProc = &proc
-					break
+
+					// c++ can be a wrapper of script etc.
+					// we want to detect the "later" language to get the real application.
+					// but we also want to detect c++ if it is the only language detected.
+					// so we break only if we have a language other than c++.
+					if programLanguageDetails.Language != common.CPlusPlusProgrammingLanguage {
+						break
+					}
 				}
 			}
 
