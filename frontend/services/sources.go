@@ -342,7 +342,7 @@ func stringToWorkloadKind(workloadKind string) (model.K8sResourceKind, bool) {
 func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind model.K8sResourceKind, currentStreamName string) (*v1alpha1.Source, error) {
 	streamLabel := ""
 	if currentStreamName != "" {
-		streamLabel = k8sconsts.SourceGroupLabelPrefix + currentStreamName
+		streamLabel = k8sconsts.SourceDataStreamLabelPrefix + currentStreamName
 	}
 
 	switch workloadKind {
@@ -430,7 +430,7 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		dataStreamNames := GetSourceDataStreamNames(source)
 
 		if len(dataStreamNames) > 1 && currentStreamName != "" {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceDataStreamLabelPrefix+currentStreamName, "")
 			return err
 		}
 
@@ -440,11 +440,10 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		// namespace source does not exist.
 		// we need to delete the workload source,
 		// or remove the relevant data-stream label (if source is in multiple streams)
-
 		dataStreamNames := GetSourceDataStreamNames(source)
 
 		if len(dataStreamNames) > 1 && currentStreamName != "" {
-			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceGroupLabelPrefix+currentStreamName, "")
+			_, err = UpdateSourceCRDLabel(ctx, nsName, source.Name, k8sconsts.SourceDataStreamLabelPrefix+currentStreamName, "")
 			return err
 		}
 
@@ -790,8 +789,8 @@ func GetSourceDataStreamNames(source *v1alpha1.Source) []*string {
 
 	if source != nil {
 		for labelKey, labelValue := range source.Labels {
-			if strings.Contains(labelKey, k8sconsts.SourceGroupLabelPrefix) && labelValue == "true" {
-				streamName := strings.TrimPrefix(labelKey, k8sconsts.SourceGroupLabelPrefix)
+			if strings.Contains(labelKey, k8sconsts.SourceDataStreamLabelPrefix) && labelValue == "true" {
+				streamName := strings.TrimPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix)
 				dataStreamNames = append(dataStreamNames, &streamName)
 			}
 		}

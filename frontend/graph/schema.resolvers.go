@@ -691,7 +691,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 	}
 	if destination.CurrentStreamName != "" {
 		k8sDestination.Spec.SourceSelector = &v1alpha1.SourceSelector{
-			Groups: []string{destination.CurrentStreamName},
+			DataStreams: []string{destination.CurrentStreamName},
 		}
 	}
 
@@ -823,15 +823,15 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	if destination.CurrentStreamName != "" {
 		// Init empty struct if nil
 		if dest.Spec.SourceSelector == nil {
-			dest.Spec.SourceSelector = &v1alpha1.SourceSelector{Groups: make([]string, 0)}
+			dest.Spec.SourceSelector = &v1alpha1.SourceSelector{DataStreams: make([]string, 0)}
 		}
 		// Init empty slice if nil
-		if dest.Spec.SourceSelector.Groups == nil {
-			dest.Spec.SourceSelector.Groups = make([]string, 0)
+		if dest.Spec.SourceSelector.DataStreams == nil {
+			dest.Spec.SourceSelector.DataStreams = make([]string, 0)
 		}
 		// Add the current stream name to the source selector
-		if !services.ArrayContains(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName) {
-			dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName)
+		if !services.ArrayContains(dest.Spec.SourceSelector.DataStreams, destination.CurrentStreamName) {
+			dest.Spec.SourceSelector.DataStreams = append(dest.Spec.SourceSelector.DataStreams, destination.CurrentStreamName)
 		}
 	}
 

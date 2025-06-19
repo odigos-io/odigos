@@ -48,7 +48,6 @@ export const prepareSourcePayloads = (
         // TODO: uncomment when Data Streams are ready to use
         currentStreamName: '', // currentStreamName || selectedStreamName,
       }));
-
       const toDeleteFromStore: WorkloadId[] = [];
       const toUpdateInStore: Source[] = [];
 
