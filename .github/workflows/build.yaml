@@ -93,7 +93,6 @@ jobs:
           push: false
           tags: odigos-collector:pr-${{ github.event.number }}
           provenance: false
-          context: ./collector
           file: ${{ matrix.dockerfile }}
       - name: run tests
         working-directory: ./collector

@@ -1,0 +1,15 @@
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: odigos.io.dest.simple-trace-db-stream-1
+  namespace: odigos-test
+spec:
+  data:
+    OTLP_HTTP_ENDPOINT: http://simple-trace-db.traces:4318
+  destinationName: e2e-tests
+  signals:
+    - TRACES
+  type: otlphttp
+  sourceSelector:
+    dataStreams:
+    - stream-1

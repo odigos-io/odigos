@@ -1,0 +1,24 @@
+receivers:
+  otlp:
+    protocols:
+      grpc: {}
+      http: {}
+exporters: {}
+processors:
+  batch/generic-batch-processor: {}
+  resource/dummy-processor: {}
+extensions: {}
+connectors: {}
+service:
+  extensions: []
+  pipelines:
+    metrics/otelcol:
+      receivers:
+      - prometheus/self-metrics
+      processors:
+      - resource/pod-name
+      exporters:
+      - otlp/odigos-own-telemetry-ui
+  telemetry:
+    metrics: {}
+    resource: {}

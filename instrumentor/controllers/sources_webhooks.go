@@ -308,7 +308,7 @@ func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source 
 
 func doesSourceHaveDataStreamLabel(source *v1alpha1.Source) bool {
 	for key := range source.Labels {
-		if strings.HasPrefix(key, k8sconsts.SourceGroupLabelPrefix) {
+		if strings.HasPrefix(key, k8sconsts.SourceDataStreamLabelPrefix) {
 			return true
 		}
 	}
