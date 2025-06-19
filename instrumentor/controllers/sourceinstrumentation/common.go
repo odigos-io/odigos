@@ -167,7 +167,6 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		markedForInstChanged := meta.SetStatusCondition(&ic.Status.Conditions, markedForInstrumentationCondition)
 		runtimeDetailsChanged := initiateRuntimeDetailsConditionIfMissing(ic, workloadObj)
 		agentEnabledChanged := initiateAgentEnabledConditionIfMissing(ic)
-		dataStreamsChanged := sourceutils.HandleInstrumentationConfigDataStreamsLabels(ctx, sources, ic)
 
 		if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged {
 			ic.Status.Conditions = sortIcConditionsByLogicalOrder(ic.Status.Conditions)
@@ -178,6 +177,8 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 				return k8sutils.K8SUpdateErrorHandler(err)
 			}
 		}
+
+		dataStreamsChanged := sourceutils.HandleInstrumentationConfigDataStreamsLabels(ctx, sources, ic)
 
 		// in case of data streams changed, we need to update the instrumentation config labels
 		if dataStreamsChanged {

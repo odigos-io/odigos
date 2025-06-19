@@ -20,8 +20,8 @@ package v1alpha1
 // SourceSelectorApplyConfiguration represents a declarative configuration of the SourceSelector type for use
 // with apply.
 type SourceSelectorApplyConfiguration struct {
-	Namespaces []string `json:"namespaces,omitempty"`
-	Groups     []string `json:"groups,omitempty"`
+	Namespaces  []string `json:"namespaces,omitempty"`
+	DataStreams []string `json:"dataStreams,omitempty"`
 }
 
 // SourceSelectorApplyConfiguration constructs a declarative configuration of the SourceSelector type for use with
@@ -40,12 +40,12 @@ func (b *SourceSelectorApplyConfiguration) WithNamespaces(values ...string) *Sou
 	return b
 }
 
-// WithGroups adds the given value to the Groups field in the declarative configuration
+// WithDataStreams adds the given value to the DataStreams field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Groups field.
-func (b *SourceSelectorApplyConfiguration) WithGroups(values ...string) *SourceSelectorApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the DataStreams field.
+func (b *SourceSelectorApplyConfiguration) WithDataStreams(values ...string) *SourceSelectorApplyConfiguration {
 	for i := range values {
-		b.Groups = append(b.Groups, values[i])
+		b.DataStreams = append(b.DataStreams, values[i])
 	}
 	return b
 }
