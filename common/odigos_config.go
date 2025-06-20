@@ -151,4 +151,5 @@ type OdigosConfiguration struct {
 	RollbackDisabled                 *bool                          `json:"rollbackDisabled,omitempty"`
 	RollbackGraceTime                string                         `json:"rollbackGraceTime,omitempty"`
 	RollbackStabilityWindow          string                         `json:"rollbackStabilityWindow,omitempty"`
+	GoAutoOffsetsCron                string                         `json:"goAutoOffsetsCron,omitempty"`
 }

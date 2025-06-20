@@ -16,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
+	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -39,6 +40,7 @@ var configCmd = &cobra.Command{
 	- "container-runtime-socket-path": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
 	- "k8s-node-logs-directory": Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log).
 	- "user-instrumentation-envs": JSON string defining per-language env vars to customize instrumentation, e.g., ` + "`" + `{"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}` + "`" + `
+	- "go-auto-offsets-cron": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
 	- "agent-env-vars-injection-method": Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest.
 	- "node-selector": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
 	- "instrumentation-auto-rollback-disabled": Disable auto rollback feature for failing instrumentations.
@@ -262,6 +264,19 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 			return fmt.Errorf("%s expects exactly one value", property)
 		}
 		config.RollbackStabilityWindow = value[0]
+
+	case consts.GoAutoOffsetsCronProperty:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		cronValue := value[0]
+		if cronValue != "" {
+			parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+			if _, err := parser.Parse(cronValue); err != nil {
+				return fmt.Errorf("invalid cron schedule: %v", err)
+			}
+		}
+		config.GoAutoOffsetsCron = cronValue
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
