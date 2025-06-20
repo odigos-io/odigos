@@ -38,6 +38,7 @@ var LangsVersionEnvs = map[string]struct{}{
 const (
 	NewRelicAgentName  = "New Relic Agent"
 	DynatraceAgentName = "Dynatrace Agent"
+	DataDogAgentName   = "Datadog Agent"
 )
 
 const (
@@ -51,7 +52,7 @@ const (
 var OtherAgentEnvs = map[string]string{
 	NewRelicAgentEnv:      NewRelicAgentName,
 	DynatraceDynamizerEnv: DynatraceAgentName,
-	DataDogAgentEnv:       "Datadog Agent",
+	DataDogAgentEnv:       DataDogAgentName,
 }
 
 var OtherAgentCmdSubString = map[string]string{
