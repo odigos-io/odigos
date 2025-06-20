@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 )
 
@@ -41,6 +42,10 @@ var CRDsList = []map[string]string{
 		CRDGroup: actionGroupName,
 	},
 	{
+		CRDName:  "sources",
+		CRDGroup: odigosGroupName,
+	},
+	{
 		CRDName:  "piimaskings",
 		CRDGroup: actionGroupName,
 	},
@@ -64,16 +69,30 @@ var CRDsList = []map[string]string{
 		CRDName:  "instrumentationinstances",
 		CRDGroup: odigosGroupName,
 	},
+	{
+		CRDName:  "actions",
+		CRDGroup: odigosGroupName,
+	},
+	{
+		CRDName:  "destinations",
+		CRDGroup: odigosGroupName,
+	},
+	{
+		CRDName:  "collectorsgroups",
+		CRDGroup: odigosGroupName,
+	},
 }
 
 func FetchOdigosCRs(ctx context.Context, kubeClient *kube.Client, crdDir string) error {
 	var wg sync.WaitGroup
 
+	fmt.Printf("Fetching Odigos CRDs...\n")
+
 	for _, resourceData := range CRDsList {
 		crdDataDirPath := filepath.Join(crdDir, resourceData[CRDName])
 		err := os.Mkdir(crdDataDirPath, os.ModePerm) // os.ModePerm gives full permissions (0777)
 		if err != nil {
-			fmt.Printf("Error creating directory for CRD: %v, because: %v", resourceData, err)
+			klog.V(1).ErrorS(err, "Failed to create directory for CRD", "crdName", resourceData[CRDName])
 			continue
 		}
 
@@ -83,7 +102,7 @@ func FetchOdigosCRs(ctx context.Context, kubeClient *kube.Client, crdDir string)
 			defer wg.Done()
 			err = fetchSingleResource(ctx, kubeClient, crdDataDirPath, resourceData)
 			if err != nil {
-				fmt.Printf("Error Getting CRDs of: %v, because: %v\n", resourceData[CRDName], err)
+				klog.V(1).ErrorS(err, "Failed to fetch Odigos CRDs", "crdName", resourceData[CRDName])
 			}
 		}()
 	}
@@ -94,7 +113,7 @@ func FetchOdigosCRs(ctx context.Context, kubeClient *kube.Client, crdDir string)
 }
 
 func fetchSingleResource(ctx context.Context, kubeClient *kube.Client, crdDataDirPath string, resourceData map[string]string) error {
-	fmt.Printf("Fetching Resource: %s\n", resourceData[CRDName])
+	klog.V(2).InfoS("Fetching Resource", "crdName", resourceData[CRDName])
 
 	gvr := schema.GroupVersionResource{
 		Group:    resourceData[CRDGroup], // The API group
@@ -105,7 +124,7 @@ func fetchSingleResource(ctx context.Context, kubeClient *kube.Client, crdDataDi
 	err := client.ListWithPages(client.DefaultPageSize, kubeClient.Dynamic.Resource(gvr).List, ctx, &metav1.ListOptions{}, func(crds *unstructured.UnstructuredList) error {
 		for _, crd := range crds.Items {
 			if err := saveCrdToFile(crd, crdDataDirPath, crd.GetName()); err != nil {
-				fmt.Printf("Fetching Resource %s Failed because: %s\n", resourceData[CRDName], err)
+				klog.V(1).ErrorS(err, "Failed to save CRD to file", "crdName", resourceData[CRDName])
 			}
 		}
 		return nil
@@ -159,7 +178,7 @@ func FetchDestinationsCRDs(ctx context.Context, client *kube.Client, CRDsDir str
 
 	for _, destination := range destinations.Items {
 		if err := saveCrdToFile(destination, crdDestinationPath, destination.Name); err != nil {
-			fmt.Printf("Fetching Resource %s Failed because: %s\n", destination.Name, err)
+			klog.V(1).ErrorS(err, "Failed to save CRD to file", "crdName", destination.Name)
 		}
 
 	}

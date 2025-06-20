@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -16,6 +17,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/klog/v2"
 )
 
 var ProfilingMetricsFunctions = []ProfileInterface{CPUProfiler{}, HeapProfiler{}, GoRoutineProfiler{}, AllocsProfiler{}}
@@ -93,10 +95,12 @@ func (h AllocsProfiler) GetUrlSuffix() string {
 }
 
 func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir string) error {
+	fmt.Printf("Fetching Odigos Profiles...\n")
 	odigosNamespace, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {
 		return nil
 	}
+
 	var podsWaitGroup sync.WaitGroup
 	for _, service := range servicesProfilingMetadata {
 		selector := service.Selector
@@ -107,53 +111,59 @@ func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir st
 			return err
 		}
 		for _, pod := range podsToProfile.Items {
-			fmt.Printf("Fetching profile for Pod: %s\n", pod.Name)
+			klog.V(2).InfoS("Fetching profile for Pod", "podName", pod.Name)
 			podsWaitGroup.Add(1)
+
 			go func(pod v1.Pod, pprofPort int32) {
 				defer podsWaitGroup.Done()
 
 				directoryName := fmt.Sprintf("%s-%s", pod.Name, pod.Spec.NodeName)
 				nodeFilePath := filepath.Join(profileDir, directoryName)
-				err := os.Mkdir(nodeFilePath, os.ModePerm)
+				err := os.MkdirAll(nodeFilePath, os.ModePerm)
 				if err != nil {
-					fmt.Printf("Error creating directory for node: %v, because: %v", nodeFilePath, err)
+					klog.V(1).ErrorS(err, "Failed to create directory for node", "nodeFilePath", nodeFilePath)
 					return
 				}
-				// Inner WaitGroup for profiling functions of this pod
+
 				var profileWaitGroup sync.WaitGroup
 				for _, profileMetricFunction := range ProfilingMetricsFunctions {
-					profileMetricFunction := profileMetricFunction // Capture range variable
+					profileMetricFunction := profileMetricFunction
 					metricFilePath := filepath.Join(nodeFilePath, profileMetricFunction.GetFileName())
 
 					profileWaitGroup.Add(1)
 
 					go func(metricFilePath string, profileFunc ProfileInterface) {
 						defer profileWaitGroup.Done()
+
 						metricFile, err := os.OpenFile(metricFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 						if err != nil {
-							fmt.Printf("Error creating file: %v, because: %v\n", metricFilePath, err)
+							klog.V(1).ErrorS(err, "Failed to create file", "metricFilePath", metricFilePath)
 							return
 						}
 						defer metricFile.Close()
 
-						err = captureProfile(ctx, client, pod.Name, pprofPort, odigosNamespace, metricFile, profileFunc)
-						if err != nil {
-							fmt.Printf(
-								"Failed to capture profile data for Pod: %s, Node: %s, Profile Type: %s. Reason: %v\n",
-								pod.Name,
-								pod.Spec.NodeName,
-								profileFunc.GetFileName(),
-								err,
-							)
+						const maxRetries = 3
+						for attempt := 1; attempt <= maxRetries; attempt++ {
+							err = captureProfile(ctx, client, pod.Name, pprofPort, odigosNamespace, metricFile, profileFunc)
+							if err == nil {
+								break
+							}
+
+							klog.V(1).ErrorS(err, "Failed to capture profile data", "podName", pod.Name, "node", pod.Spec.NodeName, "profileType", profileFunc.GetFileName(), "attempt", attempt)
+
+							if attempt < maxRetries {
+								time.Sleep(5 * time.Second)
+							} else {
+								klog.V(1).ErrorS(err, "Max retries reached, giving up", "podName", pod.Name, "profileType", profileFunc.GetFileName())
+							}
 						}
 					}(metricFilePath, profileMetricFunction)
 				}
-				// Wait for all profiling tasks of pod to complete
+
 				profileWaitGroup.Wait()
 			}(pod, service.Port)
 		}
 	}
-	// Wait for all pod-level tasks to complete
 	podsWaitGroup.Wait()
 	return nil
 }
@@ -180,6 +190,8 @@ func captureProfile(ctx context.Context, client *kube.Client, podName string, pp
 }
 
 func FetchOdigosCollectorMetrics(ctx context.Context, client *kube.Client, metricsDir string) error {
+	fmt.Printf("Fetching Odigos Collectors Metrics...\n")
+
 	odigosNamespace, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {
 		return nil
@@ -192,7 +204,7 @@ func FetchOdigosCollectorMetrics(ctx context.Context, client *kube.Client, metri
 		defer wg.Done()
 		err = collectMetrics(ctx, client, odigosNamespace, metricsDir, k8sconsts.CollectorsRoleClusterGateway)
 		if err != nil {
-			fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", k8sconsts.CollectorsRoleClusterGateway, err)
+			klog.V(1).ErrorS(err, "Failed to get metrics data", "collectorRole", k8sconsts.CollectorsRoleClusterGateway)
 		}
 	}()
 
@@ -201,7 +213,7 @@ func FetchOdigosCollectorMetrics(ctx context.Context, client *kube.Client, metri
 		defer wg.Done()
 		err = collectMetrics(ctx, client, odigosNamespace, metricsDir, k8sconsts.CollectorsRoleNodeCollector)
 		if err != nil {
-			fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", k8sconsts.CollectorsRoleNodeCollector, err)
+			klog.V(1).ErrorS(err, "Failed to get metrics data", "collectorRole", k8sconsts.CollectorsRoleNodeCollector)
 		}
 	}()
 
@@ -211,6 +223,7 @@ func FetchOdigosCollectorMetrics(ctx context.Context, client *kube.Client, metri
 }
 
 func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace string, metricsDir string, collectorRole k8sconsts.CollectorRole) error {
+
 	collectorPods, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "odigos.io/collector-role=" + string(collectorRole),
 	})
@@ -221,11 +234,11 @@ func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace st
 	var wg sync.WaitGroup
 
 	for _, collectorPod := range collectorPods.Items {
-		fmt.Println("Fetching metrics for pod:", collectorPod.Name)
+		klog.V(2).InfoS("Fetching metrics for pod", "podName", collectorPod.Name)
 		metricFilePath := filepath.Join(metricsDir, collectorPod.Name)
 		metricFile, err := os.OpenFile(metricFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
-			fmt.Printf("Error creating file: %v, because: %v", metricFilePath, err)
+			klog.V(1).ErrorS(err, "Failed to create file", "metricFilePath", metricFilePath)
 			continue
 		}
 		defer metricFile.Close()
@@ -236,7 +249,7 @@ func collectMetrics(ctx context.Context, client *kube.Client, odigosNamespace st
 			defer wg.Done()
 			err = captureMetrics(ctx, client, collectorPod.Name, odigosNamespace, metricFile, collectorRole)
 			if err != nil {
-				fmt.Printf("Error Getting Metrics Data of: %v, because: %v\n", collectorPod.Name, err)
+				klog.V(1).ErrorS(err, "Failed to get metrics data", "podName", collectorPod.Name)
 			}
 		}()
 	}
