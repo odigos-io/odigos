@@ -353,6 +353,9 @@ type SdkConfig struct {
 
 	// default configuration for library tracing.
 	DefaultTraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
+
+	// default configuration for custom instrumentations, in case the instrumentation library does not provide a configuration.
+	DefaultCustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
