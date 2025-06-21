@@ -141,6 +141,12 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 				Spec: corev1.PodSpec{
 					NodeSelector:       nodeSelector,
 					ServiceAccountName: k8sconsts.OdigosClusterCollectorDeploymentName,
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsNonRoot: boolPtr(true),
+						RunAsUser:    int64Ptr(65534), // nobody user
+						RunAsGroup:   int64Ptr(65534), // nobody group
+						FSGroup:      int64Ptr(65534),
+					},
 					Containers: []corev1.Container{
 						{
 							Name:  containerName,
