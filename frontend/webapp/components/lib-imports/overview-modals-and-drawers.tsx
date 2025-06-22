@@ -38,6 +38,7 @@ const OverviewModalsAndDrawers = () => {
         potentialDestinations={potentialDestinations}
         createDestination={createDestination}
         updateDestination={updateDestination}
+        deleteDestination={deleteDestination}
         testConnection={testConnection}
       />
       <InstrumentationRuleModal isEnterprise={isEnterprise} createInstrumentationRule={createInstrumentationRule} />

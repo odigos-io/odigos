@@ -4,10 +4,10 @@ import React, { useMemo, type PropsWithChildren } from 'react';
 import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import styled from 'styled-components';
-import { useSSE, useTokenTracker } from '@/hooks';
 import { ToastList } from '@odigos/ui-kit/containers';
 import { OnboardingStepperWrapper } from '@/components';
 import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';
+import { useSSE, useTokenTracker } from '@/hooks';
 import { useDataStreamStore, useSetupStore } from '@odigos/ui-kit/store';
 import { ErrorBoundary, FlexColumn, Stepper, StepperProps } from '@odigos/ui-kit/components';
 

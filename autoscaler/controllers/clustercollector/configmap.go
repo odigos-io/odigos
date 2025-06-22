@@ -5,18 +5,24 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
+	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/common/consts"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
+	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,7 +39,7 @@ var (
 	errNoExportersConfigured = errors.New("no exporters were configured, cannot add self telemetry pipeline")
 )
 
-func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32) error {
+func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinationPipelineNames []string, signalsRootPipelines []string) error {
 	if c.Service.Pipelines == nil {
 		return errNoPipelineConfigured
 	}
@@ -111,8 +117,9 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32) error {
 		},
 	}
 
+	// Add the odigostrafficmetrics processor to both root and destination pipelines to track telemetry data flow
 	for pipelineName, pipeline := range c.Service.Pipelines {
-		if pipelineName == "metrics/otelcol" {
+		if !isOdigosTrafficMetricsProcessorRelevant(pipelineName, destinationPipelineNames) {
 			continue
 		}
 		pipeline.Processors = append(pipeline.Processors, "odigostrafficmetrics")
@@ -126,22 +133,22 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
-	sourcesFilterProcessors, err := common.GenerateSourcesFilterProcessors(ctx, c, dests)
+	dataStreams, err := calculateDataStreams(ctx, c, dests)
 	if err != nil {
-		logger.Error(err, "Failed to generate sources filter processors")
+		logger.Error(err, "Failed to build group details")
 		return nil, err
 	}
 
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
-	desiredData, err, status, signals := config.Calculate(
+	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		common.ToExporterConfigurerArray(dests),
 		common.ToProcessorConfigurerArray(processors),
 		memoryLimiterConfiguration,
-		func(c *config.Config) error {
-			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort)
+		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
+			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines)
 		},
-		sourcesFilterProcessors,
+		dataStreams,
 	)
 
 	if err != nil {
@@ -241,4 +248,190 @@ func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.C
 	}
 
 	return updated, nil
+}
+
+// calculateDataStreams generates a slice of data streams.
+//
+// Example return structure:
+//
+//	[]DataStreams{
+//	    {
+//	        Name: "dataStreamA",
+//	        Sources: []SourceFilter{
+//	            {Namespace: "ns1", Kind: "Deployment", Name: "frontend"},
+//	            {Namespace: "ns1", Kind: "DaemonSet", Name: "log-agent"},
+//	        },
+//	        Destinations: []Destination{
+//	            {DestinationName: "coralogix",
+//				 ConfiguredSignals: []ObservabilitySignal{TracesObservabilitySignal, LogsObservabilitySignal}},
+//	        },
+//	    },
+//	    {
+//	        Name: "dataStreamB",
+//	        Sources: []SourceFilter{
+//	            {Namespace: "ns2", Kind: "StatefulSet", Name: "db"},
+//	        },
+//	        Destinations: []Destination{
+//	            {DestinationName: "jaeger",
+//				 ConfiguredSignals: []ObservabilitySignal{TracesObservabilitySignal}},
+//	        },
+//	    },
+//	}
+func calculateDataStreams(
+	ctx context.Context,
+	kubeClient client.Client,
+	dests *odigosv1.DestinationList,
+) ([]pipelinegen.DataStreams, error) {
+
+	dataStreamsMap := make(map[string]*pipelinegen.DataStreams)
+
+	for _, dest := range dests.Items {
+
+		// If the destination has no source selector, use the default data stream
+		// Otherwise, use the data streams specified in the source selector
+		dataStreams := []string{}
+		if dest.Spec.SourceSelector == nil {
+			dataStreams = append(dataStreams, consts.DefaultDataStream)
+		} else {
+			dataStreams = dest.Spec.SourceSelector.DataStreams
+		}
+
+		for _, dataStream := range dataStreams {
+			// Get or create data stream using map directly
+			dataStreamDetails, exists := dataStreamsMap[dataStream]
+			if !exists {
+				dataStreamDetails = &pipelinegen.DataStreams{
+					Name:         dataStream,
+					Sources:      []pipelinegen.SourceFilter{},
+					Destinations: []pipelinegen.Destination{},
+				}
+
+				// SourcesFilters and NamespacesFilters are attached to the DataStream itself.
+				// They are independent of the Destinations that point to the DataStream.
+				// Therefore, we only load them once per unique data stream.
+				sourcesFilters, err := getSourcesForDataStream(ctx, kubeClient, dataStream)
+				if err != nil {
+					return nil, err
+				}
+				dataStreamDetails.Sources = sourcesFilters
+
+				dataStreamsMap[dataStream] = dataStreamDetails
+			}
+
+			if !destinationExists(dataStreamDetails.Destinations, dest.Name) {
+				dataStreamDetails.Destinations = append(dataStreamDetails.Destinations, pipelinegen.Destination{
+					DestinationName:   dest.Name,
+					ConfiguredSignals: dest.GetSignals(),
+				})
+			}
+		}
+	}
+
+	// Convert map to slice, this is the final result as will be used in the configmap
+	dataStreamDetailsList := make([]pipelinegen.DataStreams, 0, len(dataStreamsMap))
+	for _, ds := range dataStreamsMap {
+		dataStreamDetailsList = append(dataStreamDetailsList, *ds)
+	}
+
+	return dataStreamDetailsList, nil
+}
+
+// getSourcesForDataStream fetches all sources [workload and namespace] that are labeled with the given data stream name.
+func getSourcesForDataStream(
+	ctx context.Context,
+	kubeClient client.Client,
+	dataStream string,
+) ([]pipelinegen.SourceFilter, error) {
+	logger := ctrl.LoggerFrom(ctx)
+
+	instrumentationConfigsList := &odigosv1.InstrumentationConfigList{}
+
+	if dataStream == consts.DefaultDataStream {
+		var err error
+		instrumentationConfigsList, err = getSourcesForDefaultDataStream(ctx, kubeClient, dataStream)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		labelSelector := labels.Set{fmt.Sprintf("%s%s", k8sconsts.SourceDataStreamLabelPrefix, dataStream): "true"}.AsSelector()
+		err := kubeClient.List(ctx, instrumentationConfigsList, &client.ListOptions{
+			LabelSelector: labelSelector,
+		})
+		if err != nil {
+			logger.Error(err, "Failed to fetch sources for DataStream", "dataStream", dataStream)
+			return nil, err
+		}
+	}
+
+	sourcesFilters := make([]pipelinegen.SourceFilter, 0, len(instrumentationConfigsList.Items))
+	for _, instrumentationConfig := range instrumentationConfigsList.Items {
+		workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instrumentationConfig.Name)
+		if err != nil {
+			logger.Error(err, "Failed to extract workload info from instrumentation config name", "instrumentationConfig", instrumentationConfig.Name)
+			continue
+		}
+		sourcesFilters = append(sourcesFilters, pipelinegen.SourceFilter{
+			Namespace: instrumentationConfig.Namespace,
+			Kind:      string(workloadKind),
+			Name:      workloadName,
+		})
+	}
+
+	return sourcesFilters, nil
+}
+
+func destinationExists(existingDestinations []pipelinegen.Destination, destinationName string) bool {
+	for _, v := range existingDestinations {
+		if v.DestinationName == destinationName {
+			return true
+		}
+	}
+	return false
+}
+
+func isOdigosTrafficMetricsProcessorRelevant(name string, destinationPipelines []string) bool {
+	// we should not add the odigostrafficmetrics processor to the metrics/otelcol pipeline
+	if name == "metrics/otelcol" {
+		return false
+	}
+	// we should add the odigostrafficmetrics processor to all destination pipelines
+	if slices.Contains(destinationPipelines, name) {
+		return true
+	}
+	return false
+}
+
+// For the default data stream, include all sources that don't have any data stream labels assigned
+// and sources that have the default data stream label assigned
+func getSourcesForDefaultDataStream(ctx context.Context, kubeClient client.Client, group string) (*odigosv1.InstrumentationConfigList, error) {
+
+	defaultStreamSources := &odigosv1.InstrumentationConfigList{}
+	err := kubeClient.List(ctx, defaultStreamSources, &client.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all instrumentation configs: %w", err)
+	}
+
+	workloadSources := []odigosv1.InstrumentationConfig{}
+
+	for _, instrumentationConfig := range defaultStreamSources.Items {
+
+		hasDataStreamLabel := false
+		explicitMatch := false
+
+		for key, value := range instrumentationConfig.Labels {
+			if strings.HasPrefix(key, k8sconsts.SourceDataStreamLabelPrefix) {
+				hasDataStreamLabel = true
+				if key == fmt.Sprintf("%s%s", k8sconsts.SourceDataStreamLabelPrefix, group) && value == "true" {
+					explicitMatch = true
+				}
+			}
+		}
+
+		// If the source has no data stream labels assigned or has the default data stream label assigned, include it in the filtered list
+		if !hasDataStreamLabel || explicitMatch {
+			workloadSources = append(workloadSources, instrumentationConfig)
+		}
+	}
+
+	return &odigosv1.InstrumentationConfigList{Items: workloadSources}, nil
 }
