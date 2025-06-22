@@ -37,6 +37,11 @@ spec:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
 
+    - name: '[1 - Setup] Add Destination'
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
     - name: '[1 - Setup] Install - Simple Demo Apps'
       try:
         - apply:
@@ -76,10 +81,6 @@ spec:
             timeout: 2m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
-    - name: '[2 - Workload Instrumentation] Add Destination'
-      try:
-        - apply:
-            file: ../../common/apply/add-simple-trace-db-destination.yaml
 
     - name: '[2 - Workload Instrumentation] Odigos pipeline ready'
       try:
