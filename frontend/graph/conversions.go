@@ -67,10 +67,12 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 		instrumented, instrumentationMessage, otelDistroName = getContainerAgentInfo(&instruConfig, containerName)
 
 		resolvedRuntimeInfo := &statusContainer
+		overriden := false
 		for _, override := range instruConfig.Spec.ContainersOverrides {
 			if override.ContainerName == containerName {
 				if override.RuntimeInfo != nil {
 					resolvedRuntimeInfo = override.RuntimeInfo
+					overriden = true
 				}
 				break
 			}
@@ -80,6 +82,7 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 			ContainerName:          containerName,
 			Language:               string(resolvedRuntimeInfo.Language),
 			RuntimeVersion:         resolvedRuntimeInfo.RuntimeVersion,
+			Overriden:              overriden,
 			Instrumented:           instrumented,
 			InstrumentationMessage: instrumentationMessage,
 			OtelDistroName:         &otelDistroName,
@@ -104,6 +107,7 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 				ContainerName:          override.ContainerName,
 				Language:               language,
 				RuntimeVersion:         runtimeVersion,
+				Overriden:              true,
 				Instrumented:           instrumented,
 				InstrumentationMessage: instrumentationMessage,
 				OtelDistroName:         &otelDistroName,
