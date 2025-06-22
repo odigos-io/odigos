@@ -3,7 +3,7 @@ import { useConfig } from '../config';
 import type { NamespaceInstrumentInput } from '@/types';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import { GET_NAMESPACE, GET_NAMESPACES, PERSIST_NAMESPACE } from '@/graphql';
+import { GET_NAMESPACE, GET_NAMESPACES, PERSIST_NAMESPACES } from '@/graphql';
 import { Crud, EntityTypes, Namespace, StatusType } from '@odigos/ui-kit/types';
 import { useDataStreamStore, useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
 
@@ -24,7 +24,7 @@ export const useNamespace = () => {
     onError: (error) => addNotification({ type: StatusType.Error, title: error.name || Crud.Read, message: error.cause?.message || error.message }),
   });
 
-  const [mutatePersist] = useMutation<{ persistK8sNamespace: boolean }>(PERSIST_NAMESPACE, {
+  const [mutatePersist] = useMutation<{ persistK8sNamespace: boolean }, NamespaceInstrumentInput>(PERSIST_NAMESPACES, {
     onError: (error) => {
       // TODO: after estimating the number of instrumentationConfigs to create for future apps in "useSourceCRUD" hook, then uncomment the below
       // setInstrumentCount('sourcesToCreate', 0);
@@ -47,11 +47,11 @@ export const useNamespace = () => {
     }
   };
 
-  const persistNamespace = async (payload: NamespaceInstrumentInput) => {
+  const persistNamespaces = async (payload: NamespaceInstrumentInput) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, true);
     } else {
-      await mutatePersist({ variables: { namespace: payload } });
+      await mutatePersist({ variables: payload });
     }
   };
 
@@ -64,6 +64,6 @@ export const useNamespace = () => {
     namespaces,
     fetchNamespaces,
     fetchNamespace: querySingleNs,
-    persistNamespace,
+    persistNamespaces,
   };
 };
