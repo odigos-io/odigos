@@ -95,7 +95,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
 
       if (data?.deleteDestination) {
         const destination: Destination = destinations.find((r) => r.id === id);
-        notifyUser(StatusType.Success, Crud.Delete, `Successfully deleted "${destination?.destinationType.type || id}" destination`, id);
+        notifyUser(StatusType.Success, Crud.Delete, `Successfully deleted "${destination?.destinationType?.type || id}" destination`, id);
         fetchDestinations();
       }
     }
