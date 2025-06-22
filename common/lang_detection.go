@@ -25,6 +25,9 @@ const (
 	RubyProgrammingLanguage       ProgrammingLanguage = "ruby"
 	RustProgrammingLanguage       ProgrammingLanguage = "rust"
 	CPlusPlusProgrammingLanguage  ProgrammingLanguage = "cplusplus"
+	CSharpProgrammingLanguage     ProgrammingLanguage = "csharp"
+	SwiftProgrammingLanguage      ProgrammingLanguage = "swift"
+	ElixirProgrammingLanguage     ProgrammingLanguage = "elixir"
 	// This is an experimental feature, It is not a language
 	// but in order to avoid huge refactoring we are adding it here for now
 	MySQLProgrammingLanguage    ProgrammingLanguage = "mysql"

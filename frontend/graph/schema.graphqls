@@ -63,6 +63,7 @@ type SourceContainer {
   containerName: String!
   language: String!
   runtimeVersion: String!
+  overriden: Boolean!
   instrumented: Boolean!
   instrumentationMessage: String!
   otelDistroName: String
