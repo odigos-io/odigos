@@ -52,5 +52,5 @@ func reconcileWorkload(
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	return syncWorkload(ctx, k8sClient, scheme, obj)
+	return syncWorkload(ctx, k8sClient, scheme, obj, objKind)
 }
