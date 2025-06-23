@@ -10,6 +10,6 @@ type CustomInstrumentations struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type Probe struct {
-	ClasName   string `json:"className,omitempty"`
+	ClassName  string `json:"className,omitempty"`
 	MethodName string `json:"methodName,omitempty"`
 }
