@@ -46,7 +46,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 		if obj != nil {
 			// NotFound will return a nil object, nothing to sync without a workload obj
-			result, err = syncWorkload(ctx, r.Client, r.Scheme, obj, source.Spec.Workload.Kind)
+			result, err = syncWorkload(ctx, r.Client, r.Scheme, obj)
 		}
 	}
 	// We could get a non-error Requeue signal from the reconcile functions,

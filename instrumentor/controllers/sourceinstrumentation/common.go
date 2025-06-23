@@ -68,7 +68,7 @@ func syncNamespaceWorkloads(
 			if client.IgnoreNotFound(err) != nil {
 				return collectiveRes, err
 			}
-			res, err := syncWorkload(ctx, k8sClient, runtimeScheme, obj, kind)
+			res, err := syncWorkload(ctx, k8sClient, runtimeScheme, obj)
 			if err != nil {
 				errs = errors.Join(errs, err)
 			}
@@ -84,13 +84,13 @@ func syncNamespaceWorkloads(
 // If not, it will attempt to delete any InstrumentationConfig for the Object.
 // If it is instrumented, it will attempt to create an InstrumentationConfig if one does not exist,
 // or update the existing InstrumentationConfig if necessary.
-func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, obj client.Object, kind k8sconsts.WorkloadKind) (ctrl.Result, error) {
+func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, obj client.Object) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	pw := k8sconsts.PodWorkload{
 		Name:      obj.GetName(),
 		Namespace: obj.GetNamespace(),
-		Kind:      kind,
+		Kind:      k8sconsts.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
 	}
 	sources, err := odigosv1.GetSources(ctx, k8sClient, pw)
 	enabled, markedForInstrumentationCondition, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, err)
