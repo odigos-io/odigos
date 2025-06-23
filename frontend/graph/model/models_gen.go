@@ -796,6 +796,7 @@ type SourceContainer struct {
 	ContainerName          string  `json:"containerName"`
 	Language               string  `json:"language"`
 	RuntimeVersion         string  `json:"runtimeVersion"`
+	Overriden              bool    `json:"overriden"`
 	Instrumented           bool    `json:"instrumented"`
 	InstrumentationMessage string  `json:"instrumentationMessage"`
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`

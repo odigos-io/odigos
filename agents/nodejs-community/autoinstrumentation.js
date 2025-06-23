@@ -8,7 +8,7 @@ try {
         console.error('Odigos: Unsupported Node.js version for OpenTelemetry auto-instrumentation');
     } else {
         // Import the necessary functions using traditional require syntax.
-        var opentelemetryNode = require('@odigos/opentelemetry-node');
+        var opentelemetryNode = require('../opentelemetry-node');
         var createNativeCommunitySpanProcessor = opentelemetryNode.createNativeCommunitySpanProcessor;
         var startOpenTelemetryAgent = opentelemetryNode.startOpenTelemetryAgent;
 
@@ -17,7 +17,7 @@ try {
 
         // Create a span processor and start the OpenTelemetry agent.
         var spanProcessor = createNativeCommunitySpanProcessor();
-        startOpenTelemetryAgent('odigos-native-community', opampServerHost, spanProcessor);
+        startOpenTelemetryAgent('nodejs-community', opampServerHost, spanProcessor);
     }    
 } catch (e) {
     console.error('Odigos: Failed to load OpenTelemetry auto-instrumentation agent native-community', e);

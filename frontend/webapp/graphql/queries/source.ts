@@ -16,6 +16,7 @@ export const GET_SOURCES = gql`
             containerName
             language
             runtimeVersion
+            overriden
             instrumented
             instrumentationMessage
             otelDistroName
@@ -47,6 +48,7 @@ export const GET_SOURCE = gql`
           containerName
           language
           runtimeVersion
+          overriden
           instrumented
           instrumentationMessage
           otelDistroName

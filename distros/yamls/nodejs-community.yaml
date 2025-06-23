@@ -16,7 +16,8 @@ spec:
     otlpHttpLocalNode: true
   runtimeAgent:
     directoryNames:
-      - "{{ODIGOS_AGENTS_DIR}}/nodejs"
+      - "{{ODIGOS_AGENTS_DIR}}/nodejs-community"
+      - "{{ODIGOS_AGENTS_DIR}}/opentelemetry-node"
     device: 'instrumentation.odigos.io/generic'
     environmentVariables:
       - envName: NODE_OPTIONS

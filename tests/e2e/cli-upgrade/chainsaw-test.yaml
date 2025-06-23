@@ -29,8 +29,11 @@ spec:
                   ARCH="arm64"
               fi
 
-              # Fetch the release assets from GitHub API
-              ASSETS_JSON=$(curl -s "$REPO_URL")
+              # Fetch the release assets from GitHub API with retry
+              # --retry 5: retry up to 5 times
+              # --retry-delay 1: wait 1 second between retries
+              # --retry-max-time 30: maximum time to spend retrying (30 seconds)
+              ASSETS_JSON=$(curl -s --retry 5 --retry-delay 1 --retry-max-time 30 "$REPO_URL")
 
               # Find the download URL that matches the OS and architecture
               DOWNLOAD_URL=$(echo "$ASSETS_JSON" | grep "browser_download_url" | grep "$OS" | grep "$ARCH" | cut -d '"' -f 4)
@@ -41,8 +44,11 @@ spec:
                   exit 1
               fi
 
-              # Download the matched asset
-              curl -L -o odigos-latest.tar.gz "$DOWNLOAD_URL"
+              # Download the matched asset with retry
+              # --retry 5: retry up to 5 times
+              # --retry-delay 1: wait 1 second between retries
+              # --retry-max-time 60: maximum time to spend retrying (60 seconds for download)
+              curl -L -o odigos-latest.tar.gz --retry 5 --retry-delay 1 --retry-max-time 60 "$DOWNLOAD_URL"
 
               # Extract the downloaded file
               tar -xvzf odigos-latest.tar.gz

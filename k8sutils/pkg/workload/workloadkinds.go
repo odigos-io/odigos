@@ -91,25 +91,6 @@ func WorkloadKindFromString(kind string) k8sconsts.WorkloadKind {
 	}
 }
 
-func WorkloadKindFromClientObject(w client.Object) k8sconsts.WorkloadKind {
-	switch w.(type) {
-	case *v1.Deployment:
-		return k8sconsts.WorkloadKindDeployment
-	case *v1.DaemonSet:
-		return k8sconsts.WorkloadKindDaemonSet
-	case *v1.StatefulSet:
-		return k8sconsts.WorkloadKindStatefulSet
-	case *batchv1.CronJob:
-		return k8sconsts.WorkloadKindCronJob
-	case *batchv1.Job:
-		return k8sconsts.WorkloadKindJob
-	case *batchv1beta1.CronJob:
-		return k8sconsts.WorkloadKindCronJob
-	default:
-		return ""
-	}
-}
-
 // ClientObjectFromWorkloadKind returns a new instance of the client object for the given workload kind
 // the returned instance is empty and should be used to fetch the actual object from the k8s api server
 func ClientObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object {
