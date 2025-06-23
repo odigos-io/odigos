@@ -398,7 +398,7 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 }
 
 func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind model.K8sResourceKind, currentStreamName string) error {
-	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
+	source, err := EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, currentStreamName)
 	if err != nil {
 		return err
 	}

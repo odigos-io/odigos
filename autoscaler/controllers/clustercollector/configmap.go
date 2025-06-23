@@ -306,7 +306,7 @@ func calculateDataStreams(
 					Destinations: []pipelinegen.Destination{},
 				}
 
-				// SourcesFilters and NamespacesFilters are attached to the DataStream itself.
+				// SourcesFilters attached to the DataStream itself.
 				// They are independent of the Destinations that point to the DataStream.
 				// Therefore, we only load them once per unique data stream.
 				sourcesFilters, err := getSourcesForDataStream(ctx, kubeClient, dataStream)
