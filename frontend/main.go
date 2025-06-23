@@ -160,17 +160,11 @@ func httpFileServerWith404(fs http.FileSystem) http.Handler {
 	})
 }
 
-func startWatchers(ctx context.Context, flags *Flags) error {
+func startWatchers(ctx context.Context) error {
 	err := watchers.StartInstrumentationConfigWatcher(ctx, "")
 	if err != nil {
 		return fmt.Errorf("error starting InstrumentationConfig watcher: %v", err)
 	}
-
-	err = watchers.StartDestinationWatcher(ctx, flags.Namespace)
-	if err != nil {
-		return fmt.Errorf("error starting Destination watcher: %v", err)
-	}
-
 	return nil
 }
 
@@ -241,7 +235,7 @@ func main() {
 	}
 
 	// Start watchers
-	err = startWatchers(ctx, &flags)
+	err = startWatchers(ctx)
 	if err != nil {
 		log.Fatalf("Error starting watchers: %s", err)
 	}
