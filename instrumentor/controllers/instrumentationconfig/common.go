@@ -9,7 +9,6 @@ import (
 )
 
 func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList) error {
-
 	workload, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name, ic.Namespace)
 	if err != nil {
 		return err
@@ -71,6 +70,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 					if rule.Spec.HeadersCollection != nil {
 						libraryConfig.HeadersCollection = mergeHttpHeadersCollectionrules(libraryConfig.HeadersCollection, rule.Spec.HeadersCollection)
 					}
+					if rule.Spec.TraceConfig != nil {
+						libraryConfig.TraceConfig = mergeTracingConfig(libraryConfig.TraceConfig, rule.Spec.TraceConfig)
+					}
 				}
 			}
 		}
@@ -79,6 +81,23 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	ic.Spec.SdkConfigs = sdkConfigs
 
 	return nil
+}
+
+func mergeTracingConfig(rule1 *odigosv1alpha1.InstrumentationLibraryConfigTraces, rule2 *instrumentationrules.TraceConfig) *odigosv1alpha1.InstrumentationLibraryConfigTraces {
+	if rule1 == nil {
+		if rule2 != nil {
+			return &odigosv1alpha1.InstrumentationLibraryConfigTraces{
+				Enabled: rule2.Enabled,
+			}
+		}
+		return nil
+	} else if rule2 == nil {
+		return rule1
+	}
+
+	mergedRules := odigosv1alpha1.InstrumentationLibraryConfigTraces{}
+	mergedRules.Enabled = merge2RuleBooleans(rule1.Enabled, rule2.Enabled)
+	return &mergedRules
 }
 
 // returns a pointer to the instrumentation library config, creating it if it does not exist
