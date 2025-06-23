@@ -98,85 +98,82 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		return ctrl.Result{}, err
 	}
 
-	podWorkload := k8sconsts.PodWorkload{
-		Name:      obj.GetName(),
-		Namespace: obj.GetNamespace(),
-		Kind:      workload.WorkloadKindFromClientObject(obj),
+	if !enabled {
+		return ctrl.Result{}, deleteWorkloadInstrumentationConfig(ctx, k8sClient, pw)
 	}
 
-	if enabled {
-		workloadObj, err := workload.ObjectToWorkload(obj)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
+	workloadObj, err := workload.ObjectToWorkload(obj)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
-		containers := make([]odigosv1.ContainerOverride, 0, len(workloadObj.PodTemplateSpec().Spec.Containers))
-		for _, container := range workloadObj.PodTemplateSpec().Spec.Containers {
-			// search if there is an override in the source for this container.
-			// list is expected to be short (1-5 containers, so linear search is fine)
-			var runtimeInfoOverride *odigosv1.RuntimeDetailsByContainer
-			if sources.Workload != nil {
-				for _, containerOverride := range sources.Workload.Spec.ContainerOverrides {
-					if containerOverride.ContainerName == container.Name {
-						runtimeInfoOverride = containerOverride.RuntimeInfo
-						break
-					}
+	containers := make([]odigosv1.ContainerOverride, 0, len(workloadObj.PodTemplateSpec().Spec.Containers))
+	for _, container := range workloadObj.PodTemplateSpec().Spec.Containers {
+		// search if there is an override in the source for this container.
+		// list is expected to be short (1-5 containers, so linear search is fine)
+		var runtimeInfoOverride *odigosv1.RuntimeDetailsByContainer
+		if sources.Workload != nil {
+			for _, containerOverride := range sources.Workload.Spec.ContainerOverrides {
+				if containerOverride.ContainerName == container.Name {
+					runtimeInfoOverride = containerOverride.RuntimeInfo
+					break
 				}
 			}
-			containers = append(containers, odigosv1.ContainerOverride{
-				ContainerName: container.Name,
-				RuntimeInfo:   runtimeInfoOverride,
-			})
 		}
-		// calculate the hash for the containers overrides
-		// convert to json string
-		json, err := json.Marshal(containers)
-		if err != nil {
+		containers = append(containers, odigosv1.ContainerOverride{
+			ContainerName: container.Name,
+			RuntimeInfo:   runtimeInfoOverride,
+		})
+	}
+	// calculate the hash for the containers overrides
+	// convert to json string
+	json, err := json.Marshal(containers)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	hash := sha256.Sum256(json)
+	hashString := hex.EncodeToString(hash[:16])
+
+	instConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
+	ic := &v1alpha1.InstrumentationConfig{}
+	err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: pw.Namespace}, ic)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
-		hash := sha256.Sum256(json)
-		hashString := hex.EncodeToString(hash[:16])
-
-		instConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
-		ic := &v1alpha1.InstrumentationConfig{}
-		err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: podWorkload.Namespace}, ic)
+		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString)
 		if err != nil {
-			if !apierrors.IsNotFound(err) {
-				return ctrl.Result{}, err
+			if apierrors.IsAlreadyExists(err) {
+				// If we hit AlreadyExists here, we just hit a race in the api/cache and want to requeue. No need to log an error
+				return ctrl.Result{Requeue: true}, nil
 			}
-			ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, podWorkload.Namespace, obj, scheme, containers, hashString)
+			return ctrl.Result{}, err
+		}
+	} else {
+		// update the instrumentation config with the new containers overrides only if it changed.
+		if ic.Spec.ContainerOverridesHash != hashString {
+			ic.Spec.ContainersOverrides = containers
+			ic.Spec.ContainerOverridesHash = hashString
+			err = k8sClient.Update(ctx, ic)
 			if err != nil {
-				if apierrors.IsAlreadyExists(err) {
-					// If we hit AlreadyExists here, we just hit a race in the api/cache and want to requeue. No need to log an error
-					return ctrl.Result{Requeue: true}, nil
-				}
-				return ctrl.Result{}, err
-			}
-		} else {
-			// update the instrumentation config with the new containers overrides only if it changed.
-			if ic.Spec.ContainerOverridesHash != hashString {
-				ic.Spec.ContainersOverrides = containers
-				ic.Spec.ContainerOverridesHash = hashString
-				err = k8sClient.Update(ctx, ic)
-				if err != nil {
-					return k8sutils.K8SUpdateErrorHandler(err)
-				}
+				return k8sutils.K8SUpdateErrorHandler(err)
 			}
 		}
+	}
 
 		markedForInstChanged := meta.SetStatusCondition(&ic.Status.Conditions, markedForInstrumentationCondition)
 		runtimeDetailsChanged := initiateRuntimeDetailsConditionIfMissing(ic, workloadObj)
 		agentEnabledChanged := initiateAgentEnabledConditionIfMissing(ic)
 
-		if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged {
-			ic.Status.Conditions = sortIcConditionsByLogicalOrder(ic.Status.Conditions)
+	if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged {
+		ic.Status.Conditions = sortIcConditionsByLogicalOrder(ic.Status.Conditions)
 
-			err = k8sClient.Status().Update(ctx, ic)
-			if err != nil {
-				logger.Info("Failed to update status conditions of InstrumentationConfig", "name", instConfigName, "namespace", podWorkload.Namespace, "error", err.Error())
-				return k8sutils.K8SUpdateErrorHandler(err)
-			}
+		err = k8sClient.Status().Update(ctx, ic)
+		if err != nil {
+			logger.Info("Failed to update status conditions of InstrumentationConfig", "name", instConfigName, "namespace", pw.Namespace, "error", err.Error())
+			return k8sutils.K8SUpdateErrorHandler(err)
 		}
+	}
 
 		dataStreamsChanged := sourceutils.HandleInstrumentationConfigDataStreamsLabels(ctx, sources, ic)
 
@@ -188,8 +185,6 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 				return k8sutils.K8SUpdateErrorHandler(err)
 			}
 		}
-	} else {
-		return ctrl.Result{}, deleteWorkloadInstrumentationConfig(ctx, k8sClient, podWorkload)
 	}
 
 	return ctrl.Result{}, nil

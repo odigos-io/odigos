@@ -51,17 +51,6 @@ func TestWorkloadKindFromString(t *testing.T) {
 	assert.Equal(t, k8sconsts.WorkloadKind(""), invalid)
 }
 
-func TestWorkloadKindFromClientObject(t *testing.T) {
-	dep := workload.WorkloadKindFromClientObject(&appsv1.Deployment{})
-	assert.Equal(t, k8sconsts.WorkloadKindDeployment, dep)
-	ds := workload.WorkloadKindFromClientObject(&appsv1.DaemonSet{})
-	assert.Equal(t, k8sconsts.WorkloadKindDaemonSet, ds)
-	ss := workload.WorkloadKindFromClientObject(&appsv1.StatefulSet{})
-	assert.Equal(t, k8sconsts.WorkloadKindStatefulSet, ss)
-	invalid := workload.WorkloadKindFromClientObject(&appsv1.ReplicaSet{})
-	assert.Equal(t, k8sconsts.WorkloadKind(""), invalid)
-}
-
 func TestClientObjectFromWorkloadKind(t *testing.T) {
 	dep := workload.ClientObjectFromWorkloadKind(k8sconsts.WorkloadKindDeployment)
 	assert.Equal(t, &appsv1.Deployment{}, dep)
