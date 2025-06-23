@@ -24,7 +24,7 @@ var EnvValuesMap = map[string]envValues{
 		delim:               " ",
 		programmingLanguage: common.JavascriptProgrammingLanguage,
 		values: map[common.OtelSdk]string{
-			common.OtelSdkNativeCommunity: "--require /var/odigos/nodejs/autoinstrumentation.js",
+			common.OtelSdkNativeCommunity: "--require /var/odigos/nodejs-community/autoinstrumentation.js",
 			common.OtelSdkEbpfEnterprise:  "--require /var/odigos/nodejs-ebpf/autoinstrumentation.js",
 		},
 	},
