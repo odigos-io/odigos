@@ -124,7 +124,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		// search if there is an override in the source for this container.
 		// list is expected to be short (1-5 containers, so linear search is fine)
 		var runtimeInfoOverride *odigosv1.RuntimeDetailsByContainer
-		if sources.Workload != nil {
+		if sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) {
 			for _, containerOverride := range sources.Workload.Spec.ContainerOverrides {
 				if containerOverride.ContainerName == container.Name {
 					runtimeInfoOverride = containerOverride.RuntimeInfo
@@ -146,6 +146,8 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	hash := sha256.Sum256(json)
 	hashString := hex.EncodeToString(hash[:16])
 
+	desiredServiceName := calculateDesiredServiceName(pw, sources)
+
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
 	ic := &v1alpha1.InstrumentationConfig{}
 	err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: pw.Namespace}, ic)
@@ -153,7 +155,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
-		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString)
+		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString, desiredServiceName)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				// If we hit AlreadyExists here, we just hit a race in the api/cache and want to requeue. No need to log an error
@@ -163,9 +165,9 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		}
 	} else {
 		// update the instrumentation config with the new containers overrides only if it changed.
-		if ic.Spec.ContainerOverridesHash != hashString {
-			ic.Spec.ContainersOverrides = containers
-			ic.Spec.ContainerOverridesHash = hashString
+		containerOverridesChanged := updateContainerOverride(ic, containers, hashString)
+		serviceNameChanged := updateServiceName(ic, desiredServiceName)
+		if containerOverridesChanged || serviceNameChanged {
 			err = k8sClient.Update(ctx, ic)
 			if err != nil {
 				return k8sutils.K8SUpdateErrorHandler(err)
@@ -200,7 +202,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	return ctrl.Result{}, nil
 }
 
-func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string) (*v1alpha1.InstrumentationConfig, error) {
+func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string) (*v1alpha1.InstrumentationConfig, error) {
 	logger := log.FromContext(ctx)
 	instConfig := v1alpha1.InstrumentationConfig{
 		TypeMeta: metav1.TypeMeta{
@@ -213,10 +215,6 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 		},
 	}
 
-	serviceName, err := sourceutils.OtelServiceNameBySource(ctx, k8sClient, obj)
-	if err != nil {
-		return nil, err
-	}
 	instConfig.Spec.ServiceName = serviceName
 	instConfig.Spec.ContainersOverrides = containers
 	instConfig.Spec.ContainerOverridesHash = containersOverridesHash
@@ -226,7 +224,7 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 		return nil, err
 	}
 
-	err = k8sClient.Create(ctx, &instConfig)
+	err := k8sClient.Create(ctx, &instConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -252,4 +250,33 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 	logger.V(1).Info("deleted instrumentationconfig", "name", instrumentationConfigName, "namespace", podWorkload.Namespace)
 
 	return nil
+}
+
+func updateContainerOverride(ic *v1alpha1.InstrumentationConfig, desiredContainers []odigosv1.ContainerOverride, desiredContainersHashString string) (updated bool) {
+	if ic.Spec.ContainerOverridesHash != desiredContainersHashString {
+		ic.Spec.ContainersOverrides = desiredContainers
+		ic.Spec.ContainerOverridesHash = desiredContainersHashString
+		return true
+	}
+	return false
+}
+
+func calculateDesiredServiceName(pw k8sconsts.PodWorkload, sources *odigosv1.WorkloadSources) string {
+	// if there is no override service name, default to the workload name (deployment name etc.)
+	if sources.Workload == nil ||
+		k8sutils.IsTerminating(sources.Workload) ||
+		sources.Workload.Spec.OtelServiceName == "" {
+
+		return pw.Name
+	}
+	// otherwise, use the override service name provided by the user in source CR as is
+	return sources.Workload.Spec.OtelServiceName
+}
+
+func updateServiceName(ic *v1alpha1.InstrumentationConfig, desiredServiceName string) (updated bool) {
+	if desiredServiceName != ic.Spec.ServiceName {
+		ic.Spec.ServiceName = desiredServiceName
+		return true
+	}
+	return false
 }
