@@ -16,12 +16,14 @@ func OdigosGinMiddleware(middlewares ...gin.HandlerFunc) []gin.HandlerFunc {
 	wrappedMiddlewares := make([]gin.HandlerFunc, len(middlewares))
 
 	for i, middleware := range middlewares {
+		// Create a local copy to avoid closure bug
+		middlewareCopy := middleware
 		wrappedMiddlewares[i] = func(c *gin.Context) {
 			done := make(chan bool)
 			reqCtx, cancel := context.WithCancel(c.Request.Context())
 			go func(ctx context.Context) {
-				middlewareName := runtime.FuncForPC(reflect.ValueOf(middleware).Pointer()).Name()
-				executeMiddleware(ctx, c, middlewareName, middleware)
+				middlewareName := runtime.FuncForPC(reflect.ValueOf(middlewareCopy).Pointer()).Name()
+				executeMiddleware(ctx, c, middlewareName, middlewareCopy)
 				done <- true
 			}(reqCtx)
 			<-done
