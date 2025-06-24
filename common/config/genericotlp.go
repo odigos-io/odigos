@@ -141,7 +141,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 
 func applyGrpcOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap) {
 	config := dest.GetConfig()
-	
+
 	oauth2Enabled := config[otlpGrpcOAuth2EnabledKey]
 	if oauth2Enabled != "true" {
 		return "", nil
@@ -165,7 +165,7 @@ func applyGrpcOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensi
 
 	// Add optional endpoint parameters
 	endpointParams := GenericMap{}
-	
+
 	// Add audience if provided
 	if audience := config[otlpGrpcOAuth2AudienceKey]; audience != "" {
 		endpointParams["audience"] = audience

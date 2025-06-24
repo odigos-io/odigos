@@ -10,20 +10,20 @@ import (
 )
 
 const (
-	otlpHttpEndpointKey          = "OTLP_HTTP_ENDPOINT"
-	otlpHttpTlsKey               = "OTLP_HTTP_TLS_ENABLED"
-	otlpHttpCaPemKey             = "OTLP_HTTP_CA_PEM"
-	otlpHttpInsecureSkipVerify   = "OTLP_HTTP_INSECURE_SKIP_VERIFY"
-	otlpHttpBasicAuthUsernameKey = "OTLP_HTTP_BASIC_AUTH_USERNAME"
-	otlpHttpBasicAuthPasswordKey = "OTLP_HTTP_BASIC_AUTH_PASSWORD"
-	otlpHttpOAuth2EnabledKey     = "OTLP_HTTP_OAUTH2_ENABLED"
-	otlpHttpOAuth2ClientIdKey    = "OTLP_HTTP_OAUTH2_CLIENT_ID"
+	otlpHttpEndpointKey           = "OTLP_HTTP_ENDPOINT"
+	otlpHttpTlsKey                = "OTLP_HTTP_TLS_ENABLED"
+	otlpHttpCaPemKey              = "OTLP_HTTP_CA_PEM"
+	otlpHttpInsecureSkipVerify    = "OTLP_HTTP_INSECURE_SKIP_VERIFY"
+	otlpHttpBasicAuthUsernameKey  = "OTLP_HTTP_BASIC_AUTH_USERNAME"
+	otlpHttpBasicAuthPasswordKey  = "OTLP_HTTP_BASIC_AUTH_PASSWORD"
+	otlpHttpOAuth2EnabledKey      = "OTLP_HTTP_OAUTH2_ENABLED"
+	otlpHttpOAuth2ClientIdKey     = "OTLP_HTTP_OAUTH2_CLIENT_ID"
 	otlpHttpOAuth2ClientSecretKey = "OTLP_HTTP_OAUTH2_CLIENT_SECRET"
-	otlpHttpOAuth2TokenUrlKey    = "OTLP_HTTP_OAUTH2_TOKEN_URL"
-	otlpHttpOAuth2ScopesKey      = "OTLP_HTTP_OAUTH2_SCOPES"
-	otlpHttpOAuth2AudienceKey    = "OTLP_HTTP_OAUTH2_AUDIENCE"
-	otlpHttpCompression          = "OTLP_HTTP_COMPRESSION"
-	otlpHttpHeaders              = "OTLP_HTTP_HEADERS"
+	otlpHttpOAuth2TokenUrlKey     = "OTLP_HTTP_OAUTH2_TOKEN_URL"
+	otlpHttpOAuth2ScopesKey       = "OTLP_HTTP_OAUTH2_SCOPES"
+	otlpHttpOAuth2AudienceKey     = "OTLP_HTTP_OAUTH2_AUDIENCE"
+	otlpHttpCompression           = "OTLP_HTTP_COMPRESSION"
+	otlpHttpHeaders               = "OTLP_HTTP_HEADERS"
 )
 
 type OTLPHttp struct{}
@@ -79,7 +79,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	// Only add TLS config if TLS is explicitly enabled or authentication is being used
 	if userTlsEnabled || hasAuthentication {
 		tlsConfig := GenericMap{
-			"insecure": !userTlsEnabled,
+			"insecure": !userTlsEnabled && !hasAuthentication,
 		}
 		caPem, caExists := config[otlpHttpCaPemKey]
 		if caExists && caPem != "" {
@@ -151,7 +151,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 
 func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap) {
 	config := dest.GetConfig()
-	
+
 	oauth2Enabled := config[otlpHttpOAuth2EnabledKey]
 	if oauth2Enabled != "true" {
 		return "", nil
@@ -175,7 +175,7 @@ func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionCo
 
 	// Add optional endpoint parameters
 	endpointParams := GenericMap{}
-	
+
 	// Add audience if provided
 	if audience := config[otlpHttpOAuth2AudienceKey]; audience != "" {
 		endpointParams["audience"] = audience
