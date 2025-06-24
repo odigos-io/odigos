@@ -24,7 +24,7 @@ export const useNamespace = () => {
     onError: (error) => addNotification({ type: StatusType.Error, title: error.name || Crud.Read, message: error.cause?.message || error.message }),
   });
 
-  const [mutatePersist] = useMutation<{ persistK8sNamespace: boolean }, NamespaceInstrumentInput>(PERSIST_NAMESPACES, {
+  const [mutatePersist] = useMutation<{ persistK8sNamespaces: boolean }, NamespaceInstrumentInput>(PERSIST_NAMESPACES, {
     onError: (error) => {
       // TODO: after estimating the number of instrumentationConfigs to create for future apps in "useSourceCRUD" hook, then uncomment the below
       // setInstrumentCount('sourcesToCreate', 0);

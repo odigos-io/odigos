@@ -90,6 +90,12 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 	if err != nil {
 		return nil, err
 	}
+	if len(namespaces) == 0 {
+		return nil, fmt.Errorf("no namespaces found with name %s", name)
+	}
+	if len(namespaces) > 1 {
+		return nil, fmt.Errorf("multiple namespaces found with name %s", name)
+	}
 	return namespaces[0], nil
 }
 
