@@ -181,7 +181,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	if dataStreamsChanged {
 		err = k8sClient.Update(ctx, ic)
 		if err != nil {
-			logger.Info("Failed to update instrumentation config", "name", instConfigName, "namespace", podWorkload.Namespace, "error", err.Error())
+			logger.Info("Failed to update instrumentation config", "name", instConfigName, "namespace", pw.Namespace, "error", err.Error())
 			return k8sutils.K8SUpdateErrorHandler(err)
 		}
 	}
@@ -224,13 +224,13 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 	return &instConfig, nil
 }
 
-func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Client, podWorkload k8sconsts.PodWorkload) error {
+func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodWorkload) error {
 	logger := log.FromContext(ctx)
-	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
+	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
 
 	err := kubeClient.Delete(ctx, &v1alpha1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: podWorkload.Namespace,
+			Namespace: pw.Namespace,
 			Name:      instrumentationConfigName,
 		},
 	})
@@ -238,7 +238,7 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 		return client.IgnoreNotFound(err)
 	}
 
-	logger.V(1).Info("deleted instrumentationconfig", "name", instrumentationConfigName, "namespace", podWorkload.Namespace)
+	logger.V(1).Info("deleted instrumentationconfig", "name", instrumentationConfigName, "namespace", pw.Namespace)
 
 	return nil
 }
