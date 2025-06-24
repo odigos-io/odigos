@@ -206,11 +206,12 @@ func TestParseOtlpHttpEndpoint(t *testing.T) {
 
 func TestOAuth2Configuration(t *testing.T) {
 	tests := []struct {
-		name           string
-		config         map[string]string
-		expectedAuth   bool
+		name            string
+		config          map[string]string
+		expectedAuth    bool
 		expectedExtName string
-		expectedScopes []string
+		expectedScopes  []string
+		expectTLSConfig bool
 	}{
 		{
 			name: "OAuth2 enabled with all parameters",
@@ -223,9 +224,10 @@ func TestOAuth2Configuration(t *testing.T) {
 				"OTLP_HTTP_OAUTH2_AUDIENCE":        "api.example.com",
 				// Note: OTLP_HTTP_OAUTH2_CLIENT_SECRET is handled separately through secrets
 			},
-			expectedAuth:   true,
+			expectedAuth:    true,
 			expectedExtName: "oauth2client/otlphttp-test-id",
-			expectedScopes: []string{"api.metrics", "api.traces"},
+			expectedScopes:  []string{"api.metrics", "api.traces"},
+			expectTLSConfig: true,
 		},
 		{
 			name: "Real user configuration",
@@ -241,9 +243,40 @@ func TestOAuth2Configuration(t *testing.T) {
 				"OTLP_HTTP_OAUTH2_AUDIENCE":        "ccccx",
 				// Client secret stored separately in secret
 			},
-			expectedAuth:   true,
+			expectedAuth:    true,
 			expectedExtName: "oauth2client/otlphttp-test-id",
-			expectedScopes: []string{"asdasd"},
+			expectedScopes:  []string{"asdasd"},
+			expectTLSConfig: true,
+		},
+		{
+			name: "TLS enabled without authentication",
+			config: map[string]string{
+				"OTLP_HTTP_ENDPOINT":    "https://example.com:4318",
+				"OTLP_HTTP_TLS_ENABLED": "true",
+			},
+			expectedAuth:    false,
+			expectTLSConfig: true,
+		},
+		{
+			name: "Basic Auth without TLS",
+			config: map[string]string{
+				"OTLP_HTTP_ENDPOINT":            "https://example.com:4318",
+				"OTLP_HTTP_TLS_ENABLED":         "false",
+				"OTLP_HTTP_BASIC_AUTH_USERNAME": "user",
+				"OTLP_HTTP_BASIC_AUTH_PASSWORD": "pass",
+			},
+			expectedAuth:    true,
+			expectedExtName: "basicauth/otlphttp-test-id",
+			expectTLSConfig: true,
+		},
+		{
+			name: "Neither TLS nor authentication - no TLS config",
+			config: map[string]string{
+				"OTLP_HTTP_ENDPOINT": "http://example.com:4318",
+				// No TLS, no OAuth2, no Basic Auth
+			},
+			expectedAuth:    false,
+			expectTLSConfig: false,
 		},
 		{
 			name: "OAuth2 disabled",
@@ -251,17 +284,19 @@ func TestOAuth2Configuration(t *testing.T) {
 				"OTLP_HTTP_ENDPOINT":       "https://example.com:4318",
 				"OTLP_HTTP_OAUTH2_ENABLED": "false",
 			},
-			expectedAuth: false,
+			expectedAuth:    false,
+			expectTLSConfig: false,
 		},
 		{
 			name: "OAuth2 enabled but missing required fields",
 			config: map[string]string{
-				"OTLP_HTTP_ENDPOINT":       "https://example.com:4318",
-				"OTLP_HTTP_OAUTH2_ENABLED": "true",
+				"OTLP_HTTP_ENDPOINT":         "https://example.com:4318",
+				"OTLP_HTTP_OAUTH2_ENABLED":   "true",
 				"OTLP_HTTP_OAUTH2_CLIENT_ID": "test-client-id",
 				// Missing TOKEN_URL
 			},
-			expectedAuth: false,
+			expectedAuth:    false,
+			expectTLSConfig: false,
 		},
 		{
 			name: "Basic Auth takes precedence when OAuth2 disabled",
@@ -271,8 +306,9 @@ func TestOAuth2Configuration(t *testing.T) {
 				"OTLP_HTTP_BASIC_AUTH_USERNAME":      "user",
 				"OTLP_HTTP_BASIC_AUTH_PASSWORD":      "pass",
 			},
-			expectedAuth:   true,
+			expectedAuth:    true,
 			expectedExtName: "basicauth/otlphttp-test-id",
+			expectTLSConfig: true,
 		},
 		{
 			name: "OAuth2 takes precedence over Basic Auth",
@@ -284,8 +320,9 @@ func TestOAuth2Configuration(t *testing.T) {
 				"OTLP_HTTP_BASIC_AUTH_USERNAME":      "user",
 				"OTLP_HTTP_BASIC_AUTH_PASSWORD":      "pass",
 			},
-			expectedAuth:   true,
+			expectedAuth:    true,
 			expectedExtName: "oauth2client/otlphttp-test-id",
+			expectTLSConfig: true,
 		},
 	}
 
@@ -322,6 +359,24 @@ func TestOAuth2Configuration(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotEmpty(t, pipelineNames)
 
+			// Check exporter configuration
+			exporterName := "otlphttp/generic-test-id"
+			assert.Contains(t, config.Exporters, exporterName)
+			exporterConfig := config.Exporters[exporterName].(GenericMap)
+
+			// Check TLS configuration presence
+			if tt.expectTLSConfig {
+				assert.Contains(t, exporterConfig, "tls", "TLS config should be present")
+				tlsConfig := exporterConfig["tls"].(GenericMap)
+				// When authentication is used without explicit TLS, it should be insecure: true
+				// When TLS is explicitly enabled, it should be insecure: false
+				userTlsEnabled := tt.config["OTLP_HTTP_TLS_ENABLED"] == "true"
+				expectedInsecure := !userTlsEnabled
+				assert.Equal(t, expectedInsecure, tlsConfig["insecure"].(bool))
+			} else {
+				assert.NotContains(t, exporterConfig, "tls", "TLS config should NOT be present when neither TLS nor authentication are enabled")
+			}
+
 			// Check if OAuth2 extension is configured correctly
 			if tt.expectedAuth {
 				assert.Contains(t, config.Service.Extensions, tt.expectedExtName)
@@ -345,15 +400,13 @@ func TestOAuth2Configuration(t *testing.T) {
 				}
 				
 				// Verify exporter has auth configuration
-				exporterName := "otlphttp/generic-test-id"
-				assert.Contains(t, config.Exporters, exporterName)
-				exporterConfig := config.Exporters[exporterName].(GenericMap)
 				authConfig := exporterConfig["auth"].(GenericMap)
 				assert.Equal(t, tt.expectedExtName, authConfig["authenticator"])
 			} else {
 				// Should not have OAuth2 extension
 				assert.NotContains(t, config.Service.Extensions, "oauth2client/otlphttp-test-id")
 				assert.NotContains(t, config.Extensions, "oauth2client/otlphttp-test-id")
+				assert.Nil(t, exporterConfig["auth"])
 			}
 		})
 	}

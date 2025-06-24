@@ -9,11 +9,12 @@ import (
 
 func TestGrpcOAuth2AutoTLS(t *testing.T) {
 	tests := []struct {
-		name           string
-		config         map[string]string
-		expectedTLS    bool
-		expectedAuth   bool
+		name            string
+		config          map[string]string
+		expectedTLS     bool
+		expectedAuth    bool
 		expectedExtName string
+		expectTLSConfig bool // New field to check if TLS config should be present
 	}{
 		{
 			name: "OAuth2 enabled forces TLS when TLS was disabled",
@@ -27,6 +28,7 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 			expectedTLS:     true, // TLS should be forced to true
 			expectedAuth:    true,
 			expectedExtName: "oauth2client/otlpgrpc-test-id",
+			expectTLSConfig: true, // TLS config should be present
 		},
 		{
 			name: "OAuth2 enabled with TLS already enabled",
@@ -40,15 +42,27 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 			expectedTLS:     true,
 			expectedAuth:    true,
 			expectedExtName: "oauth2client/otlpgrpc-test-id",
+			expectTLSConfig: true, // TLS config should be present
 		},
 		{
-			name: "No OAuth2, TLS disabled remains disabled",
+			name: "TLS enabled without OAuth2",
 			config: map[string]string{
 				"OTLP_GRPC_ENDPOINT":    "example.com:4317",
-				"OTLP_GRPC_TLS_ENABLED": "false",
+				"OTLP_GRPC_TLS_ENABLED": "true",
 			},
-			expectedTLS:  false,
-			expectedAuth: false,
+			expectedTLS:     true,
+			expectedAuth:    false,
+			expectTLSConfig: true, // TLS config should be present
+		},
+		{
+			name: "Neither TLS nor OAuth2 enabled - no TLS config",
+			config: map[string]string{
+				"OTLP_GRPC_ENDPOINT": "example.com:4317",
+				// Neither TLS nor OAuth2 enabled
+			},
+			expectedTLS:     false,
+			expectedAuth:    false,
+			expectTLSConfig: false, // NO TLS config should be present
 		},
 		{
 			name: "OAuth2 disabled, TLS setting respected",
@@ -57,8 +71,9 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 				"OTLP_GRPC_TLS_ENABLED":    "false",
 				"OTLP_GRPC_OAUTH2_ENABLED": "false",
 			},
-			expectedTLS:  false,
-			expectedAuth: false,
+			expectedTLS:     false,
+			expectedAuth:    false,
+			expectTLSConfig: false, // NO TLS config should be present
 		},
 	}
 
@@ -89,16 +104,23 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotEmpty(t, pipelineNames)
 
-			// Check TLS configuration
+			// Check exporter configuration
 			exporterName := "otlp/generic-test-id"
 			assert.Contains(t, config.Exporters, exporterName)
 			exporterConfig := config.Exporters[exporterName].(GenericMap)
-			tlsConfig := exporterConfig["tls"].(GenericMap)
 			
-			if tt.expectedTLS {
-				assert.False(t, tlsConfig["insecure"].(bool), "TLS should be enabled (insecure=false)")
+			// Check TLS configuration presence
+			if tt.expectTLSConfig {
+				assert.Contains(t, exporterConfig, "tls", "TLS config should be present")
+				tlsConfig := exporterConfig["tls"].(GenericMap)
+				
+				if tt.expectedTLS {
+					assert.False(t, tlsConfig["insecure"].(bool), "TLS should be enabled (insecure=false)")
+				} else {
+					assert.True(t, tlsConfig["insecure"].(bool), "TLS should be disabled (insecure=true)")
+				}
 			} else {
-				assert.True(t, tlsConfig["insecure"].(bool), "TLS should be disabled (insecure=true)")
+				assert.NotContains(t, exporterConfig, "tls", "TLS config should NOT be present when neither TLS nor OAuth2 are enabled")
 			}
 
 			// Check OAuth2 configuration

@@ -38,33 +38,38 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		return nil, errors.New("generic OTLP gRPC endpoint not specified, gateway will not be configured for otlp")
 	}
 
-	tls := dest.GetConfig()[genericOtlpTlsKey]
-	tlsEnabled := tls == "true"
+	userTlsEnabled := dest.GetConfig()[genericOtlpTlsKey] == "true"
 
 	// Check for OAuth2 authentication early to determine TLS requirements
 	oauth2ExtensionName, oauth2ExtensionConf := applyGrpcOAuth2Auth(dest)
 	oauth2Enabled := oauth2ExtensionName != ""
 
-	// gRPC requires TLS when using authentication credentials like OAuth2
-	if oauth2Enabled && !tlsEnabled {
-		tlsEnabled = true
-	}
+	// Determine final TLS setting: gRPC requires TLS when using authentication credentials like OAuth2
+	finalTlsEnabled := userTlsEnabled || oauth2Enabled
 
-	grpcEndpoint, err := parseOtlpGrpcUrl(url, tlsEnabled)
+	grpcEndpoint, err := parseOtlpGrpcUrl(url, finalTlsEnabled)
 	if err != nil {
 		return nil, errorMissingKey(genericOtlpUrlKey)
 	}
 
-	tlsConfig := GenericMap{
-		"insecure": !tlsEnabled,
+	exporterConf := GenericMap{
+		"endpoint": grpcEndpoint,
 	}
-	caPem, caExists := config[genericOtlpCaPemKey]
-	if caExists && caPem != "" {
-		tlsConfig["ca_pem"] = caPem
-	}
-	insecureSkipVerify, skipExists := config[genericOtlpInsecureSkipVerify]
-	if skipExists && insecureSkipVerify != "" {
-		tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
+
+	// Only add TLS config if TLS is needed (user-enabled or OAuth2-required)
+	if userTlsEnabled || oauth2Enabled {
+		tlsConfig := GenericMap{
+			"insecure": !finalTlsEnabled,
+		}
+		caPem, caExists := config[genericOtlpCaPemKey]
+		if caExists && caPem != "" {
+			tlsConfig["ca_pem"] = caPem
+		}
+		insecureSkipVerify, skipExists := config[genericOtlpInsecureSkipVerify]
+		if skipExists && insecureSkipVerify != "" {
+			tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
+		}
+		exporterConf["tls"] = tlsConfig
 	}
 
 	// add OAuth2 authenticator extension if configured
@@ -74,10 +79,6 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 
 	genericOtlpExporterName := "otlp/generic-" + dest.GetID()
-	exporterConf := GenericMap{
-		"endpoint": grpcEndpoint,
-		"tls":      tlsConfig,
-	}
 
 	// Add OAuth2 auth configuration if available
 	if oauth2ExtensionName != "" {

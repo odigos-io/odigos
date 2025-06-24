@@ -40,24 +40,11 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		return nil, errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
 	}
 
-	tls := dest.GetConfig()[otlpHttpTlsKey]
-	tlsEnabled := tls == "true"
+	userTlsEnabled := dest.GetConfig()[otlpHttpTlsKey] == "true"
 
 	parsedUrl, err := parseOtlpHttpEndpoint(url, "", "")
 	if err != nil {
 		return nil, errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
-	}
-
-	tlsConfig := GenericMap{
-		"insecure": !tlsEnabled,
-	}
-	caPem, caExists := config[otlpHttpCaPemKey]
-	if caExists && caPem != "" {
-		tlsConfig["ca_pem"] = caPem
-	}
-	insecureSkipVerify, skipExists := config[otlpHttpInsecureSkipVerify]
-	if skipExists && insecureSkipVerify != "" {
-		tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
 	}
 
 	// Check for OAuth2 or Basic Auth (OAuth2 takes precedence)
@@ -67,12 +54,15 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	// OAuth2 takes precedence over Basic Auth
 	var authExtensionName string
 	var authExtensionConf *GenericMap
+	hasAuthentication := false
 	if oauth2ExtensionName != "" && oauth2ExtensionConf != nil {
 		authExtensionName = oauth2ExtensionName
 		authExtensionConf = oauth2ExtensionConf
+		hasAuthentication = true
 	} else if basicAuthExtensionName != "" && basicAuthExtensionConf != nil {
 		authExtensionName = basicAuthExtensionName
 		authExtensionConf = basicAuthExtensionConf
+		hasAuthentication = true
 	}
 
 	// add authenticator extension
@@ -84,8 +74,24 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	otlpHttpExporterName := "otlphttp/generic-" + dest.GetID()
 	exporterConf := GenericMap{
 		"endpoint": parsedUrl,
-		"tls":      tlsConfig,
 	}
+
+	// Only add TLS config if TLS is explicitly enabled or authentication is being used
+	if userTlsEnabled || hasAuthentication {
+		tlsConfig := GenericMap{
+			"insecure": !userTlsEnabled,
+		}
+		caPem, caExists := config[otlpHttpCaPemKey]
+		if caExists && caPem != "" {
+			tlsConfig["ca_pem"] = caPem
+		}
+		insecureSkipVerify, skipExists := config[otlpHttpInsecureSkipVerify]
+		if skipExists && insecureSkipVerify != "" {
+			tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
+		}
+		exporterConf["tls"] = tlsConfig
+	}
+
 	if authExtensionName != "" {
 		exporterConf["auth"] = GenericMap{
 			"authenticator": authExtensionName,
