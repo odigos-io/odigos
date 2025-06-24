@@ -272,7 +272,7 @@ spec:
               traceConfig:
                 description: Configure the tracing configuration for the library.
                 properties:
-                  enabled:
+                  disabled:
                     description: Disabled will disable tracing for the rule.
                     type: boolean
                 type: object

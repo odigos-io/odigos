@@ -10,4 +10,4 @@ spec:
       language: go
       spanKind: server
   traceConfig:
-    enabled: false
+    disabled: true

@@ -95,7 +95,17 @@ func mergeDefaultTracingConfig(defaultConfig *instrumentationrules.TraceConfig, 
 	}
 
 	mergedRules := &instrumentationrules.TraceConfig{}
-	mergedRules.Disabled = boolPtr(*defaultConfig.Disabled || *rule.Disabled)
+
+	// Handle nil Disabled fields safely
+	var defaultDisabled, ruleDisabled bool
+	if defaultConfig.Disabled != nil {
+		defaultDisabled = *defaultConfig.Disabled
+	}
+	if rule.Disabled != nil {
+		ruleDisabled = *rule.Disabled
+	}
+
+	mergedRules.Disabled = boolPtr(defaultDisabled || ruleDisabled)
 	return mergedRules
 }
 
@@ -113,7 +123,17 @@ func mergeTracingConfig(sdkConfig *odigosv1alpha1.InstrumentationLibraryConfigTr
 	}
 
 	mergedRules := odigosv1alpha1.InstrumentationLibraryConfigTraces{}
-	mergedRules.Enabled = boolPtr(*sdkConfig.Enabled || !*rule.Disabled)
+
+	// Handle nil Enabled and Disabled fields safely
+	var sdkEnabled, ruleDisabled bool
+	if sdkConfig.Enabled != nil {
+		sdkEnabled = *sdkConfig.Enabled
+	}
+	if rule.Disabled != nil {
+		ruleDisabled = *rule.Disabled
+	}
+
+	mergedRules.Enabled = boolPtr(sdkEnabled || !ruleDisabled)
 	return &mergedRules
 }
 
