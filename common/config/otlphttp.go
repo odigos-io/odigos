@@ -79,7 +79,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	// Only add TLS config if TLS is explicitly enabled or authentication is being used
 	if userTlsEnabled || hasAuthentication {
 		tlsConfig := GenericMap{
-			"insecure": !userTlsEnabled && !hasAuthentication,
+			"insecure": !userTlsEnabled,
 		}
 		caPem, caExists := config[otlpHttpCaPemKey]
 		if caExists && caPem != "" {
