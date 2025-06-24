@@ -1,0 +1,962 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>instrumentationconfig: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig/common.go (50.3%)</option>
+				
+				<option value="file1">github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig/instrumentationconfig_controller.go (0.0%)</option>
+				
+				<option value="file2">github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig/instrumentationrule_controller.go (0.0%)</option>
+				
+				<option value="file3">github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig/manager.go (0.0%)</option>
+				
+				<option value="file4">github.com/odigos-io/odigos/instrumentor/internal/pod/pod.go (100.0%)</option>
+				
+				<option value="file5">github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector/webhook_env_injector.go (73.9%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package instrumentationconfig
+
+import (
+        odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+        "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
+        "github.com/odigos-io/odigos/common"
+        "github.com/odigos-io/odigos/instrumentor/controllers/utils"
+        "github.com/odigos-io/odigos/k8sutils/pkg/workload"
+)
+
+func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList) error <span class="cov8" title="1">{
+
+        workload, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name, ic.Namespace)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ic.Status.RuntimeDetailsByContainer))
+
+        // create an empty sdk config for each detected programming language
+        for _, container := range ic.Status.RuntimeDetailsByContainer </span><span class="cov8" title="1">{
+                containerLanguage := container.Language
+                if containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.UnknownProgrammingLanguage </span><span class="cov8" title="1">{
+                        continue</span>
+                }
+                <span class="cov8" title="1">sdkConfigs = createDefaultSdkConfig(sdkConfigs, containerLanguage)</span>
+        }
+
+        // iterate over all the payload collection rules, and update the instrumentation config accordingly
+        <span class="cov8" title="1">for i := range rules.Items </span><span class="cov8" title="1">{
+                rule := &amp;rules.Items[i]
+                if rule.Spec.Disabled </span><span class="cov8" title="1">{
+                        continue</span>
+                }
+                // filter out rules where the workload does not match
+                <span class="cov8" title="1">participating := utils.IsWorkloadParticipatingInRule(workload, rule)
+                if !participating </span><span class="cov8" title="1">{
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">for i := range sdkConfigs </span><span class="cov8" title="1">{
+                        if rule.Spec.InstrumentationLibraries == nil </span><span class="cov8" title="1">{ // nil means a rule in SDK level, that applies unless overridden by library level rule
+                                if rule.Spec.PayloadCollection != nil </span><span class="cov8" title="1">{
+                                        sdkConfigs[i].DefaultPayloadCollection.HttpRequest = mergeHttpPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.HttpRequest, rule.Spec.PayloadCollection.HttpRequest)
+                                        sdkConfigs[i].DefaultPayloadCollection.HttpResponse = mergeHttpPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.HttpResponse, rule.Spec.PayloadCollection.HttpResponse)
+                                        sdkConfigs[i].DefaultPayloadCollection.DbQuery = mergeDbPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
+                                        sdkConfigs[i].DefaultPayloadCollection.Messaging = mergeMessagingPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.Messaging, rule.Spec.PayloadCollection.Messaging)
+                                }</span>
+                                <span class="cov8" title="1">if rule.Spec.CodeAttributes != nil </span><span class="cov0" title="0">{
+                                        sdkConfigs[i].DefaultCodeAttributes = mergeCodeAttributesRules(sdkConfigs[i].DefaultCodeAttributes, rule.Spec.CodeAttributes)
+                                }</span>
+                                <span class="cov8" title="1">if rule.Spec.HeadersCollection != nil </span><span class="cov0" title="0">{
+                                        sdkConfigs[i].DefaultHeadersCollection = mergeHttpHeadersCollectionrules(sdkConfigs[i].DefaultHeadersCollection, rule.Spec.HeadersCollection)
+                                }</span>
+                        } else<span class="cov8" title="1"> {
+                                for _, library := range *rule.Spec.InstrumentationLibraries </span><span class="cov8" title="1">{
+                                        libraryConfig := findOrCreateSdkLibraryConfig(&amp;sdkConfigs[i], library)
+                                        if libraryConfig == nil </span><span class="cov0" title="0">{
+                                                // library is not relevant to this SDK
+                                                continue</span>
+                                        }
+                                        <span class="cov8" title="1">if rule.Spec.PayloadCollection != nil </span><span class="cov8" title="1">{
+                                                libraryConfig.PayloadCollection.HttpRequest = mergeHttpPayloadCollectionRules(libraryConfig.PayloadCollection.HttpRequest, rule.Spec.PayloadCollection.HttpRequest)
+                                                libraryConfig.PayloadCollection.HttpResponse = mergeHttpPayloadCollectionRules(libraryConfig.PayloadCollection.HttpResponse, rule.Spec.PayloadCollection.HttpResponse)
+                                                libraryConfig.PayloadCollection.DbQuery = mergeDbPayloadCollectionRules(libraryConfig.PayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
+                                                libraryConfig.PayloadCollection.Messaging = mergeMessagingPayloadCollectionRules(libraryConfig.PayloadCollection.Messaging, rule.Spec.PayloadCollection.Messaging)
+                                        }</span>
+                                        <span class="cov8" title="1">if rule.Spec.CodeAttributes != nil </span><span class="cov0" title="0">{
+                                                libraryConfig.CodeAttributes = mergeCodeAttributesRules(libraryConfig.CodeAttributes, rule.Spec.CodeAttributes)
+                                        }</span>
+                                        <span class="cov8" title="1">if rule.Spec.HeadersCollection != nil </span><span class="cov0" title="0">{
+                                                libraryConfig.HeadersCollection = mergeHttpHeadersCollectionrules(libraryConfig.HeadersCollection, rule.Spec.HeadersCollection)
+                                        }</span>
+                                }
+                        }
+                }
+        }
+
+        <span class="cov8" title="1">ic.Spec.SdkConfigs = sdkConfigs
+
+        return nil</span>
+}
+
+// returns a pointer to the instrumentation library config, creating it if it does not exist
+// the pointer can be used to modify the config
+func findOrCreateSdkLibraryConfig(sdkConfig *odigosv1alpha1.SdkConfig, library odigosv1alpha1.InstrumentationLibraryGlobalId) *odigosv1alpha1.InstrumentationLibraryConfig <span class="cov8" title="1">{
+        if library.Language != sdkConfig.Language </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">for i, libConfig := range sdkConfig.InstrumentationLibraryConfigs </span><span class="cov0" title="0">{
+                if libConfig.InstrumentationLibraryId.InstrumentationLibraryName == library.Name &amp;&amp;
+                        libConfig.InstrumentationLibraryId.SpanKind == library.SpanKind </span><span class="cov0" title="0">{
+
+                        // if already present, return a pointer to it which can be modified by the caller
+                        return &amp;sdkConfig.InstrumentationLibraryConfigs[i]
+                }</span>
+        }
+        <span class="cov8" title="1">newLibConfig := odigosv1alpha1.InstrumentationLibraryConfig{
+                InstrumentationLibraryId: odigosv1alpha1.InstrumentationLibraryId{
+                        InstrumentationLibraryName: library.Name,
+                        SpanKind:                   library.SpanKind,
+                },
+                PayloadCollection: &amp;instrumentationrules.PayloadCollection{},
+        }
+        sdkConfig.InstrumentationLibraryConfigs = append(sdkConfig.InstrumentationLibraryConfigs, newLibConfig)
+        return &amp;sdkConfig.InstrumentationLibraryConfigs[len(sdkConfig.InstrumentationLibraryConfigs)-1]</span>
+}
+
+func createDefaultSdkConfig(sdkConfigs []odigosv1alpha1.SdkConfig, containerLanguage common.ProgrammingLanguage) []odigosv1alpha1.SdkConfig <span class="cov8" title="1">{
+        // if the language is already present, do nothing
+        for _, sdkConfig := range sdkConfigs </span><span class="cov8" title="1">{
+                if sdkConfig.Language == containerLanguage </span><span class="cov8" title="1">{
+                        return sdkConfigs
+                }</span>
+        }
+        <span class="cov8" title="1">return append(sdkConfigs, odigosv1alpha1.SdkConfig{
+                Language:                 containerLanguage,
+                DefaultPayloadCollection: &amp;instrumentationrules.PayloadCollection{},
+        })</span>
+}
+
+func mergeHttpHeadersCollectionrules(rule1 *instrumentationrules.HttpHeadersCollection, rule2 *instrumentationrules.HttpHeadersCollection) *instrumentationrules.HttpHeadersCollection <span class="cov0" title="0">{
+        if rule1 == nil </span><span class="cov0" title="0">{
+                return rule2
+        }</span> else<span class="cov0" title="0"> if rule2 == nil </span><span class="cov0" title="0">{
+                return rule1
+        }</span>
+
+        <span class="cov0" title="0">mergedRules := instrumentationrules.HttpHeadersCollection{}
+
+        // Merge the headers collection rules
+        var mergedHeaders []string
+        if rule1.HeaderKeys != nil </span><span class="cov0" title="0">{
+                mergedHeaders = append(mergedHeaders, rule1.HeaderKeys...)
+        }</span>
+
+        <span class="cov0" title="0">if rule2.HeaderKeys != nil </span><span class="cov0" title="0">{
+                mergedHeaders = append(mergedHeaders, rule2.HeaderKeys...)
+        }</span>
+
+        <span class="cov0" title="0">mergedRules.HeaderKeys = mergedHeaders
+        return &amp;mergedRules</span>
+}
+
+func mergeHttpPayloadCollectionRules(rule1 *instrumentationrules.HttpPayloadCollection, rule2 *instrumentationrules.HttpPayloadCollection) *instrumentationrules.HttpPayloadCollection <span class="cov8" title="1">{
+
+        // nil means a rules has not yet been set, so return the other rule
+        if rule1 == nil </span><span class="cov8" title="1">{
+                return rule2
+        }</span> else<span class="cov8" title="1"> if rule2 == nil </span><span class="cov8" title="1">{
+                return rule1
+        }</span>
+
+        // merge of the 2 non nil rules
+        <span class="cov8" title="1">mergedRules := instrumentationrules.HttpPayloadCollection{}
+
+        // MimeTypes is extended to include both. nil means "all" so treat it as such
+        if rule1.MimeTypes == nil || rule2.MimeTypes == nil </span><span class="cov0" title="0">{
+                mergedRules.MimeTypes = nil
+        }</span> else<span class="cov8" title="1"> {
+                mergeMimeTypeMap := make(map[string]struct{})
+                for _, mimeType := range *rule1.MimeTypes </span><span class="cov8" title="1">{
+                        mergeMimeTypeMap[mimeType] = struct{}{}
+                }</span>
+                <span class="cov8" title="1">for _, mimeType := range *rule2.MimeTypes </span><span class="cov8" title="1">{
+                        mergeMimeTypeMap[mimeType] = struct{}{}
+                }</span>
+                <span class="cov8" title="1">mergedMimeTypeSlice := make([]string, 0, len(mergeMimeTypeMap))
+                for mimeType := range mergeMimeTypeMap </span><span class="cov8" title="1">{
+                        mergedMimeTypeSlice = append(mergedMimeTypeSlice, mimeType)
+                }</span>
+                <span class="cov8" title="1">mergedRules.MimeTypes = &amp;mergedMimeTypeSlice</span>
+        }
+
+        // MaxPayloadLength - choose the smallest value, as this is the maximum allowed
+        <span class="cov8" title="1">if rule1.MaxPayloadLength == nil </span><span class="cov0" title="0">{
+                mergedRules.MaxPayloadLength = rule2.MaxPayloadLength
+        }</span> else<span class="cov8" title="1"> if rule2.MaxPayloadLength == nil </span><span class="cov8" title="1">{
+                mergedRules.MaxPayloadLength = rule1.MaxPayloadLength
+        }</span> else<span class="cov8" title="1"> {
+                if *rule1.MaxPayloadLength &lt; *rule2.MaxPayloadLength </span><span class="cov8" title="1">{
+                        mergedRules.MaxPayloadLength = rule1.MaxPayloadLength
+                }</span> else<span class="cov0" title="0"> {
+                        mergedRules.MaxPayloadLength = rule2.MaxPayloadLength
+                }</span>
+        }
+
+        // DropPartialPayloads - if any of the rules is set to drop, the merged rule will drop
+        <span class="cov8" title="1">if rule1.DropPartialPayloads == nil </span><span class="cov8" title="1">{
+                mergedRules.DropPartialPayloads = rule2.DropPartialPayloads
+        }</span> else<span class="cov8" title="1"> if rule2.DropPartialPayloads == nil </span><span class="cov0" title="0">{
+                mergedRules.DropPartialPayloads = rule1.DropPartialPayloads
+        }</span> else<span class="cov8" title="1"> {
+                mergedRules.DropPartialPayloads = boolPtr(*rule1.DropPartialPayloads || *rule2.DropPartialPayloads)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;mergedRules</span>
+}
+
+func mergeDbPayloadCollectionRules(rule1 *instrumentationrules.DbQueryPayloadCollection, rule2 *instrumentationrules.DbQueryPayloadCollection) *instrumentationrules.DbQueryPayloadCollection <span class="cov8" title="1">{
+        if rule1 == nil </span><span class="cov8" title="1">{
+                return rule2
+        }</span> else<span class="cov0" title="0"> if rule2 == nil </span><span class="cov0" title="0">{
+                return rule1
+        }</span>
+
+        <span class="cov0" title="0">mergedRules := instrumentationrules.DbQueryPayloadCollection{}
+
+        // MaxPayloadLength - choose the smallest value, as this is the maximum allowed
+        if rule1.MaxPayloadLength == nil </span><span class="cov0" title="0">{
+                mergedRules.MaxPayloadLength = rule2.MaxPayloadLength
+        }</span> else<span class="cov0" title="0"> if rule2.MaxPayloadLength == nil </span><span class="cov0" title="0">{
+                mergedRules.MaxPayloadLength = rule1.MaxPayloadLength
+        }</span> else<span class="cov0" title="0"> {
+                if *rule1.MaxPayloadLength &lt; *rule2.MaxPayloadLength </span><span class="cov0" title="0">{
+                        mergedRules.MaxPayloadLength = rule1.MaxPayloadLength
+                }</span> else<span class="cov0" title="0"> {
+                        mergedRules.MaxPayloadLength = rule2.MaxPayloadLength
+                }</span>
+        }
+
+        // DropPartialPayloads - if any of the rules is set to drop, the merged rule will drop
+        <span class="cov0" title="0">if rule1.DropPartialPayloads == nil </span><span class="cov0" title="0">{
+                mergedRules.DropPartialPayloads = rule2.DropPartialPayloads
+        }</span> else<span class="cov0" title="0"> if rule2.DropPartialPayloads == nil </span><span class="cov0" title="0">{
+                mergedRules.DropPartialPayloads = rule1.DropPartialPayloads
+        }</span> else<span class="cov0" title="0"> {
+                mergedRules.DropPartialPayloads = boolPtr(*rule1.DropPartialPayloads || *rule2.DropPartialPayloads)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;mergedRules</span>
+}
+
+func mergeMessagingPayloadCollectionRules(rule1 *instrumentationrules.MessagingPayloadCollection, rule2 *instrumentationrules.MessagingPayloadCollection) *instrumentationrules.MessagingPayloadCollection <span class="cov8" title="1">{
+        if rule1 == nil </span><span class="cov8" title="1">{
+                return rule2
+        }</span> else<span class="cov0" title="0"> if rule2 == nil </span><span class="cov0" title="0">{
+                return rule1
+        }</span>
+
+        <span class="cov0" title="0">mergedRules := instrumentationrules.MessagingPayloadCollection{}
+
+        // MaxPayloadLength - choose the smallest value, as this is the maximum allowed
+        if rule1.MaxPayloadLength == nil </span><span class="cov0" title="0">{
+                mergedRules.MaxPayloadLength = rule2.MaxPayloadLength
+        }</span> else<span class="cov0" title="0"> if rule2.MaxPayloadLength == nil </span><span class="cov0" title="0">{
+                mergedRules.MaxPayloadLength = rule1.MaxPayloadLength
+        }</span> else<span class="cov0" title="0"> {
+                if *rule1.MaxPayloadLength &lt; *rule2.MaxPayloadLength </span><span class="cov0" title="0">{
+                        mergedRules.MaxPayloadLength = rule1.MaxPayloadLength
+                }</span> else<span class="cov0" title="0"> {
+                        mergedRules.MaxPayloadLength = rule2.MaxPayloadLength
+                }</span>
+        }
+
+        // DropPartialPayloads - if any of the rules is set to drop, the merged rule will drop
+        <span class="cov0" title="0">if rule1.DropPartialPayloads == nil </span><span class="cov0" title="0">{
+                mergedRules.DropPartialPayloads = rule2.DropPartialPayloads
+        }</span> else<span class="cov0" title="0"> if rule2.DropPartialPayloads == nil </span><span class="cov0" title="0">{
+                mergedRules.DropPartialPayloads = rule1.DropPartialPayloads
+        }</span> else<span class="cov0" title="0"> {
+                mergedRules.DropPartialPayloads = boolPtr(*rule1.DropPartialPayloads || *rule2.DropPartialPayloads)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;mergedRules</span>
+}
+
+// will merge 2 optional boolean fields from 2 instrumentation rules.
+// if any of them is true, the result is true.
+// if none of them is true, but one is false, the result is false.
+// if both are nil, the result is nil
+func merge2RuleBooleans(value1 *bool, value2 *bool) *bool <span class="cov0" title="0">{
+        if value1 == nil </span><span class="cov0" title="0">{
+                return value2
+        }</span> else<span class="cov0" title="0"> if value2 == nil </span><span class="cov0" title="0">{
+                return value1
+        }</span>
+        <span class="cov0" title="0">return boolPtr(*value1 || *value2)</span>
+}
+
+func mergeCodeAttributesRules(rule1 *instrumentationrules.CodeAttributes, rule2 *instrumentationrules.CodeAttributes) *instrumentationrules.CodeAttributes <span class="cov0" title="0">{
+        if rule1 == nil </span><span class="cov0" title="0">{
+                return rule2
+        }</span> else<span class="cov0" title="0"> if rule2 == nil </span><span class="cov0" title="0">{
+                return rule1
+        }</span>
+
+        <span class="cov0" title="0">mergedRules := instrumentationrules.CodeAttributes{}
+        mergedRules.Column = merge2RuleBooleans(rule1.Column, rule2.Column)
+        mergedRules.FilePath = merge2RuleBooleans(rule1.FilePath, rule2.FilePath)
+        mergedRules.Function = merge2RuleBooleans(rule1.Function, rule2.Function)
+        mergedRules.LineNumber = merge2RuleBooleans(rule1.LineNumber, rule2.LineNumber)
+        mergedRules.Namespace = merge2RuleBooleans(rule1.Namespace, rule2.Namespace)
+        mergedRules.Stacktrace = merge2RuleBooleans(rule1.Stacktrace, rule2.Stacktrace)
+
+        return &amp;mergedRules</span>
+}
+
+func boolPtr(b bool) *bool <span class="cov8" title="1">{
+        return &amp;b
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">/*
+Copyright 2022.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package instrumentationconfig
+
+import (
+        "context"
+
+        odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+        "github.com/odigos-io/odigos/k8sutils/pkg/utils"
+        "k8s.io/apimachinery/pkg/runtime"
+        ctrl "sigs.k8s.io/controller-runtime"
+        "sigs.k8s.io/controller-runtime/pkg/client"
+        "sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+type InstrumentationConfigReconciler struct {
+        client.Client
+        Scheme *runtime.Scheme
+}
+
+func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) <span class="cov0" title="0">{
+        logger := log.FromContext(ctx)
+
+        var ic odigosv1.InstrumentationConfig
+        err := r.Client.Get(ctx, req.NamespacedName, &amp;ic)
+        if err != nil </span><span class="cov0" title="0">{
+                return ctrl.Result{}, client.IgnoreNotFound(err)
+        }</span>
+
+        <span class="cov0" title="0">instrumentationRules := &amp;odigosv1.InstrumentationRuleList{}
+        err = r.Client.List(ctx, instrumentationRules)
+        if client.IgnoreNotFound(err) != nil </span><span class="cov0" title="0">{
+                return ctrl.Result{}, err
+        }</span>
+
+        <span class="cov0" title="0">err = updateInstrumentationConfigForWorkload(&amp;ic, instrumentationRules)
+        if err != nil </span><span class="cov0" title="0">{
+                return ctrl.Result{}, err
+        }</span>
+
+        <span class="cov0" title="0">err = r.Client.Update(ctx, &amp;ic)
+        if err == nil </span><span class="cov0" title="0">{
+                logger.V(0).Info("Updated instrumentation config", "workload", ic.Name)
+        }</span>
+        <span class="cov0" title="0">return utils.K8SUpdateErrorHandler(err)</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package instrumentationconfig
+
+import (
+        "context"
+
+        odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+        "k8s.io/apimachinery/pkg/runtime"
+        ctrl "sigs.k8s.io/controller-runtime"
+        "sigs.k8s.io/controller-runtime/pkg/client"
+        "sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+type InstrumentationRuleReconciler struct {
+        client.Client
+        Scheme *runtime.Scheme
+}
+
+func (r *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) <span class="cov0" title="0">{
+        logger := log.FromContext(ctx)
+
+        instrumentationRules := &amp;odigosv1alpha1.InstrumentationRuleList{}
+        err := r.Client.List(ctx, instrumentationRules)
+        if err != nil </span><span class="cov0" title="0">{
+                return ctrl.Result{}, err
+        }</span>
+
+        <span class="cov0" title="0">instrumentationConfigs := &amp;odigosv1alpha1.InstrumentationConfigList{}
+        err = r.Client.List(ctx, instrumentationConfigs)
+        if err != nil </span><span class="cov0" title="0">{
+                return ctrl.Result{}, err
+        }</span>
+
+        <span class="cov0" title="0">for _, ic := range instrumentationConfigs.Items </span><span class="cov0" title="0">{
+                currIc := ic
+                err = updateInstrumentationConfigForWorkload(&amp;currIc, instrumentationRules)
+                if err != nil </span><span class="cov0" title="0">{
+                        logger.Error(err, "error updating instrumentation config", "workload", ic.Name)
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">err = r.Client.Update(ctx, &amp;currIc)
+                if client.IgnoreNotFound(err) != nil </span><span class="cov0" title="0">{
+                        logger.Error(err, "error updating instrumentation config", "workload", ic.Name)
+                        return ctrl.Result{}, err
+                }</span>
+
+                <span class="cov0" title="0">logger.V(0).Info("Updated instrumentation config", "workload", ic.Name)</span>
+        }
+
+        <span class="cov0" title="0">logger.V(0).Info("Payload Collection Rules changed, recalculating instrumentation configs", "number of instrumentation rules", len(instrumentationRules.Items), "number of instrumented workloads", len(instrumentationConfigs.Items))
+        return ctrl.Result{}, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package instrumentationconfig
+
+import (
+        odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+        instrumentorpredicate "github.com/odigos-io/odigos/instrumentor/controllers/utils/predicates"
+        ctrl "sigs.k8s.io/controller-runtime"
+        "sigs.k8s.io/controller-runtime/pkg/builder"
+)
+
+func SetupWithManager(mgr ctrl.Manager) error <span class="cov0" title="0">{
+        // Watch InstrumentationRule
+        err := builder.
+                ControllerManagedBy(mgr).
+                Named("instrumentor-instrumentationconfig-instrumentationrule").
+                For(&amp;odigosv1alpha1.InstrumentationRule{}).
+                Complete(&amp;InstrumentationRuleReconciler{
+                        Client: mgr.GetClient(),
+                        Scheme: mgr.GetScheme(),
+                })
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">err = builder.
+                ControllerManagedBy(mgr).
+                Named("instrumentor-instrumentationconfig-instrumentationconfig").
+                For(&amp;odigosv1alpha1.InstrumentationConfig{}).
+                WithEventFilter(&amp;instrumentorpredicate.RuntimeDetailsChangedPredicate{}).
+                Complete(&amp;InstrumentationConfigReconciler{
+                        Client: mgr.GetClient(),
+                        Scheme: mgr.GetScheme(),
+                })
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package pod
+
+import (
+        "github.com/odigos-io/odigos/api/k8sconsts"
+        k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
+        corev1 "k8s.io/api/core/v1"
+)
+
+func AddOdigletInstalledAffinity(pod *corev1.Pod) <span class="cov8" title="1">{
+        odigletInstalledLabel := k8snode.DetermineNodeOdigletInstalledLabelByTier()
+        // Ensure Affinity exists
+        if pod.Spec.Affinity == nil </span><span class="cov8" title="1">{
+                pod.Spec.Affinity = &amp;corev1.Affinity{}
+        }</span>
+
+        // Ensure NodeAffinity exists
+        <span class="cov8" title="1">if pod.Spec.Affinity.NodeAffinity == nil </span><span class="cov8" title="1">{
+                pod.Spec.Affinity.NodeAffinity = &amp;corev1.NodeAffinity{}
+        }</span>
+
+        // Ensure RequiredDuringSchedulingIgnoredDuringExecution exists
+        <span class="cov8" title="1">if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil </span><span class="cov8" title="1">{
+                pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &amp;corev1.NodeSelector{
+                        NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+                }
+        }</span>
+
+        // Check if the term already exists to avoid duplicates
+        <span class="cov8" title="1">for _, term := range pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms </span><span class="cov8" title="1">{
+                for _, expr := range term.MatchExpressions </span><span class="cov8" title="1">{
+                        if expr.Key == odigletInstalledLabel &amp;&amp; expr.Operator == corev1.NodeSelectorOpIn </span><span class="cov8" title="1">{
+                                for _, val := range expr.Values </span><span class="cov8" title="1">{
+                                        if val == k8sconsts.OdigletInstalledLabelValue </span><span class="cov8" title="1">{
+                                                // return without adding a duplicate
+                                                return
+                                        }</span>
+                                }
+                        }
+                }
+        }
+
+        // Append the new NodeSelectorTerm if it doesn't exist
+        <span class="cov8" title="1">newTerm := corev1.NodeSelectorTerm{
+                MatchExpressions: []corev1.NodeSelectorRequirement{
+                        {
+                                Key:      odigletInstalledLabel,
+                                Operator: corev1.NodeSelectorOpIn,
+                                Values:   []string{k8sconsts.OdigletInstalledLabelValue},
+                        },
+                },
+        }
+        pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = append(
+                pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms,
+                newTerm,
+        )</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package webhookenvinjector
+
+import (
+        "context"
+        "errors"
+        "fmt"
+        "path/filepath"
+        "slices"
+        "strings"
+
+        "github.com/go-logr/logr"
+        odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+        "github.com/odigos-io/odigos/common"
+        commonconsts "github.com/odigos-io/odigos/common/consts"
+        "github.com/odigos-io/odigos/common/envOverwrite"
+        "github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
+        "github.com/odigos-io/odigos/k8sutils/pkg/env"
+        corev1 "k8s.io/api/core/v1"
+        "k8s.io/apimachinery/pkg/types"
+        "sigs.k8s.io/controller-runtime/pkg/client"
+
+        "github.com/odigos-io/odigos/api/k8sconsts"
+)
+
+func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
+        otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, client client.Client, config *common.OdigosConfiguration) error <span class="cov8" title="1">{
+
+        otelSignalExporterLanguages := []common.ProgrammingLanguage{
+                common.JavaProgrammingLanguage,
+                common.PhpProgrammingLanguage,
+                common.RubyProgrammingLanguage,
+        }
+
+        if slices.Contains(otelSignalExporterLanguages, runtimeDetails.Language) &amp;&amp; otelsdk == common.OtelSdkNativeCommunity </span><span class="cov8" title="1">{
+                // Set the OTEL signals exporter env vars
+                setOtelSignalsExporterEnvVars(ctx, logger, container, client)
+        }</span>
+
+        <span class="cov8" title="1">envVarsPerLanguage := getEnvVarNamesForLanguage(runtimeDetails.Language)
+        if envVarsPerLanguage == nil </span><span class="cov8" title="1">{
+                // no env vars to inject for this language
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">injectionMethod := config.AgentEnvVarsInjectionMethod
+        if injectionMethod == nil </span><span class="cov8" title="1">{
+                // we are reading the effective config which should already have the env injection method resolved or defaulted
+                return errors.New("env injection method is not set in ODIGOS config")
+        }</span>
+
+        // check if odigos loader should be used
+        <span class="cov8" title="1">if *injectionMethod == common.LoaderEnvInjectionMethod || *injectionMethod == common.LoaderFallbackToPodManifestInjectionMethod </span><span class="cov8" title="1">{
+                odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
+
+                manifestValExits := getContainerEnvVarPointer(&amp;container.Env, commonconsts.LdPreloadEnvVarName) != nil
+                runtimeDetailsVal, foundInInspection := getEnvVarFromRuntimeDetails(runtimeDetails, commonconsts.LdPreloadEnvVarName)
+                ldPreloadUnsetOrExpected := !foundInInspection || strings.Contains(runtimeDetailsVal, odigosLoaderPath)
+                secureExecution := runtimeDetails.SecureExecutionMode == nil || *runtimeDetails.SecureExecutionMode
+
+                if !manifestValExits &amp;&amp; ldPreloadUnsetOrExpected &amp;&amp; !secureExecution </span><span class="cov8" title="1">{
+                        // adding to the pod manifest env var:
+                        // if the LD_PRELOAD env var is not already present in the manifest and the runtime details env var is not set or set to the odigos loader path.
+                        // the odigos loader path may be detected in the runtime details from previous installations or from terminating pods.
+                        container.Env = append(container.Env, corev1.EnvVar{
+                                Name:  commonconsts.LdPreloadEnvVarName,
+                                Value: odigosLoaderPath,
+                        })
+                        return nil
+                }</span>
+
+                // the LD_PRELOAD env var is preset. for now, we don't attempt to append our value to the user defined one.
+                <span class="cov0" title="0">if *injectionMethod == common.LoaderEnvInjectionMethod </span><span class="cov0" title="0">{
+                        // we're specifically requested to use the loader env var injection method
+                        // and the user defined LD_PRELOAD env var is already present or running in a secure execution mode.
+                        // so we avoid the fallback to pod manifest env var injection method
+                        return errors.New("loader env var injection method is requested but the LD_PRELOAD env var is already present or running in a secure execution mode")
+                }</span>
+
+                <span class="cov0" title="0">switch </span>{
+                case manifestValExits:<span class="cov0" title="0">
+                        logger.Info("LD_PRELOAD env var already exists in the pod manifest, fallback to pod manifest env injection", "container", container.Name)</span>
+                case foundInInspection:<span class="cov0" title="0">
+                        logger.Info("LD_PRELOAD env var already exists in the runtime details, fallback to pod manifest env injection", "container", container.Name, "found value", runtimeDetailsVal)</span>
+                case secureExecution:<span class="cov0" title="0">
+                        logger.Info("Secure execution mode is enabled, fallback to pod manifest env injection", "container", container.Name)</span>
+                }
+        }
+
+        // from this point on, we are using the pod manifest env var injection method
+
+        // Odigos appends necessary environment variables to enable its agent.
+        // It handles this in the following ways:
+        // 1. Appends Odigos-specific values to environment variables already defined by the user in the manifest.
+        // 2. Appends Odigos-specific values to environment variables already defined by the user at runtime.
+        // 3. Sets environment variables with Odigos defaults when they are not defined in either the manifest or the runtime.
+
+        <span class="cov8" title="1">isOdigosAgentEnvAppended := false
+        for _, envVarName := range envVarsPerLanguage </span><span class="cov8" title="1">{
+                // 1.
+                if handleManifestEnvVar(container, envVarName, otelsdk, logger) </span><span class="cov0" title="0">{
+                        isOdigosAgentEnvAppended = true
+                        continue</span>
+                }
+
+                // 2.
+                <span class="cov8" title="1">if injectEnvVarsFromRuntime(logger, container, envVarName, otelsdk, runtimeDetails) </span><span class="cov0" title="0">{
+                        isOdigosAgentEnvAppended = true
+                        continue</span>
+                }
+        }
+
+        // 3.
+        <span class="cov8" title="1">if !isOdigosAgentEnvAppended </span><span class="cov8" title="1">{
+                applyOdigosEnvDefaults(container, envVarsPerLanguage, otelsdk)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func getEnvVarFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContainer, envVarName string) (string, bool) <span class="cov8" title="1">{
+        for _, envVar := range runtimeDetails.EnvVars </span><span class="cov8" title="1">{
+                if envVar.Name == envVarName </span><span class="cov8" title="1">{
+                        return envVar.Value, true
+                }</span>
+        }
+        <span class="cov8" title="1">return "", false</span>
+}
+
+func getEnvVarNamesForLanguage(pl common.ProgrammingLanguage) []string <span class="cov8" title="1">{
+        return envOverwrite.EnvVarsForLanguage[pl]
+}</span>
+
+// Return true if further processing should be skipped, either because it was already handled or due to a potential error (e.g., missing possible values)
+// Return false if the env was not processed using the manifest value and requires further handling by other methods.
+func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsdk common.OtelSdk, logger logr.Logger) bool <span class="cov8" title="1">{
+        manifestEnvVar := getContainerEnvVarPointer(&amp;container.Env, envVarName)
+        if manifestEnvVar == nil || (manifestEnvVar.ValueFrom == nil &amp;&amp; manifestEnvVar.Value == "") </span><span class="cov8" title="1">{
+                return false // Not found in manifest. further process it
+        }</span>
+
+        <span class="cov0" title="0">possibleValues := envOverwrite.GetPossibleValuesPerEnv(manifestEnvVar.Name)
+        if possibleValues == nil </span><span class="cov0" title="0">{
+                return true // Skip further processing
+        }</span>
+
+        <span class="cov0" title="0">odigosValueForOtelSdk := possibleValues[otelsdk]
+
+        // In case of env configured as ValueFrom [env[name].valueFrom.configMapKeyRef.key]
+        // We are changing the user MY_ENV to ORIGINAL_{MY_ENV}
+        // and setting MY_ENV to be ORIGINAL_MY_ENV value + Odigos additions
+        if isValueFromConfigmap(manifestEnvVar) </span><span class="cov0" title="0">{
+                handleValueFromEnvVar(container, manifestEnvVar, envVarName, odigosValueForOtelSdk)
+                return true // Handled, no need for further processing
+        }</span>
+
+        <span class="cov0" title="0">if strings.Contains(manifestEnvVar.Value, "/var/odigos/") </span><span class="cov0" title="0">{
+                logger.Info("env var exists in the manifest and already includes odigos values, skipping injection into manifest", "envVarName", envVarName,
+                        "container", container.Name)
+                return true // Skip further processing
+        }</span>
+
+        <span class="cov0" title="0">updatedEnvValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, manifestEnvVar.Value, odigosValueForOtelSdk)
+        if updatedEnvValue != nil </span><span class="cov0" title="0">{
+                manifestEnvVar.Value = *updatedEnvValue
+                logger.Info("updated manifest environment variable", "envVarName", envVarName, "value", *updatedEnvValue)
+        }</span>
+        <span class="cov0" title="0">return true</span> // Handled, no need for further processing
+}
+
+func injectEnvVarsFromRuntime(logger logr.Logger, container *corev1.Container, envVarName string,
+        otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer) bool <span class="cov8" title="1">{
+        logger.Info("Inject Odigos values based on runtime details", "envVarName", envVarName, "container", container.Name)
+
+        if !shouldInject(runtimeDetails, logger, container.Name) </span><span class="cov0" title="0">{
+                return false
+        }</span>
+
+        <span class="cov8" title="1">envVarsToInject := processEnvVarsFromRuntimeDetails(runtimeDetails, envVarName, otelsdk)
+        if len(envVarsToInject) &gt; 0 </span><span class="cov0" title="0">{
+                container.Env = append(container.Env, envVarsToInject...)
+                return true
+        }</span>
+        <span class="cov8" title="1">return false</span>
+}
+
+func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContainer, envVarName string, otelsdk common.OtelSdk) []corev1.EnvVar <span class="cov8" title="1">{
+        var envVars []corev1.EnvVar
+
+        odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
+        if odigosValueForOtelSdk == nil </span><span class="cov0" title="0">{ // No odigos values for this env var
+                return envVars
+        }</span>
+        <span class="cov8" title="1">valueToInject, ok := odigosValueForOtelSdk[otelsdk]
+        if !ok </span><span class="cov0" title="0">{ // No odigos value for this SDK
+                return envVars
+        }</span>
+        <span class="cov8" title="1">for _, envVar := range runtimeDetails.EnvFromContainerRuntime </span><span class="cov8" title="1">{
+
+                // Get the relevant envVar that we're iterating over
+                if envVar.Name != envVarName </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">if envVar.Value == "" </span><span class="cov8" title="1">{
+                        // if the value is empty, treat it as it's not existing.
+                        // from the env appending perspective, this is the same as not having it at all
+                        // we want to set it to the odigos value
+                        // this will be done at the last step
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">patchedEnvVarValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
+                envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})</span>
+        }
+
+        <span class="cov8" title="1">return envVars</span>
+}
+
+func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []string, otelsdk common.OtelSdk) <span class="cov8" title="1">{
+        for _, envVarName := range envVarsPerLanguage </span><span class="cov8" title="1">{
+                odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
+                if odigosValueForOtelSdk == nil </span><span class="cov0" title="0">{ // No Odigos values for this env var
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">valueToInject, ok := odigosValueForOtelSdk[otelsdk]
+                if !ok </span><span class="cov0" title="0">{ // No Odigos value for this SDK
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">existingEnv := getContainerEnvVarPointer(&amp;container.Env, envVarName)
+                if existingEnv != nil &amp;&amp; existingEnv.ValueFrom == nil </span><span class="cov8" title="1">{
+                        if existingEnv.Value == "" </span><span class="cov8" title="1">{
+                                existingEnv.Value = valueToInject
+                        }</span>
+                        <span class="cov8" title="1">continue</span>
+                }
+
+                <span class="cov8" title="1">container.Env = append(container.Env, corev1.EnvVar{
+                        Name:  envVarName,
+                        Value: valueToInject,
+                })</span>
+        }
+}
+
+func shouldInject(runtimeDetails *odigosv1.RuntimeDetailsByContainer, logger logr.Logger, containerName string) bool <span class="cov8" title="1">{
+
+        // Skip injection if runtimeDetails.RuntimeUpdateState is nil.
+        // This indicates that either the new runtime detection or the new runtime detection migrator did not run for this container.
+        if runtimeDetails.RuntimeUpdateState == nil </span><span class="cov8" title="1">{
+                logger.Info("RuntimeUpdateState is nil, skipping environment variable injection", "container", containerName)
+                return false
+        }</span>
+
+        <span class="cov8" title="1">if *runtimeDetails.RuntimeUpdateState == odigosv1.ProcessingStateFailed </span><span class="cov8" title="1">{
+                var criErrorMessage string
+                if runtimeDetails.CriErrorMessage != nil </span><span class="cov0" title="0">{
+                        criErrorMessage = *runtimeDetails.CriErrorMessage
+                }</span>
+                <span class="cov8" title="1">logger.Info("CRI error message present, skipping environment variable injection", "container", containerName, "error", criErrorMessage)
+                return false</span>
+        }
+
+        // All conditions are satisfied
+        <span class="cov8" title="1">return true</span>
+}
+
+func getContainerEnvVarPointer(containerEnv *[]corev1.EnvVar, envVarName string) *corev1.EnvVar <span class="cov8" title="1">{
+        for i := range *containerEnv </span><span class="cov8" title="1">{ // Use the index to avoid creating a copy
+                if (*containerEnv)[i].Name == envVarName </span><span class="cov8" title="1">{
+                        return &amp;(*containerEnv)[i]
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger, container *corev1.Container, client client.Client) <span class="cov8" title="1">{
+        odigosNamespace := env.GetCurrentNamespace()
+
+        var nodeCollectorGroup odigosv1.CollectorsGroup
+        err := client.Get(ctx, types.NamespacedName{
+                Namespace: odigosNamespace,
+                Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
+        }, &amp;nodeCollectorGroup)
+        if err != nil </span><span class="cov8" title="1">{
+                // Uses OTEL's default settings by omitting these environment variables.
+                // Although the current default is "otlp," it's safer to set them explicitly
+                // to avoid potential future changes and improve clarity.
+                logger.Error(err, "Failed to get nodeCollectorGroup using default OTEL settings")
+                return
+        }</span>
+
+        <span class="cov8" title="1">signals := nodeCollectorGroup.Status.ReceiverSignals
+
+        // Default values
+        logsExporter := "none"
+        metricsExporter := "none"
+        tracesExporter := "none"
+
+        for _, signal := range signals </span><span class="cov8" title="1">{
+                switch signal </span>{
+                case common.LogsObservabilitySignal:<span class="cov0" title="0">
+                        logsExporter = "otlp"</span>
+                case common.MetricsObservabilitySignal:<span class="cov8" title="1">
+                        metricsExporter = "otlp"</span>
+                case common.TracesObservabilitySignal:<span class="cov8" title="1">
+                        tracesExporter = "otlp"</span>
+                }
+        }
+
+        // check for existing env vars so we don't introduce them again
+        <span class="cov8" title="1">existingEnvNames := podswebhook.GetEnvVarNamesSet(container)
+        existingEnvNames = podswebhook.InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelLogsExporter, logsExporter, nil)
+        existingEnvNames = podswebhook.InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelMetricsExporter, metricsExporter, nil)
+        podswebhook.InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelTracesExporter, tracesExporter, nil)</span>
+}
+
+func isValueFromConfigmap(envVar *corev1.EnvVar) bool <span class="cov8" title="1">{
+        return envVar.ValueFrom != nil
+}</span>
+
+func handleValueFromEnvVar(container *corev1.Container, envVar *corev1.EnvVar, originalName, odigosValue string) <span class="cov8" title="1">{
+        originalNewKey := "ORIGINAL_" + originalName
+
+        combinedValue := envOverwrite.AppendOdigosAdditionsToEnvVar(originalName, fmt.Sprintf("$(%s)", originalNewKey), odigosValue)
+        if combinedValue != nil </span><span class="cov8" title="1">{
+                envVar.Name = originalNewKey
+                newEnv := corev1.EnvVar{Name: originalName, Value: *combinedValue}
+                container.Env = append(container.Env, newEnv)
+        }</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

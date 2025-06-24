@@ -320,7 +320,7 @@ func isValueFromConfigmap(envVar *corev1.EnvVar) bool {
 }
 
 func handleValueFromEnvVar(container *corev1.Container, envVar *corev1.EnvVar, originalName, odigosValue string) {
-	originalNewKey := "ORIGINAL_" + envVar.Name
+	originalNewKey := "ORIGINAL_" + originalName
 
 	combinedValue := envOverwrite.AppendOdigosAdditionsToEnvVar(originalName, fmt.Sprintf("$(%s)", originalNewKey), odigosValue)
 	if combinedValue != nil {
