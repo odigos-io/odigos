@@ -168,8 +168,6 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		containerOverridesChanged := updateContainerOverride(ic, containers, hashString)
 		serviceNameChanged := updateServiceName(ic, desiredServiceName)
 		if containerOverridesChanged || serviceNameChanged {
-			ic.Spec.ContainersOverrides = containers
-			ic.Spec.ContainerOverridesHash = hashString
 			err = k8sClient.Update(ctx, ic)
 			if err != nil {
 				return k8sutils.K8SUpdateErrorHandler(err)
