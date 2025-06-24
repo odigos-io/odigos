@@ -273,6 +273,7 @@ spec:
                 description: Configure the tracing configuration for the library.
                 properties:
                   enabled:
+                    description: Disabled will disable tracing for the rule.
                     type: boolean
                 type: object
               workloads:

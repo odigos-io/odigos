@@ -51,6 +51,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 				if rule.Spec.HeadersCollection != nil {
 					sdkConfigs[i].DefaultHeadersCollection = mergeHttpHeadersCollectionrules(sdkConfigs[i].DefaultHeadersCollection, rule.Spec.HeadersCollection)
 				}
+				if rule.Spec.TraceConfig != nil {
+					sdkConfigs[i].DefaultTraceConfig = mergeDefaultTracingConfig(sdkConfigs[i].DefaultTraceConfig, rule.Spec.TraceConfig)
+				}
 			} else {
 				for _, library := range *rule.Spec.InstrumentationLibraries {
 					libraryConfig := findOrCreateSdkLibraryConfig(&sdkConfigs[i], library)
@@ -83,20 +86,34 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	return nil
 }
 
-func mergeTracingConfig(rule1 *odigosv1alpha1.InstrumentationLibraryConfigTraces, rule2 *instrumentationrules.TraceConfig) *odigosv1alpha1.InstrumentationLibraryConfigTraces {
-	if rule1 == nil {
-		if rule2 != nil {
-			return &odigosv1alpha1.InstrumentationLibraryConfigTraces{
-				Enabled: rule2.Enabled,
-			}
+func mergeDefaultTracingConfig(defaultConfig *instrumentationrules.TraceConfig, rule *instrumentationrules.TraceConfig) *instrumentationrules.TraceConfig {
+	if defaultConfig == nil {
+		return rule
+	}
+	if rule == nil {
+		return defaultConfig
+	}
+
+	mergedRules := &instrumentationrules.TraceConfig{}
+	mergedRules.Disabled = boolPtr(*defaultConfig.Disabled || *rule.Disabled)
+	return mergedRules
+}
+
+func mergeTracingConfig(sdkConfig *odigosv1alpha1.InstrumentationLibraryConfigTraces, rule *instrumentationrules.TraceConfig) *odigosv1alpha1.InstrumentationLibraryConfigTraces {
+	if sdkConfig == nil {
+		var enabled bool
+		if rule.Disabled != nil {
+			enabled = !*rule.Disabled
 		}
-		return nil
-	} else if rule2 == nil {
-		return rule1
+		return &odigosv1alpha1.InstrumentationLibraryConfigTraces{
+			Enabled: &enabled,
+		}
+	} else if rule == nil {
+		return sdkConfig
 	}
 
 	mergedRules := odigosv1alpha1.InstrumentationLibraryConfigTraces{}
-	mergedRules.Enabled = merge2RuleBooleans(rule1.Enabled, rule2.Enabled)
+	mergedRules.Enabled = boolPtr(*sdkConfig.Enabled || !*rule.Disabled)
 	return &mergedRules
 }
 
