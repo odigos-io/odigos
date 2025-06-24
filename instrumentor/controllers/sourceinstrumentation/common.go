@@ -124,7 +124,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		// search if there is an override in the source for this container.
 		// list is expected to be short (1-5 containers, so linear search is fine)
 		var runtimeInfoOverride *odigosv1.RuntimeDetailsByContainer
-		if sources.Workload != nil {
+		if sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) {
 			for _, containerOverride := range sources.Workload.Spec.ContainerOverrides {
 				if containerOverride.ContainerName == container.Name {
 					runtimeInfoOverride = containerOverride.RuntimeInfo
@@ -265,7 +265,10 @@ func updateContainerOverride(ic *v1alpha1.InstrumentationConfig, desiredContaine
 
 func calculateDesiredServiceName(pw k8sconsts.PodWorkload, sources *odigosv1.WorkloadSources) string {
 	// if there is no override service name, default to the workload name (deployment name etc.)
-	if sources.Workload == nil || sources.Workload.Spec.OtelServiceName == "" {
+	if sources.Workload == nil ||
+		k8sutils.IsTerminating(sources.Workload) ||
+		sources.Workload.Spec.OtelServiceName == "" {
+
 		return pw.Name
 	}
 	// otherwise, use the override service name provided by the user in source CR as is
