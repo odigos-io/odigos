@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 )
@@ -15,6 +16,12 @@ const (
 	otlpHttpInsecureSkipVerify   = "OTLP_HTTP_INSECURE_SKIP_VERIFY"
 	otlpHttpBasicAuthUsernameKey = "OTLP_HTTP_BASIC_AUTH_USERNAME"
 	otlpHttpBasicAuthPasswordKey = "OTLP_HTTP_BASIC_AUTH_PASSWORD"
+	otlpHttpOAuth2EnabledKey     = "OTLP_HTTP_OAUTH2_ENABLED"
+	otlpHttpOAuth2ClientIdKey    = "OTLP_HTTP_OAUTH2_CLIENT_ID"
+	otlpHttpOAuth2ClientSecretKey = "OTLP_HTTP_OAUTH2_CLIENT_SECRET"
+	otlpHttpOAuth2TokenUrlKey    = "OTLP_HTTP_OAUTH2_TOKEN_URL"
+	otlpHttpOAuth2ScopesKey      = "OTLP_HTTP_OAUTH2_SCOPES"
+	otlpHttpOAuth2AudienceKey    = "OTLP_HTTP_OAUTH2_AUDIENCE"
 	otlpHttpCompression          = "OTLP_HTTP_COMPRESSION"
 	otlpHttpHeaders              = "OTLP_HTTP_HEADERS"
 )
@@ -53,12 +60,25 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
 	}
 
+	// Check for OAuth2 or Basic Auth (OAuth2 takes precedence)
+	oauth2ExtensionName, oauth2ExtensionConf := applyOAuth2Auth(dest)
 	basicAuthExtensionName, basicAuthExtensionConf := applyBasicAuth(dest)
 
+	// OAuth2 takes precedence over Basic Auth
+	var authExtensionName string
+	var authExtensionConf *GenericMap
+	if oauth2ExtensionName != "" && oauth2ExtensionConf != nil {
+		authExtensionName = oauth2ExtensionName
+		authExtensionConf = oauth2ExtensionConf
+	} else if basicAuthExtensionName != "" && basicAuthExtensionConf != nil {
+		authExtensionName = basicAuthExtensionName
+		authExtensionConf = basicAuthExtensionConf
+	}
+
 	// add authenticator extension
-	if basicAuthExtensionName != "" && basicAuthExtensionConf != nil {
-		currentConfig.Extensions[basicAuthExtensionName] = *basicAuthExtensionConf
-		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, basicAuthExtensionName)
+	if authExtensionName != "" && authExtensionConf != nil {
+		currentConfig.Extensions[authExtensionName] = *authExtensionConf
+		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	}
 
 	otlpHttpExporterName := "otlphttp/generic-" + dest.GetID()
@@ -66,9 +86,9 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		"endpoint": parsedUrl,
 		"tls":      tlsConfig,
 	}
-	if basicAuthExtensionName != "" {
+	if authExtensionName != "" {
 		exporterConf["auth"] = GenericMap{
-			"authenticator": basicAuthExtensionName,
+			"authenticator": authExtensionName,
 		}
 	}
 	if compression, ok := config[otlpHttpCompression]; ok {
@@ -121,6 +141,55 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	return pipelineNames, nil
+}
+
+func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap) {
+	config := dest.GetConfig()
+	
+	oauth2Enabled := config[otlpHttpOAuth2EnabledKey]
+	if oauth2Enabled != "true" {
+		return "", nil
+	}
+
+	clientId := config[otlpHttpOAuth2ClientIdKey]
+	clientSecret := config[otlpHttpOAuth2ClientSecretKey]
+	tokenUrl := config[otlpHttpOAuth2TokenUrlKey]
+
+	if clientId == "" || clientSecret == "" || tokenUrl == "" {
+		return "", nil
+	}
+
+	extensionName = "oauth2client/otlphttp-" + dest.GetID()
+	extensionConf = &GenericMap{
+		"client_id":     clientId,
+		"client_secret": fmt.Sprintf("${%s}", otlpHttpOAuth2ClientSecretKey),
+		"token_url":     tokenUrl,
+	}
+
+	// Add optional endpoint parameters
+	endpointParams := GenericMap{}
+	
+	// Add audience if provided
+	if audience := config[otlpHttpOAuth2AudienceKey]; audience != "" {
+		endpointParams["audience"] = audience
+	}
+
+	// Add endpoint_params if we have any
+	if len(endpointParams) > 0 {
+		(*extensionConf)["endpoint_params"] = endpointParams
+	}
+
+	// Add scopes if provided
+	if scopes := config[otlpHttpOAuth2ScopesKey]; scopes != "" {
+		scopesList := strings.Split(scopes, ",")
+		// Trim whitespace from each scope
+		for i, scope := range scopesList {
+			scopesList[i] = strings.TrimSpace(scope)
+		}
+		(*extensionConf)["scopes"] = scopesList
+	}
+
+	return extensionName, extensionConf
 }
 
 func applyBasicAuth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap) {
