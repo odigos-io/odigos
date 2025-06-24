@@ -177,7 +177,7 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 
 	if readonly {
 		rules = []rbacv1.PolicyRule{
-			{ // Needed to read odigos-config configmap for settings
+			{ // Needed to read odigos-configuration configmap for settings
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
 				Verbs:     []string{"get", "list"},
@@ -205,7 +205,7 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 		}
 	} else {
 		rules = []rbacv1.PolicyRule{
-			{ // Needed to read odigos-config configmap for settings
+			{ // Needed to read odigos-configuration configmap for settings
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
 				Verbs:     []string{"get", "list"},
