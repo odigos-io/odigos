@@ -202,14 +202,16 @@ func DeleteSourcesOrRemoveStreamName(ctx context.Context, sources *v1alpha1.Sour
 		source := source // capture range variable
 
 		for labelKey := range source.Labels {
-			if strings.TrimPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) == currentStreamName {
-				toPersist = append(toPersist, &model.PersistNamespaceSourceInput{
-					Namespace:         source.Spec.Workload.Namespace,
-					Name:              source.Spec.Workload.Name,
-					Kind:              model.K8sResourceKind(source.Spec.Workload.Kind),
-					Selected:          false, // to remove label, or delete entirely
-					CurrentStreamName: currentStreamName,
-				})
+			if strings.HasPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) {
+				if strings.TrimPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) == currentStreamName {
+					toPersist = append(toPersist, &model.PersistNamespaceSourceInput{
+						Namespace:         source.Spec.Workload.Namespace,
+						Name:              source.Spec.Workload.Name,
+						Kind:              model.K8sResourceKind(source.Spec.Workload.Kind),
+						Selected:          false, // to remove label, or delete entirely
+						CurrentStreamName: currentStreamName,
+					})
+				}
 			}
 		}
 	}
@@ -230,26 +232,28 @@ func UpdateSourcesCurrentStreamName(ctx context.Context, sources *v1alpha1.Sourc
 
 		g.Go(func() error {
 			for labelKey, labelValue := range source.Labels {
-				if strings.TrimPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) == currentStreamName {
-					// Note: we have to add a label 1st, then remove the old one, to avoid issues with source webhook.
-					// The source webhook will re-add a default label, if the source has no labels at all.
-					// So when trying to remove the default label, it would add itself back before we even get to apply the new label.
+				if strings.HasPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) {
+					if strings.TrimPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix) == currentStreamName {
+						// Note: we have to add a label 1st, then remove the old one, to avoid issues with source webhook.
+						// The source webhook will re-add a default label, if the source has no labels at all.
+						// So when trying to remove the default label, it would add itself back before we even get to apply the new label.
 
-					// add the new label
-					newDataStreamLabelKey := k8sconsts.SourceDataStreamLabelPrefix + newStreamName
-					_, err := UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, newDataStreamLabelKey, labelValue)
-					if err != nil {
-						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
+						// add the new label
+						newDataStreamLabelKey := k8sconsts.SourceDataStreamLabelPrefix + newStreamName
+						_, err := UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, newDataStreamLabelKey, labelValue)
+						if err != nil {
+							return fmt.Errorf("failed to update source %s: %v", source.Name, err)
+						}
+
+						// remove the old label
+						oldDataStreamLabelKey := k8sconsts.SourceDataStreamLabelPrefix + currentStreamName
+						_, err = UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, oldDataStreamLabelKey, "")
+						if err != nil {
+							return fmt.Errorf("failed to update source %s: %v", source.Name, err)
+						}
+
+						return nil
 					}
-
-					// remove the old label
-					oldDataStreamLabelKey := k8sconsts.SourceDataStreamLabelPrefix + currentStreamName
-					_, err = UpdateSourceCRDLabel(ctx, source.Namespace, source.Name, oldDataStreamLabelKey, "")
-					if err != nil {
-						return fmt.Errorf("failed to update source %s: %v", source.Name, err)
-					}
-
-					return nil
 				}
 			}
 			return nil
