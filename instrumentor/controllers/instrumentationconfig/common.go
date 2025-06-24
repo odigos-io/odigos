@@ -96,44 +96,52 @@ func mergeDefaultTracingConfig(defaultConfig *instrumentationrules.TraceConfig, 
 
 	mergedRules := &instrumentationrules.TraceConfig{}
 
-	// Handle nil Disabled fields safely
-	var defaultDisabled, ruleDisabled bool
-	if defaultConfig.Disabled != nil {
-		defaultDisabled = *defaultConfig.Disabled
+	// Only set Disabled if we have actual values to work with
+	if defaultConfig.Disabled != nil && rule.Disabled != nil {
+		// Both values are set, use OR logic: tracing is disabled if either config disables it
+		mergedRules.Disabled = boolPtr(*defaultConfig.Disabled || *rule.Disabled)
+	} else if defaultConfig.Disabled != nil {
+		// Only default config has a value, use it
+		mergedRules.Disabled = defaultConfig.Disabled
+	} else if rule.Disabled != nil {
+		// Only rule has a value, use it
+		mergedRules.Disabled = rule.Disabled
 	}
-	if rule.Disabled != nil {
-		ruleDisabled = *rule.Disabled
-	}
-
-	mergedRules.Disabled = boolPtr(defaultDisabled || ruleDisabled)
+	// If both are nil, mergedRules.Disabled remains nil
 	return mergedRules
 }
 
 func mergeTracingConfig(sdkConfig *odigosv1alpha1.InstrumentationLibraryConfigTraces, rule *instrumentationrules.TraceConfig) *odigosv1alpha1.InstrumentationLibraryConfigTraces {
+	// The SDK config uses "Enabled" field to enable/disable tracing.
+	// The rule uses "Disabled" field to disable tracing, since the semantics of "Disabled" allows for default nil/false
+	// which is clearer for the user facing object.
+
 	if sdkConfig == nil {
-		var enabled bool
 		if rule.Disabled != nil {
-			enabled = !*rule.Disabled
+			return &odigosv1alpha1.InstrumentationLibraryConfigTraces{
+				Enabled: boolPtr(!*rule.Disabled),
+			}
 		}
-		return &odigosv1alpha1.InstrumentationLibraryConfigTraces{
-			Enabled: &enabled,
-		}
+		// Both sdkConfig and rule.Disabled are nil, return nil config
+		return &odigosv1alpha1.InstrumentationLibraryConfigTraces{}
 	} else if rule == nil {
 		return sdkConfig
 	}
 
 	mergedRules := odigosv1alpha1.InstrumentationLibraryConfigTraces{}
 
-	// Handle nil Enabled and Disabled fields safely
-	var sdkEnabled, ruleDisabled bool
-	if sdkConfig.Enabled != nil {
-		sdkEnabled = *sdkConfig.Enabled
+	// Only set Enabled if we have actual values to work with
+	if sdkConfig.Enabled != nil && rule.Disabled != nil {
+		// Both values are set, use AND logic: tracing is enabled only if SDK config enables it AND rule doesn't disable it
+		mergedRules.Enabled = boolPtr(*sdkConfig.Enabled && !*rule.Disabled)
+	} else if sdkConfig.Enabled != nil {
+		// Only SDK config has a value, use it
+		mergedRules.Enabled = sdkConfig.Enabled
+	} else if rule.Disabled != nil {
+		// Only rule has a value, use it
+		mergedRules.Enabled = boolPtr(!*rule.Disabled)
 	}
-	if rule.Disabled != nil {
-		ruleDisabled = *rule.Disabled
-	}
-
-	mergedRules.Enabled = boolPtr(sdkEnabled || !ruleDisabled)
+	// If both are nil, mergedRules.Enabled remains nil
 	return &mergedRules
 }
 
