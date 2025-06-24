@@ -141,10 +141,11 @@ func applyGrpcOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensi
 	}
 
 	clientId := config[otlpGrpcOAuth2ClientIdKey]
-	clientSecret := config[otlpGrpcOAuth2ClientSecretKey]
 	tokenUrl := config[otlpGrpcOAuth2TokenUrlKey]
 
-	if clientId == "" || clientSecret == "" || tokenUrl == "" {
+	// Note: client secret is stored in the secret and injected as environment variable
+	// We don't validate it here since it's not in the regular config data
+	if clientId == "" || tokenUrl == "" {
 		return "", nil
 	}
 

@@ -152,10 +152,11 @@ func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionCo
 	}
 
 	clientId := config[otlpHttpOAuth2ClientIdKey]
-	clientSecret := config[otlpHttpOAuth2ClientSecretKey]
 	tokenUrl := config[otlpHttpOAuth2TokenUrlKey]
 
-	if clientId == "" || clientSecret == "" || tokenUrl == "" {
+	// Note: client secret is stored in the secret and injected as environment variable
+	// We don't validate it here since it's not in the regular config data
+	if clientId == "" || tokenUrl == "" {
 		return "", nil
 	}
 
