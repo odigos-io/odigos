@@ -165,10 +165,9 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		}
 	} else {
 		// update the instrumentation config with the new containers overrides only if it changed.
-		dataStreamsChanged := sourceutils.SetInstrumentationConfigDataStreamLabels(ic, desiredDataStreamsLabels)
-		if ic.Spec.ContainerOverridesHash != hashString || dataStreamsChanged {
-			ic.Spec.ContainersOverrides = containers
-			ic.Spec.ContainerOverridesHash = hashString
+		dataStreamsChanged := updateDatastreamLabels(ic, desiredDataStreamsLabels)
+		containerOverridesChanged := updateContainerOverride(ic, containers, hashString)
+		if containerOverridesChanged || dataStreamsChanged {
 			err = k8sClient.Update(ctx, ic)
 			if err != nil {
 				return k8sutils.K8SUpdateErrorHandler(err)
@@ -246,4 +245,37 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 	logger.V(1).Info("deleted instrumentationconfig", "name", instrumentationConfigName, "namespace", podWorkload.Namespace)
 
 	return nil
+}
+
+func updateContainerOverride(ic *v1alpha1.InstrumentationConfig, desiredContainers []odigosv1.ContainerOverride, desiredContainersHashString string) (updated bool) {
+	if ic.Spec.ContainerOverridesHash != desiredContainersHashString {
+		ic.Spec.ContainersOverrides = desiredContainers
+		ic.Spec.ContainerOverridesHash = desiredContainersHashString
+		return true
+	}
+	return false
+}
+
+func updateDatastreamLabels(instConfig *odigosv1.InstrumentationConfig, desiredLabels map[string]string) (updated bool) {
+	if instConfig.Labels == nil {
+		instConfig.Labels = make(map[string]string)
+	}
+
+	// Add / update labels
+	for key, value := range desiredLabels {
+		if instConfig.Labels[key] != value {
+			instConfig.Labels[key] = value
+			updated = true
+		}
+	}
+
+	// Remove datastream labels not present in desiredLabels
+	for key := range instConfig.Labels {
+		if _, exists := desiredLabels[key]; !exists && sourceutils.IsDataStreamLabel(key) {
+			delete(instConfig.Labels, key)
+			updated = true
+		}
+	}
+
+	return updated
 }
