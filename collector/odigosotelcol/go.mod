@@ -4,6 +4,8 @@ module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
 go 1.24.0
 
+toolchain go1.24.2
+
 require (
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.126.0
 	github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor v0.126.0
@@ -54,6 +56,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.126.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.126.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.126.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.126.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.126.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter v0.126.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter v0.126.0
