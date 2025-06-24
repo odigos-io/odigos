@@ -146,6 +146,8 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	hash := sha256.Sum256(json)
 	hashString := hex.EncodeToString(hash[:16])
 
+	desiredDataStreamsLabels := sourceutils.CalculateDataStreamsLabels(sources)
+
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
 	ic := &v1alpha1.InstrumentationConfig{}
 	err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: pw.Namespace}, ic)
@@ -153,7 +155,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
-		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString)
+		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString, desiredDataStreamsLabels)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				// If we hit AlreadyExists here, we just hit a race in the api/cache and want to requeue. No need to log an error
@@ -163,7 +165,8 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		}
 	} else {
 		// update the instrumentation config with the new containers overrides only if it changed.
-		if ic.Spec.ContainerOverridesHash != hashString {
+		dataStreamsChanged := sourceutils.SetInstrumentationConfigDataStreamLabels(ic, desiredDataStreamsLabels)
+		if ic.Spec.ContainerOverridesHash != hashString || dataStreamsChanged {
 			ic.Spec.ContainersOverrides = containers
 			ic.Spec.ContainerOverridesHash = hashString
 			err = k8sClient.Update(ctx, ic)
@@ -176,7 +179,6 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	markedForInstChanged := meta.SetStatusCondition(&ic.Status.Conditions, markedForInstrumentationCondition)
 	runtimeDetailsChanged := initiateRuntimeDetailsConditionIfMissing(ic, workloadObj)
 	agentEnabledChanged := initiateAgentEnabledConditionIfMissing(ic)
-	dataStreamsChanged := sourceutils.HandleInstrumentationConfigDataStreamsLabels(ctx, sources, ic)
 
 	if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged {
 		ic.Status.Conditions = sortIcConditionsByLogicalOrder(ic.Status.Conditions)
@@ -188,19 +190,10 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		}
 	}
 
-	// in case of data streams changed, we need to update the instrumentation config labels
-	if dataStreamsChanged {
-		err = k8sClient.Update(ctx, ic)
-		if err != nil {
-			logger.Info("Failed to update instrumentation config", "name", instConfigName, "namespace", pw.Namespace, "error", err.Error())
-			return k8sutils.K8SUpdateErrorHandler(err)
-		}
-	}
-
 	return ctrl.Result{}, nil
 }
 
-func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string) (*v1alpha1.InstrumentationConfig, error) {
+func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, desiredDataStreamsLabels map[string]string) (*v1alpha1.InstrumentationConfig, error) {
 	logger := log.FromContext(ctx)
 	instConfig := v1alpha1.InstrumentationConfig{
 		TypeMeta: metav1.TypeMeta{
@@ -210,6 +203,7 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instConfigName,
 			Namespace: namespace,
+			Labels:    desiredDataStreamsLabels,
 		},
 	}
 

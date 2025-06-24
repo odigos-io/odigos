@@ -103,9 +103,7 @@ func OtelServiceNameBySource(ctx context.Context, k8sClient client.Client, obj c
 	return obj.GetName(), nil
 }
 
-func HandleInstrumentationConfigDataStreamsLabels(ctx context.Context,
-	workloadSources *odigosv1.WorkloadSources, ic *odigosv1.InstrumentationConfig) bool {
-	// Extract labels from both sources (may be nil)
+func CalculateDataStreamsLabels(workloadSources *odigosv1.WorkloadSources) map[string]string {
 	workloadLabels := getSourceDataStreamsLabels(workloadSources.Workload)
 	namespaceLabels := getSourceDataStreamsLabels(workloadSources.Namespace)
 
@@ -122,11 +120,10 @@ func HandleInstrumentationConfigDataStreamsLabels(ctx context.Context,
 		mergedLabels[k] = v
 	}
 
-	// Apply merged labels into InstrumentationConfig, and return true if changed
-	return setInstrumentationConfigDataStreamLabels(ic, mergedLabels)
+	return mergedLabels
 }
 
-func setInstrumentationConfigDataStreamLabels(instConfig *odigosv1.InstrumentationConfig, desiredLabels map[string]string) (updated bool) {
+func SetInstrumentationConfigDataStreamLabels(instConfig *odigosv1.InstrumentationConfig, desiredLabels map[string]string) (updated bool) {
 	if instConfig.Labels == nil {
 		instConfig.Labels = make(map[string]string)
 	}
