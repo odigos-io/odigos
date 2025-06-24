@@ -534,18 +534,17 @@ func getInstrumentationInstancesConditions(ctx context.Context, namespace string
 		if !exists {
 			continue
 		}
-		thisNamespace := instance.Namespace
-		thisName, thisKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(objectName)
+		pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(objectName, instance.Namespace)
 		if err != nil {
 			continue
 		}
-		key := fmt.Sprintf("%s/%s/%s", thisNamespace, thisName, thisKind)
+		key := fmt.Sprintf("%s/%s/%s", pw.Namespace, pw.Name, pw.Kind)
 
 		if _, exists := conditionsMap[key]; !exists {
 			conditionsMap[key] = &model.SourceConditions{
-				Namespace:  thisNamespace,
-				Name:       thisName,
-				Kind:       model.K8sResourceKind(thisKind),
+				Namespace:  pw.Namespace,
+				Name:       pw.Name,
+				Kind:       model.K8sResourceKind(pw.Kind),
 				Conditions: []*model.Condition{},
 			}
 			instanceCountsMap[key] = &InstanceCounts{

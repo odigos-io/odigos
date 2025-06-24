@@ -75,15 +75,10 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, conf *common.OdigosConfiguration) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName)
+	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName, namespace)
 	if err != nil {
 		logger.Error(err, "error parsing workload info from runtime object name")
 		return ctrl.Result{}, nil // return nil so not to retry
-	}
-	pw := k8sconsts.PodWorkload{
-		Namespace: namespace,
-		Kind:      workloadKind,
-		Name:      workloadName,
 	}
 
 	ic := odigosv1.InstrumentationConfig{}

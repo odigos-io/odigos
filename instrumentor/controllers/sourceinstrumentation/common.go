@@ -32,6 +32,7 @@ func syncNamespaceWorkloads(
 	runtimeScheme *runtime.Scheme,
 	namespace string) (ctrl.Result, error) {
 
+	workloadsToSync := make([]k8sconsts.PodWorkload, 0)
 	collectiveRes := ctrl.Result{}
 	var errs error
 	for _, kind := range []k8sconsts.WorkloadKind{
@@ -46,37 +47,44 @@ func syncNamespaceWorkloads(
 			continue
 		}
 
-		objects := make([]client.Object, 0)
 		switch obj := workloadObjects.(type) {
 		case *v1.DeploymentList:
 			for _, dep := range obj.Items {
-				objects = append(objects, &dep)
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      dep.GetName(),
+					Namespace: dep.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindDeployment,
+				})
 			}
 		case *v1.DaemonSetList:
 			for _, ds := range obj.Items {
-				objects = append(objects, &ds)
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      ds.GetName(),
+					Namespace: ds.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindDaemonSet,
+				})
 			}
 		case *v1.StatefulSetList:
 			for _, ss := range obj.Items {
-				objects = append(objects, &ss)
-			}
-		}
-
-		for _, obj := range objects {
-			workload := workload.ClientObjectFromWorkloadKind(kind)
-			err := k8sClient.Get(ctx, client.ObjectKeyFromObject(obj), workload)
-			if client.IgnoreNotFound(err) != nil {
-				return collectiveRes, err
-			}
-			res, err := syncWorkload(ctx, k8sClient, runtimeScheme, obj)
-			if err != nil {
-				errs = errors.Join(errs, err)
-			}
-			if !res.IsZero() {
-				collectiveRes = res
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      ss.GetName(),
+					Namespace: ss.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindStatefulSet,
+				})
 			}
 		}
 	}
+
+	for _, pw := range workloadsToSync {
+		res, err := syncWorkload(ctx, k8sClient, runtimeScheme, pw)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+		if !res.IsZero() {
+			collectiveRes = res
+		}
+	}
+
 	return collectiveRes, errs
 }
 
@@ -84,14 +92,18 @@ func syncNamespaceWorkloads(
 // If not, it will attempt to delete any InstrumentationConfig for the Object.
 // If it is instrumented, it will attempt to create an InstrumentationConfig if one does not exist,
 // or update the existing InstrumentationConfig if necessary.
-func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, obj client.Object) (ctrl.Result, error) {
+func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, pw k8sconsts.PodWorkload) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	pw := k8sconsts.PodWorkload{
-		Name:      obj.GetName(),
-		Namespace: obj.GetNamespace(),
-		Kind:      k8sconsts.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
+	obj := workload.ClientObjectFromWorkloadKind(pw.Kind)
+	err := k8sClient.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, obj)
+	if err != nil {
+		// if err is not nil it means obj is invalid, so we must return.
+		// instrumentation config has the workload as owner, so it will be deleted automatically by k8s,
+		// thus NotFound is expected and we can return without error.
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
 	sources, err := odigosv1.GetSources(ctx, k8sClient, pw)
 	enabled, markedForInstrumentationCondition, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, err)
 	if err != nil {
