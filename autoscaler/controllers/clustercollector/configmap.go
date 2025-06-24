@@ -365,15 +365,15 @@ func getSourcesForDataStream(
 
 	sourcesFilters := make([]pipelinegen.SourceFilter, 0, len(instrumentationConfigsList.Items))
 	for _, instrumentationConfig := range instrumentationConfigsList.Items {
-		workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instrumentationConfig.Name)
+		pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instrumentationConfig.Name, instrumentationConfig.Namespace)
 		if err != nil {
 			logger.Error(err, "Failed to extract workload info from instrumentation config name", "instrumentationConfig", instrumentationConfig.Name)
 			continue
 		}
 		sourcesFilters = append(sourcesFilters, pipelinegen.SourceFilter{
 			Namespace: instrumentationConfig.Namespace,
-			Kind:      string(workloadKind),
-			Name:      workloadName,
+			Kind:      string(pw.Kind),
+			Name:      pw.Name,
 		})
 	}
 

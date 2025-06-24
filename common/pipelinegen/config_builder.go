@@ -139,7 +139,9 @@ func CalculateGatewayConfig(
 			return "", err, status, nil
 		}
 	}
-
+	if tracesEnabled {
+		insertServiceGraphPipeline(currentConfig)
+	}
 	// Final marshal to YAML
 	data, err := yaml.Marshal(currentConfig)
 	if err != nil {
@@ -196,6 +198,37 @@ func applyRootPipelineForSignal(currentConfig *config.Config, signal common.Obse
 	}
 }
 
+func insertServiceGraphPipeline(currentConfig *config.Config) {
+	// Add the service graph exporter to expose the service graph metrics to prometheus
+	currentConfig.Exporters["prometheus/servicegraph"] = config.GenericMap{
+		"endpoint":  "localhost:9090",
+		"namespace": "servicegraph",
+	}
+
+	// adding the service graph scrape config to prometheus/self-metrics receiver
+	AddServiceGraphScrapeConfig(currentConfig)
+
+	// Add the service graph connector to receive the service graph metrics from the root traces pipeline
+	currentConfig.Connectors["servicegraph"] = config.GenericMap{
+		"store": config.GenericMap{
+			"ttl": "5m",
+		},
+		"dimensions": []string{"service.name"},
+	}
+
+	// Add the service graph pipeline to receive the service graph metrics from the root traces pipeline
+	currentConfig.Service.Pipelines["metrics/servicegraph"] = config.Pipeline{
+		Receivers: []string{"servicegraph"},
+		Exporters: []string{"prometheus/servicegraph"},
+	}
+
+	// Add the service graph exporter to the root traces pipeline
+	rootPipelineName := GetTelemetryRootPipeline(common.TracesObservabilitySignal)
+	pipeline := currentConfig.Service.Pipelines[rootPipelineName]
+	pipeline.Exporters = append(pipeline.Exporters, "servicegraph")
+	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
+
+}
 func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 	return &config.Config{
 		Connectors: config.GenericMap{},
@@ -265,4 +298,50 @@ func filterSmallBatchesProcessor(tracesProcessors []string) ([]string, bool) {
 	}
 
 	return filtered, smallBatchesEnabled
+}
+
+func AddServiceGraphScrapeConfig(c *config.Config) {
+	servicegraphScrape := config.GenericMap{
+		"job_name":        "servicegraph",
+		"scrape_interval": "10s",
+		"static_configs": []config.GenericMap{
+			{
+				"targets": []string{"127.0.0.1:9090"},
+			},
+		},
+		"metric_relabel_configs": []config.GenericMap{
+			{
+				"source_labels": []string{"__name__"},
+				"regex":         "^servicegraph_traces_service_graph_request_total$",
+				"action":        "keep",
+			},
+		},
+	}
+
+	receiverVal, ok := c.Receivers["prometheus/self-metrics"]
+	if !ok {
+		return
+	}
+	receiver, ok := receiverVal.(config.GenericMap)
+	if !ok {
+		return
+	}
+
+	configMap, ok := receiver["config"].(config.GenericMap)
+	if !ok {
+		return
+	}
+
+	scrapeConfigs, ok := configMap["scrape_configs"].([]config.GenericMap)
+	if !ok {
+		return
+	}
+
+	// Append new servicegraph scrape config
+	scrapeConfigs = append(scrapeConfigs, servicegraphScrape)
+
+	// Reassign
+	configMap["scrape_configs"] = scrapeConfigs
+	receiver["config"] = configMap
+	c.Receivers["prometheus/self-metrics"] = receiver
 }

@@ -1,6 +1,7 @@
 package collectormetrics
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -17,8 +18,12 @@ const (
 	exporterSentMetricsMetricName = "otelcol_exporter_sent_metric_points_total"
 	exporterSentLogsMetricName    = "otelcol_exporter_sent_log_records_total"
 
+	// This metric is added by the service graph exporter.
+	// It is used to estimate the number of service graph requests and build the service graph.
+	serviceGraphRequestMetricName = "servicegraph_traces_service_graph_request_total"
+
 	// Each metrics from the exporters has this attribute which is the name of the exporter.
-	exporterMetricAttributesKey  = "exporter"
+	exporterMetricAttributesKey = "exporter"
 
 	// These metrics are added by the odigostrafficmetrics processor.
 	// Each processor comes with `otelcol_processor_incoming_items` and `otelcol_processor_outgoing_items` metrics.
@@ -29,10 +34,11 @@ const (
 	processorAcceptedLogsMetricName    = "otelcol_odigos_accepted_log_records_total"
 )
 
-type destinationsMetrics struct {
+type clusterCollectorMetrics struct {
 	destinations   map[string]*singleDestinationMetrics
 	destinationsMu sync.Mutex
 	avgCalculator  *averageSizeCalculator
+	serviceGraph   *ServiceGraph
 }
 
 type destinationTrafficMetrics struct {
@@ -99,14 +105,15 @@ func (asc *averageSizeCalculator) update(acceptedSpans, acceptedMetrics, accepte
 	asc.acceptedLogs = acceptedLogs
 }
 
-func newDestinationsMetrics() destinationsMetrics {
-	return destinationsMetrics{
+func newClusterCollectorMetrics() clusterCollectorMetrics {
+	return clusterCollectorMetrics{
 		destinations:  make(map[string]*singleDestinationMetrics),
 		avgCalculator: &averageSizeCalculator{},
+		serviceGraph:  newServiceGraph(),
 	}
 }
 
-func (dm *destinationsMetrics) removeClusterCollector(clusterCollectorID string) {
+func (dm *clusterCollectorMetrics) removeClusterCollector(clusterCollectorID string) {
 	for _, d := range dm.destinations {
 		d.mu.Lock()
 		delete(d.clusterCollectorsTraffic, clusterCollectorID)
@@ -114,7 +121,7 @@ func (dm *destinationsMetrics) removeClusterCollector(clusterCollectorID string)
 	}
 }
 
-func (dm *destinationsMetrics) removeDestination(dID string) {
+func (dm *clusterCollectorMetrics) removeDestination(dID string) {
 	dm.destinationsMu.Lock()
 	delete(dm.destinations, dID)
 	dm.destinationsMu.Unlock()
@@ -136,7 +143,7 @@ func metricAttributesToDestinationID(attrs pcommon.Map) string {
 	return exporterNameStr[inedx:]
 }
 
-func (dm *destinationsMetrics) newDestinationTrafficMetrics(metricName string, numDataPoints float64, t time.Time) *destinationTrafficMetrics {
+func (dm *clusterCollectorMetrics) newDestinationTrafficMetrics(metricName string, numDataPoints float64, t time.Time) *destinationTrafficMetrics {
 	tm := trafficMetrics{
 		lastUpdate: t,
 	}
@@ -168,7 +175,7 @@ func (dm *destinationsMetrics) newDestinationTrafficMetrics(metricName string, n
 
 // newDestinationMetrics creates a new singleDestinationMetrics object with initial traffic metrics based on the data point received
 // The clusterCollectorsTraffic map initialized with the cluster collector ID and the traffic metrics
-func (dm *destinationsMetrics) newDestinationMetrics(dp pmetric.NumberDataPoint, metricName string, clusterCollectorID string) *singleDestinationMetrics {
+func (dm *clusterCollectorMetrics) newDestinationMetrics(dp pmetric.NumberDataPoint, metricName string, clusterCollectorID string) *singleDestinationMetrics {
 	dtm := dm.newDestinationTrafficMetrics(metricName, dp.DoubleValue(), dp.Timestamp().AsTime())
 
 	sm := &singleDestinationMetrics{
@@ -180,7 +187,7 @@ func (dm *destinationsMetrics) newDestinationMetrics(dp pmetric.NumberDataPoint,
 	return sm
 }
 
-func (dm *destinationsMetrics) updateDestinationMetricsByExporter(dp pmetric.NumberDataPoint, metricName string, clusterCollectorID string) {
+func (dm *clusterCollectorMetrics) updateDestinationMetricsByExporter(dp pmetric.NumberDataPoint, metricName string, clusterCollectorID string) {
 	dID := metricAttributesToDestinationID(dp.Attributes())
 	if dID == "" {
 		return
@@ -247,7 +254,7 @@ func (dm *destinationsMetrics) updateDestinationMetricsByExporter(dp pmetric.Num
 	*throughputPtr = throughput
 }
 
-func (dm *destinationsMetrics) updateAverageEstimates(md pmetric.Metrics) {
+func (dm *clusterCollectorMetrics) updateAverageEstimates(md pmetric.Metrics) {
 	var (
 		// number of spans/metrics/logs recorded in this snapshot
 		acceptedSpans, acceptedMetrics, acceptedLogs int64
@@ -298,7 +305,7 @@ func (dm *destinationsMetrics) updateAverageEstimates(md pmetric.Metrics) {
 	dm.avgCalculator.update(acceptedSpans, acceptedMetrics, acceptedLogs, spansDataSize, metricsDataSize, logsDataSize)
 }
 
-func (dm *destinationsMetrics) handleClusterCollectorMetrics(senderPod string, md pmetric.Metrics) {
+func (dm *clusterCollectorMetrics) handleClusterCollectorMetrics(senderPod string, md pmetric.Metrics) {
 	dm.updateAverageEstimates(md)
 
 	rm := md.ResourceMetrics()
@@ -314,13 +321,18 @@ func (dm *destinationsMetrics) handleClusterCollectorMetrics(senderPod string, m
 						dataPoint := m.Sum().DataPoints().At(dataPointIndex)
 						dm.updateDestinationMetricsByExporter(dataPoint, m.Name(), senderPod)
 					}
+				case serviceGraphRequestMetricName:
+					for d := 0; d < m.Sum().DataPoints().Len(); d++ {
+						dp := m.Sum().DataPoints().At(d)
+						dm.serviceGraph.UpdateFromDataPoint(dp)
+					}
 				}
 			}
 		}
 	}
 }
 
-func (dm *destinationsMetrics) metricsByID(dID string) (trafficMetrics, bool) {
+func (dm *clusterCollectorMetrics) metricsByID(dID string) (trafficMetrics, bool) {
 	sdm, ok := dm.destinations[dID]
 	if !ok {
 		return trafficMetrics{}, false
@@ -353,7 +365,22 @@ func (sdm *singleDestinationMetrics) metrics() trafficMetrics {
 	return resultMetrics
 }
 
-func (dm *destinationsMetrics) metrics() map[string]trafficMetrics {
+func (ccm *clusterCollectorMetrics) serviceGraphEdges() map[string]map[string]ServiceGraphEdge {
+	ccm.serviceGraph.mu.Lock()
+	defer ccm.serviceGraph.mu.Unlock()
+
+	result := make(map[string]map[string]ServiceGraphEdge, len(ccm.serviceGraph.edges))
+	for client, servers := range ccm.serviceGraph.edges {
+		result[client] = make(map[string]ServiceGraphEdge, len(servers))
+		for server, edge := range servers {
+			result[client][server] = *edge
+		}
+	}
+
+	return result
+}
+
+func (dm *clusterCollectorMetrics) destinationsMetrics() map[string]trafficMetrics {
 	dm.destinationsMu.Lock()
 	defer dm.destinationsMu.Unlock()
 
@@ -363,4 +390,78 @@ func (dm *destinationsMetrics) metrics() map[string]trafficMetrics {
 	}
 
 	return result
+}
+
+type ServiceGraph struct {
+	mu    sync.Mutex
+	edges map[string]map[string]*ServiceGraphEdge // client → server → edge
+}
+
+type ServiceGraphEdge struct {
+	RequestCount int64
+	LastUpdated  time.Time
+}
+
+func newServiceGraph() *ServiceGraph {
+	return &ServiceGraph{
+		edges: make(map[string]map[string]*ServiceGraphEdge),
+	}
+}
+
+func (sg *ServiceGraph) UpdateFromDataPoint(dp pmetric.NumberDataPoint) {
+	attrs := dp.Attributes().AsRaw()
+
+	client, ok1 := attrs["client"].(string)
+	server, ok2 := attrs["server"].(string)
+
+	if !ok1 || !ok2 || client == "unknown" || server == "unknown" {
+		return
+	}
+
+	val := int64(0)
+	switch dp.ValueType() {
+	case pmetric.NumberDataPointValueTypeInt:
+		val = dp.IntValue()
+	case pmetric.NumberDataPointValueTypeDouble:
+		val = int64(dp.DoubleValue())
+	}
+
+	timestamp := dp.Timestamp().AsTime()
+
+	sg.mu.Lock()
+	defer sg.mu.Unlock()
+
+	if _, ok := sg.edges[client]; !ok {
+		sg.edges[client] = make(map[string]*ServiceGraphEdge)
+	}
+
+	edge, exists := sg.edges[client][server]
+	if !exists {
+		sg.edges[client][server] = &ServiceGraphEdge{
+			RequestCount: val,
+			LastUpdated:  timestamp,
+		}
+	} else {
+		// always overwrite because it's a cumulative counter
+		edge.RequestCount = val
+		edge.LastUpdated = timestamp
+	}
+}
+
+func (sg *ServiceGraph) DebugPrintEdges() {
+	sg.mu.Lock()
+	defer sg.mu.Unlock()
+
+	if len(sg.edges) == 0 {
+		fmt.Println("🔍 Service graph is currently empty.")
+		return
+	}
+
+	fmt.Println("📊 Current Service Graph Edges:")
+	for client, servers := range sg.edges {
+		for server, edge := range servers {
+			fmt.Printf("  %s → %s : %d requests (last updated: %s)\n",
+				client, server, edge.RequestCount, edge.LastUpdated.Format(time.RFC3339))
+		}
+	}
 }
