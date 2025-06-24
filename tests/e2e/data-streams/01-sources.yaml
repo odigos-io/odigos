@@ -81,3 +81,17 @@ spec:
     name: currency
     namespace: default
     kind: Deployment
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: geolocation
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+    odigos.io/data-stream-stream-2: "true"
+spec:
+  workload:
+    name: geolocation
+    namespace: default
+    kind: Deployment
