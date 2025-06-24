@@ -8,37 +8,28 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// OdigosGinMiddleware is a middleware that executes a chain of Gin middlewares.
+// OdigosGinMiddlewareHandler accepts a list of gin.HandlerFuncs and returns that list
+// with each function wrapped in a new function that calls executeMiddleware.
 //
 //go:noinline
-func OdigosGinMiddleware(middlewares ...gin.HandlerFunc) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if len(middlewares) == 0 {
-			c.Next()
-			return
+func OdigosGinMiddleware(middlewares ...gin.HandlerFunc) []gin.HandlerFunc {
+	wrappedMiddlewares := make([]gin.HandlerFunc, len(middlewares))
+
+	for i, middleware := range middlewares {
+		wrappedMiddlewares[i] = func(c *gin.Context) {
+			done := make(chan bool)
+			reqCtx, cancel := context.WithCancel(c.Request.Context())
+			go func(ctx context.Context) {
+				middlewareName := runtime.FuncForPC(reflect.ValueOf(middleware).Pointer()).Name()
+				executeMiddleware(ctx, c, middlewareName, middleware)
+				done <- true
+			}(reqCtx)
+			<-done
+			cancel()
 		}
-
-		executeMiddlewareChain(c, middlewares)
 	}
-}
 
-//go:noinline
-func executeMiddlewareChain(c *gin.Context, middlewareChain []gin.HandlerFunc) {
-	for i := 0; i < len(middlewareChain); i++ {
-		if c.IsAborted() {
-			return
-		}
-
-		done := make(chan bool)
-		reqCtx, cancel := context.WithCancel(c.Request.Context())
-		go func(ctx context.Context) {
-			middlewareName := runtime.FuncForPC(reflect.ValueOf(middlewareChain[i]).Pointer()).Name()
-			executeMiddleware(ctx, c, middlewareName, middlewareChain[i])
-			done <- true
-		}(reqCtx)
-		<-done
-		cancel()
-	}
+	return wrappedMiddlewares
 }
 
 //go:noinline
