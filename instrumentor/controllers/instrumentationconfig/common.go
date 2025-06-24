@@ -1,7 +1,6 @@
 package instrumentationconfig
 
 import (
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
@@ -11,14 +10,9 @@ import (
 
 func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList) error {
 
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name)
+	workload, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name, ic.Namespace)
 	if err != nil {
 		return err
-	}
-	workload := k8sconsts.PodWorkload{
-		Name:      workloadName,
-		Namespace: ic.Namespace,
-		Kind:      workloadKind,
 	}
 
 	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ic.Status.RuntimeDetailsByContainer))
