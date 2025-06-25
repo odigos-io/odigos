@@ -1,23 +1,24 @@
 package predicate
 
 import (
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 )
 
 type ReceiverSignalsChangedPredicate struct {
 }
 
-func (o ReceiverSignalsChangedPredicate) Create(e event.CreateEvent) bool {
-	if e.Object == nil {
+func (r ReceiverSignalsChangedPredicate) Create(e event.CreateEvent) bool {
+	if e.Object == nil { //nolint:staticcheck // Follow our style in other predicates
 		return false
 	}
 
 	return true
 }
 
-func (i ReceiverSignalsChangedPredicate) Update(e event.UpdateEvent) bool {
+func (r ReceiverSignalsChangedPredicate) Update(e event.UpdateEvent) bool {
 	if e.ObjectNew == nil || e.ObjectOld == nil {
 		return false
 	}
@@ -44,11 +45,11 @@ func (i ReceiverSignalsChangedPredicate) Update(e event.UpdateEvent) bool {
 	return false
 }
 
-func (i ReceiverSignalsChangedPredicate) Delete(e event.DeleteEvent) bool {
+func (r ReceiverSignalsChangedPredicate) Delete(e event.DeleteEvent) bool {
 	return false
 }
 
-func (i ReceiverSignalsChangedPredicate) Generic(e event.GenericEvent) bool {
+func (r ReceiverSignalsChangedPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
