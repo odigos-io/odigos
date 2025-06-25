@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -13,28 +12,13 @@ import (
 	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
-	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
-func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, podWorkload k8sconsts.PodWorkload, container *corev1.Container,
-	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, client client.Client, config *common.OdigosConfiguration) error {
-
-	otelSignalExporterLanguages := []common.ProgrammingLanguage{
-		common.JavaProgrammingLanguage,
-		common.PhpProgrammingLanguage,
-		common.RubyProgrammingLanguage,
-	}
-
-	if slices.Contains(otelSignalExporterLanguages, runtimeDetails.Language) && otelsdk == common.OtelSdkNativeCommunity {
-		// Set the OTEL signals exporter env vars
-		setOtelSignalsExporterEnvVars(ctx, logger, container, client)
-	}
+func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, container *corev1.Container,
+	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, config *common.OdigosConfiguration) error {
 
 	envVarsPerLanguage := getEnvVarNamesForLanguage(runtimeDetails.Language)
 	if envVarsPerLanguage == nil {
@@ -272,47 +256,6 @@ func getContainerEnvVarPointer(containerEnv *[]corev1.EnvVar, envVarName string)
 		}
 	}
 	return nil
-}
-
-func setOtelSignalsExporterEnvVars(ctx context.Context, logger logr.Logger, container *corev1.Container, client client.Client) {
-	odigosNamespace := env.GetCurrentNamespace()
-
-	var nodeCollectorGroup odigosv1.CollectorsGroup
-	err := client.Get(ctx, types.NamespacedName{
-		Namespace: odigosNamespace,
-		Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
-	}, &nodeCollectorGroup)
-	if err != nil {
-		// Uses OTEL's default settings by omitting these environment variables.
-		// Although the current default is "otlp," it's safer to set them explicitly
-		// to avoid potential future changes and improve clarity.
-		logger.Error(err, "Failed to get nodeCollectorGroup using default OTEL settings")
-		return
-	}
-
-	signals := nodeCollectorGroup.Status.ReceiverSignals
-
-	// Default values
-	logsExporter := "none"
-	metricsExporter := "none"
-	tracesExporter := "none"
-
-	for _, signal := range signals {
-		switch signal {
-		case common.LogsObservabilitySignal:
-			logsExporter = "otlp"
-		case common.MetricsObservabilitySignal:
-			metricsExporter = "otlp"
-		case common.TracesObservabilitySignal:
-			tracesExporter = "otlp"
-		}
-	}
-
-	// check for existing env vars so we don't introduce them again
-	existingEnvNames := podswebhook.GetEnvVarNamesSet(container)
-	existingEnvNames = podswebhook.InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelLogsExporter, logsExporter, nil)
-	existingEnvNames = podswebhook.InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelMetricsExporter, metricsExporter, nil)
-	podswebhook.InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelTracesExporter, tracesExporter, nil)
 }
 
 func isValueFromConfigmap(envVar *corev1.EnvVar) bool {

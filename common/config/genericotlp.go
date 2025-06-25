@@ -3,6 +3,8 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 )
@@ -12,6 +14,12 @@ const (
 	genericOtlpTlsKey             = "OTLP_GRPC_TLS_ENABLED"
 	genericOtlpCaPemKey           = "OTLP_GRPC_CA_PEM"
 	genericOtlpInsecureSkipVerify = "OTLP_GRPC_INSECURE_SKIP_VERIFY"
+	otlpGrpcOAuth2EnabledKey      = "OTLP_GRPC_OAUTH2_ENABLED"
+	otlpGrpcOAuth2ClientIdKey     = "OTLP_GRPC_OAUTH2_CLIENT_ID"
+	otlpGrpcOAuth2ClientSecretKey = "OTLP_GRPC_OAUTH2_CLIENT_SECRET"
+	otlpGrpcOAuth2TokenUrlKey     = "OTLP_GRPC_OAUTH2_TOKEN_URL"
+	otlpGrpcOAuth2ScopesKey       = "OTLP_GRPC_OAUTH2_SCOPES"
+	otlpGrpcOAuth2AudienceKey     = "OTLP_GRPC_OAUTH2_AUDIENCE"
 	otlpGrpcCompression           = "OTLP_GRPC_COMPRESSION"
 	otlpGrpcHeaders               = "OTLP_GRPC_HEADERS"
 )
@@ -30,30 +38,53 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		return nil, errors.New("generic OTLP gRPC endpoint not specified, gateway will not be configured for otlp")
 	}
 
-	tls := dest.GetConfig()[genericOtlpTlsKey]
-	tlsEnabled := tls == "true"
+	userTlsEnabled := dest.GetConfig()[genericOtlpTlsKey] == "true"
 
-	grpcEndpoint, err := parseOtlpGrpcUrl(url, tlsEnabled)
+	// Check for OAuth2 authentication early to determine TLS requirements
+	oauth2ExtensionName, oauth2ExtensionConf := applyGrpcOAuth2Auth(dest)
+	oauth2Enabled := oauth2ExtensionName != ""
+
+	// Determine final TLS setting: gRPC requires TLS when using authentication credentials like OAuth2
+	finalTlsEnabled := userTlsEnabled || oauth2Enabled
+
+	grpcEndpoint, err := parseOtlpGrpcUrl(url, finalTlsEnabled)
 	if err != nil {
 		return nil, errorMissingKey(genericOtlpUrlKey)
 	}
 
-	tlsConfig := GenericMap{
-		"insecure": !tlsEnabled,
+	exporterConf := GenericMap{
+		"endpoint": grpcEndpoint,
 	}
-	caPem, caExists := config[genericOtlpCaPemKey]
-	if caExists && caPem != "" {
-		tlsConfig["ca_pem"] = caPem
+
+	// Only add TLS config if TLS is needed (user-enabled or OAuth2-required)
+	if userTlsEnabled || oauth2Enabled {
+		tlsConfig := GenericMap{
+			"insecure": !finalTlsEnabled,
+		}
+		caPem, caExists := config[genericOtlpCaPemKey]
+		if caExists && caPem != "" {
+			tlsConfig["ca_pem"] = caPem
+		}
+		insecureSkipVerify, skipExists := config[genericOtlpInsecureSkipVerify]
+		if skipExists && insecureSkipVerify != "" {
+			tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
+		}
+		exporterConf["tls"] = tlsConfig
 	}
-	insecureSkipVerify, skipExists := config[genericOtlpInsecureSkipVerify]
-	if skipExists && insecureSkipVerify != "" {
-		tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
+
+	// add OAuth2 authenticator extension if configured
+	if oauth2ExtensionName != "" && oauth2ExtensionConf != nil {
+		currentConfig.Extensions[oauth2ExtensionName] = *oauth2ExtensionConf
+		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, oauth2ExtensionName)
 	}
 
 	genericOtlpExporterName := "otlp/generic-" + dest.GetID()
-	exporterConf := GenericMap{
-		"endpoint": grpcEndpoint,
-		"tls":      tlsConfig,
+
+	// Add OAuth2 auth configuration if available
+	if oauth2ExtensionName != "" {
+		exporterConf["auth"] = GenericMap{
+			"authenticator": oauth2ExtensionName,
+		}
 	}
 
 	if compression, ok := config[otlpGrpcCompression]; ok {
@@ -106,4 +137,54 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 
 	return pipelineNames, nil
+}
+
+func applyGrpcOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap) {
+	config := dest.GetConfig()
+
+	oauth2Enabled := config[otlpGrpcOAuth2EnabledKey]
+	if oauth2Enabled != "true" {
+		return "", nil
+	}
+
+	clientId := config[otlpGrpcOAuth2ClientIdKey]
+	tokenUrl := config[otlpGrpcOAuth2TokenUrlKey]
+
+	// Note: client secret is stored in the secret and injected as environment variable
+	// We don't validate it here since it's not in the regular config data
+	if clientId == "" || tokenUrl == "" {
+		return "", nil
+	}
+
+	extensionName = "oauth2client/otlpgrpc-" + dest.GetID()
+	extensionConf = &GenericMap{
+		"client_id":     clientId,
+		"client_secret": fmt.Sprintf("${%s}", otlpGrpcOAuth2ClientSecretKey),
+		"token_url":     tokenUrl,
+	}
+
+	// Add optional endpoint parameters
+	endpointParams := GenericMap{}
+
+	// Add audience if provided
+	if audience := config[otlpGrpcOAuth2AudienceKey]; audience != "" {
+		endpointParams["audience"] = audience
+	}
+
+	// Add endpoint_params if we have any
+	if len(endpointParams) > 0 {
+		(*extensionConf)["endpoint_params"] = endpointParams
+	}
+
+	// Add scopes if provided
+	if scopes := config[otlpGrpcOAuth2ScopesKey]; scopes != "" {
+		scopesList := strings.Split(scopes, ",")
+		// Trim whitespace from each scope
+		for i, scope := range scopesList {
+			scopesList[i] = strings.TrimSpace(scope)
+		}
+		(*extensionConf)["scopes"] = scopesList
+	}
+
+	return extensionName, extensionConf
 }
