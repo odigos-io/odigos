@@ -247,6 +247,18 @@ func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v
 	return nil
 }
 
+// all "traces" related configuration for an agent running on any process in a specific container.
+// The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
+type AgentTracesConfig struct{}
+
+// all "metrics" related configuration for an agent running on any process in a specific container.
+// The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
+type AgentMetricsConfig struct{}
+
+// all "logs" related configuration for an agent running on any process in a specific container.
+// The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
+type AgentLogsConfig struct{}
+
 // ContainerAgentConfig is a configuration for a specific container in a workload.
 type ContainerAgentConfig struct {
 	// The name of the container to which this configuration applies.
@@ -269,6 +281,12 @@ type ContainerAgentConfig struct {
 	// Additional parameters to the distro that controls how it's being applied.
 	// Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
 	DistroParams map[string]string `json:"distroParams,omitempty"`
+
+	// Each enabled signal must be set with a non-nil value (even if the config content is empty).
+	// nil means that the signal is disabled and should not be instrumented/collected by the agent.
+	Traces  *AgentTracesConfig  `json:"traces,omitempty"`
+	Metrics *AgentMetricsConfig `json:"metrics,omitempty"`
+	Logs    *AgentLogsConfig    `json:"logs,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
