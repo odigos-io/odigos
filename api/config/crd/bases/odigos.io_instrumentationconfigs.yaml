@@ -101,11 +101,26 @@ spec:
                         Additional parameters to the distro that controls how it's being applied.
                         Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
                       type: object
+                    logs:
+                      description: |-
+                        all "logs" related configuration for an agent running on any process in a specific container.
+                        The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
+                      type: object
+                    metrics:
+                      description: |-
+                        all "metrics" related configuration for an agent running on any process in a specific container.
+                        The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
+                      type: object
                     otelDistroName:
                       description: |-
                         The name of the otel distribution to use for this container.
                         if the name is empty, this container should not be instrumented.
                       type: string
+                    traces:
+                      description: |-
+                        Each enabled signal must be set with a non-nil value (even if the config content is empty).
+                        nil means that the signal is disabled and should not be instrumented/collected by the agent.
+                      type: object
                   required:
                   - agentEnabled
                   - containerName
