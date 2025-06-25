@@ -193,7 +193,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 			continue
 		}
 
-		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, *pw, container, otelSdk, runtimeDetails, p.Client, config)
+		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, container, otelSdk, runtimeDetails, config)
 		if err != nil {
 			return err
 		}
@@ -218,6 +218,12 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 	if distroMetadata.EnvironmentVariables.OpAmpClientEnvironments {
 		existingEnvNames = podswebhook.InjectOpampServerEnvVar(existingEnvNames, podContainerSpec)
+	}
+	if distroMetadata.EnvironmentVariables.SignalsAsStaticOtelEnvVars {
+		tracesEnabled := containerConfig.Traces != nil
+		metricsEnabled := containerConfig.Metrics != nil
+		logsEnabled := containerConfig.Logs != nil
+		existingEnvNames = podswebhook.InjectSignalsAsStaticOtelEnvVars(existingEnvNames, podContainerSpec, tracesEnabled, metricsEnabled, logsEnabled)
 	}
 	if distroMetadata.EnvironmentVariables.OtlpHttpLocalNode {
 		existingEnvNames = podswebhook.InjectOtlpHttpEndpointEnvVar(existingEnvNames, podContainerSpec)

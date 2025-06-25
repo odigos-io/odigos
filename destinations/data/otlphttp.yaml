@@ -42,6 +42,72 @@ spec:
         tooltip: in case the otlp receiver requires basic auth, this is the password
       secret: true
 
+    - name: OTLP_HTTP_OAUTH2_ENABLED
+      displayName: Enable OAuth2
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Enable OAuth2 client credentials authentication'
+      customReadDataLabels:
+        - condition: 'true'
+          title: 'OAuth2'
+          value: 'Enabled'
+        - condition: 'false'
+          title: 'OAuth2'
+          value: 'Disabled'
+
+    - name: OTLP_HTTP_OAUTH2_CLIENT_ID
+      displayName: OAuth2 Client ID
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: 'your-client-id'
+        tooltip: 'OAuth2 client identifier for client credentials flow'
+      renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
+
+    - name: OTLP_HTTP_OAUTH2_CLIENT_SECRET
+      displayName: OAuth2 Client Secret
+      componentType: input
+      componentProps:
+        type: password
+        required: true
+        placeholder: 'your-client-secret'
+        tooltip: 'OAuth2 client secret for client credentials flow'
+      renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
+      secret: true
+
+    - name: OTLP_HTTP_OAUTH2_TOKEN_URL
+      displayName: OAuth2 Token URL
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: 'https://example.com/oauth2/token'
+        tooltip: 'OAuth2 token endpoint URL for obtaining access tokens'
+      renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
+
+    - name: OTLP_HTTP_OAUTH2_SCOPES
+      displayName: OAuth2 Scopes
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 'api.metrics,api.traces'
+        tooltip: 'Comma-separated list of OAuth2 scopes to request (e.g., "api.metrics,api.traces")'
+      renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
+
+    - name: OTLP_HTTP_OAUTH2_AUDIENCE
+      displayName: OAuth2 Audience
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 'api.example.com'
+        tooltip: 'OAuth2 audience parameter for token requests'
+      renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
+
     - name: OTLP_HTTP_COMPRESSION
       displayName: Destination Compression Type
       componentType: dropdown
