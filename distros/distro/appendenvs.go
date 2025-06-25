@@ -7,11 +7,9 @@ package distro
 func GetAppendEnvVarNames(distros []*OtelDistro) map[string]struct{} {
 	appendEnvVarNames := map[string]struct{}{}
 	for _, distro := range distros {
-		if distro.RuntimeAgent != nil {
-			for _, envVar := range distro.RuntimeAgent.EnvironmentVariables {
-				envName := envVar.EnvName
-				appendEnvVarNames[envName] = struct{}{}
-			}
+		for _, envVar := range distro.EnvironmentVariables.AppendOdigosVariables {
+			envName := envVar.EnvName
+			appendEnvVarNames[envName] = struct{}{}
 		}
 	}
 	return appendEnvVarNames
