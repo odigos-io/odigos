@@ -51,6 +51,12 @@ func syncService(ctx context.Context, c client.Client, scheme *runtime.Scheme, d
 					Port:       4318,
 					TargetPort: intstr.FromInt(4318),
 				},
+				{
+					Name:       "metrics",
+					Protocol:   "TCP",
+					Port:       8888,
+					TargetPort: intstr.FromInt(8888),
+				},
 			},
 			InternalTrafficPolicy: &localTrafficPolicy,
 		},

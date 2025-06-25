@@ -221,7 +221,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 							},
 							Args: []string{
 								"--health-probe-bind-address=:8081",
-								"--metrics-bind-address=127.0.0.1:8080",
+								"--metrics-bind-address=0.0.0.0:8080",
 								"--leader-elect",
 							},
 							Env: []corev1.EnvVar{
@@ -327,6 +327,35 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 	}
 }
 
+func NewSchedulerService(ns string) *corev1.Service {
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-scheduler",
+			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": "odigos-scheduler",
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{
+				"app.kubernetes.io/name": "odigos-scheduler",
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "metrics",
+					Port:       8080,
+					TargetPort: intstr.FromInt(8080),
+					Protocol:   corev1.ProtocolTCP,
+				},
+			},
+		},
+	}
+}
+
 type schedulerResourceManager struct {
 	client        *kube.Client
 	ns            string
@@ -350,6 +379,7 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 		NewSchedulerClusterRole(a.config.OpenshiftEnabled),
 		NewSchedulerClusterRoleBinding(a.ns),
 		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.SchedulerImage, a.config.NodeSelector),
+		NewSchedulerService(a.ns),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }
