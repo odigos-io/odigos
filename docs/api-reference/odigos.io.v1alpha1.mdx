@@ -2040,6 +2040,17 @@ If empty, no instrumentation libraries will be used.</p>
    <p>Allows to configure the collection of http headers for different types of payloads.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>traceConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+</td>
+<td>
+   <p>Configure the tracing configuration for the library.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -2445,6 +2456,17 @@ In the Future we might add another level of configuration base on the parent spa
 </td>
 <td>
    <p>default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>traceConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+</td>
+<td>
+   <p>default configuration for library tracing.</p>
 </td>
 </tr>
 </tbody>
