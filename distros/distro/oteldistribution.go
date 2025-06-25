@@ -41,6 +41,15 @@ type EnvironmentVariables struct {
 	// if `true` the OTEL_EXPORTER_OTLP_ENDPOINT environment variable will be set to LocalTrafficOTLPHttpDataCollectionEndpoint
 	OtlpHttpLocalNode bool `yaml:"otlpHttpLocalNode,omitempty"`
 
+	// some exporters will error un-nicely or even crash a pod if they try to export
+	// a signal with no receiver.
+	// for distros that can dynamically get the enabled signals list, this is not an issue,
+	// but distros that do not support it use env vars at time of pod creation to set OTEL
+	// variables to enabled signals (and avoid collecting and exporting disabled signals).
+	// notice that this value will be set once on node creation, and will not be updated,
+	// thus it is recommended to use dynamic signal list if possible.
+	SignalsAsStaticOtelEnvVars bool `yaml:"signalsAsStaticOtelEnvVars,omitempty"`
+
 	// list of static environment variables that need to be set in the application runtime.
 	StaticVariables []StaticEnvironmentVariable `yaml:"staticVariables,omitempty"`
 }
