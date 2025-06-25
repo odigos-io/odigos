@@ -66,6 +66,11 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
+	if !ic.Spec.AgentInjectionEnabled {
+		// instrumentation config exists, but no agent should be injected by webhook
+		return nil
+	}
+
 	// get the node collector group for the enabled signals.
 	// this is temporary and should be refactored so that signals are written to the instrumentation config per container.
 	// it is better to do as little resource fetching as possible in webhook.
@@ -76,11 +81,6 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return client.IgnoreNotFound(err)
 	}
 	enabledSignals := nodeCollectorGroup.Status.ReceiverSignals
-
-	if !ic.Spec.AgentInjectionEnabled {
-		// instrumentation config exists, but no agent should be injected by webhook
-		return nil
-	}
 
 	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, p.Client)
 	if err != nil {
