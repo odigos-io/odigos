@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -177,7 +178,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		}
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
-		currentContainerConfig := containerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected)
+		currentContainerConfig := containerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected, cg)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -244,7 +245,25 @@ func containerInstrumentationConfig(containerName string,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
 	distroPerLanguage map[common.ProgrammingLanguage]string,
 	distroGetter *distros.Getter,
-	crashDetected bool) odigosv1.ContainerAgentConfig {
+	crashDetected bool,
+	nodeCollectorsGroup *odigosv1.CollectorsGroup) odigosv1.ContainerAgentConfig {
+
+	// prepare the signal values based on the node collectors group.
+	// it is used later to populated enabled container config.
+	var tracesConfig *odigosv1.AgentTracesConfig
+	var metricsConfig *odigosv1.AgentMetricsConfig
+	var logsConfig *odigosv1.AgentLogsConfig
+	if nodeCollectorsGroup != nil {
+		if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.TracesObservabilitySignal) {
+			tracesConfig = &odigosv1.AgentTracesConfig{}
+		}
+		if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal) {
+			metricsConfig = &odigosv1.AgentMetricsConfig{}
+		}
+		if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.LogsObservabilitySignal) {
+			logsConfig = &odigosv1.AgentLogsConfig{}
+		}
+	}
 
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
 	// This should be done first, because user should see workload not instrumented if container is ignored over unknown language in case both exist.
@@ -400,6 +419,9 @@ func containerInstrumentationConfig(containerName string,
 				AgentEnabledMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
 				OtelDistroName:      distroName,
 				DistroParams:        distroParameters,
+				Traces:              tracesConfig,
+				Metrics:             metricsConfig,
+				Logs:                logsConfig,
 			}
 		}
 	}
@@ -409,6 +431,9 @@ func containerInstrumentationConfig(containerName string,
 		AgentEnabled:   true,
 		OtelDistroName: distroName,
 		DistroParams:   distroParameters,
+		Traces:         tracesConfig,
+		Metrics:        metricsConfig,
+		Logs:           logsConfig,
 	}
 
 }
