@@ -13,7 +13,7 @@ spec:
     This distribution is for Ruby applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
   environmentVariables:
     otlpHttpLocalNode: true
-    enabledSignalsAsStaticEnvVars: true
+    signalsAsStaticOtelEnvVars: true
     staticVariables:
       - envName: RUBYOPT
         envValue: '-r /var/odigos/ruby/{{RUNTIME_VERSION_MAJOR_MINOR}}/index'

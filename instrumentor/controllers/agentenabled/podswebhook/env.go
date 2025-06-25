@@ -94,7 +94,7 @@ func signalOtlpExporterEnvValue(enabledSignals []common.ObservabilitySignal, sig
 	return "none"
 }
 
-func InjectEnabledSignalsAsStaticEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, enabledSignals []common.ObservabilitySignal) EnvVarNamesMap {
+func InjectSignalsAsStaticOtelEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, enabledSignals []common.ObservabilitySignal) EnvVarNamesMap {
 
 	logsExporter := signalOtlpExporterEnvValue(enabledSignals, common.LogsObservabilitySignal)
 	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelLogsExporter, logsExporter, nil)

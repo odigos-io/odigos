@@ -48,7 +48,7 @@ type EnvironmentVariables struct {
 	// variables to enabled signals (and avoid collecting and exporting disabled signals).
 	// notice that this value will be set once on node creation, and will not be updated,
 	// thus it is recommended to use dynamic signal list if possible.
-	EnabledSignalsAsStaticEnvVars bool `yaml:"enabledSignalsAsStaticEnvVars,omitempty"`
+	SignalsAsStaticOtelEnvVars bool `yaml:"signalsAsStaticOtelEnvVars,omitempty"`
 
 	// list of static environment variables that need to be set in the application runtime.
 	StaticVariables []StaticEnvironmentVariable `yaml:"staticVariables,omitempty"`
