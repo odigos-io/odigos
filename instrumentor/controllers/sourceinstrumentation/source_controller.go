@@ -12,7 +12,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
@@ -38,16 +37,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// Get the object referenced by the Source to check whether the workload is being actively instrumented.
 		// The Source itself doesn't have enough information about the global state of this workload:
 		// For example, a deleted Workload Source might still be covered by a Namespace Source.
-		var obj client.Object
-		obj, err = sourceutils.GetClientObjectFromSource(ctx, r.Client, source)
-		if client.IgnoreNotFound(err) != nil {
-			// re-queue on any error besides NotFound
-			return ctrl.Result{}, err
-		}
-		if obj != nil {
-			// NotFound will return a nil object, nothing to sync without a workload obj
-			result, err = syncWorkload(ctx, r.Client, r.Scheme, obj)
-		}
+		result, err = syncWorkload(ctx, r.Client, r.Scheme, source.Spec.Workload)
 	}
 	// We could get a non-error Requeue signal from the reconcile functions,
 	// such as a conflict updating the instrumentationconfig status

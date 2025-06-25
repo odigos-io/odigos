@@ -18,7 +18,7 @@ func CalculateWorkloadRuntimeObjectName[T string | k8sconsts.WorkloadKind | k8sc
 	return strings.ToLower(string(workloadKind) + "-" + workloadName)
 }
 
-func ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName string) (workloadName string, workloadKind k8sconsts.WorkloadKind, err error) {
+func ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName string, ns string) (pw k8sconsts.PodWorkload, err error) {
 	parts := strings.SplitN(runtimeObjectName, "-", 2)
 	if len(parts) != 2 {
 		err = errors.New("invalid workload runtime object name, missing hyphen")
@@ -27,13 +27,17 @@ func ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName string) (workloa
 
 	// convert the lowercase kind to pascal case and validate it
 	workloadKindLowerCase := k8sconsts.WorkloadKindLowerCase(parts[0])
-	workloadKind = WorkloadKindFromLowerCase(workloadKindLowerCase)
+	workloadKind := WorkloadKindFromLowerCase(workloadKindLowerCase)
 	if workloadKind == "" {
 		err = ErrKindNotSupported
 		return
 	}
 
-	workloadName = parts[1]
+	workloadName := parts[1]
 
-	return
+	return k8sconsts.PodWorkload{
+		Namespace: ns,
+		Kind:      workloadKind,
+		Name:      workloadName,
+	}, nil
 }
