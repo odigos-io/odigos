@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 func GetGatewayConfig(
@@ -213,7 +214,7 @@ func insertServiceGraphPipeline(currentConfig *config.Config) {
 		"store": config.GenericMap{
 			"ttl": "5m",
 		},
-		"dimensions": []string{"service.name"},
+		"dimensions": []string{string(semconv.ServiceNameKey)},
 	}
 
 	// Add the service graph pipeline to receive the service graph metrics from the root traces pipeline
