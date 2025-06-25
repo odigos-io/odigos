@@ -1,6 +1,7 @@
 package podswebhook
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -83,6 +84,27 @@ func InjectOtlpHttpEndpointEnvVar(existingEnvNames EnvVarNamesMap, container *co
 	existingEnvNames = injectNodeIpEnvVar(existingEnvNames, container)
 	otlpHttpEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)")
 	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelExporterEndpointEnvName, otlpHttpEndpoint, nil)
+	return existingEnvNames
+}
+
+func signalOtlpExporterEnvValue(enabledSignals []common.ObservabilitySignal, signal common.ObservabilitySignal) string {
+	if slices.Contains(enabledSignals, signal) {
+		return "otlp"
+	}
+	return "none"
+}
+
+func InjectEnabledSignalsAsStaticEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, enabledSignals []common.ObservabilitySignal) EnvVarNamesMap {
+
+	logsExporter := signalOtlpExporterEnvValue(enabledSignals, common.LogsObservabilitySignal)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelLogsExporter, logsExporter, nil)
+
+	metricsExporter := signalOtlpExporterEnvValue(enabledSignals, common.MetricsObservabilitySignal)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelMetricsExporter, metricsExporter, nil)
+
+	tracesExporter := signalOtlpExporterEnvValue(enabledSignals, common.TracesObservabilitySignal)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelTracesExporter, tracesExporter, nil)
+
 	return existingEnvNames
 }
 
