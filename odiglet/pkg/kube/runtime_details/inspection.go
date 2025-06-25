@@ -25,12 +25,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient, appendEnvVarNames map[string]struct{}) ([]odigosv1.RuntimeDetailsByContainer, error) {
+func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) ([]odigosv1.RuntimeDetailsByContainer, error) {
 	resultsMap := make(map[string]odigosv1.RuntimeDetailsByContainer)
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
 
-			processes, err := process.FindAllInContainer(string(pod.UID), container.Name, appendEnvVarNames)
+			processes, err := process.FindAllInContainer(string(pod.UID), container.Name, runtimeDetectionEnvs)
 			if err != nil {
 				log.Logger.Error(err, "failed to find processes in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				return nil, err

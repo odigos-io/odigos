@@ -148,7 +148,7 @@ func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
 
 // Find all processes in the system.
 // The function accepts a predicate function that can be used to filter the results.
-func FindAllProcesses(predicate func(string) bool, appendEnvVarNames map[string]struct{}) ([]Details, error) {
+func FindAllProcesses(predicate func(string) bool, runtimeDetectionEnvs map[string]struct{}) ([]Details, error) {
 	dirs, err := os.ReadDir("/proc")
 	if err != nil {
 		return nil, err
@@ -173,17 +173,17 @@ func FindAllProcesses(predicate func(string) bool, appendEnvVarNames map[string]
 			continue
 		}
 
-		details := GetPidDetails(pid, appendEnvVarNames)
+		details := GetPidDetails(pid, runtimeDetectionEnvs)
 		result = append(result, details)
 	}
 
 	return result, nil
 }
 
-func GetPidDetails(pid int, appendEnvVarNames map[string]struct{}) Details {
+func GetPidDetails(pid int, runtimeDetectionEnvs map[string]struct{}) Details {
 	exePath := getExePath(pid)
 	cmdLine := getCommandLine(pid)
-	envVars := getRelevantEnvVars(pid, appendEnvVarNames)
+	envVars := getRelevantEnvVars(pid, runtimeDetectionEnvs)
 	secureExecutionMode, err := isSecureExecutionMode(pid)
 	secureExecutionModePtr := &secureExecutionMode
 	if err != nil {
@@ -227,7 +227,7 @@ func getCommandLine(pid int) string {
 	}
 }
 
-func getRelevantEnvVars(pid int, appendEnvVarNames map[string]struct{}) ProcessEnvs {
+func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) ProcessEnvs {
 	envFileName := fmt.Sprintf("/proc/%d/environ", pid)
 	fileContent, err := os.ReadFile(envFileName)
 	if err != nil {
@@ -260,7 +260,7 @@ func getRelevantEnvVars(pid int, appendEnvVarNames map[string]struct{}) ProcessE
 		envName := envParts[0]
 		envDetectionValue := envParts[1]
 
-		if _, ok := appendEnvVarNames[envName]; ok {
+		if _, ok := runtimeDetectionEnvs[envName]; ok {
 			overWriteEnvsResult[envName] = envDetectionValue
 		}
 

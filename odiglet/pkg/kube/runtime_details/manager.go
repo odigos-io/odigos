@@ -11,18 +11,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
-func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClient *criwrapper.CriClient, appendEnvVarNames map[string]struct{}) error {
+func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) error {
 	readyPred := &odigospredicate.AllContainersReadyPredicate{}
 	err := builder.
 		ControllerManagedBy(mgr).
 		Named("Odiglet-RuntimeDetails-Pods").
 		For(&corev1.Pod{}, builder.WithPredicates(readyPred)).
 		Complete(&PodsReconciler{
-			Client:            mgr.GetClient(),
-			Scheme:            mgr.GetScheme(),
-			Clientset:         clientset,
-			CriClient:         criClient,
-			AppendEnvVarNames: appendEnvVarNames,
+			Client:               mgr.GetClient(),
+			Scheme:               mgr.GetScheme(),
+			Clientset:            clientset,
+			CriClient:            criClient,
+			RuntimeDetectionEnvs: runtimeDetectionEnvs,
 		})
 	if err != nil {
 		return err
@@ -34,11 +34,11 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClie
 		For(&odigosv1.InstrumentationConfig{}).
 		WithEventFilter(&instrumentationConfigPredicate{}).
 		Complete(&InstrumentationConfigReconciler{
-			Client:            mgr.GetClient(),
-			Scheme:            mgr.GetScheme(),
-			Clientset:         clientset,
-			CriClient:         criClient,
-			AppendEnvVarNames: appendEnvVarNames,
+			Client:               mgr.GetClient(),
+			Scheme:               mgr.GetScheme(),
+			Clientset:            clientset,
+			CriClient:            criClient,
+			RuntimeDetectionEnvs: runtimeDetectionEnvs,
 		})
 	if err != nil {
 		return err
