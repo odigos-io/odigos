@@ -5,12 +5,12 @@ import (
 	"slices"
 	"strings"
 
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"gopkg.in/yaml.v2"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 func GetGatewayConfig(
@@ -228,8 +228,8 @@ func insertServiceGraphPipeline(currentConfig *config.Config) {
 	pipeline := currentConfig.Service.Pipelines[rootPipelineName]
 	pipeline.Exporters = append(pipeline.Exporters, "servicegraph")
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
-
 }
+
 func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 	return &config.Config{
 		Connectors: config.GenericMap{},
