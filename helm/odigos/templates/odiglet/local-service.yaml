@@ -13,6 +13,9 @@ spec:
     - name: op-amp
       port: 4320
       targetPort: 4320
+    - name: metrics
+      port: 8080
+      targetPort: 8080
   selector:
     app.kubernetes.io/name: odiglet
   internalTrafficPolicy: Local
