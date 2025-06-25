@@ -337,12 +337,12 @@ func NewSchedulerService(ns string) *corev1.Service {
 			Name:      "odigos-scheduler",
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": "odigos-scheduler",
+				"app.kubernetes.io/name": k8sconsts.SchedulerAppLabelValue,
 			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
-				"app.kubernetes.io/name": "odigos-scheduler",
+				"app.kubernetes.io/name": k8sconsts.SchedulerAppLabelValue,
 			},
 			Ports: []corev1.ServicePort{
 				{

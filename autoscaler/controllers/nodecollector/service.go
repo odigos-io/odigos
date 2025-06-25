@@ -55,7 +55,7 @@ func syncService(ctx context.Context, c client.Client, scheme *runtime.Scheme, d
 					Name:       "metrics",
 					Protocol:   "TCP",
 					Port:       8888,
-					TargetPort: intstr.FromInt(8888),
+					TargetPort: intstr.FromInt32(k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault),
 				},
 			},
 			InternalTrafficPolicy: &localTrafficPolicy,
