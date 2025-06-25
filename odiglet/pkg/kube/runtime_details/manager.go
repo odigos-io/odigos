@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
-func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClient *criwrapper.CriClient) error {
+func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClient *criwrapper.CriClient, appendEnvVarNames map[string]struct{}) error {
 	readyPred := &odigospredicate.AllContainersReadyPredicate{}
 	err := builder.
 		ControllerManagedBy(mgr).

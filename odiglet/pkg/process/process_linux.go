@@ -44,6 +44,6 @@ func isPodContainerPredicate(podUID string, containerName string) func(string) b
 	}
 }
 
-func FindAllInContainer(podUID string, containerName string) ([]procdiscovery.Details, error) {
-	return procdiscovery.FindAllProcesses(isPodContainerPredicate(podUID, containerName))
+func FindAllInContainer(podUID string, containerName string, appendEnvVarNames map[string]struct{}) ([]procdiscovery.Details, error) {
+	return procdiscovery.FindAllProcesses(isPodContainerPredicate(podUID, containerName), appendEnvVarNames)
 }

@@ -86,7 +86,7 @@ func CreateManager() (ctrl.Manager, error) {
 }
 
 func SetupWithManager(kubeManagerOptions KubeManagerOptions) error {
-	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.Clientset, kubeManagerOptions.CriClient)
+	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.Clientset, kubeManagerOptions.CriClient, kubeManagerOptions.AppendEnvVarNames)
 	if err != nil {
 		return err
 	}

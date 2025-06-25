@@ -24,6 +24,10 @@ type PodsReconciler struct {
 	// which can be expensive (memory and CPU)
 	Clientset *kubernetes.Clientset
 	CriClient *criwrapper.CriClient
+
+	// map where keys are the names of the environment variables that participate in append mechanism
+	// they need to be recorded by runtime detection into the runtime info, and this list instruct what to collect.
+	AppendEnvVarNames map[string]struct{}
 }
 
 // We need to apply runtime details detection for a new running pod in the following cases:
@@ -56,7 +60,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 	}
 
 	// Perform runtime inspection once we know the pod is newer that the latest runtime inspection performed and saved.
-	runtimeResults, err := runtimeInspection(ctx, []corev1.Pod{pod}, p.CriClient)
+	runtimeResults, err := runtimeInspection(ctx, []corev1.Pod{pod}, p.CriClient, p.AppendEnvVarNames)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
