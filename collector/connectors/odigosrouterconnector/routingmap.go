@@ -2,6 +2,7 @@ package odigosrouterconnector
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/pipelinegen"
@@ -45,8 +46,8 @@ func BuildSignalRoutingMap(dataStreams []pipelinegen.DataStreams) SignalRoutingM
 			}
 
 			for _, signal := range signalsForDataStream {
-				pipeline := dataStream.Name
-				result[key][signal] = appendIfMissing(result[key][signal], pipeline)
+				dataStreamName := dataStream.Name
+				result[key][signal] = appendIfMissing(result[key][signal], dataStreamName)
 			}
 		}
 	}
@@ -57,13 +58,10 @@ func BuildSignalRoutingMap(dataStreams []pipelinegen.DataStreams) SignalRoutingM
 // normalizeKind ensures kind comparisons are case-insensitive and aligned with OTel semantic keys
 // e.g: Deployment -> deployment, StatefulSet -> statefulset, DaemonSet -> daemonset
 func NormalizeKind(kind string) string {
-	switch kind {
-	case "Deployment", "deployment":
-		return "deployment"
-	case "StatefulSet", "statefulset":
-		return "statefulset"
-	case "DaemonSet", "daemonset":
-		return "daemonset"
+	normalized := strings.ToLower(kind)
+	switch normalized {
+	case "deployment", "statefulset", "daemonset", "cronjob":
+		return normalized
 	default:
 		return kind
 	}
