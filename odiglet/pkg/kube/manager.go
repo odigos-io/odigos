@@ -3,7 +3,6 @@ package kube
 import (
 	"fmt"
 
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/instrumentation"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
@@ -88,16 +87,7 @@ func CreateManager() (ctrl.Manager, error) {
 
 func SetupWithManager(kubeManagerOptions KubeManagerOptions) error {
 
-	runtimeDetectionEnvs := map[string]struct{}{
-		// LD_PRELOAD is special, and is always collected.
-		// It has special handling that does not require it to be set in the "AppendOdigosVariables" list.
-		consts.LdPreloadEnvVarName: {},
-	}
-	for envName := range kubeManagerOptions.AppendEnvVarNames {
-		runtimeDetectionEnvs[envName] = struct{}{}
-	}
-
-	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.Clientset, kubeManagerOptions.CriClient, runtimeDetectionEnvs)
+	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.Clientset, kubeManagerOptions.CriClient, kubeManagerOptions.AppendEnvVarNames)
 	if err != nil {
 		return err
 	}
