@@ -16,6 +16,7 @@ spec:
     appendOdigosVariables:
       - envName: JAVA_TOOL_OPTIONS
         replacePattern: '{{ORIGINAL_ENV_VALUE}} -javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar'
+    signalsAsStaticOtelEnvVars: true
   runtimeAgent:
     directoryNames:
       - "{{ODIGOS_AGENTS_DIR}}/java"

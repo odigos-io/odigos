@@ -17,6 +17,7 @@ import (
 	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
@@ -70,6 +71,17 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
+	// get the node collector group for the enabled signals.
+	// this is temporary and should be refactored so that signals are written to the instrumentation config per container.
+	// it is better to do as little resource fetching as possible in webhook.
+	odigosNamespace := env.GetCurrentNamespace()
+	var nodeCollectorGroup odigosv1.CollectorsGroup
+	if err := p.Get(ctx, client.ObjectKey{Namespace: odigosNamespace, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, &nodeCollectorGroup); err != nil {
+		logger.Error(err, "failed to get node collector group. Skipping Injection of ODIGOS agent")
+		return client.IgnoreNotFound(err)
+	}
+	enabledSignals := nodeCollectorGroup.Status.ReceiverSignals
+
 	odigosConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, p.Client)
 	if err != nil {
 		logger.Error(err, "failed to get ODIGOS config. Skipping Injection of ODIGOS agent")
@@ -107,7 +119,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 			continue
 		}
 
-		containerVolumeMounted, err := p.injectOdigosToContainer(containerConfig, runtimeDetails, podContainerSpec, *pw, serviceName, odigosConfig)
+		containerVolumeMounted, err := p.injectOdigosToContainer(containerConfig, runtimeDetails, podContainerSpec, *pw, serviceName, odigosConfig, enabledSignals)
 		if err != nil {
 			logger.Error(err, "failed to inject ODIGOS agent to container")
 			continue
@@ -193,7 +205,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 			continue
 		}
 
-		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, *pw, container, otelSdk, runtimeDetails, p.Client, config)
+		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, container, otelSdk, runtimeDetails, config)
 		if err != nil {
 			return err
 		}
@@ -201,7 +213,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 	return nil
 }
 
-func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, runtimeDetails *odigosv1.RuntimeDetailsByContainer, podContainerSpec *corev1.Container, pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration) (bool, error) {
+func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, runtimeDetails *odigosv1.RuntimeDetailsByContainer, podContainerSpec *corev1.Container, pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration, enabledSignals []common.ObservabilitySignal) (bool, error) {
 	distroName := containerConfig.OtelDistroName
 	distroMetadata := p.DistrosGetter.GetDistroByName(distroName)
 	if distroMetadata == nil {
@@ -218,6 +230,9 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 	if distroMetadata.EnvironmentVariables.OpAmpClientEnvironments {
 		existingEnvNames = podswebhook.InjectOpampServerEnvVar(existingEnvNames, podContainerSpec)
+	}
+	if distroMetadata.EnvironmentVariables.SignalsAsStaticOtelEnvVars {
+		existingEnvNames = podswebhook.InjectSignalsAsStaticOtelEnvVars(existingEnvNames, podContainerSpec, enabledSignals)
 	}
 	if distroMetadata.EnvironmentVariables.OtlpHttpLocalNode {
 		existingEnvNames = podswebhook.InjectOtlpHttpEndpointEnvVar(existingEnvNames, podContainerSpec)
