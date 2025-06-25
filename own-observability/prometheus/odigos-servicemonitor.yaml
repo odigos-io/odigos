@@ -92,3 +92,22 @@ spec:
     - port: metrics
       path: /metrics
       interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: odigos-odiglet-monitor
+  namespace: odigos-system
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odiglet
+  namespaceSelector:
+    matchNames:
+      - odigos-system
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
