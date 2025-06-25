@@ -365,6 +365,35 @@ func (sdm *singleDestinationMetrics) metrics() trafficMetrics {
 	return resultMetrics
 }
 
+// ServiceGraphEdges returns a snapshot of the service graph edges
+// It is used to build the service graph in the UI
+// example of the structure of the result:
+// map[
+//   coupon: map[
+//     membership:        {0 2025-06-24 16:16:39.384 +0000 UTC}
+//   ]
+
+//   frontend: map[
+//     coupon:            {0 2025-06-24 16:16:39.384 +0000 UTC}
+//     currency:          {0 2025-06-24 16:16:39.384 +0000 UTC}
+//     geolocation:       {0 2025-06-24 16:16:39.384 +0000 UTC}
+//     inventory:         {0 2025-06-24 16:16:39.384 +0000 UTC}
+//     pricing:           {0 2025-06-24 16:16:39.384 +0000 UTC}
+//   ]
+
+//   prometheus-server: map[
+//     prometheus-kube-state-metrics:      {181 2025-06-25 06:01:07.771 +0000 UTC}
+//     prometheus-prometheus-node-exporter:{181 2025-06-25 06:01:07.771 +0000 UTC}
+//     prometheus-prometheus-pushgateway:  {181 2025-06-25 06:01:07.771 +0000 UTC}
+//     prometheus-server:                  {181 2025-06-25 06:01:07.771 +0000 UTC}
+//   ]
+
+//   user: map[
+//     frontend:                          {0 2025-06-24 16:16:39.384 +0000 UTC}
+//     prometheus-server:                {2814 2025-06-25 06:01:07.771 +0000 UTC}
+//   ]
+// ]
+
 func (ccm *clusterCollectorMetrics) serviceGraphEdges() map[string]map[string]ServiceGraphEdge {
 	ccm.serviceGraph.mu.Lock()
 	defer ccm.serviceGraph.mu.Unlock()
