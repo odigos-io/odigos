@@ -18,10 +18,11 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClie
 		Named("Odiglet-RuntimeDetails-Pods").
 		For(&corev1.Pod{}, builder.WithPredicates(readyPred)).
 		Complete(&PodsReconciler{
-			Client:    mgr.GetClient(),
-			Scheme:    mgr.GetScheme(),
-			Clientset: clientset,
-			CriClient: criClient,
+			Client:            mgr.GetClient(),
+			Scheme:            mgr.GetScheme(),
+			Clientset:         clientset,
+			CriClient:         criClient,
+			AppendEnvVarNames: appendEnvVarNames,
 		})
 	if err != nil {
 		return err
@@ -33,10 +34,11 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClie
 		For(&odigosv1.InstrumentationConfig{}).
 		WithEventFilter(&instrumentationConfigPredicate{}).
 		Complete(&InstrumentationConfigReconciler{
-			Client:    mgr.GetClient(),
-			Scheme:    mgr.GetScheme(),
-			Clientset: clientset,
-			CriClient: criClient,
+			Client:            mgr.GetClient(),
+			Scheme:            mgr.GetScheme(),
+			Clientset:         clientset,
+			CriClient:         criClient,
+			AppendEnvVarNames: appendEnvVarNames,
 		})
 	if err != nil {
 		return err
