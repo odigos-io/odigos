@@ -1,7 +1,6 @@
 package collectormetrics
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -474,23 +473,5 @@ func (sg *ServiceGraph) UpdateFromDataPoint(dp pmetric.NumberDataPoint) {
 		// always overwrite because it's a cumulative counter
 		edge.RequestCount = val
 		edge.LastUpdated = timestamp
-	}
-}
-
-func (sg *ServiceGraph) DebugPrintEdges() {
-	sg.mu.Lock()
-	defer sg.mu.Unlock()
-
-	if len(sg.edges) == 0 {
-		fmt.Println("🔍 Service graph is currently empty.")
-		return
-	}
-
-	fmt.Println("📊 Current Service Graph Edges:")
-	for client, servers := range sg.edges {
-		for server, edge := range servers {
-			fmt.Printf("  %s → %s : %d requests (last updated: %s)\n",
-				client, server, edge.RequestCount, edge.LastUpdated.Format(time.RFC3339))
-		}
 	}
 }
