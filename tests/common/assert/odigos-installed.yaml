@@ -119,7 +119,7 @@ metadata:
   labels:
     odigos.io/config: '1'
     odigos.io/system-object: "true"
-  name: odigos-config
+  name: odigos-configuration
   namespace: odigos-test
 ---
 apiVersion: apiextensions.k8s.io/v1

@@ -17,7 +17,7 @@ import GettingHelp from '/snippets/getting-help-section.mdx'
 Odigos offers two main options for configuring the pipeline:
 
 <Warning>
-  When configuring the pipeline, you must use **only one of the two methods** — either `profiles`, or directly editing the `odigos-config` ConfigMap.
+  When configuring the pipeline, you must use **only one of the two methods** — either `profiles`, or directly editing the `odigos-configuration` ConfigMap.
 
   Using both methods will result in configurations overwriting each other, potentially leading to unexpected behavior.
 </Warning>
@@ -45,9 +45,9 @@ Sizing Profiles `size_s`, `size_m`, `size_l` are pre-defined configurations desi
 | `size_m` | **250Mi**            | **500Mi**         | **250m**             | **500m**         |
 | `size_l` | **500Mi**            | **750Mi**         | **500m**             | **750m**         |
 
-#### 2. Directly Editing the `odigos-config` ConfigMap
+#### 2. Directly Editing the `odigos-configuration` ConfigMap
 
-For more advanced control over the pipeline, you can directly edit the `odigos-config` ConfigMap. This method allows you to configure additional `collectorGateway` settings.
+For more advanced control over the pipeline, you can directly edit the `odigos-configuration` ConfigMap. This method allows you to configure additional `collectorGateway` settings.
 
 Editing the ConfigMap allows you to fine-tune every aspect of the pipeline to meet custom requirements. Below is an example of how to configure the `collectorGateway` parameters:
 

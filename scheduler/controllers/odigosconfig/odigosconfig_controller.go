@@ -107,7 +107,7 @@ func (r *odigosConfigController) getOdigosConfigMap(ctx context.Context) (*corev
 	var configMap corev1.ConfigMap
 	odigosNs := env.GetCurrentNamespace()
 
-	// read current content in odigos-config, which is the content supplied by the user.
+	// read current content in odigos-configuration, which is the content supplied by the user.
 	// this is the baseline for reconciling, without defaults and profiles applied.
 	err := r.Client.Get(ctx, types.NamespacedName{Namespace: odigosNs, Name: consts.OdigosConfigurationName}, &configMap)
 	if err != nil {

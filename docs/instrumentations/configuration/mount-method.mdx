@@ -56,7 +56,7 @@ If it is supported in the cluster, it is preferred to use over the VirtualDevice
 
 - Helm Chart: in your values file, set `instrumentor.mountMethod` to `k8s-host-path`, or use helm cli `--set instrumentor.mountMethod=k8s-host-path` flag with helm upgrade.
 
-- Kubernetes Manifest: under the `odigos-config` ConfigMap in odigos namespace, set the value in the `mountMethod` field of `config.yaml` to `k8s-host-path`.
+- Kubernetes Manifest: under the `odigos-configuration` ConfigMap in odigos namespace, set the value in the `mountMethod` field of `config.yaml` to `k8s-host-path`.
 
 **Pod Manifest Additions**
 

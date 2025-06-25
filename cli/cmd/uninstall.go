@@ -113,7 +113,7 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 					os.Exit(1)
 				}
 				if IsOdigosHelmInstallation(odigosDeployment) {
-					// PATCH: Currently, the odigos-config resource has a Helm hook annotation,
+					// PATCH: Currently, the odigos-configuration resource has a Helm hook annotation,
 					// so it is not managed by Helm (i.e., it lacks Helm metadata labels).
 					// As a result, running `helm uninstall` does not delete this object
 					// (or the corresponding effective-config).
