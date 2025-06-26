@@ -203,12 +203,6 @@ spec:
                             name:
                               type: string
                           type: object
-                        runtimeUpdateState:
-                          description: A temporary variable used during migration
-                            to track whether the new runtime detection process has
-                            been executed. If empty, it indicates the process has
-                            not yet been run. This field may be removed later.
-                          type: string
                         runtimeVersion:
                           type: string
                         secureExecutionMode:
@@ -772,12 +766,6 @@ spec:
                         name:
                           type: string
                       type: object
-                    runtimeUpdateState:
-                      description: A temporary variable used during migration to track
-                        whether the new runtime detection process has been executed.
-                        If empty, it indicates the process has not yet been run. This
-                        field may be removed later.
-                      type: string
                     runtimeVersion:
                       type: string
                     secureExecutionMode:

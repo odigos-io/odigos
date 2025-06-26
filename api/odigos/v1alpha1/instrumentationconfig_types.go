@@ -191,14 +191,6 @@ type EnvVar struct {
 	Value string `json:"value"`
 }
 
-type ProcessingState string
-
-const (
-	ProcessingStateFailed    ProcessingState = "Failed"    // Used when CRI fails to detect the runtime envs
-	ProcessingStateSucceeded ProcessingState = "Succeeded" // Indicates that CRI successfully processed the runtime environments, even if no environments were detected.
-	ProcessingStateSkipped   ProcessingState = "Skipped"   // Used when env originally come from manifest
-)
-
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
 	ContainerName  string                     `json:"containerName"`
@@ -215,8 +207,6 @@ type RuntimeDetailsByContainer struct {
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
 	// Holds the environment variables retrieved from the container runtime.
 	EnvFromContainerRuntime []EnvVar `json:"envFromContainerRuntime,omitempty"`
-	// A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.
-	RuntimeUpdateState *ProcessingState `json:"runtimeUpdateState,omitempty"`
 }
 
 type InstrumentationConfigStatus struct {

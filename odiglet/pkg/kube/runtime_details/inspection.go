@@ -155,15 +155,6 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 
 	envVarNames = append(envVarNames, consts.LdPreloadEnvVarName)
 
-	// Verify if environment variables already exist in the container manifest.
-	// If they exist, set the RuntimeUpdateState as ProcessingStateSkipped.
-	if envsExistsInManifest := checkEnvVarsInContainerManifest(container, envVarNames); envsExistsInManifest {
-		runtimeDetailsByContainer := (*resultsMap)[container.Name]
-		state := odigosv1.ProcessingStateSkipped
-		runtimeDetailsByContainer.RuntimeUpdateState = &state
-		(*resultsMap)[container.Name] = runtimeDetailsByContainer
-	}
-
 	// Environment variables do not exist in the manifest; fetch them from the container's Image
 	fetchAndSetEnvFromContainerRuntime(ctx, criClient, pod, container, envVarNames, resultsMap, procEnvVars)
 }
@@ -221,22 +212,6 @@ func getContainerID(containerStatuses []corev1.ContainerStatus, containerName st
 		}
 	}
 	return ""
-}
-
-func checkEnvVarsInContainerManifest(container corev1.Container, envVarNames []string) bool {
-	// Create a map for quick lookup of envVar names
-	envVarSet := make(map[string]struct{})
-	for _, name := range envVarNames {
-		envVarSet[name] = struct{}{}
-	}
-
-	// Iterate over the container's environment variables
-	for _, containerEnvVar := range container.Env {
-		if _, exists := envVarSet[containerEnvVar.Name]; exists {
-			return true
-		}
-	}
-	return false
 }
 
 func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, newRuntimeDetials []odigosv1.RuntimeDetailsByContainer) error {
