@@ -8,7 +8,4 @@ rules:
 - apiGroups: ["odigos.io"]
   resources: ["sources"]
   verbs: ["list", "delete"]
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["list"]
 
