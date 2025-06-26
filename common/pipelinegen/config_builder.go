@@ -136,7 +136,7 @@ func CalculateGatewayConfig(
 
 	// Optional: Add collector self-observability
 	if applySelfTelemetry != nil {
-		if err := applySelfTelemetry(currentConfig, unifiedDestinationPipelineNames, GetSignalsRootPipelines()); err != nil {
+		if err := applySelfTelemetry(currentConfig, unifiedDestinationPipelineNames, GetSignalsRootPipelineNames()); err != nil {
 			return "", err, status, nil
 		}
 	}
@@ -184,7 +184,7 @@ func insertRootPipelinesToConfig(currentConfig *config.Config, dataStreamsDetail
 
 func applyRootPipelineForSignal(currentConfig *config.Config, signal common.ObservabilitySignal,
 	processors []string, dataStreamsDetails []DataStreams) {
-	rootPipelineName := GetTelemetryRootPipeline(signal)
+	rootPipelineName := GetTelemetryRootPipelineName(signal)
 	fullProcessors := append([]string{"memory_limiter", "resource/odigos-version"}, processors...)
 
 	connectorName := fmt.Sprintf("odigosrouterconnector/%s", strings.ToLower(string(signal)))
@@ -229,6 +229,7 @@ func insertServiceGraphPipeline(currentConfig *config.Config) {
 	pipeline.Exporters = append(pipeline.Exporters, "servicegraph")
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
 }
+
 
 func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 	return &config.Config{
@@ -300,7 +301,6 @@ func filterSmallBatchesProcessor(tracesProcessors []string) ([]string, bool) {
 
 	return filtered, smallBatchesEnabled
 }
-
 func AddServiceGraphScrapeConfig(c *config.Config) {
 	servicegraphScrape := config.GenericMap{
 		"job_name":        "servicegraph",

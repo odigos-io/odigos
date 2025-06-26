@@ -49,13 +49,13 @@ var telemetryRootPipelinesBySignal = map[common.ObservabilitySignal]string{
 	common.LogsObservabilitySignal:    strings.ToLower(string(common.LogsObservabilitySignal)) + "/in",
 }
 
-func GetTelemetryRootPipeline(signal common.ObservabilitySignal) string {
+func GetTelemetryRootPipelineName(signal common.ObservabilitySignal) string {
 	return telemetryRootPipelinesBySignal[signal]
 }
-func GetSignalsRootPipelines() []string {
+func GetSignalsRootPipelineNames() []string {
 	return []string{
-		GetTelemetryRootPipeline(common.TracesObservabilitySignal),
-		GetTelemetryRootPipeline(common.MetricsObservabilitySignal),
-		GetTelemetryRootPipeline(common.LogsObservabilitySignal),
+		GetTelemetryRootPipelineName(common.TracesObservabilitySignal),
+		GetTelemetryRootPipelineName(common.MetricsObservabilitySignal),
+		GetTelemetryRootPipelineName(common.LogsObservabilitySignal),
 	}
 }

@@ -1,0 +1,13 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: disable-gin
+spec:
+  ruleName: "disable gin"
+  notes: "Auto generated rule from disable-gin profile. Do not edit."
+  instrumentationLibraries:
+    - name: github.com/gin-gonic/gin
+      language: go
+      spanKind: server
+  traceConfig:
+    disabled: true

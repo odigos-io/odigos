@@ -548,6 +548,42 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 
 
 
+## `AgentLogsConfig` <a id="odigos-io-v1alpha1-AgentLogsConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+<p>all &quot;logs&quot; related configuration for an agent running on any process in a specific container.
+The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.</p>
+
+
+
+## `AgentMetricsConfig` <a id="odigos-io-v1alpha1-AgentMetricsConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+<p>all &quot;metrics&quot; related configuration for an agent running on any process in a specific container.
+The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.</p>
+
+
+
+## `AgentTracesConfig` <a id="odigos-io-v1alpha1-AgentTracesConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+<p>all &quot;traces&quot; related configuration for an agent running on any process in a specific container.
+The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.</p>
+
+
+
 ## `Attribute` <a id="odigos-io-v1alpha1-Attribute"></a>
     
 
@@ -1041,6 +1077,40 @@ if the name is empty, this container should not be instrumented.</p>
    <p>Additional parameters to the distro that controls how it's being applied.
 Keys are parameter names (like &quot;libc&quot;) and values are the value to use for that parameter (glibc / musl)</p>
 </td>
+</tr>
+<tr>
+<td>
+<code>traces</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentTracesConfig"><code>AgentTracesConfig</code></a>
+</td>
+<td>
+   <p>Each enabled signal must be set with a non-nil value (even if the config content is empty).
+nil means that the signal is disabled and should not be instrumented/collected by the agent.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>metrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentMetricsConfig"><code>AgentMetricsConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>logs</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentLogsConfig"><code>AgentLogsConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 </tbody>
 </table>
@@ -1970,6 +2040,17 @@ If empty, no instrumentation libraries will be used.</p>
    <p>Allows to configure the collection of http headers for different types of payloads.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>traceConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+</td>
+<td>
+   <p>Configure the tracing configuration for the library.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -2375,6 +2456,17 @@ In the Future we might add another level of configuration base on the parent spa
 </td>
 <td>
    <p>default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>traceConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+</td>
+<td>
+   <p>default configuration for library tracing.</p>
 </td>
 </tr>
 </tbody>

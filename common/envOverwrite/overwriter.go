@@ -91,12 +91,6 @@ func CleanupEnvValueFromOdigosAdditions(envVarName string, envVarValue string) s
 		envVarValue = strings.ReplaceAll(envVarValue, value, "")
 	}
 
-	// remove any odigos special values if they exist
-	if envVarName == "JAVA_OPTS" || envVarName == "JAVA_TOOL_OPTIONS" {
-		envVarValue = strings.ReplaceAll(envVarValue, " -javaagent:/opt/sre-agent/sre-agent.jar", "")
-		envVarValue = strings.ReplaceAll(envVarValue, " newrelic/bootstrap", "")
-	}
-
 	return envVarValue
 }
 
