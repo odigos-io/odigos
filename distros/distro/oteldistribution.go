@@ -41,28 +41,42 @@ type EnvironmentVariables struct {
 	// if `true` the OTEL_EXPORTER_OTLP_ENDPOINT environment variable will be set to LocalTrafficOTLPHttpDataCollectionEndpoint
 	OtlpHttpLocalNode bool `yaml:"otlpHttpLocalNode,omitempty"`
 
+	// some exporters will error un-nicely or even crash a pod if they try to export
+	// a signal with no receiver.
+	// for distros that can dynamically get the enabled signals list, this is not an issue,
+	// but distros that do not support it use env vars at time of pod creation to set OTEL
+	// variables to enabled signals (and avoid collecting and exporting disabled signals).
+	// notice that this value will be set once on node creation, and will not be updated,
+	// thus it is recommended to use dynamic signal list if possible.
+	SignalsAsStaticOtelEnvVars bool `yaml:"signalsAsStaticOtelEnvVars,omitempty"`
+
 	// list of static environment variables that need to be set in the application runtime.
 	StaticVariables []StaticEnvironmentVariable `yaml:"staticVariables,omitempty"`
+
+	// list of environment variables that needs to be appended based on the existing value.
+	AppendOdigosVariables []AppendOdigosEnvironmentVariable `yaml:"appendOdigosVariables,omitempty"`
 }
 
 // this struct describes environment variables that needs to be set in the application runtime
 // to enable the distribution.
 // This environment variable should be patched with odigos value if it already exists in the manifest.
 // If this value is determined to arrive from Container Runtime during runtime inspection, this value should be set in manifest so not to break the application.
-type RuntimeAgentEnvironmentVariable struct {
+type AppendOdigosEnvironmentVariable struct {
 
 	// The name of the environment variable to set or patch.
 	EnvName string `yaml:"envName"`
 
-	// The value of the environment variable to set or patch.
-	// One special value can be used in this text which is substituted by the actual value at runtime.
-	// The special value is: `{{ODIGOS_AGENTS_DIR}}` which is replaced by `/var/odigos`, for k8s and with other values for other platforms.
-	EnvValue string `yaml:"envValue"`
-
-	// In case the environment variable needs to be appended to an existing value,
-	// this field specifies the delimiter to use.
-	// e.g. `:` for PYTHONPATH=/path/to/lib1:/path/to/lib2
-	Delimiter string `yaml:"delimiter"`
+	// A pattern to replace the existing value in case it exists.
+	// An example is `{{ORIGINAL_ENV_VALUE}} -javaagent:{{ODIGOS_AGENTS_DIR}}/java/javaagent.jar`
+	// while updating an env var value, the user can use pre-defined templates to interact with dynamic values:
+	// - `{{ORIGINAL_ENV_VALUE}}` - the original value of the environment variable
+	// - `{{ODIGOS_AGENTS_DIR}}` - where odigos directory is mounted in the container ('/var/odigos' for k8s, and other values for other platforms)
+	//
+	// This allows distros to update the value with control over:
+	// - the delimiter used for this language
+	// - if odigos value is prepended or appended (or both)
+	// - reference the agents directory in a platform-agnostic way
+	ReplacePattern string `yaml:"replacePattern"`
 }
 
 type RuntimeAgent struct {
@@ -86,10 +100,6 @@ type RuntimeAgent struct {
 	// This list contains the full path of the files that need to be opened for the agent to properly start.
 	// All these paths must be contained in one of the directoryNames.
 	FileOpenTriggers []string `yaml:"fileOpenTriggers,omitempty"`
-
-	// List of environment variables that need to be set in the application runtime to enable the distribution.
-	// those are patched if exist in the manifest, and supplemented from runtime inspection when relevant (value from docker runtime).
-	EnvironmentVariables []RuntimeAgentEnvironmentVariable `yaml:"environmentVariables,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
