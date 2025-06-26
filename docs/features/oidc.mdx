@@ -1,0 +1,41 @@
+---
+title: 'OIDC (OpenID Connect)'
+description: 'OIDC is a standard for authentication and authorization that allows you to authenticate users with an external identity provider.'
+sidebarTitle: 'OIDC (OpenID Connect)'
+icon: 'key'
+---
+
+## Getting Started
+
+To get started with OIDC, you need to configure the Odigos UI to use an external identity provider.
+
+<Steps>
+  <Step title="Create a new OIDC application in your identity provider">
+    <Info>
+      You can use the [Okta](https://help.okta.com/en-us/content/topics/apps/apps_app_integration_wizard_oidc.htm) or [Auth0](https://auth0.com/docs/authenticate/identity-providers/enterprise-identity-providers/oidc) guides to create a new OIDC provider.
+    </Info>
+    <Warning>
+      Please note that the OIDC application should be configured to allow the Odigos UI to access the `Login redirect URLs`.
+
+      - If you are using the default Odigos UI, the redirect URL should be `http://localhost:3000/auth/callback`.
+      - If you are using a custom/remote UI, the redirect URL should be the URL of the Odigos UI, with the path `/auth/callback`.<br />
+      For example, if you are using a remote UI at `https://my-odigos-ui.com`, the redirect URL should be `https://my-odigos-ui.com/auth/callback`.
+    </Warning>
+  </Step>
+  <Step title="Set OIDC variables">
+    Use the [`odigos config set`](/cli/odigos_config_set) command to set the OIDC variables in the `odigos-config` ConfigMap. The values can be obtained from the identity provider, after creating the OIDC application.
+
+    ```bash
+    odigos config set oidc-tenant-url <value>
+    odigos config set oidc-client-id <value>
+    odigos config set oidc-client-secret <value>
+    ```
+  </Step>
+  <Step title="Set UI remote URL (optional)">
+    If you are hosting the Odigos UI on a custom/remote URL (e.g. `https://my-odigos-ui.com`), you should set the value in the `odigos-config` ConfigMap.
+
+    ```bash
+    odigos config set ui-remote-url <value>
+    ```
+  </Step>
+</Steps>
