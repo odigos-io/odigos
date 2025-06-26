@@ -224,12 +224,11 @@ func insertServiceGraphPipeline(currentConfig *config.Config) {
 	}
 
 	// Add the service graph exporter to the root traces pipeline
-	rootPipelineName := GetTelemetryRootPipeline(common.TracesObservabilitySignal)
+	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
 	pipeline := currentConfig.Service.Pipelines[rootPipelineName]
 	pipeline.Exporters = append(pipeline.Exporters, "servicegraph")
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
 }
-
 
 func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 	return &config.Config{
