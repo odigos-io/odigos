@@ -25,12 +25,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient) ([]odigosv1.RuntimeDetailsByContainer, error) {
+func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) ([]odigosv1.RuntimeDetailsByContainer, error) {
 	resultsMap := make(map[string]odigosv1.RuntimeDetailsByContainer)
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
 
-			processes, err := process.FindAllInContainer(string(pod.UID), container.Name)
+			processes, err := process.FindAllInContainer(string(pod.UID), container.Name, runtimeDetectionEnvs)
 			if err != nil {
 				log.Logger.Error(err, "failed to find processes in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				return nil, err
@@ -49,7 +49,14 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL, log.Logger)
 				if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
 					inspectProc = &proc
-					break
+
+					// c++ can be a wrapper of script etc.
+					// we want to detect the "later" language to get the real application.
+					// but we also want to detect c++ if it is the only language detected.
+					// so we break only if we have a language other than c++.
+					if programLanguageDetails.Language != common.CPlusPlusProgrammingLanguage {
+						break
+					}
 				}
 			}
 
@@ -84,6 +91,12 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 					if strings.Contains(inspectProc.CmdLine, otherAgentCmdSubstring) {
 						detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
 					}
+				}
+
+				// Agent that can be detected using environment variables
+				val, ok := inspectProc.Environments.OverwriteEnvs[consts.LdPreloadEnvVarName]
+				if ok && strings.Contains(val, procdiscovery.DynatraceFullStackEnvValuePrefix) {
+					detectedAgent = &odigosv1.OtherAgent{Name: procdiscovery.DynatraceAgentName}
 				}
 
 				// Inspecting libc type is expensive and not relevant for all languages

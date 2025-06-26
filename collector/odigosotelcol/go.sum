@@ -1273,6 +1273,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otl
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.126.0/go.mod h1:+LJj/UrcAdk3ALRIwBQGSAVr57ocKsicNolUCBgzBfA=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.126.0 h1:IPzKUYR0CJ/+hyC85r+jbi1AYGnyYvAqoMozQvVQcVQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.126.0/go.mod h1:84W9MiVXcyPUz2j5FyJOPfBFoopPJI0CqbytMW8+mR0=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.126.0 h1:0osG0G6G2DNUnN3DCG6bxXTZPERuM5Me+1hBkhYb+9E=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.126.0/go.mod h1:7/NufHSTKvNGv1KN9db5zu8qPenXOgmP7KUTBTrrR3E=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.126.0 h1:6xtTLFmApqn2NofbVI/+EvtrkxD43XTHPt5EaGgpV20=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.126.0/go.mod h1:JiO595H5WXIg53kL05OYgl9JvodtDHSO6JtSejGbsM4=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/storage v0.126.0 h1:Vx5o3YIPmdeeE8gfqw1b1o2afv/9wgUpTVXwpIWRvVM=

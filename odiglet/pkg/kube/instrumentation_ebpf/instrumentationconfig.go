@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -28,15 +27,9 @@ var (
 )
 
 func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name)
+	podWorkload, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name, req.Namespace)
 	if err != nil {
 		return ctrl.Result{}, err
-	}
-
-	podWorkload := k8sconsts.PodWorkload{
-		Namespace: req.Namespace,
-		Kind:      workloadKind,
-		Name:      workloadName,
 	}
 
 	// Fetch the InstrumentationConfig instrumentationConfig

@@ -97,7 +97,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	for i := range pod.Spec.Containers {
 		podContainerSpec := &pod.Spec.Containers[i]
 		containerConfig := ic.Spec.GetContainerAgentConfig(podContainerSpec.Name)
-		runtimeDetails := ic.Status.GetRuntimeDetailsForContainer(corev1.Container(*podContainerSpec))
+		runtimeDetails := getRuntimeInfoForContainerName(&ic, podContainerSpec.Name)
 		if containerConfig == nil {
 			// no config is found for this container, so skip (don't inject anything to it)
 			continue
@@ -179,7 +179,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
-		runtimeDetails := ic.Status.GetRuntimeDetailsForContainer(*container)
+		runtimeDetails := getRuntimeInfoForContainerName(ic, container.Name)
 		if runtimeDetails == nil {
 			continue
 		}
@@ -193,7 +193,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 			continue
 		}
 
-		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, *pw, container, otelSdk, runtimeDetails, p.Client, config)
+		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, container, otelSdk, runtimeDetails, config)
 		if err != nil {
 			return err
 		}
@@ -218,6 +218,12 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 	if distroMetadata.EnvironmentVariables.OpAmpClientEnvironments {
 		existingEnvNames = podswebhook.InjectOpampServerEnvVar(existingEnvNames, podContainerSpec)
+	}
+	if distroMetadata.EnvironmentVariables.SignalsAsStaticOtelEnvVars {
+		tracesEnabled := containerConfig.Traces != nil
+		metricsEnabled := containerConfig.Metrics != nil
+		logsEnabled := containerConfig.Logs != nil
+		existingEnvNames = podswebhook.InjectSignalsAsStaticOtelEnvVars(existingEnvNames, podContainerSpec, tracesEnabled, metricsEnabled, logsEnabled)
 	}
 	if distroMetadata.EnvironmentVariables.OtlpHttpLocalNode {
 		existingEnvNames = podswebhook.InjectOtlpHttpEndpointEnvVar(existingEnvNames, podContainerSpec)
@@ -300,4 +306,28 @@ func getRelevantOtelSDKs(ctx context.Context, kubeClient client.Client, podWorkl
 	}
 
 	return otelSdkToUse, nil
+}
+
+func getRuntimeInfoForContainerName(ic *odigosv1.InstrumentationConfig, containerName string) *odigosv1.RuntimeDetailsByContainer {
+
+	// first look for the value in overrides
+	for i := range ic.Spec.ContainersOverrides {
+		if ic.Spec.ContainersOverrides[i].ContainerName == containerName {
+			if ic.Spec.ContainersOverrides[i].RuntimeInfo != nil {
+				return ic.Spec.ContainersOverrides[i].RuntimeInfo
+			} else {
+				break
+			}
+		}
+	}
+
+	// if not found in overrides, look for the value in automatic runtime detection
+	for _, container := range ic.Status.RuntimeDetailsByContainer {
+		if container.ContainerName == containerName {
+			return &container
+		}
+	}
+
+	// if both are not found, return we don't have runtime info for this container
+	return nil
 }

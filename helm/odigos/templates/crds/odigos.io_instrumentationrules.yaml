@@ -111,6 +111,7 @@ spec:
                       - php
                       - ruby
                       - rust
+                      - cplusplus
                       - mysql
                       - nginx
                       - redis
@@ -268,6 +269,13 @@ spec:
                   convenience. Odigos does not use or assume any meaning from this
                   field.
                 type: string
+              traceConfig:
+                description: Configure the tracing configuration for the library.
+                properties:
+                  disabled:
+                    description: Disabled will disable tracing for the rule.
+                    type: boolean
+                type: object
               workloads:
                 description: An array of workload objects (name, namespace, kind)
                   to which the rule should be applied. If not specified, the rule

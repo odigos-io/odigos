@@ -37,3 +37,10 @@ true
   {{- end -}}
 {{- end -}}
 
+
+{{/*
+  Return cleaned Kubernetes version, keeping leading 'v', removing vendor suffix like -eks-...
+  */}}
+  {{- define "utils.cleanKubeVersion" -}}
+  {{- regexReplaceAll "-.*" .Capabilities.KubeVersion.Version "" -}}
+  {{- end }}
