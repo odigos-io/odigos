@@ -171,6 +171,7 @@
       "pages": [
         "pipeline/overview",
         "pipeline/configuration",
+        "pipeline/datastreams",
         {
           "group": "Sources",
           "icon": "database",
