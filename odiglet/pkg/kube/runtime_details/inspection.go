@@ -155,15 +155,6 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 
 	envVarNames = append(envVarNames, consts.LdPreloadEnvVarName)
 
-	// Verify if environment variables already exist in the container manifest.
-	// If they exist, set the RuntimeUpdateState as ProcessingStateSkipped.
-	if envsExistsInManifest := checkEnvVarsInContainerManifest(container, envVarNames); envsExistsInManifest {
-		runtimeDetailsByContainer := (*resultsMap)[container.Name]
-		state := odigosv1.ProcessingStateSkipped
-		runtimeDetailsByContainer.RuntimeUpdateState = &state
-		(*resultsMap)[container.Name] = runtimeDetailsByContainer
-	}
-
 	// Environment variables do not exist in the manifest; fetch them from the container's Image
 	fetchAndSetEnvFromContainerRuntime(ctx, criClient, pod, container, envVarNames, resultsMap, procEnvVars)
 }
