@@ -115,6 +115,11 @@ func NewOdigletClusterRole(psp, ownerPermissionEnforcement bool) *rbacv1.Cluster
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			{ // Needed for detection cronJobs
+				APIGroups: []string{"batch"},
+				Resources: []string{"jobs"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
 			{ // Needed for language detection
 				APIGroups: []string{""},
 				Resources: []string{"pods/status"},

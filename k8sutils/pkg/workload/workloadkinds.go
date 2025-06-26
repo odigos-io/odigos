@@ -82,7 +82,7 @@ func WorkloadKindFromString(kind string) k8sconsts.WorkloadKind {
 		return k8sconsts.WorkloadKindDaemonSet
 	case string(k8sconsts.WorkloadKindLowerCaseStatefulSet):
 		return k8sconsts.WorkloadKindStatefulSet
-	case string(k8sconsts.WorkloadKindCronJob):
+	case string(k8sconsts.WorkloadKindLowerCaseCronJob):
 		return k8sconsts.WorkloadKindCronJob
 	case string(k8sconsts.WorkloadKindLowerCaseJob):
 		return k8sconsts.WorkloadKindJob
@@ -106,7 +106,7 @@ func ClientObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object {
 	case k8sconsts.WorkloadKindCronJob:
 		ver, err := utils.ClusterVersion()
 		if err != nil {
-			return &batchv1beta1.CronJob{}
+			return &batchv1.CronJob{}
 		}
 
 		if ver.LessThan(version.MustParseSemantic("1.21.0")) {
@@ -132,7 +132,7 @@ func ClientListObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object
 	case k8sconsts.WorkloadKindCronJob:
 		ver, err := utils.ClusterVersion()
 		if err != nil {
-			return &batchv1beta1.CronJobList{}
+			return &batchv1.CronJobList{}
 		}
 
 		if ver != nil && ver.LessThan(version.MustParseSemantic("1.21.0")) {
