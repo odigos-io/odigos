@@ -262,6 +262,7 @@
             "backends/grafanacloudtempo",
             "backends/greptime",
             "backends/groundcover",
+            "backends/highlight",
             "backends/honeycomb",
             "backends/hyperdx",
             "backends/instana",
