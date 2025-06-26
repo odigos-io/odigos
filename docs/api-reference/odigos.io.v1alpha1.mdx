@@ -549,7 +549,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 
 
 ## `AgentLogsConfig` <a id="odigos-io-v1alpha1-AgentLogsConfig"></a>
-
+    
 
 **Appears in:**
 
@@ -561,7 +561,7 @@ The presence of this struct (as opposed to nil) means that logs collection is en
 
 
 ## `AgentMetricsConfig` <a id="odigos-io-v1alpha1-AgentMetricsConfig"></a>
-
+    
 
 **Appears in:**
 
@@ -573,7 +573,7 @@ The presence of this struct (as opposed to nil) means that metrics collection is
 
 
 ## `AgentTracesConfig` <a id="odigos-io-v1alpha1-AgentTracesConfig"></a>
-
+    
 
 **Appears in:**
 
@@ -2471,17 +2471,6 @@ In the Future we might add another level of configuration base on the parent spa
 </tr>
 <tr>
 <td>
-<code>customInstrumentations</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
-</td>
-<td>
-   <p>default configuration for custom instrumentations, in case the instrumentation library does not provide a configuration.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>traceConfig</code> <B>[Required]</B>
 </td>
 <td>
@@ -2489,6 +2478,17 @@ In the Future we might add another level of configuration base on the parent spa
 </td>
 <td>
    <p>default configuration for library tracing.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>customInstrumentations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
+</td>
+<td>
+   <p>default configuration for custom instrumentations, in case the instrumentation library does not provide a configuration.</p>
 </td>
 </tr>
 </tbody>

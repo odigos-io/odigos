@@ -1286,14 +1286,14 @@ func (in *SdkConfig) DeepCopyInto(out *SdkConfig) {
 		*out = new(instrumentationrules.HttpHeadersCollection)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.DefaultCustomInstrumentations != nil {
-		in, out := &in.DefaultCustomInstrumentations, &out.DefaultCustomInstrumentations
-		*out = new(instrumentationrules.CustomInstrumentations)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.DefaultTraceConfig != nil {
 		in, out := &in.DefaultTraceConfig, &out.DefaultTraceConfig
 		*out = new(instrumentationrules.TraceConfig)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.DefaultCustomInstrumentations != nil {
+		in, out := &in.DefaultCustomInstrumentations, &out.DefaultCustomInstrumentations
+		*out = new(instrumentationrules.CustomInstrumentations)
 		(*in).DeepCopyInto(*out)
 	}
 }
