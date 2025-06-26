@@ -353,6 +353,8 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 
 	collectLogs := slices.Contains(signals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
+		// TODO // FIXME // david : need to if "enterprise" here!
+		if 0 {
 		includes := make([]string, 0)
 		for _, element := range sources.Items {
 			// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
@@ -439,6 +441,8 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
 			Exporters:  []string{"otlp/gateway"},
 		}
+	} else {
+		fmt.Printf("Skipping logs pipeline configuration, EBPF logs!\n")
 	}
 
 	collectTraces := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
