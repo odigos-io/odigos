@@ -63,16 +63,6 @@ func GetWorkloadNameAndKind(ownerName, ownerKind string) (string, k8sconsts.Work
 	return handleNonReplicaSet(ownerName, ownerKind)
 }
 
-func extractJobInfo(jobName string) (string, error) {
-	hyphenIndex := strings.LastIndex(jobName, "-")
-	if hyphenIndex == -1 {
-		return "", fmt.Errorf("job name '%s' does not contain a hyphen", jobName)
-	}
-
-	name := jobName[:hyphenIndex]
-	return name, nil
-}
-
 // extractDeploymentInfo extracts deployment information from a ReplicaSet name
 func extractDeploymentInfo(replicaSetName string) (string, k8sconsts.WorkloadKind, error) {
 	hyphenIndex := strings.LastIndex(replicaSetName, "-")
