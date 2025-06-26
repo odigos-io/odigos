@@ -25,12 +25,10 @@ func getOidcValuesFromConfig(ctx context.Context) (string, string, string, strin
 
 	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
 	if err != nil {
-		// This should never really happen, but if it does, we log it and exit
 		log.Fatalf("Error getting CM: %v\n", err)
 	}
 	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig)
 	if err != nil {
-		// This should never really happen, but if it does, we log it and exit
 		log.Fatalf("Error parsing YAML: %v\n", err)
 	}
 	if odigosConfig.Oidc == nil {
@@ -141,12 +139,10 @@ func OidcAuthCallback(ctx context.Context, c *gin.Context) {
 	// Initialize OIDC & OAuth2
 	oidcTokenVerifier, err := GetOidcTokenVerifier(ctx)
 	if err != nil {
-		// This should never really happen, but if it does, we log it and exit
 		log.Fatalf("Error initializing OIDC verifier: %s\n", err)
 	}
 	oauth2Config, err := GetOidcOauthConfig(ctx)
 	if err != nil {
-		// This should never really happen, but if it does, we log it and exit
 		log.Fatalf("Error initializing OAuth2 config: %s\n", err)
 	}
 	// We're in a callback (after being redirected from auth),
