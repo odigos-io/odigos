@@ -62,7 +62,7 @@ spec:
       componentType: input
       componentProps:
         type: text
-        required: true
+        required: false # TODO: required only if 'Enable OAuth2' is true
         placeholder: 'your-client-id'
         tooltip: 'OAuth2 client identifier for client credentials flow'
       renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
@@ -72,7 +72,7 @@ spec:
       componentType: input
       componentProps:
         type: password
-        required: true
+        required: false # TODO: required only if 'Enable OAuth2' is true
         placeholder: 'your-client-secret'
         tooltip: 'OAuth2 client secret for client credentials flow'
       renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
@@ -83,7 +83,7 @@ spec:
       componentType: input
       componentProps:
         type: text
-        required: true
+        required: false # TODO: required only if 'Enable OAuth2' is true
         placeholder: 'https://example.com/oauth2/token'
         tooltip: 'OAuth2 token endpoint URL for obtaining access tokens'
       renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
