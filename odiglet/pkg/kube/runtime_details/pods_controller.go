@@ -93,7 +93,6 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 
 	podWorkload, err := getPodWorkloadObject(&pod)
 	if err != nil {
-		logger.Error(err, "error getting pod workload object")
 		return reconcile.Result{}, err
 	}
 	if podWorkload == nil {
@@ -101,18 +100,14 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, nil
 	}
 
-	logger.Info(fmt.Sprintf("Received podWorkload! %+v", podWorkload))
-
 	if podWorkload.Kind == k8sconsts.WorkloadKindJob {
 		/* Test if job's owner is cronJob */
 		isCronJob, err := IsCronJobBackedWorkload(ctx, p.Client, podWorkload)
 		if err != nil {
-			logger.Error(err, "Failed to determine of pod owned by CronJob")
 			return reconcile.Result{}, err
 		}
 
 		if isCronJob {
-			logger.Info(fmt.Sprintf("Cron job was detected correctly! %+v", podWorkload))
 			jobOwnerName, err := GetCronJobOwnerName(ctx, p.Client, podWorkload)
 			if err != nil {
 				return reconcile.Result{}, err
