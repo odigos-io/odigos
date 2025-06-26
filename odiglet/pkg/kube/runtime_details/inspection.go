@@ -214,22 +214,6 @@ func getContainerID(containerStatuses []corev1.ContainerStatus, containerName st
 	return ""
 }
 
-func checkEnvVarsInContainerManifest(container corev1.Container, envVarNames []string) bool {
-	// Create a map for quick lookup of envVar names
-	envVarSet := make(map[string]struct{})
-	for _, name := range envVarNames {
-		envVarSet[name] = struct{}{}
-	}
-
-	// Iterate over the container's environment variables
-	for _, containerEnvVar := range container.Env {
-		if _, exists := envVarSet[containerEnvVar.Name]; exists {
-			return true
-		}
-	}
-	return false
-}
-
 func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, newRuntimeDetials []odigosv1.RuntimeDetailsByContainer) error {
 
 	// fetch a fresh copy of instrumentation config.
