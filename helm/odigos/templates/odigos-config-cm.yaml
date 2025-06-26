@@ -39,7 +39,7 @@ data:
         clientId: {{ .Values.ui.oidcClientId }}
         {{- end }}
         {{- if .Values.ui.oidcClientSecret }}
-        clientSecret: {{ .Values.ui.oidcClientSecret }}
+        clientSecret: secretRef:odigos-oidc
         {{- end }}
     {{- end }}
     {{- if .Values.collectorGateway }}
