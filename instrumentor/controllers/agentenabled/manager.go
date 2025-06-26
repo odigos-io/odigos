@@ -16,7 +16,13 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		ControllerManagedBy(mgr).
 		Named("agentenabled-collectorsgroup").
 		For(&odigosv1.CollectorsGroup{}).
-		WithEventFilter(predicate.And(&odigospredicate.OdigosCollectorsGroupNodePredicate, &odigospredicate.CgBecomesReadyPredicate{})).
+		WithEventFilter(predicate.And(
+			&odigospredicate.OdigosCollectorsGroupNodePredicate,
+			predicate.Or(
+				&odigospredicate.CgBecomesReadyPredicate{},
+				&odigospredicate.ReceiverSignalsChangedPredicate{},
+			),
+		)).
 		Complete(&CollectorsGroupReconciler{
 			Client:          mgr.GetClient(),
 			DistrosProvider: dp,
@@ -31,7 +37,10 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		For(&odigosv1.InstrumentationConfig{}).
 		// When the runtime details change we need to potentially update the instrumentation config and roll out the workload.
 		// When the instrumentation config is deleted, we need to roll out the workload to un-instrument it.
-		WithEventFilter(predicate.Or(&instrumentorpredicate.RuntimeDetailsChangedPredicate{}, odigospredicate.DeletionPredicate{})).
+		WithEventFilter(predicate.Or(
+			&instrumentorpredicate.RuntimeDetailsChangedPredicate{},
+			&instrumentorpredicate.ContainerOverridesChangedPredicate{},
+			odigospredicate.DeletionPredicate{})).
 		Complete(&InstrumentationConfigReconciler{
 			Client:          mgr.GetClient(),
 			DistrosProvider: dp,

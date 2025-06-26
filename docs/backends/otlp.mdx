@@ -54,6 +54,23 @@ For advanced users trying to implement complex observability pipelines, Odigos s
   - This field is optional and defaults to `none`
 - **OTLP_GRPC_HEADERS** `{ key: string; value: string; }[]` : Headers. Headers is the option to set custom GRPC headers for OTLP GRPC destination. If specified, please provide each header in the format: key:value. Multiple headers can be added. Keys must be non-empty strings and follow standard HTTP header conventions. Values must be non-empty strings and may include alphanumerics, whitespace, and standard punctuation.
   - This field is optional
+- **OTLP_GRPC_OAUTH2_ENABLED** `boolean` : Enable OAuth2. Enable OAuth2 client credentials authentication
+  - This field is optional and defaults to `False`
+- **OTLP_GRPC_OAUTH2_CLIENT_ID** `string` : OAuth2 Client ID. OAuth2 client identifier for client credentials flow
+  - This field is required
+  - Example: `your-client-id`
+- **OTLP_GRPC_OAUTH2_CLIENT_SECRET** `string` : OAuth2 Client Secret. OAuth2 client secret for client credentials flow
+  - This field is required
+  - Example: `your-client-secret`
+- **OTLP_GRPC_OAUTH2_TOKEN_URL** `string` : OAuth2 Token URL. OAuth2 token endpoint URL for obtaining access tokens
+  - This field is required
+  - Example: `https://example.com/oauth2/token`
+- **OTLP_GRPC_OAUTH2_SCOPES** `string` : OAuth2 Scopes. Comma-separated list of OAuth2 scopes to request (e.g., "api.metrics,api.traces")
+  - This field is optional
+  - Example: `api.metrics,api.traces`
+- **OTLP_GRPC_OAUTH2_AUDIENCE** `string` : OAuth2 Audience. OAuth2 audience parameter for token requests
+  - This field is optional
+  - Example: `api.example.com`
 - **OTLP_GRPC_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
   - This field is optional and defaults to `False`
 - **OTLP_GRPC_CA_PEM** `string` : Certificate Authority. When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA
@@ -94,18 +111,36 @@ There are two primary methods for configuring destinations in Odigos:
     spec:
       data:
         OTLP_GRPC_ENDPOINT: <OTLP gRPC Endpoint>
+        OTLP_GRPC_OAUTH2_CLIENT_ID: <OAuth2 Client ID>
+        OTLP_GRPC_OAUTH2_TOKEN_URL: <OAuth2 Token URL>
         # Note: The commented fields below are optional.
         # OTLP_GRPC_COMPRESSION: <Destination Compression Type (default: none) (options: [none, gzip, snappy, lz4, zlib, deflate, zstd])>
         # OTLP_GRPC_HEADERS: <Headers>
+        # OTLP_GRPC_OAUTH2_ENABLED: <Enable OAuth2>
+        # OTLP_GRPC_OAUTH2_SCOPES: <OAuth2 Scopes>
+        # OTLP_GRPC_OAUTH2_AUDIENCE: <OAuth2 Audience>
         # OTLP_GRPC_TLS_ENABLED: <Enable TLS>
         # OTLP_GRPC_CA_PEM: <Certificate Authority>
         # OTLP_GRPC_INSECURE_SKIP_VERIFY: <Insecure Skip Verify>
       destinationName: otlp
+      secretRef:
+        name: otlp-secret
       signals:
       - TRACES
       - METRICS
       - LOGS
       type: otlp
+
+    ---
+
+    apiVersion: v1
+    data:
+      OTLP_GRPC_OAUTH2_CLIENT_SECRET: <Base64 OAuth2 Client Secret>
+    kind: Secret
+    metadata:
+      name: otlp-secret
+      namespace: odigos-system
+    type: Opaque
     ```
   </Step>
   <Step>

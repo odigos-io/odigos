@@ -86,6 +86,27 @@ func InjectOtlpHttpEndpointEnvVar(existingEnvNames EnvVarNamesMap, container *co
 	return existingEnvNames
 }
 
+func signalOtlpExporterEnvValue(enabled bool) string {
+	if enabled {
+		return "otlp"
+	}
+	return "none"
+}
+
+func InjectSignalsAsStaticOtelEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, tracesEnabled bool, metricsEnabled bool, logsEnabled bool) EnvVarNamesMap {
+
+	logsExporter := signalOtlpExporterEnvValue(logsEnabled)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelLogsExporter, logsExporter, nil)
+
+	metricsExporter := signalOtlpExporterEnvValue(metricsEnabled)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelMetricsExporter, metricsExporter, nil)
+
+	tracesExporter := signalOtlpExporterEnvValue(tracesEnabled)
+	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelTracesExporter, tracesExporter, nil)
+
+	return existingEnvNames
+}
+
 func InjectUserEnvForLang(odigosConfig *common.OdigosConfiguration, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig) {
 	languageSpecificEnvs := odigosConfig.UserInstrumentationEnvs.Languages
 

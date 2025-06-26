@@ -81,3 +81,17 @@ spec:
     namespace: default
     kind: Deployment
   otelServiceName: currency-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: geolocation
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: geolocation
+    namespace: default
+    kind: Deployment
+  otelServiceName: geolocation-reported

@@ -26,6 +26,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // APITokens is the resolver for the apiTokens field.
@@ -571,27 +572,78 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 	nsName := sourceID.Namespace
 	workloadName := sourceID.Name
 	workloadKind := sourceID.Kind
-	otelServiceName := patchSourceRequest.OtelServiceName
-	streamName := patchSourceRequest.CurrentStreamName
-
 	source, err := services.GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			// unexpected error occurred while trying to get the source
 			return false, err
 		}
-
-		source, err = services.EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, streamName)
+		source, err = services.EnsureSourceCRD(ctx, nsName, workloadName, workloadKind, patchSourceRequest.CurrentStreamName)
 		if err != nil {
 			// unexpected error occurred while trying to create the source
 			return false, err
 		}
 	}
 
-	_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", fmt.Sprintf("\"%s\"", otelServiceName))
-	if err != nil {
-		// unexpected error occurred while trying to update the source
-		return false, err
+	otelServiceName := patchSourceRequest.OtelServiceName
+	if otelServiceName != nil {
+		_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", fmt.Sprintf("\"%s\"", *otelServiceName))
+		if err != nil {
+			// unexpected error occurred while trying to update the source
+			return false, err
+		}
+	}
+
+	cont := patchSourceRequest.ContainerName
+	lang := patchSourceRequest.Language
+	vers := patchSourceRequest.Version
+	if cont != nil {
+		containerOverrides := make([]v1alpha1.ContainerOverride, 0)
+		// get previous overrides (except the one we are updating)
+		if source.Spec.ContainerOverrides != nil {
+			for _, override := range source.Spec.ContainerOverrides {
+				if override.ContainerName != *cont {
+					containerOverrides = append(containerOverrides, override)
+				}
+			}
+		}
+		// add the new override
+		var overrideRuntimeInfo *v1alpha1.RuntimeDetailsByContainer
+		if lang == nil || *lang == "" {
+			overrideRuntimeInfo = nil
+		} else {
+			runtimeVersion := ""
+			if vers != nil && *vers != "" {
+				if common.GetVersion(*vers) == nil {
+					return false, fmt.Errorf("invalid runtime version: %s", *vers)
+				}
+				runtimeVersion = *vers
+			}
+			overrideRuntimeInfo = &v1alpha1.RuntimeDetailsByContainer{
+				ContainerName:  *cont,
+				Language:       common.ProgrammingLanguage(*lang),
+				RuntimeVersion: runtimeVersion,
+			}
+		}
+		containerOverrides = append(containerOverrides, v1alpha1.ContainerOverride{
+			ContainerName: *cont,
+			RuntimeInfo:   overrideRuntimeInfo,
+		})
+		// patch the source with the new container overrides
+		patchBytes, err := json.Marshal([]map[string]interface{}{
+			{
+				"op":    "replace",
+				"path":  "/spec/containerOverrides",
+				"value": containerOverrides,
+			},
+		})
+		if err != nil {
+			return false, err
+		}
+		_, err = kube.DefaultClient.OdigosClient.Sources(nsName).Patch(ctx, source.Name, types.JSONPatchType, []byte(patchBytes), metav1.PatchOptions{})
+		if err != nil {
+			return false, err
+		}
 	}
 
 	return true, nil

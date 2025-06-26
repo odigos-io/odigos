@@ -165,7 +165,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
       notifyUser(StatusType.Default, 'Pending', 'Updating source...', undefined, true);
       addPendingItems([{ entityType: EntityTypes.Source, entityId: sourceId }]);
 
-      const { errors } = await mutateUpdate({ variables: { sourceId, patchSourceRequest: payload } });
+      const { errors } = await mutateUpdate({ variables: { sourceId, patchSourceRequest: { ...payload, currentStreamName: selectedStreamName } } });
 
       if (!errors?.length) notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${sourceId.name}" source`, sourceId);
       removePendingItems([{ entityType: EntityTypes.Source, entityId: sourceId }]);

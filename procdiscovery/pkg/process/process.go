@@ -8,9 +8,6 @@ import (
 	"io"
 	"os"
 	"strings"
-
-	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/envOverwrite"
 )
 
 const (
@@ -36,18 +33,27 @@ var LangsVersionEnvs = map[string]struct{}{
 }
 
 const (
-	NewRelicAgentEnv               = "NEW_RELIC_CONFIG_FILE"
-	DynatraceDynamizerEnv          = "DT_DYNAMIZER_TARGET_EXE"
-	DynatraceDynamizerExeSubString = "oneagentdynamizer"
+	NewRelicAgentName  = "New Relic Agent"
+	DynatraceAgentName = "Dynatrace Agent"
+	DataDogAgentName   = "Datadog Agent"
+)
+
+const (
+	NewRelicAgentEnv                 = "NEW_RELIC_CONFIG_FILE"
+	DynatraceDynamizerEnv            = "DT_DYNAMIZER_TARGET_EXE"
+	DynatraceDynamizerExeSubString   = "oneagentdynamizer"
+	DynatraceFullStackEnvValuePrefix = "/dynatrace/"
+	DataDogAgentEnv                  = "DD_TRACE_AGENT_URL"
 )
 
 var OtherAgentEnvs = map[string]string{
-	NewRelicAgentEnv:      "New Relic Agent",
-	DynatraceDynamizerEnv: "Dynatrace Agent",
+	NewRelicAgentEnv:      NewRelicAgentName,
+	DynatraceDynamizerEnv: DynatraceAgentName,
+	DataDogAgentEnv:       DataDogAgentName,
 }
 
 var OtherAgentCmdSubString = map[string]string{
-	"newrelic.jar": "New Relic Agent",
+	"newrelic.jar": NewRelicAgentName,
 }
 
 type Details struct {
@@ -142,7 +148,7 @@ func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
 
 // Find all processes in the system.
 // The function accepts a predicate function that can be used to filter the results.
-func FindAllProcesses(predicate func(string) bool) ([]Details, error) {
+func FindAllProcesses(predicate func(string) bool, runtimeDetectionEnvs map[string]struct{}) ([]Details, error) {
 	dirs, err := os.ReadDir("/proc")
 	if err != nil {
 		return nil, err
@@ -167,17 +173,17 @@ func FindAllProcesses(predicate func(string) bool) ([]Details, error) {
 			continue
 		}
 
-		details := GetPidDetails(pid)
+		details := GetPidDetails(pid, runtimeDetectionEnvs)
 		result = append(result, details)
 	}
 
 	return result, nil
 }
 
-func GetPidDetails(pid int) Details {
+func GetPidDetails(pid int, runtimeDetectionEnvs map[string]struct{}) Details {
 	exePath := getExePath(pid)
 	cmdLine := getCommandLine(pid)
-	envVars := getRelevantEnvVars(pid)
+	envVars := getRelevantEnvVars(pid, runtimeDetectionEnvs)
 	secureExecutionMode, err := isSecureExecutionMode(pid)
 	secureExecutionModePtr := &secureExecutionMode
 	if err != nil {
@@ -221,7 +227,7 @@ func getCommandLine(pid int) string {
 	}
 }
 
-func getRelevantEnvVars(pid int) ProcessEnvs {
+func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) ProcessEnvs {
 	envFileName := fmt.Sprintf("/proc/%d/environ", pid)
 	fileContent, err := os.ReadFile(envFileName)
 	if err != nil {
@@ -231,15 +237,6 @@ func getRelevantEnvVars(pid int) ProcessEnvs {
 	}
 
 	r := bufio.NewReader(strings.NewReader(string(fileContent)))
-
-	// We only care about the environment variables that we might overwrite
-	relevantOverwriteEnvVars := make(map[string]interface{})
-	for k := range envOverwrite.EnvValuesMap {
-		relevantOverwriteEnvVars[k] = nil
-	}
-
-	// Add LD_PRELOAD to the list of relevant environment variables
-	relevantOverwriteEnvVars[consts.LdPreloadEnvVarName] = nil
 
 	overWriteEnvsResult := make(map[string]string)
 	detailedEnvsResult := make(map[string]string)
@@ -260,16 +257,19 @@ func getRelevantEnvVars(pid int) ProcessEnvs {
 			continue
 		}
 
-		if _, ok := relevantOverwriteEnvVars[envParts[0]]; ok {
-			overWriteEnvsResult[envParts[0]] = envParts[1]
+		envName := envParts[0]
+		envDetectionValue := envParts[1]
+
+		if _, ok := runtimeDetectionEnvs[envName]; ok {
+			overWriteEnvsResult[envName] = envDetectionValue
 		}
 
-		if _, ok := LangsVersionEnvs[envParts[0]]; ok {
-			detailedEnvsResult[envParts[0]] = envParts[1]
+		if _, ok := LangsVersionEnvs[envName]; ok {
+			detailedEnvsResult[envName] = envDetectionValue
 		}
 
-		if _, ok := OtherAgentEnvs[envParts[0]]; ok {
-			detailedEnvsResult[envParts[0]] = envParts[1]
+		if _, ok := OtherAgentEnvs[envName]; ok {
+			detailedEnvsResult[envName] = envDetectionValue
 		}
 	}
 

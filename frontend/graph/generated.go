@@ -571,6 +571,7 @@ type ComplexityRoot struct {
 		Instrumented           func(childComplexity int) int
 		Language               func(childComplexity int) int
 		OtelDistroName         func(childComplexity int) int
+		Overriden              func(childComplexity int) int
 		RuntimeVersion         func(childComplexity int) int
 	}
 
@@ -3053,6 +3054,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SourceContainer.OtelDistroName(childComplexity), true
+
+	case "SourceContainer.overriden":
+		if e.complexity.SourceContainer.Overriden == nil {
+			break
+		}
+
+		return e.complexity.SourceContainer.Overriden(childComplexity), true
 
 	case "SourceContainer.runtimeVersion":
 		if e.complexity.SourceContainer.RuntimeVersion == nil {
@@ -11885,6 +11893,8 @@ func (ec *executionContext) fieldContext_K8sActualSource_containers(_ context.Co
 				return ec.fieldContext_SourceContainer_language(ctx, field)
 			case "runtimeVersion":
 				return ec.fieldContext_SourceContainer_runtimeVersion(ctx, field)
+			case "overriden":
+				return ec.fieldContext_SourceContainer_overriden(ctx, field)
 			case "instrumented":
 				return ec.fieldContext_SourceContainer_instrumented(ctx, field)
 			case "instrumentationMessage":
@@ -19962,6 +19972,50 @@ func (ec *executionContext) fieldContext_SourceContainer_runtimeVersion(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _SourceContainer_overriden(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainer_overriden(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Overriden, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceContainer_overriden(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceContainer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _SourceContainer_instrumented(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainer) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SourceContainer_instrumented(ctx, field)
 	if err != nil {
@@ -23464,20 +23518,13 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"otelServiceName", "currentStreamName"}
+	fieldsInOrder := [...]string{"currentStreamName", "otelServiceName", "containerName", "language", "version"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "otelServiceName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("otelServiceName"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.OtelServiceName = data
 		case "currentStreamName":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("currentStreamName"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -23485,6 +23532,34 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 				return it, err
 			}
 			it.CurrentStreamName = data
+		case "otelServiceName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("otelServiceName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OtelServiceName = data
+		case "containerName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("containerName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ContainerName = data
+		case "language":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("language"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Language = data
+		case "version":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Version = data
 		}
 	}
 
@@ -27806,6 +27881,11 @@ func (ec *executionContext) _SourceContainer(ctx context.Context, sel ast.Select
 			}
 		case "runtimeVersion":
 			out.Values[i] = ec._SourceContainer_runtimeVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "overriden":
+			out.Values[i] = ec._SourceContainer_overriden(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

@@ -548,6 +548,42 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 
 
 
+## `AgentLogsConfig` <a id="odigos-io-v1alpha1-AgentLogsConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+<p>all &quot;logs&quot; related configuration for an agent running on any process in a specific container.
+The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.</p>
+
+
+
+## `AgentMetricsConfig` <a id="odigos-io-v1alpha1-AgentMetricsConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+<p>all &quot;metrics&quot; related configuration for an agent running on any process in a specific container.
+The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.</p>
+
+
+
+## `AgentTracesConfig` <a id="odigos-io-v1alpha1-AgentTracesConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+<p>all &quot;traces&quot; related configuration for an agent running on any process in a specific container.
+The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.</p>
+
+
+
 ## `Attribute` <a id="odigos-io-v1alpha1-Attribute"></a>
     
 
@@ -1042,6 +1078,80 @@ if the name is empty, this container should not be instrumented.</p>
 Keys are parameter names (like &quot;libc&quot;) and values are the value to use for that parameter (glibc / musl)</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>traces</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentTracesConfig"><code>AgentTracesConfig</code></a>
+</td>
+<td>
+   <p>Each enabled signal must be set with a non-nil value (even if the config content is empty).
+nil means that the signal is disabled and should not be instrumented/collected by the agent.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>metrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentMetricsConfig"><code>AgentMetricsConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>logs</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentLogsConfig"><code>AgentLogsConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `ContainerOverride` <a id="odigos-io-v1alpha1-ContainerOverride"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)
+- [SourceSpec](#odigos-io-v1alpha1-SourceSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>containerName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The name of the container to override.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runtimeInfo</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-RuntimeDetailsByContainer"><code>RuntimeDetailsByContainer</code></a>
+</td>
+<td>
+   <p>RuntimeInfo to use for agent enabling.
+If set for a container, the automatic detection will not be used for this container,
+and the distro to use will be calculated based on this value.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -1284,6 +1394,31 @@ The workload is identified by the owner reference</p>
 </td>
 <td>
    <p>configuration for each instrumented container in the workload</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>containersOverrides</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ContainerOverride"><code>[]ContainerOverride</code></a>
+</td>
+<td>
+   <p>will always list all containers of this workload by name,
+and override data in case it is configured on the source.
+this peoperty can be used to know all container names in the workload, even if other controllers did not yet run.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>containerOverridesHash</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>An hash of the containers overrides, used to determine if the overrides have changed for event filtering.
+this is updated only when the overrides are changed, and not when some other change in the source occurs.</p>
 </td>
 </tr>
 <tr>
@@ -1905,6 +2040,17 @@ If empty, no instrumentation libraries will be used.</p>
    <p>Allows to configure the collection of http headers for different types of payloads.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>traceConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+</td>
+<td>
+   <p>Configure the tracing configuration for the library.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -2110,6 +2256,7 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 
 **Appears in:**
 
+- [ContainerOverride](#odigos-io-v1alpha1-ContainerOverride)
 - [InstrumentationConfigStatus](#odigos-io-v1alpha1-InstrumentationConfigStatus)
 
 <table class="table">
@@ -2311,6 +2458,17 @@ In the Future we might add another level of configuration base on the parent spa
    <p>default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>traceConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+</td>
+<td>
+   <p>default configuration for library tracing.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -2403,6 +2561,21 @@ This field is required upon creation and cannot be modified.</p>
    <p>OtelServiceName determines the &quot;service.name&quot; resource attribute which will be reported by the instrumentations of this source.
 If not set, the workload name will be used.
 It is not valid for namespace sources.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>containerOverrides</code>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ContainerOverride"><code>[]ContainerOverride</code></a>
+</td>
+<td>
+   <p>Specify specific override values for containers in a workload source.
+Not valid for namespace sources.
+Can be used to set the runtime info in case the automatic detection fails or produce wrong results.
+Containers are identified by their names.
+All containers not listed will retain their default behavior.</p>
 </td>
 </tr>
 </tbody>
