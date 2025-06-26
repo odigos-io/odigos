@@ -60,14 +60,14 @@ func GetWorkloadNameAndKind(ownerName, ownerKind string) (string, k8sconsts.Work
 		return extractDeploymentInfo(ownerName)
 	}
 	// A CronJobs owner is a Job kind, but since we're not supporting instrumenting (at a source level) regular Jobs, this will suffice
-	if ownerKind == "CronJob" || ownerKind == "Job" {
+	if ownerKind == "Job" {
 		return extractJobInfo(ownerName)
 	}
 	return handleNonReplicaSet(ownerName, ownerKind)
 }
 
 func extractJobInfo(jobName string) (string, k8sconsts.WorkloadKind, error) {
-	hyphenIndex := strings.Index(jobName, "-")
+	hyphenIndex := strings.LastIndex(jobName, "-")
 	if hyphenIndex == -1 {
 		return "", "", fmt.Errorf("job name '%s' does not contain a hyphen", jobName)
 	}
