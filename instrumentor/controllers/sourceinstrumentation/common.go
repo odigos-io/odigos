@@ -74,7 +74,7 @@ func syncNamespaceWorkloads(
 					Kind:      k8sconsts.WorkloadKindStatefulSet,
 				})
 			}
-		case *batchv1.JobList:
+		case *batchv1.CronJobList:
 			for _, job := range obj.Items {
 				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
 					Name:      job.GetName(),
