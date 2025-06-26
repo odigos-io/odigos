@@ -55,14 +55,6 @@ var EnvVarsForLanguage = map[common.ProgrammingLanguage][]string{
 	common.JavaProgrammingLanguage:       {"JAVA_TOOL_OPTIONS"},
 }
 
-func GetRelevantEnvVarsKeys() []string {
-	keys := make([]string, 0, len(EnvValuesMap))
-	for key := range EnvValuesMap {
-		keys = append(keys, key)
-	}
-	return keys
-}
-
 func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
 	return EnvValuesMap[env].values
 }
