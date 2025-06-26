@@ -6,8 +6,8 @@ type ProfileName string
 type UiMode string
 
 const (
-	NormalUiMode   UiMode = "normal"
-	ReadonlyUiMode UiMode = "readonly"
+	UiModeDefault  UiMode = "default"
+	UiModeReadonly UiMode = "readonly"
 )
 
 type CollectorNodeConfiguration struct {
@@ -123,6 +123,17 @@ type RolloutConfiguration struct {
 	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled"`
 }
 
+type OidcConfiguration struct {
+	// The URL of the OIDC tenant (e.g. "https://abc-123.okta.com").
+	TenantUrl string `json:"tenantUrl,omitempty"`
+
+	// The client ID of the OIDC application.
+	ClientId string `json:"clientId,omitempty"`
+
+	// The client secret of the OIDC application.
+	ClientSecret string `json:"clientSecret,omitempty"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
 	ConfigVersion                    int                            `json:"configVersion"`
@@ -139,9 +150,10 @@ type OdigosConfiguration struct {
 	AllowConcurrentAgents            *bool                          `json:"allowConcurrentAgents,omitempty"`
 	UiMode                           UiMode                         `json:"uiMode,omitempty"`
 	UiPaginationLimit                int                            `json:"uiPaginationLimit,omitempty"`
+	UiRemoteUrl                      string                         `json:"uiRemoteUrl,omitempty"`
 	CentralBackendURL                string                         `json:"centralBackendURL,omitempty"`
-	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
 	ClusterName                      string                         `json:"clusterName,omitempty"`
+	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
 	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
 	AgentEnvVarsInjectionMethod      *EnvInjectionMethod            `json:"agentEnvVarsInjectionMethod,omitempty"`
 	UserInstrumentationEnvs          *UserInstrumentationEnvs       `json:"UserInstrumentationEnvs,omitempty"`
@@ -151,4 +163,5 @@ type OdigosConfiguration struct {
 	RollbackDisabled                 *bool                          `json:"rollbackDisabled,omitempty"`
 	RollbackGraceTime                string                         `json:"rollbackGraceTime,omitempty"`
 	RollbackStabilityWindow          string                         `json:"rollbackStabilityWindow,omitempty"`
+	Oidc                             *OidcConfiguration             `json:"oidc,omitempty"`
 }
