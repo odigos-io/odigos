@@ -34,30 +34,10 @@ type PodsReconciler struct {
 	RuntimeDetectionEnvs map[string]struct{}
 }
 
-func IsCronJobBackedWorkload(ctx context.Context, c client.Client, pw *k8sconsts.PodWorkload) (bool, error) {
-	if pw.Kind != k8sconsts.WorkloadKindJob {
-		return false, nil
-	}
-
-	var job batchv1.Job
-	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, &job)
-	if err != nil {
-		return false, fmt.Errorf("failed to get Job: %w", err)
-	}
-
-	for _, ownerRef := range job.OwnerReferences {
-		if ownerRef.Controller != nil && *ownerRef.Controller && ownerRef.Kind == "CronJob" {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func GetCronJobOwnerName(ctx context.Context, c client.Client, pw *k8sconsts.PodWorkload) (string, error) {
+func GetJob(ctx context.Context, c client.Client, pw *k8sconsts.PodWorkload) (*batchv1.Job, error) {
 	// Only care about Jobs
 	if pw.Kind != k8sconsts.WorkloadKindJob {
-		return "", nil
+		return nil, nil
 	}
 
 	// Fetch the Job object
@@ -66,18 +46,9 @@ func GetCronJobOwnerName(ctx context.Context, c client.Client, pw *k8sconsts.Pod
 		Namespace: pw.Namespace,
 		Name:      pw.Name,
 	}, &job); err != nil {
-		return "", fmt.Errorf("failed to get Job %s/%s: %w", pw.Namespace, pw.Name, err)
+		return nil, fmt.Errorf("failed to get Job %s/%s: %w", pw.Namespace, pw.Name, err)
 	}
-
-	// Look for a controlling OwnerReference of kind CronJob
-	for _, owner := range job.OwnerReferences {
-		if owner.Controller != nil && *owner.Controller && owner.Kind == "CronJob" {
-			return owner.Name, nil
-		}
-	}
-
-	// No CronJob owner found
-	return "", nil
+	return &job, nil
 }
 
 // We need to apply runtime details detection for a new running pod in the following cases:
@@ -102,25 +73,24 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 
 	if podWorkload.Kind == k8sconsts.WorkloadKindJob {
 		/* Test if job's owner is cronJob */
-		isCronJob, err := IsCronJobBackedWorkload(ctx, p.Client, podWorkload)
+		job, err := GetJob(ctx, p.Client, podWorkload)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 
-		if isCronJob {
-			jobOwnerName, err := GetCronJobOwnerName(ctx, p.Client, podWorkload)
+		for _, owner := range job.OwnerReferences {
+			workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(owner)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-
-			podWorkload = &k8sconsts.PodWorkload{
-				Name:      jobOwnerName,
-				Kind:      k8sconsts.WorkloadKindCronJob,
-				Namespace: podWorkload.Namespace,
+			if workloadKind == k8sconsts.WorkloadKindCronJob {
+				podWorkload = &k8sconsts.PodWorkload{
+					Name:      workloadName,
+					Kind:      workloadKind,
+					Namespace: pod.Namespace,
+				}
+				break
 			}
-		} else {
-			/* Regular jobs not supported */
-			return reconcile.Result{}, nil
 		}
 	}
 
