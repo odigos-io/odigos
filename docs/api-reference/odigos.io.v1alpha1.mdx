@@ -2117,16 +2117,6 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `ProcessingState` <a id="odigos-io-v1alpha1-ProcessingState"></a>
-    
-(Alias of `string`)
-
-**Appears in:**
-
-- [RuntimeDetailsByContainer](#odigos-io-v1alpha1-RuntimeDetailsByContainer)
-
-
-
 ## `ProcessorSpec` <a id="odigos-io-v1alpha1-ProcessorSpec"></a>
     
 
@@ -2362,17 +2352,6 @@ nil means we were unable to determine the secure-execution mode.</p>
 </td>
 <td>
    <p>Holds the environment variables retrieved from the container runtime.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>runtimeUpdateState</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-ProcessingState"><code>ProcessingState</code></a>
-</td>
-<td>
-   <p>A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.</p>
 </td>
 </tr>
 </tbody>
