@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/version"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -141,7 +142,7 @@ var sourceCreateCmd = &cobra.Command{
 
 		if len(sourceGroupFlag) > 0 {
 			source.Labels = make(map[string]string)
-			source.Labels[k8sconsts.SourceGroupLabelPrefix+sourceGroupFlag] = "true"
+			source.Labels[k8sconsts.SourceDataStreamLabelPrefix+sourceGroupFlag] = "true"
 		}
 
 		_, err := client.OdigosClient.Sources(sourceNamespaceFlag).Create(ctx, source, v1.CreateOptions{})
@@ -305,8 +306,8 @@ It is important to note that if a Source [name] is provided, all --workload-* fl
 			source.Spec.DisableInstrumentation = disableInstrumentationFlag
 			if len(sourceRemoveGroupFlag) > 0 {
 				for label, value := range source.Labels {
-					if label == k8sconsts.SourceGroupLabelPrefix+sourceRemoveGroupFlag && value == "true" {
-						delete(source.Labels, k8sconsts.SourceGroupLabelPrefix+sourceRemoveGroupFlag)
+					if label == k8sconsts.SourceDataStreamLabelPrefix+sourceRemoveGroupFlag && value == "true" {
+						delete(source.Labels, k8sconsts.SourceDataStreamLabelPrefix+sourceRemoveGroupFlag)
 					}
 				}
 			}
@@ -314,7 +315,7 @@ It is important to note that if a Source [name] is provided, all --workload-* fl
 				if source.Labels == nil {
 					source.Labels = make(map[string]string)
 				}
-				source.Labels[k8sconsts.SourceGroupLabelPrefix+sourceSetGroupFlag] = "true"
+				source.Labels[k8sconsts.SourceDataStreamLabelPrefix+sourceSetGroupFlag] = "true"
 			}
 
 			if len(sourceOtelServiceFlag) > 0 {
@@ -434,6 +435,16 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 		objName = obj.GetName()
 		objNamespace = obj.GetName()
 		sourceNamespace = obj.GetName()
+	case k8sconsts.WorkloadKindCronJob:
+		ver := cmdcontext.K8SVersionFromContext(ctx)
+		if ver.LessThan(version.MustParseSemantic("1.21.0")) {
+			obj, err = client.Clientset.BatchV1beta1().CronJobs(sourceNamespaceFlag).Get(ctx, argName, metav1.GetOptions{})
+		} else {
+			obj, err = client.Clientset.BatchV1().CronJobs(sourceNamespaceFlag).Get(ctx, argName, metav1.GetOptions{})
+		}
+		objName = obj.GetName()
+		objNamespace = obj.GetNamespace()
+		sourceNamespace = sourceNamespaceFlag
 	}
 	if err != nil {
 		return nil, err
@@ -537,7 +548,7 @@ func parseSourceLabelFlags() (string, string, string, labels.Set) {
 	}
 	if len(sourceGroupFlag) > 0 {
 		providedWorkloadFlags = fmt.Sprintf("%s Source Group: %s\n", providedWorkloadFlags, sourceGroupFlag)
-		labelSet[k8sconsts.SourceGroupLabelPrefix+sourceGroupFlag] = "true"
+		labelSet[k8sconsts.SourceDataStreamLabelPrefix+sourceGroupFlag] = "true"
 	}
 	namespaceList := sourceNamespaceFlag
 	namespaceText := fmt.Sprintf("namespace %s", sourceNamespaceFlag)
@@ -570,6 +581,7 @@ func init() {
 		k8sconsts.WorkloadKindDaemonSet,
 		k8sconsts.WorkloadKindStatefulSet,
 		k8sconsts.WorkloadKindNamespace,
+		k8sconsts.WorkloadKindCronJob,
 	} {
 		enableCmd := enableOrDisableSourceCmd(kind, false)
 		disableCmd := enableOrDisableSourceCmd(kind, true)

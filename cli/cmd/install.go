@@ -57,6 +57,10 @@ var (
 	centralBackendURL string
 
 	userInstrumentationEnvsRaw string
+
+	autoRollbackDisabled         bool
+	autoRollbackGraceTime        string
+	autoRollbackStabilityWindows string
 )
 
 type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error
@@ -375,6 +379,9 @@ func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]st
 		CentralBackendURL:         centralBackendURL,
 		UserInstrumentationEnvs:   parsedUserJson,
 		NodeSelector:              nodeSelector,
+		RollbackDisabled:          &autoRollbackDisabled,
+		RollbackGraceTime:         autoRollbackGraceTime,
+		RollbackStabilityWindow:   autoRollbackStabilityWindows,
 	}
 
 }
@@ -405,7 +412,7 @@ func init() {
 	installCmd.Flags().StringVar(&k8sNodeLogsDirectory, consts.K8sNodeLogsDirectory, "", "custom configuration of a path to the directory where Kubernetes logs are symlinked in a node (e.g. /mnt/var/log)")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
-	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
+	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.UiModeDefault), "set the UI mode (one-of: default, readonly)")
 	installCmd.Flags().StringVar(&nodeSelectorFlag, "node-selector", "", "comma-separated key=value pair of Kubernetes NodeSelectors to set on Odigos components. Example: kubernetes.io/hostname=myhost")
 
 	installCmd.Flags().StringVar(&clusterName, "cluster-name", "", "name of the cluster to be used in the centralized backend")
@@ -416,7 +423,9 @@ func init() {
 		"",
 		"JSON string to configure per-language instrumentation envs, e.g. '{\"languages\":{\"go\":{\"enabled\":true,\"env\":{\"OTEL_GO_ENABLED\":\"true\"}}}}'",
 	)
-
+	installCmd.Flags().BoolVar(&autoRollbackDisabled, consts.RollbackDisabledProperty, false, "Disabled the auto rollback feature")
+	installCmd.Flags().StringVar(&autoRollbackGraceTime, consts.RollbackGraceTimeProperty, consts.DefaultAutoRollbackGraceTime, "Auto rollback grace time")
+	installCmd.Flags().StringVar(&autoRollbackStabilityWindows, consts.RollbackStabilityWindow, consts.DefaultAutoRollbackStabilityWindow, "Auto rollback stability windows time")
 	if OdigosVersion != "" {
 		versionFlag = OdigosVersion
 	} else {

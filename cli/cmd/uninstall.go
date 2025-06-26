@@ -46,7 +46,22 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
-		ns, err := resources.GetOdigosNamespace(client, ctx)
+		nsFlag, err := cmd.Flags().GetString("namespace")
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
+			os.Exit(1)
+		}
+		var ns string
+		if nsFlag != "" {
+			ns = nsFlag
+		} else {
+			ns, err = resources.GetOdigosNamespace(client, ctx)
+			if err != nil && !resources.IsErrNoOdigosNamespaceFound(err) {
+				fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already uninstalled: %s\n", err)
+				os.Exit(1)
+			}
+		}
+
 		if err != nil && !resources.IsErrNoOdigosNamespaceFound(err) {
 			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already uninstalled: %s\n", err)
 			os.Exit(1)
@@ -63,15 +78,33 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 				}
 			}
 
+			config, err := resources.GetCurrentConfig(ctx, client, ns)
+			if err != nil {
+				fmt.Println("Failed to get current Odigos configuration, assuming default values for uninstallation...")
+			}
+
+			autoRolloutDisabled := false
+			if config != nil {
+				autoRolloutDisabled = config.Rollout != nil &&
+					config.Rollout.AutomaticRolloutDisabled != nil &&
+					*config.Rollout.AutomaticRolloutDisabled
+			}
+
 			// delete all sources, and wait for the pods to rollout without instrumentation
 			// this is done before the instrumentor is removed, to ensure that the instrumentation is removed
-			err := removeAllSources(ctx, client)
+			err = removeAllSources(ctx, client)
 			if err != nil {
 				fmt.Printf("\033[31mERROR\033[0m Failed to remove all sources: %s\n", err)
 				os.Exit(1)
 			}
-			if !cmd.Flag("no-wait").Changed {
-				waitForPodsToRolloutWithoutInstrumentation(ctx, client)
+			if autoRolloutDisabled {
+				fmt.Println("Odigos is configured to NOT rollout workloads automatically; existing pods will remain instrumented until a manual rollout is triggered.")
+			} else if !cmd.Flag("no-wait").Changed {
+				err = waitForPodsToRolloutWithoutInstrumentation(ctx, client)
+				if err != nil {
+					fmt.Printf("\033[31mERROR\033[0m Failed to wait for pods to rollout without instrumentation: %s\n", err)
+					os.Exit(1)
+				}
 			}
 
 			// If the user only wants to uninstall instrumentation, we exit here.
@@ -90,9 +123,10 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 					// (or the corresponding effective-config).
 					// As a workaround, we explicitly delete it here, and let helm delete all other resources.
 					uninstallOdigosConfiguration(ctx, client, ns)
-					fmt.Printf("Uninstalling OdigosConfiguration from namespace %s\n", ns)
-					return 
+					fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources and odigos configuration ConfigMap successfuly\n")
+					return
 				}
+				fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources successfuly\n")
 				return
 			}
 
@@ -193,7 +227,7 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 func namespaceHasOdigosLabel(ctx context.Context, client *kube.Client, ns string) (bool, error) {
 	nsObj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
-		return false, err 
+		return false, err
 	}
 
 	if nsObj.Labels != nil {
@@ -203,7 +237,7 @@ func namespaceHasOdigosLabel(ctx context.Context, client *kube.Client, ns string
 	return false, nil
 }
 
-func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kube.Client) {
+func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kube.Client) error {
 	instrumentedPodReq, _ := k8slabels.NewRequirement(k8sconsts.OdigosAgentsMetaHashLabel, selection.Exists, []string{})
 	fmt.Printf("Waiting for pods to rollout without instrumentation... this might take a while\n")
 
@@ -230,7 +264,9 @@ func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kub
 		if errors.Is(pollErr, context.Canceled) {
 			fmt.Printf("\033[33m!\tWARN\033[0m canceled while waiting pods to roll out cleanly\n")
 		}
+		return pollErr
 	}
+	return nil
 }
 
 func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns string) {
@@ -788,21 +824,12 @@ func uninstallNamespace(ctx context.Context, client *kube.Client, ns, _ string) 
 }
 
 func uninstallOdigosConfiguration(ctx context.Context, client *kube.Client, ns string) error {
-	list, err := client.CoreV1().ConfigMaps(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
-			MatchLabels: labels.OdigosSystem,
-		}),
-	})
+	err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosConfigurationName, metav1.DeleteOptions{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to delete Odigos configuration ConfigMap %s in namespace %s: %w", consts.OdigosConfigurationName, ns, err)
 	}
 
-	for _, cm := range list.Items {
-		if cm.Name == consts.OdigosConfigurationName {
-			return client.CoreV1().ConfigMaps(ns).Delete(ctx, cm.Name, metav1.DeleteOptions{})
-		}
-	}
-
+	fmt.Printf("Deleted Odigos configuration ConfigMap %s in namespace %s\n", consts.OdigosConfigurationName, ns)
 	return nil
 }
 
@@ -819,4 +846,6 @@ func init() {
 	uninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 	uninstallCmd.Flags().Bool("no-wait", false, "skip waiting for pods to rollout without instrumentation")
 	uninstallCmd.Flags().Bool("instrumentation-only", false, "only remove instrumentation from workloads, without removing the entire Odigos setup")
+	uninstallCmd.Flags().String("namespace", "", "namespace to uninstall Odigos from (overrides auto-detection)")
+
 }

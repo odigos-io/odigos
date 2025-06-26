@@ -24,8 +24,23 @@ data:
     {{- if .Values.ui.uiPaginationLimit }}
     uiPaginationLimit: {{ .Values.ui.uiPaginationLimit }}
     {{- end }}
+    {{- if .Values.ui.uiRemoteUrl }}
+    uiRemoteUrl: {{ .Values.ui.uiRemoteUrl }}
+    {{- end }}
     {{- if .Values.ui.centralBackendURL }}
     centralBackendURL: {{ .Values.ui.centralBackendURL }}
+    {{- end }}
+    {{- if or .Values.ui.oidcTenantUrl .Values.ui.oidcClientId .Values.ui.oidcClientSecret }}
+      oidc:
+        {{- if .Values.ui.oidcTenantUrl }}
+        tenantUrl: {{ .Values.ui.oidcTenantUrl }}
+        {{- end }}
+        {{- if .Values.ui.oidcClientId }}
+        clientId: {{ .Values.ui.oidcClientId }}
+        {{- end }}
+        {{- if .Values.ui.oidcClientSecret }}
+        clientSecret: secretRef:odigos-oidc
+        {{- end }}
     {{- end }}
     {{- if .Values.collectorGateway }}
     collectorGateway:
@@ -138,3 +153,19 @@ data:
     {{- if .Values.karpenter.enabled }}
     karpenterEnabled: {{ .Values.karpenter.enabled }}
     {{- end }}
+    {{- if .Values.autoRollback.disabled }}
+    rollbackDisabled: {{ .Values.autoRollback.disabled }}
+    {{- end }}
+    {{- if .Values.autoRollback.graceTime }}
+    rollbackGraceTime: {{ .Values.autoRollback.graceTime }}
+    {{- end }}
+    {{- if .Values.autoRollback.stabilityWindowTime }}
+    rollbackStabilityWindow: {{ .Values.autoRollback.stabilityWindowTime }}
+    {{- end }}
+    {{- if .Values.rollout }}
+    rollout:
+      {{- if .Values.rollout.automaticRolloutDisabled }}
+      automaticRolloutDisabled: {{ .Values.rollout.automaticRolloutDisabled }}
+      {{- end }}
+    {{- end }}
+

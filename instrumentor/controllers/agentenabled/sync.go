@@ -2,7 +2,9 @@ package agentenabled
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -13,6 +15,7 @@ import (
 	distroTypes "github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -46,28 +49,37 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 		return ctrl.Result{}, listErr
 	}
 
+	conf, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	var allErrs error
+	aggregatedResult := ctrl.Result{}
 	for _, ic := range allInstrumentationConfigs.Items {
-		res, err := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp)
-		if err != nil || !res.IsZero() {
-			return res, err
+		res, workloadErr := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, &conf)
+		if workloadErr != nil {
+			allErrs = errors.Join(allErrs, workloadErr)
+		}
+		if !res.IsZero() {
+			if aggregatedResult.RequeueAfter == 0 {
+				aggregatedResult.RequeueAfter = res.RequeueAfter
+			} else if res.RequeueAfter < aggregatedResult.RequeueAfter {
+				aggregatedResult.RequeueAfter = res.RequeueAfter
+			}
 		}
 	}
 
-	return ctrl.Result{}, nil
+	return aggregatedResult, allErrs
 }
 
-func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider) (ctrl.Result, error) {
+func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, conf *common.OdigosConfiguration) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName)
+	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName, namespace)
 	if err != nil {
 		logger.Error(err, "error parsing workload info from runtime object name")
 		return ctrl.Result{}, nil // return nil so not to retry
-	}
-	pw := k8sconsts.PodWorkload{
-		Namespace: namespace,
-		Kind:      workloadKind,
-		Name:      workloadName,
 	}
 
 	ic := odigosv1.InstrumentationConfig{}
@@ -76,7 +88,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		if apierrors.IsNotFound(err) {
 			// instrumentation config is deleted, trigger a rollout for the associated workload
 			// this should happen once per workload, as the instrumentation config is deleted
-			_, res, err := rollout.Do(ctx, c, nil, pw)
+			_, res, err := rollout.Do(ctx, c, nil, pw, conf)
 			return res, err
 		}
 		return ctrl.Result{}, err
@@ -102,7 +114,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	}
 
 	agentEnabledChanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
-	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw)
+	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw, conf)
 
 	if rolloutChanged || agentEnabledChanged {
 		updateErr := c.Status().Update(ctx, &ic)
@@ -122,7 +134,6 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider) (*agentInjectedStatusCondition, error) {
-
 	cg, irls, effectiveConfig, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
@@ -145,9 +156,29 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	defaultDistrosPerLanguage := distroProvider.GetDefaultDistroNames()
 	distroPerLanguage := applyRulesForDistros(defaultDistrosPerLanguage, irls, distroProvider.Getter)
 
+	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff we'd like to stop
+	// instrumentating it and to disable future instrumentation of this service
+	crashDetected := ic.Status.RollbackOccurred
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
-	for _, containerRuntimeDetails := range ic.Status.RuntimeDetailsByContainer {
-		currentContainerConfig := containerInstrumentationConfig(containerRuntimeDetails.ContainerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter)
+	// ContainersOverrides will always list all containers of the workloads, so we can use it to iterate.
+	for i := range ic.Spec.ContainersOverrides {
+		containerName := ic.Spec.ContainersOverrides[i].ContainerName
+		var containerRuntimeDetails *odigosv1.RuntimeDetailsByContainer
+		// always take the override if it exists, before taking the automatic runtime detection.
+		if ic.Spec.ContainersOverrides[i].RuntimeInfo != nil {
+			containerRuntimeDetails = ic.Spec.ContainersOverrides[i].RuntimeInfo
+		} else {
+			// find this container by name in the automatic runtime detection
+			for j := range ic.Status.RuntimeDetailsByContainer {
+				if ic.Status.RuntimeDetailsByContainer[j].ContainerName == containerName {
+					containerRuntimeDetails = &ic.Status.RuntimeDetailsByContainer[j]
+					break
+				}
+			}
+		}
+		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
+		// from automatic runtime detection or overrides.
+		currentContainerConfig := containerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected, cg)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -172,7 +203,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	if len(instrumentedContainerNames) > 0 {
 		// if any instrumented containers are found, the pods webhook should process pods for this workload.
 		// set the AgentInjectionEnabled to true to signal that.
-		ic.Spec.AgentInjectionEnabled = true
+		ic.Spec.AgentInjectionEnabled = !crashDetected
 		agentsDeploymentHash, err := rollout.HashForContainersConfig(containersConfig)
 		if err != nil {
 			return nil, err
@@ -211,20 +242,31 @@ func containerConfigToStatusCondition(containerConfig odigosv1.ContainerAgentCon
 
 func containerInstrumentationConfig(containerName string,
 	effectiveConfig *common.OdigosConfiguration,
-	runtimeDetails odigosv1.RuntimeDetailsByContainer,
+	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
 	distroPerLanguage map[common.ProgrammingLanguage]string,
-	distroGetter *distros.Getter) odigosv1.ContainerAgentConfig {
+	distroGetter *distros.Getter,
+	crashDetected bool,
+	nodeCollectorsGroup *odigosv1.CollectorsGroup) odigosv1.ContainerAgentConfig {
 
-	// check unknown language first. if language is not supported, we can skip the rest of the checks.
-	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
+	// prepare the signal values based on the node collectors group.
+	// it is used later to populated enabled container config.
+	var tracesConfig *odigosv1.AgentTracesConfig
+	var metricsConfig *odigosv1.AgentMetricsConfig
+	var logsConfig *odigosv1.AgentLogsConfig
+	if nodeCollectorsGroup != nil {
+		if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.TracesObservabilitySignal) {
+			tracesConfig = &odigosv1.AgentTracesConfig{}
+		}
+		if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal) {
+			metricsConfig = &odigosv1.AgentMetricsConfig{}
+		}
+		if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.LogsObservabilitySignal) {
+			logsConfig = &odigosv1.AgentLogsConfig{}
 		}
 	}
 
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
+	// This should be done first, because user should see workload not instrumented if container is ignored over unknown language in case both exist.
 	for _, ignoredContainer := range effectiveConfig.IgnoredContainers {
 		if ignoredContainer == containerName {
 			return odigosv1.ContainerAgentConfig{
@@ -232,6 +274,23 @@ func containerInstrumentationConfig(containerName string,
 				AgentEnabled:       false,
 				AgentEnabledReason: odigosv1.AgentEnabledReasonIgnoredContainer,
 			}
+		}
+	}
+
+	if runtimeDetails == nil {
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:      containerName,
+			AgentEnabled:       false,
+			AgentEnabledReason: odigosv1.AgentEnabledReasonRuntimeDetailsUnavailable,
+		}
+	}
+
+	// check unknown language first. if language is not supported, we can skip the rest of the checks.
+	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:      containerName,
+			AgentEnabled:       false,
+			AgentEnabledReason: odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
 		}
 	}
 
@@ -331,6 +390,17 @@ func containerInstrumentationConfig(containerName string,
 		}
 	}
 
+	if crashDetected {
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:       containerName,
+			AgentEnabled:        false,
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonCrashLoopBackOff,
+			AgentEnabledMessage: "Pods entered CrashLoopBackOff; instrumentation disabled",
+			OtelDistroName:      distroName,
+			DistroParams:        distroParameters,
+		}
+	}
+
 	// check for presence of other agents
 	if runtimeDetails.OtherAgent != nil {
 		if effectiveConfig.AllowConcurrentAgents == nil || !*effectiveConfig.AllowConcurrentAgents {
@@ -341,6 +411,7 @@ func containerInstrumentationConfig(containerName string,
 				AgentEnabledMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent '%s' detected running in the container", runtimeDetails.OtherAgent.Name),
 			}
 		} else {
+
 			return odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
 				AgentEnabled:        true,
@@ -348,18 +419,23 @@ func containerInstrumentationConfig(containerName string,
 				AgentEnabledMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
 				OtelDistroName:      distroName,
 				DistroParams:        distroParameters,
+				Traces:              tracesConfig,
+				Metrics:             metricsConfig,
+				Logs:                logsConfig,
 			}
 		}
 	}
 
-	containerConfig := odigosv1.ContainerAgentConfig{
+	return odigosv1.ContainerAgentConfig{
 		ContainerName:  containerName,
 		AgentEnabled:   true,
 		OtelDistroName: distroName,
 		DistroParams:   distroParameters,
+		Traces:         tracesConfig,
+		Metrics:        metricsConfig,
+		Logs:           logsConfig,
 	}
 
-	return containerConfig
 }
 
 func applyRulesForDistros(defaultDistros map[common.ProgrammingLanguage]string,
@@ -414,7 +490,15 @@ func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.Instru
 		return false, odigosv1.AgentEnabledReasonWaitingForNodeCollector, message
 	}
 
-	if len(ic.Status.RuntimeDetailsByContainer) == 0 {
+	// if there are any overrides, we use them (and exist early)
+	for _, containerOverride := range ic.Spec.ContainersOverrides {
+		if containerOverride.RuntimeInfo != nil {
+			return true, odigosv1.AgentEnabledReasonEnabledSuccessfully, ""
+		}
+	}
+
+	hasAutomaticRuntimeDetection := len(ic.Status.RuntimeDetailsByContainer) > 0
+	if !hasAutomaticRuntimeDetection {
 		// differentiate between the case where we expect runtime detection to be completed soon,
 		// vs the case where we know it is staled due to no running pods preventing the runtime inspection
 		for _, condition := range ic.Status.Conditions {

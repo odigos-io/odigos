@@ -24,7 +24,7 @@ var EnvValuesMap = map[string]envValues{
 		delim:               " ",
 		programmingLanguage: common.JavascriptProgrammingLanguage,
 		values: map[common.OtelSdk]string{
-			common.OtelSdkNativeCommunity: "--require /var/odigos/nodejs/autoinstrumentation.js",
+			common.OtelSdkNativeCommunity: "--require /var/odigos/nodejs-community/autoinstrumentation.js",
 			common.OtelSdkEbpfEnterprise:  "--require /var/odigos/nodejs-ebpf/autoinstrumentation.js",
 		},
 	},
@@ -55,14 +55,6 @@ var EnvVarsForLanguage = map[common.ProgrammingLanguage][]string{
 	common.JavaProgrammingLanguage:       {"JAVA_TOOL_OPTIONS"},
 }
 
-func GetRelevantEnvVarsKeys() []string {
-	keys := make([]string, 0, len(EnvValuesMap))
-	for key := range EnvValuesMap {
-		keys = append(keys, key)
-	}
-	return keys
-}
-
 func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
 	return EnvValuesMap[env].values
 }
@@ -89,12 +81,6 @@ func CleanupEnvValueFromOdigosAdditions(envVarName string, envVarValue string) s
 		withSeparator := overwriteMetadata.delim + value
 		envVarValue = strings.ReplaceAll(envVarValue, withSeparator, "")
 		envVarValue = strings.ReplaceAll(envVarValue, value, "")
-	}
-
-	// remove any odigos special values if they exist
-	if envVarName == "JAVA_OPTS" || envVarName == "JAVA_TOOL_OPTIONS" {
-		envVarValue = strings.ReplaceAll(envVarValue, " -javaagent:/opt/sre-agent/sre-agent.jar", "")
-		envVarValue = strings.ReplaceAll(envVarValue, " newrelic/bootstrap", "")
 	}
 
 	return envVarValue

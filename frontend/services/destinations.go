@@ -228,18 +228,11 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 		})
 	}
 
-	dataStreamNames := make([]*string, 0)
-	if k8sDest.Spec.SourceSelector != nil && k8sDest.Spec.SourceSelector.Groups != nil {
-		for _, streamName := range k8sDest.Spec.SourceSelector.Groups {
-			dataStreamNames = append(dataStreamNames, &streamName)
-		}
-	}
-
 	return model.Destination{
 		ID:              k8sDest.Name,
 		Name:            destName,
 		Type:            string(destType),
-		DataStreamNames: dataStreamNames,
+		DataStreamNames: ExtractDataStreamsFromDestination(k8sDest),
 		ExportedSignals: &model.ExportedSignals{
 			Traces:  isSignalExported(k8sDest, common.TracesObservabilitySignal),
 			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),
@@ -297,7 +290,9 @@ func CreateDestinationSecret(ctx context.Context, destType common.DestinationTyp
 		},
 		StringData: secretFields,
 	}
-	newSecret, err := kube.DefaultClient.CoreV1().Secrets(ns).Create(ctx, &secret, metav1.CreateOptions{})
+	newSecret, err := CreateResourceWithGenerateName(ctx, func() (*k8s.Secret, error) {
+		return kube.DefaultClient.CoreV1().Secrets(ns).Create(ctx, &secret, metav1.CreateOptions{})
+	})
 	if err != nil {
 		return nil, err
 	}

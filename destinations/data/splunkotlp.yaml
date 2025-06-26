@@ -1,0 +1,73 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: splunkotlp
+  displayName: Splunk (OTLP)
+  category: managed
+spec:
+  image: splunk.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  fields:
+    - name: SPLUNK_ACCESS_TOKEN
+      displayName: Access Token
+      componentType: input
+      componentProps:
+        type: password
+        required: true
+      secret: true
+    - name: SPLUNK_REALM
+      displayName: Realm
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: The Splunk realm in use. This is the second part of the URL you use to access Splunk/SignalFX. For example, if you access Splunk at `https://app.us1.signalfx.com`, then the realm is `us1`.
+
+    - name: SPLUNK_OTLP_COMPRESSION
+      displayName: Compression Type
+      componentType: dropdown
+      componentProps:
+        values:
+          - none
+          - gzip
+        required: false
+        tooltip: 'Compression type to use for the destination. The default is `none`.'
+      initialValue: 'none'
+
+    - name: SPLUNK_OTLP_TLS_ENABLED
+      displayName: Enable TLS
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Secure connection'
+      customReadDataLabels:
+        - condition: 'true'
+          title: 'TLS'
+          value: 'Encrypted'
+        - condition: 'false'
+          title: 'TLS'
+          value: 'Unencrypted'
+    - name: SPLUNK_OTLP_CA_PEM
+      displayName: Certificate Authority
+      componentType: textarea
+      componentProps:
+        required: false
+        placeholder: '-----BEGIN CERTIFICATE-----'
+        tooltip: 'When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA'
+      renderCondition: ['SPLUNK_OTLP_TLS_ENABLED', '==', 'true']
+      hideFromReadData: ['true']
+    - name: SPLUNK_OTLP_INSECURE_SKIP_VERIFY
+      displayName: Insecure Skip Verify
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Skip TLS certificate verification'
+      renderCondition: ['SPLUNK_OTLP_TLS_ENABLED', '==', 'true']

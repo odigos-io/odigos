@@ -125,7 +125,23 @@ func NewSchedulerRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewSchedulerClusterRole() *rbacv1.ClusterRole {
+func NewSchedulerClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
+	rules := []rbacv1.PolicyRule{
+		{ // Needed to track presence/status of configs to wake the data/gateway collectors
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"instrumentationconfigs"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+	}
+
+	if openshiftEnabled {
+		rules = append(rules, rbacv1.PolicyRule{
+			APIGroups: []string{""},
+			Resources: []string{"configmaps/finalizers"},
+			Verbs:     []string{"update"},
+		})
+	}
+
 	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
@@ -134,13 +150,7 @@ func NewSchedulerClusterRole() *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.SchedulerClusterRoleName,
 		},
-		Rules: []rbacv1.PolicyRule{
-			{ // Needed to track presence/status of configs to wake the data/gateway collectors
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentationconfigs"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		},
+		Rules: rules,
 	}
 }
 
@@ -211,7 +221,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 							},
 							Args: []string{
 								"--health-probe-bind-address=:8081",
-								"--metrics-bind-address=127.0.0.1:8080",
+								"--metrics-bind-address=0.0.0.0:8080",
 								"--leader-elect",
 							},
 							Env: []corev1.EnvVar{
@@ -317,6 +327,35 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 	}
 }
 
+func NewSchedulerService(ns string) *corev1.Service {
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-scheduler",
+			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.SchedulerAppLabelValue,
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.SchedulerAppLabelValue,
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "metrics",
+					Port:       8080,
+					TargetPort: intstr.FromInt(8080),
+					Protocol:   corev1.ProtocolTCP,
+				},
+			},
+		},
+	}
+}
+
 type schedulerResourceManager struct {
 	client        *kube.Client
 	ns            string
@@ -337,9 +376,10 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 		NewSchedulerLeaderElectionRoleBinding(a.ns),
 		NewSchedulerRole(a.ns),
 		NewSchedulerRoleBinding(a.ns),
-		NewSchedulerClusterRole(),
+		NewSchedulerClusterRole(a.config.OpenshiftEnabled),
 		NewSchedulerClusterRoleBinding(a.ns),
 		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.SchedulerImage, a.config.NodeSelector),
+		NewSchedulerService(a.ns),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

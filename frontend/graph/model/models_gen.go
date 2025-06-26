@@ -394,9 +394,10 @@ type JSONCondition struct {
 }
 
 type K8sActualNamespace struct {
-	Name     string             `json:"name"`
-	Selected bool               `json:"selected"`
-	Sources  []*K8sActualSource `json:"sources"`
+	Name            string             `json:"name"`
+	Selected        bool               `json:"selected"`
+	DataStreamNames []*string          `json:"dataStreamNames"`
+	Sources         []*K8sActualSource `json:"sources"`
 }
 
 type K8sActualSource struct {
@@ -568,8 +569,11 @@ type PaginatedSources struct {
 }
 
 type PatchSourceRequestInput struct {
-	OtelServiceName   string `json:"otelServiceName"`
-	CurrentStreamName string `json:"currentStreamName"`
+	CurrentStreamName string  `json:"currentStreamName"`
+	OtelServiceName   *string `json:"otelServiceName,omitempty"`
+	ContainerName     *string `json:"containerName,omitempty"`
+	Language          *string `json:"language,omitempty"`
+	Version           *string `json:"version,omitempty"`
 }
 
 type PayloadCollection struct {
@@ -587,11 +591,13 @@ type PayloadCollectionInput struct {
 }
 
 type PersistNamespaceItemInput struct {
-	Name           string `json:"name"`
-	FutureSelected bool   `json:"futureSelected"`
+	Namespace         string `json:"namespace"`
+	Selected          bool   `json:"selected"`
+	CurrentStreamName string `json:"currentStreamName"`
 }
 
 type PersistNamespaceSourceInput struct {
+	Namespace         string          `json:"namespace"`
 	Name              string          `json:"name"`
 	Kind              K8sResourceKind `json:"kind"`
 	Selected          bool            `json:"selected"`
@@ -633,15 +639,19 @@ type PipelineAction struct {
 }
 
 type PodAnalyze struct {
-	PodName    *EntityProperty        `json:"podName"`
-	NodeName   *EntityProperty        `json:"nodeName"`
-	Phase      *EntityProperty        `json:"phase"`
-	Containers []*PodContainerAnalyze `json:"containers"`
+	PodName                       *EntityProperty        `json:"podName"`
+	NodeName                      *EntityProperty        `json:"nodeName"`
+	Phase                         *EntityProperty        `json:"phase"`
+	AgentInjected                 *EntityProperty        `json:"agentInjected"`
+	RunningLatestWorkloadRevision *EntityProperty        `json:"runningLatestWorkloadRevision,omitempty"`
+	Containers                    []*PodContainerAnalyze `json:"containers"`
 }
 
 type PodContainerAnalyze struct {
 	ContainerName            *EntityProperty                   `json:"containerName"`
 	ActualDevices            *EntityProperty                   `json:"actualDevices"`
+	Started                  *EntityProperty                   `json:"started,omitempty"`
+	Ready                    *EntityProperty                   `json:"ready,omitempty"`
 	InstrumentationInstances []*InstrumentationInstanceAnalyze `json:"instrumentationInstances"`
 }
 
@@ -789,6 +799,7 @@ type SourceContainer struct {
 	ContainerName          string  `json:"containerName"`
 	Language               string  `json:"language"`
 	RuntimeVersion         string  `json:"runtimeVersion"`
+	Overriden              bool    `json:"overriden"`
 	Instrumented           bool    `json:"instrumented"`
 	InstrumentationMessage string  `json:"instrumentationMessage"`
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
@@ -1114,17 +1125,19 @@ const (
 	K8sResourceKindDeployment  K8sResourceKind = "Deployment"
 	K8sResourceKindDaemonSet   K8sResourceKind = "DaemonSet"
 	K8sResourceKindStatefulSet K8sResourceKind = "StatefulSet"
+	K8sResourceKindCronJob     K8sResourceKind = "CronJob"
 )
 
 var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindDeployment,
 	K8sResourceKindDaemonSet,
 	K8sResourceKindStatefulSet,
+	K8sResourceKindCronJob,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob:
 		return true
 	}
 	return false

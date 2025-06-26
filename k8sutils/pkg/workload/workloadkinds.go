@@ -5,10 +5,14 @@ import (
 	"strings"
 
 	v1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/version"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
 // This go file contains utils to handle the kind of odigos workloads.
@@ -29,7 +33,8 @@ func IgnoreErrorKindNotSupported(err error) error {
 
 func IsValidWorkloadKind(kind k8sconsts.WorkloadKind) bool {
 	switch kind {
-	case k8sconsts.WorkloadKindDeployment, k8sconsts.WorkloadKindDaemonSet, k8sconsts.WorkloadKindStatefulSet, k8sconsts.WorkloadKindNamespace:
+	case k8sconsts.WorkloadKindDeployment, k8sconsts.WorkloadKindDaemonSet,
+		k8sconsts.WorkloadKindStatefulSet, k8sconsts.WorkloadKindNamespace, k8sconsts.WorkloadKindCronJob:
 		return true
 	}
 	return false
@@ -45,6 +50,10 @@ func WorkloadKindLowerCaseFromKind(pascalCase k8sconsts.WorkloadKind) k8sconsts.
 		return k8sconsts.WorkloadKindLowerCaseStatefulSet
 	case k8sconsts.WorkloadKindNamespace:
 		return k8sconsts.WorkloadKindLowerCaseNamespace
+	case k8sconsts.WorkloadKindCronJob:
+		return k8sconsts.WorkloadKindLowerCaseCronJob
+	case k8sconsts.WorkloadKindJob:
+		return k8sconsts.WorkloadKindLowerCaseJob
 	}
 	return ""
 }
@@ -57,6 +66,10 @@ func WorkloadKindFromLowerCase(lowerCase k8sconsts.WorkloadKindLowerCase) k8scon
 		return k8sconsts.WorkloadKindDaemonSet
 	case k8sconsts.WorkloadKindLowerCaseStatefulSet:
 		return k8sconsts.WorkloadKindStatefulSet
+	case k8sconsts.WorkloadKindLowerCaseCronJob:
+		return k8sconsts.WorkloadKindCronJob
+	case k8sconsts.WorkloadKindLowerCaseJob:
+		return k8sconsts.WorkloadKindJob
 	}
 	return ""
 }
@@ -69,21 +82,12 @@ func WorkloadKindFromString(kind string) k8sconsts.WorkloadKind {
 		return k8sconsts.WorkloadKindDaemonSet
 	case string(k8sconsts.WorkloadKindLowerCaseStatefulSet):
 		return k8sconsts.WorkloadKindStatefulSet
+	case string(k8sconsts.WorkloadKindCronJob):
+		return k8sconsts.WorkloadKindCronJob
+	case string(k8sconsts.WorkloadKindLowerCaseJob):
+		return k8sconsts.WorkloadKindJob
 	default:
 		return k8sconsts.WorkloadKind("")
-	}
-}
-
-func WorkloadKindFromClientObject(w client.Object) k8sconsts.WorkloadKind {
-	switch w.(type) {
-	case *v1.Deployment:
-		return k8sconsts.WorkloadKindDeployment
-	case *v1.DaemonSet:
-		return k8sconsts.WorkloadKindDaemonSet
-	case *v1.StatefulSet:
-		return k8sconsts.WorkloadKindStatefulSet
-	default:
-		return ""
 	}
 }
 
@@ -99,6 +103,19 @@ func ClientObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object {
 		return &v1.StatefulSet{}
 	case k8sconsts.WorkloadKindNamespace:
 		return &corev1.Namespace{}
+	case k8sconsts.WorkloadKindCronJob:
+		ver, err := utils.ClusterVersion()
+		if err != nil {
+			return &batchv1beta1.CronJob{}
+		}
+
+		if ver.LessThan(version.MustParseSemantic("1.21.0")) {
+			return &batchv1beta1.CronJob{}
+		} else {
+			return &batchv1.CronJob{}
+		}
+	case k8sconsts.WorkloadKindJob:
+		return &batchv1.Job{}
 	default:
 		return nil
 	}
@@ -112,6 +129,19 @@ func ClientListObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object
 		return &v1.DaemonSetList{}
 	case k8sconsts.WorkloadKindStatefulSet:
 		return &v1.StatefulSetList{}
+	case k8sconsts.WorkloadKindCronJob:
+		ver, err := utils.ClusterVersion()
+		if err != nil {
+			return &batchv1beta1.CronJobList{}
+		}
+
+		if ver != nil && ver.LessThan(version.MustParseSemantic("1.21.0")) {
+			return &batchv1beta1.CronJobList{}
+		} else {
+			return &batchv1.CronJobList{}
+		}
+	case k8sconsts.WorkloadKindJob:
+		return &batchv1.JobList{}
 	default:
 		return nil
 	}

@@ -12,6 +12,6 @@ func isPodContainerPredicate(_ string, _ string) func(string) bool {
 	}
 }
 
-func FindAllInContainer(podUID string, containerName string) ([]procdiscovery.Details, error) {
+func FindAllInContainer(podUID string, containerName string, appendEnvVarNames map[string]struct{}) ([]procdiscovery.Details, error) {
 	return nil, nil
 }

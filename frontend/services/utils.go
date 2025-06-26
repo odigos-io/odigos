@@ -2,8 +2,11 @@ package services
 
 import (
 	"context"
-	"errors"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
+	"io"
+	"net/http"
 	"path"
 	"slices"
 	"sort"
@@ -15,9 +18,11 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-
+	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
+	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"k8s.io/apimachinery/pkg/util/version"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/yaml"
 )
 
@@ -87,15 +92,6 @@ func Metav1TimeToString(latestStatusTime metav1.Time) string {
 	return latestStatusTime.Time.Format(time.RFC3339)
 }
 
-func CheckWorkloadKind(kind WorkloadKind) error {
-	switch kind {
-	case WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
-		return nil
-	default:
-		return errors.New("unsupported workload kind: " + string(kind))
-	}
-}
-
 func ArrayContains(arr []string, str string) bool {
 	return slices.Contains(arr, str)
 }
@@ -151,4 +147,81 @@ func SortConditions(conditions []*model.Condition) {
 
 		return timeI.Before(timeJ)
 	})
+}
+
+func randString(nByte int) (string, error) {
+	b := make([]byte, nByte)
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func setCallbackCookie(w http.ResponseWriter, r *http.Request, name string, value string, path string, maxAge int) {
+	if maxAge <= 0 {
+		maxAge = int(time.Hour.Seconds())
+	}
+
+	c := &http.Cookie{
+		Name:     name,
+		Value:    value,
+		HttpOnly: true,
+		Secure:   r.TLS != nil,
+		SameSite: http.SameSiteLaxMode, // prevents CSRF
+		MaxAge:   maxAge,
+	}
+
+	if path != "" {
+		c.Path = path
+	}
+
+	http.SetCookie(w, c)
+}
+
+// generated names can cause conflicts with k8s < 1.32.
+// the best practice is to retry the create operation if we got a conflict error (409).
+// this function takes care of checking the k8s version and retrying the create operation if needed.
+func CreateResourceWithGenerateName[T any](ctx context.Context, createFunc func() (T, error)) (T, error) {
+	if feature.RetryGenerateName(feature.GA) {
+		// in k8s 1.32+, the generate name is enabled by default in the api server, so we don't need to retry.
+		return createFunc()
+	} else {
+		var result T
+		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			var err error
+			result, err = createFunc()
+			return err
+		})
+		return result, err
+	}
+}
+
+// Function to run multiple goroutines with a limit on concurrency.
+func WithGoroutine(ctx context.Context, limit int, run func(goFunc func(func() error))) error {
+	g, _ := errgroup.WithContext(ctx)
+	if limit > 0 {
+		g.SetLimit(limit)
+	}
+
+	run(g.Go)
+
+	if err := g.Wait(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// getKubeVersion retrieves and parses the Kubernetes server version.
+func getKubeVersion() (*version.Version, error) {
+	verInfo, err := kube.DefaultClient.Discovery().ServerVersion()
+	if err != nil {
+		return nil, err
+	}
+
+	parsedVer, err := version.ParseGeneric(verInfo.GitVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	return parsedVer, nil
 }

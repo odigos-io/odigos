@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -20,18 +21,22 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
 	updateRemoteFlag bool
 	proNamespaceFlag string
 	useDefault       bool
+	downloadFile     string
+	fromFile         string
 )
 
 var proCmd = &cobra.Command{
@@ -131,6 +136,12 @@ odigos pro update-offsets
 
 # Revert to using the default offsets data shipped with Odigos
 odigos pro update-offsets --default
+
+# Download the offsets file to a specific location without updating the cluster
+odigos pro update-offsets --download-file /path/to/save/offsets.json
+
+# Use a local offsets file instead of downloading it
+odigos pro update-offsets --from-file /path/to/local/offsets.json
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
@@ -157,6 +168,17 @@ odigos pro update-offsets --default
 			os.Exit(1)
 		}
 
+		// If download file is specified, just save the file and exit
+		if downloadFile != "" {
+			err = os.WriteFile(downloadFile, data, 0644)
+			if err != nil {
+				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to write offsets file: %s", err))
+				os.Exit(1)
+			}
+			fmt.Printf("Successfully downloaded offsets to %s\n", downloadFile)
+			return
+		}
+
 		cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
 		if err != nil {
 			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to get Go offsets ConfigMap: %s", err))
@@ -179,13 +201,28 @@ odigos pro update-offsets --default
 			os.Exit(1)
 		}
 
-		fmt.Println("Updated Go Offsets.")
+		fmt.Println("Updated Go Offsets, restarting Odiglet to use the new offsets.")
+		err = restartOdiglet(ctx, client, ns)
+		if err != nil {
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to restart Odiglet: %s", err))
+			os.Exit(1)
+		}
+		fmt.Println("Odiglet restarted successfully.")
 	},
 }
 
 func getLatestOffsets(revert bool) ([]byte, error) {
 	if revert {
 		return []byte{}, nil
+	}
+
+	// If fromFile is specified, read from local file
+	if fromFile != "" {
+		data, err := os.ReadFile(fromFile)
+		if err != nil {
+			return nil, fmt.Errorf("cannot read offsets file: %s", err)
+		}
+		return data, nil
 	}
 
 	resp, err := http.Get(consts.GoOffsetsPublicURL)
@@ -219,16 +256,73 @@ var centralInstallCmd = &cobra.Command{
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		onPremToken := cmd.Flag("onprem-token").Value.String()
-		if onPremToken == "" {
-			fmt.Println("\033[31mERROR\033[0m onprem-token is required")
-			os.Exit(1)
-		}
-
 		if err := installCentralBackendAndUI(ctx, client, proNamespaceFlag, onPremToken); err != nil {
 			fmt.Println("\033[31mERROR\033[0m Failed to install Odigos central:")
 			fmt.Println(err)
 			os.Exit(1)
 		}
+	},
+}
+
+var activateCmd = &cobra.Command{
+	Use:   "activate",
+	Short: "Activate the Odigos Enterprise tier from the Community Edition",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		ns, err := resources.GetOdigosNamespace(client, ctx)
+		if resources.IsErrNoOdigosNamespaceFound(err) {
+			fmt.Println("\033[31mERROR\033[0m no odigos installation found in the current cluster")
+			os.Exit(1)
+		} else if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Starting activation of Enterprise tier from Community...")
+
+		odigosConfig, err := resources.GetCurrentConfig(ctx, client, ns)
+		if err != nil {
+			fmt.Printf("Error reading odigos configuration: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Since Karpenter uses a different labeling system that has no separation between OSS and enterprise,
+		// we want to avoid potential user apps from crashing in case they are scheduled on a node where the
+		// enterprise files are not yet found in the /var/odigos mount.
+		if odigosConfig.KarpenterEnabled != nil && *odigosConfig.KarpenterEnabled {
+			fmt.Println("\033[31mERROR\033[0m Activation is not supported when odigos is installed with 'KarpenterEnabled' option. uninstall odigos community and reinstall odigos with enterprise onprem token")
+			os.Exit(1)
+		}
+
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+		}
+
+		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Println("Odigos pro activate failed - unable to get odigos deployment ConfigMap.")
+			os.Exit(1)
+		}
+		odigosVersion := cm.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
+		if odigosVersion == "" {
+			fmt.Println("Odigos pro activate failed - missing version info.")
+			os.Exit(1)
+		}
+
+		onPremToken := cmd.Flag("onprem-token").Value.String()
+		resourceManagers := resources.CreateResourceManagers(
+			client, ns, common.OnPremOdigosTier, &onPremToken, odigosConfig, odigosVersion,
+			installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
+
+		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Synching")
+		if err != nil {
+			fmt.Println("Odigos pro activate failed - unable to apply resources.")
+			os.Exit(1)
+		}
+
+		fmt.Println("Activation completed successfully. Odigos is upgraded to enterprise tier")
 	},
 }
 
@@ -346,6 +440,22 @@ func findPodWithAppLabel(ctx context.Context, client *kube.Client, ns, appLabel 
 	return pod, nil
 }
 
+func restartOdiglet(ctx context.Context, client *kube.Client, ns string) error {
+	// Create patch to add/update the restartedAt annotation
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`,
+		time.Now().Format(time.RFC3339))
+
+	// Patch the Odiglet daemonset
+	_, err := client.AppsV1().DaemonSets(ns).Patch(
+		ctx,
+		k8sconsts.OdigletDaemonSetName,
+		types.StrategicMergePatchType,
+		[]byte(patch),
+		metav1.PatchOptions{},
+	)
+	return err
+}
+
 func init() {
 	rootCmd.AddCommand(proCmd)
 
@@ -355,7 +465,8 @@ func init() {
 
 	proCmd.AddCommand(offsetsCmd)
 	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
-
+	offsetsCmd.Flags().StringVar(&downloadFile, "download-file", "", "download the offsets file to the specified location without updating the cluster")
+	offsetsCmd.Flags().StringVar(&fromFile, "from-file", "", "use the offsets file from the specified location instead of downloading it")
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
@@ -364,4 +475,9 @@ func init() {
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
 	centralCmd.AddCommand(portForwardCentralCmd)
+	// migrate subcommand
+	proCmd.AddCommand(activateCmd)
+	activateCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
+	activateCmd.MarkFlagRequired("onprem-token")
+
 }

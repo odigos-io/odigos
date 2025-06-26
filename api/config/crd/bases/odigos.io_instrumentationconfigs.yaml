@@ -55,6 +55,11 @@ spec:
                   or something else that requires rollout, the hash change will indicate that.
                   if the hash is empty, it means that no agent should be enabled in any pod container.
                 type: string
+              containerOverridesHash:
+                description: |-
+                  An hash of the containers overrides, used to determine if the overrides have changed for event filtering.
+                  this is updated only when the overrides are changed, and not when some other change in the source occurs.
+                type: string
               containers:
                 description: configuration for each instrumented container in the
                   workload
@@ -83,6 +88,7 @@ spec:
                       - UnsupportedRuntimeVersion
                       - MissingDistroParameter
                       - OtherAgentDetected
+                      - CrashLoopBackOff
                       type: string
                     containerName:
                       description: The name of the container to which this configuration
@@ -95,13 +101,126 @@ spec:
                         Additional parameters to the distro that controls how it's being applied.
                         Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
                       type: object
+                    logs:
+                      description: |-
+                        all "logs" related configuration for an agent running on any process in a specific container.
+                        The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
+                      type: object
+                    metrics:
+                      description: |-
+                        all "metrics" related configuration for an agent running on any process in a specific container.
+                        The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
+                      type: object
                     otelDistroName:
                       description: |-
                         The name of the otel distribution to use for this container.
                         if the name is empty, this container should not be instrumented.
                       type: string
+                    traces:
+                      description: |-
+                        Each enabled signal must be set with a non-nil value (even if the config content is empty).
+                        nil means that the signal is disabled and should not be instrumented/collected by the agent.
+                      type: object
                   required:
                   - agentEnabled
+                  - containerName
+                  type: object
+                type: array
+              containersOverrides:
+                description: |-
+                  will always list all containers of this workload by name,
+                  and override data in case it is configured on the source.
+                  this peoperty can be used to know all container names in the workload, even if other controllers did not yet run.
+                items:
+                  properties:
+                    containerName:
+                      description: The name of the container to override.
+                      type: string
+                    runtimeInfo:
+                      description: |-
+                        RuntimeInfo to use for agent enabling.
+                        If set for a container, the automatic detection will not be used for this container,
+                        and the distro to use will be calculated based on this value.
+                      properties:
+                        containerName:
+                          type: string
+                        criErrorMessage:
+                          description: Stores the error message from the CRI runtime
+                            if returned to prevent instrumenting the container if
+                            an error exists.
+                          type: string
+                        envFromContainerRuntime:
+                          description: Holds the environment variables retrieved from
+                            the container runtime.
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          type: array
+                        envVars:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          type: array
+                        language:
+                          enum:
+                          - java
+                          - python
+                          - go
+                          - dotnet
+                          - javascript
+                          - php
+                          - ruby
+                          - rust
+                          - cplusplus
+                          - mysql
+                          - nginx
+                          - redis
+                          - postgres
+                          - unknown
+                          - ignored
+                          type: string
+                        libCType:
+                          enum:
+                          - glibc
+                          - musl
+                          type: string
+                        otherAgent:
+                          properties:
+                            name:
+                              type: string
+                          type: object
+                        runtimeUpdateState:
+                          description: A temporary variable used during migration
+                            to track whether the new runtime detection process has
+                            been executed. If empty, it indicates the process has
+                            not yet been run. This field may be removed later.
+                          type: string
+                        runtimeVersion:
+                          type: string
+                        secureExecutionMode:
+                          description: |-
+                            Indicates whether the target process is running is secure-execution mode.
+                            nil means we were unable to determine the secure-execution mode.
+                          type: boolean
+                      required:
+                      - containerName
+                      - language
+                      type: object
+                  required:
                   - containerName
                   type: object
                 type: array
@@ -407,6 +526,7 @@ spec:
                       - php
                       - ruby
                       - rust
+                      - cplusplus
                       - mysql
                       - nginx
                       - redis
@@ -499,6 +619,13 @@ spec:
                               type: integer
                           type: object
                       type: object
+                    traceConfig:
+                      description: default configuration for library tracing.
+                      properties:
+                        disabled:
+                          description: Disabled will disable tracing for the rule.
+                          type: boolean
+                      type: object
                   required:
                   - language
                   type: object
@@ -570,6 +697,15 @@ spec:
                   - type
                   type: object
                 type: array
+              instrumentationTime:
+                description: |-
+                  This time recorded only after the rollout took place.
+                  This allows us to determine whether a crashing application should be rolled back or not
+                format: date-time
+                type: string
+              rollbackOccurred:
+                description: Check if rollback happened to an application
+                type: boolean
               runtimeDetailsByContainer:
                 description: Capture Runtime Details for the workloads that this CR
                   applies to.
@@ -618,6 +754,7 @@ spec:
                       - php
                       - ruby
                       - rust
+                      - cplusplus
                       - mysql
                       - nginx
                       - redis
