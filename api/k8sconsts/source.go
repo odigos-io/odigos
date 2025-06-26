@@ -19,7 +19,5 @@ const (
 	WorkloadNamespaceLabel = "odigos.io/workload-namespace"
 	WorkloadKindLabel      = "odigos.io/workload-kind"
 
-	// sourcegrouplabelprefix will be removed once merging the connectors approach
-	SourceGroupLabelPrefix      = "odigos.io/group-"
 	SourceDataStreamLabelPrefix = "odigos.io/data-stream-"
 )

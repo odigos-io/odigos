@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { STORAGE_KEYS } from '@/utils';
 import { useSourceCRUD } from '../sources';
+import { useDestinationCRUD } from '../destinations';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { Crud, type DataStream, StatusType } from '@odigos/ui-kit/types';
 import { useDataStreamStore, useNotificationStore } from '@odigos/ui-kit/store';
@@ -20,6 +21,7 @@ interface UseDataStreamsCrud {
 export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
   const { isReadonly } = useConfig();
   const { fetchSourcesPaginated } = useSourceCRUD();
+  const { fetchDestinations } = useDestinationCRUD();
   const { addNotification } = useNotificationStore();
   const { dataStreams, setDataStreams, addDataStreams, removeDataStreams, dataStreamsLoading, setDataStreamsLoading, selectedStreamName, setSelectedStreamName } = useDataStreamStore();
 
@@ -64,10 +66,9 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
       notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${oldStream?.name}" data stream`);
 
       const switchToStream = selectedStreamName === oldStream?.name ? newStream.name : selectedStreamName;
-      await fetchDataStreams(switchToStream);
+      await fetchDestinations();
       await fetchSourcesPaginated();
-      // We don't need to refetch destinations, because it's refetched with SSE for modified events.
-      // The reason we do refetch sources, is because the stream name is never written to instrumentation configs.
+      await fetchDataStreams(switchToStream);
     },
   });
 
@@ -79,10 +80,9 @@ export const useDataStreamsCRUD = (): UseDataStreamsCrud => {
       notifyUser(StatusType.Success, Crud.Delete, `Successfully deleted "${oldStream?.name}" data stream`);
 
       const switchToStream = selectedStreamName === oldStream?.name ? DEFAULT_DATA_STREAM_NAME : selectedStreamName;
-      await fetchDataStreams(switchToStream);
+      await fetchDestinations();
       await fetchSourcesPaginated();
-      // We don't need to refetch destinations, because it's refetched with SSE for modified events.
-      // The reason we do refetch sources, is because the stream name is never written to instrumentation configs.
+      await fetchDataStreams(switchToStream);
     },
   });
 
