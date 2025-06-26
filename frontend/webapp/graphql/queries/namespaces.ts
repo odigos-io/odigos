@@ -6,6 +6,7 @@ export const GET_NAMESPACES = gql`
       k8sActualNamespaces {
         name
         selected
+        dataStreamNames
       }
     }
   }
@@ -17,6 +18,7 @@ export const GET_NAMESPACE = gql`
       k8sActualNamespace(name: $namespaceName) {
         name
         selected
+        dataStreamNames
         sources {
           namespace
           kind
