@@ -619,6 +619,13 @@ spec:
                               type: integer
                           type: object
                       type: object
+                    traceConfig:
+                      description: default configuration for library tracing.
+                      properties:
+                        disabled:
+                          description: Disabled will disable tracing for the rule.
+                          type: boolean
+                      type: object
                   required:
                   - language
                   type: object

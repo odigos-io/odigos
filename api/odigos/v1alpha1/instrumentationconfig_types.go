@@ -350,6 +350,9 @@ type SdkConfig struct {
 
 	// default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.
 	DefaultHeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
+
+	// default configuration for library tracing.
+	DefaultTraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
