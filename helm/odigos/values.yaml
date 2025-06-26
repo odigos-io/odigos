@@ -179,15 +179,32 @@ ui:
     limits:
       cpu: 500m
       memory: 512Mi
-  # uiMode: 'normal' or 'readonly'
+  # uiMode: 'default' or 'readonly'
   #  - This flag controls whether the UI should be in read-only mode.
   #  - Setting this to "readonly" will disable the ability to create, update, or delete objects in the UI.
-  #  - If not set, the UI will be in normal mode.
-  uiMode: 'normal'
+  #  - If not set, the UI will be in default mode.
+  uiMode: 'default'
   # uiPaginationLimit:
   #  - This flag controls the number of items to fetch per paginated-batch in the UI.
   #  - If not set, the UI will fetch 100 items per paginated-batch.
   uiPaginationLimit: 0
+  # uiRemoteUrl:
+  #  - This flag sets the URL of the remote UI (e.g. https://my-odigos-ui.com).
+  #  - If not set, the UI will default to the local UI.
+  #  - This is useful when you are hosting the Odigos UI on a custom/remote URL, and require OIDC authentication.
+  uiRemoteUrl: ''
+  # oidcTenantUrl:
+  #  - This flag sets the URL of the OIDC tenant (e.g. https://my-oidc-tenant.com).
+  #  - If not set, the UI will not process OIDC authentication.
+  oidcTenantUrl: ''
+  # oidcClientId:
+  #  - This flag sets the client ID of the OIDC application.
+  #  - If not set, the UI will not process OIDC authentication.
+  oidcClientId: ''
+  # oidcClientSecret:
+  #  - This flag sets the client secret of the OIDC application.
+  #  - If not set, the UI will not process OIDC authentication.
+  oidcClientSecret: ''
   centralBackendURL: ''
 
 instrumentor:

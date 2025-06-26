@@ -91,7 +91,7 @@ func TestCalculate(t *testing.T) {
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, config, want)
-	assert.Equal(t, len(statuses.Destination), 0)
+	assert.Equal(t, len(statuses.Destination), 1)
 	assert.Equal(t, len(statuses.Processor), 0)
 	assert.Equal(t, len(signals), 1)
 	assert.Equal(t, signals[0], common.LogsObservabilitySignal)
@@ -203,7 +203,7 @@ func TestCalculateDataStreamAndDestinations(t *testing.T) {
 
 	assert.Equal(t, config, want)
 	assert.Nil(t, err)
-	assert.Equal(t, len(statuses.Destination), 0)
+	assert.Equal(t, len(statuses.Destination), 1)
 	assert.Equal(t, len(statuses.Processor), 0)
 	assert.Equal(t, len(signals), 1)
 }
@@ -259,7 +259,7 @@ func TestCalculateDataStreamMissingSources(t *testing.T) {
 
 	assert.Equal(t, config, want)
 	assert.Nil(t, err)
-	assert.Equal(t, len(statuses.Destination), 0)
+	assert.Equal(t, len(statuses.Destination), 1)
 	assert.Equal(t, len(statuses.Processor), 0)
 	assert.Equal(t, len(signals), 1)
 	assert.Equal(t, signals, []common.ObservabilitySignal{common.LogsObservabilitySignal})
