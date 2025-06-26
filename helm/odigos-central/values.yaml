@@ -19,6 +19,10 @@ centralBackend:
 centralUI:
   uiMode: normal
   uiPaginationLimit: 0
+  uiRemoteUrl: ''
+  oidcTenantUrl: ''
+  oidcClientId: ''
+  oidcClientSecret: ''
   centralBackendURL: ""
   resources:
     requests:
