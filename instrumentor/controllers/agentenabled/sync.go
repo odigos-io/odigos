@@ -490,6 +490,11 @@ func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.Instru
 		return false, odigosv1.AgentEnabledReasonWaitingForNodeCollector, message
 	}
 
+	gotReadySignals, message := gotReadySignals(cg)
+	if !gotReadySignals {
+		return false, odigosv1.AgentEnabledReasonNoCollectedSignals, message
+	}
+
 	// if there are any overrides, we use them (and exist early)
 	for _, containerOverride := range ic.Spec.ContainersOverrides {
 		if containerOverride.RuntimeInfo != nil {
@@ -525,5 +530,17 @@ func isNodeCollectorReady(cg *odigosv1.CollectorsGroup) (bool, string) {
 	}
 
 	// node collector is ready to receive telemetry
+	return true, ""
+}
+
+func gotReadySignals(cg *odigosv1.CollectorsGroup) (bool, string) {
+	if cg == nil {
+		return false, "waiting for OpenTelemetry Collector to be created"
+	}
+
+	if len(cg.Status.ReceiverSignals) == 0 {
+		return false, "no signals are being collected"
+	}
+
 	return true, ""
 }
