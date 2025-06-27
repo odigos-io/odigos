@@ -77,11 +77,9 @@ func IsObjectInstrumentedBySource(ctx context.Context, sources *odigosv1.Workloa
 	return false, condition, nil
 }
 
-func HandleInstrumentationConfigDataStreamsLabels(ctx context.Context,
-	workloadSources *odigosv1.WorkloadSources, ic *odigosv1.InstrumentationConfig) bool {
-	// Extract labels from both sources (may be nil)
-	workloadLabels := GetSourceDataStreamsLabels(workloadSources.Workload)
-	namespaceLabels := GetSourceDataStreamsLabels(workloadSources.Namespace)
+func CalculateDataStreamsLabels(workloadSources *odigosv1.WorkloadSources) map[string]string {
+	workloadLabels := getSourceDataStreamsLabels(workloadSources.Workload)
+	namespaceLabels := getSourceDataStreamsLabels(workloadSources.Namespace)
 
 	// Start merging logic:
 	mergedLabels := make(map[string]string)
@@ -96,32 +94,7 @@ func HandleInstrumentationConfigDataStreamsLabels(ctx context.Context,
 		mergedLabels[k] = v
 	}
 
-	// Apply merged labels into InstrumentationConfig, and return true if changed
-	return setInstrumentationConfigDataStreamLabels(ic, mergedLabels)
-}
-
-func setInstrumentationConfigDataStreamLabels(instConfig *odigosv1.InstrumentationConfig, desiredLabels map[string]string) (updated bool) {
-	if instConfig.Labels == nil {
-		instConfig.Labels = make(map[string]string)
-	}
-
-	// Add / update labels
-	for key, value := range desiredLabels {
-		if instConfig.Labels[key] != value {
-			instConfig.Labels[key] = value
-			updated = true
-		}
-	}
-
-	// Remove datastream labels not present in desiredLabels
-	for key := range instConfig.Labels {
-		if _, exists := desiredLabels[key]; !exists && IsDataStreamLabel(key) {
-			delete(instConfig.Labels, key)
-			updated = true
-		}
-	}
-
-	return updated
+	return mergedLabels
 }
 
 // IsDataStreamLabel returns true if the label is a datastream label.
@@ -130,7 +103,7 @@ func IsDataStreamLabel(labelKey string) bool {
 }
 
 // GetSourceDataStreamsLabels extracts only datastream labels from the Source object.
-func GetSourceDataStreamsLabels(source *odigosv1.Source) map[string]string {
+func getSourceDataStreamsLabels(source *odigosv1.Source) map[string]string {
 	result := make(map[string]string)
 
 	if source == nil {
