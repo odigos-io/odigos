@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 
@@ -76,31 +75,6 @@ func IsObjectInstrumentedBySource(ctx context.Context, sources *odigosv1.Workloa
 		Message: "workload not marked for automatic instrumentation by any source CR",
 	}
 	return false, condition, nil
-}
-
-// OtelServiceNameBySource returns the ReportedName for the given workload object.
-// OTel service name is only valid for workload sources (not namespace sources).
-// If none is configured, it returns the default name which is the k8s workload resource name.
-func OtelServiceNameBySource(ctx context.Context, k8sClient client.Client, obj client.Object) (string, error) {
-	pw := k8sconsts.PodWorkload{
-		Name:      obj.GetName(),
-		Namespace: obj.GetNamespace(),
-		Kind:      k8sconsts.WorkloadKind(obj.GetObjectKind().GroupVersionKind().Kind),
-	}
-	sources, err := odigosv1.GetSources(ctx, k8sClient, pw)
-	if err != nil {
-		return "", err
-	}
-
-	// use the otel service name attribute on the source if it exists
-	if sources.Workload != nil {
-		if sources.Workload.Spec.OtelServiceName != "" {
-			return sources.Workload.Spec.OtelServiceName, nil
-		}
-	}
-
-	// otherwise, fallback to the name of the workload (deployment/ds/sst name)
-	return obj.GetName(), nil
 }
 
 func CalculateDataStreamsLabels(workloadSources *odigosv1.WorkloadSources) map[string]string {
