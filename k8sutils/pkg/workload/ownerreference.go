@@ -66,7 +66,10 @@ func GetWorkloadNameAndKind(ownerName, ownerKind string) (string, k8sconsts.Work
 	}
 }
 
-// extractInfoWithSuffix trims generated suffixes from names (e.g., for ReplicaSets, Jobs)
+// extractInfoWithSuffix strips Kubernetes-generated suffixes from owner reference names.
+// ReplicaSets and Jobs get unique suffixes appended (e.g., "app-name-7d4c8b5f9b").
+// This extracts the base name by removing everything after the last hyphen,
+// enabling grouping of resources by their logical application identity..
 func extractInfoWithSuffix(fullName string, kind k8sconsts.WorkloadKind) (string, k8sconsts.WorkloadKind, error) {
 	hyphenIndex := strings.LastIndex(fullName, "-")
 	if hyphenIndex == -1 {
