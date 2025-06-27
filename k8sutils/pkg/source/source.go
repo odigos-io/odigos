@@ -97,30 +97,6 @@ func CalculateDataStreamsLabels(workloadSources *odigosv1.WorkloadSources) map[s
 	return mergedLabels
 }
 
-func setInstrumentationConfigDataStreamLabels(instConfig *odigosv1.InstrumentationConfig, desiredLabels map[string]string) (updated bool) {
-	if instConfig.Labels == nil {
-		instConfig.Labels = make(map[string]string)
-	}
-
-	// Add / update labels
-	for key, value := range desiredLabels {
-		if instConfig.Labels[key] != value {
-			instConfig.Labels[key] = value
-			updated = true
-		}
-	}
-
-	// Remove datastream labels not present in desiredLabels
-	for key := range instConfig.Labels {
-		if _, exists := desiredLabels[key]; !exists && IsDataStreamLabel(key) {
-			delete(instConfig.Labels, key)
-			updated = true
-		}
-	}
-
-	return updated
-}
-
 // IsDataStreamLabel returns true if the label is a datastream label.
 func IsDataStreamLabel(labelKey string) bool {
 	return strings.HasPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix)
