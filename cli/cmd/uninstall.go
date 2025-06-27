@@ -11,12 +11,12 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
-	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
+	"github.com/odigos-io/odigos/cli/pkg/deprecated_envoverwrite"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/odigos-io/odigos/cli/pkg/log"
@@ -378,10 +378,10 @@ func getWorkloadRolloutJsonPatch(obj kube.Object, pts *v1.PodTemplateSpec) ([]by
 	}
 
 	// read the original env vars (of the manifest) from the annotation
-	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(obj.GetAnnotations())
+	manifestEnvOriginal, err := deprecated_envoverwrite.NewOrigWorkloadEnvValues(obj.GetAnnotations())
 	if err != nil {
 		fmt.Println("Failed to get original env vars from annotation: ", err)
-		manifestEnvOriginal = &envoverwrite.OrigWorkloadEnvValues{}
+		manifestEnvOriginal = &deprecated_envoverwrite.OrigWorkloadEnvValues{}
 	}
 
 	var origManifestEnv map[string]map[string]string
