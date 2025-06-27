@@ -5,19 +5,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-type OtelSdkInstrumentationRulePredicate struct{}
+type OtelDistroInstrumentationRulePredicate struct{}
 
-func (o OtelSdkInstrumentationRulePredicate) Create(e event.CreateEvent) bool {
+func (o OtelDistroInstrumentationRulePredicate) Create(e event.CreateEvent) bool {
 	// check if delete rule is for otel sdk
 	instrumentationRule, ok := e.Object.(*odigosv1alpha1.InstrumentationRule)
 	if !ok {
 		return false
 	}
 
-	return instrumentationRule.Spec.OtelSdks != nil
+	return instrumentationRule.Spec.OtelSdks != nil || instrumentationRule.Spec.OtelDistros != nil
 }
 
-func (i OtelSdkInstrumentationRulePredicate) Update(e event.UpdateEvent) bool {
+func (i OtelDistroInstrumentationRulePredicate) Update(e event.UpdateEvent) bool {
 	oldInstrumentationRule, oldOk := e.ObjectOld.(*odigosv1alpha1.InstrumentationRule)
 	newInstrumentationRule, newOk := e.ObjectNew.(*odigosv1alpha1.InstrumentationRule)
 
@@ -26,19 +26,20 @@ func (i OtelSdkInstrumentationRulePredicate) Update(e event.UpdateEvent) bool {
 	}
 
 	// only handle rules for otel sdks
-	return oldInstrumentationRule.Spec.OtelSdks != nil || newInstrumentationRule.Spec.OtelSdks != nil
+	return oldInstrumentationRule.Spec.OtelSdks != nil || newInstrumentationRule.Spec.OtelSdks != nil ||
+		oldInstrumentationRule.Spec.OtelDistros != nil || newInstrumentationRule.Spec.OtelDistros != nil
 }
 
-func (i OtelSdkInstrumentationRulePredicate) Delete(e event.DeleteEvent) bool {
+func (i OtelDistroInstrumentationRulePredicate) Delete(e event.DeleteEvent) bool {
 	// check if delete rule is for otel sdk
 	instrumentationRule, ok := e.Object.(*odigosv1alpha1.InstrumentationRule)
 	if !ok {
 		return false
 	}
 
-	return instrumentationRule.Spec.OtelSdks != nil
+	return instrumentationRule.Spec.OtelSdks != nil || instrumentationRule.Spec.OtelDistros != nil
 }
 
-func (i OtelSdkInstrumentationRulePredicate) Generic(e event.GenericEvent) bool {
+func (i OtelDistroInstrumentationRulePredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
