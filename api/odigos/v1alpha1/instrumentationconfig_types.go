@@ -94,6 +94,7 @@ const (
 	AgentEnabledReasonEnabledSuccessfully            AgentEnabledReason = "EnabledSuccessfully"
 	AgentEnabledReasonWaitingForRuntimeInspection    AgentEnabledReason = "WaitingForRuntimeInspection"
 	AgentEnabledReasonWaitingForNodeCollector        AgentEnabledReason = "WaitingForNodeCollector"
+	AgentEnabledReasonNoCollectedSignals             AgentEnabledReason = "NoCollectedSignals"
 	AgentEnabledReasonIgnoredContainer               AgentEnabledReason = "IgnoredContainer"
 	AgentEnabledReasonUnsupportedProgrammingLanguage AgentEnabledReason = "UnsupportedProgrammingLanguage"
 	AgentEnabledReasonNoAvailableAgent               AgentEnabledReason = "NoAvailableAgent"
@@ -136,6 +137,8 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 20
 	case AgentEnabledReasonWaitingForNodeCollector:
 		return 30
+	case AgentEnabledReasonNoCollectedSignals:
+		return 31
 	case AgentEnabledReasonIgnoredContainer:
 		return 40
 	case AgentEnabledReasonUnsupportedProgrammingLanguage:
@@ -163,6 +166,7 @@ func IsReasonStatusDisabled(reason string) bool {
 	case string(AgentEnabledReasonUnsupportedProgrammingLanguage),
 		string(AgentEnabledReasonUnsupportedRuntimeVersion),
 		string(RuntimeDetectionReasonNoRunningPods),
+		string(AgentEnabledReasonNoCollectedSignals),
 		string(AgentEnabledReasonIgnoredContainer),
 		string(AgentEnabledReasonNoAvailableAgent),
 		string(AgentEnabledReasonOtherAgentDetected),
