@@ -2,7 +2,11 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
+	"io"
+	"net/http"
 	"path"
 	"slices"
 	"sort"
@@ -143,6 +147,35 @@ func SortConditions(conditions []*model.Condition) {
 
 		return timeI.Before(timeJ)
 	})
+}
+
+func randString(nByte int) (string, error) {
+	b := make([]byte, nByte)
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func setCallbackCookie(w http.ResponseWriter, r *http.Request, name string, value string, path string, maxAge int) {
+	if maxAge <= 0 {
+		maxAge = int(time.Hour.Seconds())
+	}
+
+	c := &http.Cookie{
+		Name:     name,
+		Value:    value,
+		HttpOnly: true,
+		Secure:   r.TLS != nil,
+		SameSite: http.SameSiteLaxMode, // prevents CSRF
+		MaxAge:   maxAge,
+	}
+
+	if path != "" {
+		c.Path = path
+	}
+
+	http.SetCookie(w, c)
 }
 
 // generated names can cause conflicts with k8s < 1.32.

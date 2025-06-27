@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // IsObjectInstrumentedBySource returns true if the given object has an active, non-excluding Source.
@@ -123,6 +123,30 @@ func CalculateDataStreamsLabels(workloadSources *odigosv1.WorkloadSources) map[s
 	return mergedLabels
 }
 
+func setInstrumentationConfigDataStreamLabels(instConfig *odigosv1.InstrumentationConfig, desiredLabels map[string]string) (updated bool) {
+	if instConfig.Labels == nil {
+		instConfig.Labels = make(map[string]string)
+	}
+
+	// Add / update labels
+	for key, value := range desiredLabels {
+		if instConfig.Labels[key] != value {
+			instConfig.Labels[key] = value
+			updated = true
+		}
+	}
+
+	// Remove datastream labels not present in desiredLabels
+	for key := range instConfig.Labels {
+		if _, exists := desiredLabels[key]; !exists && IsDataStreamLabel(key) {
+			delete(instConfig.Labels, key)
+			updated = true
+		}
+	}
+
+	return updated
+}
+
 // IsDataStreamLabel returns true if the label is a datastream label.
 func IsDataStreamLabel(labelKey string) bool {
 	return strings.HasPrefix(labelKey, k8sconsts.SourceDataStreamLabelPrefix)
@@ -137,7 +161,7 @@ func getSourceDataStreamsLabels(source *odigosv1.Source) map[string]string {
 	}
 
 	for k, v := range source.Labels {
-		if isDataStreamLabel(k) {
+		if IsDataStreamLabel(k) {
 			result[k] = v
 		}
 	}

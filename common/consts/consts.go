@@ -56,6 +56,9 @@ const (
 	LdPreloadEnvVarName = "LD_PRELOAD"
 	OdigosLoaderDirName = "loader"
 	OdigosLoaderName    = "loader.so"
+
+	// name of the secret that contains the oidc client secret
+	OidcSecretName = "odigos-oidc"
 )
 
 // Odigos config properties
@@ -67,22 +70,26 @@ const (
 	AllowConcurrentAgentsProperty     = "allow-concurrent-agents"
 	ImagePrefixProperty               = "image-prefix"
 	UiModeProperty                    = "ui-mode"
-	UiPaginationLimit                 = "ui-pagination-limit"
+	UiPaginationLimitProperty         = "ui-pagination-limit"
+	UiRemoteUrlProperty               = "ui-remote-url"
+	CentralBackendURLProperty         = "central-backend-url"
+	ClusterNameProperty               = "cluster-name"
 	IgnoredNamespacesProperty         = "ignored-namespaces"
 	IgnoredContainersProperty         = "ignored-containers"
 	MountMethodProperty               = "mount-method"
-	CentralBackendURLProperty         = "central-backend-url"
 	CustomContainerRuntimeSocketPath  = "custom-container-runtime-socket-path"
 	K8sNodeLogsDirectory              = "k8s-node-logs-directory"
-	AgentEnvVarsInjectionMethod       = "agent-env-vars-injection-method"
-	ClusterNameProperty               = "cluster-name"
 	UserInstrumentationEnvsProperty   = "user-instrumentation-envs"
+	AgentEnvVarsInjectionMethod       = "agent-env-vars-injection-method"
 	NodeSelectorProperty              = "node-selector"
 	KarpenterEnabledProperty          = "karpenter-enabled"
 	RollbackDisabledProperty          = "instrumentation-auto-rollback-disabled"
 	RollbackGraceTimeProperty         = "instrumentation-auto-rollback-grace-time"
 	RollbackStabilityWindow           = "instrumentation-auto-rollback-stability-window"
 	AutomaticRolloutDisabledProperty  = "automatic-rollout-disabled"
+	OidcTenantUrlProperty             = "oidc-tenant-url"
+	OidcClientIdProperty              = "oidc-client-id"
+	OidcClientSecretProperty          = "oidc-client-secret"
 )
 
 var (
@@ -110,6 +117,13 @@ const (
 	KarpenterStartupTaintKey = "odigos.io/needs-init"
 )
 
+// Batch processor related consts
+const (
+	GenericBatchProcessorConfigKey = "batch/generic-batch-processor"
+	SmallBatchesProcessor          = "batch/small-batches"
+)
+
+// Auto rollback related consts
 const (
 	DefaultAutoRollbackGraceTime       = "5m"
 	DefaultAutoRollbackStabilityWindow = "1h"
