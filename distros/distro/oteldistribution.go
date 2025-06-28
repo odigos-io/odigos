@@ -7,7 +7,6 @@ import (
 )
 
 const AgentPlaceholderDirectory = "{{ODIGOS_AGENTS_DIR}}"
-const RuntimeVersionPlaceholderMajorMinor = "{{RUNTIME_VERSION_MAJOR_MINOR}}"
 
 const RuntimeVersionMajorMinorDistroParameterName = "RUNTIME_VERSION_MAJOR_MINOR"
 
