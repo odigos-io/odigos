@@ -82,12 +82,14 @@ spec:
                       - EnabledSuccessfully
                       - WaitingForRuntimeInspection
                       - WaitingForNodeCollector
+                      - NoCollectedSignals
                       - UnsupportedProgrammingLanguage
                       - IgnoredContainer
                       - NoAvailableAgent
                       - UnsupportedRuntimeVersion
                       - MissingDistroParameter
                       - OtherAgentDetected
+                      - RuntimeDetailsUnavailable
                       - CrashLoopBackOff
                       type: string
                     containerName:
