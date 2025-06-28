@@ -38,8 +38,8 @@ type StaticEnvironmentVariable struct {
 
 	// pre-parsed template that is ready to be executed with the relevant parameters.
 	// if the EnvValue field is templated (e.g. contains {{.PARAM_NAME}}), this field is set.
-	// it indicates that the the value should be templated with the relevant parameters.
-	// this field is calculated and is not pulled from the manifest.
+	// it indicates that the value should be templated with the relevant parameters.
+	// this field is calculated based on the EnvValue field, and is not pulled from the yaml.
 	Template *template.Template
 }
 
