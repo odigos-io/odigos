@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"strings"
 
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -404,19 +403,6 @@ func calculateContainerInstrumentationConfig(containerName string,
 				AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", distro.RuntimeEnvironments[0].Name, constraint, detectedVersion),
 			}
 		}
-	} else if runtimeDetails.RuntimeVersion == "" {
-		// If the runtime does not have a version, we can't replace placeholders
-		for _, staticVariable := range distro.EnvironmentVariables.StaticVariables {
-			// This is a placeholder for the runtime version, disable the agent
-			if strings.Contains(staticVariable.EnvValue, distroTypes.RuntimeVersionPlaceholderMajorMinor) {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-					AgentEnabledMessage: "runtime version is not available, but the distribution requires it to be set",
-				}
-			}
-		}
 	}
 
 	distroParameters := map[string]string{}
@@ -432,6 +418,35 @@ func calculateContainerInstrumentationConfig(containerName string,
 				}
 			}
 			distroParameters[common.LibcTypeDistroParameterName] = string(*runtimeDetails.LibCType)
+
+		case distroTypes.RuntimeVersionMajorMinorDistroParameterName:
+			if runtimeDetails.RuntimeVersion == "" {
+				return odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+					AgentEnabledMessage: fmt.Sprintf("missing required parameter '%s' for distro '%s'", distroTypes.RuntimeVersionMajorMinorDistroParameterName, distroName),
+				}
+			}
+			version, err := version.NewVersion(runtimeDetails.RuntimeVersion)
+			if err != nil {
+				return odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+					AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version: %s", runtimeDetails.RuntimeVersion),
+				}
+			}
+			versionAsMajorMinor, err := common.MajorMinorStringOnly(version)
+			if err != nil {
+				return odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+					AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version as major.minor: %s", runtimeDetails.RuntimeVersion),
+				}
+			}
+			distroParameters[distroTypes.RuntimeVersionMajorMinorDistroParameterName] = versionAsMajorMinor
 
 		default:
 			return odigosv1.ContainerAgentConfig{
