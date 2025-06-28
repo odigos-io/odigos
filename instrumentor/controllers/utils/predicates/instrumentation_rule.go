@@ -14,20 +14,23 @@ func (o AgentInjectionRelevantRulesPredicate) Create(e event.CreateEvent) bool {
 		return false
 	}
 
-	return instrumentationRule.Spec.OtelSdks != nil || instrumentationRule.Spec.OtelDistros != nil
+	return instrumentationRule.Spec.OtelSdks != nil ||
+		instrumentationRule.Spec.OtelDistros != nil ||
+		instrumentationRule.Spec.TraceConfig != nil
 }
 
 func (i AgentInjectionRelevantRulesPredicate) Update(e event.UpdateEvent) bool {
-	oldInstrumentationRule, oldOk := e.ObjectOld.(*odigosv1alpha1.InstrumentationRule)
-	newInstrumentationRule, newOk := e.ObjectNew.(*odigosv1alpha1.InstrumentationRule)
+	old, oldOk := e.ObjectOld.(*odigosv1alpha1.InstrumentationRule)
+	new, newOk := e.ObjectNew.(*odigosv1alpha1.InstrumentationRule)
 
 	if !oldOk || !newOk {
 		return false
 	}
 
 	// only handle rules for otel sdks or distros configuration
-	return oldInstrumentationRule.Spec.OtelSdks != nil || newInstrumentationRule.Spec.OtelSdks != nil ||
-		oldInstrumentationRule.Spec.OtelDistros != nil || newInstrumentationRule.Spec.OtelDistros != nil
+	return old.Spec.OtelSdks != nil || new.Spec.OtelSdks != nil ||
+		old.Spec.OtelDistros != nil || new.Spec.OtelDistros != nil ||
+		old.Spec.TraceConfig != nil || new.Spec.TraceConfig != nil
 }
 
 func (i AgentInjectionRelevantRulesPredicate) Delete(e event.DeleteEvent) bool {
@@ -37,7 +40,9 @@ func (i AgentInjectionRelevantRulesPredicate) Delete(e event.DeleteEvent) bool {
 		return false
 	}
 
-	return instrumentationRule.Spec.OtelSdks != nil || instrumentationRule.Spec.OtelDistros != nil
+	return instrumentationRule.Spec.OtelSdks != nil ||
+		instrumentationRule.Spec.OtelDistros != nil ||
+		instrumentationRule.Spec.TraceConfig != nil
 }
 
 func (i AgentInjectionRelevantRulesPredicate) Generic(e event.GenericEvent) bool {
