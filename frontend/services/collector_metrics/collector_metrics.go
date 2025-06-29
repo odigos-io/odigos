@@ -66,9 +66,9 @@ func (tm *trafficMetrics) String() string {
 }
 
 type OdigosMetricsConsumer struct {
-	sources      sourcesMetrics
-	destinations destinationsMetrics
-	deletedChan  chan notification
+	sources                 sourcesMetrics
+	clusterCollectorMetrics clusterCollectorMetrics
+	deletedChan             chan notification
 }
 
 var (
@@ -112,9 +112,9 @@ func (c *OdigosMetricsConsumer) runNotificationsLoop(ctx context.Context) {
 			case nodeCollector:
 				c.sources.removeNodeCollector(n.object)
 			case clusterCollector:
-				c.destinations.removeClusterCollector(n.object)
+				c.clusterCollectorMetrics.removeClusterCollector(n.object)
 			case destination:
-				c.destinations.removeDestination(n.object)
+				c.clusterCollectorMetrics.removeDestination(n.object)
 			case source:
 				switch n.eventType {
 				case watch.Deleted:
@@ -153,7 +153,7 @@ func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 	}
 
 	if strings.HasPrefix(senderPod, k8sconsts.OdigosClusterCollectorDeploymentName) {
-		c.destinations.handleClusterCollectorMetrics(senderPod, md)
+		c.clusterCollectorMetrics.handleClusterCollectorMetrics(senderPod, md)
 		return nil
 	}
 
@@ -162,9 +162,9 @@ func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 
 func NewOdigosMetrics() *OdigosMetricsConsumer {
 	return &OdigosMetricsConsumer{
-		sources:      newSourcesMetrics(),
-		destinations: newDestinationsMetrics(),
-		deletedChan:  make(chan notification),
+		sources:                 newSourcesMetrics(),
+		clusterCollectorMetrics: newClusterCollectorMetrics(),
+		deletedChan:             make(chan notification),
 	}
 }
 
@@ -218,7 +218,7 @@ func (c *OdigosMetricsConsumer) GetSingleSourceMetrics(sID common.SourceID) (tra
 }
 
 func (c *OdigosMetricsConsumer) GetSingleDestinationMetrics(dID string) (trafficMetrics, bool) {
-	return c.destinations.metricsByID(dID)
+	return c.clusterCollectorMetrics.metricsByID(dID)
 }
 
 func (c *OdigosMetricsConsumer) GetSourcesMetrics() map[common.SourceID]trafficMetrics {
@@ -226,5 +226,9 @@ func (c *OdigosMetricsConsumer) GetSourcesMetrics() map[common.SourceID]trafficM
 }
 
 func (c *OdigosMetricsConsumer) GetDestinationsMetrics() map[string]trafficMetrics {
-	return c.destinations.metrics()
+	return c.clusterCollectorMetrics.destinationsMetrics()
+}
+
+func (c *OdigosMetricsConsumer) GetServiceGraphEdges() map[string]map[string]ServiceGraphEdge {
+	return c.clusterCollectorMetrics.serviceGraphEdges()
 }

@@ -57,6 +57,9 @@ const (
 	OdigosLoaderDirName = "loader"
 	OdigosLoaderName    = "loader.so"
 
+	ServiceGraphConnectorName = "servicegraph"
+	ServiceGraphEndpointPort  = 9090
+
 	// name of the secret that contains the oidc client secret
 	OidcSecretName = "odigos-oidc"
 )

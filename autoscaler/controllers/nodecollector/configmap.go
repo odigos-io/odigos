@@ -38,11 +38,7 @@ func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigos
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
 
-	// If sampling configured, load balancing exporter should be added to the data collection config
-	SamplingExists := commonconf.FindFirstProcessorByType(allProcessors, "odigossampling")
-	setTracesLoadBalancer := SamplingExists != nil
-
-	desired, err := getDesiredConfigMap(sources, signals, processors, datacollection, scheme, setTracesLoadBalancer)
+	desired, err := getDesiredConfigMap(sources, signals, processors, datacollection, scheme)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
@@ -100,8 +96,8 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 }
 
 func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
-	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme, setTracesLoadBalancer bool) (*v1.ConfigMap, error) {
-	cmData, err := calculateConfigMapData(datacollection, sources, signals, processors, setTracesLoadBalancer)
+	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme) (*v1.ConfigMap, error) {
+	cmData, err := calculateConfigMapData(datacollection, sources, signals, processors)
 	if err != nil {
 		return nil, err
 	}
@@ -191,8 +187,8 @@ func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
 	return nil
 }
 
-func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
-	setTracesLoadBalancer bool) (string, error) {
+func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal,
+	processors []*odigosv1.Processor) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
 
@@ -263,7 +259,11 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	}
 	tracesPipelineExporter := []string{"otlp/gateway"}
 
-	if setTracesLoadBalancer {
+	// Add loadbalancing exporter for traces to ensure consistent gateway routing.
+	// This allows the servicegraph connector to properly aggregate trace data
+	// by sending all traces from a node collector to the same gateway instance.
+	tracesEnabled := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
+	if tracesEnabled {
 		exporters["loadbalancing"] = config.GenericMap{
 			"protocol": config.GenericMap{"otlp": config.GenericMap{"tls": config.GenericMap{"insecure": true}}},
 			"resolver": config.GenericMap{"k8s": config.GenericMap{"service": fmt.Sprintf("odigos-gateway.%s", env.GetCurrentNamespace())}},
