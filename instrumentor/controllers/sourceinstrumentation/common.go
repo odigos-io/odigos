@@ -79,7 +79,7 @@ func syncNamespaceWorkloads(
 				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
 					Name:      job.GetName(),
 					Namespace: job.GetNamespace(),
-					Kind:      k8sconsts.WorkloadKindJob,
+					Kind:      k8sconsts.WorkloadKindCronJob,
 				})
 			}
 		}
