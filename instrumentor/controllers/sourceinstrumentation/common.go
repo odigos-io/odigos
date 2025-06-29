@@ -8,6 +8,7 @@ import (
 	"errors"
 
 	v1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,6 +40,7 @@ func syncNamespaceWorkloads(
 		k8sconsts.WorkloadKindDaemonSet,
 		k8sconsts.WorkloadKindDeployment,
 		k8sconsts.WorkloadKindStatefulSet,
+		k8sconsts.WorkloadKindCronJob,
 	} {
 		workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
 		err := k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
@@ -70,6 +72,14 @@ func syncNamespaceWorkloads(
 					Name:      ss.GetName(),
 					Namespace: ss.GetNamespace(),
 					Kind:      k8sconsts.WorkloadKindStatefulSet,
+				})
+			}
+		case *batchv1.CronJobList:
+			for _, job := range obj.Items {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      job.GetName(),
+					Namespace: job.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindCronJob,
 				})
 			}
 		}

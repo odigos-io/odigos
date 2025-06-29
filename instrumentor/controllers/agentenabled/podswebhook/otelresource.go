@@ -48,6 +48,10 @@ func getWorkloadKindAttributeKey(workloadKind k8sconsts.WorkloadKind) attribute.
 		return semconv.K8SStatefulSetNameKey
 	case k8sconsts.WorkloadKindDaemonSet:
 		return semconv.K8SDaemonSetNameKey
+	case k8sconsts.WorkloadKindCronJob:
+		return semconv.K8SCronJobNameKey
+	case k8sconsts.WorkloadKindJob:
+		return semconv.K8SJobNameKey
 	}
 	return attribute.Key("")
 }
