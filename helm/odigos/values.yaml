@@ -263,6 +263,11 @@ odiglet:
   # into the Odiglet to ensure it can access the container runtime unix socket.
   customContainerRuntimeSocketPath: ''
 
+  # Prior to Kubernetes v1.26, Odigos uses host networking.
+  # In some environments, different ports may already be in use on the host (e.g., due to other daemons or networking constraints).
+  # Use the following values to configure the readiness and liveness probe ports to avoid conflicts.
+  readinessAndLivenessProbePort: 55683
+
 centralProxy:
   enabled: false
   # Central backend URL where this proxy will forward data
