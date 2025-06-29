@@ -66,9 +66,9 @@ func main() {
 	}
 
 	instrumentationManagerOptions := ebpf.InstrumentationManagerOptions{
-		Factories:           ebpfInstrumentationFactories(),
-		DistributionGetter:  dg,
-		HealthProbeBindPort: healthProbeBindPort,
+		Factories:                  ebpfInstrumentationFactories(),
+		DistributionGetter:         dg,
+		OdigletHealthProbeBindPort: healthProbeBindPort,
 	}
 
 	o, err := odiglet.New(clientset, deviceInjectionCallbacks(), instrumentationManagerOptions)

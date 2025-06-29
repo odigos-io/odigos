@@ -81,7 +81,7 @@ func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (c
 		Metrics: metricsserver.Options{
 			BindAddress: metricsBindAddress,
 		},
-		HealthProbeBindAddress: fmt.Sprintf(":%d", instrumentationMgrOpts.HealthProbeBindPort),
+		HealthProbeBindAddress: fmt.Sprintf(":%d", instrumentationMgrOpts.OdigletHealthProbeBindPort),
 	})
 }
 

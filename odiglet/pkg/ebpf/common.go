@@ -17,10 +17,10 @@ import (
 )
 
 type InstrumentationManagerOptions struct {
-	Factories           map[instrumentation.OtelDistribution]instrumentation.Factory
-	DistributionGetter  *distros.Getter
-	MeterProvider       metric.MeterProvider
-	HealthProbeBindPort int
+	Factories                  map[instrumentation.OtelDistribution]instrumentation.Factory
+	DistributionGetter         *distros.Getter
+	MeterProvider              metric.MeterProvider
+	OdigletHealthProbeBindPort int
 }
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.

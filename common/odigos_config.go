@@ -164,5 +164,5 @@ type OdigosConfiguration struct {
 	RollbackGraceTime                string                         `json:"rollbackGraceTime,omitempty"`
 	RollbackStabilityWindow          string                         `json:"rollbackStabilityWindow,omitempty"`
 	Oidc                             *OidcConfiguration             `json:"oidc,omitempty"`
-	HealthProbeBindPort              int                            `json:"healthProbeBindPort,omitempty"`
+	OdigletHealthProbeBindPort       int                            `json:"odigletHealthProbeBindPort,omitempty"`
 }

@@ -784,8 +784,8 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	}
 
 	// if the health probe bind port is not set, use the default value
-	if a.config.HealthProbeBindPort == 0 {
-		a.config.HealthProbeBindPort = k8sconsts.OdigletDefaultHealthProbeBindPort
+	if a.config.OdigletHealthProbeBindPort == 0 {
+		a.config.OdigletHealthProbeBindPort = k8sconsts.OdigletDefaultHealthProbeBindPort
 	}
 
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
@@ -794,7 +794,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
 				K8SVersion: k8sVersion,
-			}, a.config.CustomContainerRuntimeSocketPath, a.config.NodeSelector, a.config.HealthProbeBindPort))
+			}, a.config.CustomContainerRuntimeSocketPath, a.config.NodeSelector, a.config.OdigletHealthProbeBindPort))
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }
