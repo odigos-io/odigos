@@ -213,11 +213,14 @@ func insertServiceGraphPipeline(currentConfig *config.Config) {
 	}
 
 	// Add the service graph connector to receive the service graph metrics from the root traces pipeline
+	// Retain incomplete edges for up to 15s to allow delayed span matching
+	// Clean up every 5s to reduce memory pressure and avoid stale edges
 	currentConfig.Connectors[consts.ServiceGraphConnectorName] = config.GenericMap{
 		"store": config.GenericMap{
-			"ttl": "5m",
+			"ttl": "15s",
 		},
-		"dimensions": []string{string(semconv.ServiceNameKey)},
+		"store_expiration_loop": "5s",
+		"dimensions":            []string{string(semconv.ServiceNameKey)},
 	}
 
 	// Add the service graph pipeline to receive the service graph metrics from the root traces pipeline
@@ -228,6 +231,7 @@ func insertServiceGraphPipeline(currentConfig *config.Config) {
 
 	// Add the service graph exporter to the root traces pipeline
 	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
+	// This pipeline should already exist because entering this function means that traces are enabled, but we'll check just in case
 	pipeline, exists := currentConfig.Service.Pipelines[rootPipelineName]
 	if !exists {
 		return
