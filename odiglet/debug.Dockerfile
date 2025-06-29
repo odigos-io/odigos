@@ -66,7 +66,7 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
     echo "x64" > /tmp/arch_suffix; \
     fi
 
-    RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
+RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
