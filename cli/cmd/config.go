@@ -57,6 +57,7 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the URL of the OIDC tenant.
 	- "%s": Sets the client ID of the OIDC application.
 	- "%s": Sets the client secret of the OIDC application.
+	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -85,6 +86,7 @@ var configCmd = &cobra.Command{
 		consts.OidcTenantUrlProperty,
 		consts.OidcClientIdProperty,
 		consts.OidcClientSecretProperty,
+		consts.OdigletHealthProbeBindPortProperty,
 	),
 }
 
@@ -186,7 +188,8 @@ func validatePropertyValue(property string, value []string) error {
 		consts.AutomaticRolloutDisabledProperty,
 		consts.OidcTenantUrlProperty,
 		consts.OidcClientIdProperty,
-		consts.OidcClientSecretProperty:
+		consts.OidcClientSecretProperty,
+		consts.OdigletHealthProbeBindPortProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -206,7 +209,8 @@ func validatePropertyValue(property string, value []string) error {
 				return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
 			}
 
-		case consts.UiPaginationLimitProperty:
+		case consts.UiPaginationLimitProperty,
+			consts.OdigletHealthProbeBindPortProperty:
 			_, err := strconv.Atoi(value[0])
 			if err != nil {
 				return fmt.Errorf("invalid integer value for %s: %s", property, value[0])
@@ -391,6 +395,10 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 			config.Oidc = &common.OidcConfiguration{}
 		}
 		config.Oidc.ClientSecret = fmt.Sprintf("secretRef:%s", consts.OidcSecretName)
+
+	case consts.OdigletHealthProbeBindPortProperty:
+		intValue, _ := strconv.Atoi(value[0])
+		config.OdigletHealthProbeBindPort = intValue
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)

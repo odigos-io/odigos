@@ -80,6 +80,10 @@ spec:
           {{- else }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
+          args:
+            - --health-probe-bind-port={{ .Values.odiglet.readinessAndLivenessProbePort }}
+          command:
+            - /root/odiglet
           env:
             - name: NODE_NAME
               valueFrom:
@@ -125,13 +129,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8081
+              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
             initialDelaySeconds: 15
             periodSeconds: 20
           readinessProbe:
             httpGet:
               path: /readyz
-              port: 8081
+              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
             periodSeconds: 10
           volumeMounts:
             - name: run-dir
