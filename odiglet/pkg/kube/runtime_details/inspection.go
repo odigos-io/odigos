@@ -341,13 +341,6 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 		updated = true
 	}
 
-	if (existing.OtherAgent == nil && new.OtherAgent != nil) ||
-		(existing.OtherAgent != nil && new.OtherAgent == nil) ||
-		(existing.OtherAgent != nil && new.OtherAgent != nil && existing.OtherAgent.Name != new.OtherAgent.Name) {
-		existing.OtherAgent = new.OtherAgent
-		updated = true
-	}
-
 	return updated
 }
 
