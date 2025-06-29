@@ -25,6 +25,7 @@ import (
 func main() {
 	var healthProbeBindPort int
 	flag.IntVar(&healthProbeBindPort, "health-probe-bind-port", 8081, "The port the probe endpoint binds to.")
+	flag.Parse()
 
 	// Init Kubernetes clientset
 	cfg, err := rest.InClusterConfig()
