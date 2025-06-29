@@ -90,6 +90,7 @@ const (
 	OidcTenantUrlProperty             = "oidc-tenant-url"
 	OidcClientIdProperty              = "oidc-client-id"
 	OidcClientSecretProperty          = "oidc-client-secret"
+	HealthProbeBindPortProperty       = "health-probe-bind-port"
 )
 
 var (

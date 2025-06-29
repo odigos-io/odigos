@@ -17,6 +17,8 @@ type ManagerOpts struct {
 	// NodeSelector is a Kubernetes NodeSelector that will be applied to all Odigos components.
 	// Note that Odigos will only be able to instrument applications on the same node.
 	NodeSelector map[string]string
+	// HealthProbeBindAddress is the address the probe endpoint binds to.
+	HealthProbeBindPort int
 }
 
 type ImageReferences struct {

@@ -51,7 +51,7 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 		return nil, err
 	}
 
-	mgr, err := kube.CreateManager()
+	mgr, err := kube.CreateManager(instrumentationMgrOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create controller-runtime manager %w", err)
 	}
