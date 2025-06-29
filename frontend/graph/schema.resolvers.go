@@ -485,10 +485,6 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 
 // UpdateAPIToken is the resolver for the updateApiToken field.
 func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	ns := env.GetCurrentNamespace()
 	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, ns, token)
 	return err == nil, nil
@@ -496,10 +492,6 @@ func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bo
 
 // PersistK8sNamespaces is the resolver for the persistK8sNamespaces field.
 func (r *mutationResolver) PersistK8sNamespaces(ctx context.Context, namespaces []*model.PersistNamespaceItemInput) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	persistObjects := []*model.PersistNamespaceSourceInput{}
 	for _, namespace := range namespaces {
 		persistObjects = append(persistObjects, &model.PersistNamespaceSourceInput{
@@ -521,10 +513,6 @@ func (r *mutationResolver) PersistK8sNamespaces(ctx context.Context, namespaces 
 
 // PersistK8sSources is the resolver for the persistK8sSources field.
 func (r *mutationResolver) PersistK8sSources(ctx context.Context, sources []*model.PersistNamespaceSourceInput) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	err := services.SyncWorkloadsInNamespace(ctx, sources)
 	if err != nil {
 		return false, fmt.Errorf("failed to sync workloads: %v", err)
@@ -535,10 +523,6 @@ func (r *mutationResolver) PersistK8sSources(ctx context.Context, sources []*mod
 
 // UpdateK8sActualSource is the resolver for the updateK8sActualSource field.
 func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	nsName := sourceID.Namespace
 	workloadName := sourceID.Name
 	workloadKind := sourceID.Kind
@@ -621,10 +605,6 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 
 // CreateNewDestination is the resolver for the createNewDestination field.
 func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	ns := env.GetCurrentNamespace()
 	destType := common.DestinationType(destination.Type)
 	destName := destination.Name
@@ -702,10 +682,6 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 // UpdateDestination is the resolver for the updateDestination field.
 func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	ns := env.GetCurrentNamespace()
 	destType := common.DestinationType(destination.Type)
 	destName := destination.Name
@@ -825,10 +801,6 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 
 // DeleteDestination is the resolver for the deleteDestination field.
 func (r *mutationResolver) DeleteDestination(ctx context.Context, id string, currentStreamName string) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	ns := env.GetCurrentNamespace()
 
 	dest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Get(ctx, id, metav1.GetOptions{})
@@ -892,10 +864,6 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 
 // CreateAction is the resolver for the createAction field.
 func (r *mutationResolver) CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	switch action.Type {
 	case actionservices.ActionTypeK8sAttributes:
 		return actionservices.CreateK8sAttributes(ctx, action)
@@ -924,10 +892,6 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 
 // UpdateAction is the resolver for the updateAction field.
 func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action model.ActionInput) (model.Action, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	switch action.Type {
 	case actionservices.ActionTypeK8sAttributes:
 		return actionservices.UpdateK8sAttributes(ctx, id, action)
@@ -956,10 +920,6 @@ func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action m
 
 // DeleteAction is the resolver for the deleteAction field.
 func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionType string) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	switch actionType {
 	case actionservices.ActionTypeK8sAttributes:
 		err := actionservices.DeleteK8sAttributes(ctx, id)
@@ -1023,28 +983,16 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 
 // CreateInstrumentationRule is the resolver for the createInstrumentationRule field.
 func (r *mutationResolver) CreateInstrumentationRule(ctx context.Context, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	return services.CreateInstrumentationRule(ctx, instrumentationRule)
 }
 
 // UpdateInstrumentationRule is the resolver for the updateInstrumentationRule field.
 func (r *mutationResolver) UpdateInstrumentationRule(ctx context.Context, ruleID string, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	return services.UpdateInstrumentationRule(ctx, ruleID, instrumentationRule)
 }
 
 // DeleteInstrumentationRule is the resolver for the deleteInstrumentationRule field.
 func (r *mutationResolver) DeleteInstrumentationRule(ctx context.Context, ruleID string) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	_, err := services.DeleteInstrumentationRule(ctx, ruleID)
 	if err != nil {
 		return false, err
@@ -1055,10 +1003,6 @@ func (r *mutationResolver) DeleteInstrumentationRule(ctx context.Context, ruleID
 
 // UpdateDataStream is the resolver for the updateDataStream field.
 func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, dataStream model.DataStreamInput) (*model.DataStream, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	idNew := dataStream.Name
 	if id == idNew {
 		return &model.DataStream{Name: idNew}, nil
@@ -1090,9 +1034,6 @@ func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, data
 
 // DeleteDataStream is the resolver for the deleteDataStream field.
 func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
 	kubeClient := kube.DefaultClient.OdigosClient
 
 	destinations, err := kubeClient.Destinations(env.GetCurrentNamespace()).List(ctx, metav1.ListOptions{})
@@ -1118,10 +1059,6 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 
 // RestartWorkloads is the resolver for the restartWorkloads field.
 func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	err := services.WithGoroutine(ctx, len(sourceIds), func(goFunc func(func() error)) {
 		for _, sourceID := range sourceIds {
 			goFunc(func() error {
