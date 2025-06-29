@@ -36,7 +36,7 @@ var configCmd = &cobra.Command{
 	- "%s": Skips webhook issuer creation (true/false).
 	- "%s": Allows concurrent agents (true/false).
 	- "%s": Sets the image prefix.
-	- "%s": Sets the UI mode (normal/readonly).
+	- "%s": Sets the UI mode (default/readonly).
 	- "%s": Controls the number of items to fetch per paginated-batch in the UI.
 	- "%s": Sets the public URL of a remotely, self-hosted UI.
 	- "%s": Sets the URL of the Odigos Central Backend.

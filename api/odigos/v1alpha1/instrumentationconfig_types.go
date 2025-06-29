@@ -87,7 +87,7 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;CrashLoopBackOff
+// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;NoCollectedSignals;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff
 type AgentEnabledReason string
 
 const (
@@ -137,10 +137,10 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 20
 	case AgentEnabledReasonWaitingForNodeCollector:
 		return 30
-	case AgentEnabledReasonNoCollectedSignals:
-		return 31
 	case AgentEnabledReasonIgnoredContainer:
 		return 40
+	case AgentEnabledReasonNoCollectedSignals:
+		return 45
 	case AgentEnabledReasonUnsupportedProgrammingLanguage:
 		return 50
 	case AgentEnabledReasonUnsupportedRuntimeVersion:
@@ -357,6 +357,9 @@ type SdkConfig struct {
 
 	// default configuration for library tracing.
 	DefaultTraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
+
+	// default configuration for custom instrumentations, in case the instrumentation library does not provide a configuration.
+	DefaultCustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression

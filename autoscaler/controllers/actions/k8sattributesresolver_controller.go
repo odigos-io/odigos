@@ -58,12 +58,16 @@ var (
 		string(semconv.K8SDeploymentUIDKey),
 		string(semconv.K8SDaemonSetUIDKey),
 		string(semconv.K8SStatefulSetUIDKey),
+		string(semconv.K8SCronJobUIDKey),
+		string(semconv.K8SJobUIDKey),
 	}
 
 	workloadNameAttributes = []string{
 		string(semconv.K8SDeploymentNameKey),
 		string(semconv.K8SDaemonSetNameKey),
 		string(semconv.K8SStatefulSetNameKey),
+		string(semconv.K8SCronJobNameKey),
+		string(semconv.K8SJobNameKey),
 	}
 
 	containerAttributes = []string{

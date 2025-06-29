@@ -82,12 +82,14 @@ spec:
                       - EnabledSuccessfully
                       - WaitingForRuntimeInspection
                       - WaitingForNodeCollector
+                      - NoCollectedSignals
                       - UnsupportedProgrammingLanguage
                       - IgnoredContainer
                       - NoAvailableAgent
                       - UnsupportedRuntimeVersion
                       - MissingDistroParameter
                       - OtherAgentDetected
+                      - RuntimeDetailsUnavailable
                       - CrashLoopBackOff
                       type: string
                     containerName:
@@ -264,6 +266,22 @@ spec:
                             Should record the `code.stacktrace` attribute.
                             if unset, the value will resolve from other relevant rules, or fallback to false
                           type: boolean
+                      type: object
+                    customInstrumentations:
+                      description: default configuration for custom instrumentations,
+                        in case the instrumentation library does not provide a configuration.
+                      properties:
+                        probes:
+                          description: Custom instrumentation probes to be added to
+                            the SDK.
+                          items:
+                            properties:
+                              className:
+                                type: string
+                              methodName:
+                                type: string
+                            type: object
+                          type: array
                       type: object
                     headSamplerConfig:
                       description: |-

@@ -42,6 +42,12 @@ export const GET_INSTRUMENTATION_RULES = gql`
         headersCollection {
           headerKeys
         }
+        customInstrumentations {
+            probes {
+                className
+                methodName
+            }
+         }
       }
     }
   }
