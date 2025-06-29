@@ -44,3 +44,26 @@ func FilterRelevantSdk(instrumentationConfig *v1alpha1.InstrumentationConfig, pr
 	return &instrumentationConfigContent, nil
 
 }
+
+func FilterRelevantContainerConfig(instrumentationConfig *v1alpha1.InstrumentationConfig, containerName string) (*protobufs.AgentConfigFile, error) {
+	containerConfig := v1alpha1.ContainerAgentConfig{}
+
+	for _, container := range instrumentationConfig.Spec.Containers {
+		if container.ContainerName == containerName {
+			containerConfig = container
+		}
+	}
+
+	remoteConfigContainerConfigBytes, err := json.Marshal(containerConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	containerConfigContent := protobufs.AgentConfigFile{
+		Body:        remoteConfigContainerConfigBytes,
+		ContentType: "application/json",
+	}
+
+	return &containerConfigContent, nil
+
+}

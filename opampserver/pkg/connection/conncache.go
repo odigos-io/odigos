@@ -105,28 +105,65 @@ func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
 }
 
 // allow to completely overwrite the remote config for a set of keys for a given workload
-func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWorkload, sdkConfig *v1alpha1.SdkConfig) error {
-	sdkConfigProgrammingLang := common.MapOdigosToSemConv(sdkConfig.Language)
+func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWorkload, sdkConfig []v1alpha1.SdkConfig, containers []v1alpha1.ContainerAgentConfig) error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	for _, conn := range c.liveConnections {
-		if conn.Workload != workload || conn.ProgrammingLanguage != sdkConfigProgrammingLang {
+		if conn.Workload != workload {
 			continue
 		}
 
-		remoteConfigInstrumentationConfigBytes, err := json.Marshal(sdkConfig)
-		if err != nil {
-			return err
+		var instrumentationConfigContent *protobufs.AgentConfigFile
+		for _, sdkConfig := range sdkConfig {
+			if conn.ProgrammingLanguage != common.MapOdigosToSemConv(sdkConfig.Language) {
+				continue
+			}
+
+			remoteConfigInstrumentationConfigBytes, err := json.Marshal(sdkConfig)
+			if err != nil {
+				return err
+			}
+
+			instrumentationConfigContent = &protobufs.AgentConfigFile{
+				Body:        remoteConfigInstrumentationConfigBytes,
+				ContentType: "application/json",
+			}
+
+			break // after we find the first matching sdk config, no need to continue
 		}
 
-		instrumentationConfigContent := &protobufs.AgentConfigFile{
-			Body:        remoteConfigInstrumentationConfigBytes,
-			ContentType: "application/json",
+		var containerConfigContent *protobufs.AgentConfigFile
+		for _, container := range containers {
+			if container.ContainerName != conn.ContainerName {
+				continue
+			}
+
+			containerConfigBytes, err := json.Marshal(container)
+			if err != nil {
+				return err
+			}
+
+			containerConfigContent = &protobufs.AgentConfigFile{
+				Body:        containerConfigBytes,
+				ContentType: "application/json",
+			}
+
+			break // after we find the first matching container, no need to continue
+		}
+
+		// skip if no config content was found for this connection
+		if instrumentationConfigContent == nil && containerConfigContent == nil {
+			continue
 		}
 
 		// copy the old remote config to avoid it being accessed concurrently
 		newRemoteConfigMap := proto.Clone(conn.AgentRemoteConfig.Config).(*protobufs.AgentConfigMap)
-		newRemoteConfigMap.ConfigMap[""] = instrumentationConfigContent
+		if instrumentationConfigContent != nil {
+			newRemoteConfigMap.ConfigMap[""] = instrumentationConfigContent
+		}
+		if containerConfigContent != nil {
+			newRemoteConfigMap.ConfigMap["container_config"] = containerConfigContent
+		}
 
 		conn.AgentRemoteConfig = &protobufs.AgentRemoteConfig{
 			Config:     newRemoteConfigMap,

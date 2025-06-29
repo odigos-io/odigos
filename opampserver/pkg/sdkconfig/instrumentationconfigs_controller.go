@@ -29,10 +29,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
-	for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
-		i.ConnectionCache.UpdateWorkloadRemoteConfig(podWorkload, &sdkConfig)
-	}
+	i.ConnectionCache.UpdateWorkloadRemoteConfig(podWorkload, instrumentationConfig.Spec.SdkConfigs, instrumentationConfig.Spec.Containers)
 
 	return ctrl.Result{}, nil
 }
