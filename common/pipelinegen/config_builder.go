@@ -202,15 +202,18 @@ func applyRootPipelineForSignal(currentConfig *config.Config, signal common.Obse
 func insertServiceGraphPipeline(currentConfig *config.Config) {
 	// Add the service graph exporter to expose the service graph metrics to prometheus
 	currentConfig.Exporters["prometheus/servicegraph"] = config.GenericMap{
-		"endpoint":  "localhost:9090",
+		"endpoint":  fmt.Sprintf("localhost:%d", consts.ServiceGraphEndpointPort),
 		"namespace": "servicegraph",
 	}
 
 	// adding the service graph scrape config to prometheus/self-metrics receiver
-	AddServiceGraphScrapeConfig(currentConfig)
+	err := AddServiceGraphScrapeConfig(currentConfig)
+	if err != nil {
+		return
+	}
 
 	// Add the service graph connector to receive the service graph metrics from the root traces pipeline
-	currentConfig.Connectors["servicegraph"] = config.GenericMap{
+	currentConfig.Connectors[consts.ServiceGraphConnectorName] = config.GenericMap{
 		"store": config.GenericMap{
 			"ttl": "5m",
 		},
@@ -219,14 +222,17 @@ func insertServiceGraphPipeline(currentConfig *config.Config) {
 
 	// Add the service graph pipeline to receive the service graph metrics from the root traces pipeline
 	currentConfig.Service.Pipelines["metrics/servicegraph"] = config.Pipeline{
-		Receivers: []string{"servicegraph"},
+		Receivers: []string{consts.ServiceGraphConnectorName},
 		Exporters: []string{"prometheus/servicegraph"},
 	}
 
 	// Add the service graph exporter to the root traces pipeline
 	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
-	pipeline := currentConfig.Service.Pipelines[rootPipelineName]
-	pipeline.Exporters = append(pipeline.Exporters, "servicegraph")
+	pipeline, exists := currentConfig.Service.Pipelines[rootPipelineName]
+	if !exists {
+		return
+	}
+	pipeline.Exporters = append(pipeline.Exporters, consts.ServiceGraphConnectorName)
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
 }
 
@@ -300,13 +306,13 @@ func filterSmallBatchesProcessor(tracesProcessors []string) ([]string, bool) {
 
 	return filtered, smallBatchesEnabled
 }
-func AddServiceGraphScrapeConfig(c *config.Config) {
+func AddServiceGraphScrapeConfig(c *config.Config) error {
 	servicegraphScrape := config.GenericMap{
-		"job_name":        "servicegraph",
+		"job_name":        consts.ServiceGraphConnectorName,
 		"scrape_interval": "10s",
 		"static_configs": []config.GenericMap{
 			{
-				"targets": []string{"127.0.0.1:9090"},
+				"targets": []string{fmt.Sprintf("127.0.0.1:%d", consts.ServiceGraphEndpointPort)},
 			},
 		},
 		"metric_relabel_configs": []config.GenericMap{
@@ -320,21 +326,21 @@ func AddServiceGraphScrapeConfig(c *config.Config) {
 
 	receiverVal, ok := c.Receivers["prometheus/self-metrics"]
 	if !ok {
-		return
+		return fmt.Errorf("receiver config is not a map")
 	}
 	receiver, ok := receiverVal.(config.GenericMap)
 	if !ok {
-		return
+		return fmt.Errorf("receiver config is not a map")
 	}
 
 	configMap, ok := receiver["config"].(config.GenericMap)
 	if !ok {
-		return
+		return fmt.Errorf("scrape configs is not a list")
 	}
 
 	scrapeConfigs, ok := configMap["scrape_configs"].([]config.GenericMap)
 	if !ok {
-		return
+		return fmt.Errorf("scrape configs is not a list")
 	}
 
 	// Append new servicegraph scrape config
@@ -344,4 +350,5 @@ func AddServiceGraphScrapeConfig(c *config.Config) {
 	configMap["scrape_configs"] = scrapeConfigs
 	receiver["config"] = configMap
 	c.Receivers["prometheus/self-metrics"] = receiver
+	return nil
 }

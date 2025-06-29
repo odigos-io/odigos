@@ -56,6 +56,9 @@ const (
 	LdPreloadEnvVarName = "LD_PRELOAD"
 	OdigosLoaderDirName = "loader"
 	OdigosLoaderName    = "loader.so"
+
+	ServiceGraphConnectorName = "servicegraph"
+	ServiceGraphEndpointPort  = 9090
 )
 
 // Odigos config properties
