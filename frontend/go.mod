@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	github.com/99designs/gqlgen v0.17.70
+	github.com/coreos/go-oidc/v3 v3.14.1
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.1
 	github.com/glebarez/sqlite v1.11.0
@@ -38,6 +39,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20250323135004-b31fac66206e // indirect
 	github.com/glebarez/go-sqlite v1.21.2 // indirect
+	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/google/go-tpm v0.9.4 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
@@ -159,7 +161,7 @@ require (
 	golang.org/x/arch v0.15.0 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/oauth2 v0.30.0 // indirect
+	golang.org/x/oauth2 v0.30.0
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
