@@ -13,6 +13,7 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -24,7 +25,7 @@ import (
 
 func main() {
 	var healthProbeBindPort int
-	flag.IntVar(&healthProbeBindPort, "health-probe-bind-port", 8081, "The port the probe endpoint binds to.")
+	flag.IntVar(&healthProbeBindPort, "health-probe-bind-port", k8sconsts.OdigletDefaultHealthProbeBindPort, "The port the probe endpoint binds to.")
 	flag.Parse()
 
 	// Init Kubernetes clientset
