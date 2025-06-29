@@ -259,7 +259,7 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 		return nil
 
 	default:
-		return fmt.Errorf("unsupported kind: %s (must be Deployment, StatefulSet, or DaemonSet)", kind)
+		return fmt.Errorf("unsupported kind: %s (must be Deployment, StatefulSet, DaemonSet or CronJob)", kind)
 	}
 
 	return nil

@@ -412,7 +412,7 @@ func init() {
 	installCmd.Flags().StringVar(&k8sNodeLogsDirectory, consts.K8sNodeLogsDirectory, "", "custom configuration of a path to the directory where Kubernetes logs are symlinked in a node (e.g. /mnt/var/log)")
 	installCmd.Flags().StringSliceVar(&userInputIgnoredContainers, "ignore-container", k8sconsts.DefaultIgnoredContainers, "container names to exclude from instrumentation (useful for sidecar container)")
 	installCmd.Flags().StringSliceVar(&userInputInstallProfiles, "profile", []string{}, "install preset profiles with a specific configuration")
-	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.NormalUiMode), "set the UI mode (one-of: normal, readonly)")
+	installCmd.Flags().StringVarP(&uiMode, consts.UiModeProperty, "", string(common.UiModeDefault), "set the UI mode (one-of: default, readonly)")
 	installCmd.Flags().StringVar(&nodeSelectorFlag, "node-selector", "", "comma-separated key=value pair of Kubernetes NodeSelectors to set on Odigos components. Example: kubernetes.io/hostname=myhost")
 
 	installCmd.Flags().StringVar(&clusterName, "cluster-name", "", "name of the cluster to be used in the centralized backend")

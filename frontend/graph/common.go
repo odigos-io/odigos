@@ -1,11 +1,37 @@
 package graph
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
+	"time"
+
+	gqlHandler "github.com/99designs/gqlgen/graphql/handler"
+	gqlTransport "github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/frontend/middlewares"
+	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
 )
+
+func GetGQLHandler(ctx context.Context, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer) http.Handler {
+	// Use "New" instead of "NewDefaultServer" for production grade.
+	srv := gqlHandler.New(NewExecutableSchema(Config{
+		Resolvers: &Resolver{
+			MetricsConsumer: odigosMetrics,
+			Logger:          logger,
+		},
+	}))
+
+	srv.AddTransport(gqlTransport.GET{})
+	srv.AddTransport(gqlTransport.POST{})
+	srv.AddTransport(gqlTransport.Websocket{KeepAlivePingInterval: 10 * time.Second})
+	srv.Use(middlewares.OperationInterceptor())
+
+	return srv
+}
 
 func extractJWTPayload(token string) (map[string]interface{}, error) {
 	parts := strings.Split(token, ".")

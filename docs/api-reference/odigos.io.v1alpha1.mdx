@@ -2051,6 +2051,17 @@ If empty, no instrumentation libraries will be used.</p>
    <p>Configure the tracing configuration for the library.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>customInstrumentations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
+</td>
+<td>
+   <p>Add custom instrumentation probes</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -2467,6 +2478,17 @@ In the Future we might add another level of configuration base on the parent spa
 </td>
 <td>
    <p>default configuration for library tracing.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>customInstrumentations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
+</td>
+<td>
+   <p>default configuration for custom instrumentations, in case the instrumentation library does not provide a configuration.</p>
 </td>
 </tr>
 </tbody>

@@ -639,6 +639,9 @@ func NewOdigletLocalTrafficService(ns string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigletLocalTrafficServiceName,
 			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
@@ -649,6 +652,11 @@ func NewOdigletLocalTrafficService(ns string) *corev1.Service {
 					Name:       "op-amp",
 					Port:       int32(consts.OpAMPPort),
 					TargetPort: intstr.FromInt(consts.OpAMPPort),
+				},
+				{
+					Name:       "metrics",
+					Port:       8080,
+					TargetPort: intstr.FromInt(8080),
 				},
 			},
 			InternalTrafficPolicy: &localTrafficPolicy,

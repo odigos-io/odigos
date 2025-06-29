@@ -1,9 +1,14 @@
 package distro
 
-import "github.com/odigos-io/odigos/common"
+import (
+	"text/template"
+
+	"github.com/odigos-io/odigos/common"
+)
 
 const AgentPlaceholderDirectory = "{{ODIGOS_AGENTS_DIR}}"
-const RuntimeVersionPlaceholderMajorMinor = "{{RUNTIME_VERSION_MAJOR_MINOR}}"
+
+const RuntimeVersionMajorMinorDistroParameterName = "RUNTIME_VERSION_MAJOR_MINOR"
 
 type RuntimeEnvironment struct {
 	// the runtime environment this distribution targets.
@@ -30,6 +35,12 @@ type StaticEnvironmentVariable struct {
 
 	// The value of the environment variable to set.
 	EnvValue string `yaml:"envValue"`
+
+	// pre-parsed template that is ready to be executed with the relevant parameters.
+	// if the EnvValue field is templated (e.g. contains {{.PARAM_NAME}}), this field is set.
+	// it indicates that the value should be templated with the relevant parameters.
+	// this field is calculated based on the EnvValue field, and is not pulled from the yaml.
+	Template *template.Template
 }
 
 type EnvironmentVariables struct {

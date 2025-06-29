@@ -70,6 +70,38 @@ func copyDirectories(srcDir string, destDir string, filesToKeep map[string]struc
 	return nil
 }
 
+func createDotnetDeprecatedDirectories(destDir string) error {
+
+	var err error
+
+	arch := getArch()
+	dotnetSoFile := "OpenTelemetry.AutoInstrumentation.Native.so"
+	glibcDir := filepath.Join(destDir, "linux-glibc")
+	muslDir := filepath.Join(destDir, "linux-musl")
+	glibcDirWithArch := filepath.Join(destDir, "linux-glibc-"+arch)
+	muslDirWithArch := filepath.Join(destDir, "linux-musl-"+arch)
+
+	err = os.MkdirAll(glibcDirWithArch, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(muslDirWithArch, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = os.Symlink(filepath.Join(glibcDir, dotnetSoFile), filepath.Join(glibcDirWithArch, dotnetSoFile))
+	if err != nil {
+		return err
+	}
+	err = os.Symlink(filepath.Join(muslDir, dotnetSoFile), filepath.Join(muslDirWithArch, dotnetSoFile))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -157,4 +189,12 @@ func HostContainsEbpfDir(dir string) bool {
 		return nil
 	})
 	return found
+}
+
+func getArch() string {
+	if runtime.GOARCH == "arm64" {
+		return "arm64"
+	}
+
+	return "x64"
 }

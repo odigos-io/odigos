@@ -56,6 +56,7 @@ enum InstrumentationRuleType {
   CodeAttributes
   HeadersCollection
   PayloadCollection
+  CustomInstrumentation
   UnknownType
 }
 
@@ -145,6 +146,7 @@ type InstrumentationRule {
   codeAttributes: CodeAttributes
   headersCollection: HeadersCollection
   payloadCollection: PayloadCollection
+  customInstrumentations: CustomInstrumentations
 }
 
 input InstrumentationRuleInput {
@@ -156,6 +158,7 @@ input InstrumentationRuleInput {
   codeAttributes: CodeAttributesInput
   headersCollection: HeadersCollectionInput
   payloadCollection: PayloadCollectionInput
+  customInstrumentations: CustomInstrumentationsInput
 }
 
 type InstrumentationLibraryGlobalId {
@@ -172,6 +175,24 @@ input InstrumentationLibraryGlobalIdInput {
 
 type HeadersCollection {
   headerKeys: [String]
+}
+
+type CustomInstrumentations {
+    probes: [Probe]
+}
+
+type Probe {
+    className: String
+    methodName: String
+}
+
+input CustomInstrumentationsInput {
+    probes: [ProbeInput]
+}
+
+input ProbeInput {
+    className: String
+    methodName: String
 }
 
 input HeadersCollectionInput {

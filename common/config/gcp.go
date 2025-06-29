@@ -11,6 +11,7 @@ func (g *GoogleCloud) DestType() common.DestinationType {
 }
 
 func (g *GoogleCloud) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		exporterName := "googlecloud/" + dest.GetID()
 		currentConfig.Exporters[exporterName] = struct{}{}
@@ -19,8 +20,9 @@ func (g *GoogleCloud) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
-	var pipelineNames []string
+
 	if isLoggingEnabled(dest) {
 		exporterName := "googlecloud/" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{

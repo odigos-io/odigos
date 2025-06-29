@@ -36,6 +36,7 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	CodeAttributes           *instrumentationrules.CodeAttributes                `json:"codeAttributes,omitempty"`
 	HeadersCollection        *instrumentationrules.HttpHeadersCollection         `json:"headersCollection,omitempty"`
 	TraceConfig              *instrumentationrules.TraceConfig                   `json:"traceConfig,omitempty"`
+	CustomInstrumentations   *instrumentationrules.CustomInstrumentations        `json:"customInstrumentations,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -141,5 +142,13 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithHeadersCollection(value 
 // If called multiple times, the TraceConfig field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithTraceConfig(value instrumentationrules.TraceConfig) *InstrumentationRuleSpecApplyConfiguration {
 	b.TraceConfig = &value
+	return b
+}
+
+// WithCustomInstrumentations sets the CustomInstrumentations field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the CustomInstrumentations field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithCustomInstrumentations(value instrumentationrules.CustomInstrumentations) *InstrumentationRuleSpecApplyConfiguration {
+	b.CustomInstrumentations = &value
 	return b
 }

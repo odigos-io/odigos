@@ -31,9 +31,11 @@ If you prefer to use kubectl or GitOps to manage your Kubernetes workloads, you 
   Only one Source object may exist for a given workload, except in namespace instrumentation.
 </Warning>
 
-**Workload Source:**
+### Workload Source
 
-The following Source object enables instrumentation for a Deployment named `frontend` in the `default` namespace.
+The following Source object enables instrumentation for a Deployment named `frontend` in the `default` namespace and belong to Datastream `example`.
+
+> **Note:** Sources that do not have a Datastream label will be automatically attached to the default Datastream.
 
 ```yaml
 apiVersion: odigos.io/v1alpha1
@@ -41,6 +43,8 @@ kind: Source
 metadata:
   name: example-source
   namespace: default
+  labels:
+    odigos.io/data-stream-example: "true"
 spec:
   workload:
     name: frontend
@@ -48,7 +52,7 @@ spec:
     kind: Deployment
 ```
 
-**Namespace Source:**
+### Namespace Source
 
 The following Source object enables instrumentation for all the workloads in the `default` namespace:
 
@@ -69,7 +73,7 @@ Namespace Sources must have the following fields:<br />
 - `spec.workload.name == spec.workload.namespace`
 - `spec.workload.kind: Namespace`
 
-**Disable Workload Source in Namespace:**
+### Disable Workload Source in Namespace
 
 You can have a namespace Source and a workload Source that both enable instrumentation for a workload. In this case, if one is deleted, the other will persist instrumentation for the workload.
 

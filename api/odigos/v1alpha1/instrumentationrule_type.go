@@ -75,6 +75,9 @@ type InstrumentationRuleSpec struct {
 
 	// Configure the tracing configuration for the library.
 	TraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
+
+	// Add custom instrumentation probes
+	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
 
 type InstrumentationRuleStatus struct {

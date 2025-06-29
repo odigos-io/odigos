@@ -45,6 +45,9 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	if pw.Kind == k8sconsts.WorkloadKindCronJob || pw.Kind == k8sconsts.WorkloadKindJob {
+		if ic == nil {
+			return false, ctrl.Result{}, nil
+		}
 		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 			Status:  metav1.ConditionTrue,

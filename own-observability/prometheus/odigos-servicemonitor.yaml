@@ -1,0 +1,113 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: odigos-autoscaler-monitor
+  namespace: odigos-system
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-autoscaler
+  namespaceSelector:
+    matchNames:
+      - odigos-system
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: odigos-instrumentor-monitor
+  namespace: odigos-system
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-instrumentor
+  namespaceSelector:
+    matchNames:
+      - odigos-system
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: odigos-scheduler-monitor
+  namespace: odigos-system
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-scheduler
+  namespaceSelector:
+    matchNames:
+      - odigos-system
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: odigos-node-collector-monitor
+  namespace: odigos-system
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      odigos.io/collector-role: NODE_COLLECTOR
+  namespaceSelector:
+    matchNames:
+      - odigos-system
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: odigos-cluster-gateway-monitor
+  namespace: odigos-system
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      odigos.io/collector-role: CLUSTER_GATEWAY
+  namespaceSelector:
+    matchNames:
+      - odigos-system
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: odigos-odiglet-monitor
+  namespace: odigos-system
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odiglet
+  namespaceSelector:
+    matchNames:
+      - odigos-system
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s

@@ -65,13 +65,13 @@ To configure basic authentication, use the optional config options `Basic Auth U
 - **OTLP_HTTP_OAUTH2_ENABLED** `boolean` : Enable OAuth2. Enable OAuth2 client credentials authentication
   - This field is optional and defaults to `False`
 - **OTLP_HTTP_OAUTH2_CLIENT_ID** `string` : OAuth2 Client ID. OAuth2 client identifier for client credentials flow
-  - This field is required
+  - This field is optional
   - Example: `your-client-id`
 - **OTLP_HTTP_OAUTH2_CLIENT_SECRET** `string` : OAuth2 Client Secret. OAuth2 client secret for client credentials flow
-  - This field is required
+  - This field is optional
   - Example: `your-client-secret`
 - **OTLP_HTTP_OAUTH2_TOKEN_URL** `string` : OAuth2 Token URL. OAuth2 token endpoint URL for obtaining access tokens
-  - This field is required
+  - This field is optional
   - Example: `https://example.com/oauth2/token`
 - **OTLP_HTTP_OAUTH2_SCOPES** `string` : OAuth2 Scopes. Comma-separated list of OAuth2 scopes to request (e.g., "api.metrics,api.traces")
   - This field is optional
@@ -123,11 +123,11 @@ There are two primary methods for configuring destinations in Odigos:
     spec:
       data:
         OTLP_HTTP_ENDPOINT: <OTLP http Endpoint>
-        OTLP_HTTP_OAUTH2_CLIENT_ID: <OAuth2 Client ID>
-        OTLP_HTTP_OAUTH2_TOKEN_URL: <OAuth2 Token URL>
         # Note: The commented fields below are optional.
         # OTLP_HTTP_BASIC_AUTH_USERNAME: <Basic Auth Username>
         # OTLP_HTTP_OAUTH2_ENABLED: <Enable OAuth2>
+        # OTLP_HTTP_OAUTH2_CLIENT_ID: <OAuth2 Client ID>
+        # OTLP_HTTP_OAUTH2_TOKEN_URL: <OAuth2 Token URL>
         # OTLP_HTTP_OAUTH2_SCOPES: <OAuth2 Scopes>
         # OTLP_HTTP_OAUTH2_AUDIENCE: <OAuth2 Audience>
         # OTLP_HTTP_COMPRESSION: <Destination Compression Type (default: none) (options: [none, gzip, snappy, lz4, zlib, deflate, zstd])>

@@ -193,6 +193,12 @@ func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
 	} else if dsName, ok := attrs.Get(K8SDaemonSetNameKey); ok {
 		kind = k8sconsts.WorkloadKindDaemonSet
 		name = dsName
+	} else if cjName, ok := attrs.Get(K8SCronJobNameKey); ok {
+		kind = k8sconsts.WorkloadKindCronJob
+		name = cjName
+	} else if jobName, ok := attrs.Get(K8SJobNameKey); ok {
+		kind = k8sconsts.WorkloadKindJob
+		name = jobName
 	} else {
 		return common.SourceID{}, errors.New("kind not found")
 	}

@@ -59,11 +59,11 @@ func GetVersion(versionString string) *version.Version {
 	return runtimeVersion
 }
 
-func MajorMinorStringOnly(v *version.Version) string {
+func MajorMinorStringOnly(v *version.Version) (string, error) {
 	segments := v.Segments()
 	if len(segments) < 2 {
 		// fallback for malformed versions
-		return v.String()
+		return "", fmt.Errorf("version %s has less than 2 segments", v.String())
 	}
-	return fmt.Sprintf("%d.%d", segments[0], segments[1])
+	return fmt.Sprintf("%d.%d", segments[0], segments[1]), nil
 }

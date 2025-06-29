@@ -32,6 +32,7 @@ func (g *OTLPHttp) DestType() common.DestinationType {
 	return common.OtlpHttpDestinationType
 }
 
+//nolint:funlen // TODO: make it shorter
 func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 
@@ -48,7 +49,10 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	// Check for OAuth2 or Basic Auth (OAuth2 takes precedence)
-	oauth2ExtensionName, oauth2ExtensionConf := applyOAuth2Auth(dest)
+	oauth2ExtensionName, oauth2ExtensionConf, err := applyOAuth2Auth(dest)
+	if err != nil {
+		return nil, err
+	}
 	basicAuthExtensionName, basicAuthExtensionConf := applyBasicAuth(dest)
 
 	// OAuth2 takes precedence over Basic Auth
@@ -149,12 +153,12 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	return pipelineNames, nil
 }
 
-func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap) {
+func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap, err error) {
 	config := dest.GetConfig()
 
 	oauth2Enabled := config[otlpHttpOAuth2EnabledKey]
 	if oauth2Enabled != "true" {
-		return "", nil
+		return "", nil, nil
 	}
 
 	clientId := config[otlpHttpOAuth2ClientIdKey]
@@ -163,7 +167,7 @@ func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionCo
 	// Note: client secret is stored in the secret and injected as environment variable
 	// We don't validate it here since it's not in the regular config data
 	if clientId == "" || tokenUrl == "" {
-		return "", nil
+		return "", nil, errors.New("when OAuth2 is enabled, client ID and token URL must be provided")
 	}
 
 	extensionName = "oauth2client/otlphttp-" + dest.GetID()
@@ -196,7 +200,7 @@ func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionCo
 		(*extensionConf)["scopes"] = scopesList
 	}
 
-	return extensionName, extensionConf
+	return extensionName, extensionConf, nil
 }
 
 func applyBasicAuth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap) {

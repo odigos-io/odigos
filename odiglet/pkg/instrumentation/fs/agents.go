@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -54,6 +55,20 @@ func CopyAgentsDirectoryToHost() error {
 	err = copyDirectories(containerDir, k8sconsts.OdigosAgentsDirectory, updatedFilesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error copying instrumentation directory to host")
+		return err
+	}
+
+	// temporary workaround for dotnet.
+	// dotnet used to have directories containing the arch suffix (linux-glibc-arm64).
+	// this works will with virtual device that knows the arch it is running on.
+	// however, the webhook cannot know in advance which arch the pod is going to run on.
+	// thus, the directory names are renamed so they do not contain the arch suffix (linux-glibc)
+	// which can be used by the webhook.
+	// The following link is a temporary support for the deprecated dotnet virtual devices.
+	// TODO: remove this once we delete the virtual devices.
+	err = createDotnetDeprecatedDirectories(path.Join(k8sconsts.OdigosAgentsDirectory, "dotnet"))
+	if err != nil {
+		log.Logger.Error(err, "Error creating dotnet deprecated directories")
 		return err
 	}
 

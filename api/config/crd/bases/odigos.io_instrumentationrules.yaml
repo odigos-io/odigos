@@ -74,6 +74,21 @@ spec:
                       if unset, the value will resolve from other relevant rules, or fallback to false
                     type: boolean
                 type: object
+              customInstrumentations:
+                description: Add custom instrumentation probes
+                properties:
+                  probes:
+                    description: Custom instrumentation probes to be added to the
+                      SDK.
+                    items:
+                      properties:
+                        className:
+                          type: string
+                        methodName:
+                          type: string
+                      type: object
+                    type: array
+                type: object
               disabled:
                 description: A boolean field allowing to temporarily disable the rule,
                   but keep it around for future use

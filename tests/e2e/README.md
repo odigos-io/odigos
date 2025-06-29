@@ -30,11 +30,12 @@ Install these tools once when setting up your local testing environment the firs
   go install github.com/kyverno/chainsaw@latest
   ```
 
-- yq and jq installed:
+- yq, jq, and ko installed:
 
 ```bash
 brew install yq
 brew install jq
+brew install ko
 ```
 
 ### Preparing

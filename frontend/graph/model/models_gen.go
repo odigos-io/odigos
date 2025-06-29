@@ -152,6 +152,14 @@ type ContainerRuntimeInfoAnalyze struct {
 	EnvVars        []*EntityProperty `json:"envVars"`
 }
 
+type CustomInstrumentations struct {
+	Probes []*Probe `json:"probes,omitempty"`
+}
+
+type CustomInstrumentationsInput struct {
+	Probes []*ProbeInput `json:"probes,omitempty"`
+}
+
 type CustomReadDataLabel struct {
 	Condition string `json:"condition"`
 	Title     string `json:"title"`
@@ -367,6 +375,7 @@ type InstrumentationRule struct {
 	CodeAttributes           *CodeAttributes                   `json:"codeAttributes,omitempty"`
 	HeadersCollection        *HeadersCollection                `json:"headersCollection,omitempty"`
 	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
+	CustomInstrumentations   *CustomInstrumentations           `json:"customInstrumentations,omitempty"`
 }
 
 type InstrumentationRuleInput struct {
@@ -378,6 +387,7 @@ type InstrumentationRuleInput struct {
 	CodeAttributes           *CodeAttributesInput                   `json:"codeAttributes,omitempty"`
 	HeadersCollection        *HeadersCollectionInput                `json:"headersCollection,omitempty"`
 	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
+	CustomInstrumentations   *CustomInstrumentationsInput           `json:"customInstrumentations,omitempty"`
 }
 
 type InstrumentationSourcesAnalyze struct {
@@ -692,6 +702,16 @@ func (this ProbabilisticSamplerAction) GetSignals() []SignalType {
 		interfaceSlice = append(interfaceSlice, concrete)
 	}
 	return interfaceSlice
+}
+
+type Probe struct {
+	ClassName  *string `json:"className,omitempty"`
+	MethodName *string `json:"methodName,omitempty"`
+}
+
+type ProbeInput struct {
+	ClassName  *string `json:"className,omitempty"`
+	MethodName *string `json:"methodName,omitempty"`
 }
 
 type Query struct {
@@ -1024,22 +1044,24 @@ func (e InstallationStatus) MarshalGQL(w io.Writer) {
 type InstrumentationRuleType string
 
 const (
-	InstrumentationRuleTypeCodeAttributes    InstrumentationRuleType = "CodeAttributes"
-	InstrumentationRuleTypeHeadersCollection InstrumentationRuleType = "HeadersCollection"
-	InstrumentationRuleTypePayloadCollection InstrumentationRuleType = "PayloadCollection"
-	InstrumentationRuleTypeUnknownType       InstrumentationRuleType = "UnknownType"
+	InstrumentationRuleTypeCodeAttributes        InstrumentationRuleType = "CodeAttributes"
+	InstrumentationRuleTypeHeadersCollection     InstrumentationRuleType = "HeadersCollection"
+	InstrumentationRuleTypePayloadCollection     InstrumentationRuleType = "PayloadCollection"
+	InstrumentationRuleTypeCustomInstrumentation InstrumentationRuleType = "CustomInstrumentation"
+	InstrumentationRuleTypeUnknownType           InstrumentationRuleType = "UnknownType"
 )
 
 var AllInstrumentationRuleType = []InstrumentationRuleType{
 	InstrumentationRuleTypeCodeAttributes,
 	InstrumentationRuleTypeHeadersCollection,
 	InstrumentationRuleTypePayloadCollection,
+	InstrumentationRuleTypeCustomInstrumentation,
 	InstrumentationRuleTypeUnknownType,
 }
 
 func (e InstrumentationRuleType) IsValid() bool {
 	switch e {
-	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeUnknownType:
+	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCustomInstrumentation, InstrumentationRuleTypeUnknownType:
 		return true
 	}
 	return false

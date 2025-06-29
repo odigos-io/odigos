@@ -54,6 +54,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 				if rule.Spec.TraceConfig != nil {
 					sdkConfigs[i].DefaultTraceConfig = mergeDefaultTracingConfig(sdkConfigs[i].DefaultTraceConfig, rule.Spec.TraceConfig)
 				}
+				if rule.Spec.CustomInstrumentations != nil {
+					sdkConfigs[i].DefaultCustomInstrumentations = mergeCustomInstrumentations(sdkConfigs[i].DefaultCustomInstrumentations, rule.Spec.CustomInstrumentations)
+				}
 			} else {
 				for _, library := range *rule.Spec.InstrumentationLibraries {
 					libraryConfig := findOrCreateSdkLibraryConfig(&sdkConfigs[i], library)
@@ -182,6 +185,28 @@ func createDefaultSdkConfig(sdkConfigs []odigosv1alpha1.SdkConfig, containerLang
 		Language:                 containerLanguage,
 		DefaultPayloadCollection: &instrumentationrules.PayloadCollection{},
 	})
+}
+
+func mergeCustomInstrumentations(rule1 *instrumentationrules.CustomInstrumentations, rule2 *instrumentationrules.CustomInstrumentations) *instrumentationrules.CustomInstrumentations {
+	if rule1 == nil {
+		return rule2
+	} else if rule2 == nil {
+		return rule1
+	}
+
+	mergedRules := instrumentationrules.CustomInstrumentations{}
+
+	var mergedProbes []instrumentationrules.Probe
+	if rule1.Probes != nil {
+		mergedProbes = append(mergedProbes, rule1.Probes...)
+	}
+
+	if rule2.Probes != nil {
+		mergedProbes = append(mergedProbes, rule2.Probes...)
+	}
+
+	mergedRules.Probes = mergedProbes
+	return &mergedRules
 }
 
 func mergeHttpHeadersCollectionrules(rule1 *instrumentationrules.HttpHeadersCollection, rule2 *instrumentationrules.HttpHeadersCollection) *instrumentationrules.HttpHeadersCollection {

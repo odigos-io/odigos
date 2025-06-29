@@ -53,7 +53,7 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		ControllerManagedBy(mgr).
 		Named("agentenabled-instrumentationrules").
 		For(&odigosv1.InstrumentationRule{}).
-		WithEventFilter(&instrumentorpredicate.OtelSdkInstrumentationRulePredicate{}).
+		WithEventFilter(&instrumentorpredicate.AgentInjectionRelevantRulesPredicate{}).
 		Complete(&InstrumentationRuleReconciler{
 			Client:          mgr.GetClient(),
 			DistrosProvider: dp,
