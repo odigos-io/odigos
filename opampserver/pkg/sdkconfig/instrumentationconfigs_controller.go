@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// Only handle events where the agent is enabled.
+// Only handle events where the agent injection is enabled
 type agentEnabledPredicate struct{}
 
 func (i *agentEnabledPredicate) Create(e event.CreateEvent) bool {
@@ -81,6 +81,10 @@ func (i *InstrumentationConfigReconciler) SetupWithManager(mgr ctrl.Manager) err
 		Named("opampserver-instrumentationconfig").
 		For(&odigosv1.InstrumentationConfig{}).
 		WithEventFilter(predicate.GenerationChangedPredicate{}).
+		// if agent is disabled, we don't need to reconcile as all config is disabled.
+		// TODO: in the future, notify the agent to stop collection until a rollout is triggered?
+		// TODO2: do it also when object is deleted
+		// TODO3: refine the condition so it will be triggered even less
 		WithEventFilter(&agentEnabledPredicate{}).
 		Complete(i)
 }
