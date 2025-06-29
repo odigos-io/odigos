@@ -3,17 +3,19 @@ package configsections
 import (
 	"encoding/json"
 	"fmt"
-	"slices"
 
-	"github.com/odigos-io/odigos/common"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 )
 
-func CalcSdkRemoteConfig(remoteResourceAttributes []configresolvers.ResourceAttribute, signals []common.ObservabilitySignal) *RemoteConfigSdk {
-	tracesEnabled := slices.Contains(signals, common.TracesObservabilitySignal)
-	metricsEnabled := slices.Contains(signals, common.MetricsObservabilitySignal)
-	logsEnabled := slices.Contains(signals, common.LogsObservabilitySignal)
+// SdkConfig is sunsetting, as we are now just sending the entire config to the agent.
+// however, the process is still ongoing, and after we upgrade the agent,
+// opampserver will still need to serve old agents from non-restarted pods for some time.
+func CalcSdkRemoteConfig(remoteResourceAttributes []configresolvers.ResourceAttribute, containerConfig *odigosv1.ContainerAgentConfig) *RemoteConfigSdk {
+	tracesEnabled := containerConfig.Traces != nil
+	metricsEnabled := containerConfig.Metrics != nil
+	logsEnabled := containerConfig.Logs != nil
 
 	remoteConfigSdk := RemoteConfigSdk{
 		RemoteResourceAttributes: remoteResourceAttributes,
