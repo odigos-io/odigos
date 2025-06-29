@@ -8,4 +8,20 @@
     ],
 
     "go.buildTags": "embed_manifests",
+    
+    // Disable .NET extensions for this workspace
+    "extensions.ignoreRecommendations": true,
+    "dotnet.defaultSolution": "",
+    "omnisharp.enableEditorConfigSupport": false,
+    "omnisharp.enableImportCompletion": false,
+    "omnisharp.enableRoslynAnalyzers": false,
+    "omnisharp.enableUnsafeCodeFixes": false,
+    "omnisharp.organizeImportsOnFormat": false,
+    "omnisharp.enableMsBuildLoadProjectsOnDemand": false,
+    "omnisharp.enableEditorConfigSupport": false,
+    "omnisharp.enableImportCompletion": false,
+    "omnisharp.enableRoslynAnalyzers": false,
+    "omnisharp.enableUnsafeCodeFixes": false,
+    "omnisharp.organizeImportsOnFormat": false,
+    "omnisharp.enableMsBuildLoadProjectsOnDemand": false
 }
