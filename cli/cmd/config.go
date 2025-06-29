@@ -57,7 +57,7 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the URL of the OIDC tenant.
 	- "%s": Sets the client ID of the OIDC application.
 	- "%s": Sets the client secret of the OIDC application.
-	- "%s": Sets the port for the health probe.
+	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
