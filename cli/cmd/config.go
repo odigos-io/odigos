@@ -85,6 +85,7 @@ var configCmd = &cobra.Command{
 		consts.AutomaticRolloutDisabledProperty,
 		consts.OidcTenantUrlProperty,
 		consts.OidcClientIdProperty,
+		consts.OidcClientSecretProperty,
 		consts.HealthProbeBindPortProperty,
 	),
 }
