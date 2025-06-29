@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 type InstrumentationConfigReconciler struct {
@@ -22,6 +23,8 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	err := i.Get(ctx, req.NamespacedName, instrumentationConfig)
 
 	if err != nil {
+		// TODO: signal the agent to stop collection?
+		// it should be restarted after some time, but until then it can be nice to have it disabled
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -38,5 +41,6 @@ func (i *InstrumentationConfigReconciler) SetupWithManager(mgr ctrl.Manager) err
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("opampserver-instrumentationconfig").
 		For(&odigosv1.InstrumentationConfig{}).
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(i)
 }
