@@ -28,6 +28,7 @@ func FilterRelevantSdk(instrumentationConfig *v1alpha1.InstrumentationConfig, pr
 	for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
 		if common.MapOdigosToSemConv(sdkConfig.Language) == programmingLanguage {
 			relevantSdkConfig = sdkConfig
+			break
 		}
 	}
 
@@ -51,6 +52,7 @@ func FilterRelevantContainerConfig(instrumentationConfig *v1alpha1.Instrumentati
 	for _, container := range instrumentationConfig.Spec.Containers {
 		if container.ContainerName == containerName {
 			containerConfig = container
+			break
 		}
 	}
 
