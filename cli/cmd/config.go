@@ -88,7 +88,7 @@ var configCmd = &cobra.Command{
 		consts.OidcClientIdProperty,
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
-    consts.ServiceGraphDisabledProperty,
+		consts.ServiceGraphDisabledProperty,
 	),
 }
 
@@ -167,7 +167,6 @@ func validatePropertyValue(property string, value []string) error {
 			return fmt.Errorf("%s expects at least one value", property)
 		}
 
-
 	case consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
 		consts.PspProperty,
@@ -193,7 +192,7 @@ func validatePropertyValue(property string, value []string) error {
 		consts.OidcClientIdProperty,
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
-    consts.ServiceGraphDisabledProperty:
+		consts.ServiceGraphDisabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -208,7 +207,7 @@ func validatePropertyValue(property string, value []string) error {
 			consts.KarpenterEnabledProperty,
 			consts.RollbackDisabledProperty,
 			consts.AutomaticRolloutDisabledProperty,
-      consts.ServiceGraphDisabledProperty:
+			consts.ServiceGraphDisabledProperty:
 			_, err := strconv.ParseBool(value[0])
 			if err != nil {
 				return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
@@ -358,8 +357,8 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 		}
 		boolValue, _ := strconv.ParseBool(value[0])
 		config.Rollout.AutomaticRolloutDisabled = &boolValue
-    
-  case consts.ServiceGraphDisabledProperty:
+
+	case consts.ServiceGraphDisabledProperty:
 		if config.CollectorGateway == nil {
 			config.CollectorGateway = &common.CollectorGatewayConfiguration{}
 		}
