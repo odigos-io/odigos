@@ -100,7 +100,7 @@ type CollectorsGroupSpec struct {
 
 	// ServiceGraphEnabled is a feature that allows you to visualize the service graph of your application.
 	// It is enabled by default and can be disabled by setting the enabled flag to false.
-	ServiceGraphEnabled *bool `json:"serviceGraphEnabled,omitempty"`
+	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

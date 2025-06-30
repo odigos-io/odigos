@@ -86,7 +86,7 @@ const (
 	RollbackGraceTimeProperty         = "instrumentation-auto-rollback-grace-time"
 	RollbackStabilityWindow           = "instrumentation-auto-rollback-stability-window"
 	AutomaticRolloutDisabledProperty  = "automatic-rollout-disabled"
-	ServiceGraphEnabledProperty       = "service-graph-enabled"
+	ServiceGraphDisabledProperty      = "service-graph-disabled"
 )
 
 var (

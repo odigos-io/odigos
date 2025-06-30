@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings, serviceGraphEnabled *bool) *odigosv1.CollectorsGroup {
+func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings, serviceGraphDisabled *bool) *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -25,7 +25,7 @@ func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.Coll
 			Role:                    odigosv1.CollectorsGroupRoleClusterGateway,
 			CollectorOwnMetricsPort: k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault,
 			ResourcesSettings:       *resourcesSettings,
-			ServiceGraphEnabled:     serviceGraphEnabled,
+			ServiceGraphDisabled:    serviceGraphDisabled,
 		},
 	}
 }
@@ -40,10 +40,11 @@ func sync(ctx context.Context, c client.Client) error {
 	}
 	resourceSettings := getGatewayResourceSettings(&odigosConfig)
 
-	serviceGraphEnabled := odigosConfig.CollectorGateway.ServiceGraphEnabled
-	if serviceGraphEnabled == nil {
-		enabled := false
-		serviceGraphEnabled = &enabled
+	// default servicegraph is enabled (serviceGraphDisabled to false)
+	serviceGraphDisabled := odigosConfig.CollectorGateway.ServiceGraphDisabled
+	if serviceGraphDisabled == nil {
+		result := false
+		serviceGraphDisabled = &result
 	}
 
 	// cluster collector is always set and never deleted at the moment.
@@ -51,7 +52,7 @@ func sync(ctx context.Context, c client.Client) error {
 	// and started.
 	// in the future we might want to support a deployment of instrumentations only and allow user
 	// to setup their own collectors, then we would avoid adding the cluster collector by default.
-	err = utils.ApplyCollectorGroup(ctx, c, newClusterCollectorGroup(namespace, resourceSettings, serviceGraphEnabled))
+	err = utils.ApplyCollectorGroup(ctx, c, newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled))
 	if err != nil {
 		return err
 	}

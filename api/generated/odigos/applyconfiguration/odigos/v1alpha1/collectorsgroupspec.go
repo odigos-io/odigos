@@ -28,7 +28,7 @@ type CollectorsGroupSpecApplyConfiguration struct {
 	CollectorOwnMetricsPort *int32                                              `json:"collectorOwnMetricsPort,omitempty"`
 	K8sNodeLogsDirectory    *string                                             `json:"k8sNodeLogsDirectory,omitempty"`
 	ResourcesSettings       *CollectorsGroupResourcesSettingsApplyConfiguration `json:"resourcesSettings,omitempty"`
-	ServiceGraphEnabled     *bool                                               `json:"serviceGraphEnabled,omitempty"`
+	ServiceGraphDisabled    *bool                                               `json:"serviceGraphDisabled,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -69,10 +69,10 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithResourcesSettings(value *Col
 	return b
 }
 
-// WithServiceGraphEnabled sets the ServiceGraphEnabled field in the declarative configuration to the given value
+// WithServiceGraphDisabled sets the ServiceGraphDisabled field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ServiceGraphEnabled field is set to the value of the last call.
-func (b *CollectorsGroupSpecApplyConfiguration) WithServiceGraphEnabled(value bool) *CollectorsGroupSpecApplyConfiguration {
-	b.ServiceGraphEnabled = &value
+// If called multiple times, the ServiceGraphDisabled field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithServiceGraphDisabled(value bool) *CollectorsGroupSpecApplyConfiguration {
+	b.ServiceGraphDisabled = &value
 	return b
 }

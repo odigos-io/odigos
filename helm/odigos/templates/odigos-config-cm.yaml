@@ -56,9 +56,7 @@ data:
       {{- with .Values.collectorGateway.goMemLimitMiB }}
       goMemLimitMiB: {{ . }}
       {{- end }}
-      {{- with .Values.collectorGateway.serviceGraphEnabled }}
-      serviceGraphEnabled: {{ . }}
-      {{- end }}
+      serviceGraphDisabled: {{ .Values.collectorGateway.serviceGraphDisabled }}
     {{- end }}
     {{- if .Values.collectorNode }}
     collectorNode:

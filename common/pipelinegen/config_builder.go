@@ -19,10 +19,10 @@ func GetGatewayConfig(
 	memoryLimiterConfig config.GenericMap,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
-	serviceGraphEnabled *bool,
+	serviceGraphDisabled *bool,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig := GetBasicConfig(memoryLimiterConfig)
-	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, serviceGraphEnabled)
+	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, serviceGraphDisabled)
 }
 
 func CalculateGatewayConfig(
@@ -31,7 +31,7 @@ func CalculateGatewayConfig(
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
-	serviceGraphEnabled *bool,
+	serviceGraphDisabled *bool,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := config.LoadConfigers()
 	if err != nil {
@@ -143,7 +143,7 @@ func CalculateGatewayConfig(
 		}
 	}
 
-	if tracesEnabled && *serviceGraphEnabled {
+	if tracesEnabled && !*serviceGraphDisabled {
 		insertServiceGraphPipeline(currentConfig)
 	}
 	// Final marshal to YAML

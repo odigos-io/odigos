@@ -45,7 +45,7 @@ var configCmd = &cobra.Command{
 	- "instrumentation-auto-rollback-grace-time": Grace time before uninstrumenting an application [default: 5m].
 	- "instrumentation-auto-rollback-stability-window": Time windows where the auto rollback can happen [default: 1h].
 	- "automatic-rollout-disabled": Disable auto rollout feature for workloads when instrumenting or uninstrumenting.
-	- "service-graph-enabled": Enable or disable the service graph feature [default: true].
+	- "service-graph-disabled": Enable or disable the service graph feature [default: false].
 	`,
 }
 
@@ -122,7 +122,7 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 	case consts.TelemetryEnabledProperty, consts.OpenshiftEnabledProperty, consts.PspProperty,
 		consts.SkipWebhookIssuerCreationProperty, consts.AllowConcurrentAgentsProperty,
 		consts.KarpenterEnabledProperty, consts.RollbackDisabledProperty,
-		consts.AutomaticRolloutDisabledProperty, consts.ServiceGraphEnabledProperty:
+		consts.AutomaticRolloutDisabledProperty, consts.ServiceGraphDisabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value (true/false)", property)
@@ -152,11 +152,11 @@ func setConfigProperty(config *common.OdigosConfiguration, property string, valu
 				config.Rollout = &common.RolloutConfiguration{}
 			}
 			config.Rollout.AutomaticRolloutDisabled = &boolValue
-		case consts.ServiceGraphEnabledProperty:
+		case consts.ServiceGraphDisabledProperty:
 			if config.CollectorGateway == nil {
 				config.CollectorGateway = &common.CollectorGatewayConfiguration{}
 			}
-			config.CollectorGateway.ServiceGraphEnabled = &boolValue
+			config.CollectorGateway.ServiceGraphDisabled = &boolValue
 		}
 
 	case consts.ImagePrefixProperty, consts.UiModeProperty, consts.UiPaginationLimit:

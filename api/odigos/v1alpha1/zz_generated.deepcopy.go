@@ -334,8 +334,8 @@ func (in *CollectorsGroupResourcesSettings) DeepCopy() *CollectorsGroupResources
 func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 	*out = *in
 	in.ResourcesSettings.DeepCopyInto(&out.ResourcesSettings)
-	if in.ServiceGraphEnabled != nil {
-		in, out := &in.ServiceGraphEnabled, &out.ServiceGraphEnabled
+	if in.ServiceGraphDisabled != nil {
+		in, out := &in.ServiceGraphDisabled, &out.ServiceGraphDisabled
 		*out = new(bool)
 		**out = **in
 	}
