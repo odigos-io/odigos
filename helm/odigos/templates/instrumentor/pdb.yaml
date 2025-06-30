@@ -1,0 +1,15 @@
+{{- if .Values.pdb.enabled }}
+apiVersion: {{- if semverCompare "<1.21.0-0" (include "utils.cleanKubeVersion" .) }}policy/v1beta1{{- else }}policy/v1{{- end }}
+kind: PodDisruptionBudget
+metadata:
+  name: odigos-instrumentor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-instrumentor
+    odigos.io/system-object: "true"
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-instrumentor
+{{- end }}

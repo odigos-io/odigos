@@ -1,0 +1,19 @@
+{{- if .Values.pdb.enabled }}
+apiVersion: {{- if semverCompare "<1.21.0-0" (include "utils.cleanKubeVersion" .) }}policy/v1beta1{{- else }}policy/v1{{- end }}
+kind: PodDisruptionBudget
+metadata:
+  name: odigos-scheduler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-scheduler
+    odigos.io/system-object: "true"
+spec:
+  # This component runs only 1 replica and is important but not critical.
+  # We use maxUnavailable: 1 instead of minAvailable to allow voluntary disruptions
+  # (e.g., node drains, upgrades) without blocking cluster operations.
+  # If we used minAvailable: 1, evictions would be blocked due to no spare pods.
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-scheduler
+{{- end }}
