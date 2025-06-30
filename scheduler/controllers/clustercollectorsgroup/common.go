@@ -33,7 +33,7 @@ func sync(ctx context.Context, c client.Client) error {
 
 	namespace := env.GetCurrentNamespace()
 
-	odigosConfiguration, err := utils.GetCurrentOdigosConfig(ctx, c)
+	odigosConfiguration, err := utils.GetCurrentOdigosConfiguration(ctx, c)
 	if err != nil {
 		return err
 	}

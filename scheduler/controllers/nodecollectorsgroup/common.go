@@ -154,7 +154,7 @@ func sync(ctx context.Context, c client.Client) error {
 		return client.IgnoreNotFound(err)
 	}
 
-	odigosConfiguration, err := utils.GetCurrentOdigosConfig(ctx, c)
+	odigosConfiguration, err := utils.GetCurrentOdigosConfiguration(ctx, c)
 	if err != nil {
 		return err
 	}

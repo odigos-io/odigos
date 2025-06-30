@@ -70,12 +70,12 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
-	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfig(ctx, p.Client)
+	odigosConfig, err := k8sutils.GetCurrentOdigosConfiguration(ctx, p.Client)
 	if err != nil {
 		logger.Error(err, "failed to get ODIGOS config. Skipping Injection of ODIGOS agent")
 		return nil
 	}
-	if odigosConfiguration.MountMethod == nil {
+	if odigosConfig.MountMethod == nil {
 		// we are reading the effective config which should already have the mount method resolved or defaulted
 		logger.Error(errors.New("mount method is not set in ODIGOS config"), "Skipping Injection of ODIGOS agent")
 		return nil
@@ -89,7 +89,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	// Add odiglet installed node-affinity to the pod, for non Karpenter installations
-	if odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled {
+	if odigosConfig.KarpenterEnabled == nil || !*odigosConfig.KarpenterEnabled {
 		podutils.AddOdigletInstalledAffinity(pod)
 	}
 
@@ -106,7 +106,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 			continue
 		}
 
-		containerVolumeMounted, err := p.injectOdigosToContainer(containerConfig, runtimeDetails, podContainerSpec, *pw, serviceName, odigosConfiguration)
+		containerVolumeMounted, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, odigosConfig)
 		if err != nil {
 			logger.Error(err, "failed to inject ODIGOS agent to container")
 			continue
@@ -114,20 +114,20 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		volumeMounted = volumeMounted || containerVolumeMounted
 	}
 
-	if *odigosConfiguration.MountMethod == common.K8sHostPathMountMethod && volumeMounted {
+	if *odigosConfig.MountMethod == common.K8sHostPathMountMethod && volumeMounted {
 		// only mount the volume if at least one container has a volume to mount
 		podswebhook.MountPodVolume(pod)
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
-	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw, &odigosConfiguration)
+	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw, &odigosConfig)
 	if injectErr != nil {
 		logger.Error(injectErr, "failed to inject ODIGOS instrumentation. Skipping Injection of ODIGOS agent")
 		return nil
 	}
 
-	if odigosConfiguration.UserInstrumentationEnvs != nil {
-		podswebhook.InjectUserEnvForLang(&odigosConfiguration, pod, &ic)
+	if odigosConfig.UserInstrumentationEnvs != nil {
+		podswebhook.InjectUserEnvForLang(&odigosConfig, pod, &ic)
 	}
 
 	// store the agents deployment value so we can later associate each pod with the instrumentation version.

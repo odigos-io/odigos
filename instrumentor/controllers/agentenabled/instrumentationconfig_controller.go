@@ -15,7 +15,7 @@ type InstrumentationConfigReconciler struct {
 }
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	conf, err := k8sutils.GetCurrentOdigosConfig(ctx, r.Client)
+	conf, err := k8sutils.GetCurrentOdigosConfiguration(ctx, r.Client)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
