@@ -82,31 +82,12 @@ func WorkloadKindFromString(kind string) k8sconsts.WorkloadKind {
 		return k8sconsts.WorkloadKindDaemonSet
 	case string(k8sconsts.WorkloadKindLowerCaseStatefulSet):
 		return k8sconsts.WorkloadKindStatefulSet
-	case string(k8sconsts.WorkloadKindCronJob):
+	case string(k8sconsts.WorkloadKindLowerCaseCronJob):
 		return k8sconsts.WorkloadKindCronJob
 	case string(k8sconsts.WorkloadKindLowerCaseJob):
 		return k8sconsts.WorkloadKindJob
 	default:
 		return k8sconsts.WorkloadKind("")
-	}
-}
-
-func WorkloadKindFromClientObject(w client.Object) k8sconsts.WorkloadKind {
-	switch w.(type) {
-	case *v1.Deployment:
-		return k8sconsts.WorkloadKindDeployment
-	case *v1.DaemonSet:
-		return k8sconsts.WorkloadKindDaemonSet
-	case *v1.StatefulSet:
-		return k8sconsts.WorkloadKindStatefulSet
-	case *batchv1.CronJob:
-		return k8sconsts.WorkloadKindCronJob
-	case *batchv1.Job:
-		return k8sconsts.WorkloadKindJob
-	case *batchv1beta1.CronJob:
-		return k8sconsts.WorkloadKindCronJob
-	default:
-		return ""
 	}
 }
 

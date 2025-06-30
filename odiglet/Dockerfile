@@ -11,7 +11,7 @@ RUN echo "VERSION = \"$ODIGOS_VERSION\";" > /python-instrumentation/workspace/in
 #
 # The Node.js agent is built in multiple stages so it can be built with either upstream
 # @odigos/opentelemetry-node or with a local clone to test changes during development.
-# The implemntation is based on the following blog post:
+# The implementation is based on the following blog post:
 # https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
 
 # The first build stage 'nodejs-agent-clone' clones the agent sources from github main branch.
@@ -22,9 +22,9 @@ ARG NODEJS_AGENT_VERSION=main
 RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentelemetry-node && git checkout $NODEJS_AGENT_VERSION
 
 # The second build stage 'nodejs-agent-src' prepares the actual code we are going to compile and embed in odiglet.
-# By default, it uses the previous 'nodejs-agent-src' stage, but one can override it by setting the 
+# By default, it uses the previous 'nodejs-agent-clone' stage, but one can override it by setting the 
 # --build-context nodejs-agent-src=../opentelemetry-node flag in the docker build command.
-# This allows us to nobe the agent sources and test changes during development.
+# This allows us to use the agent sources and test changes during development.
 # The output of this stage is the resolved source code to be used in the next stage.
 FROM scratch AS nodejs-agent-src
 COPY --from=nodejs-agent-clone /src/opentelemetry-node /
@@ -32,15 +32,18 @@ COPY --from=nodejs-agent-clone /src/opentelemetry-node /
 # The third step 'nodejs-agent-build' compiles the agent sources and prepares it for 
 # being dependency of the native-community agent.
 FROM node:18 AS nodejs-agent-build
+# Run yarn install to generate the production node_modules directory
+WORKDIR /opentelemetry-node-prod
+COPY --from=nodejs-agent-src package.json yarn.lock ./
+RUN yarn install --frozen-lockfile --production
+# Build the agent from typescript sources
 ARG ODIGOS_VERSION
 WORKDIR /opentelemetry-node
 COPY --from=nodejs-agent-src package.json yarn.lock ./
-# install dependencies with dev so we can build the agent
 RUN yarn --frozen-lockfile
 COPY --from=nodejs-agent-src / .
 RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
 RUN yarn compile
-RUN rm -rf .github .git src tsconfig.json yarn.lock
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
@@ -56,18 +59,19 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
-    mv linux-$ARCH_SUFFIX linux-glibc-$ARCH_SUFFIX && \
+    mv linux-$ARCH_SUFFIX linux-glibc
+RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
-    unzip opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip "linux-musl-$ARCH_SUFFIX/*" -d . && \
-    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip
+    unzip -o opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    mv linux-musl-$ARCH_SUFFIX linux-musl
 
 # TODO(edenfed): Currently .NET Automatic instrumentation does not work on dotnet 6.0 with glibc,
 # This is due to compilation of the .so file on a newer version of glibc than the one used by the dotnet runtime.
 # The following override the .so file with our own which is compiled on the same glibc version as the dotnet runtime.
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
-    mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
-
+    mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc/OpenTelemetry.AutoInstrumentation.Native.so
 
 # PHP
 FROM --platform=$BUILDPLATFORM maniator/gh AS php-agents
@@ -139,8 +143,13 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
+COPY --from=nodejs-agent-build /opentelemetry-node/package.json /instrumentations/opentelemetry-node/package.json
+COPY --from=nodejs-agent-build /opentelemetry-node/LICENSE /instrumentations/opentelemetry-node/LICENSE
+COPY --from=nodejs-agent-build /opentelemetry-node/build /instrumentations/opentelemetry-node/build
+COPY --from=nodejs-agent-build /opentelemetry-node-prod/node_modules /instrumentations/opentelemetry-node/node_modules
+
+# nodejs-community
 COPY ./agents/nodejs-community/autoinstrumentation.js /instrumentations/nodejs-community/autoinstrumentation.js
-COPY --from=nodejs-agent-build /opentelemetry-node /instrumentations/opentelemetry-node
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet

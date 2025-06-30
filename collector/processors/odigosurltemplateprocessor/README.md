@@ -157,7 +157,7 @@ For example, if your system uses `id`s in format `id-1234`, you can set the rege
 
 Few more examples for ids that will not be catched by default but can be configured with custom regexp:
 
-- `SA_8856_BH` - `^SA_\d{4}_\w{2}$` ("SA_" then 4 digits then "_" then 2 "word characters" ([a-zA-Z0-9_]))
+- `SA_8856_BH` - `^SA_\d{4}_\w{2}$` ("SA\_" then 4 digits then "\_" then 2 "word characters" ([a-zA-Z0-9_]))
 - `prod-api-001` - `^(dev|staging|prod)-[a-z]+-\d{3}$` (limit the first part to dev/staging/prod)
 - `backup_20250416_073045` - `^backup_\d{8}_\d{6}$` (Timestamped IDs)
 - `v2.3.4-beta` - `^v\d+\.\d+\.\d+(-[a-z]+)?$` (Application Release Tags)

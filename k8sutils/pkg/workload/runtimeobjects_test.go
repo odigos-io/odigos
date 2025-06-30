@@ -15,34 +15,34 @@ func TestRuntimeObjectName(t *testing.T) {
 
 func TestExtractDeploymentWorkloadInfoFromRuntimeObjectName(t *testing.T) {
 	runtimeObjectName := workload.CalculateWorkloadRuntimeObjectName("my-app", "Deployment")
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName)
+	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName, "test")
 	assert.Nil(t, err)
-	assert.Equal(t, "my-app", workloadName)
-	assert.Equal(t, k8sconsts.WorkloadKindDeployment, workloadKind)
+	assert.Equal(t, "my-app", pw.Name)
+	assert.Equal(t, k8sconsts.WorkloadKindDeployment, pw.Kind)
 }
 
 func TestExtractDaemonSetWorkloadInfoFromRuntimeObjectName(t *testing.T) {
 	runtimeObjectName := workload.CalculateWorkloadRuntimeObjectName("my-app", "DaemonSet")
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName)
+	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName, "test")
 	assert.Nil(t, err)
-	assert.Equal(t, "my-app", workloadName)
-	assert.Equal(t, k8sconsts.WorkloadKindDaemonSet, workloadKind)
+	assert.Equal(t, "my-app", pw.Name)
+	assert.Equal(t, k8sconsts.WorkloadKindDaemonSet, pw.Kind)
 }
 
 func TestExtractStatefulSetWorkloadInfoFromRuntimeObjectName(t *testing.T) {
 	runtimeObjectName := workload.CalculateWorkloadRuntimeObjectName("my-app", "StatefulSet")
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName)
+	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName, "test")
 	assert.Nil(t, err)
-	assert.Equal(t, "my-app", workloadName)
-	assert.Equal(t, k8sconsts.WorkloadKindStatefulSet, workloadKind)
+	assert.Equal(t, "my-app", pw.Name)
+	assert.Equal(t, k8sconsts.WorkloadKindStatefulSet, pw.Kind)
 }
 
 func TestExtractInvalidWorkloadInfoFromRuntimeObjectName(t *testing.T) {
-	_, _, err := workload.ExtractWorkloadInfoFromRuntimeObjectName("nohyphen")
+	_, err := workload.ExtractWorkloadInfoFromRuntimeObjectName("nohyphen", "test")
 	assert.NotNil(t, err)
 }
 
 func TestExtractUnknownWorkloadInfoFromRuntimeObjectName(t *testing.T) {
-	_, _, err := workload.ExtractWorkloadInfoFromRuntimeObjectName("unknownkind-my-app")
+	_, err := workload.ExtractWorkloadInfoFromRuntimeObjectName("unknownkind-my-app", "test")
 	assert.NotNil(t, err)
 }

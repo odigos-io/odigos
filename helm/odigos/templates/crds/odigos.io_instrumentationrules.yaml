@@ -74,6 +74,21 @@ spec:
                       if unset, the value will resolve from other relevant rules, or fallback to false
                     type: boolean
                 type: object
+              customInstrumentations:
+                description: Add custom instrumentation probes
+                properties:
+                  probes:
+                    description: Custom instrumentation probes to be added to the
+                      SDK.
+                    items:
+                      properties:
+                        className:
+                          type: string
+                        methodName:
+                          type: string
+                      type: object
+                    type: array
+                type: object
               disabled:
                 description: A boolean field allowing to temporarily disable the rule,
                   but keep it around for future use
@@ -269,6 +284,13 @@ spec:
                   convenience. Odigos does not use or assume any meaning from this
                   field.
                 type: string
+              traceConfig:
+                description: Configure the tracing configuration for the library.
+                properties:
+                  disabled:
+                    description: Disabled will disable tracing for the rule.
+                    type: boolean
+                type: object
               workloads:
                 description: An array of workload objects (name, namespace, kind)
                   to which the rule should be applied. If not specified, the rule

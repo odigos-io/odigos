@@ -24,5 +24,6 @@ var KratosProfile = profile.Profile{
 		"mount-method-k8s-host-path",
 		"reduce-span-name-cardinality",
 		"loader-fallback-to-pod-manifest-env-var-injection",
+		"disable-gin",
 	},
 }

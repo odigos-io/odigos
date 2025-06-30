@@ -16,7 +16,13 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		ControllerManagedBy(mgr).
 		Named("agentenabled-collectorsgroup").
 		For(&odigosv1.CollectorsGroup{}).
-		WithEventFilter(predicate.And(&odigospredicate.OdigosCollectorsGroupNodePredicate, &odigospredicate.CgBecomesReadyPredicate{})).
+		WithEventFilter(predicate.And(
+			&odigospredicate.OdigosCollectorsGroupNodePredicate,
+			predicate.Or(
+				&odigospredicate.CgBecomesReadyPredicate{},
+				&odigospredicate.ReceiverSignalsChangedPredicate{},
+			),
+		)).
 		Complete(&CollectorsGroupReconciler{
 			Client:          mgr.GetClient(),
 			DistrosProvider: dp,
@@ -47,7 +53,7 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		ControllerManagedBy(mgr).
 		Named("agentenabled-instrumentationrules").
 		For(&odigosv1.InstrumentationRule{}).
-		WithEventFilter(&instrumentorpredicate.OtelSdkInstrumentationRulePredicate{}).
+		WithEventFilter(&instrumentorpredicate.AgentInjectionRelevantRulesPredicate{}).
 		Complete(&InstrumentationRuleReconciler{
 			Client:          mgr.GetClient(),
 			DistrosProvider: dp,
