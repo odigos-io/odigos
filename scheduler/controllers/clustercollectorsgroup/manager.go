@@ -12,7 +12,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		For(&corev1.ConfigMap{}).
 		Named("clustercollectorgroup-odigosconfiguration").
 		WithEventFilter(&odigospredicates.OdigosEffectiveConfigMapPredicate).
-		Complete(&odigosConfigController{
+		Complete(&odigosConfigurationController{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
