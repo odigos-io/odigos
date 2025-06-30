@@ -1,16 +1,16 @@
 ---
-title: "Configure Odigos with ArgoCD"
-sidebarTitle: "Odigos with ArgoCD"
+title: "Configure Odigos with Argo CD"
+sidebarTitle: "Odigos with Argo CD"
 ---
 
-This guide shows you how to deploy Odigos in your Kubernetes cluster using ArgoCD with the official Odigos Helm chart. This allows for GitOps-based management and observability instrumentation across your applications.
+This guide shows you how to deploy Odigos in your Kubernetes cluster using Argo CD with the official Odigos Helm chart. This allows for GitOps-based management and observability instrumentation across your applications.
 
 ## Prerequisites
 
 Before you begin, make sure you have:
 
 * A running Kubernetes cluster
-* ArgoCD installed and configured in the cluster
+* Argo CD installed and configured in the cluster
 * Helm CLI installed (optional but useful for inspection and verification)
 
 ## Step 1: Add the Odigos Helm Repository
@@ -32,7 +32,7 @@ helm search repo odigos --versions
 
 ## Step 3: Define the Argo CD Application Manifest
 
-Create an ArgoCD `Application` custom resource to deploy Odigos using Helm. Save the following YAML as `odigos-application.yaml`:
+Create an Argo CD `Application` custom resource to deploy Odigos using Helm. Save the following YAML as `odigos-application.yaml`:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -65,19 +65,19 @@ spec:
 
 ## Step 4: Apply the Application
 
-Use `kubectl` to create the application in ArgoCD:
+Use `kubectl` to create the application in Argo CD:
 
 ```bash
 kubectl apply -f odigos-application.yaml
 ```
 
-This will instruct ArgoCD to deploy Odigos using the Helm chart.
+This will instruct Argo CD to deploy Odigos using the Helm chart.
 
 ## Step 5: Monitor the Deployment
 
-You can monitor the status of the deployment through the ArgoCD UI:
+You can monitor the status of the deployment through the Argo CD UI:
 
-* Navigate to your ArgoCD web interface.
+* Navigate to your Argo CD web interface.
 * Find the application named `odigos`.
 * Verify that it reaches a **Healthy** and **Synced** state.
 
