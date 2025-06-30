@@ -82,7 +82,7 @@ func WorkloadKindFromString(kind string) k8sconsts.WorkloadKind {
 		return k8sconsts.WorkloadKindDaemonSet
 	case string(k8sconsts.WorkloadKindLowerCaseStatefulSet):
 		return k8sconsts.WorkloadKindStatefulSet
-	case string(k8sconsts.WorkloadKindCronJob):
+	case string(k8sconsts.WorkloadKindLowerCaseCronJob):
 		return k8sconsts.WorkloadKindCronJob
 	case string(k8sconsts.WorkloadKindLowerCaseJob):
 		return k8sconsts.WorkloadKindJob

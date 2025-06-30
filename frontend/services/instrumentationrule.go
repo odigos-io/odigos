@@ -34,6 +34,12 @@ func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRu
 		}
 	}
 
+	if rule.CustomInstrumentations != nil {
+		if rule.CustomInstrumentations.Probes != nil && len(rule.CustomInstrumentations.Probes) > 0 {
+			return model.InstrumentationRuleTypeCustomInstrumentation
+		}
+	}
+
 	return model.InstrumentationRuleTypeUnknownType
 }
 
@@ -64,6 +70,7 @@ func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule
 			CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
 			HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 			PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
+			CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
 		}
 		rule.Type = deriveTypeFromRule(rule)
 
@@ -96,6 +103,7 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
+		CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
 	}
 	rule.Type = deriveTypeFromRule(rule)
 
@@ -171,6 +179,30 @@ func getCodeAttributesInput(input model.InstrumentationRuleInput) *instrumentati
 	return codeAttributes
 }
 
+func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instrumentationrules.CustomInstrumentations {
+	if input.CustomInstrumentations == nil {
+		return nil
+	}
+
+	customInstrumentations := &instrumentationrules.CustomInstrumentations{}
+
+	if input.CustomInstrumentations.Probes != nil {
+		customInstrumentations.Probes = make([]instrumentationrules.Probe, 0, len(input.CustomInstrumentations.Probes))
+		for _, probe := range input.CustomInstrumentations.Probes {
+			apiProbe := instrumentationrules.Probe{}
+			if probe.ClassName != nil {
+				apiProbe.ClassName = *probe.ClassName
+			}
+			if probe.MethodName != nil {
+				apiProbe.MethodName = *probe.MethodName
+			}
+			customInstrumentations.Probes = append(customInstrumentations.Probes, apiProbe)
+		}
+	}
+
+	return customInstrumentations
+}
+
 func UpdateInstrumentationRule(ctx context.Context, id string, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
 	ns := env.GetCurrentNamespace()
 
@@ -223,6 +255,12 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		existingRule.Spec.CodeAttributes = nil
 	}
 
+	if input.CustomInstrumentations != nil {
+		existingRule.Spec.CustomInstrumentations = getCustomInstrumentationsInput(input)
+	} else {
+		existingRule.Spec.CustomInstrumentations = nil
+	}
+
 	// Update rule in Kubernetes
 	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Update(ctx, existingRule, metav1.UpdateOptions{})
 	if err != nil {
@@ -244,6 +282,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		CodeAttributes:           (*model.CodeAttributes)(updatedRule.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(updatedRule.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
+		CustomInstrumentations:   convertCustomInstrumentations(updatedRule.Spec.CustomInstrumentations),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 
@@ -307,6 +346,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			CodeAttributes:           getCodeAttributesInput(input),
 			HeadersCollection:        getHeadersCollectionInput(input),
 			PayloadCollection:        getPayloadCollectionInput(input),
+			CustomInstrumentations:   getCustomInstrumentationsInput(input),
 		},
 	}
 
@@ -331,6 +371,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		CodeAttributes:           (*model.CodeAttributes)(createdRule.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(createdRule.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(createdRule.Spec.PayloadCollection),
+		CustomInstrumentations:   convertCustomInstrumentations(createdRule.Spec.CustomInstrumentations),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 
@@ -425,4 +466,23 @@ func toMessagingPayload(payload *instrumentationrules.MessagingPayloadCollection
 		return nil
 	}
 	return &model.MessagingPayloadCollection{}
+}
+
+// Converts CustomInstrumentations to GraphQL-compatible format
+func convertCustomInstrumentations(custom *instrumentationrules.CustomInstrumentations) *model.CustomInstrumentations {
+	if custom == nil {
+		return nil
+	}
+
+	probes := make([]*model.Probe, len(custom.Probes))
+	for i, probe := range custom.Probes {
+		probes[i] = &model.Probe{
+			ClassName:  &probe.ClassName,
+			MethodName: &probe.MethodName,
+		}
+	}
+
+	return &model.CustomInstrumentations{
+		Probes: probes,
+	}
 }
