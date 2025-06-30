@@ -64,7 +64,7 @@ func GetK8SNamespaces(ctx context.Context, namespaceName *string) ([]*model.K8sA
 func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]corev1.Namespace, error) {
 	var (
 		odigosConfiguration *common.OdigosConfiguration
-		list                *v1.NamespaceList
+		list                *corev1.NamespaceList
 	)
 
 	g, ctx := errgroup.WithContext(ctx)
