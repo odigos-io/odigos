@@ -349,4 +349,4 @@ rollout:
 # This reflects Odigos' recommended defaults for maintaining observability continuity without blocking routine maintenance.
 # PDBs are disabled by default and can be enabled in production environments where stability during disruptions is important.
 pdb:
-  enabled: false
+  enabled: true

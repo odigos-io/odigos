@@ -1,5 +1,9 @@
 {{- if .Values.pdb.enabled }}
-apiVersion: {{- if semverCompare "<1.21.0-0" (include "utils.cleanKubeVersion" .) }}policy/v1beta1{{- else }}policy/v1{{- end }}
+{{- $pdbApiVersion := "policy/v1" }}
+{{- if semverCompare "<1.21.0-0" (include "utils.cleanKubeVersion" .) }}
+{{- $pdbApiVersion = "policy/v1beta1" }}
+{{- end }}
+apiVersion: {{ $pdbApiVersion }}
 kind: PodDisruptionBudget
 metadata:
   name: odigos-scheduler
