@@ -33,11 +33,11 @@ func sync(ctx context.Context, c client.Client) error {
 
 	namespace := env.GetCurrentNamespace()
 
-	odigosConfig, err := utils.GetCurrentOdigosConfig(ctx, c)
+	odigosConfiguration, err := utils.GetCurrentOdigosConfig(ctx, c)
 	if err != nil {
 		return err
 	}
-	resourceSettings := getGatewayResourceSettings(&odigosConfig)
+	resourceSettings := getGatewayResourceSettings(&odigosConfiguration)
 
 	// cluster collector is always set and never deleted at the moment.
 	// this is to accelerate spinup time and avoid errors while things are gradually being reconciled

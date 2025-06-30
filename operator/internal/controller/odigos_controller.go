@@ -298,7 +298,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))
 	}
 
-	odigosConfig := common.OdigosConfiguration{}
+	odigosConfiguration := common.OdigosConfiguration{}
 	upgrade := false
 	config, err := resources.GetCurrentConfig(ctx, kubeClient, ns)
 	if err != nil {
@@ -314,12 +314,12 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 			return ctrl.Result{}, r.Status().Update(ctx, odigos)
 		}
 
-		odigosConfig = common.OdigosConfiguration{
+		odigosConfiguration = common.OdigosConfiguration{
 			ConfigVersion: 1,
 		}
 	} else {
-		odigosConfig = *config
-		odigosConfig.ConfigVersion = odigosConfig.ConfigVersion + 1
+		odigosConfiguration = *config
+		odigosConfiguration.ConfigVersion = odigosConfiguration.ConfigVersion + 1
 		upgrade = true
 	}
 
@@ -328,17 +328,17 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		nodeSelector = odigos.Spec.NodeSelector
 	}
 
-	odigosConfig.TelemetryEnabled = odigos.Spec.TelemetryEnabled
-	odigosConfig.OpenshiftEnabled = odigos.Spec.OpenShiftEnabled
-	odigosConfig.IgnoredNamespaces = odigos.Spec.IgnoredNamespaces
-	odigosConfig.IgnoredContainers = odigos.Spec.IgnoredContainers
-	odigosConfig.SkipWebhookIssuerCreation = odigos.Spec.SkipWebhookIssuerCreation
-	odigosConfig.Psp = odigos.Spec.PodSecurityPolicy
-	odigosConfig.ImagePrefix = odigos.Spec.ImagePrefix
-	odigosConfig.Profiles = odigos.Spec.Profiles
-	odigosConfig.UiMode = common.UiMode(odigos.Spec.UIMode)
-	odigosConfig.NodeSelector = nodeSelector
-	odigosConfig.AgentEnvVarsInjectionMethod = &odigos.Spec.AgentEnvVarsInjectionMethod
+	odigosConfiguration.TelemetryEnabled = odigos.Spec.TelemetryEnabled
+	odigosConfiguration.OpenshiftEnabled = odigos.Spec.OpenShiftEnabled
+	odigosConfiguration.IgnoredNamespaces = odigos.Spec.IgnoredNamespaces
+	odigosConfiguration.IgnoredContainers = odigos.Spec.IgnoredContainers
+	odigosConfiguration.SkipWebhookIssuerCreation = odigos.Spec.SkipWebhookIssuerCreation
+	odigosConfiguration.Psp = odigos.Spec.PodSecurityPolicy
+	odigosConfiguration.ImagePrefix = odigos.Spec.ImagePrefix
+	odigosConfiguration.Profiles = odigos.Spec.Profiles
+	odigosConfiguration.UiMode = common.UiMode(odigos.Spec.UIMode)
+	odigosConfiguration.NodeSelector = nodeSelector
+	odigosConfiguration.AgentEnvVarsInjectionMethod = &odigos.Spec.AgentEnvVarsInjectionMethod
 
 	ownerReference := metav1.OwnerReference{
 		APIVersion: odigos.APIVersion,
@@ -362,7 +362,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 
 	defaultMountMethod := common.K8sVirtualDeviceMountMethod
 	if len(odigos.Spec.MountMethod) == 0 {
-		odigosConfig.MountMethod = &defaultMountMethod
+		odigosConfiguration.MountMethod = &defaultMountMethod
 	} else {
 		switch odigos.Spec.MountMethod {
 		case common.K8sHostPathMountMethod:
@@ -378,18 +378,18 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 			logger.Error(fmt.Errorf("invalid mount method (valid values: %s, %s)", common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod), "mountMethod", odigos.Spec.MountMethod)
 			return ctrl.Result{}, r.Status().Update(ctx, odigos)
 		}
-		odigosConfig.MountMethod = &odigos.Spec.MountMethod
+		odigosConfiguration.MountMethod = &odigos.Spec.MountMethod
 	}
 
 	if !odigos.Spec.OpenShiftEnabled {
 		if odigos.Spec.ImagePrefix == "" {
-			odigosConfig.ImagePrefix = k8sconsts.OdigosImagePrefix
+			odigosConfiguration.ImagePrefix = k8sconsts.OdigosImagePrefix
 		}
 	}
 
 	logger.Info("Installing Odigos version " + version + " in namespace " + ns)
 
-	resourceManagers := resources.CreateResourceManagers(kubeClient, ns, odigosTier, &odigosProToken, &odigosConfig, version, installationmethod.K8sInstallationMethodOdigosOperator, managerOpts)
+	resourceManagers := resources.CreateResourceManagers(kubeClient, ns, odigosTier, &odigosProToken, &odigosConfiguration, version, installationmethod.K8sInstallationMethodOdigosOperator, managerOpts)
 	err = resources.ApplyResourceManagers(ctx, kubeClient, resourceManagers, "Creating")
 	if err != nil {
 		return ctrl.Result{}, err
@@ -405,7 +405,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	})
 
 	if upgrade {
-		err = resources.DeleteOldOdigosSystemObjects(ctx, kubeClient, ns, &odigosConfig)
+		err = resources.DeleteOldOdigosSystemObjects(ctx, kubeClient, ns, &odigosConfiguration)
 		if err != nil {
 			meta.SetStatusCondition(&odigos.Status.Conditions, metav1.Condition{
 				Type:               odigosUpgradeCondition,

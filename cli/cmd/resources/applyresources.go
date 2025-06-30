@@ -49,9 +49,9 @@ func GetCurrentConfig(ctx context.Context, client *kube.Client, ns string) (*com
 	if err != nil {
 		return nil, err
 	}
-	var odigosConfig common.OdigosConfiguration
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
+	var odigosConfiguration common.OdigosConfiguration
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration); err != nil {
 		return nil, err
 	}
-	return &odigosConfig, nil
+	return &odigosConfiguration, nil
 }

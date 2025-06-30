@@ -44,7 +44,7 @@ func NewOdigosConfigResourceManager(client *kube.Client, ns string, config *comm
 	return &odigosConfigResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, managerOpts: managerOpts}
 }
 
-func (a *odigosConfigResourceManager) Name() string { return "OdigosConfig" }
+func (a *odigosConfigResourceManager) Name() string { return "OdigosConfiguration" }
 
 func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
 

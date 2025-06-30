@@ -23,18 +23,18 @@ var ErrOdigosEffectiveConfigNotFound = errors.New("odigos effective config not f
 // GetCurrentOdigosConfig is a helper function to get the current odigos config using a controller-runtime client
 func GetCurrentOdigosConfig(ctx context.Context, k8sClient client.Client) (common.OdigosConfiguration, error) {
 	var configMap v1.ConfigMap
-	var odigosConfig common.OdigosConfiguration
+	var odigosConfiguration common.OdigosConfiguration
 	odigosSystemNamespaceName := env.GetCurrentNamespace()
 	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: odigosSystemNamespaceName, Name: consts.OdigosEffectiveConfigName},
 		&configMap); err != nil {
 		if apierrors.IsNotFound(err) {
-			return odigosConfig, ErrOdigosEffectiveConfigNotFound
+			return odigosConfiguration, ErrOdigosEffectiveConfigNotFound
 		} else {
-			return odigosConfig, err
+			return odigosConfiguration, err
 		}
 	}
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
-		return odigosConfig, err
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration); err != nil {
+		return odigosConfiguration, err
 	}
-	return odigosConfig, nil
+	return odigosConfiguration, nil
 }

@@ -1,7 +1,7 @@
 package common
 
 // Note: this configuration is currently only relevant for k8s,
-// but is used in odigosconfig which is declared in the common package.
+// but is used in odigosConfiguration which is declared in the common package.
 // We should revisit this decision later on and consider if the config should be k8s specific,
 // then move it to the api module.
 

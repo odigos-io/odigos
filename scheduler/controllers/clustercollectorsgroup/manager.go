@@ -10,7 +10,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err := ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.ConfigMap{}).
-		Named("clustercollectorgroup-odigosconfig").
+		Named("clustercollectorgroup-odigosconfiguration").
 		WithEventFilter(&odigospredicates.OdigosEffectiveConfigMapPredicate).
 		Complete(&odigosConfigController{
 			Client: mgr.GetClient(),

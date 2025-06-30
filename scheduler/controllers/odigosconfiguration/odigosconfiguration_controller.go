@@ -1,4 +1,4 @@
-package odigosconfig
+package odigosconfiguration
 
 import (
 	"context"
@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-type odigosConfigController struct {
+type odigosConfigurationController struct {
 	client.Client
 	Scheme        *runtime.Scheme
 	Tier          common.OdigosTier
@@ -35,7 +35,7 @@ type odigosConfigController struct {
 	DynamicClient *dynamic.DynamicClient
 }
 
-func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
+func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	odigosConfigMap, err := r.getOdigosConfigMap(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -47,8 +47,8 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	odigosConfig := common.OdigosConfiguration{}
-	err = yaml.Unmarshal([]byte(odigosConfigMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig)
+	odigosConfiguration := common.OdigosConfiguration{}
+	err = yaml.Unmarshal([]byte(odigosConfigMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -57,7 +57,7 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	availableProfiles := profiles.GetAvailableProfilesForTier(r.Tier)
 
 	allProfiles := make([]common.ProfileName, 0)
-	allProfiles = append(allProfiles, odigosConfig.Profiles...)
+	allProfiles = append(allProfiles, odigosConfiguration.Profiles...)
 
 	if tokenProfilesString, ok := odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapOnPremClientProfilesKey]; ok {
 		tokenProfiles := strings.Split(tokenProfilesString, ", ")
@@ -76,26 +76,26 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	}
 
 	// make sure the default ignored namespaces are always present
-	odigosConfig.IgnoredNamespaces = mergeIgnoredItemLists(odigosConfig.IgnoredNamespaces, k8sconsts.DefaultIgnoredNamespaces)
-	odigosConfig.IgnoredNamespaces = append(odigosConfig.IgnoredNamespaces, env.GetCurrentNamespace())
+	odigosConfiguration.IgnoredNamespaces = mergeIgnoredItemLists(odigosConfiguration.IgnoredNamespaces, k8sconsts.DefaultIgnoredNamespaces)
+	odigosConfiguration.IgnoredNamespaces = append(odigosConfiguration.IgnoredNamespaces, env.GetCurrentNamespace())
 
 	// make sure the default ignored containers are always present
-	odigosConfig.IgnoredContainers = mergeIgnoredItemLists(odigosConfig.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
+	odigosConfiguration.IgnoredContainers = mergeIgnoredItemLists(odigosConfiguration.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
 
-	modifyConfigWithEffectiveProfiles(effectiveProfiles, &odigosConfig)
-	odigosConfig.Profiles = effectiveProfiles
+	modifyConfigWithEffectiveProfiles(effectiveProfiles, &odigosConfiguration)
+	odigosConfiguration.Profiles = effectiveProfiles
 
 	// if none of the profiles set sizing for collectors, use size_s as default, so the values are never nil
 	// if the values were already set (by user or profile) this is a no-op
-	sizing.SizeSProfile.ModifyConfigFunc(&odigosConfig)
+	sizing.SizeSProfile.ModifyConfigFunc(&odigosConfiguration)
 
 	// TODO: revisit doing this here, might be nicer to maintain in a more generic way
 	// and have it on the config object itself.
 	// I want to preserve that user input (specific request or empty), and persist the resolved value in effective config.
-	resolveMountMethod(&odigosConfig)
-	resolveEnvInjectionMethod(&odigosConfig)
+	resolveMountMethod(&odigosConfiguration)
+	resolveEnvInjectionMethod(&odigosConfiguration)
 
-	err = r.persistEffectiveConfig(ctx, &odigosConfig, odigosConfigMap)
+	err = r.persistEffectiveConfig(ctx, &odigosConfiguration, odigosConfigMap)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -103,7 +103,7 @@ func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	return ctrl.Result{}, nil
 }
 
-func (r *odigosConfigController) getOdigosConfigMap(ctx context.Context) (*corev1.ConfigMap, error) {
+func (r *odigosConfigurationController) getOdigosConfigMap(ctx context.Context) (*corev1.ConfigMap, error) {
 	var configMap corev1.ConfigMap
 	odigosNs := env.GetCurrentNamespace()
 
@@ -117,7 +117,7 @@ func (r *odigosConfigController) getOdigosConfigMap(ctx context.Context) (*corev
 	return &configMap, nil
 }
 
-func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, effectiveConfig *common.OdigosConfiguration, owner *corev1.ConfigMap) error {
+func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Context, effectiveConfig *common.OdigosConfiguration, owner *corev1.ConfigMap) error {
 	odigosNs := env.GetCurrentNamespace()
 
 	// apply patch the OdigosEffectiveConfigName configmap with the effective configuration
@@ -156,8 +156,8 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 	if err != nil {
 		return err
 	}
-
-	err = r.Client.Patch(ctx, &effectiveConfigMap, client.RawPatch(types.ApplyYAMLPatchType, objApplyBytes), client.ForceOwnership, client.FieldOwner("scheduler-odigosconfig"))
+	// to check
+	err = r.Client.Patch(ctx, &effectiveConfigMap, client.RawPatch(types.ApplyYAMLPatchType, objApplyBytes), client.ForceOwnership, client.FieldOwner("scheduler-odigosconfiguration"))
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func (r *odigosConfigController) persistEffectiveConfig(ctx context.Context, eff
 	return nil
 }
 
-func (r *odigosConfigController) applyProfileManifests(ctx context.Context, effectiveProfiles []common.ProfileName) error {
+func (r *odigosConfigurationController) applyProfileManifests(ctx context.Context, effectiveProfiles []common.ProfileName) error {
 
 	profileDeploymentHash := calculateProfilesDeploymentHash(effectiveProfiles, r.OdigosVersion)
 
@@ -223,7 +223,7 @@ func (r *odigosConfigController) applyProfileManifests(ctx context.Context, effe
 	return nil
 }
 
-func (r *odigosConfigController) applySingleProfileManifest(ctx context.Context, profileName common.ProfileName, yamlBytes []byte, profileDeploymentHash string) error {
+func (r *odigosConfigurationController) applySingleProfileManifest(ctx context.Context, profileName common.ProfileName, yamlBytes []byte, profileDeploymentHash string) error {
 
 	obj := &unstructured.Unstructured{}
 	err := yaml.Unmarshal(yamlBytes, obj)
@@ -259,7 +259,7 @@ func (r *odigosConfigController) applySingleProfileManifest(ctx context.Context,
 
 	resourceClient := r.DynamicClient.Resource(gvr).Namespace(env.GetCurrentNamespace())
 	_, err = resourceClient.Apply(ctx, obj.GetName(), obj, metav1.ApplyOptions{
-		FieldManager: "scheduler-odigosconfig",
+		FieldManager: "scheduler-odigosconfiguration",
 	})
 	if err != nil {
 		return err
@@ -268,24 +268,24 @@ func (r *odigosConfigController) applySingleProfileManifest(ctx context.Context,
 	return nil
 }
 
-func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, odigosConfig *common.OdigosConfiguration) {
+func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, odigosConfiguration *common.OdigosConfiguration) {
 	for _, profileName := range effectiveProfiles {
 		p := profiles.ProfilesByName[profileName]
 		if p.ModifyConfigFunc != nil {
-			p.ModifyConfigFunc(odigosConfig)
+			p.ModifyConfigFunc(odigosConfiguration)
 		}
 	}
 }
 
-func resolveMountMethod(odigosConfig *common.OdigosConfiguration) {
+func resolveMountMethod(odigosConfiguration *common.OdigosConfiguration) {
 	defaultMountMethod := common.K8sVirtualDeviceMountMethod
 
-	if odigosConfig.MountMethod == nil {
-		odigosConfig.MountMethod = &defaultMountMethod
+	if odigosConfiguration.MountMethod == nil {
+		odigosConfiguration.MountMethod = &defaultMountMethod
 		return
 	}
 
-	switch *odigosConfig.MountMethod {
+	switch *odigosConfiguration.MountMethod {
 	case common.K8sHostPathMountMethod:
 		return
 	case common.K8sVirtualDeviceMountMethod:
@@ -293,19 +293,19 @@ func resolveMountMethod(odigosConfig *common.OdigosConfiguration) {
 	default:
 		// any illegal value will be defaulted to host-path
 		// TODO: emit some error here and think how to handle it
-		odigosConfig.MountMethod = &defaultMountMethod
+		odigosConfiguration.MountMethod = &defaultMountMethod
 	}
 }
 
-func resolveEnvInjectionMethod(odigosConfig *common.OdigosConfiguration) {
+func resolveEnvInjectionMethod(odigosConfiguration *common.OdigosConfiguration) {
 	defaultInjectionMethod := common.PodManifestEnvInjectionMethod
 
-	if odigosConfig.AgentEnvVarsInjectionMethod == nil {
-		odigosConfig.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
+	if odigosConfiguration.AgentEnvVarsInjectionMethod == nil {
+		odigosConfiguration.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
 		return
 	}
 
-	switch *odigosConfig.AgentEnvVarsInjectionMethod {
+	switch *odigosConfiguration.AgentEnvVarsInjectionMethod {
 	case common.LoaderFallbackToPodManifestInjectionMethod:
 		return
 	case common.LoaderEnvInjectionMethod:
@@ -314,6 +314,6 @@ func resolveEnvInjectionMethod(odigosConfig *common.OdigosConfiguration) {
 		return
 	default:
 		// any illegal value will be defaulted to pod-manifest
-		odigosConfig.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
+		odigosConfiguration.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
 	}
 }
