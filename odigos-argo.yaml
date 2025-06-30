@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: odigos
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/AvihuHenya/odigos.git
+    targetRevision: argocd-hook-fix
+    path: helm/odigos
+    helm:
+      values: |
+        image:
+          tag: "v1.0.199"
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: odigos
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      prune: true
+      selfHeal: true
