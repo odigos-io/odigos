@@ -34,16 +34,5 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	// Watch for Source changes to update InstrumentationConfig
-	if err := builder.
-		ControllerManagedBy(mgr).
-		Named("instrumentor-instrumentationconfig-source").
-		For(&odigosv1alpha1.Source{}).
-		Complete(&SourceReconciler{
-			Client: mgr.GetClient(),
-		}); err != nil {
-		return err
-	}
-
 	return nil
 }

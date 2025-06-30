@@ -43,9 +43,12 @@ type KubeManagerOptions struct {
 	Clientset     *kubernetes.Clientset
 	ConfigUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
 	CriClient     *criwrapper.CriClient
+	// map where keys are the names of the environment variables that participate in append mechanism
+	// they need to be recorded by runtime detection into the runtime info, and this list instruct what to collect.
+	AppendEnvVarNames map[string]struct{}
 }
 
-func CreateManager() (ctrl.Manager, error) {
+func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (ctrl.Manager, error) {
 	log.Logger.V(0).Info("Starting reconcileres for runtime details")
 	ctrl.SetLogger(log.Logger)
 
@@ -78,12 +81,13 @@ func CreateManager() (ctrl.Manager, error) {
 		Metrics: metricsserver.Options{
 			BindAddress: metricsBindAddress,
 		},
-		HealthProbeBindAddress: ":8081",
+		HealthProbeBindAddress: fmt.Sprintf(":%d", instrumentationMgrOpts.OdigletHealthProbeBindPort),
 	})
 }
 
 func SetupWithManager(kubeManagerOptions KubeManagerOptions) error {
-	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.Clientset, kubeManagerOptions.CriClient)
+
+	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.Clientset, kubeManagerOptions.CriClient, kubeManagerOptions.AppendEnvVarNames)
 	if err != nil {
 		return err
 	}

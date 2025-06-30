@@ -63,7 +63,7 @@ func IsReadonlyMode(ctx context.Context) bool {
 		return false
 	}
 
-	return odigosConfiguration.UiMode == common.ReadonlyUiMode
+	return odigosConfiguration.UiMode == common.UiModeReadonly
 }
 
 func isSourceCreated(ctx context.Context) bool {

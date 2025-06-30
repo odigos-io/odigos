@@ -23,7 +23,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"golang.org/x/sync/errgroup"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -82,38 +81,22 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 
 // K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
 func (r *computePlatformResolver) K8sActualNamespaces(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualNamespace, error) {
-	k8sNamespaces, err := services.GetK8SNamespaces(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	k8sActualNamespaces := make([]*model.K8sActualNamespace, len(k8sNamespaces.Namespaces))
-	for i, namespace := range k8sNamespaces.Namespaces {
-		k8sActualNamespaces[i] = &namespace
-	}
-
-	return k8sActualNamespaces, nil
+	return services.GetK8SNamespaces(ctx, nil)
 }
 
 // K8sActualNamespace is the resolver for the k8sActualNamespace field.
 func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *model.ComputePlatform, name string) (*model.K8sActualNamespace, error) {
-	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
+	namespaces, err := services.GetK8SNamespaces(ctx, &name)
 	if err != nil {
 		return nil, err
 	}
-	nsName := namespace.Namespace
-
-	// check if entire namespace is instrumented
-	crd, err := services.GetSourceCRD(ctx, nsName, nsName, services.WorkloadKindNamespace)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return &model.K8sActualNamespace{}, err
+	if len(namespaces) == 0 {
+		return nil, fmt.Errorf("no namespaces found with name %s", name)
 	}
-	instrumented := crd != nil && !crd.Spec.DisableInstrumentation
-
-	return &model.K8sActualNamespace{
-		Name:     namespace.Name,
-		Selected: instrumented,
-	}, nil
+	if len(namespaces) > 1 {
+		return nil, fmt.Errorf("multiple namespaces found with name %s", name)
+	}
+	return namespaces[0], nil
 }
 
 // Sources is the resolver for the sources field.
@@ -139,35 +122,10 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 		}
 	}
 
-	// Get Source objects to extract stream names
-	g, ctx := errgroup.WithContext(ctx)
-	g.SetLimit(len(icList.Items))
-	// Keep order based on idx
-	srcList := make([]*v1alpha1.Source, len(icList.Items))
-	for idx, ic := range icList.Items {
-		// Copy to avoid potential race conditions from capturing loop variables in the goroutines
-		idxCopy := idx
-		icCopy := ic
-
-		g.Go(func() error {
-			if len(icCopy.OwnerReferences) == 0 {
-				return fmt.Errorf("no owner reference found for InstrumentationConfig %s", icCopy.Name)
-			}
-			src, err := services.GetSourceCRD(ctx, icCopy.Namespace, icCopy.OwnerReferences[0].Name, model.K8sResourceKind(icCopy.OwnerReferences[0].Kind))
-			if err != nil && !apierrors.IsNotFound(err) {
-				return err
-			}
-			srcList[idxCopy] = src
-			return nil
-		})
-	}
-	if err := g.Wait(); err != nil {
-		return nil, err
-	}
-
 	var actualSources []*model.K8sActualSource
-	for idx, ic := range icList.Items {
-		actualSource, err := instrumentationConfigToActualSource(ctx, ic, srcList[idx])
+	for _, ic := range icList.Items {
+		dataStreamNames := services.ExtractDataStreamsFromInstrumentationConfig(&ic)
+		actualSource, err := instrumentationConfigToActualSource(ctx, ic, dataStreamNames)
 		if err != nil {
 			return nil, err
 		}
@@ -194,13 +152,8 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 		return nil, fmt.Errorf("InstrumentationConfig not found for %s/%s in namespace %s", kind, name, ns)
 	}
 
-	// Get Source object to extract stream names
-	src, err := services.GetSourceCRD(ctx, ns, name, kind)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to get Source: %w", err)
-	}
-
-	payload, err := instrumentationConfigToActualSource(ctx, *ic, src)
+	dataStreamNames := services.ExtractDataStreamsFromInstrumentationConfig(ic)
+	payload, err := instrumentationConfigToActualSource(ctx, *ic, dataStreamNames)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
@@ -443,17 +396,41 @@ func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj 
 func (r *computePlatformResolver) DataStreams(ctx context.Context, obj *model.ComputePlatform) ([]*model.DataStream, error) {
 	ns := env.GetCurrentNamespace()
 
+	dataStreams := make([]*model.DataStream, 0)
+	seen := make(map[string]bool) // prevent duplicates
+
+	dataStreams = append(dataStreams, &model.DataStream{Name: "default"})
+	seen["default"] = true
+
+	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, ic := range instrumentationConfigs.Items {
+		for _, name := range services.ExtractDataStreamsFromInstrumentationConfig(&ic) {
+			if !seen[*name] {
+				seen[*name] = true
+				dataStreams = append(dataStreams, &model.DataStream{
+					Name: *name,
+				})
+			}
+		}
+	}
+
 	destinations, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-
-	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
+	for _, dest := range destinations.Items {
+		for _, name := range services.ExtractDataStreamsFromDestination(dest) {
+			if !seen[*name] {
+				seen[*name] = true
+				dataStreams = append(dataStreams, &model.DataStream{
+					Name: *name,
+				})
+			}
+		}
 	}
-
-	dataStreams := services.ExtractDataStreamsFromEntities(sources.Items, destinations.Items)
 
 	return dataStreams, nil
 }
@@ -474,6 +451,7 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 
 	var namespaceSource *v1alpha1.Source
 	sourceObjects := make(map[string]*v1alpha1.Source)
+
 	for _, source := range sourceList.Items {
 		if model.K8sResourceKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace {
 			namespaceSource = &source
@@ -498,9 +476,7 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 		sources[i].DataStreamNames = make([]*string, 0)
 
 		if workloadSource != nil {
-			for _, ds := range services.ExtractDataStreamsFromEntities([]v1alpha1.Source{*workloadSource}, make([]v1alpha1.Destination, 0)) {
-				sources[i].DataStreamNames = append(sources[i].DataStreamNames, &ds.Name)
-			}
+			sources[i].DataStreamNames = services.ExtractDataStreamsFromSource(workloadSource, namespaceSource)
 		}
 	}
 
@@ -509,29 +485,25 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 
 // UpdateAPIToken is the resolver for the updateApiToken field.
 func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	ns := env.GetCurrentNamespace()
 	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, ns, token)
 	return err == nil, nil
 }
 
-// PersistK8sNamespace is the resolver for the persistK8sNamespace field.
-func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace model.PersistNamespaceItemInput) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
+// PersistK8sNamespaces is the resolver for the persistK8sNamespaces field.
+func (r *mutationResolver) PersistK8sNamespaces(ctx context.Context, namespaces []*model.PersistNamespaceItemInput) (bool, error) {
+	persistObjects := []*model.PersistNamespaceSourceInput{}
+	for _, namespace := range namespaces {
+		persistObjects = append(persistObjects, &model.PersistNamespaceSourceInput{
+			Namespace:         namespace.Namespace,
+			Name:              namespace.Namespace,
+			Kind:              model.K8sResourceKind(services.WorkloadKindNamespace),
+			Selected:          namespace.Selected,
+			CurrentStreamName: namespace.CurrentStreamName,
+		})
 	}
 
-	persistObjects := []model.PersistNamespaceSourceInput{}
-	persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
-		Name:     namespace.Name,
-		Kind:     model.K8sResourceKind(services.WorkloadKindNamespace),
-		Selected: namespace.FutureSelected,
-	})
-
-	err := services.SyncWorkloadsInNamespace(ctx, namespace.Name, persistObjects)
+	err := services.SyncWorkloadsInNamespace(ctx, persistObjects)
 	if err != nil {
 		return false, fmt.Errorf("failed to sync workloads: %v", err)
 	}
@@ -540,22 +512,8 @@ func (r *mutationResolver) PersistK8sNamespace(ctx context.Context, namespace mo
 }
 
 // PersistK8sSources is the resolver for the persistK8sSources field.
-func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace string, sources []*model.PersistNamespaceSourceInput) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
-	var persistObjects []model.PersistNamespaceSourceInput
-	for _, source := range sources {
-		persistObjects = append(persistObjects, model.PersistNamespaceSourceInput{
-			Name:              source.Name,
-			Kind:              source.Kind,
-			Selected:          source.Selected,
-			CurrentStreamName: source.CurrentStreamName,
-		})
-	}
-
-	err := services.SyncWorkloadsInNamespace(ctx, namespace, persistObjects)
+func (r *mutationResolver) PersistK8sSources(ctx context.Context, sources []*model.PersistNamespaceSourceInput) (bool, error) {
+	err := services.SyncWorkloadsInNamespace(ctx, sources)
 	if err != nil {
 		return false, fmt.Errorf("failed to sync workloads: %v", err)
 	}
@@ -565,10 +523,6 @@ func (r *mutationResolver) PersistK8sSources(ctx context.Context, namespace stri
 
 // UpdateK8sActualSource is the resolver for the updateK8sActualSource field.
 func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	nsName := sourceID.Namespace
 	workloadName := sourceID.Name
 	workloadKind := sourceID.Kind
@@ -651,10 +605,6 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 
 // CreateNewDestination is the resolver for the createNewDestination field.
 func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination model.DestinationInput) (*model.Destination, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	ns := env.GetCurrentNamespace()
 	destType := common.DestinationType(destination.Type)
 	destName := destination.Name
@@ -691,7 +641,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 	}
 	if destination.CurrentStreamName != "" {
 		k8sDestination.Spec.SourceSelector = &v1alpha1.SourceSelector{
-			Groups: []string{destination.CurrentStreamName},
+			DataStreams: []string{destination.CurrentStreamName},
 		}
 	}
 
@@ -732,10 +682,6 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 
 // UpdateDestination is the resolver for the updateDestination field.
 func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, destination model.DestinationInput) (*model.Destination, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	ns := env.GetCurrentNamespace()
 	destType := common.DestinationType(destination.Type)
 	destName := destination.Name
@@ -823,15 +769,15 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	if destination.CurrentStreamName != "" {
 		// Init empty struct if nil
 		if dest.Spec.SourceSelector == nil {
-			dest.Spec.SourceSelector = &v1alpha1.SourceSelector{Groups: make([]string, 0)}
+			dest.Spec.SourceSelector = &v1alpha1.SourceSelector{DataStreams: make([]string, 0)}
 		}
 		// Init empty slice if nil
-		if dest.Spec.SourceSelector.Groups == nil {
-			dest.Spec.SourceSelector.Groups = make([]string, 0)
+		if dest.Spec.SourceSelector.DataStreams == nil {
+			dest.Spec.SourceSelector.DataStreams = make([]string, 0)
 		}
 		// Add the current stream name to the source selector
-		if !services.ArrayContains(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName) {
-			dest.Spec.SourceSelector.Groups = append(dest.Spec.SourceSelector.Groups, destination.CurrentStreamName)
+		if !services.ArrayContains(dest.Spec.SourceSelector.DataStreams, destination.CurrentStreamName) {
+			dest.Spec.SourceSelector.DataStreams = append(dest.Spec.SourceSelector.DataStreams, destination.CurrentStreamName)
 		}
 	}
 
@@ -855,10 +801,6 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 
 // DeleteDestination is the resolver for the deleteDestination field.
 func (r *mutationResolver) DeleteDestination(ctx context.Context, id string, currentStreamName string) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	ns := env.GetCurrentNamespace()
 
 	dest, err := kube.DefaultClient.OdigosClient.Destinations(ns).Get(ctx, id, metav1.GetOptions{})
@@ -922,10 +864,6 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 
 // CreateAction is the resolver for the createAction field.
 func (r *mutationResolver) CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	switch action.Type {
 	case actionservices.ActionTypeK8sAttributes:
 		return actionservices.CreateK8sAttributes(ctx, action)
@@ -954,10 +892,6 @@ func (r *mutationResolver) CreateAction(ctx context.Context, action model.Action
 
 // UpdateAction is the resolver for the updateAction field.
 func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action model.ActionInput) (model.Action, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	switch action.Type {
 	case actionservices.ActionTypeK8sAttributes:
 		return actionservices.UpdateK8sAttributes(ctx, id, action)
@@ -986,10 +920,6 @@ func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action m
 
 // DeleteAction is the resolver for the deleteAction field.
 func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionType string) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	switch actionType {
 	case actionservices.ActionTypeK8sAttributes:
 		err := actionservices.DeleteK8sAttributes(ctx, id)
@@ -1053,28 +983,16 @@ func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionTy
 
 // CreateInstrumentationRule is the resolver for the createInstrumentationRule field.
 func (r *mutationResolver) CreateInstrumentationRule(ctx context.Context, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	return services.CreateInstrumentationRule(ctx, instrumentationRule)
 }
 
 // UpdateInstrumentationRule is the resolver for the updateInstrumentationRule field.
 func (r *mutationResolver) UpdateInstrumentationRule(ctx context.Context, ruleID string, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
-	}
-
 	return services.UpdateInstrumentationRule(ctx, ruleID, instrumentationRule)
 }
 
 // DeleteInstrumentationRule is the resolver for the deleteInstrumentationRule field.
 func (r *mutationResolver) DeleteInstrumentationRule(ctx context.Context, ruleID string) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	_, err := services.DeleteInstrumentationRule(ctx, ruleID)
 	if err != nil {
 		return false, err
@@ -1085,8 +1003,9 @@ func (r *mutationResolver) DeleteInstrumentationRule(ctx context.Context, ruleID
 
 // UpdateDataStream is the resolver for the updateDataStream field.
 func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, dataStream model.DataStreamInput) (*model.DataStream, error) {
-	if services.IsReadonlyMode(ctx) {
-		return nil, services.ErrorIsReadonly
+	idNew := dataStream.Name
+	if id == idNew {
+		return &model.DataStream{Name: idNew}, nil
 	}
 
 	ns := env.GetCurrentNamespace()
@@ -1096,7 +1015,7 @@ func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, data
 	if err != nil {
 		return nil, err
 	}
-	err = services.UpdateDestinationsCurrentStreamName(ctx, destinations, id, dataStream.Name)
+	err = services.UpdateDestinationsCurrentStreamName(ctx, destinations, id, idNew)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update destinations: %v", err)
 	}
@@ -1105,24 +1024,19 @@ func (r *mutationResolver) UpdateDataStream(ctx context.Context, id string, data
 	if err != nil {
 		return nil, err
 	}
-	err = services.UpdateSourcesCurrentStreamName(ctx, sources, id, dataStream.Name)
+	err = services.UpdateSourcesCurrentStreamName(ctx, sources, id, idNew)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update sources: %v", err)
 	}
 
-	return &model.DataStream{Name: dataStream.Name}, nil
+	return &model.DataStream{Name: idNew}, nil
 }
 
 // DeleteDataStream is the resolver for the deleteDataStream field.
 func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
-	ns := env.GetCurrentNamespace()
 	kubeClient := kube.DefaultClient.OdigosClient
 
-	destinations, err := kubeClient.Destinations(ns).List(ctx, metav1.ListOptions{})
+	destinations, err := kubeClient.Destinations(env.GetCurrentNamespace()).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return false, err
 	}
@@ -1145,10 +1059,6 @@ func (r *mutationResolver) DeleteDataStream(ctx context.Context, id string) (boo
 
 // RestartWorkloads is the resolver for the restartWorkloads field.
 func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error) {
-	if services.IsReadonlyMode(ctx) {
-		return false, services.ErrorIsReadonly
-	}
-
 	err := services.WithGoroutine(ctx, len(sourceIds), func(goFunc func(func() error)) {
 		for _, sourceID := range sourceIds {
 			goFunc(func() error {

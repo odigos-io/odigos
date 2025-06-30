@@ -9,7 +9,6 @@ import (
 )
 
 func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList) error {
-
 	workload, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name, ic.Namespace)
 	if err != nil {
 		return err
@@ -52,6 +51,12 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 				if rule.Spec.HeadersCollection != nil {
 					sdkConfigs[i].DefaultHeadersCollection = mergeHttpHeadersCollectionrules(sdkConfigs[i].DefaultHeadersCollection, rule.Spec.HeadersCollection)
 				}
+				if rule.Spec.TraceConfig != nil {
+					sdkConfigs[i].DefaultTraceConfig = mergeDefaultTracingConfig(sdkConfigs[i].DefaultTraceConfig, rule.Spec.TraceConfig)
+				}
+				if rule.Spec.CustomInstrumentations != nil {
+					sdkConfigs[i].DefaultCustomInstrumentations = mergeCustomInstrumentations(sdkConfigs[i].DefaultCustomInstrumentations, rule.Spec.CustomInstrumentations)
+				}
 			} else {
 				for _, library := range *rule.Spec.InstrumentationLibraries {
 					libraryConfig := findOrCreateSdkLibraryConfig(&sdkConfigs[i], library)
@@ -71,6 +76,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 					if rule.Spec.HeadersCollection != nil {
 						libraryConfig.HeadersCollection = mergeHttpHeadersCollectionrules(libraryConfig.HeadersCollection, rule.Spec.HeadersCollection)
 					}
+					if rule.Spec.TraceConfig != nil {
+						libraryConfig.TraceConfig = mergeTracingConfig(libraryConfig.TraceConfig, rule.Spec.TraceConfig)
+					}
 				}
 			}
 		}
@@ -79,6 +87,65 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	ic.Spec.SdkConfigs = sdkConfigs
 
 	return nil
+}
+
+func mergeDefaultTracingConfig(defaultConfig *instrumentationrules.TraceConfig, rule *instrumentationrules.TraceConfig) *instrumentationrules.TraceConfig {
+	if defaultConfig == nil {
+		return rule
+	}
+	if rule == nil {
+		return defaultConfig
+	}
+
+	mergedRules := &instrumentationrules.TraceConfig{}
+
+	// Only set Disabled if we have actual values to work with
+	if defaultConfig.Disabled != nil && rule.Disabled != nil {
+		// Both values are set, use OR logic: tracing is disabled if either config disables it
+		mergedRules.Disabled = boolPtr(*defaultConfig.Disabled || *rule.Disabled)
+	} else if defaultConfig.Disabled != nil {
+		// Only default config has a value, use it
+		mergedRules.Disabled = defaultConfig.Disabled
+	} else if rule.Disabled != nil {
+		// Only rule has a value, use it
+		mergedRules.Disabled = rule.Disabled
+	}
+	// If both are nil, mergedRules.Disabled remains nil
+	return mergedRules
+}
+
+func mergeTracingConfig(sdkConfig *odigosv1alpha1.InstrumentationLibraryConfigTraces, rule *instrumentationrules.TraceConfig) *odigosv1alpha1.InstrumentationLibraryConfigTraces {
+	// The SDK config uses "Enabled" field to enable/disable tracing.
+	// The rule uses "Disabled" field to disable tracing, since the semantics of "Disabled" allows for default nil/false
+	// which is clearer for the user facing object.
+
+	if sdkConfig == nil {
+		if rule.Disabled != nil {
+			return &odigosv1alpha1.InstrumentationLibraryConfigTraces{
+				Enabled: boolPtr(!*rule.Disabled),
+			}
+		}
+		// Both sdkConfig and rule.Disabled are nil, return nil config
+		return &odigosv1alpha1.InstrumentationLibraryConfigTraces{}
+	} else if rule == nil {
+		return sdkConfig
+	}
+
+	mergedRules := odigosv1alpha1.InstrumentationLibraryConfigTraces{}
+
+	// Only set Enabled if we have actual values to work with
+	if sdkConfig.Enabled != nil && rule.Disabled != nil {
+		// Both values are set, use AND logic: tracing is enabled only if SDK config enables it AND rule doesn't disable it
+		mergedRules.Enabled = boolPtr(*sdkConfig.Enabled && !*rule.Disabled)
+	} else if sdkConfig.Enabled != nil {
+		// Only SDK config has a value, use it
+		mergedRules.Enabled = sdkConfig.Enabled
+	} else if rule.Disabled != nil {
+		// Only rule has a value, use it
+		mergedRules.Enabled = boolPtr(!*rule.Disabled)
+	}
+	// If both are nil, mergedRules.Enabled remains nil
+	return &mergedRules
 }
 
 // returns a pointer to the instrumentation library config, creating it if it does not exist
@@ -118,6 +185,28 @@ func createDefaultSdkConfig(sdkConfigs []odigosv1alpha1.SdkConfig, containerLang
 		Language:                 containerLanguage,
 		DefaultPayloadCollection: &instrumentationrules.PayloadCollection{},
 	})
+}
+
+func mergeCustomInstrumentations(rule1 *instrumentationrules.CustomInstrumentations, rule2 *instrumentationrules.CustomInstrumentations) *instrumentationrules.CustomInstrumentations {
+	if rule1 == nil {
+		return rule2
+	} else if rule2 == nil {
+		return rule1
+	}
+
+	mergedRules := instrumentationrules.CustomInstrumentations{}
+
+	var mergedProbes []instrumentationrules.Probe
+	if rule1.Probes != nil {
+		mergedProbes = append(mergedProbes, rule1.Probes...)
+	}
+
+	if rule2.Probes != nil {
+		mergedProbes = append(mergedProbes, rule2.Probes...)
+	}
+
+	mergedRules.Probes = mergedProbes
+	return &mergedRules
 }
 
 func mergeHttpHeadersCollectionrules(rule1 *instrumentationrules.HttpHeadersCollection, rule2 *instrumentationrules.HttpHeadersCollection) *instrumentationrules.HttpHeadersCollection {

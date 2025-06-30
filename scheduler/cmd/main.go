@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"os"
+	"time"
 
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
@@ -117,6 +118,34 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "ce024640.odigos.io",
+		/*
+			Leader Election Parameters:
+
+			LeaseDuration (30s):
+			- Maximum time a pod can remain the leader after its last successful renewal.
+			- If the leader pod dies, failover can take up to the LeaseDuration from the last renewal.
+			  The actual failover time depends on how recently the leader renewed the lease.
+			- Controls when the lease is fully expired and failover can occur.
+
+			RenewDeadline (20s):
+			- The maximum time the leader pod has to successfully renew its lease before it is
+			  considered unhealthy. Relevant only while the leader is alive and renewing.
+			- Controls how long the current leader will keep retrying to refresh the lease.
+
+			RetryPeriod (5s):
+			- How often non-leader pods check and attempt to acquire leadership when the lease is available.
+			- Lower value means faster failover but adds more load on the Kubernetes API server.
+
+			Relationship:
+			- RetryPeriod < RenewDeadline < LeaseDuration
+			- This ensures proper failover timing and system stability.
+
+			Setting the leader election params to 30s/20s/5s should provide a good balance between stability and quick failover.
+		*/
+		LeaseDuration:                 durationPointer(30 * time.Second),
+		RenewDeadline:                 durationPointer(20 * time.Second),
+		RetryPeriod:                   durationPointer(5 * time.Second),
+		LeaderElectionReleaseOnCancel: true,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -175,4 +204,8 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func durationPointer(d time.Duration) *time.Duration {
+	return &d
 }
