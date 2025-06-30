@@ -60,10 +60,10 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 
 	// Only add TLS config if TLS is needed (user-enabled or OAuth2-required)
-	if userTlsEnabled || oauth2Enabled {
-		tlsConfig := GenericMap{
-			"insecure": !finalTlsEnabled,
-		}
+	tlsConfig := GenericMap{
+		"insecure": !finalTlsEnabled,
+	}
+	if finalTlsEnabled {
 		caPem, caExists := config[genericOtlpCaPemKey]
 		if caExists && caPem != "" {
 			tlsConfig["ca_pem"] = caPem
@@ -72,8 +72,8 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		if skipExists && insecureSkipVerify != "" {
 			tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
 		}
-		exporterConf["tls"] = tlsConfig
 	}
+	exporterConf["tls"] = tlsConfig
 
 	// add OAuth2 authenticator extension if configured
 	if oauth2ExtensionName != "" && oauth2ExtensionConf != nil {

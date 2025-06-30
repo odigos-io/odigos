@@ -81,10 +81,10 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	// Only add TLS config if TLS is explicitly enabled or authentication is being used
+	tlsConfig := GenericMap{
+		"insecure": !userTlsEnabled,
+	}
 	if userTlsEnabled || hasAuthentication {
-		tlsConfig := GenericMap{
-			"insecure": !userTlsEnabled,
-		}
 		caPem, caExists := config[otlpHttpCaPemKey]
 		if caExists && caPem != "" {
 			tlsConfig["ca_pem"] = caPem
@@ -93,8 +93,8 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		if skipExists && insecureSkipVerify != "" {
 			tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
 		}
-		exporterConf["tls"] = tlsConfig
 	}
+	exporterConf["tls"] = tlsConfig
 
 	if authExtensionName != "" {
 		exporterConf["auth"] = GenericMap{
