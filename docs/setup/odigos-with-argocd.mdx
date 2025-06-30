@@ -30,16 +30,7 @@ Check available versions of the Odigos chart to determine the desired `targetRev
 helm search repo odigos --versions
 ```
 
-### Step 3: Set Environment Variables
-First, export the `VERSION` and `CUSTOM-DOCKER-REGISTRY` environment variables in your shell:
-
-```bash
-export ARGOCD_NS=<YOUR-ARGOCD-NAMESPACE>
-export ODIGOS_NS=<YOUR-ODIGOS-NAMESPACE>
-```
-Replace `<YOUR-ARGOCD-NAMESPACE>` with the namespace where Argo CD is installed, and `<YOUR-ODIGOS-NAMESPACE>` with the desired namespace where you want Odigos to be installed.
-
-## Step 4: Define the Argo CD Application Manifest
+## Step 3: Define the Argo CD Application Manifest
 
 Create an Argo CD `Application` custom resource to deploy Odigos using Helm. Save the following YAML as `odigos-application.yaml`:
 
@@ -48,7 +39,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: odigos
-  namespace: ARGOCD_NS
+  namespace: argocd  # <- Replace with your Argo CD namespace
 spec:
   project: default
   source:
@@ -63,7 +54,7 @@ spec:
         # To use chart defaults, delete this field entirely or set it to an empty string ("").
   destination:
     server: https://kubernetes.default.svc
-    namespace: ODIGOS_NS
+    namespace: odigos-system  # <- Replace with the desired namespace where you want Odigos to be installed
   syncPolicy:
     automated:
       prune: true
@@ -72,7 +63,7 @@ spec:
       - CreateNamespace=true
 ```
 
-## Step 5: Apply the Application
+## Step 4: Apply the Application
 
 Use `kubectl` to create the application in Argo CD:
 
