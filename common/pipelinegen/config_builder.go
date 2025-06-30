@@ -113,6 +113,8 @@ func CalculateGatewayConfig(
 			// save the updated pipeline with the new receiver
 			currentConfig.Service.Pipelines[pipelineName] = pipeline
 		}
+
+		status.Destination[dest.GetID()] = nil // mark this destination as success
 	}
 	// track which signals are enabled
 	enabledSignals := []common.ObservabilitySignal{}

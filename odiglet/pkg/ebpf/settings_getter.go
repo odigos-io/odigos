@@ -70,6 +70,10 @@ func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, p
 		attrs = append(attrs, semconv.K8SStatefulSetName(podWorkload.Name))
 	case k8sconsts.WorkloadKindDaemonSet:
 		attrs = append(attrs, semconv.K8SDaemonSetName(podWorkload.Name))
+	case k8sconsts.WorkloadKindCronJob:
+		attrs = append(attrs, semconv.K8SCronJobName(podWorkload.Name))
+	case k8sconsts.WorkloadKindJob:
+		attrs = append(attrs, semconv.K8SJobName(podWorkload.Name))
 	}
 
 	if pe.ExecDetails != nil {

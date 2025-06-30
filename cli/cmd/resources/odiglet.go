@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 	"path/filepath"
+	"strconv"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
@@ -267,7 +268,7 @@ func NewResourceQuota(ns string) *corev1.ResourceQuota {
 }
 
 func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string,
-	odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails, customContainerRuntimeSocketPath string, nodeSelector map[string]string) *appsv1.DaemonSet {
+	odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails, customContainerRuntimeSocketPath string, nodeSelector map[string]string, healthProbeBindPort int) *appsv1.DaemonSet {
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -475,7 +476,13 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  k8sconsts.OdigletContainerName,
+							Name: k8sconsts.OdigletContainerName,
+							Command: []string{
+								"/root/odiglet",
+							},
+							Args: []string{
+								"--health-probe-bind-port=" + strconv.Itoa(healthProbeBindPort),
+							},
 							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Env: append([]corev1.EnvVar{
 								{
@@ -523,7 +530,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 										Path: "/healthz",
 										Port: intstr.IntOrString{
 											Type:   intstr.Type(0),
-											IntVal: 8081,
+											IntVal: int32(healthProbeBindPort),
 										},
 									},
 								},
@@ -539,7 +546,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 										Path: "/readyz",
 										Port: intstr.IntOrString{
 											Type:   intstr.Type(0),
-											IntVal: 8081,
+											IntVal: int32(healthProbeBindPort),
 										},
 									},
 								},
@@ -639,6 +646,9 @@ func NewOdigletLocalTrafficService(ns string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigletLocalTrafficServiceName,
 			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
@@ -649,6 +659,11 @@ func NewOdigletLocalTrafficService(ns string) *corev1.Service {
 					Name:       "op-amp",
 					Port:       int32(consts.OpAMPPort),
 					TargetPort: intstr.FromInt(consts.OpAMPPort),
+				},
+				{
+					Name:       "metrics",
+					Port:       8080,
+					TargetPort: intstr.FromInt(8080),
 				},
 			},
 			InternalTrafficPolicy: &localTrafficPolicy,
@@ -768,13 +783,18 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		resources = append(resources, NewResourceQuota(a.ns))
 	}
 
+	// if the health probe bind port is not set, use the default value
+	if a.config.OdigletHealthProbeBindPort == 0 {
+		a.config.OdigletHealthProbeBindPort = k8sconsts.OdigletDefaultHealthProbeBindPort
+	}
+
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
 	resources = append(resources,
 		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.OdigletImage, a.odigosTier, a.config.OpenshiftEnabled,
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
 				K8SVersion: k8sVersion,
-			}, a.config.CustomContainerRuntimeSocketPath, a.config.NodeSelector))
+			}, a.config.CustomContainerRuntimeSocketPath, a.config.NodeSelector, a.config.OdigletHealthProbeBindPort))
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

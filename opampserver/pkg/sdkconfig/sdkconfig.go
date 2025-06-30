@@ -2,17 +2,18 @@ package sdkconfig
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type SdkConfigManager struct {
@@ -38,28 +39,18 @@ func NewSdkConfigManager(logger logr.Logger, mgr ctrl.Manager, connectionCache *
 		logger.Error(err, "unable to create controller for opamp server sdk config", "controller", "InstrumentationConfig")
 	}
 
-	// setup the controller to watch for changes in the collectors group CRD for node collector to recalculate enabled signals
-	if err := (&CollectorsGroupReconciler{
-		Client:          mgr.GetClient(),
-		Scheme:          mgr.GetScheme(),
-		ConnectionCache: connectionCache,
-	}).SetupWithManager(mgr); err != nil {
-		logger.Error(err, "unable to create controller for opamp server sdk config", "controller", "Destination")
-	}
-
 	return sdkConfigManager
 }
 
 func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttributes []configresolvers.ResourceAttribute, podWorkload *k8sconsts.PodWorkload, instrumentedAppName string, programmingLanguage string,
-	instrumentationConfig *odigosv1.InstrumentationConfig) (*protobufs.AgentRemoteConfig, error) {
+	instrumentationConfig *odigosv1.InstrumentationConfig, containerName string) (*protobufs.AgentRemoteConfig, error) {
 
-	var nodeCollectorGroup odigosv1.CollectorsGroup
-	err := m.mgr.GetClient().Get(ctx, client.ObjectKey{Name: k8sconsts.OdigosNodeCollectorCollectorGroupName, Namespace: m.odigosNs}, &nodeCollectorGroup)
-	if err != nil {
-		return nil, err
+	containerConfig := container.GetContainerConfigByName(instrumentationConfig.Spec.Containers, containerName)
+	if containerConfig == nil {
+		return nil, fmt.Errorf("container config not found for container %s", containerName)
 	}
 
-	sdkRemoteConfig := configsections.CalcSdkRemoteConfig(remoteResourceAttributes, nodeCollectorGroup.Status.ReceiverSignals)
+	sdkRemoteConfig := configsections.CalcSdkRemoteConfig(remoteResourceAttributes, containerConfig)
 	opampRemoteConfigSdk, sdkSectionName, err := configsections.SdkRemoteConfigToOpamp(sdkRemoteConfig)
 	if err != nil {
 		m.logger.Error(err, "failed to marshal server offered resource attributes")
@@ -81,12 +72,22 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttr
 	// // We are moving towards passing all Instrumentation capabilities unchanged within the instrumentationConfig to the opamp client.
 	// // Gradually, we will migrate the InstrumentationLibraryConfigs and SDK remote config into the instrumentationConfig and the agents to use it.
 	opampRemoteConfigInstrumentationConfig, err := configsections.FilterRelevantSdk(instrumentationConfig, programmingLanguage)
+	if err != nil {
+		m.logger.Error(err, "failed to filter relevant sdk config")
+		return nil, err
+	}
+	opampRemoteConfigContainerConfig, err := configsections.FilterRelevantContainerConfig(instrumentationConfig, containerName)
+	if err != nil {
+		m.logger.Error(err, "failed to filter relevant container config")
+		return nil, err
+	}
 
 	agentConfigMap := protobufs.AgentConfigMap{
 		ConfigMap: map[string]*protobufs.AgentConfigFile{
 			sdkSectionName:                      opampRemoteConfigSdk,
 			instrumentationLibrariesSectionName: opampRemoteConfigInstrumentationLibraries,
 			"":                                  opampRemoteConfigInstrumentationConfig,
+			"container_config":                  opampRemoteConfigContainerConfig,
 		},
 	}
 	configHash := connection.CalcRemoteConfigHash(&agentConfigMap)
