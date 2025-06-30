@@ -62,17 +62,21 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 	for i := range irList.Items {
 		ir := &irList.Items[i]
 
+		// ignore disabled rules
+		if ir.Spec.Disabled {
+			continue
+		}
+
 		if !utils.IsWorkloadParticipatingInRule(pw, ir) {
 			continue
 		}
 
-		if ir.Spec.OtelSdks == nil {
-			// we only care about otel sdks rules at the moment.
-			// no need to process other rules.
-			continue
-		}
+		// filter only rules that are relevant to the agent enabled logic
+		if (ir.Spec.OtelSdks != nil || ir.Spec.OtelDistros != nil) ||
+			(ir.Spec.TraceConfig != nil && ir.Spec.TraceConfig.Disabled != nil) {
 
-		relevantIr = append(relevantIr, *ir)
+			relevantIr = append(relevantIr, *ir)
+		}
 	}
 
 	return &relevantIr, nil

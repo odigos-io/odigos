@@ -313,6 +313,12 @@
       ]
     },
     {
+      "group": "Feature Guidelines",
+      "pages": [
+        "features/oidc"
+      ]
+    },
+    {
       "group": "Contribution Guidelines",
       "pages": [
         "adding-new-dest",
