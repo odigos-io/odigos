@@ -17,4 +17,5 @@ rules:
 - apiGroups: [""]
   resources: ["configmaps"]
   resourceNames: ["odigos-configuration"]
-  verbs: ["delete"]
+  verbs: ["get","delete"]
+

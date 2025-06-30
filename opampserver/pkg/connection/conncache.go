@@ -2,12 +2,15 @@ package connection
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/container"
+	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
 )
@@ -105,28 +108,62 @@ func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
 }
 
 // allow to completely overwrite the remote config for a set of keys for a given workload
-func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWorkload, sdkConfig *v1alpha1.SdkConfig) error {
-	sdkConfigProgrammingLang := common.MapOdigosToSemConv(sdkConfig.Language)
+func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWorkload, sdkConfig []v1alpha1.SdkConfig, containers []v1alpha1.ContainerAgentConfig) error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	for _, conn := range c.liveConnections {
-		if conn.Workload != workload || conn.ProgrammingLanguage != sdkConfigProgrammingLang {
+		if conn.Workload != workload {
 			continue
 		}
 
-		remoteConfigInstrumentationConfigBytes, err := json.Marshal(sdkConfig)
+		var instrumentationConfigContent *protobufs.AgentConfigFile
+		for _, sdkConfig := range sdkConfig {
+			if conn.ProgrammingLanguage != common.MapOdigosToSemConv(sdkConfig.Language) {
+				continue
+			}
+
+			remoteConfigInstrumentationConfigBytes, err := json.Marshal(sdkConfig)
+			if err != nil {
+				return err
+			}
+
+			instrumentationConfigContent = &protobufs.AgentConfigFile{
+				Body:        remoteConfigInstrumentationConfigBytes,
+				ContentType: "application/json",
+			}
+
+			break // after we find the first matching sdk config, no need to continue
+		}
+
+		containerConfig := container.GetContainerConfigByName(containers, conn.ContainerName)
+		if containerConfig == nil {
+			return fmt.Errorf("container config not found for container %s", conn.ContainerName)
+		}
+
+		containerConfigBytes, err := json.Marshal(containerConfig)
+		if err != nil {
+			return err
+		}
+		containerConfigContent := &protobufs.AgentConfigFile{
+			Body:        containerConfigBytes,
+			ContentType: "application/json",
+		}
+
+		remoteConfigSdk := configsections.CalcSdkRemoteConfig(conn.RemoteResourceAttributes, containerConfig)
+		opampRemoteConfigSdk, sdkSectionName, err := configsections.SdkRemoteConfigToOpamp(remoteConfigSdk)
 		if err != nil {
 			return err
 		}
 
-		instrumentationConfigContent := &protobufs.AgentConfigFile{
-			Body:        remoteConfigInstrumentationConfigBytes,
-			ContentType: "application/json",
-		}
-
 		// copy the old remote config to avoid it being accessed concurrently
 		newRemoteConfigMap := proto.Clone(conn.AgentRemoteConfig.Config).(*protobufs.AgentConfigMap)
-		newRemoteConfigMap.ConfigMap[""] = instrumentationConfigContent
+		if instrumentationConfigContent != nil {
+			newRemoteConfigMap.ConfigMap[""] = instrumentationConfigContent
+		}
+		if containerConfigContent != nil {
+			newRemoteConfigMap.ConfigMap["container_config"] = containerConfigContent
+		}
+		newRemoteConfigMap.ConfigMap[sdkSectionName] = opampRemoteConfigSdk
 
 		conn.AgentRemoteConfig = &protobufs.AgentRemoteConfig{
 			Config:     newRemoteConfigMap,
@@ -134,35 +171,4 @@ func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWork
 		}
 	}
 	return nil
-}
-
-// how to use this function:
-// it allows you to update remote config keys which will be sent to the agent on next heartbeat.
-// should be used to update general odigos pipeline configs that are shared by all connections.
-// for example: updating the enabled signals configuration.
-// pass it a callback, that will be called for each connection, and should return the new config entries for that connection.
-// entries that are not specified in the returned map will retain their previous value.
-// each key should be updated entirely when specified, partial updates are not supported.
-// the callback should be fast and not block, as it will be called for each connection with the lock held.
-func (c *ConnectionsCache) UpdateAllConnectionConfigs(connConfigEvaluator func(connInfo *ConnectionInfo) *protobufs.AgentConfigMap) {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-
-	for _, conn := range c.liveConnections {
-		newConfigEntries := connConfigEvaluator(conn)
-		if newConfigEntries == nil {
-			continue
-		}
-
-		// merge the new config entries into the existing remote config
-		// copy the old remote config to avoid it being accessed concurrently
-		newRemoteConfigMap := proto.Clone(conn.AgentRemoteConfig.Config).(*protobufs.AgentConfigMap)
-		for key, value := range newConfigEntries.ConfigMap {
-			newRemoteConfigMap.ConfigMap[key] = value
-		}
-		conn.AgentRemoteConfig = &protobufs.AgentRemoteConfig{
-			Config:     newRemoteConfigMap,
-			ConfigHash: CalcRemoteConfigHash(newRemoteConfigMap),
-		}
-	}
 }

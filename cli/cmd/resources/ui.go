@@ -459,7 +459,7 @@ func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosC
 		ns:            ns,
 		config:        config,
 		odigosVersion: odigosVersion,
-		readonly:      config.UiMode == common.ReadonlyUiMode,
+		readonly:      config.UiMode == common.UiModeReadonly,
 		managerOpts:   managerOpts,
 	}
 }

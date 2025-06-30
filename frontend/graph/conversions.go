@@ -50,21 +50,15 @@ func getContainerAgentInfo(ic *v1alpha1.InstrumentationConfig, containerName str
 	return false, "", ""
 }
 
-func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, source *v1alpha1.Source) (*model.K8sActualSource, error) {
+func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, dataStreamNames []*string) (*model.K8sActualSource, error) {
 	selected := true
-	dataStreamNames := services.GetSourceDataStreamNames(source)
 	var containers []*model.SourceContainer
 
 	// Map the containers runtime details
 	for i := range instruConfig.Status.RuntimeDetailsByContainer {
-		var instrumented bool
-		var instrumentationMessage string
-		var otelDistroName string
-
 		statusContainer := instruConfig.Status.RuntimeDetailsByContainer[i]
 		containerName := statusContainer.ContainerName
-
-		instrumented, instrumentationMessage, otelDistroName = getContainerAgentInfo(&instruConfig, containerName)
+		instrumented, instrumentationMessage, otelDistroName := getContainerAgentInfo(&instruConfig, containerName)
 
 		resolvedRuntimeInfo := &statusContainer
 		overriden := false
@@ -92,7 +86,6 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 	if len(containers) == 0 {
 		// then take the containers from the overrides
 		for _, override := range instruConfig.Spec.ContainersOverrides {
-
 			language := ""
 			if override.RuntimeInfo != nil {
 				language = string(override.RuntimeInfo.Language)

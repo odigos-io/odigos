@@ -171,6 +171,7 @@
       "pages": [
         "pipeline/overview",
         "pipeline/configuration",
+        "pipeline/datastreams",
         {
           "group": "Sources",
           "icon": "database",
@@ -309,6 +310,12 @@
         "usage-reports",
         "benchmarks",
         "permissions"
+      ]
+    },
+    {
+      "group": "Feature Guidelines",
+      "pages": [
+        "features/oidc"
       ]
     },
     {
