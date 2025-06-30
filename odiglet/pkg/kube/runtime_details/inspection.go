@@ -329,6 +329,18 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 		updated = true
 	}
 
+	// 6. Update OtherAgent if there is any difference between the existing and new values.
+	// This includes three cases:
+	// 1. existing.OtherAgent is nil but new.OtherAgent is not (addition),
+	// 2. existing.OtherAgent is not nil but new.OtherAgent is nil (removal),
+	// 3. both are non-nil but their .Name fields differ (modification).
+	if (existing.OtherAgent == nil && new.OtherAgent != nil) ||
+		(existing.OtherAgent != nil && new.OtherAgent == nil) ||
+		(existing.OtherAgent != nil && new.OtherAgent != nil && existing.OtherAgent.Name != new.OtherAgent.Name) {
+		existing.OtherAgent = new.OtherAgent
+		updated = true
+	}
+
 	return updated
 }
 

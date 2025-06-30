@@ -57,7 +57,8 @@ func (i RuntimeDetailsChangedPredicate) Update(e event.UpdateEvent) bool {
 		newDetails := newIc.Status.RuntimeDetailsByContainer[i]
 
 		if oldDetails.Language != newDetails.Language ||
-			oldDetails.RuntimeVersion != newDetails.RuntimeVersion {
+			oldDetails.RuntimeVersion != newDetails.RuntimeVersion ||
+			oldDetails.OtherAgent != newDetails.OtherAgent {
 			return true // runtime details have changed
 		}
 	}
