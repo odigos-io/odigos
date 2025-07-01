@@ -71,7 +71,6 @@ func Value(v attribute.Value) *proto.AnyValue {
 	return av
 }
 
-
 func boolSliceValues(vals []bool) []*proto.AnyValue {
 	converted := make([]*proto.AnyValue, len(vals))
 	for i, v := range vals {
@@ -132,7 +131,6 @@ func ToAttributesSlice(kvs []*proto.KeyValue) []attribute.KeyValue {
 	return out
 }
 
-
 func ToAttribute(kv *proto.KeyValue) attribute.KeyValue {
 	switch kv.Value.Value.(type) {
 	case *proto.AnyValue_BoolValue:
@@ -144,28 +142,34 @@ func ToAttribute(kv *proto.KeyValue) attribute.KeyValue {
 	case *proto.AnyValue_StringValue:
 		return attribute.String(kv.Key, kv.Value.GetStringValue())
 	case *proto.AnyValue_ArrayValue:
-		switch kv.Value.GetArrayValue().Values[0].Value.(type) {
+		arrayValues := kv.Value.GetArrayValue().Values
+		if len(arrayValues) == 0 {
+			// Empty array - return empty string slice as default
+			return attribute.StringSlice(kv.Key, []string{})
+		}
+
+		switch arrayValues[0].Value.(type) {
 		case *proto.AnyValue_BoolValue:
-			boolSlice := make([]bool, len(kv.Value.GetArrayValue().Values))
-			for i, v := range kv.Value.GetArrayValue().Values {
+			boolSlice := make([]bool, len(arrayValues))
+			for i, v := range arrayValues {
 				boolSlice[i] = v.GetBoolValue()
 			}
 			return attribute.BoolSlice(kv.Key, boolSlice)
 		case *proto.AnyValue_IntValue:
-			intSlice := make([]int64, len(kv.Value.GetArrayValue().Values))
-			for i, v := range kv.Value.GetArrayValue().Values {
+			intSlice := make([]int64, len(arrayValues))
+			for i, v := range arrayValues {
 				intSlice[i] = v.GetIntValue()
 			}
 			return attribute.Int64Slice(kv.Key, intSlice)
 		case *proto.AnyValue_DoubleValue:
-			floatSlice := make([]float64, len(kv.Value.GetArrayValue().Values))
-			for i, v := range kv.Value.GetArrayValue().Values {
+			floatSlice := make([]float64, len(arrayValues))
+			for i, v := range arrayValues {
 				floatSlice[i] = v.GetDoubleValue()
 			}
 			return attribute.Float64Slice(kv.Key, floatSlice)
 		case *proto.AnyValue_StringValue:
-			stringSlice := make([]string, len(kv.Value.GetArrayValue().Values))
-			for i, v := range kv.Value.GetArrayValue().Values {
+			stringSlice := make([]string, len(arrayValues))
+			for i, v := range arrayValues {
 				stringSlice[i] = v.GetStringValue()
 			}
 			return attribute.StringSlice(kv.Key, stringSlice)
