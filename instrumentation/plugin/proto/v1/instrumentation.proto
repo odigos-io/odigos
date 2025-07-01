@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package odigos.io.instrumentation.plugin.v1;
+
+option go_package = "odigos.io/instrumentation/plugin/v1";
+
+import "google/protobuf/empty.proto";
+import "v1/common.proto";
+
+message InstrumentationRequest {
+  optional int32 process_id = 1;
+  optional string service_name = 2;
+  repeated KeyValue resource_attributes = 3;
+  optional bytes initial_config = 4;
+}
+
+message InstrumentationConfigRequest {
+  optional int32 process_id = 1;
+  optional bytes config = 2;
+}
+
+message InstrumentationCloseRequest {
+  optional int32 process_id = 1;
+}
+
+service Instrumentation {
+  rpc Start(InstrumentationRequest) returns (google.protobuf.Empty) {}
+
+  rpc ApplyConfig(InstrumentationConfigRequest) returns (google.protobuf.Empty) {}
+
+  rpc Close(InstrumentationCloseRequest) returns (google.protobuf.Empty) {}
+}
