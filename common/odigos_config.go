@@ -100,6 +100,10 @@ type CollectorGatewayConfiguration struct {
 	// this is when go runtime will start garbage collection.
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
+
+	// ServiceGraphDisabled is a feature that allows you to visualize the service graph of your application.
+	// It is enabled by default and can be disabled by setting the disabled flag to true.
+	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
 }
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`

@@ -31,16 +31,16 @@ data:
     centralBackendURL: {{ .Values.ui.centralBackendURL }}
     {{- end }}
     {{- if or .Values.ui.oidcTenantUrl .Values.ui.oidcClientId .Values.ui.oidcClientSecret }}
-      oidc:
-        {{- if .Values.ui.oidcTenantUrl }}
-        tenantUrl: {{ .Values.ui.oidcTenantUrl }}
-        {{- end }}
-        {{- if .Values.ui.oidcClientId }}
-        clientId: {{ .Values.ui.oidcClientId }}
-        {{- end }}
-        {{- if .Values.ui.oidcClientSecret }}
-        clientSecret: secretRef:odigos-oidc
-        {{- end }}
+    oidc:
+      {{- if .Values.ui.oidcTenantUrl }}
+      tenantUrl: {{ .Values.ui.oidcTenantUrl }}
+      {{- end }}
+      {{- if .Values.ui.oidcClientId }}
+      clientId: {{ .Values.ui.oidcClientId }}
+      {{- end }}
+      {{- if .Values.ui.oidcClientSecret }}
+      clientSecret: secretRef:odigos-oidc
+      {{- end }}
     {{- end }}
     {{- if .Values.collectorGateway }}
     collectorGateway:
@@ -71,6 +71,7 @@ data:
       {{- with .Values.collectorGateway.goMemLimitMiB }}
       goMemLimitMiB: {{ . }}
       {{- end }}
+      serviceGraphDisabled: {{ .Values.collectorGateway.serviceGraphDisabled }}
     {{- end }}
     {{- if .Values.collectorNode }}
     collectorNode:
