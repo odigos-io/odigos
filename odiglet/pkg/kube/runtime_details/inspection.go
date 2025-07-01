@@ -16,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
@@ -347,17 +348,6 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 	return updated
 }
 
-// return if LD_PRELOAD is set in the envs list.
-func findLdPreloadInEnvs(envs []odigosv1.EnvVar) (string, bool) {
-	// list is expected to contain 0-2 elements, so we can use a simple loop.
-	for i := range envs {
-		if envs[i].Name == consts.LdPreloadEnvVarName {
-			return envs[i].Value, true
-		}
-	}
-	return "", false
-}
-
 func removeLdPreloadFromEnvs(envs []odigosv1.EnvVar) []odigosv1.EnvVar {
 	for i := range envs {
 		if envs[i].Name == consts.LdPreloadEnvVarName {
@@ -373,8 +363,8 @@ func mergeLdPreloadEnvVars(
 	skipIfContains *string,
 ) ([]odigosv1.EnvVar, bool) {
 
-	newLdPreloadValue, newHasLdPreload := findLdPreloadInEnvs(newEnvs)
-	_, existingHasLdPreload := findLdPreloadInEnvs(existingEnvs)
+	newLdPreloadValue, newHasLdPreload := env.FindLdPreloadInEnvs(newEnvs)
+	_, existingHasLdPreload := env.FindLdPreloadInEnvs(existingEnvs)
 
 	if newHasLdPreload && existingHasLdPreload {
 		// Already present, nothing to do.
