@@ -58,7 +58,7 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the client ID of the OIDC application.
 	- "%s": Sets the client secret of the OIDC application.
 	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
-  - "%s": Enable or disable the service graph feature [default: false].
+  	- "%s": Enable or disable the service graph feature [default: false].
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
