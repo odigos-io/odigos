@@ -277,7 +277,7 @@ func TestOAuth2Configuration(t *testing.T) {
 				// No TLS, no OAuth2, no Basic Auth
 			},
 			expectedAuth:    false,
-			expectTLSConfig: false,
+			expectTLSConfig: true,
 		},
 		{
 			name: "OAuth2 disabled",
@@ -286,7 +286,7 @@ func TestOAuth2Configuration(t *testing.T) {
 				"OTLP_HTTP_OAUTH2_ENABLED": "false",
 			},
 			expectedAuth:    false,
-			expectTLSConfig: false,
+			expectTLSConfig: true,
 		},
 		{
 			name: "OAuth2 enabled but missing required fields",

@@ -18,8 +18,8 @@ spec:
     signalsAsStaticOtelEnvVars: true
     staticVariables:
       - envName: RUBYOPT
-        envValue: '-r /var/odigos/ruby/{{.RUNTIME_VERSION_MAJOR_MINOR}}/index'
-      - envName: ADDITIONAL_GEM_PATH
+        envValue: '-r/var/odigos/ruby/{{.RUNTIME_VERSION_MAJOR_MINOR}}/index.rb'
+      - envName: ODIGOS_GEM_PATH
         envValue: '/var/odigos/ruby/{{.RUNTIME_VERSION_MAJOR_MINOR}}/bundle'
       - envName: OTEL_EXPORTER_OTLP_PROTOCOL
         envValue: 'http/protobuf'

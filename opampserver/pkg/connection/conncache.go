@@ -2,12 +2,15 @@ package connection
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/container"
+	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
 )
@@ -132,28 +135,24 @@ func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWork
 			break // after we find the first matching sdk config, no need to continue
 		}
 
-		var containerConfigContent *protobufs.AgentConfigFile
-		for _, container := range containers {
-			if container.ContainerName != conn.ContainerName {
-				continue
-			}
-
-			containerConfigBytes, err := json.Marshal(container)
-			if err != nil {
-				return err
-			}
-
-			containerConfigContent = &protobufs.AgentConfigFile{
-				Body:        containerConfigBytes,
-				ContentType: "application/json",
-			}
-
-			break // after we find the first matching container, no need to continue
+		containerConfig := container.GetContainerConfigByName(containers, conn.ContainerName)
+		if containerConfig == nil {
+			return fmt.Errorf("container config not found for container %s", conn.ContainerName)
 		}
 
-		// skip if no config content was found for this connection
-		if instrumentationConfigContent == nil && containerConfigContent == nil {
-			continue
+		containerConfigBytes, err := json.Marshal(containerConfig)
+		if err != nil {
+			return err
+		}
+		containerConfigContent := &protobufs.AgentConfigFile{
+			Body:        containerConfigBytes,
+			ContentType: "application/json",
+		}
+
+		remoteConfigSdk := configsections.CalcSdkRemoteConfig(conn.RemoteResourceAttributes, containerConfig)
+		opampRemoteConfigSdk, sdkSectionName, err := configsections.SdkRemoteConfigToOpamp(remoteConfigSdk)
+		if err != nil {
+			return err
 		}
 
 		// copy the old remote config to avoid it being accessed concurrently
@@ -164,6 +163,7 @@ func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWork
 		if containerConfigContent != nil {
 			newRemoteConfigMap.ConfigMap["container_config"] = containerConfigContent
 		}
+		newRemoteConfigMap.ConfigMap[sdkSectionName] = opampRemoteConfigSdk
 
 		conn.AgentRemoteConfig = &protobufs.AgentRemoteConfig{
 			Config:     newRemoteConfigMap,
@@ -171,35 +171,4 @@ func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWork
 		}
 	}
 	return nil
-}
-
-// how to use this function:
-// it allows you to update remote config keys which will be sent to the agent on next heartbeat.
-// should be used to update general odigos pipeline configs that are shared by all connections.
-// for example: updating the enabled signals configuration.
-// pass it a callback, that will be called for each connection, and should return the new config entries for that connection.
-// entries that are not specified in the returned map will retain their previous value.
-// each key should be updated entirely when specified, partial updates are not supported.
-// the callback should be fast and not block, as it will be called for each connection with the lock held.
-func (c *ConnectionsCache) UpdateAllConnectionConfigs(connConfigEvaluator func(connInfo *ConnectionInfo) *protobufs.AgentConfigMap) {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-
-	for _, conn := range c.liveConnections {
-		newConfigEntries := connConfigEvaluator(conn)
-		if newConfigEntries == nil {
-			continue
-		}
-
-		// merge the new config entries into the existing remote config
-		// copy the old remote config to avoid it being accessed concurrently
-		newRemoteConfigMap := proto.Clone(conn.AgentRemoteConfig.Config).(*protobufs.AgentConfigMap)
-		for key, value := range newConfigEntries.ConfigMap {
-			newRemoteConfigMap.ConfigMap[key] = value
-		}
-		conn.AgentRemoteConfig = &protobufs.AgentRemoteConfig{
-			Config:     newRemoteConfigMap,
-			ConfigHash: CalcRemoteConfigHash(newRemoteConfigMap),
-		}
-	}
 }
