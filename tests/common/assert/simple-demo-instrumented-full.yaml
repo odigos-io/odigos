@@ -367,8 +367,8 @@ spec:
       (env[?name == 'OTEL_PROPAGATORS']):
         - value: 'tracecontext,baggage'
       (env[?name == 'RUBYOPT']):
-        - value: '-r /var/odigos/ruby/3.4/index'
-      (env[?name == 'ADDITIONAL_GEM_PATH']):
+        - value: '-r/var/odigos/ruby/3.4/index.rb'
+      (env[?name == 'ODIGOS_GEM_PATH']):
         - value: '/var/odigos/ruby/3.4/bundle'
 status:
   containerStatuses:

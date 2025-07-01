@@ -62,7 +62,7 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 			},
 			expectedTLS:     false,
 			expectedAuth:    false,
-			expectTLSConfig: false, // NO TLS config should be present
+			expectTLSConfig: true, // TLS config should be present with insecure=true
 		},
 		{
 			name: "OAuth2 disabled, TLS setting respected",
@@ -73,7 +73,7 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 			},
 			expectedTLS:     false,
 			expectedAuth:    false,
-			expectTLSConfig: false, // NO TLS config should be present
+			expectTLSConfig: true, // TLS config should be present with insecure=true
 		},
 	}
 
