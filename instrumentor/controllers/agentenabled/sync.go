@@ -413,7 +413,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 				ContainerName:       containerName,
 				AgentEnabled:        false,
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
-				AgentEnabledMessage: "container is already using LD_PRELOAD env var, and injection method is set to 'loader'.",
+				AgentEnabledMessage: "container is already using LD_PRELOAD env var, and injection method is set to 'loader'. current value: " + ldPreloadValue,
 			}
 		}
 	}
