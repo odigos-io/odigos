@@ -1,16 +1,16 @@
 'use client';
 
 import React from 'react';
-import { HEADER_HEIGHT } from '@/utils';
 import { useServiceMap } from '@/hooks';
 import { ServiceMap } from '@odigos/ui-kit/containers';
+import { HEADER_HEIGHT, MENU_BAR_HEIGHT } from '@/utils';
 
 export default function Page() {
   const { serviceMap } = useServiceMap();
 
   return (
     <>
-      <ServiceMap heightToRemove={HEADER_HEIGHT} serviceMap={serviceMap} />
+      <ServiceMap heightToRemove={HEADER_HEIGHT + MENU_BAR_HEIGHT} serviceMap={serviceMap} />
     </>
   );
 }
