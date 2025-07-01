@@ -138,7 +138,6 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 			}
 			// This means that we only delete the namespace if we created (labled) it during the install process.
 			if hasSystemLabel {
-				fmt.Printf("Uninstalling namespace %s\n", ns)
 				createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
 					client, ns, k8sconsts.OdigosSystemLabelKey, uninstallNamespace)
 
