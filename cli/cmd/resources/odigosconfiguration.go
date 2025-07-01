@@ -32,7 +32,7 @@ func NewOdigosConfiguration(ns string, config *common.OdigosConfiguration) (kube
 	}, nil
 }
 
-type odigosConfigResourceManager struct {
+type odigosConfigurationResourceManager struct {
 	client      *kube.Client
 	ns          string
 	config      *common.OdigosConfiguration
@@ -40,13 +40,13 @@ type odigosConfigResourceManager struct {
 	managerOpts resourcemanager.ManagerOpts
 }
 
-func NewOdigosConfigResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
-	return &odigosConfigResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, managerOpts: managerOpts}
+func NewodigosConfigurationResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
+	return &odigosConfigurationResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, managerOpts: managerOpts}
 }
 
-func (a *odigosConfigResourceManager) Name() string { return "OdigosConfiguration" }
+func (a *odigosConfigurationResourceManager) Name() string { return "OdigosConfiguration" }
 
-func (a *odigosConfigResourceManager) InstallFromScratch(ctx context.Context) error {
+func (a *odigosConfigurationResourceManager) InstallFromScratch(ctx context.Context) error {
 
 	obj, err := NewOdigosConfiguration(a.ns, a.config)
 	if err != nil {
