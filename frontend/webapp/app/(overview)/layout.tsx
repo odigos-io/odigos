@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import styled from 'styled-components';
 import { EntityTypes } from '@odigos/ui-kit/types';
-import { useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
+import { useDataStreamsCRUD, useServiceMap, useSSE, useTokenTracker } from '@/hooks';
 import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
 import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
 import { DataFlowActionsMenu, NavIconIds, SideNav, ToastList } from '@odigos/ui-kit/containers';
@@ -69,6 +69,9 @@ function OverviewLayout({ children }: PropsWithChildren) {
   useSSE();
   useTokenTracker();
   const { updateDataStream, deleteDataStream } = useDataStreamsCRUD();
+
+  // TODO: move to releveant file after release of UI-Kit: https://github.com/odigos-io/ui-kit/pull/207
+  useServiceMap();
 
   const router = useRouter();
   const pathname = usePathname();

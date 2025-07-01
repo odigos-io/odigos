@@ -1,0 +1,22 @@
+{{- if .Values.pdb.enabled }}
+{{- $pdbApiVersion := "policy/v1" }}
+{{- if semverCompare "<1.21.0-0" (include "utils.cleanKubeVersion" .) }}
+{{- $pdbApiVersion = "policy/v1beta1" }}
+{{- end }}
+apiVersion: {{ $pdbApiVersion }}
+kind: PodDisruptionBudget
+metadata:
+  name: odigos-instrumentor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-instrumentor
+    odigos.io/system-object: "true"
+spec:
+  # This PDB ensures that at least one instrumentor pod is always running.
+  # The instrumentor is critical for injecting observability logic into workloads,
+  # and losing all replicas at once would temporarily stop new instrumentation.
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-instrumentor
+{{- end }}

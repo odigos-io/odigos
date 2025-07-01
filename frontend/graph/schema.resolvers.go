@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -1156,6 +1157,35 @@ func (r *queryResolver) GetOverviewMetrics(ctx context.Context) (*model.Overview
 		Sources:      sourcesResp,
 		Destinations: destinationsResp,
 	}, nil
+}
+
+// GetServiceMap is the resolver for the getServiceMap field.
+func (r *queryResolver) GetServiceMap(ctx context.Context) (*model.ServiceMap, error) {
+	if r.MetricsConsumer == nil {
+		return nil, fmt.Errorf("metrics consumer not initialized")
+	}
+
+	serviceMap := r.MetricsConsumer.GetServiceGraphEdges()
+	services := make([]*model.ServiceMapFromSource, 0)
+
+	for serviceName, toServices := range serviceMap {
+		to := make([]*model.ServiceMapToSource, 0)
+
+		for toServiceName, info := range toServices {
+			to = append(to, &model.ServiceMapToSource{
+				ServiceName: toServiceName,
+				Requests:    int(info.RequestCount),
+				DateTime:    info.LastUpdated.Format(time.RFC3339),
+			})
+		}
+
+		services = append(services, &model.ServiceMapFromSource{
+			ServiceName: serviceName,
+			Services:    to,
+		})
+	}
+
+	return &model.ServiceMap{Services: services}, nil
 }
 
 // DescribeOdigos is the resolver for the describeOdigos field.

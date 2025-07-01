@@ -59,6 +59,9 @@ const (
 
 	// name of the secret that contains the oidc client secret
 	OidcSecretName = "odigos-oidc"
+
+	ServiceGraphConnectorName = "servicegraph"
+	ServiceGraphEndpointPort  = 9090
 )
 
 // Odigos config properties
@@ -91,6 +94,7 @@ const (
 	OidcClientIdProperty               = "oidc-client-id"
 	OidcClientSecretProperty           = "oidc-client-secret"
 	OdigletHealthProbeBindPortProperty = "odiglet-health-probe-bind-port"
+	ServiceGraphDisabledProperty       = "service-graph-disabled"
 )
 
 var (

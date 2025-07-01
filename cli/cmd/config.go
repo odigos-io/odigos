@@ -58,6 +58,7 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the client ID of the OIDC application.
 	- "%s": Sets the client secret of the OIDC application.
 	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
+  	- "%s": Enable or disable the service graph feature [default: false].
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -87,6 +88,7 @@ var configCmd = &cobra.Command{
 		consts.OidcClientIdProperty,
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
+		consts.ServiceGraphDisabledProperty,
 	),
 }
 
@@ -189,7 +191,8 @@ func validatePropertyValue(property string, value []string) error {
 		consts.OidcTenantUrlProperty,
 		consts.OidcClientIdProperty,
 		consts.OidcClientSecretProperty,
-		consts.OdigletHealthProbeBindPortProperty:
+		consts.OdigletHealthProbeBindPortProperty,
+		consts.ServiceGraphDisabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -203,7 +206,8 @@ func validatePropertyValue(property string, value []string) error {
 			consts.AllowConcurrentAgentsProperty,
 			consts.KarpenterEnabledProperty,
 			consts.RollbackDisabledProperty,
-			consts.AutomaticRolloutDisabledProperty:
+			consts.AutomaticRolloutDisabledProperty,
+			consts.ServiceGraphDisabledProperty:
 			_, err := strconv.ParseBool(value[0])
 			if err != nil {
 				return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
@@ -354,16 +358,25 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 		boolValue, _ := strconv.ParseBool(value[0])
 		config.Rollout.AutomaticRolloutDisabled = &boolValue
 
+	case consts.ServiceGraphDisabledProperty:
+		if config.CollectorGateway == nil {
+			config.CollectorGateway = &common.CollectorGatewayConfiguration{}
+		}
+		boolValue, _ := strconv.ParseBool(value[0])
+		config.CollectorGateway.ServiceGraphDisabled = &boolValue
+
 	case consts.OidcTenantUrlProperty:
 		if config.Oidc == nil {
 			config.Oidc = &common.OidcConfiguration{}
 		}
 		config.Oidc.TenantUrl = value[0]
+
 	case consts.OidcClientIdProperty:
 		if config.Oidc == nil {
 			config.Oidc = &common.OidcConfiguration{}
 		}
 		config.Oidc.ClientId = value[0]
+
 	case consts.OidcClientSecretProperty:
 		// get existing secret, do not throw on not found
 		secret, err := client.CoreV1().Secrets(namespace).Get(ctx, consts.OidcSecretName, metav1.GetOptions{})
