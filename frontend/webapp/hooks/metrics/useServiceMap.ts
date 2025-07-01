@@ -12,8 +12,6 @@ export const useServiceMap = () => {
   });
 
   return {
-    metrics: data?.getServiceMap || {
-      services: [],
-    },
+    serviceMap: data?.getServiceMap?.services || [],
   };
 };
