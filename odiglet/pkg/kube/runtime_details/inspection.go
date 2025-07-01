@@ -302,12 +302,15 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 		return false
 	}
 
+	// Overwrite the existing env vars. they always reflect the current state of the container.
 	// 1. Merge LD_PRELOAD from EnvVars [/proc/pid/environ]
 	odigosStr := "odigos"
-	updatedEnviron := mergeLdPreloadEnvVars(new.EnvVars, &existing.EnvVars, &odigosStr)
+	mergedEnvVars, updatedEnviron := mergeLdPreloadEnvVars(new.EnvVars, existing.EnvVars, &odigosStr)
+	existing.EnvVars = mergedEnvVars
 
 	// 2. Merge LD_PRELOAD from EnvFromContainerRuntime [DockerFile]
-	updatedDocker := mergeLdPreloadEnvVars(new.EnvFromContainerRuntime, &existing.EnvFromContainerRuntime, nil)
+	mergedEnvFromContainerRuntime, updatedDocker := mergeLdPreloadEnvVars(new.EnvFromContainerRuntime, existing.EnvFromContainerRuntime, nil)
+	existing.EnvFromContainerRuntime = mergedEnvFromContainerRuntime
 
 	updated := updatedEnviron || updatedDocker
 
@@ -344,26 +347,59 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 	return updated
 }
 
+// return if LD_PRELOAD is set in the envs list.
+func findLdPreloadInEnvs(envs []odigosv1.EnvVar) (string, bool) {
+	// list is expected to contain 0-2 elements, so we can use a simple loop.
+	for i := range envs {
+		if envs[i].Name == consts.LdPreloadEnvVarName {
+			return envs[i].Value, true
+		}
+	}
+	return "", false
+}
+
+func removeLdPreloadFromEnvs(envs []odigosv1.EnvVar) []odigosv1.EnvVar {
+	for i := range envs {
+		if envs[i].Name == consts.LdPreloadEnvVarName {
+			return append(envs[:i], envs[i+1:]...)
+		}
+	}
+	return envs
+}
+
 func mergeLdPreloadEnvVars(
 	newEnvs []odigosv1.EnvVar,
-	existingEnvs *[]odigosv1.EnvVar,
+	existingEnvs []odigosv1.EnvVar,
 	skipIfContains *string,
-) bool {
-	// Step 1: Check if LD_PRELOAD already exists in the existing envs
-	for _, existingEnv := range *existingEnvs {
-		if existingEnv.Name == consts.LdPreloadEnvVarName {
-			return false // Already present, nothing to do
-		}
+) ([]odigosv1.EnvVar, bool) {
+
+	newLdPreloadValue, newHasLdPreload := findLdPreloadInEnvs(newEnvs)
+	_, existingHasLdPreload := findLdPreloadInEnvs(existingEnvs)
+
+	if newHasLdPreload && existingHasLdPreload {
+		// Already present, nothing to do.
+		// Amir 01/07/2025: do we need to update the existing envs value if it changes?
+		return existingEnvs, false
 	}
 
-	// Step 2: Try to add it from new envs
-	for _, newEnv := range newEnvs {
-		if newEnv.Name == consts.LdPreloadEnvVarName {
-			if skipIfContains == nil || !strings.Contains(newEnv.Value, *skipIfContains) {
-				*existingEnvs = append(*existingEnvs, newEnv)
-				return true // Add LD_PRELOAD and return
-			}
+	if newHasLdPreload && !existingHasLdPreload {
+		// Avoid adding LD_PRELOAD if it contains odigos value.
+		// Amir 01/07/2025: the consumer (agentenabled controllers) already checks for this value.
+		// can we simply log what we have and let downstream filter it or not depending on the usecase?
+		if skipIfContains != nil && strings.Contains(newLdPreloadValue, *skipIfContains) {
+			return existingEnvs, false
 		}
+		// New LD_PRELOAD is set, add it to the existing envs.
+		envsWithLdPreload := append(existingEnvs, odigosv1.EnvVar{Name: consts.LdPreloadEnvVarName, Value: newLdPreloadValue})
+		return envsWithLdPreload, true
 	}
-	return false // No LD_PRELOAD found, nothing to do
+
+	if !newHasLdPreload && existingHasLdPreload {
+		// New LD_PRELOAD is not set, remove it from the existing envs.
+		envsWithoutLdPreload := removeLdPreloadFromEnvs(existingEnvs)
+		return envsWithoutLdPreload, true
+	}
+
+	// At this point, we have no new nor existing LD_PRELOAD, so nothing to do.
+	return existingEnvs, false
 }
