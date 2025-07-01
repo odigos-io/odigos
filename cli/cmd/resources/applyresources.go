@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -46,7 +47,7 @@ func DeleteOldOdigosSystemObjects(ctx context.Context, client *kube.Client, ns s
 
 func GetCurrentConfig(ctx context.Context, client *kube.Client, ns string) (*common.OdigosConfiguration, error) {
 	configMap, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
-	if len(configMap.Items) == 0 {
+	if err != nil && apierrors.IsNotFound(err) {
 		// Fallback to the old config map name for backward compatibility
 		configMap, err = client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLegacyConfigName, metav1.GetOptions{})
 		if err != nil {
