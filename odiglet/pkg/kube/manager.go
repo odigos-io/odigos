@@ -48,7 +48,7 @@ type KubeManagerOptions struct {
 	AppendEnvVarNames map[string]struct{}
 }
 
-func CreateManager() (ctrl.Manager, error) {
+func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (ctrl.Manager, error) {
 	log.Logger.V(0).Info("Starting reconcileres for runtime details")
 	ctrl.SetLogger(log.Logger)
 
@@ -81,7 +81,7 @@ func CreateManager() (ctrl.Manager, error) {
 		Metrics: metricsserver.Options{
 			BindAddress: metricsBindAddress,
 		},
-		HealthProbeBindAddress: ":8081",
+		HealthProbeBindAddress: fmt.Sprintf(":%d", instrumentationMgrOpts.OdigletHealthProbeBindPort),
 	})
 }
 
