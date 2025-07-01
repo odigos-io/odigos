@@ -1,0 +1,23 @@
+{{- if .Values.pdb.enabled }}
+{{- $pdbApiVersion := "policy/v1" }}
+{{- if semverCompare "<1.21.0-0" (include "utils.cleanKubeVersion" .) }}
+{{- $pdbApiVersion = "policy/v1beta1" }}
+{{- end }}
+apiVersion: {{ $pdbApiVersion }}
+kind: PodDisruptionBudget
+metadata:
+  name: odigos-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-ui
+    odigos.io/system-object: "true"
+spec:
+  # The UI component runs only 1 replica and is not considered critical for system availability.
+  # We use maxUnavailable: 1 instead of minAvailable to allow voluntary disruptions
+  # (e.g., during upgrades, reboots, or cluster maintenance) without blocking operations.
+  # Setting minAvailable: 1 with a single replica would prevent any eviction and create friction in normal ops.
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: odigos-ui
+{{- end }}

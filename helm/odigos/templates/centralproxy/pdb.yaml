@@ -1,0 +1,25 @@
+{{- if .Values.pdb.enabled }}
+{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .) }}
+{{- $pdbApiVersion := "policy/v1" }}
+{{- if semverCompare "<1.21.0-0" (include "utils.cleanKubeVersion" .) }}
+{{- $pdbApiVersion = "policy/v1beta1" }}
+{{- end }}
+apiVersion: {{ $pdbApiVersion }}
+kind: PodDisruptionBudget
+metadata:
+  name: central-proxy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: central-proxy
+    odigos.io/system-object: "true"
+spec:
+  # Central Proxy runs a single replica and is not mission-critical for cluster operations.
+  # We use maxUnavailable: 1 to allow voluntary disruptions such as upgrades or node drains
+  # without blocking operations. Using minAvailable: 1 here would prevent any evictions,
+  # which is too strict for a non-critical, conditionally deployed component.
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: central-proxy
+{{- end }}
+{{- end }}
