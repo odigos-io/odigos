@@ -35,15 +35,6 @@ func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, coll
 	return filteredProcessors
 }
 
-func FindFirstProcessorByType(allProcessors *odigosv1.ProcessorList, processorType string) *odigosv1.Processor {
-	for _, processor := range allProcessors.Items {
-		if processor.Spec.Type == processorType {
-			return &processor
-		}
-	}
-	return nil
-}
-
 func GetGenericBatchProcessor() odigosv1.Processor {
 	emptyConfig, _ := json.Marshal(make(map[string]interface{}))
 
