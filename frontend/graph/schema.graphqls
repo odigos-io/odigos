@@ -178,21 +178,21 @@ type HeadersCollection {
 }
 
 type CustomInstrumentations {
-    probes: [Probe]
+  probes: [Probe]
 }
 
 type Probe {
-    className: String
-    methodName: String
+  className: String
+  methodName: String
 }
 
 input CustomInstrumentationsInput {
-    probes: [ProbeInput]
+  probes: [ProbeInput]
 }
 
 input ProbeInput {
-    className: String
-    methodName: String
+  className: String
+  methodName: String
 }
 
 input HeadersCollectionInput {
@@ -779,12 +779,28 @@ input DataStreamInput {
   name: String!
 }
 
+type ServiceMap {
+  services: [ServiceMapFromSource!]!
+}
+
+type ServiceMapFromSource {
+  serviceName: String!
+  services: [ServiceMapToSource!]!
+}
+
+type ServiceMapToSource {
+  serviceName: String!
+  requests: Int!
+  dateTime: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
   destinationCategories: GetDestinationCategories
   potentialDestinations: [DestinationDetails!]!
   getOverviewMetrics: OverviewMetricsResponse!
+  getServiceMap: ServiceMap!
   describeOdigos: OdigosAnalyze!
   describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
   sourceConditions: [SourceConditions!]!

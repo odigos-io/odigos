@@ -97,6 +97,10 @@ type CollectorsGroupSpec struct {
 	// - consuming all available memory on the node which can lead to node instability
 	// - pushing back pressure to the instrumented applications
 	ResourcesSettings CollectorsGroupResourcesSettings `json:"resourcesSettings"`
+
+	// ServiceGraphEnabled is a feature that allows you to visualize the service graph of your application.
+	// It is enabled by default and can be disabled by setting the enabled flag to false.
+	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

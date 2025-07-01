@@ -148,7 +148,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
 			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines)
 		},
-		dataStreams,
+		dataStreams, gateway.Spec.ServiceGraphDisabled,
 	)
 
 	if err != nil {
