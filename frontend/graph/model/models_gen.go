@@ -749,6 +749,21 @@ type RuntimeInfoAnalyze struct {
 	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
 }
 
+type ServiceMap struct {
+	Services []*ServiceMapFromSource `json:"services"`
+}
+
+type ServiceMapFromSource struct {
+	ServiceName string                `json:"serviceName"`
+	Services    []*ServiceMapToSource `json:"services"`
+}
+
+type ServiceMapToSource struct {
+	ServiceName string `json:"serviceName"`
+	Requests    int    `json:"requests"`
+	DateTime    string `json:"dateTime"`
+}
+
 type ServiceNameFilters struct {
 	ServiceName           string  `json:"serviceName"`
 	SamplingRatio         float64 `json:"samplingRatio"`
