@@ -10,6 +10,7 @@ const (
 	OdigosTierEnvVarName        = "ODIGOS_TIER"
 	DefaultOdigosNamespace      = "odigos-system"
 	OdigosConfigurationName     = "odigos-configuration"
+	OdigosLegacyConfigName      = "odigos-config"
 	OdigosEffectiveConfigName   = "effective-config"
 	OdigosConfigurationFileName = "config.yaml"
 	OTLPPort                    = 4317

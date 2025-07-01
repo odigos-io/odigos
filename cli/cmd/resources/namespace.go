@@ -30,7 +30,16 @@ func GetOdigosNamespace(client *kube.Client, ctx context.Context) (string, error
 		}),
 		FieldSelector: fmt.Sprintf("metadata.name=%s", consts.OdigosConfigurationName),
 	})
-	if err != nil {
+
+	if len(configMap.Items) == 0 {
+		// Fallback to the old config map name for backward compatibility
+		configMap, err = client.CoreV1().ConfigMaps("").List(ctx, metav1.ListOptions{
+			LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+				MatchLabels: labels.OdigosSystem,
+			}),
+			FieldSelector: fmt.Sprintf("metadata.name=%s", consts.OdigosLegacyConfigName),
+		})
+	} else if err != nil {
 		return "", err
 	}
 

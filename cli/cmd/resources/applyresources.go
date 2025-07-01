@@ -46,8 +46,14 @@ func DeleteOldOdigosSystemObjects(ctx context.Context, client *kube.Client, ns s
 
 func GetCurrentConfig(ctx context.Context, client *kube.Client, ns string) (*common.OdigosConfiguration, error) {
 	configMap, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
+	if len(configMap.Items) == 0 {
+		// Fallback to the old config map name for backward compatibility
+		configMap, err = client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLegacyConfigName, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get odigos-config ConfigMap: %w", err)
+		}
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get odigos-configuration ConfigMap: %w", err)
 	}
 	var odigosConfiguration common.OdigosConfiguration
 	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration); err != nil {
