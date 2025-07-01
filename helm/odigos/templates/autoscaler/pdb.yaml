@@ -1,0 +1,23 @@
+{{- if .Values.pdb.enabled }}
+{{- $pdbApiVersion := "policy/v1" }}
+{{- if semverCompare "<1.21.0-0" (include "utils.cleanKubeVersion" .) }}
+{{- $pdbApiVersion = "policy/v1beta1" }}
+{{- end }}
+apiVersion: {{ $pdbApiVersion }}
+kind: PodDisruptionBudget
+metadata:
+  name: odigos-autoscaler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-autoscaler
+    odigos.io/system-object: "true"
+spec:
+  # This component runs only 1 replica and is important but not considered highly critical.
+  # We use maxUnavailable: 1 instead of minAvailable to allow voluntary disruptions
+  # (e.g., during node drain or upgrades) without blocking cluster operations.
+  # Using minAvailable: 1 with 1 replica would prevent any disruptions and may hinder maintenance workflows.
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-autoscaler
+{{- end }}
