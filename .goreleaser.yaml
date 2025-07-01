@@ -19,11 +19,11 @@ builds:
       - -X github.com/odigos-io/odigos/cli/cmd.OdigosCommit={{ .ShortCommit }}
       - -X github.com/odigos-io/odigos/cli/cmd.OdigosDate={{ .Date }}
     tags:
-     - embed_manifests
+      - embed_manifests
 archives:
   - id: odigos
     name_template: "cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    builds:
+    ids:
       - odigos
     files:
       - none*
@@ -37,7 +37,7 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
-brews:
+homebrew_casks:
   - repository:
       owner: keyval-dev
       name: homebrew-odigos-cli
