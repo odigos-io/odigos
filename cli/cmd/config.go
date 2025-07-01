@@ -362,6 +362,7 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 		if config.CollectorGateway == nil {
 			config.CollectorGateway = &common.CollectorGatewayConfiguration{}
 		}
+		boolValue, _ := strconv.ParseBool(value[0])
 		config.CollectorGateway.ServiceGraphDisabled = &boolValue
 
 	case consts.OidcTenantUrlProperty:
