@@ -395,7 +395,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 
 		// check for conditions to inject ldpreload when it is the only method configured.
 		secureExecution := runtimeDetails.SecureExecutionMode == nil || *runtimeDetails.SecureExecutionMode
-		if !secureExecution {
+		if secureExecution {
 			return odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
 				AgentEnabled:        false,
