@@ -34,7 +34,6 @@ module "vpc" {
     "kubernetes.io/role/internal-elb" = 1
   }
 
-  depends_on = [aws_vpc_endpoint.eks_api]
 }
 
 module "eks" {
