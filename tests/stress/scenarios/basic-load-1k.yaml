@@ -1,0 +1,54 @@
+name: "Basic Load Test - 1K spans/sec"
+description: "Basic throughput testing with 1,000 spans per second"
+duration: "10m"
+
+load:
+  spans_per_second: 1000
+  trace_complexity: simple
+  protocols: [otlp]
+  pattern: constant
+  attributes_per_span: 5
+  spans_per_trace: 3
+  
+resources:
+  cpu_limit: "1000m"
+  memory_limit: "2Gi"
+  cpu_threshold: 80
+  memory_threshold: 80
+  oom_kill_threshold: 90
+
+backends:
+  - name: "fast-backend"
+    endpoint: "http://mock-backend:14318"
+    delay: "10ms"
+    success_rate: 99.9
+    backpressure_threshold: 10000
+
+processors:
+  - name: "memory_limiter"
+    enabled: true
+    config:
+      limit_mib: 1536
+      spike_limit_mib: 384
+  - name: "batch"
+    enabled: true
+    config:
+      send_batch_size: 1000
+      timeout: "1s"
+      send_batch_max_size: 1500
+
+monitoring:
+  prometheus_enabled: true
+  grafana_enabled: true
+  export_metrics: true
+  alert_thresholds:
+    cpu_percent: 80
+    memory_percent: 80
+    error_rate_percent: 1
+    latency_p99_ms: 1000
+
+expected_results:
+  max_cpu_percent: 20
+  max_memory_mb: 512
+  max_latency_p99_ms: 100
+  max_error_rate_percent: 0.1

@@ -1,0 +1,821 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Odigos Stress Testing Dashboard",
+    "tags": ["odigos", "stress-testing", "otel", "collector"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Collector CPU Usage",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{namespace=\"odigos-system\",pod=~\"odigos-gateway.*\"}[5m]) * 100",
+            "legendFormat": "CPU Usage %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 70
+                },
+                {
+                  "color": "red",
+                  "value": 85
+                }
+              ]
+            },
+            "unit": "percent"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Collector Memory Usage",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "container_memory_usage_bytes{namespace=\"odigos-system\",pod=~\"odigos-gateway.*\"} / 1024 / 1024",
+            "legendFormat": "Memory Usage MB",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1536
+                },
+                {
+                  "color": "red",
+                  "value": 2048
+                }
+              ]
+            },
+            "unit": "decbytes"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Spans Received Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(otelcol_receiver_accepted_spans_total{service_name=\"odigos-gateway\"}[5m])",
+            "legendFormat": "Spans/sec",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Spans Exported Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(otelcol_exporter_sent_spans_total{service_name=\"odigos-gateway\"}[5m])",
+            "legendFormat": "Exported Spans/sec",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Error Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(otelcol_receiver_refused_spans_total{service_name=\"odigos-gateway\"}[5m])",
+            "legendFormat": "Refused Spans/sec",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(otelcol_exporter_send_failed_spans_total{service_name=\"odigos-gateway\"}[5m])",
+            "legendFormat": "Failed Exports/sec",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 10
+                },
+                {
+                  "color": "red",
+                  "value": 100
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        },
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Batch Size Distribution",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "otelcol_processor_batch_batch_send_size_bucket{service_name=\"odigos-gateway\"}",
+            "legendFormat": "{{ le }}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        },
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Load Generator Metrics",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(odigos_stress_spans_generated_total[5m])",
+            "legendFormat": "Generated Spans/sec",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(odigos_stress_errors_total[5m])",
+            "legendFormat": "Load Gen Errors/sec",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        },
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Mock Backend Performance",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(mock_backend_requests_total[5m])",
+            "legendFormat": "Backend Requests/sec",
+            "refId": "A"
+          },
+          {
+            "expr": "mock_backend_active_connections",
+            "legendFormat": "Active Connections",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(mock_backend_errors_total[5m])",
+            "legendFormat": "Backend Errors/sec",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "never",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        },
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Current Test Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "odigos_stress_spans_generated_total",
+            "legendFormat": "Total Spans Generated",
+            "refId": "A"
+          },
+          {
+            "expr": "otelcol_receiver_accepted_spans_total{service_name=\"odigos-gateway\"}",
+            "legendFormat": "Total Spans Received",
+            "refId": "B"
+          },
+          {
+            "expr": "otelcol_exporter_sent_spans_total{service_name=\"odigos-gateway\"}",
+            "legendFormat": "Total Spans Exported",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto",
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 32
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "text": {},
+          "textMode": "auto"
+        },
+        "pluginVersion": "8.0.0"
+      }
+    ],
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    },
+    "timepicker": {},
+    "templating": {
+      "list": [
+        {
+          "current": {
+            "selected": false,
+            "text": "All",
+            "value": "$__all"
+          },
+          "datasource": "Prometheus",
+          "definition": "label_values(otelcol_receiver_accepted_spans_total, service_name)",
+          "hide": 0,
+          "includeAll": true,
+          "label": "Collector",
+          "multi": true,
+          "name": "collector",
+          "options": [],
+          "query": {
+            "query": "label_values(otelcol_receiver_accepted_spans_total, service_name)",
+            "refId": "StandardVariableQuery"
+          },
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 0,
+          "type": "query"
+        },
+        {
+          "current": {
+            "selected": false,
+            "text": "All",
+            "value": "$__all"
+          },
+          "datasource": "Prometheus",
+          "definition": "label_values(odigos_stress_spans_generated_total, test_id)",
+          "hide": 0,
+          "includeAll": true,
+          "label": "Test ID",
+          "multi": true,
+          "name": "test_id",
+          "options": [],
+          "query": {
+            "query": "label_values(odigos_stress_spans_generated_total, test_id)",
+            "refId": "StandardVariableQuery"
+          },
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 0,
+          "type": "query"
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "refresh": "5s",
+    "schemaVersion": 30,
+    "style": "dark",
+    "tags": [
+      "odigos",
+      "stress-testing",
+      "otel",
+      "collector"
+    ],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Odigos Stress Testing Dashboard",
+    "uid": "odigos-stress-testing",
+    "version": 1
+  }
+}

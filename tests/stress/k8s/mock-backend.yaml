@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-backend
+  labels:
+    app: mock-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mock-backend
+  template:
+    metadata:
+      labels:
+        app: mock-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "15318"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: mock-backend
+        image: registry.odigos.io/odigos-stress-backend:latest
+        imagePullPolicy: Always
+        args:
+        - --port=14318
+        - --delay=10ms
+        - --success-rate=99.9
+        - --backpressure-threshold=10000
+        - --max-concurrency=1000
+        env:
+        - name: PORT
+          value: "14318"
+        - name: HTTP_PORT
+          value: "15318"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        ports:
+        - containerPort: 14318
+          name: grpc
+          protocol: TCP
+        - containerPort: 15318
+          name: http
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 15318
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 15318
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mock-backend
+  labels:
+    app: mock-backend
+spec:
+  selector:
+    app: mock-backend
+  ports:
+  - port: 14318
+    targetPort: 14318
+    name: grpc
+    protocol: TCP
+  - port: 15318
+    targetPort: 15318
+    name: http
+    protocol: TCP
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mock-backend
+  labels:
+    app: mock-backend
+spec:
+  selector:
+    matchLabels:
+      app: mock-backend
+  endpoints:
+  - port: http
+    interval: 5s
+    path: /metrics

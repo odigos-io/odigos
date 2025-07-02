@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stress-loadgen
+  labels:
+    app: stress-loadgen
+    test-id: "${TEST_ID}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stress-loadgen
+  template:
+    metadata:
+      labels:
+        app: stress-loadgen
+        test-id: "${TEST_ID}"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: loadgen
+        image: registry.odigos.io/odigos-stress-loadgen:latest
+        imagePullPolicy: Always
+        args:
+        - --endpoint=http://odigos-gateway.odigos-system.svc.cluster.local:4317
+        - --spans-per-sec=${SPANS_PER_SEC}
+        - --duration=${DURATION}
+        - --service-name=stress-loadgen
+        - --test-id=${TEST_ID}
+        env:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://odigos-gateway.odigos-system.svc.cluster.local:4317"
+        - name: OTEL_SERVICE_NAME
+          value: "stress-loadgen"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "test.id=${TEST_ID},test.type=stress"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: ${CPU_LIMIT}
+            memory: ${MEMORY_LIMIT}
+        ports:
+        - containerPort: 8080
+          name: metrics
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stress-loadgen
+  labels:
+    app: stress-loadgen
+spec:
+  selector:
+    app: stress-loadgen
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: metrics
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stress-loadgen
+  labels:
+    app: stress-loadgen
+spec:
+  selector:
+    matchLabels:
+      app: stress-loadgen
+  endpoints:
+  - port: metrics
+    interval: 5s
+    path: /metrics

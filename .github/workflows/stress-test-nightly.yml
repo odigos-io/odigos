@@ -1,0 +1,325 @@
+name: Nightly Stress Tests
+
+on:
+  schedule:
+    # Run every night at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      scenarios:
+        description: 'Comma-separated list of scenarios to run (or "all" for all scenarios)'
+        required: false
+        default: 'all'
+      duration:
+        description: 'Test duration override'
+        required: false
+        default: '10m'
+      cluster_type:
+        description: 'Type of cluster to use'
+        required: false
+        default: 'kind'
+        type: choice
+        options:
+          - kind
+          - gke
+          - eks
+
+env:
+  REGISTRY: registry.odigos.io
+  KIND_VERSION: v0.20.0
+  KUBECTL_VERSION: v1.28.0
+  HELM_VERSION: v3.12.0
+
+jobs:
+  stress-test:
+    name: Run Stress Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 180  # 3 hours max
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scenario: basic-load-1k
+            spans_per_sec: 1000
+            cpu_limit: 1000m
+            memory_limit: 2Gi
+            duration: 10m
+          - scenario: basic-load-5k
+            spans_per_sec: 5000
+            cpu_limit: 1500m
+            memory_limit: 3Gi
+            duration: 10m
+          - scenario: basic-load-10k
+            spans_per_sec: 10000
+            cpu_limit: 2000m
+            memory_limit: 4Gi
+            duration: 15m
+          - scenario: oom-prevention
+            spans_per_sec: 15000
+            cpu_limit: 1000m
+            memory_limit: 1Gi
+            duration: 20m
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install matplotlib pandas numpy
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Set up Kind
+      uses: helm/kind-action@v1.8.0
+      with:
+        version: ${{ env.KIND_VERSION }}
+        kubectl_version: ${{ env.KUBECTL_VERSION }}
+        cluster_name: stress-test-cluster
+        config: tests/common/apply/kind-config.yaml
+
+    - name: Set up Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: ${{ env.HELM_VERSION }}
+
+    - name: Install metrics-server for kubectl top
+      run: |
+        kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+        kubectl patch -n kube-system deployment metrics-server --type=json -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+        kubectl wait --for=condition=available --timeout=300s deployment/metrics-server -n kube-system
+
+    - name: Build Odigos images
+      run: |
+        TAG=stress-test make build-images
+        TAG=stress-test make load-to-kind
+
+    - name: Build stress test components
+      run: |
+        TAG=stress-test make stress-test-build
+        kind load docker-image ${{ env.REGISTRY }}/odigos-stress-loadgen:stress-test
+        kind load docker-image ${{ env.REGISTRY }}/odigos-stress-backend:stress-test
+
+    - name: Install Odigos
+      run: |
+        TAG=stress-test make cli-install
+        kubectl wait --for=condition=Available --timeout=300s deployment/odigos-gateway -n odigos-system
+        kubectl wait --for=condition=Available --timeout=300s deployment/odigos-instrumentor -n odigos-system
+        kubectl wait --for=condition=Available --timeout=300s deployment/odigos-scheduler -n odigos-system
+        kubectl wait --for=condition=Available --timeout=300s deployment/odigos-autoscaler -n odigos-system
+
+    - name: Set up monitoring (Prometheus)
+      run: |
+        # Install Prometheus operator
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        helm repo update
+        helm install prometheus prometheus-community/kube-prometheus-stack \
+          --namespace monitoring \
+          --create-namespace \
+          --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+          --wait --timeout=10m
+
+    - name: Run stress test scenario
+      id: stress-test
+      run: |
+        cd tests/stress
+        ./run-stress-test.sh \
+          --scenario ${{ matrix.scenario }} \
+          --duration ${{ matrix.duration }} \
+          --spans-per-sec ${{ matrix.spans_per_sec }} \
+          --cpu-limit ${{ matrix.cpu_limit }} \
+          --memory-limit ${{ matrix.memory_limit }} \
+          --namespace odigos-stress-${{ matrix.scenario }}
+      continue-on-error: true
+
+    - name: Generate test report
+      if: always()
+      run: |
+        cd tests/stress
+        # Find the most recent test result directory
+        RESULT_DIR=$(find ./results -name "*${{ matrix.scenario }}*" -type d | sort | tail -1)
+        if [ -n "$RESULT_DIR" ]; then
+          echo "result_dir=$RESULT_DIR" >> $GITHUB_OUTPUT
+          python3 scripts/analyze-results.py "$RESULT_DIR"
+        fi
+
+    - name: Collect logs
+      if: always()
+      run: |
+        mkdir -p logs/${{ matrix.scenario }}
+        
+        # Collect Odigos component logs
+        kubectl logs -n odigos-system deployment/odigos-gateway --tail=1000 > logs/${{ matrix.scenario }}/gateway.log || true
+        kubectl logs -n odigos-system deployment/odigos-instrumentor --tail=1000 > logs/${{ matrix.scenario }}/instrumentor.log || true
+        kubectl logs -n odigos-system deployment/odigos-scheduler --tail=1000 > logs/${{ matrix.scenario }}/scheduler.log || true
+        kubectl logs -n odigos-system deployment/odigos-autoscaler --tail=1000 > logs/${{ matrix.scenario }}/autoscaler.log || true
+        
+        # Collect stress test component logs
+        kubectl logs -n odigos-stress-${{ matrix.scenario }} -l app=stress-loadgen --tail=1000 > logs/${{ matrix.scenario }}/loadgen.log || true
+        kubectl logs -n odigos-stress-${{ matrix.scenario }} -l app=mock-backend --tail=1000 > logs/${{ matrix.scenario }}/backend.log || true
+        
+        # Collect cluster state
+        kubectl get pods -A > logs/${{ matrix.scenario }}/pods.txt
+        kubectl top nodes > logs/${{ matrix.scenario }}/node-resources.txt || true
+        kubectl top pods -A > logs/${{ matrix.scenario }}/pod-resources.txt || true
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: stress-test-results-${{ matrix.scenario }}
+        path: |
+          tests/stress/results/
+          logs/${{ matrix.scenario }}/
+        retention-days: 30
+
+    - name: Check test result
+      if: always()
+      run: |
+        if [ "${{ steps.stress-test.outcome }}" != "success" ]; then
+          echo "❌ Stress test ${{ matrix.scenario }} failed"
+          exit 1
+        else
+          echo "✅ Stress test ${{ matrix.scenario }} passed"
+        fi
+
+  # Aggregate results and send notifications
+  aggregate-results:
+    name: Aggregate Results and Notify
+    runs-on: ubuntu-latest
+    needs: stress-test
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all test results
+      uses: actions/download-artifact@v3
+      with:
+        path: test-results
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install matplotlib pandas numpy
+
+    - name: Generate consolidated report
+      run: |
+        # Create a consolidated report from all test results
+        mkdir -p consolidated-results
+        
+        # Count results
+        total_tests=0
+        passed_tests=0
+        failed_tests=0
+        
+        for result_dir in test-results/*/; do
+          if [ -d "$result_dir" ]; then
+            total_tests=$((total_tests + 1))
+            
+            # Check if this test passed by looking for analysis summary
+            if find "$result_dir" -name "analysis-summary.txt" -exec grep -q "✅ PASSED" {} \; 2>/dev/null; then
+              passed_tests=$((passed_tests + 1))
+            else
+              failed_tests=$((failed_tests + 1))
+            fi
+          fi
+        done
+        
+        # Generate summary
+        cat > consolidated-results/summary.md << EOF
+        # Nightly Stress Test Results - $(date -u +%Y-%m-%d)
+        
+        ## Overall Summary
+        - **Total Tests**: $total_tests
+        - **Passed**: $passed_tests  
+        - **Failed**: $failed_tests
+        - **Success Rate**: $(( total_tests > 0 ? (passed_tests * 100) / total_tests : 0 ))%
+        
+        ## Test Results
+        EOF
+        
+        # Add individual test results
+        for result_dir in test-results/stress-test-results-*/; do
+          if [ -d "$result_dir" ]; then
+            scenario=$(basename "$result_dir" | sed 's/stress-test-results-//')
+            echo "### $scenario" >> consolidated-results/summary.md
+            
+            if find "$result_dir" -name "analysis-summary.txt" -print0 | xargs -0 cat >> consolidated-results/summary.md 2>/dev/null; then
+              echo "" >> consolidated-results/summary.md
+            else
+              echo "❌ Test failed or results unavailable" >> consolidated-results/summary.md
+              echo "" >> consolidated-results/summary.md
+            fi
+          fi
+        done
+        
+        echo "TOTAL_TESTS=$total_tests" >> $GITHUB_ENV
+        echo "PASSED_TESTS=$passed_tests" >> $GITHUB_ENV
+        echo "FAILED_TESTS=$failed_tests" >> $GITHUB_ENV
+
+    - name: Send Slack notification
+      if: env.SLACK_WEBHOOK_URL != ''
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            "text": "Nightly Stress Test Results",
+            "attachments": [
+              {
+                "color": "${{ env.FAILED_TESTS == '0' && 'good' || 'danger' }}",
+                "fields": [
+                  {
+                    "title": "Summary",
+                    "value": "Total: ${{ env.TOTAL_TESTS }} | Passed: ${{ env.PASSED_TESTS }} | Failed: ${{ env.FAILED_TESTS }}",
+                    "short": false
+                  },
+                  {
+                    "title": "Success Rate",
+                    "value": "${{ env.TOTAL_TESTS > 0 && (env.PASSED_TESTS * 100 / env.TOTAL_TESTS) || 0 }}%",
+                    "short": true
+                  },
+                  {
+                    "title": "Date",
+                    "value": "$(date -u +%Y-%m-%d)",
+                    "short": true
+                  }
+                ]
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Upload consolidated results
+      uses: actions/upload-artifact@v3
+      with:
+        name: consolidated-stress-test-results
+        path: consolidated-results/
+        retention-days: 90
+
+    - name: Fail if any tests failed
+      if: env.FAILED_TESTS != '0'
+      run: |
+        echo "❌ ${{ env.FAILED_TESTS }} out of ${{ env.TOTAL_TESTS }} stress tests failed"
+        exit 1

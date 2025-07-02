@@ -455,6 +455,58 @@ publish-to-ecr:
 	make -j 3 build-tag-push-ecr-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	echo "✅ Deployed Odigos to EKS, now install the CLI"
 
+# Stress Testing Framework
+STRESS_SCENARIO ?= basic-load-1k
+STRESS_DURATION ?= 10m
+STRESS_SPANS_PER_SEC ?= 1000
+STRESS_CPU_LIMIT ?= 1000m
+STRESS_MEMORY_LIMIT ?= 2Gi
+STRESS_NAMESPACE ?= odigos-stress
+
+.PHONY: stress-test
+stress-test:
+	@echo "🚀 Running stress test: $(STRESS_SCENARIO)"
+	cd tests/stress && ./run-stress-test.sh \
+		--scenario $(STRESS_SCENARIO) \
+		--duration $(STRESS_DURATION) \
+		--spans-per-sec $(STRESS_SPANS_PER_SEC) \
+		--cpu-limit $(STRESS_CPU_LIMIT) \
+		--memory-limit $(STRESS_MEMORY_LIMIT) \
+		--namespace $(STRESS_NAMESPACE)
+
+.PHONY: stress-test-nightly
+stress-test-nightly:
+	@echo "🌙 Running nightly stress test suite"
+	cd tests/stress && ./run-nightly-suite.sh
+
+.PHONY: stress-test-build
+stress-test-build:
+	@echo "🔨 Building stress test components"
+	docker build -t $(ORG)/odigos-stress-loadgen:$(TAG) tests/stress/loadgen/
+	docker build -t $(ORG)/odigos-stress-backend:$(TAG) tests/stress/backend/
+	docker build -t $(ORG)/odigos-stress-monitor:$(TAG) tests/stress/monitoring/
+
+.PHONY: stress-test-setup
+stress-test-setup: stress-test-build
+	@echo "⚙️ Setting up stress test environment"
+	kubectl create namespace $(STRESS_NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
+	cd tests/stress && kubectl apply -f k8s/ -n $(STRESS_NAMESPACE)
+
+.PHONY: stress-test-cleanup
+stress-test-cleanup:
+	@echo "🧹 Cleaning up stress test environment"
+	kubectl delete namespace $(STRESS_NAMESPACE) --ignore-not-found=true
+
+.PHONY: stress-test-results
+stress-test-results:
+	@echo "📊 Generating stress test results"
+	cd tests/stress && python3 scripts/generate-report.py --latest
+
+.PHONY: stress-test-dashboard
+stress-test-dashboard:
+	@echo "📈 Deploying Grafana dashboard"
+	cd tests/stress && kubectl apply -f monitoring/grafana-dashboard.yaml
+
 .PHONY: build-cli-image
 build-cli-image:
 	cd cli && \

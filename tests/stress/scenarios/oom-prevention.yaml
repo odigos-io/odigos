@@ -1,0 +1,80 @@
+name: "OOM Prevention Test"
+description: "Test memory limiter effectiveness and data dropping under memory pressure"
+duration: "20m"
+
+load:
+  spans_per_second: 15000
+  trace_complexity: complex
+  protocols: [otlp]
+  pattern: burst
+  burst_duration: "2m"
+  quiet_duration: "1m"
+  attributes_per_span: 20
+  spans_per_trace: 10
+  large_attributes: true  # Include large attribute values
+  
+resources:
+  cpu_limit: "1000m"
+  memory_limit: "1Gi"  # Intentionally constrained
+  cpu_threshold: 85
+  memory_threshold: 85
+  oom_kill_threshold: 95
+
+backends:
+  - name: "slow-backend"
+    endpoint: "http://mock-backend:14318"
+    delay: "100ms"  # Slow backend to create backpressure
+    success_rate: 99.0
+    backpressure_threshold: 5000
+
+processors:
+  - name: "memory_limiter"
+    enabled: true
+    priority: 1
+    config:
+      limit_mib: 768  # 75% of container limit
+      spike_limit_mib: 192
+      check_interval: "1s"
+  - name: "batch"
+    enabled: true
+    config:
+      send_batch_size: 500
+      timeout: "2s"
+      send_batch_max_size: 1000
+
+monitoring:
+  prometheus_enabled: true
+  grafana_enabled: true
+  export_metrics: true
+  detailed_logging: true
+  alert_thresholds:
+    cpu_percent: 85
+    memory_percent: 85
+    error_rate_percent: 5  # Higher threshold due to intentional dropping
+    latency_p99_ms: 5000
+    
+test_assertions:
+  # What we expect to happen
+  - name: "memory_limit_respected"
+    description: "Memory usage should not exceed limit_mib"
+    threshold: 768
+    operator: "less_than"
+  - name: "no_oom_kills"
+    description: "Container should not be OOM killed"
+    assertion: "no_restarts"
+  - name: "data_dropped"
+    description: "Memory limiter should drop data when under pressure"
+    metric: "otelcol_processor_refused_spans_total"
+    operator: "greater_than"
+    threshold: 1000
+  - name: "collector_survives"
+    description: "Collector should remain responsive"
+    endpoint: "http://odigos-gateway:8888/metrics"
+    timeout: "5s"
+
+expected_results:
+  max_cpu_percent: 90
+  max_memory_mb: 768
+  max_latency_p99_ms: 10000
+  max_error_rate_percent: 10  # Expected due to data dropping
+  data_loss_acceptable: true
