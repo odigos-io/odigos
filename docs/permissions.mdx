@@ -128,6 +128,7 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 |---|---|---|---|
 | \* | configmaps | odigos-deployment | get |
 | \* | configmaps | odigos-configuration | get<br />delete |
+| \* | configmaps | odigos-config | get<br />delete |
 
 ### odigos-data-collection
 
@@ -160,6 +161,12 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 |---|---|---|---|
 | \* | events | \* | create<br />patch |
 | coordination.k8s.io | leases | \* | get<br />list<br />watch<br />create<br />update<br />patch<br />delete |
+
+### migration-role
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | configmaps | odigos-config | get<br />delete |
 
 ### odiglet
 
