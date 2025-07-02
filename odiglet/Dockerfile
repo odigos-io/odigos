@@ -59,18 +59,19 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
-    mv linux-$ARCH_SUFFIX linux-glibc-$ARCH_SUFFIX && \
+    mv linux-$ARCH_SUFFIX linux-glibc
+RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
-    unzip opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip "linux-musl-$ARCH_SUFFIX/*" -d . && \
-    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip
+    unzip -o opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    mv linux-musl-$ARCH_SUFFIX linux-musl
 
 # TODO(edenfed): Currently .NET Automatic instrumentation does not work on dotnet 6.0 with glibc,
 # This is due to compilation of the .so file on a newer version of glibc than the one used by the dotnet runtime.
 # The following override the .so file with our own which is compiled on the same glibc version as the dotnet runtime.
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
-    mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
-
+    mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc/OpenTelemetry.AutoInstrumentation.Native.so
 
 # PHP
 FROM --platform=$BUILDPLATFORM maniator/gh AS php-agents
@@ -94,7 +95,7 @@ RUN for v in ${PHP_VERSIONS}; do \
 FROM --platform=$BUILDPLATFORM maniator/gh AS ruby-agents
 WORKDIR /ruby-agents
 ARG TARGETARCH
-ARG RUBY_AGENT_VERSION="v0.0.4"
+ARG RUBY_AGENT_VERSION="v0.0.5"
 ARG RUBY_VERSIONS="3.1 3.2 3.3 3.4"
 ENV RUBY_VERSIONS=${RUBY_VERSIONS}
 # Clone agents repo (contains pre-compiled binaries, and pre-installed dependencies for each Ruby version)

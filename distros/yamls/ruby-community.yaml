@@ -11,14 +11,16 @@ spec:
   displayName: 'Ruby Community Native Instrumentation'
   description: |
     This distribution is for Ruby applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  requireParameters:
+    - RUNTIME_VERSION_MAJOR_MINOR
   environmentVariables:
     otlpHttpLocalNode: true
     signalsAsStaticOtelEnvVars: true
     staticVariables:
       - envName: RUBYOPT
-        envValue: '-r /var/odigos/ruby/{{RUNTIME_VERSION_MAJOR_MINOR}}/index'
-      - envName: ADDITIONAL_GEM_PATH
-        envValue: '/var/odigos/ruby/{{RUNTIME_VERSION_MAJOR_MINOR}}/bundle'
+        envValue: '-r/var/odigos/ruby/{{.RUNTIME_VERSION_MAJOR_MINOR}}/index.rb'
+      - envName: ODIGOS_GEM_PATH
+        envValue: '/var/odigos/ruby/{{.RUNTIME_VERSION_MAJOR_MINOR}}/bundle'
       - envName: OTEL_EXPORTER_OTLP_PROTOCOL
         envValue: 'http/protobuf'
       - envName: OTEL_PROPAGATORS

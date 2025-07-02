@@ -5,6 +5,7 @@ module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 go 1.24.0
 
 require (
+	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.126.0
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.126.0
 	github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor v0.126.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.126.0
@@ -92,6 +93,7 @@ require (
 	go.opentelemetry.io/collector/component/componenttest v0.126.0
 	go.opentelemetry.io/collector/confmap v1.32.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.32.0
+	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.32.0
 	go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider v0.126.0
 	go.opentelemetry.io/collector/connector v0.126.0
 	go.opentelemetry.io/collector/connector/forwardconnector v0.126.0
@@ -470,6 +472,7 @@ require (
 	github.com/mtibben/percent v0.2.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
+	github.com/odigos-io/odigos/common v0.0.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/sumologicextension v0.126.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/awsutil v0.126.0 // indirect
@@ -736,5 +739,9 @@ replace github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor => ..
 replace github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
 
 replace go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
+
+replace github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
+
+replace github.com/odigos-io/odigos/common => ../../common
 
 exclude github.com/knadh/koanf v1.5.0

@@ -41,7 +41,10 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	userTlsEnabled := dest.GetConfig()[genericOtlpTlsKey] == "true"
 
 	// Check for OAuth2 authentication early to determine TLS requirements
-	oauth2ExtensionName, oauth2ExtensionConf := applyGrpcOAuth2Auth(dest)
+	oauth2ExtensionName, oauth2ExtensionConf, err := applyGrpcOAuth2Auth(dest)
+	if err != nil {
+		return nil, err
+	}
 	oauth2Enabled := oauth2ExtensionName != ""
 
 	// Determine final TLS setting: gRPC requires TLS when using authentication credentials like OAuth2
@@ -57,10 +60,10 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 
 	// Only add TLS config if TLS is needed (user-enabled or OAuth2-required)
-	if userTlsEnabled || oauth2Enabled {
-		tlsConfig := GenericMap{
-			"insecure": !finalTlsEnabled,
-		}
+	tlsConfig := GenericMap{
+		"insecure": !finalTlsEnabled,
+	}
+	if finalTlsEnabled {
 		caPem, caExists := config[genericOtlpCaPemKey]
 		if caExists && caPem != "" {
 			tlsConfig["ca_pem"] = caPem
@@ -69,8 +72,8 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		if skipExists && insecureSkipVerify != "" {
 			tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
 		}
-		exporterConf["tls"] = tlsConfig
 	}
+	exporterConf["tls"] = tlsConfig
 
 	// add OAuth2 authenticator extension if configured
 	if oauth2ExtensionName != "" && oauth2ExtensionConf != nil {
@@ -139,12 +142,12 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	return pipelineNames, nil
 }
 
-func applyGrpcOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap) {
+func applyGrpcOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap, err error) {
 	config := dest.GetConfig()
 
 	oauth2Enabled := config[otlpGrpcOAuth2EnabledKey]
 	if oauth2Enabled != "true" {
-		return "", nil
+		return "", nil, nil
 	}
 
 	clientId := config[otlpGrpcOAuth2ClientIdKey]
@@ -153,7 +156,7 @@ func applyGrpcOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensi
 	// Note: client secret is stored in the secret and injected as environment variable
 	// We don't validate it here since it's not in the regular config data
 	if clientId == "" || tokenUrl == "" {
-		return "", nil
+		return "", nil, errors.New("when OAuth2 is enabled, client ID and token URL must be provided")
 	}
 
 	extensionName = "oauth2client/otlpgrpc-" + dest.GetID()
@@ -186,5 +189,5 @@ func applyGrpcOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensi
 		(*extensionConf)["scopes"] = scopesList
 	}
 
-	return extensionName, extensionConf
+	return extensionName, extensionConf, nil
 }

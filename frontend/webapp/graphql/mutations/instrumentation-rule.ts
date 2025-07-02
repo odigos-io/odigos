@@ -41,6 +41,12 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
       headersCollection {
         headerKeys
       }
+      customInstrumentations {
+        probes {
+          className
+          methodName
+        }
+      }
     }
   }
 `;
@@ -85,6 +91,12 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
       }
       headersCollection {
         headerKeys
+      }
+      customInstrumentations {
+        probes {
+          className
+          methodName
+        }
       }
     }
   }

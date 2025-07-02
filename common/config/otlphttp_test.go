@@ -208,6 +208,7 @@ func TestOAuth2Configuration(t *testing.T) {
 	tests := []struct {
 		name            string
 		config          map[string]string
+		expectedError   bool
 		expectedAuth    bool
 		expectedExtName string
 		expectedScopes  []string
@@ -216,12 +217,12 @@ func TestOAuth2Configuration(t *testing.T) {
 		{
 			name: "OAuth2 enabled with all parameters",
 			config: map[string]string{
-				"OTLP_HTTP_ENDPOINT":               "https://example.com:4318",
-				"OTLP_HTTP_OAUTH2_ENABLED":         "true",
-				"OTLP_HTTP_OAUTH2_CLIENT_ID":       "test-client-id",
-				"OTLP_HTTP_OAUTH2_TOKEN_URL":       "https://auth.example.com/token",
-				"OTLP_HTTP_OAUTH2_SCOPES":          "api.metrics,api.traces",
-				"OTLP_HTTP_OAUTH2_AUDIENCE":        "api.example.com",
+				"OTLP_HTTP_ENDPOINT":         "https://example.com:4318",
+				"OTLP_HTTP_OAUTH2_ENABLED":   "true",
+				"OTLP_HTTP_OAUTH2_CLIENT_ID": "test-client-id",
+				"OTLP_HTTP_OAUTH2_TOKEN_URL": "https://auth.example.com/token",
+				"OTLP_HTTP_OAUTH2_SCOPES":    "api.metrics,api.traces",
+				"OTLP_HTTP_OAUTH2_AUDIENCE":  "api.example.com",
 				// Note: OTLP_HTTP_OAUTH2_CLIENT_SECRET is handled separately through secrets
 			},
 			expectedAuth:    true,
@@ -232,15 +233,15 @@ func TestOAuth2Configuration(t *testing.T) {
 		{
 			name: "Real user configuration",
 			config: map[string]string{
-				"OTLP_HTTP_ENDPOINT":               "http://eden.com",
-				"OTLP_HTTP_COMPRESSION":            "none",
-				"OTLP_HTTP_TLS_ENABLED":            "false",
-				"OTLP_HTTP_INSECURE_SKIP_VERIFY":   "false",
-				"OTLP_HTTP_OAUTH2_ENABLED":         "true",
-				"OTLP_HTTP_OAUTH2_CLIENT_ID":       "123123",
-				"OTLP_HTTP_OAUTH2_TOKEN_URL":       "https://gooogle.com",
-				"OTLP_HTTP_OAUTH2_SCOPES":          "asdasd",
-				"OTLP_HTTP_OAUTH2_AUDIENCE":        "ccccx",
+				"OTLP_HTTP_ENDPOINT":             "http://eden.com",
+				"OTLP_HTTP_COMPRESSION":          "none",
+				"OTLP_HTTP_TLS_ENABLED":          "false",
+				"OTLP_HTTP_INSECURE_SKIP_VERIFY": "false",
+				"OTLP_HTTP_OAUTH2_ENABLED":       "true",
+				"OTLP_HTTP_OAUTH2_CLIENT_ID":     "123123",
+				"OTLP_HTTP_OAUTH2_TOKEN_URL":     "https://gooogle.com",
+				"OTLP_HTTP_OAUTH2_SCOPES":        "asdasd",
+				"OTLP_HTTP_OAUTH2_AUDIENCE":      "ccccx",
 				// Client secret stored separately in secret
 			},
 			expectedAuth:    true,
@@ -276,7 +277,7 @@ func TestOAuth2Configuration(t *testing.T) {
 				// No TLS, no OAuth2, no Basic Auth
 			},
 			expectedAuth:    false,
-			expectTLSConfig: false,
+			expectTLSConfig: true,
 		},
 		{
 			name: "OAuth2 disabled",
@@ -285,7 +286,7 @@ func TestOAuth2Configuration(t *testing.T) {
 				"OTLP_HTTP_OAUTH2_ENABLED": "false",
 			},
 			expectedAuth:    false,
-			expectTLSConfig: false,
+			expectTLSConfig: true,
 		},
 		{
 			name: "OAuth2 enabled but missing required fields",
@@ -295,16 +296,15 @@ func TestOAuth2Configuration(t *testing.T) {
 				"OTLP_HTTP_OAUTH2_CLIENT_ID": "test-client-id",
 				// Missing TOKEN_URL
 			},
-			expectedAuth:    false,
-			expectTLSConfig: false,
+			expectedError: true,
 		},
 		{
 			name: "Basic Auth takes precedence when OAuth2 disabled",
 			config: map[string]string{
-				"OTLP_HTTP_ENDPOINT":                 "https://example.com:4318",
-				"OTLP_HTTP_OAUTH2_ENABLED":           "false",
-				"OTLP_HTTP_BASIC_AUTH_USERNAME":      "user",
-				"OTLP_HTTP_BASIC_AUTH_PASSWORD":      "pass",
+				"OTLP_HTTP_ENDPOINT":            "https://example.com:4318",
+				"OTLP_HTTP_OAUTH2_ENABLED":      "false",
+				"OTLP_HTTP_BASIC_AUTH_USERNAME": "user",
+				"OTLP_HTTP_BASIC_AUTH_PASSWORD": "pass",
 			},
 			expectedAuth:    true,
 			expectedExtName: "basicauth/otlphttp-test-id",
@@ -313,12 +313,12 @@ func TestOAuth2Configuration(t *testing.T) {
 		{
 			name: "OAuth2 takes precedence over Basic Auth",
 			config: map[string]string{
-				"OTLP_HTTP_ENDPOINT":                 "https://example.com:4318",
-				"OTLP_HTTP_OAUTH2_ENABLED":           "true",
-				"OTLP_HTTP_OAUTH2_CLIENT_ID":         "test-client-id",
-				"OTLP_HTTP_OAUTH2_TOKEN_URL":         "https://auth.example.com/token",
-				"OTLP_HTTP_BASIC_AUTH_USERNAME":      "user",
-				"OTLP_HTTP_BASIC_AUTH_PASSWORD":      "pass",
+				"OTLP_HTTP_ENDPOINT":            "https://example.com:4318",
+				"OTLP_HTTP_OAUTH2_ENABLED":      "true",
+				"OTLP_HTTP_OAUTH2_CLIENT_ID":    "test-client-id",
+				"OTLP_HTTP_OAUTH2_TOKEN_URL":    "https://auth.example.com/token",
+				"OTLP_HTTP_BASIC_AUTH_USERNAME": "user",
+				"OTLP_HTTP_BASIC_AUTH_PASSWORD": "pass",
 			},
 			expectedAuth:    true,
 			expectedExtName: "oauth2client/otlphttp-test-id",
@@ -336,7 +336,7 @@ func TestOAuth2Configuration(t *testing.T) {
 
 			// Create OTLP HTTP configurator
 			otlpHttp := &OTLPHttp{}
-			
+
 			// Create initial config
 			config := &Config{
 				Extensions: make(map[string]interface{}),
@@ -349,6 +349,10 @@ func TestOAuth2Configuration(t *testing.T) {
 
 			// Apply the configuration
 			pipelineNames, err := otlpHttp.ModifyConfig(dest, config)
+			if tt.expectedError {
+				assert.Error(t, err)
+				return
+			}
 
 			if tt.config["OTLP_HTTP_ENDPOINT"] == "" {
 				// Should fail if no endpoint
@@ -381,24 +385,24 @@ func TestOAuth2Configuration(t *testing.T) {
 			if tt.expectedAuth {
 				assert.Contains(t, config.Service.Extensions, tt.expectedExtName)
 				assert.Contains(t, config.Extensions, tt.expectedExtName)
-				
+
 				// Verify the extension configuration
 				if tt.expectedExtName == "oauth2client/otlphttp-test-id" {
 					extConfig := config.Extensions[tt.expectedExtName].(GenericMap)
 					assert.Equal(t, tt.config["OTLP_HTTP_OAUTH2_CLIENT_ID"], extConfig["client_id"])
 					assert.Equal(t, "${OTLP_HTTP_OAUTH2_CLIENT_SECRET}", extConfig["client_secret"])
 					assert.Equal(t, tt.config["OTLP_HTTP_OAUTH2_TOKEN_URL"], extConfig["token_url"])
-					
+
 					if tt.expectedScopes != nil {
 						assert.Equal(t, tt.expectedScopes, extConfig["scopes"])
 					}
-					
+
 					if tt.config["OTLP_HTTP_OAUTH2_AUDIENCE"] != "" {
 						endpointParams := extConfig["endpoint_params"].(GenericMap)
 						assert.Equal(t, tt.config["OTLP_HTTP_OAUTH2_AUDIENCE"], endpointParams["audience"])
 					}
 				}
-				
+
 				// Verify exporter has auth configuration
 				authConfig := exporterConfig["auth"].(GenericMap)
 				assert.Equal(t, tt.expectedExtName, authConfig["authenticator"])
