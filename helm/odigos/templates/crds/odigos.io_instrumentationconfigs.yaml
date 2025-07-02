@@ -82,9 +82,10 @@ spec:
                       - EnabledSuccessfully
                       - WaitingForRuntimeInspection
                       - WaitingForNodeCollector
-                      - NoCollectedSignals
-                      - UnsupportedProgrammingLanguage
                       - IgnoredContainer
+                      - NoCollectedSignals
+                      - InjectionConflict
+                      - UnsupportedProgrammingLanguage
                       - NoAvailableAgent
                       - UnsupportedRuntimeVersion
                       - MissingDistroParameter
