@@ -39,7 +39,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: odigos
-  namespace: argocd  # <- Replace with your Argo CD namespace
+  namespace: <ARGOCD_NAMESPACE>  # <- Replace with your Argo CD namespace
 spec:
   project: default
   source:
@@ -54,7 +54,7 @@ spec:
         # To use chart defaults, delete this field entirely or set it to an empty string ("").
   destination:
     server: https://kubernetes.default.svc
-    namespace: odigos-system  # <- Replace with the desired namespace where you want Odigos to be installed
+    namespace: <ODIGOS_NAMESPACE>  # <- Replace with the desired namespace where you want Odigos to be installed
   syncPolicy:
     automated:
       prune: true
