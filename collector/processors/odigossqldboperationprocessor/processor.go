@@ -2,6 +2,7 @@ package odigossqldboperationprocessor
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -56,6 +57,10 @@ func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Tra
 				// Only set the `db.operation.name` if the detected operation name is not "UNKNOWN"
 				if operationName != OperationUnknown {
 					span.Attributes().PutStr(string(semconv.DBOperationNameKey), operationName)
+
+					// Append operation name to the span name
+					originalName := span.Name()
+					span.SetName(fmt.Sprintf("%s %s", originalName, operationName))
 				}
 			}
 		}
