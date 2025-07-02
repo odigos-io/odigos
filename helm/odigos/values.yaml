@@ -249,7 +249,7 @@ odiglet:
     ## regardless of its taints (including master/control-plane nodes)
     - operator: Exists
   affinity: {}
-  # Resource configuration for the odiglet daemonset
+  # Resource configuration for the odiglet daemonset main container
   # resources:
   #   requests:
   #     cpu: 10m
@@ -257,6 +257,16 @@ odiglet:
   #   limits:
   #     cpu: 500m
   #     memory: 512Mi
+
+  # Resource configuration for the odiglet init container
+  # The init container handles file copying operations and should complete quickly
+  initContainerResources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
 
   # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)

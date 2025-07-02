@@ -14,17 +14,40 @@ import (
 )
 
 const (
-	// we don't want to overload the CPU so we limit to small number of goroutines
-	maxWorkers = 4
+	// Optimize worker count for I/O bound operations
+	maxWorkers = 8
 
-	// 32 KB buffer for I/O operations
-	bufferSize = 32 * 1024
+	// Increased buffer size for better I/O performance
+	bufferSize = 64 * 1024
 )
 
+// CopyJob represents a file copy operation
+type CopyJob struct {
+	src string
+	dst string
+}
+
+// CopyWorkerPool manages parallel file copying operations
+type CopyWorkerPool struct {
+	workers int
+	jobs    chan CopyJob
+	wg      sync.WaitGroup
+	errors  chan error
+	bufPool sync.Pool
+}
+
 // getNumberOfWorkers returns the number of workers to use for copying files.
-// It returns the minimum of maxWorkers and the number of CPUs divided by 4.
 func getNumberOfWorkers() int {
-	return min(maxWorkers, max(1, runtime.NumCPU()/4))
+	numCPU := runtime.NumCPU()
+	// For I/O bound operations, we can use more workers than CPU cores
+	workers := numCPU * 2
+	if workers > maxWorkers {
+		workers = maxWorkers
+	}
+	if workers < 2 {
+		workers = 2
+	}
+	return workers
 }
 
 func copyDirectories(srcDir string, destDir string, filesToKeep map[string]struct{}) error {
@@ -36,37 +59,181 @@ func copyDirectories(srcDir string, destDir string, filesToKeep map[string]struc
 	CopyCFiles := !hostContainEbpfDir
 	log.Logger.V(0).Info("Copying instrumentation files to host", "srcDir", srcDir, "destDir", destDir, "CopyCFiles", CopyCFiles)
 
-	files, err := getFiles(srcDir, CopyCFiles, filesToKeep)
-	if err != nil {
-		return err
-	}
-
 	// Create the destination directory if it doesn't exist
-	err = os.MkdirAll(destDir, os.ModePerm)
+	err := os.MkdirAll(destDir, os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	// Create a buffered channel to control concurrency
+	// Collect copy jobs efficiently in a single directory traversal
+	copyJobs, err := collectCopyJobs(srcDir, destDir, CopyCFiles, filesToKeep)
+	if err != nil {
+		return err
+	}
+
+	if len(copyJobs) == 0 {
+		log.Logger.V(0).Info("No files to copy")
+		return nil
+	}
+
+	// Process copy jobs in parallel
+	err = processCopyJobsInParallel(copyJobs)
+	if err != nil {
+		return err
+	}
+
+	log.Logger.V(0).Info("Finished copying instrumentation files to host", "duration", time.Since(start), "fileCount", len(copyJobs))
+	return nil
+}
+
+// collectCopyJobs efficiently collects all copy operations in a single directory traversal
+func collectCopyJobs(srcDir, destDir string, copyCFiles bool, filesToKeep map[string]struct{}) ([]CopyJob, error) {
+	var jobs []CopyJob
+	srcDirLen := len(srcDir) + 1 // +1 for the path separator
+
+	err := filepath.WalkDir(srcDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			log.Logger.Error(err, "Error accessing path during copy scan", "path", path)
+			return nil // Continue processing other files
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		// Apply filtering logic efficiently
+		if !copyCFiles {
+			// Convert container path to host path for comparison
+			hostPath := "/var/odigos/" + path[srcDirLen:]
+			if _, found := filesToKeep[hostPath]; found {
+				log.Logger.V(1).Info("Skipping copying file", "file", path)
+				return nil
+			}
+		}
+
+		// Create destination path
+		destFile := filepath.Join(destDir, path[srcDirLen:])
+		jobs = append(jobs, CopyJob{src: path, dst: destFile})
+
+		return nil
+	})
+
+	return jobs, err
+}
+
+// processCopyJobsInParallel processes copy jobs using optimized worker pool
+func processCopyJobsInParallel(jobs []CopyJob) error {
+	if len(jobs) == 0 {
+		return nil
+	}
+
 	numWorkers := getNumberOfWorkers()
-	fileChan := make(chan string, numWorkers)
-	var wg sync.WaitGroup
-
-	// Start worker goroutines
-	for i := 0; i < numWorkers; i++ {
-		wg.Add(1)
-		go worker(fileChan, srcDir, destDir, &wg)
+	if numWorkers > len(jobs) {
+		numWorkers = len(jobs)
 	}
 
-	// Send files to the channel
-	for _, file := range files {
-		fileChan <- file
+	pool := &CopyWorkerPool{
+		workers: numWorkers,
+		jobs:    make(chan CopyJob, len(jobs)),
+		errors:  make(chan error, len(jobs)),
+		bufPool: sync.Pool{
+			New: func() interface{} {
+				return make([]byte, bufferSize)
+			},
+		},
 	}
 
-	// Close the channel and wait for workers to finish
-	close(fileChan)
-	wg.Wait()
-	log.Logger.V(0).Info("Finished copying instrumentation files to host", "duration", time.Since(start))
+	// Start workers
+	for i := 0; i < pool.workers; i++ {
+		pool.wg.Add(1)
+		go pool.worker()
+	}
+
+	// Send jobs
+	go func() {
+		for _, job := range jobs {
+			pool.jobs <- job
+		}
+		close(pool.jobs)
+	}()
+
+	// Wait for completion
+	go func() {
+		pool.wg.Wait()
+		close(pool.errors)
+	}()
+
+	// Collect any errors
+	var firstError error
+	errorCount := 0
+	for err := range pool.errors {
+		if err != nil {
+			errorCount++
+			if firstError == nil {
+				firstError = err
+			}
+			log.Logger.Error(err, "Error during file copy")
+		}
+	}
+
+	if errorCount > 0 && firstError != nil {
+		log.Logger.Error(firstError, "Copy operation completed with errors", "errorCount", errorCount, "totalJobs", len(jobs))
+		return firstError
+	}
+
+	return nil
+}
+
+// worker processes copy jobs with optimized buffer management
+func (pool *CopyWorkerPool) worker() {
+	defer pool.wg.Done()
+
+	for job := range pool.jobs {
+		err := pool.copyFileOptimized(job.src, job.dst)
+		pool.errors <- err
+	}
+}
+
+// copyFileOptimized uses buffer pool and optimized I/O operations
+func (pool *CopyWorkerPool) copyFileOptimized(src, dst string) error {
+	// Get buffer from pool
+	buf := pool.bufPool.Get().([]byte)
+	defer pool.bufPool.Put(buf)
+
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	// Create destination directories if needed
+	err = os.MkdirAll(filepath.Dir(dst), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	// Optimized copy loop with larger buffer
+	for {
+		n, readErr := srcFile.Read(buf)
+		if n > 0 {
+			if _, writeErr := dstFile.Write(buf[:n]); writeErr != nil {
+				return writeErr
+			}
+		}
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return readErr
+		}
+	}
+
 	return nil
 }
 
@@ -102,6 +269,7 @@ func createDotnetDeprecatedDirectories(destDir string) error {
 	return nil
 }
 
+// Deprecated: Use processCopyJobsInParallel instead
 func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -116,6 +284,7 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
+// Deprecated: Use collectCopyJobs instead
 func getFiles(dir string, CopyCFiles bool, filesToKeep map[string]struct{}) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
@@ -138,6 +307,7 @@ func getFiles(dir string, CopyCFiles bool, filesToKeep map[string]struct{}) ([]s
 	return files, err
 }
 
+// Deprecated: Use copyFileOptimized instead
 func copyFile(src, dst string, buf []byte) error {
 	srcFile, err := os.Open(src)
 	if err != nil {
@@ -176,15 +346,17 @@ func copyFile(src, dst string, buf []byte) error {
 	return nil
 }
 
+// HostContainsEbpfDir efficiently checks if directory contains ebpf subdirectories
 func HostContainsEbpfDir(dir string) bool {
+	// Use a more efficient approach with early termination
 	found := false
-	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || found {
 			return err
 		}
-		if info.IsDir() && strings.Contains(info.Name(), "ebpf") {
+		if d.IsDir() && strings.Contains(d.Name(), "ebpf") {
 			found = true
-			return filepath.SkipDir
+			return filepath.SkipAll // Early termination
 		}
 		return nil
 	})
