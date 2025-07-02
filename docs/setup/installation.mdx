@@ -133,9 +133,9 @@ helm repo add odigos https://odigos-io.github.io/odigos/
   </Tab>
 </Tabs>
 
-Once all the Odigos pods are online, you will need to port-forward the ui service to load the Odigos UI.
+Once the Odigos pods are online, simply run the following command to launch the Odigos UI.
 ```shell
-kubectl -n odigos-system port-forward svc/ui 3000:3000
+odigos ui
 ```
 
 ## OpenShift Operator
