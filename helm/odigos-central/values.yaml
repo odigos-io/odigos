@@ -41,6 +41,10 @@ keycloak:
   enabled: true
   image: quay.io/keycloak/keycloak:24.0.3
   adminUsername: admin
+  # adminPassword: REQUIRED - Set a secure password for Keycloak admin user
+  # This field must be provided when installing the chart
+  # Example: --set keycloak.adminPassword="your-secure-password"
+  adminPassword: ''
   port: 8080
   portName: http
   resources:
