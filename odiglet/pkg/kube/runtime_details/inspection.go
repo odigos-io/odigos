@@ -316,7 +316,9 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 	updated := updatedEnviron || updatedDocker
 
 	// 3. Update SecureExecutionMode if needed
-	if existing.SecureExecutionMode == nil && new.SecureExecutionMode != nil {
+	existingSecureExecution := existing.SecureExecutionMode != nil && *existing.SecureExecutionMode
+	newSecureExecution := new.SecureExecutionMode != nil && *new.SecureExecutionMode
+	if !existingSecureExecution && newSecureExecution {
 		existing.SecureExecutionMode = new.SecureExecutionMode
 		updated = true
 	}
