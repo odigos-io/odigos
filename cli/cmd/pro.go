@@ -15,6 +15,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/cmd/resources/centralodigos"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
@@ -248,6 +249,11 @@ var centralCmd = &cobra.Command{
 	Long:  "Manage Odigos Central backend and UI components used in enterprise deployments.",
 }
 
+var (
+	keycloakAdminUser     string
+	keycloakAdminPassword string
+)
+
 var centralInstallCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install Odigos Central backend and UI components",
@@ -364,7 +370,13 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 	if err := createOdigosCentralSecret(ctx, client, ns, onPremToken); err != nil {
 		return err
 	}
-	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag)
+	config := resources.CentralManagersConfig{
+		Keycloak: centralodigos.KeycloakConfig{
+			AdminUsername: keycloakAdminUser,
+			AdminPassword: keycloakAdminPassword,
+		},
+	}
+	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag, config)
 	if err := resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating"); err != nil {
 		return fmt.Errorf("failed to install Odigos central: %w", err)
 	}
@@ -474,6 +486,10 @@ func init() {
 	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
+
+	// Keycloak configuration flags
+	centralInstallCmd.Flags().StringVar(&keycloakAdminUser, "keycloak-admin-user", "admin", "Keycloak admin username")
+	centralInstallCmd.Flags().StringVar(&keycloakAdminPassword, "keycloak-admin-password", "supersecret", "Keycloak admin password")
 	centralCmd.AddCommand(portForwardCentralCmd)
 	// migrate subcommand
 	proCmd.AddCommand(activateCmd)

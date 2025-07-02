@@ -1,0 +1,67 @@
+{{- if (include "odigos.secretExists" .) }}
+{{- if .Values.keycloak.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: keycloak
+    odigos.io/system-object: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app: keycloak
+        {{- end }}
+        {{- end }}
+      {{- if .Values.keycloak.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.keycloak.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.keycloak.tolerations }}
+      tolerations:
+        {{- toYaml .Values.keycloak.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.keycloak.affinity }}
+      affinity:
+        {{- toYaml .Values.keycloak.affinity | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: keycloak
+          image: {{ .Values.keycloak.image | quote }}
+          args: ["start", "--optimized", "--http-enabled=true"]
+          env:
+            - name: KEYCLOAK_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin-credentials
+                  key: admin-username
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin-credentials
+                  key: admin-password
+            - name: KC_HOSTNAME
+              value: "localhost"
+          ports:
+            - containerPort: {{ .Values.keycloak.port }}
+              name: {{ .Values.keycloak.portName }}
+          resources:
+            {{- toYaml .Values.keycloak.resources | nindent 12 }}
+{{- end }}
+{{- end }} 

@@ -1,0 +1,16 @@
+{{- if (include "odigos.secretExists" .) }}
+{{- if .Values.keycloak.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - name: {{ .Values.keycloak.portName }}
+      port: {{ .Values.keycloak.port }}
+      targetPort: {{ .Values.keycloak.port }}
+{{- end }}
+{{- end }} 
