@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useCallback, useMemo, type PropsWithChildren } from 'react';
+import React, { CSSProperties, useCallback, useMemo, type PropsWithChildren } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { ROUTES } from '@/utils';
 import styled from 'styled-components';
 import { EntityTypes } from '@odigos/ui-kit/types';
-import { useDataStreamsCRUD, useServiceMap, useSSE, useTokenTracker } from '@/hooks';
+import { ServiceMapIcon } from '@odigos/ui-kit/icons';
+import { DATA_FLOW_HEIGHT, MENU_BAR_HEIGHT, ROUTES } from '@/utils';
+import { useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
 import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
 import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
 import { DataFlowActionsMenu, NavIconIds, SideNav, ToastList } from '@odigos/ui-kit/containers';
@@ -17,9 +18,9 @@ const PageContent = styled(FlexColumn)`
   align-items: center;
 `;
 
-const ContentWithActions = styled.div`
+const ContentWithActions = styled.div<{ $height: CSSProperties['height'] }>`
   width: 100%;
-  height: calc(100vh - 176px);
+  height: ${({ $height }) => $height};
   position: relative;
 `;
 
@@ -29,6 +30,9 @@ const ContentUnderActions = styled(FlexRow)`
   padding-left: 12px;
   width: calc(100% - 12px);
 `;
+
+const serviceMapId = 'service-map';
+const serviceMapDisplayName = 'Service Map';
 
 const getEntityType = (pathname: string) => {
   return pathname.includes(ROUTES.SOURCES)
@@ -53,6 +57,8 @@ const getSelectedId = (pathname: string) => {
     ? NavIconIds.Actions
     : pathname.includes(ROUTES.INSTRUMENTATION_RULES)
     ? NavIconIds.InstrumentationRules
+    : pathname.includes(ROUTES.SERVICE_MAP)
+    ? serviceMapId
     : undefined;
 };
 
@@ -62,6 +68,7 @@ const routesMap = {
   [NavIconIds.Destinations]: ROUTES.DESTINATIONS,
   [NavIconIds.Actions]: ROUTES.ACTIONS,
   [NavIconIds.InstrumentationRules]: ROUTES.INSTRUMENTATION_RULES,
+  [serviceMapId]: ROUTES.SERVICE_MAP,
 };
 
 function OverviewLayout({ children }: PropsWithChildren) {
@@ -70,9 +77,6 @@ function OverviewLayout({ children }: PropsWithChildren) {
   useTokenTracker();
   const { updateDataStream, deleteDataStream } = useDataStreamsCRUD();
 
-  // TODO: move to releveant file after release of UI-Kit: https://github.com/odigos-io/ui-kit/pull/207
-  useServiceMap();
-
   const router = useRouter();
   const pathname = usePathname();
 
@@ -80,7 +84,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
   const selectedId = useMemo(() => getSelectedId(pathname), [pathname]);
 
   const onClickId = useCallback(
-    (navId: NavIconIds) => {
+    (navId: keyof typeof routesMap) => {
       const route = routesMap[navId];
       if (route) router.push(route);
     },
@@ -92,10 +96,27 @@ function OverviewLayout({ children }: PropsWithChildren) {
       <PageContent>
         <OverviewHeader />
 
-        <ContentWithActions>
-          <DataFlowActionsMenu addEntity={entityType} onClickNewDataStream={() => router.push(ROUTES.CHOOSE_STREAM)} updateDataStream={updateDataStream} deleteDataStream={deleteDataStream} />
+        <ContentWithActions $height={DATA_FLOW_HEIGHT}>
+          {selectedId !== serviceMapId ? (
+            <DataFlowActionsMenu addEntity={entityType} onClickNewDataStream={() => router.push(ROUTES.CHOOSE_STREAM)} updateDataStream={updateDataStream} deleteDataStream={deleteDataStream} />
+          ) : (
+            <div style={{ height: `${MENU_BAR_HEIGHT}px` }} />
+          )}
+
           <ContentUnderActions>
-            <SideNav defaultSelectedId={selectedId} onClickId={onClickId} />
+            <SideNav
+              defaultSelectedId={selectedId}
+              onClickId={onClickId}
+              extendedNavIcons={[
+                {
+                  id: serviceMapId,
+                  icon: ServiceMapIcon,
+                  selected: selectedId === serviceMapId,
+                  onClick: () => onClickId(serviceMapId),
+                  tooltip: serviceMapDisplayName,
+                },
+              ]}
+            />
             {children}
           </ContentUnderActions>
         </ContentWithActions>
