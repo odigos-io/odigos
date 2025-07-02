@@ -41,7 +41,7 @@ func sync(ctx context.Context, c client.Client) error {
 	resourceSettings := getGatewayResourceSettings(&odigosConfiguration)
 
 	// default servicegraph is enabled (serviceGraphDisabled to false)
-	serviceGraphDisabled := odigosConfig.CollectorGateway.ServiceGraphDisabled
+	serviceGraphDisabled := odigosConfiguration.CollectorGateway.ServiceGraphDisabled
 	if serviceGraphDisabled == nil {
 		result := false
 		serviceGraphDisabled = &result
