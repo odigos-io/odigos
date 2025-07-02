@@ -23,4 +23,3 @@ rules:
   resources: ["configmaps"]
   resourceNames: ["odigos-config"]
   verbs: ["get","delete"]
-
