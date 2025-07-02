@@ -11,7 +11,7 @@ The following command downloads the `ocb` tool and builds the collector:
 make genodigoscol
 ```
 **Notes:**
-- Run `make genodigoscol` using the go version specify in odigosotelcol/go.mod toolchain. 
+- Run `make genodigoscol` using the go version specify in odigosotelcol/go.mod toolchain.
 - If the local Go version is not matching the one specified in the collector build, the above command can be run inside a container:
 ```bash
 docker run -it -v $(pwd):/app golang:1.23.0 bash
@@ -25,4 +25,29 @@ To generate metadata for a component, create `metadata.yaml` in the component's 
 
 ```bash
 make generate
+```
+
+
+## Troubleshooting
+
+You might encounter weird dependency issues when trying to build the collector.
+
+For example
+```bash
+$ make genodigoscol
+/workspace/collector/.tools/builder_0.126.0 --config builder-config.yaml
+2025-06-30T09:51:07.488Z        INFO    internal/command.go:99  OpenTelemetry Collector Builder {"version": "0.126.0"}
+2025-06-30T09:51:07.490Z        INFO    internal/command.go:104 Using config file       {"path": "builder-config.yaml"}
+2025-06-30T09:51:07.491Z        INFO    builder/config.go:160   Using go        {"go-executable": "/usr/local/go/bin/go"}
+2025-06-30T09:51:07.526Z        INFO    builder/main.go:99      Sources created {"path": "./odigosotelcol"}
+2025-06-30T09:51:11.379Z        INFO    builder/main.go:201     Getting go modules
+2025-06-30T09:51:19.540Z        INFO    builder/main.go:206     Failed modules download {"retry": "1/3"}
+2025-06-30T09:51:30.210Z        INFO    builder/main.go:206     Failed modules download {"retry": "2/3"}
+2025-06-30T09:51:40.637Z        INFO    builder/main.go:206     Failed modules download {"retry": "3/3"}
+Error: failed to download go modules: go subcommand failed with args '[mod download]': exit status 1, error message: go: github.com/DataDog/datadog-agent/pkg/template@v0.0.0-00010101000000-000000000000: invalid version: unknown revision 000000000000
+```
+
+Those issues can happen because of stale files and dependencies, fixing them can be done by running:
+```bash
+git clean -d -x -f
 ```
