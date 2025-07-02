@@ -156,7 +156,19 @@ runs:
         path: odigos_debug*.tar.gz
       continue-on-error: true
 
-    # 16) Destroy Resources (always attempts)
+    # 16.1) Destroy EKS module first (if provider is EKS)
+    - name: Destroy EKS module (only for EKS)
+      if: always() && inputs.provider == 'eks'
+      shell: bash
+      run: |
+        export TF_DIR="./tests-infrastructure/terraform/eks"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_run_id="${GITHUB_RUN_ID}"
+        tofu -chdir="$TF_DIR" destroy -target=module.eks -auto-approve
+        sleep 60
+      continue-on-error: true
+
+    # 16.2) Destroy Resources (always attempts)
     - name: Destroy Resources
       if: always()
       shell: bash

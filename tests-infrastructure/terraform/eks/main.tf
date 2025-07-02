@@ -49,6 +49,8 @@ module "eks" {
 
   enable_cluster_creator_admin_permissions = true
 
+  force_destroy  = true
+
   eks_managed_node_group_defaults = {
     ami_type = "AL2_x86_64"
   }
@@ -60,6 +62,7 @@ module "eks" {
       min_size       = var.node_count
       max_size       = var.node_count
       desired_size   = var.node_count
+      force_destroy = true
     }
   }
 }
