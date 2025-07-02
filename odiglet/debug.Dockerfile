@@ -107,7 +107,7 @@ RUN for v in ${PHP_VERSIONS}; do \
 FROM --platform=$BUILDPLATFORM maniator/gh AS ruby-agents
 WORKDIR /ruby-agents
 ARG TARGETARCH
-ARG RUBY_AGENT_VERSION="v0.0.4"
+ARG RUBY_AGENT_VERSION="v0.0.5"
 ARG RUBY_VERSIONS="3.1 3.2 3.3 3.4"
 ENV RUBY_VERSIONS=${RUBY_VERSIONS}
 # Clone agents repo (contains pre-compiled binaries, and pre-installed dependencies for each Ruby version)
