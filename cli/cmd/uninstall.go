@@ -121,12 +121,12 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 					// As part of the migration, we explicitly delete the legacy ConfigMap if it still exists.
 					_, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLegacyConfigName, metav1.GetOptions{})
 					if err != nil {
-						err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.consts.OdigosLegacyConfigName, metav1.DeleteOptions{})
+						err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosLegacyConfigName, metav1.DeleteOptions{})
 						if err != nil {
-							fmt.Errorf("failed to delete legacy Odigos config ConfigMap %s in namespace %s: %w", consts.consts.OdigosLegacyConfigName, ns, err)
+							fmt.Errorf("failed to delete legacy Odigos config ConfigMap %s in namespace %s: %w", consts.OdigosLegacyConfigName, ns, err)
 							os.Exit(1)
 						}
-						fmt.Printf("Deleted legacy Odigos config ConfigMap %s in namespace %s\n", consts.consts.OdigosLegacyConfigName, ns)
+						fmt.Printf("Deleted legacy Odigos config ConfigMap %s in namespace %s\n", consts.OdigosLegacyConfigName, ns)
 					}
 					fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources and odigos configuration ConfigMap successfuly\n")
 					return
