@@ -41,7 +41,6 @@ keycloak:
   enabled: true
   image: quay.io/keycloak/keycloak:24.0.3
   adminUsername: admin
-  adminPassword: supersecret
   port: 8080
   portName: http
   resources:

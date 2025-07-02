@@ -489,7 +489,8 @@ func init() {
 
 	// Keycloak configuration flags
 	centralInstallCmd.Flags().StringVar(&keycloakAdminUser, "keycloak-admin-user", "admin", "Keycloak admin username")
-	centralInstallCmd.Flags().StringVar(&keycloakAdminPassword, "keycloak-admin-password", "supersecret", "Keycloak admin password")
+	centralInstallCmd.Flags().StringVar(&keycloakAdminPassword, "keycloak-admin-password", "", "Keycloak admin password")
+	centralInstallCmd.MarkFlagRequired("keycloak-admin-password")
 	centralCmd.AddCommand(portForwardCentralCmd)
 	// migrate subcommand
 	proCmd.AddCommand(activateCmd)
