@@ -62,10 +62,6 @@ module "eks" {
       desired_size   = var.node_count
     }
   }
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 resource "aws_vpc_endpoint" "eks_api" {
@@ -120,38 +116,4 @@ resource "aws_security_group_rule" "allow_4318_internal" {
   description       = "Allow 4318 for e2e-tests-tempo"
 
   depends_on = [module.eks]
-}
-
-# Cleanup lingering ENIs
-resource "null_resource" "cleanup_enis" {
-  triggers = {
-    vpc_id = module.vpc.vpc_id
-  }
-
-  provisioner "local-exec" {
-    when    = destroy
-    command = <<EOT
-      aws ec2 describe-network-interfaces --filters Name=vpc-id,Values=${self.triggers.vpc_id} --region ${var.region} --query 'NetworkInterfaces[].NetworkInterfaceId' --output text | xargs -n 1 -I {} aws ec2 delete-network-interface --network-interface-id {} --region ${var.region} || true
-    EOT
-  }
-
-  depends_on = [module.eks, aws_vpc_endpoint.eks_api]
-}
-
-# Cleanup NAT Gateway and Elastic IP
-resource "null_resource" "nat_gateway_cleanup" {
-  triggers = {
-    nat_gateway_id = module.vpc.natgw_ids[0]
-  }
-
-  provisioner "local-exec" {
-    when    = destroy
-    command = <<EOT
-      aws ec2 delete-nat-gateway --nat-gateway-id ${self.triggers.nat_gateway_id} --region ${var.region}
-      aws ec2 wait nat-gateway-deleted --nat-gateway-ids ${self.triggers.nat_gateway_id} --region ${var.region} || true
-      aws ec2 describe-addresses --filters Name=tag:aws:cloudformation:logical-id,Values=NatGateway --region ${var.region} --query 'Addresses[].AllocationId' --output text | xargs -n 1 aws ec2 release-address --allocation-id --region ${var.region} || true
-    EOT
-  }
-
-  depends_on = [module.vpc]
 }
