@@ -31,7 +31,7 @@ var AllProfiles = []profile.Profile{
 	instrumentation.LegacyDotNetProfile,
 	instrumentation.MountMethodK8sHostPathProfile,
 	instrumentation.MountMethodK8sVirtualDevice,
-	instrumentation.LoaderFallbackToPodManifestEnvVarInjection,
+	instrumentation.PodManifestEnvVarInjection,
 	instrumentation.DisableGinProfile,
 
 	pipeline.SmallBatchesProfile,
