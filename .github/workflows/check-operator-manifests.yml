@@ -19,7 +19,7 @@ jobs:
       - name: Check operator manifests are up to date
         run: |
           cd operator
-          GOFLAGS="-tags=embed_manifests" USE_IMAGE_DIGESTS=true make generate manifests
+          USE_IMAGE_DIGESTS=true make generate manifests
           
           # Check if there are any changes
           if ! git diff --quiet; then
