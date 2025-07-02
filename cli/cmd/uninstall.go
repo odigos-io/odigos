@@ -116,12 +116,18 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 					os.Exit(1)
 				}
 				if IsOdigosHelmInstallation(odigosDeployment) {
-					// PATCH: Currently, the odigos-configuration resource has a Helm hook annotation,
-					// so it is not managed by Helm (i.e., it lacks Helm metadata labels).
-					// As a result, running `helm uninstall` does not delete this object
-					// (or the corresponding effective-config).
-					// As a workaround, we explicitly delete it here, and let helm delete all other resources.
-					uninstallOdigosConfiguration(ctx, client, ns)
+					// MIGRATION: In older versions of Odigos, a legacy ConfigMap named "odigos-config" was used.
+					// It has since been replaced by "odigos-configuration", which is Helm-managed and does not include hook annotations.
+					// As part of the migration, we explicitly delete the legacy ConfigMap if it still exists.
+					_, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLegacyConfigName, metav1.GetOptions{})
+					if err != nil {
+						err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.consts.OdigosLegacyConfigName, metav1.DeleteOptions{})
+						if err != nil {
+							fmt.Errorf("failed to delete legacy Odigos config ConfigMap %s in namespace %s: %w", consts.consts.OdigosLegacyConfigName, ns, err)
+							os.Exit(1)
+						}
+						fmt.Printf("Deleted legacy Odigos config ConfigMap %s in namespace %s\n", consts.consts.OdigosLegacyConfigName, ns)
+					}
 					fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources and odigos configuration ConfigMap successfuly\n")
 					return
 				}
@@ -819,16 +825,6 @@ func uninstallSecrets(ctx context.Context, client *kube.Client, ns, _ string) er
 func uninstallNamespace(ctx context.Context, client *kube.Client, ns, _ string) error {
 	err := client.CoreV1().Namespaces().Delete(ctx, ns, metav1.DeleteOptions{})
 	return err
-}
-
-func uninstallOdigosConfiguration(ctx context.Context, client *kube.Client, ns string) error {
-	err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosConfigurationName, metav1.DeleteOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to delete Odigos configuration ConfigMap %s in namespace %s: %w", consts.OdigosConfigurationName, ns, err)
-	}
-
-	fmt.Printf("Deleted Odigos configuration ConfigMap %s in namespace %s\n", consts.OdigosConfigurationName, ns)
-	return nil
 }
 
 func IsOdigosHelmInstallation(cm *v1.ConfigMap) bool {
