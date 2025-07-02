@@ -348,15 +348,6 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 	return updated
 }
 
-func removeLdPreloadFromEnvs(envs []odigosv1.EnvVar) []odigosv1.EnvVar {
-	for i := range envs {
-		if envs[i].Name == consts.LdPreloadEnvVarName {
-			return append(envs[:i], envs[i+1:]...)
-		}
-	}
-	return envs
-}
-
 func mergeLdPreloadEnvVars(
 	newEnvs []odigosv1.EnvVar,
 	existingEnvs []odigosv1.EnvVar,
@@ -385,9 +376,14 @@ func mergeLdPreloadEnvVars(
 	}
 
 	if !newHasLdPreload && existingHasLdPreload {
-		// New LD_PRELOAD is not set, remove it from the existing envs.
-		envsWithoutLdPreload := removeLdPreloadFromEnvs(existingEnvs)
-		return envsWithoutLdPreload, true
+		// at this point, if we have an existing LD_PRELOAD, we never remove it.
+		// this is to prevent loops where the value jitters and we end up
+		// enabling and disabling the agent and causing a lot of noise and rollout.
+		// the downside is that if a user has LD_PRELOAD and removes it,
+		// odigos will falsly show this as if LD_PRELOAD is still set.
+		// in this case, user currently has no other way then to uninstrument and re-instrument.
+		// TODO: this is a bad UX to the user, consider how to update this value live.
+		return existingEnvs, true
 	}
 
 	// At this point, we have no new nor existing LD_PRELOAD, so nothing to do.

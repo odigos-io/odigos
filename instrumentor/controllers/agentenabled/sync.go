@@ -284,6 +284,9 @@ func getEnabledSignalsForContainer(nodeCollectorsGroup *odigosv1.CollectorsGroup
 }
 
 func getEnvVarFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContainer, envVarName string) (string, bool) {
+	// here we check for the value of LD_PRELOAD in the EnvVars list,
+	// which returns the env as read from /proc to make sure if there is any value set,
+	// via any mechanism (manifest, device, script, other agent, etc.) then we are aware.
 	for _, envVar := range runtimeDetails.EnvVars {
 		if envVar.Name == envVarName {
 			return envVar.Value, true
