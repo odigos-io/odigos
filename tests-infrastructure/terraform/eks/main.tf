@@ -33,6 +33,8 @@ module "vpc" {
   private_subnet_tags = {
     "kubernetes.io/role/internal-elb" = 1
   }
+
+  depends_on = [aws_vpc_endpoint.eks_api]
 }
 
 module "eks" {
@@ -49,8 +51,6 @@ module "eks" {
 
   enable_cluster_creator_admin_permissions = true
 
-  force_destroy  = true
-
   eks_managed_node_group_defaults = {
     ami_type = "AL2_x86_64"
   }
@@ -62,17 +62,17 @@ module "eks" {
       min_size       = var.node_count
       max_size       = var.node_count
       desired_size   = var.node_count
-      force_destroy = true
+      force_destroy  = true
     }
   }
 }
 
 resource "aws_vpc_endpoint" "eks_api" {
-  vpc_id            = module.vpc.vpc_id
-  service_name      = "com.amazonaws.${var.region}.eks"
-  vpc_endpoint_type = "Interface"
-  subnet_ids        = module.vpc.private_subnets
-  security_group_ids = [aws_security_group.eks_api_sg.id]
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${var.region}.eks"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [aws_security_group.eks_api_sg.id]
   private_dns_enabled = true
 
   depends_on = [module.eks]
