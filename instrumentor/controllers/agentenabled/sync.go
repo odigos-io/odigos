@@ -4,12 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
 	distroTypes "github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
@@ -280,6 +283,18 @@ func getEnabledSignalsForContainer(nodeCollectorsGroup *odigosv1.CollectorsGroup
 	return tracesEnabled, metricsEnabled, logsEnabled
 }
 
+func getEnvVarFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContainer, envVarName string) (string, bool) {
+	// here we check for the value of LD_PRELOAD in the EnvVars list,
+	// which returns the env as read from /proc to make sure if there is any value set,
+	// via any mechanism (manifest, device, script, other agent, etc.) then we are aware.
+	for _, envVar := range runtimeDetails.EnvVars {
+		if envVar.Name == envVarName {
+			return envVar.Value, true
+		}
+	}
+	return "", false
+}
+
 func calculateContainerInstrumentationConfig(containerName string,
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
@@ -372,6 +387,37 @@ func calculateContainerInstrumentationConfig(containerName string,
 			AgentEnabled:        false,
 			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoCollectedSignals,
 			AgentEnabledMessage: "all signals are disabled, no agent will be injected",
+		}
+	}
+
+	// check for injection method based on the distro and runtime details
+	containsAppendEnvVar := len(distro.EnvironmentVariables.AppendOdigosVariables) > 0
+	ldPreloadInjectionSupported := distro.RuntimeAgent != nil && distro.RuntimeAgent.LdPreloadInjectionSupported
+	if containsAppendEnvVar && ldPreloadInjectionSupported &&
+		(effectiveConfig.AgentEnvVarsInjectionMethod != nil && *effectiveConfig.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod) {
+
+		// check for conditions to inject ldpreload when it is the only method configured.
+		secureExecution := runtimeDetails.SecureExecutionMode == nil || *runtimeDetails.SecureExecutionMode
+		if secureExecution {
+			return odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+				AgentEnabledMessage: "container is running in secure execution mode and injection method is set to 'loader'",
+			}
+		}
+
+		// check if the LD_PRELOAD env var is not already present in the manifest and the runtime details env var is not set or set to the odigos loader path.
+		odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
+		ldPreloadValue, foundInInspection := getEnvVarFromRuntimeDetails(runtimeDetails, "LD_PRELOAD")
+		ldPreloadUnsetOrExpected := !foundInInspection || strings.Contains(ldPreloadValue, odigosLoaderPath)
+		if !ldPreloadUnsetOrExpected {
+			return odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+				AgentEnabledMessage: "container is already using LD_PRELOAD env var, and injection method is set to 'loader'. current value: " + ldPreloadValue,
+			}
 		}
 	}
 

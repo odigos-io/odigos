@@ -111,6 +111,9 @@ type RuntimeAgent struct {
 	// This list contains the full path of the files that need to be opened for the agent to properly start.
 	// All these paths must be contained in one of the directoryNames.
 	FileOpenTriggers []string `yaml:"fileOpenTriggers,omitempty"`
+
+	// If true, the agent supports ld-preload injection of "append" environment variables.
+	LdPreloadInjectionSupported bool `yaml:"ldPreloadInjectionSupported,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
