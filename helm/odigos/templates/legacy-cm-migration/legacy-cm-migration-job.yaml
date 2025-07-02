@@ -10,10 +10,11 @@ spec:
   ttlSecondsAfterFinished: 60
   template:
     spec:
+      serviceAccountName: migration-sa
       restartPolicy: Never
       containers:
         - name: cleanup
-          image: bitnami/kubectl:latest
+          image: bitnami/kubectl:1.28.2
           command:
             - /bin/sh
             - -c
