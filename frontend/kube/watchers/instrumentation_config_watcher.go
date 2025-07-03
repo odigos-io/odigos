@@ -89,28 +89,26 @@ func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.I
 }
 
 func handleAddedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConfig) {
-	namespace := instruConfig.Namespace
-	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instruConfig.Name)
+	pw, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instruConfig.Name, instruConfig.Namespace)
 	if err != nil {
 		genericErrorMessage(sse.MessageEventAdded, consts.InstrumentationConfig, err.Error())
 		return
 	}
 
-	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
-	data := fmt.Sprintf(`Successfully created "%s" source`, name)
+	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", pw.Namespace, pw.Name, pw.Kind)
+	data := fmt.Sprintf(`Successfully created "%s" source`, pw.Name)
 	instrumentationConfigAddedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
 
 func handleModifiedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConfig) {
-	namespace := instruConfig.Namespace
-	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instruConfig.Name)
+	pw, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instruConfig.Name, instruConfig.Namespace)
 	if err != nil {
 		genericErrorMessage(sse.MessageEventModified, consts.InstrumentationConfig, err.Error())
 		return
 	}
 
-	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
-	data := fmt.Sprintf(`Successfully updated "%s" source`, name)
+	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", pw.Namespace, pw.Name, pw.Kind)
+	data := fmt.Sprintf(`Successfully updated "%s" source`, pw.Name)
 
 	// We have to ensure that the event is always an individual event - no batching.
 	// We need to do this because we have to get an event with the target ID, which is not possible with batching.
@@ -125,14 +123,13 @@ func handleModifiedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationC
 }
 
 func handleDeletedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConfig) {
-	namespace := instruConfig.Namespace
-	name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instruConfig.Name)
+	pw, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(instruConfig.Name, instruConfig.Namespace)
 	if err != nil {
 		genericErrorMessage(sse.MessageEventDeleted, consts.InstrumentationConfig, err.Error())
 		return
 	}
 
-	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", namespace, name, kind)
-	data := fmt.Sprintf(`Successfully deleted "%s" source`, name)
+	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", pw.Namespace, pw.Name, pw.Kind)
+	data := fmt.Sprintf(`Successfully deleted "%s" source`, pw.Name)
 	instrumentationConfigDeletedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }

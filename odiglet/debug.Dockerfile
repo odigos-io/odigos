@@ -70,17 +70,19 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
-    mv linux-$ARCH_SUFFIX linux-glibc-$ARCH_SUFFIX && \
+    mv linux-$ARCH_SUFFIX linux-glibc
+RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
-    unzip opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip "linux-musl-$ARCH_SUFFIX/*" -d . && \
-    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip
+    unzip -o opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    mv linux-musl-$ARCH_SUFFIX linux-musl
 
 # TODO(edenfed): Currently .NET Automatic instrumentation does not work on dotnet 6.0 with glibc,
 # This is due to compilation of the .so file on a newer version of glibc than the one used by the dotnet runtime.
 # The following override the .so file with our own which is compiled on the same glibc version as the dotnet runtime.
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
-    mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
+    mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc/OpenTelemetry.AutoInstrumentation.Native.so
 
 
 # PHP
@@ -98,6 +100,27 @@ RUN git clone https://github.com/odigos-io/opentelemetry-php \
 RUN for v in ${PHP_VERSIONS}; do \
     mv opentelemetry-php/$v/bin/${TARGETARCH}/* opentelemetry-php/$v/; \
     rm -rf opentelemetry-php/$v/bin; \
+    done
+
+
+# Ruby
+FROM --platform=$BUILDPLATFORM maniator/gh AS ruby-agents
+WORKDIR /ruby-agents
+ARG TARGETARCH
+ARG RUBY_AGENT_VERSION="v0.0.5"
+ARG RUBY_VERSIONS="3.1 3.2 3.3 3.4"
+ENV RUBY_VERSIONS=${RUBY_VERSIONS}
+# Clone agents repo (contains pre-compiled binaries, and pre-installed dependencies for each Ruby version)
+RUN git clone https://github.com/odigos-io/opentelemetry-ruby \
+    && cd opentelemetry-ruby \
+    && git checkout tags/${RUBY_AGENT_VERSION}
+# Move the gems & binaries to the correct directories
+RUN for v in ${RUBY_VERSIONS}; do \
+    mv opentelemetry-ruby/$v/${TARGETARCH}/* opentelemetry-ruby/$v/; \
+    cp opentelemetry-ruby/Gemfile opentelemetry-ruby/$v/Gemfile; \
+    cp opentelemetry-ruby/index.rb opentelemetry-ruby/$v/index.rb; \
+    rm -rf opentelemetry-ruby/$v/amd64; \
+    rm -rf opentelemetry-ruby/$v/arm64; \
     done
 
 
@@ -146,8 +169,14 @@ COPY --from=php-agents /php-agents/opentelemetry-php/8.2 /instrumentations/php/8
 COPY --from=php-agents /php-agents/opentelemetry-php/8.3 /instrumentations/php/8.3
 COPY --from=php-agents /php-agents/opentelemetry-php/8.4 /instrumentations/php/8.4
 
+# Ruby
+COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.1 /instrumentations/ruby/3.1
+COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.2 /instrumentations/ruby/3.2
+COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.3 /instrumentations/ruby/3.3
+COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.4 /instrumentations/ruby/3.4
+
 # loader
-ARG ODIGOS_LOADER_VERSION=v0.0.3
+ARG ODIGOS_LOADER_VERSION=v0.0.4
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
 FROM registry.fedoraproject.org/fedora-minimal:38

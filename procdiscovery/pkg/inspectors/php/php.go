@@ -5,8 +5,6 @@ import (
 	"debug/elf"
 	"regexp"
 
-	"path/filepath"
-
 	"github.com/hashicorp/go-version"
 
 	"github.com/odigos-io/odigos/common"
@@ -23,9 +21,7 @@ var (
 )
 
 func (n *PhpInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	baseExe := filepath.Base(pcx.ExePath)
-
-	if utils.IsBaseExeContainsProcessName(baseExe, processNames) {
+	if utils.IsProcessEqualProcessNames(pcx, processNames) {
 		return common.PhpProgrammingLanguage, true
 	}
 

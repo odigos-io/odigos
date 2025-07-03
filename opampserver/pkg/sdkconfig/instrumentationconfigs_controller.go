@@ -3,13 +3,13 @@ package sdkconfig
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 type InstrumentationConfigReconciler struct {
@@ -23,23 +23,16 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	err := i.Get(ctx, req.NamespacedName, instrumentationConfig)
 
 	if err != nil {
+		// TODO: signal the agent to stop collection?
+		// it should be restarted after some time, but until then it can be nice to have it disabled
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name)
+	podWorkload, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name, req.Namespace)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
-	podWorkload := k8sconsts.PodWorkload{
-		Namespace: req.Namespace,
-		Kind:      k8sconsts.WorkloadKind(workloadKind),
-		Name:      workloadName,
-	}
-
-	for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
-		i.ConnectionCache.UpdateWorkloadRemoteConfig(podWorkload, &sdkConfig)
-	}
+	i.ConnectionCache.UpdateWorkloadRemoteConfig(podWorkload, instrumentationConfig.Spec.SdkConfigs, instrumentationConfig.Spec.Containers)
 
 	return ctrl.Result{}, nil
 }
@@ -48,5 +41,6 @@ func (i *InstrumentationConfigReconciler) SetupWithManager(mgr ctrl.Manager) err
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("opampserver-instrumentationconfig").
 		For(&odigosv1.InstrumentationConfig{}).
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(i)
 }

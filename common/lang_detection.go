@@ -12,7 +12,7 @@ type ProgramLanguageDetails struct {
 	RuntimeVersion *version.Version
 }
 
-// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;ruby;rust;mysql;nginx;redis;postgres;unknown;ignored
+// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;ruby;rust;cplusplus;mysql;nginx;redis;postgres;unknown;ignored
 type ProgrammingLanguage string
 
 const (
@@ -24,6 +24,10 @@ const (
 	PhpProgrammingLanguage        ProgrammingLanguage = "php"
 	RubyProgrammingLanguage       ProgrammingLanguage = "ruby"
 	RustProgrammingLanguage       ProgrammingLanguage = "rust"
+	CPlusPlusProgrammingLanguage  ProgrammingLanguage = "cplusplus"
+	CSharpProgrammingLanguage     ProgrammingLanguage = "csharp"
+	SwiftProgrammingLanguage      ProgrammingLanguage = "swift"
+	ElixirProgrammingLanguage     ProgrammingLanguage = "elixir"
 	// This is an experimental feature, It is not a language
 	// but in order to avoid huge refactoring we are adding it here for now
 	MySQLProgrammingLanguage    ProgrammingLanguage = "mysql"
@@ -55,11 +59,11 @@ func GetVersion(versionString string) *version.Version {
 	return runtimeVersion
 }
 
-func MajorMinorStringOnly(v *version.Version) string {
+func MajorMinorStringOnly(v *version.Version) (string, error) {
 	segments := v.Segments()
 	if len(segments) < 2 {
 		// fallback for malformed versions
-		return v.String()
+		return "", fmt.Errorf("version %s has less than 2 segments", v.String())
 	}
-	return fmt.Sprintf("%d.%d", segments[0], segments[1])
+	return fmt.Sprintf("%d.%d", segments[0], segments[1]), nil
 }
