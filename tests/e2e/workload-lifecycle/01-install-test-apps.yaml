@@ -486,6 +486,45 @@ spec:
   ports:
     - protocol: TCP
       port: 3000
+---      
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-unique-exec
+  namespace: default
+  labels:
+    app: java-unique-exec
+spec:
+  selector:
+    matchLabels:
+      app: java-unique-exec
+  template:
+    metadata:
+      labels:
+        app: java-unique-exec
+    spec:
+      containers:
+        - name: java-unique-exec
+          image: public.ecr.aws/odigos/java-unique-exec:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-unique-exec
+  namespace: default
+spec:
+  selector:
+    app: java-unique-exec
+  ports:
+    - protocol: TCP
+      port: 3000
 ---
 kind: Deployment
 apiVersion: apps/v1
