@@ -120,7 +120,7 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 					// It has since been replaced by "odigos-configuration", which is Helm-managed and does not include hook annotations.
 					// As part of the migration, we explicitly delete the legacy ConfigMap if it still exists.
 					_, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLegacyConfigName, metav1.GetOptions{})
-					if err != nil && !apierrors.IsNotFound(err) {
+					if err != nil {
 						err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosLegacyConfigName, metav1.DeleteOptions{})
 						if err != nil {
 							fmt.Errorf("failed to delete legacy Odigos config ConfigMap %s in namespace %s: %w", consts.OdigosLegacyConfigName, ns, err)
