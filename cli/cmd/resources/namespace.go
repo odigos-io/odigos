@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/odigos-io/odigos/common/consts"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,7 +31,7 @@ func GetOdigosNamespace(client *kube.Client, ctx context.Context) (string, error
 		}),
 		FieldSelector: fmt.Sprintf("metadata.name=%s", consts.OdigosConfigurationName),
 	})
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return "", err
 	}
 
@@ -42,12 +43,9 @@ func GetOdigosNamespace(client *kube.Client, ctx context.Context) (string, error
 			}),
 			FieldSelector: fmt.Sprintf("metadata.name=%s", consts.OdigosLegacyConfigName),
 		})
-	} else if err != nil {
-		return "", err
-	}
-
-	if len(configMap.Items) == 0 {
-		return "", errNoOdigosNamespaceFound
+		if err != nil || len(configMap.Items) == 0 {
+			return "", errNoOdigosNamespaceFound
+		}
 	} else if len(configMap.Items) != 1 {
 		return "", fmt.Errorf("expected to get 1 namespace got %d", len(configMap.Items))
 	}
