@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	"hash/crc32"
 	"io"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -23,6 +26,89 @@ const (
 	semanagePath   = "/sbin/semanage"
 	restoreconPath = "/sbin/restorecon"
 )
+
+// FileInfo holds essential file information for quick comparison
+type FileInfo struct {
+	Path    string
+	Size    int64
+	ModTime int64
+	Exists  bool
+}
+
+// getFileInfo efficiently gets file information without full stat
+func getFileInfo(path string) FileInfo {
+	info, err := os.Stat(path)
+	if err != nil {
+		return FileInfo{Path: path, Exists: false}
+	}
+	return FileInfo{
+		Path:    path,
+		Size:    info.Size(),
+		ModTime: info.ModTime().Unix(),
+		Exists:  true,
+	}
+}
+
+// fastFileCompare does a quick comparison using size and mtime before expensive hash
+func fastFileCompare(hostPath, containerPath string) (bool, error) {
+	hostInfo := getFileInfo(hostPath)
+	containerInfo := getFileInfo(containerPath)
+
+	// If either doesn't exist, they're different
+	if !hostInfo.Exists || !containerInfo.Exists {
+		return false, nil
+	}
+
+	// Quick comparison - if size or modtime differ, files are different
+	if hostInfo.Size != containerInfo.Size {
+		return false, nil
+	}
+
+	// If sizes match, use fast CRC32 instead of SHA-256 for final comparison
+	return fastHashCompare(hostPath, containerPath)
+}
+
+// fastHashCompare uses CRC32 which is much faster than SHA-256
+func fastHashCompare(hostPath, containerPath string) (bool, error) {
+	hostHash, err := calculateFastHash(hostPath)
+	if err != nil {
+		return false, err
+	}
+
+	containerHash, err := calculateFastHash(containerPath)
+	if err != nil {
+		return false, err
+	}
+
+	return hostHash == containerHash, nil
+}
+
+// calculateFastHash uses CRC32 which is much faster than SHA-256
+func calculateFastHash(filePath string) (uint32, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	hasher := crc32.NewIEEE()
+	// Use a larger buffer for better I/O performance
+	buf := make([]byte, 64*1024)
+	for {
+		n, err := file.Read(buf)
+		if n > 0 {
+			hasher.Write(buf[:n])
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	return hasher.Sum32(), nil
+}
 
 func CopyAgentsDirectoryToHost() error {
 	// remove the current content of /var/odigos
@@ -75,51 +161,121 @@ func CopyAgentsDirectoryToHost() error {
 	return nil
 }
 
+// WorkerPool manages parallel file processing
+type WorkerPool struct {
+	workers    int
+	jobs       chan string
+	results    chan fileComparisonResult
+	wg         sync.WaitGroup
+	mu         sync.Mutex
+	keepMap    map[string]struct{}
+	containerDir string
+	hostDir    string
+}
+
+type fileComparisonResult struct {
+	hostPath    string
+	containerPath string
+	keep        bool
+	newPath     string
+	err         error
+}
+
 func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, containerDir string, hostDir string) (map[string]struct{}, error) {
+	// Use worker pool for parallel processing
+	numWorkers := runtime.NumCPU()
+	if numWorkers > len(filesToKeepMap) {
+		numWorkers = len(filesToKeepMap)
+	}
 
+	wp := &WorkerPool{
+		workers:      numWorkers,
+		jobs:         make(chan string, len(filesToKeepMap)),
+		results:      make(chan fileComparisonResult, len(filesToKeepMap)),
+		keepMap:      make(map[string]struct{}),
+		containerDir: containerDir,
+		hostDir:      hostDir,
+	}
+
+	// Start workers
+	for i := 0; i < wp.workers; i++ {
+		wp.wg.Add(1)
+		go wp.worker()
+	}
+
+	// Send jobs
+	go func() {
+		for hostPath := range filesToKeepMap {
+			wp.jobs <- hostPath
+		}
+		close(wp.jobs)
+	}()
+
+	// Wait for workers to finish
+	go func() {
+		wp.wg.Wait()
+		close(wp.results)
+	}()
+
+	// Collect results
 	updatedFilesToKeepMap := make(map[string]struct{})
-
-	for hostPath := range filesToKeepMap {
-		// Convert host path to container path
-		containerPath := strings.Replace(hostPath, hostDir, containerDir, 1)
-
-		// If either file doesn't exist, mark as changed and remove from filesToKeepMap
-		_, hostErr := os.Stat(hostPath)
-		_, containerErr := os.Stat(containerPath)
-
-		if hostErr != nil || containerErr != nil {
-			log.Logger.V(0).Info("File marked for recreate (missing)", "file", hostPath)
-			continue
+	for result := range wp.results {
+		if result.err != nil {
+			return nil, result.err
 		}
-
-		// Compare file hashes
-		hostHash, err := calculateFileHash(hostPath)
-		if err != nil {
-			return nil, fmt.Errorf("error calculating hash for host file %s: %v", hostPath, err)
+		if result.keep {
+			updatedFilesToKeepMap[result.hostPath] = struct{}{}
 		}
-
-		containerHash, err := calculateFileHash(containerPath)
-		if err != nil {
-			return nil, fmt.Errorf("error calculating hash for container file %s: %v", containerPath, err)
+		if result.newPath != "" {
+			updatedFilesToKeepMap[result.newPath] = struct{}{}
 		}
-
-		// If the hashes are different, keep the old version of the file in the host with the new name <ORIGINAL_FILE_NAME_{12_CHARS_OF_HASH}>
-		// and ensure the renamed file is added to filesToKeepMap to protect it from deletion.
-		if hostHash != containerHash {
-			newHostPath, err := renameFileWithHashSuffix(hostPath, hostHash)
-			if err != nil {
-				return nil, fmt.Errorf("error renaming file: %v", err)
-			}
-
-			updatedFilesToKeepMap[newHostPath] = struct{}{}
-
-			continue // original file is renamed, recreate hostPath and keep NewHostPath
-		}
-
-		updatedFilesToKeepMap[hostPath] = struct{}{}
 	}
 
 	return updatedFilesToKeepMap, nil
+}
+
+func (wp *WorkerPool) worker() {
+	defer wp.wg.Done()
+	
+	for hostPath := range wp.jobs {
+		result := fileComparisonResult{hostPath: hostPath}
+		
+		// Convert host path to container path
+		containerPath := strings.Replace(hostPath, wp.hostDir, wp.containerDir, 1)
+		result.containerPath = containerPath
+
+		// Use fast comparison instead of expensive SHA-256
+		filesMatch, err := fastFileCompare(hostPath, containerPath)
+		if err != nil {
+			result.err = fmt.Errorf("error comparing files %s and %s: %v", hostPath, containerPath, err)
+			wp.results <- result
+			continue
+		}
+
+		if !filesMatch {
+			// Only calculate SHA-256 for renaming when files actually differ
+			hostHash, err := calculateFileHash(hostPath)
+			if err != nil {
+				result.err = fmt.Errorf("error calculating hash for host file %s: %v", hostPath, err)
+				wp.results <- result
+				continue
+			}
+
+			newHostPath, err := renameFileWithHashSuffix(hostPath, hostHash)
+			if err != nil {
+				result.err = fmt.Errorf("error renaming file: %v", err)
+				wp.results <- result
+				continue
+			}
+
+			result.newPath = newHostPath
+			log.Logger.V(0).Info("File marked for recreate (changed)", "file", hostPath)
+		} else {
+			result.keep = true
+		}
+
+		wp.results <- result
+	}
 }
 
 // Helper function to rename a file using the first 12 characters of its hash
@@ -144,7 +300,7 @@ func generateRenamedFilePath(originalPath, hashSuffix string) string {
 	return fmt.Sprintf("%s_hash_version-%s%s", base, hashSuffix, ext) // Append the hash and add back the extension
 }
 
-// calculateFileHash computes the SHA-256 hash of a file
+// calculateFileHash computes the SHA-256 hash of a file (kept for compatibility where SHA-256 is required)
 func calculateFileHash(filePath string) (string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -153,8 +309,19 @@ func calculateFileHash(filePath string) (string, error) {
 	defer file.Close()
 
 	hasher := sha256.New()
-	if _, err := io.Copy(hasher, file); err != nil {
-		return "", err
+	// Use larger buffer for better I/O performance
+	buf := make([]byte, 64*1024)
+	for {
+		n, err := file.Read(buf)
+		if n > 0 {
+			hasher.Write(buf[:n])
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil

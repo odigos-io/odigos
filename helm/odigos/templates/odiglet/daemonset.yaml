@@ -56,6 +56,10 @@ spec:
             capabilities:
               add:
                 - SYS_PTRACE
+          {{- if .Values.odiglet.initContainerResources }}
+          resources:
+{{ toYaml .Values.odiglet.initContainerResources | indent 12 }}
+          {{- end }}
           env:
             - name: NODE_NAME
               valueFrom:
