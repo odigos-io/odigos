@@ -250,8 +250,8 @@ var centralCmd = &cobra.Command{
 }
 
 var (
-	keycloakAdminUser     string
-	keycloakAdminPassword string
+	centralAdminUser     string
+	centralAdminPassword string
 )
 
 var centralInstallCmd = &cobra.Command{
@@ -372,8 +372,8 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 	}
 	config := resources.CentralManagersConfig{
 		Keycloak: centralodigos.KeycloakConfig{
-			AdminUsername: keycloakAdminUser,
-			AdminPassword: keycloakAdminPassword,
+			AdminUsername: centralAdminUser,
+			AdminPassword: centralAdminPassword,
 		},
 	}
 	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag, config)
@@ -487,10 +487,10 @@ func init() {
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
 
-	// Keycloak configuration flags
-	centralInstallCmd.Flags().StringVar(&keycloakAdminUser, "keycloak-admin-user", "admin", "Keycloak admin username")
-	centralInstallCmd.Flags().StringVar(&keycloakAdminPassword, "keycloak-admin-password", "", "Keycloak admin password")
-	centralInstallCmd.MarkFlagRequired("keycloak-admin-password")
+	// Central configuration flags
+	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
+	centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password")
+	centralInstallCmd.MarkFlagRequired("central-admin-password")
 	centralCmd.AddCommand(portForwardCentralCmd)
 	// migrate subcommand
 	proCmd.AddCommand(activateCmd)
