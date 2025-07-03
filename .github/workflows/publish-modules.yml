@@ -58,7 +58,7 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
           PR_LINKS: ${{ steps.verify.outputs.links }}
         run: |
-          pr_links_formatted=$(echo "$PR_LINKS" | jq -r '.[]' | awk '{print "- " $0}' | tr '\n' '\n')
+          pr_links_formatted=$(echo "$PR_LINKS" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
           curl -X POST -H 'Content-type: application/json' --data "{
             \"description\": \"❌ ERROR: Open offset PRs found in \`${{ matrix.repo }}\`\n\n$pr_links_formatted\",
             \"link\": \"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}\",
@@ -113,7 +113,7 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
           PR_LINKS: ${{ steps.verify.outputs.links }}
         run: |
-          pr_links_formatted=$(echo "$PR_LINKS" | jq -r '.[]' | awk '{print "- " $0}' | tr '\n' '\n')
+          pr_links_formatted=$(echo "$PR_LINKS" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
           curl -X POST -H 'Content-type: application/json' --data "{
             \"description\": \"❌ ERROR: Open depenencies-syncer-bot PRs found in \`${{ matrix.repo }}\`\n\n$pr_links_formatted\",
             \"link\": \"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}\",
@@ -168,7 +168,7 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
           PR_LINKS: ${{ steps.verify.outputs.links }}
         run: |
-          pr_links_formatted=$(echo "$PR_LINKS" | jq -r '.[]' | awk '{print "- " $0}' | tr '\n' '\n')
+          pr_links_formatted=$(echo "$PR_LINKS" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
           curl -X POST -H 'Content-type: application/json' --data "{
             \"description\": \"❌ ERROR: Open release-blocker PRs found in \`${{ matrix.repo }}\`\n\n$pr_links_formatted\",
             \"link\": \"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}\",
