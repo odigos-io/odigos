@@ -347,6 +347,17 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 										},
 									},
 								},
+								{
+									Name: consts.OdigosTierEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
+										},
+									},
+								},
 							}, optionalEnvs...),
 							EnvFrom: []corev1.EnvFromSource{
 								{
