@@ -324,7 +324,7 @@ spec:
   template:
     spec:
       containers:
-        - image: java-unique-exec:v0.0.1
+        - image: public.ecr.aws/odigos/java-unique-exec:v0.0.1
           name: java-unique-exec
 status:
   availableReplicas: 1
