@@ -52,6 +52,20 @@ const (
 )
 
 const (
+	KeycloakResourceManagerName = "Keycloak"
+	KeycloakAppName             = "keycloak"
+	KeycloakDeploymentName      = "keycloak"
+	KeycloakServiceName         = "keycloak"
+	KeycloakContainerName       = "keycloak"
+	KeycloakImage               = "quay.io/keycloak/keycloak:24.0.3"
+	KeycloakPort                = 8080
+	KeycloakPortName            = "http"
+	KeycloakSecretName          = "keycloak-admin-credentials"
+	KeycloakAdminUsernameKey    = "admin-username"
+	KeycloakAdminPasswordKey    = "admin-password"
+)
+
+const (
 	OdigosSystemLabelCentralKey = "odigos.io/central-system-object"
 )
 
