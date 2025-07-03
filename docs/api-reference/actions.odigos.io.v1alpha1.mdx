@@ -1137,6 +1137,7 @@ Example: $.user.role or $.events[0].code</p>
 
 **Appears in:**
 
+- [K8sAttributesConfig](#K8sAttributesConfig)
 - [K8sAttributesSpec](#K8sAttributesSpec)
 
 <table class="table">
@@ -1166,6 +1167,97 @@ e.g. &quot;kubectl.kubernetes.io/restartedAt&quot;</p>
 <td>
    <p>The attribute key to be used for the resource attribute created from the label.
 e.g. &quot;kubectl.kubernetes.restartedAte&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `K8sAttributesConfig` <a id="K8sAttributesConfig"></a>
+    
+
+**Appears in:**
+
+- [ActionSpec](#odigos-io-v1alpha1-ActionSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>collectContainerAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the following container related attributes:
+k8s.container.name
+container.id
+container.image.name
+container.image.tag</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectReplicaSetAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>collect replicaset related attributes (when relevant, e.g. for deployments):
+k8s.replicaset.name
+if CollectWorkloadUID is set, also collect:
+k8s.replicaset.uid</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectWorkloadUID</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the following workload UID attributes:
+k8s.deployment.uid
+k8s.daemonset.uid
+k8s.statefulset.uid</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectClusterUID</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the k8s.cluster.uid attribute, which is set to the uid of the namespace &quot;kube-system&quot;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>labelsAttributes</code>
+</td>
+<td>
+<a href="#K8sLabelAttribute"><code>[]K8sLabelAttribute</code></a>
+</td>
+<td>
+   <p>list of labels to be extracted from the pod, and the attribute key to be used for the resource attribute created from each label.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>annotationsAttributes</code>
+</td>
+<td>
+<a href="#K8sAnnotationAttribute"><code>[]K8sAnnotationAttribute</code></a>
+</td>
+<td>
+   <p>list of annotations to be extracted from the pod, and the attribute key to be used for the resource attribute created from each annotation.</p>
 </td>
 </tr>
 </tbody>
@@ -1340,6 +1432,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 
 **Appears in:**
 
+- [K8sAttributesConfig](#K8sAttributesConfig)
 - [K8sAttributesSpec](#K8sAttributesSpec)
 
 <table class="table">
