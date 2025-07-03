@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/distros/distro"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -50,7 +51,7 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 		return nil, err
 	}
 
-	mgr, err := kube.CreateManager()
+	mgr, err := kube.CreateManager(instrumentationMgrOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create controller-runtime manager %w", err)
 	}
@@ -64,6 +65,8 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 	}
 	instrumentationMgrOpts.MeterProvider = provider
 
+	appendEnvVarNames := distro.GetAppendEnvVarNames(instrumentationMgrOpts.DistributionGetter.GetAllDistros())
+
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		return nil, fmt.Errorf("unable to set up health check: %w", err)
 	}
@@ -72,17 +75,18 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 	}
 
 	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
-	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates)
+	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates, appendEnvVarNames)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ebpf manager %w", err)
 	}
 	criWrapper := criwrapper.CriClient{Logger: log.Logger}
 
 	kubeManagerOptions := kube.KubeManagerOptions{
-		Mgr:           mgr,
-		Clientset:     clientset,
-		ConfigUpdates: configUpdates,
-		CriClient:     &criWrapper,
+		Mgr:               mgr,
+		Clientset:         clientset,
+		ConfigUpdates:     configUpdates,
+		CriClient:         &criWrapper,
+		AppendEnvVarNames: appendEnvVarNames,
 	}
 
 	err = kube.SetupWithManager(kubeManagerOptions)

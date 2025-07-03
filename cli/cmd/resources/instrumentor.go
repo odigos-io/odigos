@@ -178,6 +178,11 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			{ // Read instrumentation labels from statefulsets and apply pod spec changes
+				APIGroups: []string{"batch"},
+				Resources: []string{"cronjobs"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
 			{ // Read instrumentation labels from daemonsets and apply pod spec changes
 				APIGroups: []string{"apps"},
 				Resources: []string{"daemonsets"},
@@ -197,11 +202,6 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 				APIGroups: []string{"operator.odigos.io"},
 				Resources: []string{"odigos/finalizers"},
 				Verbs:     []string{"update"},
-			},
-			{ // React to runtime detection in user workloads in all namespaces
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentedapplications"},
-				Verbs:     []string{"delete", "get", "list", "watch"},
 			},
 			{ // Update the status of the instrumentation configs after device injection
 				APIGroups: []string{"odigos.io"},
@@ -282,6 +282,9 @@ func NewInstrumentorService(ns string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.InstrumentorServiceName,
 			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.InstrumentorAppLabelValue,
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -289,6 +292,11 @@ func NewInstrumentorService(ns string) *corev1.Service {
 					Name:       "webhook-server",
 					Port:       9443,
 					TargetPort: intstr.FromInt(9443),
+				},
+				{
+					Name:       "metrics",
+					Port:       8080,
+					TargetPort: intstr.FromInt(8080),
 				},
 			},
 			Selector: map[string]string{
@@ -488,7 +496,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 	}
 	args := []string{
 		"--health-probe-bind-address=:8081",
-		"--metrics-bind-address=127.0.0.1:8080",
+		"--metrics-bind-address=0.0.0.0:8080",
 		"--leader-elect",
 	}
 

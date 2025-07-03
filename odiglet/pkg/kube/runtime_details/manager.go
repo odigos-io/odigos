@@ -2,6 +2,7 @@ package runtime_details
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
 
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
@@ -11,17 +12,28 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
-func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClient *criwrapper.CriClient) error {
+func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClient *criwrapper.CriClient, appendEnvVarNames map[string]struct{}) error {
+
+	runtimeDetectionEnvs := map[string]struct{}{
+		// LD_PRELOAD is special, and is always collected.
+		// It has special handling that does not require it to be set in the "AppendOdigosVariables" list.
+		consts.LdPreloadEnvVarName: {},
+	}
+	for envName := range appendEnvVarNames {
+		runtimeDetectionEnvs[envName] = struct{}{}
+	}
+
+	readyPred := &odigospredicate.AllContainersReadyPredicate{}
 	err := builder.
 		ControllerManagedBy(mgr).
 		Named("Odiglet-RuntimeDetails-Pods").
-		For(&corev1.Pod{}).
-		WithEventFilter(&odigospredicate.AllContainersReadyPredicate{}).
+		For(&corev1.Pod{}, builder.WithPredicates(readyPred)).
 		Complete(&PodsReconciler{
-			Client:    mgr.GetClient(),
-			Scheme:    mgr.GetScheme(),
-			Clientset: clientset,
-			CriClient: criClient,
+			Client:               mgr.GetClient(),
+			Scheme:               mgr.GetScheme(),
+			Clientset:            clientset,
+			CriClient:            criClient,
+			RuntimeDetectionEnvs: runtimeDetectionEnvs,
 		})
 	if err != nil {
 		return err
@@ -33,10 +45,11 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClie
 		For(&odigosv1.InstrumentationConfig{}).
 		WithEventFilter(&instrumentationConfigPredicate{}).
 		Complete(&InstrumentationConfigReconciler{
-			Client:    mgr.GetClient(),
-			Scheme:    mgr.GetScheme(),
-			Clientset: clientset,
-			CriClient: criClient,
+			Client:               mgr.GetClient(),
+			Scheme:               mgr.GetScheme(),
+			Clientset:            clientset,
+			CriClient:            criClient,
+			RuntimeDetectionEnvs: runtimeDetectionEnvs,
 		})
 	if err != nil {
 		return err

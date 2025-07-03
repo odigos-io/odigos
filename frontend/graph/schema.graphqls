@@ -7,6 +7,7 @@ enum K8sResourceKind {
   Deployment
   DaemonSet
   StatefulSet
+  CronJob
 }
 
 enum ConditionStatus {
@@ -55,6 +56,7 @@ enum InstrumentationRuleType {
   CodeAttributes
   HeadersCollection
   PayloadCollection
+  CustomInstrumentation
   UnknownType
 }
 
@@ -62,6 +64,7 @@ type SourceContainer {
   containerName: String!
   language: String!
   runtimeVersion: String!
+  overriden: Boolean!
   instrumented: Boolean!
   instrumentationMessage: String!
   otelDistroName: String
@@ -78,6 +81,7 @@ type Condition {
 type K8sActualNamespace {
   name: String!
   selected: Boolean!
+  dataStreamNames: [String]!
   sources: [K8sActualSource]!
 }
 
@@ -142,6 +146,7 @@ type InstrumentationRule {
   codeAttributes: CodeAttributes
   headersCollection: HeadersCollection
   payloadCollection: PayloadCollection
+  customInstrumentations: CustomInstrumentations
 }
 
 input InstrumentationRuleInput {
@@ -153,6 +158,7 @@ input InstrumentationRuleInput {
   codeAttributes: CodeAttributesInput
   headersCollection: HeadersCollectionInput
   payloadCollection: PayloadCollectionInput
+  customInstrumentations: CustomInstrumentationsInput
 }
 
 type InstrumentationLibraryGlobalId {
@@ -169,6 +175,24 @@ input InstrumentationLibraryGlobalIdInput {
 
 type HeadersCollection {
   headerKeys: [String]
+}
+
+type CustomInstrumentations {
+  probes: [Probe]
+}
+
+type Probe {
+  className: String
+  methodName: String
+}
+
+input CustomInstrumentationsInput {
+  probes: [ProbeInput]
+}
+
+input ProbeInput {
+  className: String
+  methodName: String
 }
 
 input HeadersCollectionInput {
@@ -349,11 +373,13 @@ input ExportedSignalsInput {
 }
 
 input PersistNamespaceItemInput {
-  name: String!
-  futureSelected: Boolean!
+  namespace: String!
+  selected: Boolean!
+  currentStreamName: String!
 }
 
 input PersistNamespaceSourceInput {
+  namespace: String!
   name: String!
   kind: K8sResourceKind!
   selected: Boolean!
@@ -382,8 +408,12 @@ type PipelineAction {
 }
 
 input PatchSourceRequestInput {
-  otelServiceName: String!
   currentStreamName: String!
+  otelServiceName: String
+  # for runtime override
+  containerName: String
+  language: String
+  version: String
 }
 
 interface Action {
@@ -667,6 +697,8 @@ type InstrumentationInstanceAnalyze {
 type PodContainerAnalyze {
   containerName: EntityProperty!
   actualDevices: EntityProperty!
+  started: EntityProperty
+  ready: EntityProperty
   instrumentationInstances: [InstrumentationInstanceAnalyze!]!
 }
 
@@ -674,6 +706,8 @@ type PodAnalyze {
   podName: EntityProperty!
   nodeName: EntityProperty!
   phase: EntityProperty!
+  agentInjected: EntityProperty!
+  runningLatestWorkloadRevision: EntityProperty
   containers: [PodContainerAnalyze!]!
 }
 
@@ -745,12 +779,28 @@ input DataStreamInput {
   name: String!
 }
 
+type ServiceMap {
+  services: [ServiceMapFromSource!]!
+}
+
+type ServiceMapFromSource {
+  serviceName: String!
+  services: [ServiceMapToSource!]!
+}
+
+type ServiceMapToSource {
+  serviceName: String!
+  requests: Int!
+  dateTime: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
   destinationCategories: GetDestinationCategories
   potentialDestinations: [DestinationDetails!]!
   getOverviewMetrics: OverviewMetricsResponse!
+  getServiceMap: ServiceMap!
   describeOdigos: OdigosAnalyze!
   describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
   sourceConditions: [SourceConditions!]!
@@ -758,8 +808,8 @@ type Query {
 
 type Mutation {
   updateApiToken(token: String!): Boolean!
-  persistK8sNamespace(namespace: PersistNamespaceItemInput!): Boolean!
-  persistK8sSources(namespace: String!, sources: [PersistNamespaceSourceInput!]!): Boolean!
+  persistK8sNamespaces(namespaces: [PersistNamespaceItemInput!]!): Boolean!
+  persistK8sSources(sources: [PersistNamespaceSourceInput!]!): Boolean!
   updateK8sActualSource(sourceId: K8sSourceId!, patchSourceRequest: PatchSourceRequestInput!): Boolean!
   createNewDestination(destination: DestinationInput!): Destination!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
@@ -773,4 +823,5 @@ type Mutation {
   deleteInstrumentationRule(ruleId: ID!): Boolean!
   updateDataStream(id: ID!, dataStream: DataStreamInput!): DataStream!
   deleteDataStream(id: ID!): Boolean!
+  restartWorkloads(sourceIds: [K8sSourceId!]!): Boolean!
 }

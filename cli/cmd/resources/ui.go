@@ -291,6 +291,11 @@ func NewUIClusterRole(readonly bool) *rbacv1.ClusterRole {
 				Resources: []string{"deployments", "statefulsets", "daemonsets"},
 				Verbs:     []string{"get", "list"},
 			},
+			{ // Needed to get and instrument sources
+				APIGroups: []string{"batch"},
+				Resources: []string{"cronjobs"},
+				Verbs:     []string{"get", "list"},
+			},
 			{ // Needed for "Describe Source" and for "Describe Odigos"
 				APIGroups: []string{"apps"},
 				Resources: []string{"replicasets"},
@@ -326,9 +331,15 @@ func NewUIClusterRole(readonly bool) *rbacv1.ClusterRole {
 				Resources: []string{"namespaces"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed to get workloads
+			{ // get & list : Needed to get workloads
+				// patch & update: Needed to rollout restart workloads
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments", "statefulsets", "daemonsets"},
+				Verbs:     []string{"get", "list", "patch", "update"},
+			},
+			{ // Needed to get and instrument sources
+				APIGroups: []string{"batch"},
+				Resources: []string{"cronjobs"},
 				Verbs:     []string{"get", "list"},
 			},
 			{ // Needed for "Describe Source" and for "Describe Odigos"
@@ -448,7 +459,7 @@ func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosC
 		ns:            ns,
 		config:        config,
 		odigosVersion: odigosVersion,
-		readonly:      config.UiMode == common.ReadonlyUiMode,
+		readonly:      config.UiMode == common.UiModeReadonly,
 		managerOpts:   managerOpts,
 	}
 }

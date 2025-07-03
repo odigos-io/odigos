@@ -3,28 +3,112 @@ title: "Configure Odigos with Argo CD"
 sidebarTitle: "Odigos with Argo CD"
 ---
 
-This guide explains how to configure Argo CD to work seamlessly with Odigos by preserving the custom labels, annotations, and other fields that Odigos injects into workloads. By utilizing the ignoreDifferences setting in Argo CD, you can prevent these Odigos-specific fields from being overwritten during synchronization.
+This guide shows you how to deploy Odigos in your Kubernetes cluster using Argo CD with the official Odigos Helm chart. This allows for GitOps-based management and observability instrumentation across your applications.
 
-## Setting up `ignoreDifferences` at the System Level
+## Prerequisites
 
-To configure Argo CD to ignore specific differences at a **system-wide level**, follow the [Argo CD documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/#system-level-configuration) on configuring `ignoreDifferences`. This approach ensures that fields injected by Odigos will not be removed or modified during Argo CD sync operations.
+Before you begin, make sure you have:
 
-### Configuration Example
+* A running Kubernetes cluster
+* Argo CD installed and configured in the cluster
+* Helm CLI installed (optional but useful for inspection and verification)
 
-In your Argo CD configuration, add the following entries under `resource.customizations.ignoreDifferences.all` in the `data` section:
+## Step 1: Add the Odigos Helm Repository
 
-```yaml
-data:
-  resource.customizations.ignoreDifferences.all: |
-    jqPathExpressions:
-    - .metadata.annotations | select(has("odigos.io"))
-    - .spec.template.metadata.labels | select(has("odigos.io"))
-    - .spec.template.spec.containers[].resources.limits | select(keys[] | startswith("instrumentation.odigos.io"))
+Add the Odigos Helm repository to your Helm configuration:
+
+```bash
+helm repo add odigos https://odigos-io.github.io/odigos --force-update
+helm repo update
 ```
 
-These paths specify fields added by Odigos that you want Argo CD to ignore during synchronization.
+## Step 2: Identify the Helm Chart Version
 
+Check available versions of the Odigos chart to determine the desired `targetRevision`:
 
-Refer to the [Argo CD documentation on diffing](https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/) for further guidance on configuring `ignoreDifferences`.
+```bash
+helm search repo odigos --versions
+```
 
-By setting up `ignoreDifferences` in this way, Argo CD will avoid syncing the fields injected by Odigos, allowing the instrumentation to function without interference.
+## Step 3: Define the Argo CD Application Manifest
+
+Create an Argo CD `Application` custom resource to deploy Odigos using Helm. Save the following YAML as `odigos-application.yaml`:
+This guide shows you how to deploy Odigos in your Kubernetes cluster using Argo CD with the official Odigos Helm chart. This allows for GitOps-based management and observability instrumentation across your applications.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+* A running Kubernetes cluster
+* Argo CD installed and configured in the cluster
+* Helm CLI installed (optional but useful for inspection and verification)
+
+## Step 1: Add the Odigos Helm Repository
+
+Add the Odigos Helm repository to your Helm configuration:
+
+```bash
+helm repo add odigos https://odigos-io.github.io/odigos --force-update
+helm repo update
+```
+
+## Step 2: Identify the Helm Chart Version
+
+Check available versions of the Odigos chart to determine the desired `targetRevision`:
+
+```bash
+helm search repo odigos --versions
+```
+
+## Step 3: Define the Argo CD Application Manifest
+
+Create an Argo CD `Application` custom resource to deploy Odigos using Helm. Save the following YAML as `odigos-application.yaml`:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: odigos
+  namespace: <ARGOCD_NAMESPACE>  # <- Replace with your Argo CD namespace
+spec:
+  project: default
+  source:
+    repoURL: https://odigos-io.github.io/odigos
+    chart: odigos
+    targetRevision:  # REQUIRED: set the version from 'helm search repo odigos --versions'
+    helm:
+      releaseName: odigos
+      values: |
+        # OPTIONAL: add your custom Helm values here if needed.
+        # Argo CD expects this field to be a YAML-formatted string.
+        # To use chart defaults, delete this field entirely or set it to an empty string ("").
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: <ODIGOS_NAMESPACE>  # <- Replace with the desired namespace where you want Odigos to be installed
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+```
+
+## Step 4: Apply the Application
+
+Use `kubectl` to create the application in Argo CD:
+
+```bash
+kubectl apply -f odigos-application.yaml
+```
+
+This will instruct Argo CD to deploy Odigos using the Helm chart.
+
+## Step 5: Monitor the Deployment
+
+You can monitor the status of the deployment through the Argo CD UI:
+
+* Navigate to your Argo CD web interface.
+* Find the application named `odigos`.
+* Verify that it reaches a **Healthy** and **Synced** state.
+
+Once complete, Odigos will be installed in your cluster and ready to instrument workloads.

@@ -14,6 +14,7 @@ var GreatwallProfile = profile.Profile{
 		"java-ebpf-instrumentations",
 		"legacy-dotnet-instrumentation",
 		"mount-method-k8s-virtual-device",
+		"pod-manifest-env-var-injection",
 	},
 	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
 		// temporary set in profile until we add auto discovery for /var/log symlink target

@@ -56,29 +56,33 @@ func GetWorkloadFromOwnerReference(ownerReference metav1.OwnerReference) (worklo
 }
 
 func GetWorkloadNameAndKind(ownerName, ownerKind string) (string, k8sconsts.WorkloadKind, error) {
-	if ownerKind == "ReplicaSet" {
-		return extractDeploymentInfo(ownerName)
+	switch ownerKind {
+	case "ReplicaSet":
+		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindDeployment)
+	case "Job":
+		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindCronJob)
+	default:
+		return extractInfoWithoutSuffix(ownerName, ownerKind)
 	}
-	return handleNonReplicaSet(ownerName, ownerKind)
 }
 
-// extractDeploymentInfo extracts deployment information from a ReplicaSet name
-func extractDeploymentInfo(replicaSetName string) (string, k8sconsts.WorkloadKind, error) {
-	hyphenIndex := strings.LastIndex(replicaSetName, "-")
+// extractInfoWithSuffix strips Kubernetes-generated suffixes from owner reference names.
+// ReplicaSets and Jobs get unique suffixes appended (e.g., "app-name-7d4c8b5f9b").
+// This extracts the base name by removing everything after the last hyphen,
+// enabling grouping of resources by their logical application identity..
+func extractInfoWithSuffix(fullName string, kind k8sconsts.WorkloadKind) (string, k8sconsts.WorkloadKind, error) {
+	hyphenIndex := strings.LastIndex(fullName, "-")
 	if hyphenIndex == -1 {
-		return "", "", fmt.Errorf("replicaset name '%s' does not contain a hyphen", replicaSetName)
+		return "", "", fmt.Errorf("%s name '%s' does not contain a hyphen", kind, fullName)
 	}
-
-	deploymentName := replicaSetName[:hyphenIndex]
-	return deploymentName, k8sconsts.WorkloadKindDeployment, nil
+	return fullName[:hyphenIndex], kind, nil
 }
 
-// handleNonReplicaSet processes non-ReplicaSet workload types
-func handleNonReplicaSet(ownerName, ownerKind string) (string, k8sconsts.WorkloadKind, error) {
+// extractInfoWithoutSuffix processes non-suffix-based workload names
+func extractInfoWithoutSuffix(ownerName, ownerKind string) (string, k8sconsts.WorkloadKind, error) {
 	workloadKind := WorkloadKindFromString(ownerKind)
 	if workloadKind == "" {
 		return "", "", ErrKindNotSupported
 	}
-
 	return ownerName, workloadKind, nil
 }

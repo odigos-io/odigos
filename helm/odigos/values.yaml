@@ -95,6 +95,11 @@ collectorGateway:
   # this is when go runtime will start garbage collection.
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
   goMemLimitMiB: 340
+  # Service Graph settings
+  # Service Graph is a feature that allows you to visualize the service graph of your application.
+  # It is enabled by default and can be disabled by setting the disabled flag to true.
+  serviceGraphDisabled: false
+
 
 collectorNode:
   # The port to use for exposing the collector's own metrics as a prometheus endpoint.
@@ -146,27 +151,65 @@ autoscaler:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 scheduler:
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 ui:
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
-  # uiMode: 'normal' or 'readonly'
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # uiMode: 'default' or 'readonly'
   #  - This flag controls whether the UI should be in read-only mode.
   #  - Setting this to "readonly" will disable the ability to create, update, or delete objects in the UI.
-  #  - If not set, the UI will be in normal mode.
-  uiMode: 'normal'
+  #  - If not set, the UI will be in default mode.
+  uiMode: 'default'
   # uiPaginationLimit:
   #  - This flag controls the number of items to fetch per paginated-batch in the UI.
   #  - If not set, the UI will fetch 100 items per paginated-batch.
   uiPaginationLimit: 0
+  # uiRemoteUrl:
+  #  - This flag sets the URL of the remote UI (e.g. https://my-odigos-ui.com).
+  #  - If not set, the UI will default to the local UI.
+  #  - This is useful when you are hosting the Odigos UI on a custom/remote URL, and require OIDC authentication.
+  uiRemoteUrl: ''
+  # oidcTenantUrl:
+  #  - This flag sets the URL of the OIDC tenant (e.g. https://my-oidc-tenant.com).
+  #  - If not set, the UI will not process OIDC authentication.
+  oidcTenantUrl: ''
+  # oidcClientId:
+  #  - This flag sets the client ID of the OIDC application.
+  #  - If not set, the UI will not process OIDC authentication.
+  oidcClientId: ''
+  # oidcClientSecret:
+  #  - This flag sets the client secret of the OIDC application.
+  #  - If not set, the UI will not process OIDC authentication.
+  oidcClientSecret: ''
   centralBackendURL: ''
 
 instrumentor:
@@ -178,6 +221,13 @@ instrumentor:
     kubernetes.io/os: linux
   tolerations: []
   affinity: {}
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
   # skipWebhookIssuerCreation:
   #   - This flag controls whether the chart should skip creating an Issuer
   #     and associated Certificate for securing the mutating webhook communication.
@@ -204,10 +254,24 @@ odiglet:
     ## regardless of its taints (including master/control-plane nodes)
     - operator: Exists
   affinity: {}
+  # Resource configuration for the odiglet daemonset
+  # resources:
+  #   requests:
+  #     cpu: 10m
+  #     memory: 64Mi
+  #   limits:
+  #     cpu: 500m
+  #     memory: 512Mi
+
   # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
   # into the Odiglet to ensure it can access the container runtime unix socket.
   customContainerRuntimeSocketPath: ''
+
+  # Prior to Kubernetes v1.26, Odigos uses host networking.
+  # In some environments, different ports may already be in use on the host (e.g., due to other daemons or networking constraints).
+  # Use the following values to configure the readiness and liveness probe ports to avoid conflicts.
+  readinessAndLivenessProbePort: 55683
 
 centralProxy:
   enabled: false
@@ -252,6 +316,19 @@ nodeSelector: {}
 karpenter:
   enabled: false
 
+
+# Refer to the official Kubernetes documentation for structure and field details:
+# https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+#
+# Example: Odigos components should be evenly spread across zones.
+# No need to set labelSelector manually — the Odigos Helm chart will apply it automatically.
+# topologySpreadConstraints:
+#   - maxSkew: 1
+#     topologyKey: "topology.kubernetes.io/zone"
+#     whenUnsatisfiable: "ScheduleAnyway"
+topologySpreadConstraints: []
+
+
 # Auto rollback settings
 # The auto‐rollback feature provides a stability window to test instrumented apps.
 # After an application is instrumented, a grace period begins during which we allow the app (and its dependencies) to stabilize and start working.
@@ -261,3 +338,20 @@ autoRollback:
   graceTime: 5m
   stabilityWindowTime: 1h
 
+rollout:
+# Odigos automatically triggers a one-time rollout for workloads when instrumenting or uninstrumenting, to apply changes.
+# If workload restarts are sensitive, this setting can be used to disable the automatic rollout.
+# When disabled, users are responsible for manually triggering rollouts after adding or removing sources.
+# Any new pods created after enabling or disabling the agent (via manual rollout, autoscaling, etc.)
+# will still have the agent injected, regardless of this setting.
+# When set to true, all additional configurations related to automated rollouts or rollbacks are ignored.
+  automaticRolloutDisabled: false
+
+# Pod Disruption Budgets (PDBs) help ensure high availability during voluntary disruptions like node drains or upgrades.
+# When enabled, Odigos will deploy PDBs for its components based on their importance:
+# - Critical components (e.g., instrumentor) will be protected with stricter disruption limits.
+# - Non-critical components will use more relaxed budgets to allow operational flexibility.
+# This reflects Odigos' recommended defaults for maintaining observability continuity without blocking routine maintenance.
+# PDBs are disabled by default and can be enabled in production environments where stability during disruptions is important.
+pdb:
+  enabled: false
