@@ -303,6 +303,8 @@ openshift:
 gke:
   enabled: false
 
+# List of profile names to apply. Must be an array.
+# Example: --set profiles={size_l}
 profiles: []
 
 # Optional NodeSelector to apply to all Odigos components
