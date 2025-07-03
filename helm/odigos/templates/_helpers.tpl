@@ -36,3 +36,11 @@ Returns "true" if any userInstrumentationEnvs.language is enabled or has env var
 true
   {{- end -}}
 {{- end -}}
+
+
+{{/*
+  Return cleaned Kubernetes version, keeping leading 'v', removing vendor suffix like -eks-...
+  */}}
+  {{- define "utils.cleanKubeVersion" -}}
+  {{- regexReplaceAll "-.*" .Capabilities.KubeVersion.Version "" -}}
+  {{- end }}

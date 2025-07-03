@@ -46,6 +46,16 @@ type Source struct {
 	Status SourceStatus `json:"status,omitempty"`
 }
 
+type ContainerOverride struct {
+	// The name of the container to override.
+	ContainerName string `json:"containerName"`
+
+	// RuntimeInfo to use for agent enabling.
+	// If set for a container, the automatic detection will not be used for this container,
+	// and the distro to use will be calculated based on this value.
+	RuntimeInfo *RuntimeDetailsByContainer `json:"runtimeInfo,omitempty"`
+}
+
 type SourceSpec struct {
 	// Workload represents the workload or namespace to be instrumented.
 	// This field is required upon creation and cannot be modified.
@@ -60,6 +70,15 @@ type SourceSpec struct {
 	// +kubebuilder:validation:Optional
 	// +optional
 	OtelServiceName string `json:"otelServiceName,omitempty"`
+
+	// Specify specific override values for containers in a workload source.
+	// Not valid for namespace sources.
+	// Can be used to set the runtime info in case the automatic detection fails or produce wrong results.
+	// Containers are identified by their names.
+	// All containers not listed will retain their default behavior.
+	// +kubebuilder:validation:Optional
+	// +optional
+	ContainerOverrides []ContainerOverride `json:"containerOverrides,omitempty"`
 }
 
 type SourceStatus struct {
@@ -85,28 +104,6 @@ type SourceList struct {
 type WorkloadSources struct {
 	Workload  *Source
 	Namespace *Source
-}
-
-type SourceSelector struct {
-	// If a namespace is specified, all workloads (sources) within that namespace are allowed to send data.
-	// Example:
-	// namespaces: ["default", "production"]
-	// This means the destination will receive data from all sources in "default" and "production" namespaces.
-	// +optional
-	Namespaces []string `json:"namespaces,omitempty"`
-	// Workloads (sources) are assigned to groups via labels (odigos.io/group-backend: true), allowing a more flexible selection mechanism.
-	// Example:
-	// groups: ["backend", "monitoring"]
-	// This means the destination will receive data only from sources labeled with "backend" or "monitoring".
-	// +optional
-	Groups []string `json:"groups,omitempty"`
-
-	// Selection Semantics:
-	// If both `Namespaces` and `Groups` are specified, the selection follows an **OR** logic:
-	// - A source is included **if** it belongs to **at least one** of the specified namespaces OR groups.
-	// - If `Namespaces` is empty but `Groups` is specified, only sources in those groups are included.
-	// - If `Groups` is empty but `Namespaces` is specified, all sources in those namespaces are included.
-	// - If SourceSelector is nil, the destination receives data from all sources.
 }
 
 // GetSources returns a WorkloadSources listing the Workload and Namespace Source

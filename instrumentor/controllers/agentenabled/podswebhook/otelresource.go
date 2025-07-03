@@ -48,6 +48,10 @@ func getWorkloadKindAttributeKey(workloadKind k8sconsts.WorkloadKind) attribute.
 		return semconv.K8SStatefulSetNameKey
 	case k8sconsts.WorkloadKindDaemonSet:
 		return semconv.K8SDaemonSetNameKey
+	case k8sconsts.WorkloadKindCronJob:
+		return semconv.K8SCronJobNameKey
+	case k8sconsts.WorkloadKindJob:
+		return semconv.K8SJobNameKey
 	}
 	return attribute.Key("")
 }
@@ -63,11 +67,11 @@ func getResourceAttributesEnvVarValue(ra []resourceAttribute) string {
 func InjectOtelResourceAndServiceNameEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, distroName string, pw k8sconsts.PodWorkload, serviceName string) EnvVarNamesMap {
 
 	// OTEL_SERVICE_NAME
-	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, otelServiceNameEnvVarName, serviceName, nil)
+	existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, otelServiceNameEnvVarName, serviceName)
 
 	// OTEL_RESOURCE_ATTRIBUTES
 	resourceAttributes := getResourceAttributes(pw, container.Name)
 	resourceAttributesEnvValue := getResourceAttributesEnvVarValue(resourceAttributes)
-	existingEnvNames = InjectEnvVarToPodContainer(existingEnvNames, container, otelResourceAttributesEnvVarName, resourceAttributesEnvValue, nil)
+	existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, otelResourceAttributesEnvVarName, resourceAttributesEnvValue)
 	return existingEnvNames
 }

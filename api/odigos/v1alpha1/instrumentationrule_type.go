@@ -72,6 +72,12 @@ type InstrumentationRuleSpec struct {
 
 	// Allows to configure the collection of http headers for different types of payloads.
 	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
+
+	// Configure the tracing configuration for the library.
+	TraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
+
+	// Add custom instrumentation probes
+	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
 
 type InstrumentationRuleStatus struct {

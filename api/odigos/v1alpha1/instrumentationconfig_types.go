@@ -87,7 +87,7 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;CrashLoopBackOff
+// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff
 type AgentEnabledReason string
 
 const (
@@ -95,8 +95,10 @@ const (
 	AgentEnabledReasonWaitingForRuntimeInspection    AgentEnabledReason = "WaitingForRuntimeInspection"
 	AgentEnabledReasonWaitingForNodeCollector        AgentEnabledReason = "WaitingForNodeCollector"
 	AgentEnabledReasonIgnoredContainer               AgentEnabledReason = "IgnoredContainer"
+	AgentEnabledReasonNoCollectedSignals             AgentEnabledReason = "NoCollectedSignals"
 	AgentEnabledReasonUnsupportedProgrammingLanguage AgentEnabledReason = "UnsupportedProgrammingLanguage"
 	AgentEnabledReasonNoAvailableAgent               AgentEnabledReason = "NoAvailableAgent"
+	AgentEnabledReasonInjectionConflict              AgentEnabledReason = "InjectionConflict"
 	AgentEnabledReasonUnsupportedRuntimeVersion      AgentEnabledReason = "UnsupportedRuntimeVersion"
 	AgentEnabledReasonMissingDistroParameter         AgentEnabledReason = "MissingDistroParameter"
 	AgentEnabledReasonOtherAgentDetected             AgentEnabledReason = "OtherAgentDetected"
@@ -108,13 +110,15 @@ const (
 	AgentEnabledReasonCrashLoopBackOff AgentEnabledReason = "CrashLoopBackOff"
 )
 
-// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing
+// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart
 type WorkloadRolloutReason string
 
 const (
 	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
+	WorkloadRolloutReasonDisabled               WorkloadRolloutReason = "Disabled"
+	WorkloadRolloutReasonWaitingForRestart      WorkloadRolloutReason = "WaitingForRestart"
 )
 
 const (
@@ -136,6 +140,10 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 30
 	case AgentEnabledReasonIgnoredContainer:
 		return 40
+	case AgentEnabledReasonNoCollectedSignals:
+		return 45
+	case AgentEnabledReasonInjectionConflict:
+		return 48
 	case AgentEnabledReasonUnsupportedProgrammingLanguage:
 		return 50
 	case AgentEnabledReasonUnsupportedRuntimeVersion:
@@ -161,15 +169,21 @@ func IsReasonStatusDisabled(reason string) bool {
 	case string(AgentEnabledReasonUnsupportedProgrammingLanguage),
 		string(AgentEnabledReasonUnsupportedRuntimeVersion),
 		string(RuntimeDetectionReasonNoRunningPods),
+		string(AgentEnabledReasonNoCollectedSignals),
 		string(AgentEnabledReasonIgnoredContainer),
 		string(AgentEnabledReasonNoAvailableAgent),
+		string(AgentEnabledReasonInjectionConflict),
 		string(AgentEnabledReasonOtherAgentDetected),
 		string(AgentEnabledReasonCrashLoopBackOff),
-		// K8s workload-related reasons
-		string(K8sWorkloadRolloutReasonFailedCreate),
 		string(AgentEnabledReasonRuntimeDetailsUnavailable):
 
 		return true
+
+	// rollout-related reasons
+	case string(K8sWorkloadRolloutReasonFailedCreate):
+
+		return true
+
 	default:
 		return false
 	}
@@ -241,6 +255,18 @@ func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v
 	return nil
 }
 
+// all "traces" related configuration for an agent running on any process in a specific container.
+// The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
+type AgentTracesConfig struct{}
+
+// all "metrics" related configuration for an agent running on any process in a specific container.
+// The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
+type AgentMetricsConfig struct{}
+
+// all "logs" related configuration for an agent running on any process in a specific container.
+// The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
+type AgentLogsConfig struct{}
+
 // ContainerAgentConfig is a configuration for a specific container in a workload.
 type ContainerAgentConfig struct {
 	// The name of the container to which this configuration applies.
@@ -263,6 +289,12 @@ type ContainerAgentConfig struct {
 	// Additional parameters to the distro that controls how it's being applied.
 	// Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
 	DistroParams map[string]string `json:"distroParams,omitempty"`
+
+	// Each enabled signal must be set with a non-nil value (even if the config content is empty).
+	// nil means that the signal is disabled and should not be instrumented/collected by the agent.
+	Traces  *AgentTracesConfig  `json:"traces,omitempty"`
+	Metrics *AgentMetricsConfig `json:"metrics,omitempty"`
+	Logs    *AgentLogsConfig    `json:"logs,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
@@ -276,6 +308,14 @@ type InstrumentationConfigSpec struct {
 
 	// configuration for each instrumented container in the workload
 	Containers []ContainerAgentConfig `json:"containers,omitempty"`
+
+	// will always list all containers of this workload by name,
+	// and override data in case it is configured on the source.
+	// this peoperty can be used to know all container names in the workload, even if other controllers did not yet run.
+	ContainersOverrides []ContainerOverride `json:"containersOverrides,omitempty"`
+	// An hash of the containers overrides, used to determine if the overrides have changed for event filtering.
+	// this is updated only when the overrides are changed, and not when some other change in the source occurs.
+	ContainerOverridesHash string `json:"containerOverridesHash,omitempty"`
 
 	// this hash is used to determine the deployment of the agents.
 	// e.g. when the distro for container changes, or it's compatibility version,
@@ -318,6 +358,12 @@ type SdkConfig struct {
 
 	// default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.
 	DefaultHeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
+
+	// default configuration for library tracing.
+	DefaultTraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
+
+	// default configuration for custom instrumentations, in case the instrumentation library does not provide a configuration.
+	DefaultCustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression

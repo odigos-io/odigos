@@ -6,8 +6,8 @@ type ProfileName string
 type UiMode string
 
 const (
-	NormalUiMode   UiMode = "normal"
-	ReadonlyUiMode UiMode = "readonly"
+	UiModeDefault  UiMode = "default"
+	UiModeReadonly UiMode = "readonly"
 )
 
 type CollectorNodeConfiguration struct {
@@ -100,6 +100,10 @@ type CollectorGatewayConfiguration struct {
 	// this is when go runtime will start garbage collection.
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
+
+	// ServiceGraphDisabled is a feature that allows you to visualize the service graph of your application.
+	// It is enabled by default and can be disabled by setting the disabled flag to true.
+	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
 }
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
@@ -109,6 +113,29 @@ type UserInstrumentationEnvs struct {
 type LanguageConfig struct {
 	Enabled bool              `json:"enabled"`
 	EnvVars map[string]string `json:"env,omitempty"`
+}
+
+type RolloutConfiguration struct {
+
+	// When set to true, Odigos will never trigger a rollout for workloads when instrumenting or uninstrumenting.
+	// It is expected that users will manually trigger a rollout to apply the changes when needed,
+	// but it gives them the option to control the process.
+	// Any new pods that are created after agent is enabled or disabled (via manual rollout or auto scaling)
+	// will be have agent injection regardless of this setting.
+	// This setting does not control manual rollouts executed from the UI or via the API.
+	// Any additional configuration regarding rollouts and rollbacks are ignored when this is set to true.
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled"`
+}
+
+type OidcConfiguration struct {
+	// The URL of the OIDC tenant (e.g. "https://abc-123.okta.com").
+	TenantUrl string `json:"tenantUrl,omitempty"`
+
+	// The client ID of the OIDC application.
+	ClientId string `json:"clientId,omitempty"`
+
+	// The client secret of the OIDC application.
+	ClientSecret string `json:"clientSecret,omitempty"`
 }
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
@@ -127,15 +154,19 @@ type OdigosConfiguration struct {
 	AllowConcurrentAgents            *bool                          `json:"allowConcurrentAgents,omitempty"`
 	UiMode                           UiMode                         `json:"uiMode,omitempty"`
 	UiPaginationLimit                int                            `json:"uiPaginationLimit,omitempty"`
+	UiRemoteUrl                      string                         `json:"uiRemoteUrl,omitempty"`
 	CentralBackendURL                string                         `json:"centralBackendURL,omitempty"`
-	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
 	ClusterName                      string                         `json:"clusterName,omitempty"`
+	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
 	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
 	AgentEnvVarsInjectionMethod      *EnvInjectionMethod            `json:"agentEnvVarsInjectionMethod,omitempty"`
 	UserInstrumentationEnvs          *UserInstrumentationEnvs       `json:"UserInstrumentationEnvs,omitempty"`
 	NodeSelector                     map[string]string              `json:"nodeSelector,omitempty"`
 	KarpenterEnabled                 *bool                          `json:"karpenterEnabled,omitempty"`
+	Rollout                          *RolloutConfiguration          `json:"rollout,omitempty"`
 	RollbackDisabled                 *bool                          `json:"rollbackDisabled,omitempty"`
 	RollbackGraceTime                string                         `json:"rollbackGraceTime,omitempty"`
 	RollbackStabilityWindow          string                         `json:"rollbackStabilityWindow,omitempty"`
+	Oidc                             *OidcConfiguration             `json:"oidc,omitempty"`
+	OdigletHealthProbeBindPort       int                            `json:"odigletHealthProbeBindPort,omitempty"`
 }

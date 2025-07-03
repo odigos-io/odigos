@@ -48,15 +48,17 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		return err
 	}
 
+	// We need to react to changes in the InstrumentationConfig CRs because we're relying
+	// on the labels to build the connectors configuration in the gateway configmap for datastreams.
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("clustercollector-sources").
-		For(&odigosv1.Source{}).
+		Named("clustercollector-instrumentationconfigs").
+		For(&odigosv1.InstrumentationConfig{}).
 		WithEventFilter(predicate.Or(
 			odigospredicate.ExistencePredicate{},
 			predicate.LabelChangedPredicate{},
 		)).
-		Complete(&SourceReconciler{
+		Complete(&InstrumentationConfigReconciler{
 			Client:           mgr.GetClient(),
 			Scheme:           mgr.GetScheme(),
 			ImagePullSecrets: imagePullSecrets,

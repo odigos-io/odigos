@@ -22,10 +22,21 @@ spec:
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: odigos-scheduler
+        {{- end }}
+      {{- end }}
       containers:
       - args:
           - --health-probe-bind-address=:8081
-          - --metrics-bind-address=127.0.0.1:8080
+          - --metrics-bind-address=0.0.0.0:8080
           - --leader-elect
         command:
           - /app
@@ -65,12 +76,7 @@ spec:
           periodSeconds: 10
         name: manager
         resources:
-          limits:
-            cpu: 500m
-            memory: 512Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
+{{ toYaml .Values.scheduler.resources | indent 10 }}
         securityContext:
           allowPrivilegeEscalation: false
       securityContext:

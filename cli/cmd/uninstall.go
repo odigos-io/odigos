@@ -10,13 +10,12 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common/envOverwrite"
-	"github.com/odigos-io/odigos/k8sutils/pkg/envoverwrite"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
+	"github.com/odigos-io/odigos/cli/pkg/deprecated_envoverwrite"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/odigos-io/odigos/cli/pkg/log"
@@ -78,15 +77,33 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 				}
 			}
 
+			config, err := resources.GetCurrentConfig(ctx, client, ns)
+			if err != nil {
+				fmt.Println("Failed to get current Odigos configuration, assuming default values for uninstallation...")
+			}
+
+			autoRolloutDisabled := false
+			if config != nil {
+				autoRolloutDisabled = config.Rollout != nil &&
+					config.Rollout.AutomaticRolloutDisabled != nil &&
+					*config.Rollout.AutomaticRolloutDisabled
+			}
+
 			// delete all sources, and wait for the pods to rollout without instrumentation
 			// this is done before the instrumentor is removed, to ensure that the instrumentation is removed
-			err := removeAllSources(ctx, client)
+			err = removeAllSources(ctx, client)
 			if err != nil {
 				fmt.Printf("\033[31mERROR\033[0m Failed to remove all sources: %s\n", err)
 				os.Exit(1)
 			}
-			if !cmd.Flag("no-wait").Changed {
-				waitForPodsToRolloutWithoutInstrumentation(ctx, client)
+			if autoRolloutDisabled {
+				fmt.Println("Odigos is configured to NOT rollout workloads automatically; existing pods will remain instrumented until a manual rollout is triggered.")
+			} else if !cmd.Flag("no-wait").Changed {
+				err = waitForPodsToRolloutWithoutInstrumentation(ctx, client)
+				if err != nil {
+					fmt.Printf("\033[31mERROR\033[0m Failed to wait for pods to rollout without instrumentation: %s\n", err)
+					os.Exit(1)
+				}
 			}
 
 			// If the user only wants to uninstall instrumentation, we exit here.
@@ -219,7 +236,7 @@ func namespaceHasOdigosLabel(ctx context.Context, client *kube.Client, ns string
 	return false, nil
 }
 
-func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kube.Client) {
+func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kube.Client) error {
 	instrumentedPodReq, _ := k8slabels.NewRequirement(k8sconsts.OdigosAgentsMetaHashLabel, selection.Exists, []string{})
 	fmt.Printf("Waiting for pods to rollout without instrumentation... this might take a while\n")
 
@@ -246,7 +263,9 @@ func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kub
 		if errors.Is(pollErr, context.Canceled) {
 			fmt.Printf("\033[33m!\tWARN\033[0m canceled while waiting pods to roll out cleanly\n")
 		}
+		return pollErr
 	}
+	return nil
 }
 
 func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns string) {
@@ -358,10 +377,10 @@ func getWorkloadRolloutJsonPatch(obj kube.Object, pts *v1.PodTemplateSpec) ([]by
 	}
 
 	// read the original env vars (of the manifest) from the annotation
-	manifestEnvOriginal, err := envoverwrite.NewOrigWorkloadEnvValues(obj.GetAnnotations())
+	manifestEnvOriginal, err := deprecated_envoverwrite.NewOrigWorkloadEnvValues(obj.GetAnnotations())
 	if err != nil {
 		fmt.Println("Failed to get original env vars from annotation: ", err)
-		manifestEnvOriginal = &envoverwrite.OrigWorkloadEnvValues{}
+		manifestEnvOriginal = &deprecated_envoverwrite.OrigWorkloadEnvValues{}
 	}
 
 	var origManifestEnv map[string]map[string]string
@@ -409,7 +428,7 @@ func getWorkloadRolloutJsonPatch(obj kube.Object, pts *v1.PodTemplateSpec) ([]by
 				})
 			} else {
 				// revert the env var to its original value
-				sanitizedEnvVar := envOverwrite.CleanupEnvValueFromOdigosAdditions(envName, *originalEnvValue)
+				sanitizedEnvVar := deprecated_envoverwrite.CleanupEnvValueFromOdigosAdditions(envName, *originalEnvValue)
 				patchOperations = append(patchOperations, map[string]interface{}{
 					"op":    "replace",
 					"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", iContainer, iEnv),

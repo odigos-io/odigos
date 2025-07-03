@@ -152,6 +152,14 @@ type ContainerRuntimeInfoAnalyze struct {
 	EnvVars        []*EntityProperty `json:"envVars"`
 }
 
+type CustomInstrumentations struct {
+	Probes []*Probe `json:"probes,omitempty"`
+}
+
+type CustomInstrumentationsInput struct {
+	Probes []*ProbeInput `json:"probes,omitempty"`
+}
+
 type CustomReadDataLabel struct {
 	Condition string `json:"condition"`
 	Title     string `json:"title"`
@@ -367,6 +375,7 @@ type InstrumentationRule struct {
 	CodeAttributes           *CodeAttributes                   `json:"codeAttributes,omitempty"`
 	HeadersCollection        *HeadersCollection                `json:"headersCollection,omitempty"`
 	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
+	CustomInstrumentations   *CustomInstrumentations           `json:"customInstrumentations,omitempty"`
 }
 
 type InstrumentationRuleInput struct {
@@ -378,6 +387,7 @@ type InstrumentationRuleInput struct {
 	CodeAttributes           *CodeAttributesInput                   `json:"codeAttributes,omitempty"`
 	HeadersCollection        *HeadersCollectionInput                `json:"headersCollection,omitempty"`
 	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
+	CustomInstrumentations   *CustomInstrumentationsInput           `json:"customInstrumentations,omitempty"`
 }
 
 type InstrumentationSourcesAnalyze struct {
@@ -394,9 +404,10 @@ type JSONCondition struct {
 }
 
 type K8sActualNamespace struct {
-	Name     string             `json:"name"`
-	Selected bool               `json:"selected"`
-	Sources  []*K8sActualSource `json:"sources"`
+	Name            string             `json:"name"`
+	Selected        bool               `json:"selected"`
+	DataStreamNames []*string          `json:"dataStreamNames"`
+	Sources         []*K8sActualSource `json:"sources"`
 }
 
 type K8sActualSource struct {
@@ -568,8 +579,11 @@ type PaginatedSources struct {
 }
 
 type PatchSourceRequestInput struct {
-	OtelServiceName   string `json:"otelServiceName"`
-	CurrentStreamName string `json:"currentStreamName"`
+	CurrentStreamName string  `json:"currentStreamName"`
+	OtelServiceName   *string `json:"otelServiceName,omitempty"`
+	ContainerName     *string `json:"containerName,omitempty"`
+	Language          *string `json:"language,omitempty"`
+	Version           *string `json:"version,omitempty"`
 }
 
 type PayloadCollection struct {
@@ -587,11 +601,13 @@ type PayloadCollectionInput struct {
 }
 
 type PersistNamespaceItemInput struct {
-	Name           string `json:"name"`
-	FutureSelected bool   `json:"futureSelected"`
+	Namespace         string `json:"namespace"`
+	Selected          bool   `json:"selected"`
+	CurrentStreamName string `json:"currentStreamName"`
 }
 
 type PersistNamespaceSourceInput struct {
+	Namespace         string          `json:"namespace"`
 	Name              string          `json:"name"`
 	Kind              K8sResourceKind `json:"kind"`
 	Selected          bool            `json:"selected"`
@@ -633,15 +649,19 @@ type PipelineAction struct {
 }
 
 type PodAnalyze struct {
-	PodName    *EntityProperty        `json:"podName"`
-	NodeName   *EntityProperty        `json:"nodeName"`
-	Phase      *EntityProperty        `json:"phase"`
-	Containers []*PodContainerAnalyze `json:"containers"`
+	PodName                       *EntityProperty        `json:"podName"`
+	NodeName                      *EntityProperty        `json:"nodeName"`
+	Phase                         *EntityProperty        `json:"phase"`
+	AgentInjected                 *EntityProperty        `json:"agentInjected"`
+	RunningLatestWorkloadRevision *EntityProperty        `json:"runningLatestWorkloadRevision,omitempty"`
+	Containers                    []*PodContainerAnalyze `json:"containers"`
 }
 
 type PodContainerAnalyze struct {
 	ContainerName            *EntityProperty                   `json:"containerName"`
 	ActualDevices            *EntityProperty                   `json:"actualDevices"`
+	Started                  *EntityProperty                   `json:"started,omitempty"`
+	Ready                    *EntityProperty                   `json:"ready,omitempty"`
 	InstrumentationInstances []*InstrumentationInstanceAnalyze `json:"instrumentationInstances"`
 }
 
@@ -684,6 +704,16 @@ func (this ProbabilisticSamplerAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type Probe struct {
+	ClassName  *string `json:"className,omitempty"`
+	MethodName *string `json:"methodName,omitempty"`
+}
+
+type ProbeInput struct {
+	ClassName  *string `json:"className,omitempty"`
+	MethodName *string `json:"methodName,omitempty"`
+}
+
 type Query struct {
 }
 
@@ -717,6 +747,21 @@ func (this RenameAttributeAction) GetSignals() []SignalType {
 type RuntimeInfoAnalyze struct {
 	Generation *EntityProperty                `json:"generation"`
 	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
+}
+
+type ServiceMap struct {
+	Services []*ServiceMapFromSource `json:"services"`
+}
+
+type ServiceMapFromSource struct {
+	ServiceName string                `json:"serviceName"`
+	Services    []*ServiceMapToSource `json:"services"`
+}
+
+type ServiceMapToSource struct {
+	ServiceName string `json:"serviceName"`
+	Requests    int    `json:"requests"`
+	DateTime    string `json:"dateTime"`
 }
 
 type ServiceNameFilters struct {
@@ -789,6 +834,7 @@ type SourceContainer struct {
 	ContainerName          string  `json:"containerName"`
 	Language               string  `json:"language"`
 	RuntimeVersion         string  `json:"runtimeVersion"`
+	Overriden              bool    `json:"overriden"`
 	Instrumented           bool    `json:"instrumented"`
 	InstrumentationMessage string  `json:"instrumentationMessage"`
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
@@ -1013,22 +1059,24 @@ func (e InstallationStatus) MarshalGQL(w io.Writer) {
 type InstrumentationRuleType string
 
 const (
-	InstrumentationRuleTypeCodeAttributes    InstrumentationRuleType = "CodeAttributes"
-	InstrumentationRuleTypeHeadersCollection InstrumentationRuleType = "HeadersCollection"
-	InstrumentationRuleTypePayloadCollection InstrumentationRuleType = "PayloadCollection"
-	InstrumentationRuleTypeUnknownType       InstrumentationRuleType = "UnknownType"
+	InstrumentationRuleTypeCodeAttributes        InstrumentationRuleType = "CodeAttributes"
+	InstrumentationRuleTypeHeadersCollection     InstrumentationRuleType = "HeadersCollection"
+	InstrumentationRuleTypePayloadCollection     InstrumentationRuleType = "PayloadCollection"
+	InstrumentationRuleTypeCustomInstrumentation InstrumentationRuleType = "CustomInstrumentation"
+	InstrumentationRuleTypeUnknownType           InstrumentationRuleType = "UnknownType"
 )
 
 var AllInstrumentationRuleType = []InstrumentationRuleType{
 	InstrumentationRuleTypeCodeAttributes,
 	InstrumentationRuleTypeHeadersCollection,
 	InstrumentationRuleTypePayloadCollection,
+	InstrumentationRuleTypeCustomInstrumentation,
 	InstrumentationRuleTypeUnknownType,
 }
 
 func (e InstrumentationRuleType) IsValid() bool {
 	switch e {
-	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeUnknownType:
+	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCustomInstrumentation, InstrumentationRuleTypeUnknownType:
 		return true
 	}
 	return false
@@ -1114,17 +1162,19 @@ const (
 	K8sResourceKindDeployment  K8sResourceKind = "Deployment"
 	K8sResourceKindDaemonSet   K8sResourceKind = "DaemonSet"
 	K8sResourceKindStatefulSet K8sResourceKind = "StatefulSet"
+	K8sResourceKindCronJob     K8sResourceKind = "CronJob"
 )
 
 var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindDeployment,
 	K8sResourceKindDaemonSet,
 	K8sResourceKindStatefulSet,
+	K8sResourceKindCronJob,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob:
 		return true
 	}
 	return false

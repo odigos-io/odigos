@@ -38,5 +38,15 @@ spec:
       {{- with .Values.centralUI.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
       {{- end }}
-
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: central-ui
+      {{- end }}
+      {{- end }}
 {{- end }}

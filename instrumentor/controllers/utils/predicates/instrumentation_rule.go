@@ -5,40 +5,46 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-type OtelSdkInstrumentationRulePredicate struct{}
+type AgentInjectionRelevantRulesPredicate struct{}
 
-func (o OtelSdkInstrumentationRulePredicate) Create(e event.CreateEvent) bool {
-	// check if delete rule is for otel sdk
+func (o AgentInjectionRelevantRulesPredicate) Create(e event.CreateEvent) bool {
+	// check if delete rule is relevant for agent enabling controllers
 	instrumentationRule, ok := e.Object.(*odigosv1alpha1.InstrumentationRule)
 	if !ok {
 		return false
 	}
 
-	return instrumentationRule.Spec.OtelSdks != nil
+	return instrumentationRule.Spec.OtelSdks != nil ||
+		instrumentationRule.Spec.OtelDistros != nil ||
+		instrumentationRule.Spec.TraceConfig != nil
 }
 
-func (i OtelSdkInstrumentationRulePredicate) Update(e event.UpdateEvent) bool {
-	oldInstrumentationRule, oldOk := e.ObjectOld.(*odigosv1alpha1.InstrumentationRule)
-	newInstrumentationRule, newOk := e.ObjectNew.(*odigosv1alpha1.InstrumentationRule)
+func (i AgentInjectionRelevantRulesPredicate) Update(e event.UpdateEvent) bool {
+	old, oldOk := e.ObjectOld.(*odigosv1alpha1.InstrumentationRule)
+	new, newOk := e.ObjectNew.(*odigosv1alpha1.InstrumentationRule)
 
 	if !oldOk || !newOk {
 		return false
 	}
 
-	// only handle rules for otel sdks
-	return oldInstrumentationRule.Spec.OtelSdks != nil || newInstrumentationRule.Spec.OtelSdks != nil
+	// only handle rules for otel sdks or distros configuration
+	return old.Spec.OtelSdks != nil || new.Spec.OtelSdks != nil ||
+		old.Spec.OtelDistros != nil || new.Spec.OtelDistros != nil ||
+		old.Spec.TraceConfig != nil || new.Spec.TraceConfig != nil
 }
 
-func (i OtelSdkInstrumentationRulePredicate) Delete(e event.DeleteEvent) bool {
+func (i AgentInjectionRelevantRulesPredicate) Delete(e event.DeleteEvent) bool {
 	// check if delete rule is for otel sdk
 	instrumentationRule, ok := e.Object.(*odigosv1alpha1.InstrumentationRule)
 	if !ok {
 		return false
 	}
 
-	return instrumentationRule.Spec.OtelSdks != nil
+	return instrumentationRule.Spec.OtelSdks != nil ||
+		instrumentationRule.Spec.OtelDistros != nil ||
+		instrumentationRule.Spec.TraceConfig != nil
 }
 
-func (i OtelSdkInstrumentationRulePredicate) Generic(e event.GenericEvent) bool {
+func (i AgentInjectionRelevantRulesPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
