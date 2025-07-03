@@ -297,15 +297,15 @@ func resolveMountMethod(odigosConfiguration *common.OdigosConfiguration) {
 	}
 }
 
-func resolveEnvInjectionMethod(odigosConfiguration *common.OdigosConfiguration) {
-	defaultInjectionMethod := common.PodManifestEnvInjectionMethod
+func resolveEnvInjectionMethod(odigosConfig *common.OdigosConfiguration) {
+	defaultInjectionMethod := common.LoaderFallbackToPodManifestInjectionMethod
 
-	if odigosConfiguration.AgentEnvVarsInjectionMethod == nil {
-		odigosConfiguration.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
+	if odigosConfig.AgentEnvVarsInjectionMethod == nil {
+		odigosConfig.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
 		return
 	}
 
-	switch *odigosConfiguration.AgentEnvVarsInjectionMethod {
+	switch *odigosConfig.AgentEnvVarsInjectionMethod {
 	case common.LoaderFallbackToPodManifestInjectionMethod:
 		return
 	case common.LoaderEnvInjectionMethod:
@@ -313,7 +313,6 @@ func resolveEnvInjectionMethod(odigosConfiguration *common.OdigosConfiguration) 
 	case common.PodManifestEnvInjectionMethod:
 		return
 	default:
-		// any illegal value will be defaulted to pod-manifest
-		odigosConfiguration.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
+		odigosConfig.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
 	}
 }
