@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type KeycloakConfig struct {
+type AuthConfig struct {
 	AdminUsername string
 	AdminPassword string
 }
@@ -20,10 +20,10 @@ type keycloakResourceManager struct {
 	client      *kube.Client
 	ns          string
 	managerOpts resourcemanager.ManagerOpts
-	config      KeycloakConfig
+	config      AuthConfig
 }
 
-func NewKeycloakResourceManager(client *kube.Client, ns string, managerOpts resourcemanager.ManagerOpts, config KeycloakConfig) resourcemanager.ResourceManager {
+func NewKeycloakResourceManager(client *kube.Client, ns string, managerOpts resourcemanager.ManagerOpts, config AuthConfig) resourcemanager.ResourceManager {
 	return &keycloakResourceManager{
 		client:      client,
 		ns:          ns,
@@ -43,7 +43,7 @@ func (m *keycloakResourceManager) InstallFromScratch(ctx context.Context) error 
 	return m.client.ApplyResources(ctx, 1, resources, m.managerOpts)
 }
 
-func NewKeycloakSecret(ns string, config KeycloakConfig) *corev1.Secret {
+func NewKeycloakSecret(ns string, config AuthConfig) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
@@ -62,7 +62,7 @@ func NewKeycloakSecret(ns string, config KeycloakConfig) *corev1.Secret {
 	}
 }
 
-func NewKeycloakDeployment(ns string, config KeycloakConfig) *appsv1.Deployment {
+func NewKeycloakDeployment(ns string, config AuthConfig) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",

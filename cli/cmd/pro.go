@@ -371,7 +371,7 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 		return err
 	}
 	config := resources.CentralManagersConfig{
-		Keycloak: centralodigos.KeycloakConfig{
+		Auth: centralodigos.AuthConfig{
 			AdminUsername: centralAdminUser,
 			AdminPassword: centralAdminPassword,
 		},

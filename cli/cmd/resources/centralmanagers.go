@@ -7,13 +7,13 @@ import (
 )
 
 type CentralManagersConfig struct {
-	Keycloak centralodigos.KeycloakConfig
+	Auth centralodigos.AuthConfig
 }
 
 func CreateCentralizedManagers(client *kube.Client, managerOpts resourcemanager.ManagerOpts, ns string, odigosVersion string, config CentralManagersConfig) []resourcemanager.ResourceManager {
 	return []resourcemanager.ResourceManager{
 		centralodigos.NewRedisResourceManager(client, ns, managerOpts),
-		centralodigos.NewKeycloakResourceManager(client, ns, managerOpts, config.Keycloak),
+		centralodigos.NewKeycloakResourceManager(client, ns, managerOpts, config.Auth),
 		centralodigos.NewCentralUIResourceManager(client, ns, managerOpts, odigosVersion),
 		centralodigos.NewCentralBackendResourceManager(client, ns, odigosVersion, managerOpts),
 	}
