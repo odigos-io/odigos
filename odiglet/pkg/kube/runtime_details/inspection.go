@@ -16,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
@@ -302,17 +303,22 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 		return false
 	}
 
+	// Overwrite the existing env vars. they always reflect the current state of the container.
 	// 1. Merge LD_PRELOAD from EnvVars [/proc/pid/environ]
 	odigosStr := "odigos"
-	updatedEnviron := mergeLdPreloadEnvVars(new.EnvVars, &existing.EnvVars, &odigosStr)
+	mergedEnvVars, updatedEnviron := mergeLdPreloadEnvVars(new.EnvVars, existing.EnvVars, &odigosStr)
+	existing.EnvVars = mergedEnvVars
 
 	// 2. Merge LD_PRELOAD from EnvFromContainerRuntime [DockerFile]
-	updatedDocker := mergeLdPreloadEnvVars(new.EnvFromContainerRuntime, &existing.EnvFromContainerRuntime, nil)
+	mergedEnvFromContainerRuntime, updatedDocker := mergeLdPreloadEnvVars(new.EnvFromContainerRuntime, existing.EnvFromContainerRuntime, nil)
+	existing.EnvFromContainerRuntime = mergedEnvFromContainerRuntime
 
 	updated := updatedEnviron || updatedDocker
 
 	// 3. Update SecureExecutionMode if needed
-	if existing.SecureExecutionMode == nil && new.SecureExecutionMode != nil {
+	existingSecureExecution := existing.SecureExecutionMode != nil && *existing.SecureExecutionMode
+	newSecureExecution := new.SecureExecutionMode != nil && *new.SecureExecutionMode
+	if !existingSecureExecution && newSecureExecution {
 		existing.SecureExecutionMode = new.SecureExecutionMode
 		updated = true
 	}
@@ -346,24 +352,42 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 
 func mergeLdPreloadEnvVars(
 	newEnvs []odigosv1.EnvVar,
-	existingEnvs *[]odigosv1.EnvVar,
+	existingEnvs []odigosv1.EnvVar,
 	skipIfContains *string,
-) bool {
-	// Step 1: Check if LD_PRELOAD already exists in the existing envs
-	for _, existingEnv := range *existingEnvs {
-		if existingEnv.Name == consts.LdPreloadEnvVarName {
-			return false // Already present, nothing to do
-		}
+) ([]odigosv1.EnvVar, bool) {
+
+	newLdPreloadValue, newHasLdPreload := env.FindLdPreloadInEnvs(newEnvs)
+	_, existingHasLdPreload := env.FindLdPreloadInEnvs(existingEnvs)
+
+	if newHasLdPreload && existingHasLdPreload {
+		// Already present, nothing to do.
+		// Amir 01/07/2025: do we need to update the existing envs value if it changes?
+		return existingEnvs, false
 	}
 
-	// Step 2: Try to add it from new envs
-	for _, newEnv := range newEnvs {
-		if newEnv.Name == consts.LdPreloadEnvVarName {
-			if skipIfContains == nil || !strings.Contains(newEnv.Value, *skipIfContains) {
-				*existingEnvs = append(*existingEnvs, newEnv)
-				return true // Add LD_PRELOAD and return
-			}
+	if newHasLdPreload && !existingHasLdPreload {
+		// Avoid adding LD_PRELOAD if it contains odigos value.
+		// Amir 01/07/2025: the consumer (agentenabled controllers) already checks for this value.
+		// can we simply log what we have and let downstream filter it or not depending on the usecase?
+		if skipIfContains != nil && strings.Contains(newLdPreloadValue, *skipIfContains) {
+			return existingEnvs, false
 		}
+		// New LD_PRELOAD is set, add it to the existing envs.
+		envsWithLdPreload := append(existingEnvs, odigosv1.EnvVar{Name: consts.LdPreloadEnvVarName, Value: newLdPreloadValue})
+		return envsWithLdPreload, true
 	}
-	return false // No LD_PRELOAD found, nothing to do
+
+	if !newHasLdPreload && existingHasLdPreload {
+		// at this point, if we have an existing LD_PRELOAD, we never remove it.
+		// this is to prevent loops where the value jitters and we end up
+		// enabling and disabling the agent and causing a lot of noise and rollout.
+		// the downside is that if a user has LD_PRELOAD and removes it,
+		// odigos will falsly show this as if LD_PRELOAD is still set.
+		// in this case, user currently has no other way then to uninstrument and re-instrument.
+		// TODO: this is a bad UX to the user, consider how to update this value live.
+		return existingEnvs, true
+	}
+
+	// At this point, we have no new nor existing LD_PRELOAD, so nothing to do.
+	return existingEnvs, false
 }

@@ -120,6 +120,9 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 					isLatestRevisionText = "true"
 				}
 				for i := range podList.Items {
+					if podList.Items[i].Annotations == nil {
+						podList.Items[i].Annotations = make(map[string]string)
+					}
 					podList.Items[i].Annotations[OdigosRunningLatestWorkloadRevisionAnnotation] = isLatestRevisionText
 				}
 
