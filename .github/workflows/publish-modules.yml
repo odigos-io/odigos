@@ -176,7 +176,7 @@ jobs:
           }" $SLACK_WEBHOOK_URL
 
   print-tag:
-    needs: verify-dependencies-sync
+    needs: verify-release-blockers
     runs-on: ubuntu-latest
     steps:
       - name: Extract Tag
@@ -190,7 +190,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Detected new git tag. initializing a release", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   tag-modules:
-    needs: verify-dependencies-sync
+    needs: verify-release-blockers
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -246,7 +246,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: Odigos go modules release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   publish-images:
-    needs: verify-dependencies-sync
+    needs: verify-release-blockers
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -368,7 +368,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: odigos component ${{ matrix.service }} release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   publish-collector-linux-packages:
-    needs: verify-dependencies-sync
+    needs: verify-release-blockers
     runs-on: ubuntu-latest
     steps:
       - name: Extract Tag
