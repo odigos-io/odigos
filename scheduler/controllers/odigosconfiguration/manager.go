@@ -1,4 +1,4 @@
-package odigosconfig
+package odigosconfiguration
 
 import (
 	"github.com/odigos-io/odigos/common"
@@ -12,9 +12,9 @@ func SetupWithManager(mgr ctrl.Manager, tier common.OdigosTier, odigosVersion st
 
 	err := ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.ConfigMap{}).
-		Named("odigosconfig-odigosconfig").
+		Named("odigosconfiguration-odigosconfiguration").
 		WithEventFilter(&odigospredicates.OdigosConfigMapPredicate).
-		Complete(&odigosConfigController{
+		Complete(&odigosConfigurationController{
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			Tier:          tier,
@@ -27,9 +27,9 @@ func SetupWithManager(mgr ctrl.Manager, tier common.OdigosTier, odigosVersion st
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.ConfigMap{}).
-		Named("odigosconfig-odigosdeployment").
+		Named("odigosconfiguration-odigosdeployment").
 		WithEventFilter(&odigospredicates.OdigosDeploymentConfigMapPredicate).
-		Complete(&odigosConfigController{
+		Complete(&odigosConfigurationController{
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			Tier:          tier,

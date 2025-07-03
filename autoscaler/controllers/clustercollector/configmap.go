@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
+	odigoslabels "github.com/odigos-io/odigos/cli/pkg/labels"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
@@ -188,6 +189,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosClusterCollectorConfigMapName,
 			Namespace: gateway.Namespace,
+			Labels:    odigoslabels.OdigosSystem,
 		},
 		Data: map[string]string{
 			k8sconsts.OdigosClusterCollectorConfigMapKey: desiredData,

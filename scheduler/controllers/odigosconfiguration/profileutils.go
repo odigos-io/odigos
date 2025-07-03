@@ -1,4 +1,4 @@
-package odigosconfig
+package odigosconfiguration
 
 import (
 	"crypto/sha256"

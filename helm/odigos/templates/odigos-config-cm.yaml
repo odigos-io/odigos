@@ -1,10 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: odigos-config
+  name: odigos-configuration
   namespace: '{{ .Release.Namespace }}'
-  annotations:
-    'helm.sh/hook': post-install,post-upgrade
   labels:
     odigos.io/config: '1'
     odigos.io/system-object: "true"

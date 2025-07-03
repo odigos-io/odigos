@@ -34,7 +34,7 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 
 	// TODO: we are yaml unmarshalling the configmap data for every workload, this is not efficient
 	// can we cache the configmap data in the controller?
-	effectiveConfig, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
+	effectiveConfig, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
 	if err != nil {
 		return nil, nil, nil, err
 	}

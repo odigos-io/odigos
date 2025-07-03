@@ -140,7 +140,7 @@ It will install k8s components that will auto-instrument your applications with 
 			os.Exit(1)
 		}
 
-		config := CreateOdigosConfig(odigosTier, nodeSelector)
+		config := CreateOdigosConfiguration(odigosTier, nodeSelector)
 
 		err = installOdigos(ctx, client, ns, &config, &odigosProToken, odigosTier, "Creating")
 		if err != nil {
@@ -337,7 +337,7 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcema
 	return imageReferences
 }
 
-func CreateOdigosConfig(odigosTier common.OdigosTier, nodeSelector map[string]string) common.OdigosConfiguration {
+func CreateOdigosConfiguration(odigosTier common.OdigosTier, nodeSelector map[string]string) common.OdigosConfiguration {
 	selectedProfiles := []common.ProfileName{}
 	for _, profile := range userInputInstallProfiles {
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))

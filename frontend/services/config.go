@@ -57,13 +57,13 @@ func IsReadonlyMode(ctx context.Context) bool {
 		return false
 	}
 
-	var odigosConfig common.OdigosConfiguration
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
+	var odigosConfiguration common.OdigosConfiguration
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration); err != nil {
 		log.Printf("Error parsing YAML: %v\n", err)
 		return false
 	}
 
-	return odigosConfig.UiMode == common.UiModeReadonly
+	return odigosConfiguration.UiMode == common.UiModeReadonly
 }
 
 func isSourceCreated(ctx context.Context) bool {

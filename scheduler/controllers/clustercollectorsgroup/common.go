@@ -34,14 +34,14 @@ func sync(ctx context.Context, c client.Client) error {
 
 	namespace := env.GetCurrentNamespace()
 
-	odigosConfig, err := utils.GetCurrentOdigosConfig(ctx, c)
+	odigosConfiguration, err := utils.GetCurrentOdigosConfiguration(ctx, c)
 	if err != nil {
 		return err
 	}
-	resourceSettings := getGatewayResourceSettings(&odigosConfig)
+	resourceSettings := getGatewayResourceSettings(&odigosConfiguration)
 
 	// default servicegraph is enabled (serviceGraphDisabled to false)
-	serviceGraphDisabled := odigosConfig.CollectorGateway.ServiceGraphDisabled
+	serviceGraphDisabled := odigosConfiguration.CollectorGateway.ServiceGraphDisabled
 	if serviceGraphDisabled == nil {
 		result := false
 		serviceGraphDisabled = &result

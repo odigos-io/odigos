@@ -282,7 +282,7 @@ var activateCmd = &cobra.Command{
 
 		fmt.Println("Starting activation of Enterprise tier from Community...")
 
-		odigosConfig, err := resources.GetCurrentConfig(ctx, client, ns)
+		odigosConfiguration, err := resources.GetCurrentConfig(ctx, client, ns)
 		if err != nil {
 			fmt.Printf("Error reading odigos configuration: %v\n", err)
 			os.Exit(1)
@@ -291,7 +291,7 @@ var activateCmd = &cobra.Command{
 		// Since Karpenter uses a different labeling system that has no separation between OSS and enterprise,
 		// we want to avoid potential user apps from crashing in case they are scheduled on a node where the
 		// enterprise files are not yet found in the /var/odigos mount.
-		if odigosConfig.KarpenterEnabled != nil && *odigosConfig.KarpenterEnabled {
+		if odigosConfiguration.KarpenterEnabled != nil && *odigosConfiguration.KarpenterEnabled {
 			fmt.Println("\033[31mERROR\033[0m Activation is not supported when odigos is installed with 'KarpenterEnabled' option. uninstall odigos community and reinstall odigos with enterprise onprem token")
 			os.Exit(1)
 		}
@@ -313,7 +313,7 @@ var activateCmd = &cobra.Command{
 
 		onPremToken := cmd.Flag("onprem-token").Value.String()
 		resourceManagers := resources.CreateResourceManagers(
-			client, ns, common.OnPremOdigosTier, &onPremToken, odigosConfig, odigosVersion,
+			client, ns, common.OnPremOdigosTier, &onPremToken, odigosConfiguration, odigosVersion,
 			installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Synching")

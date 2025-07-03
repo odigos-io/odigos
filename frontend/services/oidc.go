@@ -20,23 +20,23 @@ import (
 
 // gets the OIDC configuration values from the odigos-config ConfigMap
 func getOidcValuesFromConfig(ctx context.Context) (string, string, string, string, bool) {
-	var odigosConfig common.OdigosConfiguration
+	var odigosConfiguration common.OdigosConfiguration
 	odigosns := env.GetCurrentNamespace()
 
 	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
 	if err != nil {
 		log.Fatalf("Error getting CM: %v\n", err)
 	}
-	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig)
+	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
 	if err != nil {
 		log.Fatalf("Error parsing YAML: %v\n", err)
 	}
-	if odigosConfig.Oidc == nil {
+	if odigosConfiguration.Oidc == nil {
 		return "", "", "", "", false
 	}
 
 	// UI values
-	uiRemoteUrl := odigosConfig.UiRemoteUrl
+	uiRemoteUrl := odigosConfiguration.UiRemoteUrl
 	if uiRemoteUrl == "" {
 		uiRemoteUrl = "http://localhost:3000"
 	}
@@ -50,8 +50,8 @@ func getOidcValuesFromConfig(ctx context.Context) (string, string, string, strin
 		return "", "", "", "", false
 	}
 	oidcClientSecret := string(secret.Data[consts.OidcClientSecretProperty])
-	oidcClientId := odigosConfig.Oidc.ClientId
-	oidcTenantUrl := odigosConfig.Oidc.TenantUrl
+	oidcClientId := odigosConfiguration.Oidc.ClientId
+	oidcTenantUrl := odigosConfiguration.Oidc.TenantUrl
 	if !strings.HasPrefix(oidcTenantUrl, "https://") {
 		oidcTenantUrl = fmt.Sprintf("https://%s", oidcTenantUrl)
 	}
