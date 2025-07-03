@@ -1,7 +1,6 @@
 {{- if (include "odigos.secretExists" .) }}
-{{- if .Values.keycloak.enabled }}
-{{- if not .Values.keycloak.adminPassword }}
-{{- fail "Keycloak admin password is required. Please use --set keycloak.adminPassword=<your-password>" }}
+{{- if not .Values.auth.adminPassword }}
+{{- fail "Central admin password is required. Please use --set auth.adminPassword=<your-password>" }}
 {{- end }}
 apiVersion: apps/v1
 kind: Deployment
@@ -32,21 +31,21 @@ spec:
               app: keycloak
         {{- end }}
         {{- end }}
-      {{- if .Values.keycloak.nodeSelector }}
+      {{- if .Values.auth.nodeSelector }}
       nodeSelector:
-        {{- toYaml .Values.keycloak.nodeSelector | nindent 8 }}
+        {{- toYaml .Values.auth.nodeSelector | nindent 8 }}
       {{- end }}
-      {{- if .Values.keycloak.tolerations }}
+      {{- if .Values.auth.tolerations }}
       tolerations:
-        {{- toYaml .Values.keycloak.tolerations | nindent 8 }}
+        {{- toYaml .Values.auth.tolerations | nindent 8 }}
       {{- end }}
-      {{- if .Values.keycloak.affinity }}
+      {{- if .Values.auth.affinity }}
       affinity:
-        {{- toYaml .Values.keycloak.affinity | nindent 8 }}
+        {{- toYaml .Values.auth.affinity | nindent 8 }}
       {{- end }}
       containers:
         - name: keycloak
-          image: {{ .Values.keycloak.image | quote }}
+          image: {{ .Values.auth.image | quote }}
           args: ["start", "--optimized", "--http-enabled=true"]
           env:
             - name: KEYCLOAK_ADMIN
@@ -62,9 +61,8 @@ spec:
             - name: KC_HOSTNAME
               value: "localhost"
           ports:
-            - containerPort: {{ .Values.keycloak.port }}
-              name: {{ .Values.keycloak.portName }}
+            - containerPort: {{ .Values.auth.port }}
+              name: {{ .Values.auth.portName }}
           resources:
-            {{- toYaml .Values.keycloak.resources | nindent 12 }}
+            {{- toYaml .Values.auth.resources | nindent 12 }}
 {{- end }}
-{{- end }} 

@@ -37,7 +37,7 @@ redis:
   port: 6379
   portName: redis
 
-keycloak:
+auth:
   enabled: true
   image: quay.io/keycloak/keycloak:24.0.3
   adminUsername: admin
