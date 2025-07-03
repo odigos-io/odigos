@@ -120,6 +120,61 @@ jobs:
             \"tag\": \"verify-dependencies-sync-failure\"
           }" $SLACK_WEBHOOK_URL
 
+  verify-release-blockers:
+    needs: verify-dependencies-sync
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ['odigos', 'odigos-enterprise']
+    steps:
+      - name: Verify no open release-blocker PRs
+        id: verify
+        run: |
+          # Fetch open PRs and filter by "release-blocker" label
+          result=$(curl -s -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100")
+
+          pr_links=$(echo "$result" \
+            | jq -r '[.[] | select(.labels | any(.name == "release-blocker")) | .html_url] | join(" ")')
+
+          count=$(echo "$pr_links" | wc -w)
+          if [ "$count" -gt 0 ]; then
+            # Write outputs to GITHUB_OUTPUT instead of using ::set-output
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "links=$pr_links" >> $GITHUB_OUTPUT
+            echo "❌ Error: Open PRs with label \"release-blocker\" found!" >&2
+            exit 1
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "✅ No open PRs with label \"release-blocker\"."
+          fi
+
+      - name: Notify Slack on Success
+        if: ${{ steps.verify.outputs.status == 'success' }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "description": "✅ No open release-blocker PRs in `${{ matrix.repo }}`",
+            "tag": "verify-release-blockers-success"
+          }' $SLACK_WEBHOOK_URL
+
+      - name: Notify Slack on Failure
+        if: ${{ failure() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          PR_LINKS: ${{ steps.verify.outputs.links }}
+        run: |
+          pr_links_formatted=$(echo "$PR_LINKS" | jq -r '.[]' | awk '{print "- " $0}' | tr '\n' '\n')
+          curl -X POST -H 'Content-type: application/json' --data "{
+            \"description\": \"❌ ERROR: Open release-blocker PRs found in \`${{ matrix.repo }}\`\n\n$pr_links_formatted\",
+            \"link\": \"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}\",
+            \"tag\": \"verify-release-blockers-failure\"
+          }" $SLACK_WEBHOOK_URL
+
   print-tag:
     needs: verify-dependencies-sync
     runs-on: ubuntu-latest
