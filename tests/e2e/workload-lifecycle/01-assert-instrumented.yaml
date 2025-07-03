@@ -302,7 +302,7 @@ status:
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
-    - message: "agent injected successfully to 1 containers: [java-unique-exec]"
+    - message: "agent enabled in 1 containers: [java-unique-exec]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
