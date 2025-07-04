@@ -151,7 +151,7 @@ spec:
               configMapKeyRef:
                 key: PYTHONPATH
                 name: env-configmap
-          image: ghcr.io/odigos-io/simple-demo/odigos-demo-inventory:v0.1.27
+          image: registry.odigos.io/odigos-demo-inventory:v0.1.14
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -237,7 +237,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/odigos-io/simple-demo/odigos-demo-frontend:v0.1.27
+          image: registry.odigos.io/odigos-demo-frontend:v0.1.14
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsUser: 1000

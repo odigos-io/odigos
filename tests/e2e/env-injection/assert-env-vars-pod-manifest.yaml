@@ -52,7 +52,7 @@ metadata:
   namespace: default
 spec:
   containers:
-    - image: ghcr.io/odigos-io/simple-demo/odigos-demo-inventory:v0.1.27
+    - image: registry.odigos.io/odigos-demo-inventory:v0.1.14
       name: inventory
       # We are checking that in case valueFrom exists we're appending Odigos additions to the ORIGINAL_{envar}
       (env[?name=='PYTHONPATH']):
@@ -86,7 +86,7 @@ metadata:
   namespace: default
 spec:
   containers:
-    - image: ghcr.io/odigos-io/simple-demo/odigos-demo-frontend:v0.1.27
+    - image: registry.odigos.io/odigos-demo-frontend:v0.1.14
       name: frontend
       # We are checking that in case valueFrom exists we're appending Odigos additions to the ORIGINAL_{envar}
       (env[?name=='JAVA_TOOL_OPTIONS']):
