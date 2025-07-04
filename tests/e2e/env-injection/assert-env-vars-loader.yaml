@@ -53,7 +53,7 @@ metadata:
   namespace: default
 spec:
   containers:
-    - image: registry.odigos.io/odigos-demo-inventory:v0.1.14
+    - image: ghcr.io/odigos-io/simple-demo/odigos-demo-inventory:v0.1.27
       # the user defined PYTHONPATH remains unchanged
       # and we add the loader.
       name: inventory
@@ -91,7 +91,7 @@ metadata:
   namespace: default
 spec:
   containers:
-    - image: registry.odigos.io/odigos-demo-frontend:v0.1.14
+    - image: ghcr.io/odigos-io/simple-demo/odigos-demo-frontend:v0.1.27
       name: frontend
       # the user defined PYTHONPATH remains unchanged
       # and we add the loader.
