@@ -131,14 +131,6 @@ jobs:
           docker load -i cli-image.tar
           TAG=e2e-test make load-to-kind
 
-      - name: Create ImagePullSecret for Kind cluster to pull demo images authenticated
-        run: |
-          kubectl create secret docker-registry ghcr-secret \
-            --docker-server=ghcr.io \
-            --docker-username=${{ github.actor }} \
-            --docker-password=${{ secrets.GITHUB_TOKEN }} \
-            --namespace=default
-
       - name: Download CLI binary
         uses: actions/download-artifact@v4
         with:
