@@ -2,7 +2,7 @@ apiVersion: odigos.io/v1alpha1
 kind: Action
 metadata:
   name: 06-action-piimasking
-  namespace: default
+  namespace: odigos-test
 spec:
   signals:
   - TRACES
