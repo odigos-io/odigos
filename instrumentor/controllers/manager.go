@@ -203,13 +203,13 @@ func RegisterWebhooks(mgr manager.Manager, dp *distros.Provider) error {
 	}
 
 	err = builder.
-	WebhookManagedBy(mgr).
-	For(&corev1.Pod{}).
-	WithDefaulter(&agentenabled.PodsWebhook{
-		Client:        mgr.GetClient(),
-		DistrosGetter: dp.Getter,
-	}).
-	Complete()
+		WebhookManagedBy(mgr).
+		For(&corev1.Pod{}).
+		WithDefaulter(&agentenabled.PodsWebhook{
+			Client:        mgr.GetClient(),
+			DistrosGetter: dp.Getter,
+		}).
+		Complete()
 	if err != nil {
 		return err
 	}

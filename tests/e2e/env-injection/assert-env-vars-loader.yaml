@@ -93,7 +93,7 @@ spec:
   containers:
     - image: registry.odigos.io/odigos-demo-frontend:v0.1.14
       name: frontend
-      # the user defined PYTHONPATH remains unchanged
+      # the user defined JAVA_TOOL_OPTIONS remains unchanged
       # and we add the loader.
       (env[?name=='JAVA_TOOL_OPTIONS']):
        - valueFrom:

@@ -290,6 +290,15 @@ type ContainerAgentConfig struct {
 	// Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
 	DistroParams map[string]string `json:"distroParams,omitempty"`
 
+	// the reconciler resolves which injection method to use for this container.
+	// it is affected (at the moment) by config, runtime inspection and the user defined overrides.
+	// This field carries the following semantics:
+	// - nil: do not inject any "append variables" (PYTHONPATH, NODE_OPTIONS, etc.) at all.
+	// - "loader": inject the LD_PRELOAD env var to the pod manifest which will trigger the odigos loader.
+	// - "pod-manifest": inject the runtime specific agent loading env vars (e.g PYTHONPATH, NODE_OPTIONS) as specified in the distro manifest.
+	// - "loader-fallback-to-pod-manifest": use "pod-manifest". it means we tried LD_PRELOAD and it failed, so we falled-back to the pod manifest.
+	EnvInjectionMethod *common.EnvInjectionMethod `json:"agentInjectionMethod,omitempty"`
+
 	// Each enabled signal must be set with a non-nil value (even if the config content is empty).
 	// nil means that the signal is disabled and should not be instrumented/collected by the agent.
 	Traces  *AgentTracesConfig  `json:"traces,omitempty"`
