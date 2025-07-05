@@ -223,9 +223,9 @@ spec:
     - name: pricing
       resources:
         limits:
-          instrumentation.odigos.io/dotnet-native-generic: '1'
+          instrumentation.odigos.io/generic: '1'
         requests:
-          instrumentation.odigos.io/dotnet-native-generic: '1'
+          instrumentation.odigos.io/generic: '1'
       (env[?name == 'ODIGOS_CONTAINER_NAME']):
         - value: pricing
       (env[?name == 'ODIGOS_DISTRO_NAME']):
