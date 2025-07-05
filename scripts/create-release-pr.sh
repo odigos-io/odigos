@@ -25,7 +25,7 @@ NEXT_VERSION="v$MAJOR.$MINOR.$NEW_PATCH"
 echo "Next version: $NEXT_VERSION"
 
 # Check if a release PR already exists
-EXISTING_PR=$(gh pr list --head "release/$NEXT_VERSION" --json number --jq '.[0].number' 2>/dev/null || echo "")
+EXISTING_PR=$(gh pr list --head "release/$NEXT_VERSION" --json number --jq '.[0].number // empty' 2>/dev/null || echo "")
 
 # Generate changelog
 CHANGELOG=$(git log --oneline --no-merges $LATEST_TAG..HEAD | sed 's/^/- /')
@@ -53,7 +53,17 @@ if [ -n "$EXISTING_PR" ]; then
     gh pr edit $EXISTING_PR --title "$PR_TITLE" --body "$PR_BODY"
 else
     echo "Creating new release PR for $NEXT_VERSION"
-    git checkout -b "release/$NEXT_VERSION"
+    
+    # Check if the branch already exists locally or remotely
+    if git show-ref --verify --quiet refs/heads/release/$NEXT_VERSION 2>/dev/null || git ls-remote --heads origin release/$NEXT_VERSION | grep -q release/$NEXT_VERSION; then
+        echo "Branch release/$NEXT_VERSION already exists. Checking it out and updating."
+        git checkout "release/$NEXT_VERSION"
+        git pull origin "release/$NEXT_VERSION" 2>/dev/null || true
+    else
+        echo "Creating new branch release/$NEXT_VERSION"
+        git checkout -b "release/$NEXT_VERSION"
+    fi
+    
     git push origin "release/$NEXT_VERSION"
     gh pr create --title "$PR_TITLE" --body "$PR_BODY" --base main --head "release/$NEXT_VERSION" --label "release" --label "automated"
 fi 
