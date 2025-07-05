@@ -14,6 +14,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/distros/distro"
 	distroTypes "github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -295,6 +296,117 @@ func getEnvVarFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContai
 	return "", false
 }
 
+// will check if loader injection is supported based on the runtime inspection.
+// loader is only allowed if:
+// - LD_PRELOAD is not used in the container for some other purpose (other agent)
+// - container is not running in secure execution mode
+//
+// returns "nil" on success, and a container agent config with reason and message if not supported.
+func isLoaderInjectionSupportedByRuntimeDetails(containerName string, runtimeDetails *odigosv1.RuntimeDetailsByContainer) *odigosv1.ContainerAgentConfig {
+	// check for conditions to inject ldpreload when it is the only method configured.
+	secureExecution := runtimeDetails.SecureExecutionMode == nil || *runtimeDetails.SecureExecutionMode
+	if secureExecution {
+		return &odigosv1.ContainerAgentConfig{
+			ContainerName:       containerName,
+			AgentEnabled:        false,
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+			AgentEnabledMessage: "container is running in secure execution mode and injection method is set to 'loader'",
+		}
+	}
+
+	// check if the LD_PRELOAD env var is not already present in the manifest and the runtime details env var is not set or set to the odigos loader path.
+	odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
+	ldPreloadValue, foundInInspection := getEnvVarFromRuntimeDetails(runtimeDetails, "LD_PRELOAD")
+	ldPreloadUnsetOrExpected := !foundInInspection || strings.Contains(ldPreloadValue, odigosLoaderPath)
+	if !ldPreloadUnsetOrExpected {
+		return &odigosv1.ContainerAgentConfig{
+			ContainerName:       containerName,
+			AgentEnabled:        false,
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+			AgentEnabledMessage: "container is already using LD_PRELOAD env var, and injection method is set to 'loader'. current value: " + ldPreloadValue,
+		}
+	}
+
+	return nil
+}
+
+// Will calculate the env injection method for the container based on the relevant parameters.
+// returned paramters are:
+// - the env injection method to use for this container (may be nil if no injection should take place)
+// - a container agent config to signal any failures in using the loader in these conditions.
+//
+// second returned value acts as an "error" value, user should first check if it's not nil and handle any errors accordingly.
+func getEnvInjectionMethod(
+	containerName string,
+	effectiveConfig *common.OdigosConfiguration,
+	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
+	distro *distro.OtelDistro,
+) (*common.EnvInjectionMethod, *odigosv1.ContainerAgentConfig) {
+
+	if effectiveConfig.AgentEnvVarsInjectionMethod == nil {
+		// this should never happen, as the config is reconciled with default value.
+		// it is only here as a safety net.
+		return nil, &odigosv1.ContainerAgentConfig{
+			ContainerName:       containerName,
+			AgentEnabled:        false,
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+			AgentEnabledMessage: "no injection method configured for odigos agent",
+		}
+	}
+
+	// If we should try loader, check for this first
+	distroSupportsLoader := distro.RuntimeAgent != nil && distro.RuntimeAgent.LdPreloadInjectionSupported
+	configRequiresLoader := *effectiveConfig.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod
+	configRequestLoader := configRequiresLoader || *effectiveConfig.AgentEnvVarsInjectionMethod == common.LoaderFallbackToPodManifestInjectionMethod
+
+	if distroSupportsLoader && configRequestLoader {
+		err := isLoaderInjectionSupportedByRuntimeDetails(containerName, runtimeDetails)
+		if err == nil {
+			// loader is requested by config and distro, and supported by the runtime details.
+			// thus, we can use the loader injection method in webhook.
+			loaderInjectionMethod := common.LoaderEnvInjectionMethod
+			return &loaderInjectionMethod, nil
+		} else {
+			// loader is requested by config and distro, but not supported by the runtime details.
+			if configRequiresLoader {
+				// config requires us to use loader when it is supported by distro,
+				// thus we can't use it and need fail the injection.
+				return nil, err
+			} // else - we will not return and continue to the next injection method.
+		}
+	}
+
+	// at this point, we know that if loader is requested supported, or required and not supported,
+	// the function has already returned.
+	// everything else from this point onwards is for using pod manifest injection.
+
+	distroHasAppendEnvVar := len(distro.EnvironmentVariables.AppendOdigosVariables) > 0
+	if !distroHasAppendEnvVar {
+		// this is a common case, where a distro doesn't support nor loader or append env var injection.
+		// at the time of writing, this is golang, dotnet, php, ruby.
+		// for those we don't mark env injection as nil to denote "no injection"
+		// and return err as nil to denote "no error".
+		return nil, nil
+	}
+
+	// at this point we know there are "append env vars" and that they should be used.
+	// we return the injection method accordingly.
+	if configRequestLoader {
+		// loader is requested by config, but we falled-back to pod-maifest.
+		// return the 'loader-fallback-to-pod-manifest' to indicate that we tried loader and fallbacked to using pod-manifest.
+		// webhook should interpret this as "use pod-manifest injection method".
+		// ui and describe can enhance to show reason why use pod-manifest.
+		manifestInjectionMethod := common.LoaderFallbackToPodManifestInjectionMethod
+		return &manifestInjectionMethod, nil
+	} else {
+		// return the pod-manifest injection method to signal that:
+		// - this is what pod webhook should use to inject the agent.
+		// - this is the value configured by the user in the config.
+		manifestInjectionMethod := common.PodManifestEnvInjectionMethod
+		return &manifestInjectionMethod, nil
+	}
+}
+
 func calculateContainerInstrumentationConfig(containerName string,
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
@@ -378,6 +490,13 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
+	envInjectionMethod, unsupportedDetails := getEnvInjectionMethod(containerName, effectiveConfig, runtimeDetails, distro)
+	if unsupportedDetails != nil {
+		// if we have a container agent config with reason and message, we return it.
+		// this is a failure to inject the agent, and we should not proceed with other checks.
+		return *unsupportedDetails
+	}
+
 	// if no signals are enabled, we don't need to inject the agent.
 	// based on the rules, we can have a case where no signals are enabled for specific container.
 	// TODO: check if this distro supports no signals enabled (instead of checking for any signal)
@@ -387,37 +506,6 @@ func calculateContainerInstrumentationConfig(containerName string,
 			AgentEnabled:        false,
 			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoCollectedSignals,
 			AgentEnabledMessage: "all signals are disabled, no agent will be injected",
-		}
-	}
-
-	// check for injection method based on the distro and runtime details
-	containsAppendEnvVar := len(distro.EnvironmentVariables.AppendOdigosVariables) > 0
-	ldPreloadInjectionSupported := distro.RuntimeAgent != nil && distro.RuntimeAgent.LdPreloadInjectionSupported
-	if containsAppendEnvVar && ldPreloadInjectionSupported &&
-		(effectiveConfig.AgentEnvVarsInjectionMethod != nil && *effectiveConfig.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod) {
-
-		// check for conditions to inject ldpreload when it is the only method configured.
-		secureExecution := runtimeDetails.SecureExecutionMode == nil || *runtimeDetails.SecureExecutionMode
-		if secureExecution {
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
-				AgentEnabledMessage: "container is running in secure execution mode and injection method is set to 'loader'",
-			}
-		}
-
-		// check if the LD_PRELOAD env var is not already present in the manifest and the runtime details env var is not set or set to the odigos loader path.
-		odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
-		ldPreloadValue, foundInInspection := getEnvVarFromRuntimeDetails(runtimeDetails, "LD_PRELOAD")
-		ldPreloadUnsetOrExpected := !foundInInspection || strings.Contains(ldPreloadValue, odigosLoaderPath)
-		if !ldPreloadUnsetOrExpected {
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
-				AgentEnabledMessage: "container is already using LD_PRELOAD env var, and injection method is set to 'loader'. current value: " + ldPreloadValue,
-			}
 		}
 	}
 
@@ -533,6 +621,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 				AgentEnabledMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
 				OtelDistroName:      distroName,
 				DistroParams:        distroParameters,
+				EnvInjectionMethod:  envInjectionMethod,
 				Traces:              tracesConfig,
 				Metrics:             metricsConfig,
 				Logs:                logsConfig,
@@ -541,13 +630,14 @@ func calculateContainerInstrumentationConfig(containerName string,
 	}
 
 	return odigosv1.ContainerAgentConfig{
-		ContainerName:  containerName,
-		AgentEnabled:   true,
-		OtelDistroName: distroName,
-		DistroParams:   distroParameters,
-		Traces:         tracesConfig,
-		Metrics:        metricsConfig,
-		Logs:           logsConfig,
+		ContainerName:      containerName,
+		AgentEnabled:       true,
+		OtelDistroName:     distroName,
+		DistroParams:       distroParameters,
+		EnvInjectionMethod: envInjectionMethod,
+		Traces:             tracesConfig,
+		Metrics:            metricsConfig,
+		Logs:               logsConfig,
 	}
 
 }
