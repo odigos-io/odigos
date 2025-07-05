@@ -4,18 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 )
-
-// OtelDistribution is a customized version of an OpenTelemetry component.
-// see https://opentelemetry.io/docs/concepts/distributions  and https://github.com/odigos-io/odigos/pull/1776#discussion_r1853367917 for more information.
-// TODO: This should be moved to a common root package, since it will require a bigger refactor across multiple components,
-// we use this local definition for now.
-type OtelDistribution struct {
-	Language common.ProgrammingLanguage
-	OtelSdk  common.OtelSdk
-}
 
 // ProcessDetails is used to convert the common process details reported by the detector to details relevant to hosting platform.
 //
@@ -52,7 +43,7 @@ type ConfigGroupResolver[processDetails ProcessDetails, configGroup ConfigGroup]
 	// Resolve will classify the process into a configuration group.
 	// The Otel Distribution is resolved in the time of calling this function, and may be used
 	// to determine the configuration group.
-	Resolve(context.Context, processDetails, OtelDistribution) (configGroup, error)
+	Resolve(context.Context, processDetails, *distro.OtelDistro) (configGroup, error)
 }
 
 // Reporter is used to report the status of the instrumentation.
@@ -79,13 +70,13 @@ type Reporter[processDetails ProcessDetails] interface {
 // DistributionMatcher is used to match a process to an Otel Distribution.
 type DistributionMatcher[processDetails ProcessDetails] interface {
 	// Distribution will match a process to an Otel Distribution.
-	Distribution(context.Context, processDetails) (OtelDistribution, error)
+	Distribution(context.Context, processDetails) (*distro.OtelDistro, error)
 }
 
 // SettingsGetter is used to fetch the initial settings of an instrumentation.
 type SettingsGetter[processDetails ProcessDetails] interface {
 	// GetSettings will fetch the initial settings of an instrumentation.
-	Settings(context.Context, processDetails, OtelDistribution) (Settings, error)
+	Settings(context.Context, processDetails, *distro.OtelDistro) (Settings, error)
 }
 
 // Handler is used to classify, report and configure instrumentations.
