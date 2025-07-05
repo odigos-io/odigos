@@ -2,6 +2,13 @@
 
 set -e
 
+# Check if GitHub CLI is authenticated
+if ! gh auth status >/dev/null 2>&1; then
+    echo "Error: GitHub CLI is not authenticated. Please set GH_TOKEN environment variable."
+    echo "Example: export GH_TOKEN=\${{ github.token }}"
+    exit 1
+fi
+
 # Get the latest semantic version tag (vX.Y.Z format)
 LATEST_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1) || { echo "Failed to get latest tag"; exit 1; }
 echo "Latest tag: $LATEST_TAG"
@@ -45,7 +52,10 @@ This PR was automatically created by the release workflow."
 
 if [ -n "$EXISTING_PR" ]; then
     echo "Updating existing release PR #$EXISTING_PR"
-    gh pr edit $EXISTING_PR --title "$PR_TITLE" --body "$PR_BODY"
+    if ! gh pr edit $EXISTING_PR --title "$PR_TITLE" --body "$PR_BODY"; then
+        echo "Error: Failed to update PR #$EXISTING_PR"
+        exit 1
+    fi
 else
     echo "Creating new release PR for $NEXT_VERSION"
     
@@ -60,5 +70,8 @@ else
     fi
     
     git push origin "release/$NEXT_VERSION"
-    gh pr create --title "$PR_TITLE" --body "$PR_BODY" --base main --head "release/$NEXT_VERSION" --label "release" --label "automated"
+    if ! gh pr create --title "$PR_TITLE" --body "$PR_BODY" --base main --head "release/$NEXT_VERSION" --label "release" --label "automated"; then
+        echo "Error: Failed to create PR for $NEXT_VERSION"
+        exit 1
+    fi
 fi 
