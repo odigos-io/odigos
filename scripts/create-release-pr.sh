@@ -2,8 +2,8 @@
 
 set -e
 
-# Get the latest tag
-LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+# Get the latest semantic version tag (vX.Y.Z format)
+LATEST_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1) || { echo "Failed to get latest tag"; exit 1; }
 echo "Latest tag: $LATEST_TAG"
 
 # Check if there are any commits since the last tag
