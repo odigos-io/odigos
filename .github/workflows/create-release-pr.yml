@@ -13,6 +13,8 @@ permissions:
 jobs:
   create-release-pr:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
