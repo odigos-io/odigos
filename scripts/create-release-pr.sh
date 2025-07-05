@@ -56,14 +56,18 @@ if [ -n "$EXISTING_PR" ]; then
         echo "Error: Failed to update PR #$EXISTING_PR"
         exit 1
     fi
+    echo "Successfully updated PR #$EXISTING_PR"
+    exit 0
 else
     echo "Creating new release PR for $NEXT_VERSION"
     
     # Check if the branch already exists locally or remotely
     if git show-ref --verify --quiet refs/heads/release/$NEXT_VERSION 2>/dev/null || git ls-remote --heads origin release/$NEXT_VERSION | grep -q release/$NEXT_VERSION; then
-        echo "Branch release/$NEXT_VERSION already exists. Checking it out and updating."
+        echo "Branch release/$NEXT_VERSION already exists. Checking it out and updating to latest main."
         git checkout "release/$NEXT_VERSION"
         git pull origin "release/$NEXT_VERSION" 2>/dev/null || true
+        # Update the branch to latest main
+        git merge main --no-edit
     else
         echo "Creating new branch release/$NEXT_VERSION"
         git checkout -b "release/$NEXT_VERSION"
