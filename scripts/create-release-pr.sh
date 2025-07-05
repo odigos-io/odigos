@@ -67,7 +67,7 @@ else
         git checkout "release/$NEXT_VERSION"
         git pull origin "release/$NEXT_VERSION" 2>/dev/null || true
         # Update the branch to latest main
-        git merge main --no-edit
+        git reset --hard origin/main
     else
         echo "Creating new branch release/$NEXT_VERSION"
         git checkout -b "release/$NEXT_VERSION"
