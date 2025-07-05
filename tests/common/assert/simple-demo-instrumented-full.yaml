@@ -223,9 +223,9 @@ spec:
     - name: pricing
       resources:
         limits:
-          instrumentation.odigos.io/dotnet-native-community: '1'
+          instrumentation.odigos.io/dotnet-native-generic: '1'
         requests:
-          instrumentation.odigos.io/dotnet-native-community: '1'
+          instrumentation.odigos.io/dotnet-native-generic: '1'
       (env[?name == 'ODIGOS_CONTAINER_NAME']):
         - value: pricing
       (env[?name == 'ODIGOS_DISTRO_NAME']):
@@ -241,6 +241,28 @@ spec:
         - value: pricing
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
         - value: 'k8s.pod.name=$(ODIGOS_POD_NAME),k8s.container.name=pricing,k8s.namespace.name=default,k8s.deployment.name=pricing'
+      (env[?name == 'CORECLR_ENABLE_PROFILING']):
+        - value: '1'
+      (env[?name == 'CORECLR_PROFILER']):
+        - value: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
+      (env[?name == 'CORECLR_PROFILER_PATH']):
+        - value: '/var/odigos/dotnet/linux-glibc/OpenTelemetry.AutoInstrumentation.Native.so'
+      (env[?name == 'OTEL_DOTNET_AUTO_HOME']):
+        - value: '/var/odigos/dotnet'
+      (env[?name == 'DOTNET_STARTUP_HOOKS']):
+        - value: '/var/odigos/dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll'
+      (env[?name == 'DOTNET_ADDITIONAL_DEPS']):
+        - value: '/var/odigos/dotnet/AdditionalDeps'
+      (env[?name == 'DOTNET_SHARED_STORE']):
+        - value: '/var/odigos/dotnet/store'
+      (env[?name == 'OTEL_LOGS_EXPORTER']):
+        - value: none
+      (env[?name == 'OTEL_METRICS_EXPORTER']):
+        - value: none
+      (env[?name == 'OTEL_TRACES_EXPORTER']):
+        - value: otlp
+      (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
 status:
   containerStatuses:
     - name: pricing
