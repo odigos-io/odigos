@@ -72,6 +72,9 @@ else
         echo "Creating new branch release/$NEXT_VERSION"
         git checkout -b "release/$NEXT_VERSION"
     fi
+
+    # Create empty commit to ensure there are changes for the PR
+    git commit --allow-empty -m "Release $NEXT_VERSION"
     
     git push origin "release/$NEXT_VERSION"
     if ! gh pr create --title "$PR_TITLE" --body "$PR_BODY" --base main --head "release/$NEXT_VERSION" --label "release" --label "automated"; then
