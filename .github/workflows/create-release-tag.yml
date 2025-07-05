@@ -1,0 +1,60 @@
+name: Create Release Tag
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  create-release-tag:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.title, 'Release ')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from PR title
+        id: extract-version
+        run: |
+          # Extract version from PR title (e.g., "Release v1.0.206" -> "v1.0.206")
+          VERSION=$(echo "${{ github.event.pull_request.title }}" | sed 's/Release //')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Creating release tag: $VERSION"
+
+      - name: Create and push tag
+        run: |
+          VERSION="${{ steps.extract-version.outputs.version }}"
+          
+          # Create the tag
+          git tag -a "$VERSION" -m "Release $VERSION"
+          
+          # Push the tag
+          git push origin "$VERSION"
+          
+          echo "Successfully created and pushed tag: $VERSION"
+
+      - name: Create GitHub Release
+        run: |
+          VERSION="${{ steps.extract-version.outputs.version }}"
+          
+          # Generate release notes from commits since last tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 "$VERSION"^ 2>/dev/null || echo "")
+          
+          if [ -n "$PREVIOUS_TAG" ]; then
+            RELEASE_NOTES=$(git log --oneline --no-merges "$PREVIOUS_TAG".."$VERSION" | sed 's/^/- /')
+          else
+            RELEASE_NOTES=$(git log --oneline --no-merges "$VERSION" | sed 's/^/- /')
+          fi
+          
+          # Create GitHub release
+          gh release create "$VERSION" \
+            --title "Release $VERSION" \
+            --notes "$RELEASE_NOTES" \
+            --target main 
