@@ -112,6 +112,8 @@ spec:
                   name: odigos-pro
                   key: odigos-onprem-token
             {{- end }}
+            - name: GOMEMLIMIT
+              value: {{ .Values.odiglet.goMemLimit | default "512MiB" }}
           envFrom:
             - configMapRef:
                 name: odigos-own-telemetry-otel-config
