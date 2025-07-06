@@ -744,4 +744,6 @@ replace github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector =
 
 replace github.com/odigos-io/odigos/common => ../../common
 
+replace go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
+
 exclude github.com/knadh/koanf v1.5.0

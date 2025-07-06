@@ -5,11 +5,9 @@ metadata:
   namespace: odigos-system
 spec:
   data:
-    MOCK_RESPONSE_DURATION_MS: "500"
+    MOCK_RESPONSE_DURATION_MS: "5000"
     MOCK_REJECT_FRACTION: "1"
   destinationName: mock-back-pressure
   signals:
   - TRACES
-  - METRICS
-  - LOGS
   type: mock

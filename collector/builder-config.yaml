@@ -129,3 +129,4 @@ replaces:
   - go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
   - github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
   - github.com/odigos-io/odigos/common => ../../common
+  - go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
