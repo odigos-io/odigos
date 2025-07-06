@@ -38,7 +38,10 @@ import (
 	"go.opentelemetry.io/collector/extension/extensionauth"
 )
 
-var errMetadataNotFound = errors.New("no request metadata found")
+var (
+	errMetadataNotFound   = errors.New("no request metadata found")
+	errMemoryLimitReached = status.Error(codes.ResourceExhausted, "Memory limit has been reached, too many requests.")
+)
 
 // KeepaliveClientConfig exposes the keepalive.ClientParameters to be used by the exporter.
 // Refer to the original data-structure for the meaning of each parameter:
@@ -109,6 +112,9 @@ type ClientConfig struct {
 
 	// Middlewares for the gRPC client.
 	Middlewares []configmiddleware.Config `mapstructure:"middlewares,omitempty"`
+
+	// MemoryLimiter is memory limiter this receiver will use to restrict incoming requests
+	MemoryLimiter *component.ID `mapstructure:"memory_limiter"`
 }
 
 // NewDefaultClientConfig returns a new instance of ClientConfig with default values.
@@ -205,9 +211,13 @@ type ServerConfig struct {
 	// Middlewares for the gRPC server.
 	Middlewares []configmiddleware.Config `mapstructure:"middlewares,omitempty"`
 
+	MemoryLimiter *component.ID `mapstructure:"memory_limiter"`
+
 	// prevent unkeyed literal initialization
 	_ struct{}
 }
+
+type memoryLimiterExtension = interface{ MustRefuse() bool }
 
 // NewDefaultServerConfig returns a new instance of ServerConfig with default values.
 func NewDefaultServerConfig() *ServerConfig {
@@ -520,6 +530,21 @@ func (gss *ServerConfig) getGrpcServerOptions(
 		})
 	}
 
+	if gss.MemoryLimiter != nil {
+		fmt.Println("********************* memory limiter is not nil ****************************** ")
+		memoryLimiter, err := getMemoryLimiterExtension(gss.MemoryLimiter, host.GetExtensions())
+		if err != nil {
+			return nil, err
+		}
+
+		uInterceptors = append(uInterceptors, func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+			return memoryLimiterUnaryServerInterceptor(ctx, req, info, handler, memoryLimiter)
+		})
+		sInterceptors = append(sInterceptors, func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			return memoryLimiterStreamServerInterceptor(srv, ss, info, handler, memoryLimiter)
+		})
+	}
+
 	otelOpts := []otelgrpc.Option{
 		otelgrpc.WithTracerProvider(settings.TracerProvider),
 		otelgrpc.WithPropagators(otel.GetTextMapPropagator()),
@@ -549,6 +574,35 @@ func (gss *ServerConfig) getGrpcServerOptions(
 	}
 
 	return opts, nil
+}
+
+func memoryLimiterUnaryServerInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler, ml memoryLimiterExtension) (any, error) {
+	if ml.MustRefuse() {
+		return nil, errMemoryLimitReached
+	}
+
+	return handler(ctx, req)
+}
+
+func memoryLimiterStreamServerInterceptor(srv any, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler, ml memoryLimiterExtension) error {
+	ctx := stream.Context()
+	fmt.Println("========================= amir testing if this line is printed ========================= ")
+	if ml.MustRefuse() {
+		return errMemoryLimitReached
+	}
+
+	return handler(srv, wrapServerStream(ctx, stream))
+}
+
+func getMemoryLimiterExtension(extID *component.ID, extensions map[component.ID]component.Component) (memoryLimiterExtension, error) {
+	if ext, found := extensions[*extID]; found {
+		if server, ok := ext.(memoryLimiterExtension); ok {
+			return server, nil
+		}
+		return nil, fmt.Errorf("requested MemoryLimiter, %s, is not a memoryLimiterExtension", extID)
+	}
+
+	return nil, fmt.Errorf("failed to resolve memoryLimiterExtension %q: %s", extID, "memory limiter extension not found")
 }
 
 // getGRPCCompressionName returns compression name registered in grpc.

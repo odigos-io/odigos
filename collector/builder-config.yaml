@@ -7,6 +7,7 @@ dist:
 
 extensions:
   - gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.126.0
+  - gomod: go.opentelemetry.io/collector/extension/memorylimiterextension v0.126.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.126.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.126.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.126.0
