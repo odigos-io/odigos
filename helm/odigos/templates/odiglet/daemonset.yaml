@@ -77,8 +77,7 @@ spec:
                   containerName: init
                   resource: limits.cpu
           resources:
-            limits:
-              cpu: 100m
+{{ toYaml .Values.odiglet.initContainerResources | indent 12 }}
 
       containers:
         - name: odiglet

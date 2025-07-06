@@ -262,6 +262,11 @@ odiglet:
   #   limits:
   #     cpu: 500m
   #     memory: 512Mi
+  initContainerResources:
+    requests:
+      cpu: 100m
+    limits:
+      cpu: 100m
 
   # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
@@ -303,7 +308,7 @@ openshift:
 gke:
   enabled: false
 
-# List of profile names (array). Example (YAML): profiles: [size_l] | (CLI): --set profiles={size_l} 
+# List of profile names (array). Example (YAML): profiles: [size_l] | (CLI): --set profiles={size_l}
 profiles: []
 
 # Optional NodeSelector to apply to all Odigos components
