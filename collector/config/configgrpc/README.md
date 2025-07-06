@@ -1,115 +1,56 @@
-# gRPC Configuration Settings
+# OpenTelemetry Collector gRPC Config Module
 
-gRPC exposes a [variety of settings](https://godoc.org/google.golang.org/grpc).
-Several of these settings are available for configuration within individual
-receivers or exporters. In general, none of these settings should need to be
-adjusted.
+## Overview
 
-## Client Configuration
+This is a copy of the `go.opentelemetry.io/collector/config/configgrpc` module from the [OpenTelemetry Collector repository](https://github.com/open-telemetry/opentelemetry-collector/tree/main/config/configgrpc) with an additional enhancement from [PR #9673](https://github.com/open-telemetry/opentelemetry-collector/pull/9673). This enhancement enables the collector to reject incoming telemetry data during memory pressure situations before processing and decoding, preventing unnecessary memory allocation.
 
-[Exporters](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/README.md)
-leverage client configuration.
+## Problem Statement
 
-Note that client configuration supports TLS configuration, the
-configuration parameters are also defined under `tls` like server
-configuration. For more information, see [configtls
-README](../configtls/README.md).
+### Baseline Scenario
 
-- [`balancer_name`](https://github.com/grpc/grpc-go/blob/master/examples/features/load_balancing/README.md): Default before v0.103.0 is `pick_first`, default for v0.103.0 is `round_robin`. See [issue](https://github.com/open-telemetry/opentelemetry-collector/issues/10298). To restore the previous behavior, set `balancer_name` to `pick_first`.
-- `compression`: Compression type to use among `gzip`, `snappy`, `zstd`, and `none`.
-- `endpoint`: Valid value syntax available [here](https://github.com/grpc/grpc/blob/master/doc/naming.md)
-- [`tls`](../configtls/README.md)
-- `headers`: name/value pairs added to the request
-- [`keepalive`](https://godoc.org/google.golang.org/grpc/keepalive#ClientParameters)
-  - `permit_without_stream`
-  - `time`
-  - `timeout`
-- [`read_buffer_size`](https://godoc.org/google.golang.org/grpc#ReadBufferSize)
-- [`write_buffer_size`](https://godoc.org/google.golang.org/grpc#WriteBufferSize)
-- [`auth`](../configauth/README.md)
-- [`middlewares`](../configmiddleware/README.md)
+This fix addresses observations from one of our users experiencing:
 
-Please note that [`per_rpc_auth`](https://pkg.go.dev/google.golang.org/grpc#PerRPCCredentials) which allows the credentials to send for every RPC is now moved to become an [extension](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/extension/bearertokenauthextension). Note that this feature isn't about sending the headers only during the initial connection as an `authorization` header under the `headers` would do: this is sent for every RPC performed during an established connection.
+- **Large cluster**: ~200 nodes
+- **Heavy payload**: Large span payloads due to stack trace collection
+- **Downstream issues**: Failures and delays preventing export, causing collector queue buildup
+- **Memory exhaustion**: Memory limits reached
+- **Continuous data flow**: New data from numerous senders continues flowing in, allocating more memory
+- **System failure**: Collector pod dies with Out of Memory (OOM) error
 
-Example:
+### Root Cause Analysis
 
-```yaml
-exporters:
-  otlp:
-    endpoint: otelcol2:55690
-    auth:
-      authenticator: some-authenticator-extension
-    tls:
-      ca_file: ca.pem
-      cert_file: cert.pem
-      key_file: key.pem
-    headers:
-      test1: "value1"
-      "test 2": "value 2"
-```
+The issue occurs when the extra buffer in the memory limiter (between hard limit and OOM) cannot handle the volume of incoming telemetry, especially since each batch requires decoding into memory before rejection.
 
-### Compression Comparison
+While memory thresholds are somewhat arbitrary and the process isn't fully hermetic, this appears to be the primary factor affecting collector stability under high load with slow downstream destinations.
 
-[configgrpc_benchmark_test.go](./configgrpc_benchmark_test.go) contains benchmarks comparing the supported compression algorithms. It performs compression using `gzip`, `zstd`, and `snappy` compression on small, medium, and large sized log, trace, and metric payloads. Each test case outputs the uncompressed payload size, the compressed payload size, and the average nanoseconds spent on compression. 
+### Impact
 
-The following table summarizes the results, including some additional columns computed from the raw data. The benchmarks were performed on an AWS m5.large EC2 instance with an Intel(R) Xeon(R) Platinum 8259CL CPU @ 2.50GHz.
+- Collectors become overwhelmed within seconds of startup
+- System crashes with OOM errors
+- No metrics reporting, preventing Horizontal Pod Autoscaler (HPA) from adding more collector replicas
+- Complete service disruption
 
-| Request           | Compressor | Raw Bytes | Compressed bytes | Compression ratio | Ns / op | Mb compressed / second | Mb saved / second |
-|-------------------|------------|-----------|------------------|-------------------|---------|------------------------|-------------------|
-| lg_log_request    | gzip       | 5150      | 262              | 19.66             | 49231   | 104.61                 | 99.29             |
-| lg_metric_request | gzip       | 6800      | 201              | 33.83             | 51816   | 131.23                 | 127.35            |
-| lg_trace_request  | gzip       | 9200      | 270              | 34.07             | 65174   | 141.16                 | 137.02            |
-| md_log_request    | gzip       | 363       | 268              | 1.35              | 37609   | 9.65                   | 2.53              |
-| md_metric_request | gzip       | 320       | 145              | 2.21              | 30141   | 10.62                  | 5.81              |
-| md_trace_request  | gzip       | 451       | 288              | 1.57              | 38270   | 11.78                  | 4.26              |
-| sm_log_request    | gzip       | 166       | 168              | 0.99              | 30511   | 5.44                   | -0.07             |
-| sm_metric_request | gzip       | 185       | 142              | 1.30              | 29055   | 6.37                   | 1.48              |
-| sm_trace_request  | gzip       | 233       | 205              | 1.14              | 33466   | 6.96                   | 0.84              |
-| lg_log_request    | snappy     | 5150      | 475              | 10.84             | 1915    | 2,689.30               | 2,441.25          |
-| lg_metric_request | snappy     | 6800      | 466              | 14.59             | 2266    | 3,000.88               | 2,795.23          |
-| lg_trace_request  | snappy     | 9200      | 644              | 14.29             | 3281    | 2,804.02               | 2,607.74          |
-| md_log_request    | snappy     | 363       | 300              | 1.21              | 770.0   | 471.43                 | 81.82             |
-| md_metric_request | snappy     | 320       | 162              | 1.98              | 588.6   | 543.66                 | 268.43            |
-| md_trace_request  | snappy     | 451       | 330              | 1.37              | 907.7   | 496.86                 | 133.30            |
-| sm_log_request    | snappy     | 166       | 184              | 0.90              | 551.8   | 300.83                 | -32.62            |
-| sm_metric_request | snappy     | 185       | 154              | 1.20              | 526.3   | 351.51                 | 58.90             |
-| sm_trace_request  | snappy     | 233       | 251              | 0.93              | 682.1   | 341.59                 | -26.39            |
-| lg_log_request    | zstd       | 5150      | 223              | 23.09             | 17998   | 286.14                 | 273.75            |
-| lg_metric_request | zstd       | 6800      | 144              | 47.22             | 14289   | 475.89                 | 465.81            |
-| lg_trace_request  | zstd       | 9200      | 208              | 44.23             | 17160   | 536.13                 | 524.01            |
-| md_log_request    | zstd       | 363       | 261              | 1.39              | 11216   | 32.36                  | 9.09              |
-| md_metric_request | zstd       | 320       | 145              | 2.21              | 9318    | 34.34                  | 18.78             |
-| md_trace_request  | zstd       | 451       | 301              | 1.50              | 12583   | 35.84                  | 11.92             |
-| sm_log_request    | zstd       | 166       | 165              | 1.01              | 12482   | 13.30                  | 0.08              |
-| sm_metric_request | zstd       | 185       | 139              | 1.33              | 8824    | 20.97                  | 5.21              |
-| sm_trace_request  | zstd       | 233       | 203              | 1.15              | 10134   | 22.99                  | 2.96              |
+## Related Issues and PRs
 
-Compression ratios will vary in practice as they are highly dependent on the data's information entropy. Compression rates are dependent on the speed of the CPU, and the size of payloads being compressed: smaller payloads compress at slower rates relative to larger payloads, which are able to amortize fixed computation costs over more bytes.
+- **[PR #9673](https://github.com/open-telemetry/opentelemetry-collector/pull/9673)**: Adds rejection capability to gRPC servers (temporarily applied to our fork)
+- **[Issue #9591](https://github.com/open-telemetry/opentelemetry-collector/issues/9591)**: Tracking issue for this problem
+- **[PR #13265](https://github.com/open-telemetry/opentelemetry-collector/pull/13265)**: Tracking issue for approach under development
+- **[PR #9397](https://github.com/open-telemetry/opentelemetry-collector/pull/9397)**: Similar PR for HTTP receiver (for future data collection implementation)
 
-`gzip` is the only required compression algorithm required for [OTLP servers](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md#protocol-details), and is a natural first choice. It is not as fast as `snappy`, but achieves better compression ratios and has reasonable performance. If your collector is CPU bound and your OTLP server supports it, you may benefit from using `snappy` compression. If your collector is CPU bound and has a very fast network link, you may benefit from disabling compression, which is the default.
+## Future Plans
 
-## Server Configuration
+The OpenTelemetry Collector SIG is working on refactoring how receiver middlewares are applied. As of 06/07/2025, this is still under development with several draft PRs, including [PR #13265](https://github.com/open-telemetry/opentelemetry-collector/pull/13265).
 
-[Receivers](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/README.md)
-leverage server configuration.
+Once the collector adopts the new "middlewares" approach, this module can be retired and removed.
 
-Note that transport configuration can also be configured. For more information,
-see [confignet README](../confignet/README.md).
+## Maintenance
 
-- [`keepalive`](https://godoc.org/google.golang.org/grpc/keepalive#ServerParameters)
-  - [`enforcement_policy`](https://godoc.org/google.golang.org/grpc/keepalive#EnforcementPolicy)
-    - `min_time`
-    - `permit_without_stream`
-  - [`server_parameters`](https://godoc.org/google.golang.org/grpc/keepalive#ServerParameters)
-    - `max_connection_age`
-    - `max_connection_age_grace`
-    - `max_connection_idle`
-    - `time`
-    - `timeout`
-- [`max_concurrent_streams`](https://godoc.org/google.golang.org/grpc#MaxConcurrentStreams)
-- [`max_recv_msg_size_mib`](https://godoc.org/google.golang.org/grpc#MaxRecvMsgSize)
-- [`read_buffer_size`](https://godoc.org/google.golang.org/grpc#ReadBufferSize)
-- [`tls`](../configtls/README.md)
-- [`write_buffer_size`](https://godoc.org/google.golang.org/grpc#WriteBufferSize)
-- [`auth`](../configauth/README.md)
-- [`middlewares`](../configmiddleware/README.md)
+### How to Update
+
+The code in this module is copied from the collector repository using the current tag (`v0.126.0` as of this writing). When upgrading the collector version, this module must also be updated accordingly.
+
+### Current Version
+
+- **Collector Version**: v0.126.0
+- **Last Updated**: 06/07/2025
+
