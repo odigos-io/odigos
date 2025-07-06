@@ -22,12 +22,13 @@ const (
 )
 
 // getNumberOfWorkers returns the number of workers to use for copying files.
-// It returns the minimum of maxWorkers and the number of CPUs divided by 4.
+// It is based on GOMAXPROCS, which reflects the CPU limit set for the init container.
+// The function returns the smaller of maxWorkers and GOMAXPROCS, but always at least 1.
 func getNumberOfWorkers() int {
-	return min(maxWorkers, max(1, runtime.NumCPU()/4))
+	return min(maxWorkers, max(1, runtime.GOMAXPROCS(0)))
 }
 
-func copyDirectories(srcDir string, destDir string, filesToKeep map[string]struct{}) error {
+func copyDirectories(srcDir string, destDir string, unchangedFiles map[string]struct{}, filesToKeep map[string]struct{}) error {
 	start := time.Now()
 
 	hostContainEbpfDir := HostContainsEbpfDir(destDir)
@@ -36,7 +37,7 @@ func copyDirectories(srcDir string, destDir string, filesToKeep map[string]struc
 	CopyCFiles := !hostContainEbpfDir
 	log.Logger.V(0).Info("Copying instrumentation files to host", "srcDir", srcDir, "destDir", destDir, "CopyCFiles", CopyCFiles)
 
-	files, err := getFiles(srcDir, CopyCFiles, filesToKeep)
+	files, err := getFiles(srcDir, CopyCFiles, unchangedFiles, filesToKeep)
 	if err != nil {
 		return err
 	}
@@ -116,18 +117,25 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
-func getFiles(dir string, CopyCFiles bool, filesToKeep map[string]struct{}) ([]string, error) {
+func getFiles(dir string, CopyCFiles bool, unchangedFiles map[string]struct{}, filesToKeep map[string]struct{}) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
+			destPath := strings.Replace(path, "/instrumentations/", "/var/odigos/", 1)
+
 			if !CopyCFiles {
-				if _, found := filesToKeep[strings.Replace(path, "/instrumentations/", "/var/odigos/", 1)]; found {
+				if _, found := filesToKeep[destPath]; found {
 					log.Logger.V(0).Info("Skipping copying file", "file", path)
 					return nil
 				}
+			}
+
+			if _, unchanged := unchangedFiles[destPath]; unchanged {
+				log.Logger.V(1).Info("Skipping unchanged file", "file", path)
+				return nil
 			}
 
 			files = append(files, path)
@@ -177,18 +185,18 @@ func copyFile(src, dst string, buf []byte) error {
 }
 
 func HostContainsEbpfDir(dir string) bool {
-	found := false
-	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || found {
-			return err
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() && strings.Contains(entry.Name(), "ebpf") {
+			return true
 		}
-		if info.IsDir() && strings.Contains(info.Name(), "ebpf") {
-			found = true
-			return filepath.SkipDir
-		}
-		return nil
-	})
-	return found
+	}
+
+	return false
 }
 
 func getArch() string {

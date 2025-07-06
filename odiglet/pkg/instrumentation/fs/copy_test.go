@@ -16,7 +16,7 @@ func TestGetFiles(t *testing.T) {
 	}
 
 	filesToKeep := make(map[string]struct{})
-	gotFiles, err := getFiles(tempDir+"/dir1", false, filesToKeep)
+	gotFiles, err := getFiles(tempDir+"/dir1", false, filesToKeep, filesToKeep)
 	if err != nil {
 		t.Fatalf("getFiles failed: %v", err)
 	}
@@ -75,7 +75,7 @@ func TestCopyDirectories(t *testing.T) {
 		t.Fatalf("createTestFiles failed: %v", err)
 	}
 
-	err = copyDirectories(src, dest, filesToKeep)
+	err = copyDirectories(src, dest, filesToKeep, filesToKeep)
 	if err != nil {
 		t.Fatalf("copyDirectories failed: %v", err)
 	}
@@ -110,7 +110,7 @@ func BenchmarkCopyDirectories(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		err = copyDirectories(src, dest, filesToKeep)
+		err = copyDirectories(src, dest, filesToKeep, filesToKeep)
 		if err != nil {
 			b.Fatalf("copyDirectories failed: %v", err)
 		}

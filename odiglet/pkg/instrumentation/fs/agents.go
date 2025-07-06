@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path"
@@ -41,18 +42,25 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
 	}
 
+	// Detect files that haven't changed (same size + mtime)
+	unchangedFiles, err := findUnchangedFiles(containerDir, k8sconsts.OdigosAgentsDirectory)
+	if err != nil {
+		log.Logger.Error(err, "Error finding unchanged files")
+		return err
+	}
+
 	updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
 	if err != nil {
 		log.Logger.Error(err, "Error getting changed files")
 	}
 
-	err = removeFilesInDir(k8sconsts.OdigosAgentsDirectory, updatedFilesToKeepMap)
+	err = removeFilesInDir(k8sconsts.OdigosAgentsDirectory, unchangedFiles, updatedFilesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error removing instrumentation directory from host")
 		return err
 	}
 
-	err = copyDirectories(containerDir, k8sconsts.OdigosAgentsDirectory, updatedFilesToKeepMap)
+	err = copyDirectories(containerDir, k8sconsts.OdigosAgentsDirectory, unchangedFiles, updatedFilesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error copying instrumentation directory to host")
 		return err
@@ -221,4 +229,50 @@ func ApplyOpenShiftSELinuxSettings() error {
 		log.Logger.Info("Unable to find semanage path, possibly not on RHEL host")
 	}
 	return nil
+}
+func findUnchangedFiles(srcDir, destDir string) (map[string]struct{}, error) {
+	unchanged := make(map[string]struct{})
+
+	srcDir = filepath.Clean(srcDir)
+	destDir = filepath.Clean(destDir)
+
+	err := filepath.WalkDir(srcDir, func(srcPath string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+
+		srcPath = filepath.Clean(srcPath)
+
+		relPath, err := filepath.Rel(srcDir, srcPath)
+		if err != nil {
+			return err
+		}
+
+		destPath := filepath.Join(destDir, relPath)
+
+		// TEMPORARY: skip dotnet files — they are symlinked manually later
+		if strings.HasPrefix(destPath, filepath.Join(destDir, "dotnet")) {
+			return nil
+		}
+
+		srcInfo, err := os.Stat(srcPath)
+		if err != nil {
+			return err
+		}
+
+		destInfo, err := os.Stat(destPath)
+		if os.IsNotExist(err) {
+			return nil // no matching destination file
+		} else if err != nil {
+			return err
+		}
+
+		if srcInfo.Size() == destInfo.Size() {
+			unchanged[filepath.Clean(destPath)] = struct{}{}
+		}
+
+		return nil
+	})
+
+	return unchanged, err
 }
