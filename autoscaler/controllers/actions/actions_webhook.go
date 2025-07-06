@@ -31,6 +31,7 @@ import (
 
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
 var validActionConfigNames = []string{
@@ -90,6 +91,12 @@ func (s *ActionsValidator) ValidateDelete(ctx context.Context, obj runtime.Objec
 
 // TODO: Refactor Action config to cast a generic config field in v1alpha2 to one of the matching action configs to allow type-switch validation.
 func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.Action) field.ErrorList {
+
+	odigosNamespace := env.GetCurrentNamespace()
+	if action.Namespace != odigosNamespace {
+		return field.ErrorList{field.Invalid(field.NewPath("namespace"), action.Namespace, "actions are only allowed in the odigos namespace '"+odigosNamespace+"'")}
+	}
+
 	var allErrs field.ErrorList
 	fields := make(map[*field.Path]ActionConfig)
 	if action.Spec.AddClusterInfo != nil {

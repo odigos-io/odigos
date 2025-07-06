@@ -39,4 +39,4 @@ jobs:
           if [ "$HELM_RBAC_CHANGED" = true ] && [ "$OPERATOR_RBAC_CHANGED" = false ]; then
             echo "::error::Component RBAC updated without corresponding permissions changed in Operator, please update the kubebuilder tags in operator/internal/controller/odigos_controller.go and regenerate with 'cd operator && USE_IMAGE_DIGESTS=true make generate manifests bundle'"
             exit 1
-          fi 
+          fi
