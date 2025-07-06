@@ -40,7 +40,7 @@ type odigosConfigurationResourceManager struct {
 	managerOpts resourcemanager.ManagerOpts
 }
 
-func NewodigosConfigurationResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
+func NewOdigosConfigurationResourceManager(client *kube.Client, ns string, config *common.OdigosConfiguration, odigosTier common.OdigosTier, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
 	return &odigosConfigurationResourceManager{client: client, ns: ns, config: config, odigosTier: odigosTier, managerOpts: managerOpts}
 }
 
