@@ -12,8 +12,8 @@ import (
 	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/odiglet/pkg/env"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/deviceplugin/pkg/log"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -82,6 +82,7 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf
 		}
 	}
 
+	log.Logger.Info("availablePlugins", "availablePlugins", availablePlugins)
 	// device that only mounts the odigos agent directory.
 	// always present regardless of the otelSdksLsf
 	mountDeviceFunc := func(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
