@@ -33,13 +33,43 @@ helm search repo odigos --versions
 ## Step 3: Define the Argo CD Application Manifest
 
 Create an Argo CD `Application` custom resource to deploy Odigos using Helm. Save the following YAML as `odigos-application.yaml`:
+This guide shows you how to deploy Odigos in your Kubernetes cluster using Argo CD with the official Odigos Helm chart. This allows for GitOps-based management and observability instrumentation across your applications.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+* A running Kubernetes cluster
+* Argo CD installed and configured in the cluster
+* Helm CLI installed (optional but useful for inspection and verification)
+
+## Step 1: Add the Odigos Helm Repository
+
+Add the Odigos Helm repository to your Helm configuration:
+
+```bash
+helm repo add odigos https://odigos-io.github.io/odigos --force-update
+helm repo update
+```
+
+## Step 2: Identify the Helm Chart Version
+
+Check available versions of the Odigos chart to determine the desired `targetRevision`:
+
+```bash
+helm search repo odigos --versions
+```
+
+## Step 3: Define the Argo CD Application Manifest
+
+Create an Argo CD `Application` custom resource to deploy Odigos using Helm. Save the following YAML as `odigos-application.yaml`:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: odigos
-  namespace: argocd  # <- Replace with your Argo CD namespace
+  namespace: <ARGOCD_NAMESPACE>  # <- Replace with your Argo CD namespace
 spec:
   project: default
   source:
@@ -54,7 +84,7 @@ spec:
         # To use chart defaults, delete this field entirely or set it to an empty string ("").
   destination:
     server: https://kubernetes.default.svc
-    namespace: odigos-system  # <- Replace with the desired namespace where you want Odigos to be installed
+    namespace: <ODIGOS_NAMESPACE>  # <- Replace with the desired namespace where you want Odigos to be installed
   syncPolicy:
     automated:
       prune: true
