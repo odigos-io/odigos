@@ -42,7 +42,7 @@ This final CSV is what is distributed to OperatorHub on OpenShift (see [DEVELOPM
 
 ### Versioning
 
-Currently, the operator is pinned to the same version of OpenShift. Meaning `v1.0.205` of the Operator will only install `v1.0.205` of Odigos.
+Currently, the operator is pinned to the same version of Odigos. Meaning `v1.0.205` of the Operator will only install `v1.0.205` of Odigos.
 To upgrade Odigos through the Operator, you only need to update the Operator itself. When the new operator pod spins up, it will re-list any existing
 `odigos` objects and follow the same upgrade path as the CLI.
 
