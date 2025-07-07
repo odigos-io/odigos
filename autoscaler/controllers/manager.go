@@ -144,6 +144,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				&apiactions.K8sAttributesResolver{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.Action{}: {
+					Field: nsSelector,
+				},
 				&odigosv1.InstrumentationConfig{}: {},
 			},
 		},
