@@ -71,7 +71,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-
       containers:
         - name: odiglet
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
@@ -84,6 +83,25 @@ spec:
             - --health-probe-bind-port={{ .Values.odiglet.readinessAndLivenessProbePort }}
           command:
             - /root/odiglet
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - SYS_PTRACE
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
+            periodSeconds: 10
+          resources:
+{{ include "odigos.odiglet.resources" . }}
           env:
             - name: NODE_NAME
               valueFrom:
@@ -113,37 +131,16 @@ spec:
                   key: odigos-onprem-token
             {{- end }}
             - name: GOMEMLIMIT
-              value: {{ .Values.odiglet.goMemLimit | default "64MiB" }}
+              value: "{{ include "odigos.gomemlimitFromLimits" . }}"
           envFrom:
             - configMapRef:
                 name: odigos-own-telemetry-otel-config
                 optional: true
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-            capabilities:
-              add:
-                - SYS_PTRACE
-          {{- if .Values.odiglet.resources }}
-          resources:
-{{ toYaml .Values.odiglet.resources | indent 12 }}
-          {{- end }}
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
-            initialDelaySeconds: 15
-            periodSeconds: 20
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
-            periodSeconds: 10
           volumeMounts:
             - name: run-dir
               mountPath: /run
             {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
-            - name: custom-container-runtime-socket
+            - name: custom-container-runtime-socket 
               mountPath: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
             {{- end }}
             {{- if .Values.openshift.enabled }}

@@ -44,3 +44,45 @@ true
   {{- define "utils.cleanKubeVersion" -}}
   {{- regexReplaceAll "-.*" .Capabilities.KubeVersion.Version "" -}}
   {{- end }}
+
+{{- define "odigos.odiglet.resources" -}}
+{{- $defaults := dict
+  "cpu"    "500m"
+  "memory" "512Mi"
+-}}
+
+{{- $resources := .Values.odiglet.resources | default dict -}}
+{{- $requests := get $resources "requests" | default dict -}}
+{{- $limits := get $resources "limits" | default dict -}}
+{{- if and (empty $limits) (not (empty $requests)) -}}
+  {{- $_ := set $resources "limits" $requests -}}
+{{- end }}
+{{- if and (empty $limits) (empty $requests) -}}
+  {{- $_ := set $resources "limits" $defaults -}}
+  {{- $_ := set $resources "requests" $defaults -}}
+{{- end }}
+{{- toYaml $resources | indent 12 }}
+{{- end }}
+
+
+{{- define "odigos.gomemlimitFromLimits" -}}
+{{- $resources := .Values.odiglet.resources | default dict -}}
+{{- $limits := get $resources "limits" | default dict -}}
+{{- $requests := get $resources "requests" | default dict -}}
+
+{{- $raw := get $limits "memory" | default (get $requests "memory" | default "512Mi") | trim -}}
+
+{{- $number := regexFind "[0-9.]+" $raw | float64 -}}
+{{- $unit := regexFind "[a-zA-Z]+" $raw | default "Mi" -}}
+
+{{- if and $number $unit }}
+  {{- $val := divf (mulf $number 80.0) 100.0 -}}
+  {{- if hasSuffix "B" $unit -}}
+    {{- printf "%.0f%s" $val $unit -}}
+  {{- else -}}
+    {{- printf "%.0f%sB" $val $unit -}}
+  {{- end -}}
+{{- else }}
+  {{- fail (printf "invalid memory format: %q" $raw) -}}
+{{- end }}
+{{- end }}

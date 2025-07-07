@@ -254,6 +254,7 @@ odiglet:
     ## regardless of its taints (including master/control-plane nodes)
     - operator: Exists
   affinity: {}
+
   # Resource configuration for the odiglet daemonset
   # resources:
   #   requests:
@@ -263,10 +264,6 @@ odiglet:
   #     cpu: 500m
   #     memory: 512Mi
 
-  # Soft memory limit for Go runtime, passed via GOMEMLIMIT env var.
-  # Influences garbage collector to limit heap size and stay within memory budget.
-  # Format examples: "512MiB", "2GB", "104857600" (bytes)
-  goMemLimit: ""
 
   # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
