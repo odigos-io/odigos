@@ -25,6 +25,7 @@ func GetGatewayConfig(
 	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, serviceGraphDisabled)
 }
 
+//nolint:funlen // This function handles complex gateway configuration logic that is difficult to break down further
 func CalculateGatewayConfig(
 	currentConfig *config.Config,
 	dests []config.ExporterConfigurer,
