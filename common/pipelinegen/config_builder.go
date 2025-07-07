@@ -13,8 +13,6 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 )
 
-const memoryLimiterExtensionName = "memory_limiter"
-
 func GetGatewayConfig(
 	dests []config.ExporterConfigurer,
 	processors []config.ProcessorConfigurer,
@@ -150,6 +148,7 @@ func CalculateGatewayConfig(
 	if tracesEnabled && !*serviceGraphDisabled {
 		insertServiceGraphPipeline(currentConfig)
 	}
+
 	// Final marshal to YAML
 	data, err := yaml.Marshal(currentConfig)
 	if err != nil {
@@ -266,7 +265,7 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 								"max_connection_age_grace": consts.GatewayMaxConnectionAgeGrace,
 							},
 						},
-						"memory_limiter": memoryLimiterExtensionName, // tells the receiver to check this "memory_limiter" extension when receiving data
+						"memory_limiter": consts.MemoryLimiterExtensionKey, // tells the receiver to check this "memory_limiter" extension when receiving data
 					},
 					// Node collectors send in gRPC, so this is probably not needed
 					"http": config.GenericMap{
@@ -285,9 +284,10 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 					},
 				},
 			},
+			consts.GenericBatchProcessorConfigKey: config.GenericMap{},
 		},
 		Extensions: config.GenericMap{
-			memoryLimiterExtensionName: memoryLimiterConfig,
+			consts.MemoryLimiterExtensionKey: memoryLimiterConfig,
 			"health_check": config.GenericMap{
 				"endpoint": "0.0.0.0:13133",
 			},
@@ -298,7 +298,7 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 		Exporters: map[string]interface{}{},
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{},
-			Extensions: []string{"health_check", "pprof", memoryLimiterExtensionName},
+			Extensions: []string{"health_check", "pprof", consts.MemoryLimiterExtensionKey},
 		},
 	}
 }
