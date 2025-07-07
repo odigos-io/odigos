@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: coupon
-          image: registry.odigos.io/odigos-demo-coupon:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-coupon:v0.1.27
           imagePullPolicy: IfNotPresent
           env:
             - name: MEMBERSHIP_SERVICE_HOST
@@ -62,7 +62,7 @@ spec:
     spec:
       containers:
         - name: currency
-          image: registry.odigos.io/odigos-demo-currency:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-currency:v0.1.27
           imagePullPolicy: IfNotPresent
           env:
             - name: GEOLOCATION_SERVICE_HOST
@@ -135,7 +135,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: registry.odigos.io/odigos-demo-frontend:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-frontend:v0.1.27
           imagePullPolicy: IfNotPresent
           env:
             - name: INVENTORY_SERVICE_HOST
@@ -185,7 +185,7 @@ spec:
     spec:
       containers:
         - name: geolocation
-          image: registry.odigos.io/odigos-demo-geolocation:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-geolocation:v0.1.27
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -243,7 +243,7 @@ spec:
     spec:
       containers:
         - name: inventory
-          image: registry.odigos.io/odigos-demo-inventory:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-inventory:v0.1.27
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -283,7 +283,7 @@ spec:
     spec:
       containers:
         - name: membership
-          image: registry.odigos.io/odigos-demo-membership:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-membership:v0.1.27
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -323,7 +323,7 @@ spec:
     spec:
       containers:
         - name: pricing
-          image: registry.odigos.io/odigos-demo-pricing:v0.1.23
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-pricing:v0.1.27
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
