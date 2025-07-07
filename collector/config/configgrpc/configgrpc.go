@@ -531,7 +531,6 @@ func (gss *ServerConfig) getGrpcServerOptions(
 	}
 
 	if gss.MemoryLimiter != nil {
-		fmt.Println("********************* memory limiter is not nil ****************************** ")
 		memoryLimiter, err := getMemoryLimiterExtension(gss.MemoryLimiter, host.GetExtensions())
 		if err != nil {
 			return nil, err
@@ -586,7 +585,6 @@ func memoryLimiterUnaryServerInterceptor(ctx context.Context, req any, _ *grpc.U
 
 func memoryLimiterStreamServerInterceptor(srv any, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler, ml memoryLimiterExtension) error {
 	ctx := stream.Context()
-	fmt.Println("========================= amir testing if this line is printed ========================= ")
 	if ml.MustRefuse() {
 		return errMemoryLimitReached
 	}
