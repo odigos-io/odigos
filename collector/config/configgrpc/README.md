@@ -49,6 +49,8 @@ Once the collector adopts the new "middlewares" approach, this module can be ret
 
 The code in this module is copied from the collector repository using the current tag (`v0.126.0` as of this writing). When upgrading the collector version, this module must also be updated accordingly.
 
+- Remove mono-repo replaces in `go.mod` as they confuse the `make go-mod-tidy`
+
 ### Current Version
 
 - **Collector Version**: v0.126.0
