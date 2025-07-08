@@ -3,6 +3,10 @@ ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
 ORG ?= registry.odigos.io
+# Override ORG for staging pushes
+ifeq ($(STAGING_ORG),true)
+    ORG = us-central1-docker.pkg.dev/odigos-cloud/staging-components
+endif
 GOLANGCI_LINT_VERSION ?= v2.1.6
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
 GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
@@ -133,6 +137,7 @@ build-images-rhel:
 
 push-image/%:
 	docker buildx build --platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+	$(if $(filter true,$(PUSH_IMAGE)),--push,) \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg VERSION=$(TAG) \
 	--build-arg RELEASE=$(TAG) \
@@ -353,7 +358,9 @@ helm-install-central:
 		--namespace odigos-central \
 		--set image.tag=$(ODIGOS_CLI_VERSION) \
 		--set onPremToken=$(ONPREM_TOKEN) \
-	kubectl label namespace odigos-central odigos.io/central-system-object="true" --overwrite
+		--set auth.adminUsername=$(CENTRAL_ADMIN_USER) \
+		--set auth.adminPassword=$(CENTRAL_ADMIN_PASSWORD) \
+	kubectl label namespace odigos-central odigos.io/central-system-object="true" --overwrite 
 
 
 .PHONY: api-all

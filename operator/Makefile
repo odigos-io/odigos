@@ -277,6 +277,7 @@ endif
 
 .PHONY: bundle
 bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
+	rm -rf bundle/manifests/*
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	cd config/manager && $(KUSTOMIZE) edit set image autoscaler=$(AUTOSCALER_IMG)
