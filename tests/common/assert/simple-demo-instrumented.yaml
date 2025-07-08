@@ -139,9 +139,9 @@ spec:
     - name: pricing
       resources:
         limits:
-          instrumentation.odigos.io/dotnet-native-community: '1'
+          instrumentation.odigos.io/generic: '1'
         requests:
-          instrumentation.odigos.io/dotnet-native-community: '1'
+          instrumentation.odigos.io/generic: '1'
 status:
   containerStatuses:
     - name: pricing
