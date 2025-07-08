@@ -121,7 +121,7 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 					} else {
 						err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosLegacyConfigName, metav1.DeleteOptions{})
 						if err != nil {
-							fmt.Printf("\033[31mERROR\033[0m Failed to delete legacy Odigos config ConfigMap %s in namespace %s: %w", consts.OdigosLegacyConfigName, ns, err)
+							fmt.Printf("\033[31mERROR\033[0m Failed to delete legacy Odigos config ConfigMap %s in namespace %s: %v\n", consts.OdigosLegacyConfigName, ns, err)
 							os.Exit(1)
 						}
 						fmt.Printf("Deleted legacy Odigos config ConfigMap %s in namespace %s\n", consts.OdigosLegacyConfigName, ns)
