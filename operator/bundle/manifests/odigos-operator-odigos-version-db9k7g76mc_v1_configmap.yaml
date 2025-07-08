@@ -1,6 +1,0 @@
-apiVersion: v1
-data:
-  ODIGOS_VERSION: 1.0.185
-kind: ConfigMap
-metadata:
-  name: odigos-operator-odigos-version-db9k7g76mc
