@@ -72,17 +72,18 @@ true
 
 {{- $raw := get $limits "memory" | default (get $requests "memory" | default "512Mi") | trim -}}
 
-{{- $number := regexFind "[0-9.]+" $raw | float64 -}}
-{{- $unit := regexFind "[a-zA-Z]+" $raw | default "Mi" -}}
+{{- $number := regexFind "^[0-9]+" $raw -}}
+{{- $unit := regexFind "[a-zA-Z]+$" $raw | default "Mi" -}}
 
 {{- if and $number $unit }}
-  {{- $val := divf (mulf $number 80.0) 100.0 -}}
-  {{- if hasSuffix "B" $unit -}}
-    {{- printf "%.0f%s" $val $unit -}}
+  {{- $num := int $number -}}
+  {{- $val := divf (mul $num 80.0) 100.0 -}}
+  {{- if hasSuffix $unit "B" -}}
+    {{- printf "%.1f%s" $val $unit -}}
   {{- else -}}
-    {{- printf "%.0f%sB" $val $unit -}}
+    {{- printf "%.1f%sB" $val $unit -}}
   {{- end -}}
 {{- else }}
-  {{- fail (printf "invalid memory format: %q" $raw) -}}
+  {{- fail (printf "Invalid memory format for limit: %q" $raw) -}}
 {{- end }}
 {{- end }}
