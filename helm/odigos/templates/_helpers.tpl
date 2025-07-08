@@ -66,24 +66,24 @@ true
 
 
 {{- define "odigos.gomemlimitFromLimits" -}}
+
 {{- $resources := .Values.odiglet.resources | default dict -}}
 {{- $limits := get $resources "limits" | default dict -}}
 {{- $requests := get $resources "requests" | default dict -}}
 
+{{/* Use limits.memory if set, otherwise fallback to requests.memory, or default to 512Mi */}}
 {{- $raw := get $limits "memory" | default (get $requests "memory" | default "512Mi") | trim -}}
 
 {{- $number := regexFind "^[0-9]+" $raw -}}
-{{- $unit := regexFind "[a-zA-Z]+$" $raw | default "Mi" -}}
+{{- $unit := regexFind "[a-zA-Z]+$" $raw -}}
 
 {{- if and $number $unit }}
   {{- $num := int $number -}}
-  {{- $val := divf (mul $num 80.0) 100.0 -}}
+  {{- $val := div (mul $num 80) 100 -}}
   {{- if hasSuffix $unit "B" -}}
-    {{- printf "%.1f%s" $val $unit -}}
+    {{- printf "%d%s" $val $unit -}}
   {{- else -}}
-    {{- printf "%.1f%sB" $val $unit -}}
-  {{- end -}}
-{{- else }}
-  {{- fail (printf "Invalid memory format for limit: %q" $raw) -}}
+    {{- printf "%d%sB" $val $unit -}}
+  {{- end }}
 {{- end }}
 {{- end }}
