@@ -32,7 +32,7 @@ type OdigosSpec struct {
 	// In "normal" mode the UI is fully interactive, allowing users to view and edit
 	// Odigos configuration and settings. In "readonly" mode, the UI can only be
 	// used to view current Odigos configuration and is not interactive.
-	// Default=normal
+	// Default=default
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UI Mode",order=2
 	UIMode common.UiMode `json:"uiMode,omitempty"`
 

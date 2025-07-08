@@ -207,6 +207,24 @@ status:
       secureExecutionMode: false
 
 ---
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-java-unique-exec
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-unique-exec
+status:
+  runtimeDetailsByContainer:
+    - containerName: java-unique-exec
+      language: java
+      runtimeVersion: 21.0.7+6
+---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:

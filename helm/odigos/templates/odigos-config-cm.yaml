@@ -120,6 +120,9 @@ data:
         {{- end }}
     {{- end }}
     {{- if .Values.profiles }}
+      {{- if not (kindIs "slice" .Values.profiles) }}
+        {{- fail "Invalid 'profiles' value: must be a list. Example (YAML): profiles: [size_l]  |  CLI: --set profiles={size_l}" }}
+      {{- end }}
     profiles:
       {{- toYaml .Values.profiles | nindent 6 }}
     {{- end }}
@@ -169,4 +172,3 @@ data:
       automaticRolloutDisabled: {{ .Values.rollout.automaticRolloutDisabled }}
       {{- end }}
     {{- end }}
-
