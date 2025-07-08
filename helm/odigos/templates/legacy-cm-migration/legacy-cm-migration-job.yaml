@@ -10,7 +10,7 @@ spec:
   ttlSecondsAfterFinished: 60
   template:
     spec:
-      serviceAccountName: migration-sa
+      serviceAccountName: config-migration-sa
       restartPolicy: Never
       containers:
         - name: cleanup
