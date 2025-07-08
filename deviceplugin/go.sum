@@ -70,8 +70,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
-github.com/odigos-io/odigos-device-plugin v1.19.7-0.20250708105137-3883a98caf8e h1:7A9BNbsDiWEXzsuipNR1Ad3HMq6/3Pzm1o2xV/+7C9o=
-github.com/odigos-io/odigos-device-plugin v1.19.7-0.20250708105137-3883a98caf8e/go.mod h1:hE6uBely/Hblo3G3PbkzMFq0/OUlvE8VEQxZAX+2fro=
+github.com/odigos-io/odigos-device-plugin v1.19.7 h1:el1TuMs8u0IZ0H+T9V3DdTljFD0fSda3xiSGxqwQksg=
+github.com/odigos-io/odigos-device-plugin v1.19.7/go.mod h1:hE6uBely/Hblo3G3PbkzMFq0/OUlvE8VEQxZAX+2fro=
 github.com/odigos-io/opentelemetry-zap-bridge v0.0.5 h1:UDEKtgab42nGVSvA/F3lLKUYFPETtpl7kpxM9BKBlWk=
 github.com/odigos-io/opentelemetry-zap-bridge v0.0.5/go.mod h1:K98wHhktQ6vCTqeFztcpBDtPTe88vxVgZFlbeGobt24=
 github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=
