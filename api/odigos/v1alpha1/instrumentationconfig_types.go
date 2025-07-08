@@ -295,7 +295,7 @@ type ContainerAgentConfig struct {
 	// This field carries the following semantics:
 	// - nil: do not inject any "append variables" (PYTHONPATH, NODE_OPTIONS, etc.) at all.
 	// - "loader": inject the LD_PRELOAD env var to the pod manifest which will trigger the odigos loader.
-	// - "pod-manifest": inject the runtime specific agent loading env vars (e.g PYTHONPATH, NODE_OPTIONS) as specified in the distro manifest.
+	// - "pod-manifest": inject the runtime specific agent loading env vars (e.g PYTHONPATH, NODE_OPTIONS) to the pod manifest as specified in the distro manifest.
 	// - "loader-fallback-to-pod-manifest": use "pod-manifest". it means we tried LD_PRELOAD and it failed, so we falled-back to the pod manifest.
 	EnvInjectionMethod *common.EnvInjectionMethod `json:"agentInjectionMethod,omitempty"`
 
