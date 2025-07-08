@@ -358,7 +358,9 @@ helm-install-central:
 		--namespace odigos-central \
 		--set image.tag=$(ODIGOS_CLI_VERSION) \
 		--set onPremToken=$(ONPREM_TOKEN) \
-	kubectl label namespace odigos-central odigos.io/central-system-object="true" --overwrite
+		--set auth.adminUsername=$(CENTRAL_ADMIN_USER) \
+		--set auth.adminPassword=$(CENTRAL_ADMIN_PASSWORD) \
+	kubectl label namespace odigos-central odigos.io/central-system-object="true" --overwrite 
 
 
 .PHONY: api-all
