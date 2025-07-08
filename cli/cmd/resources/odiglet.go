@@ -476,6 +476,46 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					},
 					Containers: []corev1.Container{
 						{
+							Name: k8sconsts.OdigletDevicePluginContainerName,
+							Command: []string{
+								"/root/deviceplugin",
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name: k8sconsts.NodeNameEnvVar,
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name: "NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "CURRENT_NS",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+							},
+							Resources: corev1.ResourceRequirements{},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "device-plugins-dir",
+									MountPath: "/var/lib/kubelet/device-plugins",
+								},
+							},
+							ImagePullPolicy: "IfNotPresent",
+						},
+						{
 							Name: k8sconsts.OdigletContainerName,
 							Command: []string{
 								"/root/odiglet",
@@ -560,10 +600,6 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								{
 									Name:      "run-dir",
 									MountPath: "/run",
-								},
-								{
-									Name:      "device-plugins-dir",
-									MountPath: "/var/lib/kubelet/device-plugins",
 								},
 								{
 									Name:      "odigos",
