@@ -14,13 +14,19 @@ import (
 )
 
 func getInstrumentationRulePriority(ir *odigosv1.InstrumentationRule) int {
-	switch ir.Annotations[k8sconsts.OdigosProfileSourceAnnotation] {
+	ruleSource, found := ir.Annotations[k8sconsts.OdigosProfileSourceAnnotation]
+	if !found {
+		// if the rule was created with kubectl, it will lack the annotation.
+		// we will always prioritize these rules over others.
+		return 100
+	}
+	switch ruleSource {
 	case k8sconsts.OdigosProfileSourceOnPremToken:
 		return 1
 	case k8sconsts.OdigosProfileSourceConfig:
 		return 2
 	default:
-		return 3
+		return 3 // just a safeguard, not expected to happen
 	}
 }
 
