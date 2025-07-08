@@ -14,10 +14,6 @@ rules:
   resources: ["configmaps"]
   resourceNames: ["odigos-deployment"]
   verbs: ["get"]
-- apiGroups: [""]
-  resources: ["configmaps"]
-  resourceNames: ["odigos-configuration"]
-  verbs: ["get","delete"]
 # migration-role is used to delete the legacy configmap
 - apiGroups: [""]
   resources: ["configmaps"]

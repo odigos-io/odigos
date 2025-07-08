@@ -110,11 +110,6 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 			// This flag being used by users who want to remove instrumentation without removing the entire Odigos setup,
 			// And by cleanup jobs that runs as helm pre-uninstall hook before helm uninstall command.
 			if cmd.Flag("instrumentation-only").Changed {
-				odigosDeployment, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-				if err != nil && !apierrors.IsNotFound(err) {
-					fmt.Printf("\033[31mERROR\033[0m Failed to get Odigos deployment config map: %s\n", err)
-					os.Exit(1)
-				}
 				if IsOdigosHelmInstallation(odigosDeployment) {
 					// MIGRATION: In older versions of Odigos, a legacy ConfigMap named "odigos-config" was used.
 					// It has since been replaced by "odigos-configuration", which is Helm-managed and does not include hook annotations.
