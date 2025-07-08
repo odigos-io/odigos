@@ -3,6 +3,10 @@ ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
 ORG ?= registry.odigos.io
+# Override ORG for staging pushes
+ifeq ($(STAGING_ORG),true)
+    ORG = us-central1-docker.pkg.dev/odigos-cloud/staging-components
+endif
 GOLANGCI_LINT_VERSION ?= v2.1.6
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
 GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
@@ -132,9 +136,8 @@ build-images-rhel:
 	$(MAKE) build-images IMG_SUFFIX=-ubi9 DOCKERFILE=Dockerfile.rhel TAG=$(TAG) ORG=$(ORG)
 
 push-image/%:
-	@echo "Warning: This will push image '$(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG)' to the registry"
-	@read -p "Are you sure you want to continue? [y/N] " confirm && [ $$confirm = "y" ] || exit 1
-	docker buildx build --push --platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+	docker buildx build --platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+	$(if $(filter true,$(PUSH_IMAGE)),--push,) \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg VERSION=$(TAG) \
 	--build-arg RELEASE=$(TAG) \
