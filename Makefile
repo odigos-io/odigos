@@ -166,7 +166,7 @@ push-scheduler:
 
 .PHONY: push-collector
 push-collector:
-	$(MAKE) push-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) push-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=. SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-ui
 push-ui:
@@ -358,7 +358,9 @@ helm-install-central:
 		--namespace odigos-central \
 		--set image.tag=$(ODIGOS_CLI_VERSION) \
 		--set onPremToken=$(ONPREM_TOKEN) \
-	kubectl label namespace odigos-central odigos.io/central-system-object="true" --overwrite
+		--set auth.adminUsername=$(CENTRAL_ADMIN_USER) \
+		--set auth.adminPassword=$(CENTRAL_ADMIN_PASSWORD) \
+	kubectl label namespace odigos-central odigos.io/central-system-object="true" --overwrite 
 
 
 .PHONY: api-all
