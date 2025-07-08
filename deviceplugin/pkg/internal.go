@@ -28,7 +28,8 @@ func runDeviceManager(opts Options) error {
 		return fmt.Errorf("failed to create clientset: %w", err)
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	lister, err := instrumentation.NewLister(ctx, clientset, opts.DeviceInjectionCallbacks)
 	if err != nil {
@@ -36,6 +37,6 @@ func runDeviceManager(opts Options) error {
 	}
 
 	manager := dpm.NewManager(lister, log.Logger)
-	manager.Run()
+	manager.Run(ctx)
 	return nil
 }

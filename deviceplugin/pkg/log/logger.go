@@ -21,7 +21,6 @@ func Init() error {
 	zapLogger = bridge.AttachToZapLogger(zapLogger)
 	Logger = zapr.NewLogger(zapLogger)
 
-	// used by device manager logger
 	flag.Parse()
 
 	return nil

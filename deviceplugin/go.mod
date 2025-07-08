@@ -17,7 +17,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.6.0
-	github.com/odigos-io/odigos-device-plugin v1.19.6
+	github.com/odigos-io/odigos-device-plugin v1.19.7-0.20250708105137-3883a98caf8e
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0

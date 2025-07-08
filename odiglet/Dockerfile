@@ -22,14 +22,14 @@ ARG NODEJS_AGENT_VERSION=main
 RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentelemetry-node && git checkout $NODEJS_AGENT_VERSION
 
 # The second build stage 'nodejs-agent-src' prepares the actual code we are going to compile and embed in odiglet.
-# By default, it uses the previous 'nodejs-agent-clone' stage, but one can override it by setting the 
+# By default, it uses the previous 'nodejs-agent-clone' stage, but one can override it by setting the
 # --build-context nodejs-agent-src=../opentelemetry-node flag in the docker build command.
 # This allows us to use the agent sources and test changes during development.
 # The output of this stage is the resolved source code to be used in the next stage.
 FROM scratch AS nodejs-agent-src
 COPY --from=nodejs-agent-clone /src/opentelemetry-node /
 
-# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for 
+# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for
 # being dependency of the native-community agent.
 FROM node:18 AS nodejs-agent-build
 # Run yarn install to generate the production node_modules directory
@@ -132,6 +132,16 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make build-odiglet
 
+
+# Build deviceplugin binary
+WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
+COPY deviceplugin/ .
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./cmd
+
+
+
 WORKDIR /instrumentations
 
 # Java
@@ -173,6 +183,7 @@ RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/
 
 FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 CMD ["/root/odiglet"]
