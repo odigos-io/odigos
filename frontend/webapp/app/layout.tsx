@@ -1,14 +1,17 @@
 'use client';
 
-import React, { type PropsWithChildren } from 'react';
+import React, { type PropsWithChildren, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useDarkMode } from '@odigos/ui-kit/store';
 import ApolloProvider from '@/lib/apollo-provider';
+import useHiringConsoleMessage from '@/hooks/common/useHiringConsoleMessage';
 
 const ThemeProvider = dynamic(() => import('@/lib/theme-provider'), { ssr: false });
 
 function RootLayout({ children }: PropsWithChildren) {
   const { darkMode } = useDarkMode();
+
+  useHiringConsoleMessage();
 
   return (
     <html lang='en'>
