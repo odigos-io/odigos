@@ -28,6 +28,7 @@ type InstrumentationLibraryConfigApplyConfiguration struct {
 	TraceConfig              *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
 	PayloadCollection        *instrumentationrules.PayloadCollection               `json:"payloadCollection,omitempty"`
 	CodeAttributes           *instrumentationrules.CodeAttributes                  `json:"codeAttributes,omitempty"`
+	HeadersCollection        *instrumentationrules.HttpHeadersCollection           `json:"headersCollection,omitempty"`
 }
 
 // InstrumentationLibraryConfigApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryConfig type for use with
@@ -65,5 +66,13 @@ func (b *InstrumentationLibraryConfigApplyConfiguration) WithPayloadCollection(v
 // If called multiple times, the CodeAttributes field is set to the value of the last call.
 func (b *InstrumentationLibraryConfigApplyConfiguration) WithCodeAttributes(value instrumentationrules.CodeAttributes) *InstrumentationLibraryConfigApplyConfiguration {
 	b.CodeAttributes = &value
+	return b
+}
+
+// WithHeadersCollection sets the HeadersCollection field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HeadersCollection field is set to the value of the last call.
+func (b *InstrumentationLibraryConfigApplyConfiguration) WithHeadersCollection(value instrumentationrules.HttpHeadersCollection) *InstrumentationLibraryConfigApplyConfiguration {
+	b.HeadersCollection = &value
 	return b
 }

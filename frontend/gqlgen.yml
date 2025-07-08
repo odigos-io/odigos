@@ -60,6 +60,8 @@ models:
         resolver: true
       instrumentationRules:
         resolver: true
+      dataStreams:
+        resolver: true
   K8sActualNamespace:
     fields:
       sources:

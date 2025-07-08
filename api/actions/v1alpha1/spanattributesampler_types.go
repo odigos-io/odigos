@@ -219,7 +219,6 @@ type SpanAttributeSamplerStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=spanattributesamplers,scope=Namespaced,shortName=sas
-// +kubebuilder:metadata:labels=odigos.io/config=1
 // +kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // SpanAttributeSampler is the Schema for the spanattributesamplers API.

@@ -1,9 +1,11 @@
-{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName .Values.onPremToken}}
+{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .)}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: central-proxy
   namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]

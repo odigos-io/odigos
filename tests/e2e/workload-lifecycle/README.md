@@ -78,25 +78,33 @@ This e2e test verify various scenarios related to the lifecycle of workloads in 
 - Application uses JAVA_OPTS environment variable in the k8s deployment manifest.
 - This workload verifies that after instrumentation is applied, those 2 options still works as expected.
 
+### java-uniqe-entrypoint
+
+- This workload verifies that even if there is no "java" keyword in exec command, the runtime ispection process still recognize it as java process
+
 ## Python Workloads
 
 ### python-latest-version
+
 - Runs on the latest Python version.
 - The instrumentation device should be added, and the agent must load and report traces as expected.
 - We ensure that odigos-opentelemetry-python does not conflict with or overwrite the application's dependencies.
 
 ### python-alpine
+
 - Runs Python 3.10 on the Alpine Linux distribution.
 - The instrumentation device should be added, and the agent must load and report traces as expected.
 - We ensure that odigos-opentelemetry-python does not conflict with or overwrite the application's dependencies.
 - The application utilizes the `PYTHONPATH` environment variable in the Kubernetes deployment manifest.
 
 ### python-minimum-supported-version
+
 - Runs Python 3.8 (minimum supported version).
 - The instrumentation device should be added, and the agent must load and report traces as expected.
 - We ensure that odigos-opentelemetry-python does not conflict with or overwrite the application's dependencies.
 
 ### python-not-supported-version
+
 - Runs Python 3.6.
 - This version is not supported for instrumentation.
 - We ensure that odigos-opentelemetry-python does not conflict with or overwrite the application's dependencies.
@@ -142,7 +150,7 @@ Verify the expected state for each workload according to it's caracteristics.
   - should report health in the instrumented instance CR
   - agent should load and report traces, and verify the `--require` script is loaded correctly and the `--max-old-space-size` is in effect in v8 runtime.
 - cpp-http-server
-  - should NOT detect the runtime language and report it as `unknown`
+  - should detect the runtime language and report it as `cplusplus`
   - should NOT add instrumentation device
 
 ## Step 02 - Update Workload Manifest

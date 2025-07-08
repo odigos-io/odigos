@@ -122,11 +122,10 @@ type PiiMaskingConfig struct {
 	BlockedValues []string `json:"blocked_values"`
 }
 
-func (r *PiiMaskingReconciler) convertToProcessor(action *actionv1.PiiMasking) (*v1.Processor, error) {
-
-	PiiCategories := action.Spec.PiiCategories
+func piiMaskingConfig(cfg []actionv1.PiiCategory) (PiiMaskingConfig, error) {
+	PiiCategories := cfg
 	if len(PiiCategories) == 0 {
-		return nil, fmt.Errorf("no PII categories are configured, so this processor is not needed")
+		return PiiMaskingConfig{}, fmt.Errorf("no PII categories are configured, so this processor is not needed")
 	}
 
 	// Allow all attributes to be traced. If set to false it removes all attributes not in allowed_keys which is all attributes
@@ -142,6 +141,16 @@ func (r *PiiMaskingReconciler) convertToProcessor(action *actionv1.PiiMasking) (
 				"(5[1-5][0-9]{14})",       // MasterCard number
 			}...)
 		}
+	}
+
+	return config, nil
+}
+
+func (r *PiiMaskingReconciler) convertToProcessor(action *actionv1.PiiMasking) (*v1.Processor, error) {
+
+	config, err := piiMaskingConfig(action.Spec.PiiCategories)
+	if err != nil {
+		return nil, err
 	}
 
 	configJson, err := json.Marshal(config)

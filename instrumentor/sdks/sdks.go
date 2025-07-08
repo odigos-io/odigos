@@ -14,6 +14,8 @@ func otelSdkConfigCommunity() map[common.ProgrammingLanguage]common.OtelSdk {
 		common.GoProgrammingLanguage:         common.OtelSdkEbpfCommunity,
 		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
 		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+		common.PhpProgrammingLanguage:        common.OtelSdkNativeCommunity,
+		common.RubyProgrammingLanguage:       common.OtelSdkNativeCommunity,
 	}
 }
 
@@ -24,6 +26,8 @@ func otelSdkConfigCloud() map[common.ProgrammingLanguage]common.OtelSdk {
 		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
 		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
 		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
+		common.PhpProgrammingLanguage:        common.OtelSdkNativeCommunity,
+		common.RubyProgrammingLanguage:       common.OtelSdkNativeCommunity,
 	}
 }
 
@@ -34,6 +38,8 @@ func otelSdkConfigOnPrem() map[common.ProgrammingLanguage]common.OtelSdk {
 		common.GoProgrammingLanguage:         common.OtelSdkEbpfEnterprise,
 		common.DotNetProgrammingLanguage:     common.OtelSdkNativeCommunity,
 		common.JavascriptProgrammingLanguage: common.OtelSdkEbpfEnterprise,
+		common.PhpProgrammingLanguage:        common.OtelSdkNativeCommunity,
+		common.RubyProgrammingLanguage:       common.OtelSdkNativeCommunity,
 		common.MySQLProgrammingLanguage:      common.OtelSdkEbpfEnterprise,
 		common.NginxProgrammingLanguage:      common.OtelSdkNativeCommunity,
 	}

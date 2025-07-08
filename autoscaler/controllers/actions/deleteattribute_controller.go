@@ -103,22 +103,21 @@ func (r *DeleteAttributeReconciler) ReportReconciledToProcessor(ctx context.Cont
 	return nil
 }
 
-func (r *DeleteAttributeReconciler) convertToProcessor(action *actionv1.DeleteAttribute) (*v1.Processor, error) {
-
+func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (TransformProcessorConfig, error) {
 	config := TransformProcessorConfig{
 		ErrorMode: "propagate", // deleting attributes is a security sensitive operation, so we should propagate errors
 	}
 
-	if action.Spec.Signals == nil {
-		return nil, fmt.Errorf("Signals must be set")
+	if signals == nil {
+		return config, fmt.Errorf("Signals must be set")
 	}
 
-	ottlDeleteKeyStatements := make([]string, len(action.Spec.AttributeNamesToDelete))
-	for i, attr := range action.Spec.AttributeNamesToDelete {
+	ottlDeleteKeyStatements := make([]string, len(cfg))
+	for i, attr := range cfg {
 		ottlDeleteKeyStatements[i] = fmt.Sprintf("delete_key(attributes, \"%s\")", attr)
 	}
 
-	for _, signal := range action.Spec.Signals {
+	for _, signal := range signals {
 		switch signal {
 
 		case common.LogsObservabilitySignal:
@@ -173,6 +172,15 @@ func (r *DeleteAttributeReconciler) convertToProcessor(action *actionv1.DeleteAt
 				},
 			}
 		}
+	}
+	return config, nil
+}
+
+func (r *DeleteAttributeReconciler) convertToProcessor(action *actionv1.DeleteAttribute) (*v1.Processor, error) {
+
+	config, err := deleteAttributeConfig(action.Spec.AttributeNamesToDelete, action.Spec.Signals)
+	if err != nil {
+		return nil, err
 	}
 
 	configJson, err := json.Marshal(config)

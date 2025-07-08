@@ -103,26 +103,25 @@ func (r *RenameAttributeReconciler) ReportReconciledToProcessor(ctx context.Cont
 	return nil
 }
 
-func (r *RenameAttributeReconciler) convertToProcessor(action *actionv1.RenameAttribute) (*v1.Processor, error) {
-
+func renameAttributeConfig(cfg map[string]string, signals []common.ObservabilitySignal) (TransformProcessorConfig, error) {
 	config := TransformProcessorConfig{
 		ErrorMode: "ignore",
 	}
 
-	if action.Spec.Signals == nil {
-		return nil, fmt.Errorf("Signals must be set")
+	if signals == nil {
+		return TransformProcessorConfig{}, fmt.Errorf("Signals must be set")
 	}
 
 	// Every rename produces 2 OTTL statement
-	ottlStatements := make([]string, 2*len(action.Spec.Renames))
+	ottlStatements := make([]string, 2*len(cfg))
 	i := 0
-	for from, to := range action.Spec.Renames {
+	for from, to := range cfg {
 		ottlStatements[i] = fmt.Sprintf("set(attributes[\"%s\"], attributes[\"%s\"])", to, from)
 		ottlStatements[i+1] = fmt.Sprintf("delete_key(attributes, \"%s\")", from)
 		i += 2
 	}
 
-	for _, signal := range action.Spec.Signals {
+	for _, signal := range signals {
 		switch signal {
 
 		case common.LogsObservabilitySignal:
@@ -177,6 +176,15 @@ func (r *RenameAttributeReconciler) convertToProcessor(action *actionv1.RenameAt
 				},
 			}
 		}
+	}
+	return config, nil
+}
+
+func (r *RenameAttributeReconciler) convertToProcessor(action *actionv1.RenameAttribute) (*v1.Processor, error) {
+
+	config, err := renameAttributeConfig(action.Spec.Renames, action.Spec.Signals)
+	if err != nil {
+		return nil, err
 	}
 
 	configJson, err := json.Marshal(config)

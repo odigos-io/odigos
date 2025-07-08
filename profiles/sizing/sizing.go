@@ -94,8 +94,9 @@ func modifySizingConfig(c *common.OdigosConfiguration,
 	c.CollectorGateway = &clusterCollectorConfig
 	collectorNodeConfig := nodeCollectorConfig
 	if c.CollectorNode != nil {
-		// make sure we keep the port which is unrelated to the sizing
+		// make sure we keep values unrelated to sizing
 		collectorNodeConfig.CollectorOwnMetricsPort = c.CollectorNode.CollectorOwnMetricsPort
+		collectorNodeConfig.K8sNodeLogsDirectory = c.CollectorNode.K8sNodeLogsDirectory
 	}
 	c.CollectorNode = &collectorNodeConfig
 }

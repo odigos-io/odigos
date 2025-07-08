@@ -20,6 +20,7 @@ import (
 // the effective config is reconciled in the scheduler, so it is possible to have a situation where the config is not found when odigos starts.
 var ErrOdigosEffectiveConfigNotFound = errors.New("odigos effective config not found")
 
+// GetCurrentOdigosConfig is a helper function to get the current odigos config using a controller-runtime client
 func GetCurrentOdigosConfig(ctx context.Context, k8sClient client.Client) (common.OdigosConfiguration, error) {
 	var configMap v1.ConfigMap
 	var odigosConfig common.OdigosConfiguration

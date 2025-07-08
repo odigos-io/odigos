@@ -66,7 +66,8 @@
                 "setup/installation",
                 "setup/installation-options",
                 "setup/docker-registry",
-                "setup/odigos-with-argocd"
+                "setup/odigos-with-argocd",
+                "setup/odigos-with-karpenter"
               ]
             },
             "setup/upgrade",
@@ -110,7 +111,8 @@
           "icon": "golang",
           "pages": [
             "instrumentations/golang/ebpf",
-            "instrumentations/golang/enrichment"
+            "instrumentations/golang/enrichment",
+            "instrumentations/golang/go-hooks"
           ]
         },
         {
@@ -148,6 +150,14 @@
           ]
         },
         {
+          "group": "PHP",
+          "icon": "php",
+          "pages": [
+            "instrumentations/php/native",
+            "instrumentations/php/enrichment"
+          ]
+        },
+        {
           "group": "Advanced",
           "icon": "gear",
           "pages": [
@@ -161,6 +171,7 @@
       "pages": [
         "pipeline/overview",
         "pipeline/configuration",
+        "pipeline/datastreams",
         {
           "group": "Sources",
           "icon": "database",
@@ -177,8 +188,9 @@
           "icon": "microchip",
           "pages": [
             "pipeline/rules/introduction",
-            "pipeline/rules/payloadcollection",
-            "pipeline/rules/codeattributes"
+            "pipeline/rules/codeattributes",
+            "pipeline/rules/headerscollection",
+            "pipeline/rules/payloadcollection"
           ]
         },
         {
@@ -238,6 +250,7 @@
             "backends/coralogix",
             "backends/dash0",
             "backends/datadog",
+            "backends/dynamic",
             "backends/dynatrace",
             "backends/elasticapm",
             "backends/elasticsearch",
@@ -276,6 +289,8 @@
             "backends/seq",
             "backends/signoz",
             "backends/splunk",
+            "backends/splunkotlp",
+            "backends/splunksapm",
             "backends/sumologic",
             "backends/telemetryhub",
             "backends/tempo",
@@ -293,11 +308,18 @@
         "telemetry-types",
         "custom-resources",
         "usage-reports",
-        "benchmarks"
+        "benchmarks",
+        "permissions"
       ]
     },
     {
-      "group": "Contibution Guidelines",
+      "group": "Feature Guidelines",
+      "pages": [
+        "features/oidc"
+      ]
+    },
+    {
+      "group": "Contribution Guidelines",
       "pages": [
         "adding-new-dest",
         "debugging"

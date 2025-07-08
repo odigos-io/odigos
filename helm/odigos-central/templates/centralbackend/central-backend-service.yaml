@@ -1,0 +1,19 @@
+{{- if (include "odigos.secretExists" .) }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: central-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: central-backend
+spec:
+  selector:
+    app: central-backend
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8081
+      targetPort: 8081
+
+{{- end }}

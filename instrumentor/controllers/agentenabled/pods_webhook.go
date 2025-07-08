@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
@@ -34,10 +36,9 @@ type PodsWebhook struct {
 var _ webhook.CustomDefaulter = &PodsWebhook{}
 
 func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
-
 	logger := log.FromContext(ctx)
-
 	pod, ok := obj.(*corev1.Pod)
+
 	if !ok {
 		logger.Error(errors.New("expected a Pod but got a %T"), "failed to inject odigos agent")
 		return nil
@@ -87,8 +88,10 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
-	// Add odiglet installed node-affinity to the pod
-	podutils.AddOdigletInstalledAffinity(pod)
+	// Add odiglet installed node-affinity to the pod, for non Karpenter installations
+	if odigosConfig.KarpenterEnabled == nil || !*odigosConfig.KarpenterEnabled {
+		podutils.AddOdigletInstalledAffinity(pod)
+	}
 
 	volumeMounted := false
 	for i := range pod.Spec.Containers {
@@ -98,13 +101,12 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 			// no config is found for this container, so skip (don't inject anything to it)
 			continue
 		}
-
 		if !containerConfig.AgentEnabled || containerConfig.OtelDistroName == "" {
 			// container config exists, but no agent should be injected by webhook to this container
 			continue
 		}
 
-		containerVolumeMounted, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, *odigosConfig.MountMethod)
+		containerVolumeMounted, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, odigosConfig)
 		if err != nil {
 			logger.Error(err, "failed to inject ODIGOS agent to container")
 			continue
@@ -118,10 +120,14 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
-	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
+	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw, &odigosConfig)
 	if injectErr != nil {
 		logger.Error(injectErr, "failed to inject ODIGOS instrumentation. Skipping Injection of ODIGOS agent")
 		return nil
+	}
+
+	if odigosConfig.UserInstrumentationEnvs != nil {
+		podswebhook.InjectUserEnvForLang(&odigosConfig, pod, &ic)
 	}
 
 	// store the agents deployment value so we can later associate each pod with the instrumentation version.
@@ -162,7 +168,7 @@ func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod) (*k8scon
 	return pw, nil
 }
 
-func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload) error {
+func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload, config *common.OdigosConfiguration) error {
 	logger := log.FromContext(ctx)
 
 	otelSdkToUse, err := getRelevantOtelSDKs(ctx, p.Client, *pw)
@@ -172,7 +178,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
-		runtimeDetails := ic.Status.GetRuntimeDetailsForContainer(*container)
+		runtimeDetails := getRuntimeInfoForContainerName(ic, container.Name)
 		if runtimeDetails == nil {
 			continue
 		}
@@ -185,33 +191,41 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 		if !found {
 			continue
 		}
-		webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, *pw, container, otelSdk, runtimeDetails, p.Client)
+
+		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, container, otelSdk, runtimeDetails, config)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container, pw k8sconsts.PodWorkload, serviceName string, mountMethod common.MountMethod) (bool, error) {
+func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container, pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration) (bool, error) {
+	var err error
 
 	distroName := containerConfig.OtelDistroName
-
 	distroMetadata := p.DistrosGetter.GetDistroByName(distroName)
 	if distroMetadata == nil {
 		return false, fmt.Errorf("distribution %s not found", distroName)
 	}
 
 	// check for existing env vars so we don't introduce them again
-	existingEnvNames := make(podswebhook.EnvVarNamesMap)
-	for _, envVar := range podContainerSpec.Env {
-		existingEnvNames[envVar.Name] = struct{}{}
-	}
+	existingEnvNames := podswebhook.GetEnvVarNamesSet(podContainerSpec)
 
 	// inject various kinds of distro environment variables
-	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroName, pw.Namespace)
-	for _, envVar := range distroMetadata.EnvironmentVariables.StaticVariables {
-		existingEnvNames = podswebhook.InjectStaticEnvVar(existingEnvNames, podContainerSpec, envVar.EnvName, envVar.EnvValue)
+	existingEnvNames, err = podswebhook.InjectStaticEnvVarsToPodContainer(existingEnvNames, podContainerSpec, distroMetadata.EnvironmentVariables.StaticVariables, containerConfig.DistroParams)
+	if err != nil {
+		return false, err
 	}
+	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroName, pw.Namespace)
 	if distroMetadata.EnvironmentVariables.OpAmpClientEnvironments {
 		existingEnvNames = podswebhook.InjectOpampServerEnvVar(existingEnvNames, podContainerSpec)
+	}
+	if distroMetadata.EnvironmentVariables.SignalsAsStaticOtelEnvVars {
+		tracesEnabled := containerConfig.Traces != nil
+		metricsEnabled := containerConfig.Metrics != nil
+		logsEnabled := containerConfig.Logs != nil
+		existingEnvNames = podswebhook.InjectSignalsAsStaticOtelEnvVars(existingEnvNames, podContainerSpec, tracesEnabled, metricsEnabled, logsEnabled)
 	}
 	if distroMetadata.EnvironmentVariables.OtlpHttpLocalNode {
 		existingEnvNames = podswebhook.InjectOtlpHttpEndpointEnvVar(existingEnvNames, podContainerSpec)
@@ -219,11 +233,18 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 
 	volumeMounted := false
 	if distroMetadata.RuntimeAgent != nil {
-		if mountMethod == common.K8sHostPathMountMethod {
+		if *config.MountMethod == common.K8sHostPathMountMethod {
 			// mount directory only if the mount type is host-path
 			for _, agentDirectoryName := range distroMetadata.RuntimeAgent.DirectoryNames {
 				podswebhook.MountDirectory(podContainerSpec, agentDirectoryName)
 				volumeMounted = true
+			}
+
+			// if loader is enabled, mount the loader directory
+			if config.AgentEnvVarsInjectionMethod != nil &&
+				(*config.AgentEnvVarsInjectionMethod == common.LoaderFallbackToPodManifestInjectionMethod ||
+					*config.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod) {
+				podswebhook.MountDirectory(podContainerSpec, filepath.Join(k8sconsts.OdigosAgentsDirectory, consts.OdigosLoaderDirName))
 			}
 		}
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
@@ -236,7 +257,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 			// even if mount method is not device, we still need to inject the deprecated agent specific device
 			// while we remove them one by one
 			isGenericDevice := *distroMetadata.RuntimeAgent.Device == k8sconsts.OdigosGenericDeviceName
-			if mountMethod == common.K8sVirtualDeviceMountMethod || !isGenericDevice {
+			if *config.MountMethod == common.K8sVirtualDeviceMountMethod || !isGenericDevice {
 				deviceName := *distroMetadata.RuntimeAgent.Device
 				// TODO: currently devices are composed with glibc as input for dotnet.
 				// as devices will soon converge to a single device, I am hardcoding the logic here,
@@ -287,4 +308,28 @@ func getRelevantOtelSDKs(ctx context.Context, kubeClient client.Client, podWorkl
 	}
 
 	return otelSdkToUse, nil
+}
+
+func getRuntimeInfoForContainerName(ic *odigosv1.InstrumentationConfig, containerName string) *odigosv1.RuntimeDetailsByContainer {
+
+	// first look for the value in overrides
+	for i := range ic.Spec.ContainersOverrides {
+		if ic.Spec.ContainersOverrides[i].ContainerName == containerName {
+			if ic.Spec.ContainersOverrides[i].RuntimeInfo != nil {
+				return ic.Spec.ContainersOverrides[i].RuntimeInfo
+			} else {
+				break
+			}
+		}
+	}
+
+	// if not found in overrides, look for the value in automatic runtime detection
+	for _, container := range ic.Status.RuntimeDetailsByContainer {
+		if container.ContainerName == containerName {
+			return &container
+		}
+	}
+
+	// if both are not found, return we don't have runtime info for this container
+	return nil
 }

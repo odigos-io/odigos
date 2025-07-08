@@ -1,24 +1,32 @@
 package utils
 
-func IsBaseExeContainsProcessName(baseExe string, processName string) bool {
-	baseLen := len(baseExe)
-	procLen := len(processName)
+import (
+	"bufio"
+	"path/filepath"
+	"slices"
+	"strings"
 
-	// Check if baseExe starts with processName
-	if baseLen >= procLen && baseExe[:procLen] == processName {
-		// If it's exactly processName, or only digits follow
-		if baseLen == procLen || IsDigitsOnly(baseExe[procLen:]) {
-			return true
-		}
-	}
-	return false
+	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
+)
+
+func IsProcessEqualProcessNames(pcx *process.ProcessContext, processNames []string) bool {
+	baseExe := filepath.Base(pcx.ExePath)
+
+	return slices.Contains(processNames, baseExe)
 }
 
-func IsDigitsOnly(s string) bool {
-	for i := 0; i < len(s); i++ {
-		if s[i] < '0' || s[i] > '9' {
-			return false
+func IsMapsFileContainsBinary(mapsFile process.ProcessFile, binaries []string) bool {
+	scanner := bufio.NewScanner(mapsFile)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		for _, binary := range binaries {
+			if strings.Contains(line, binary) {
+				return true
+			}
 		}
 	}
-	return true
+
+	return false
 }

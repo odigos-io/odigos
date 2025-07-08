@@ -38,6 +38,15 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
         namespace
         stacktrace
       }
+      headersCollection {
+        headerKeys
+      }
+      customInstrumentations {
+        probes {
+          className
+          methodName
+        }
+      }
     }
   }
 `;
@@ -79,6 +88,15 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
         lineNumber
         namespace
         stacktrace
+      }
+      headersCollection {
+        headerKeys
+      }
+      customInstrumentations {
+        probes {
+          className
+          methodName
+        }
       }
     }
   }

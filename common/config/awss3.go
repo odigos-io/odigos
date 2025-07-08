@@ -27,7 +27,7 @@ func (s *AWSS3) DestType() common.DestinationType {
 
 func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	if !isLoggingEnabled(dest) && !isTracingEnabled(dest) && !isMetricsEnabled(dest) {
-		return nil, errors.New("No metrics, logs or traces enabled, gateway will not be configured for AWS S3")
+		return nil, errors.New("no metrics, logs or traces enabled, gateway will not be configured for AWS S3")
 	}
 
 	bucket, ok := dest.GetConfig()[s3BucketKey]
@@ -45,7 +45,7 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		partition = "minute"
 	}
 	if partition != "minute" && partition != "hour" {
-		return nil, errors.New("Invalid partition specified, gateway will not be configured for AWS S3")
+		return nil, errors.New("invalid partition specified, gateway will not be configured for AWS S3")
 	}
 
 	marshaler, ok := dest.GetConfig()[s3Marshaller]
@@ -53,7 +53,7 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		marshaler = "otlp_json"
 	}
 	if marshaler != "otlp_json" && marshaler != "otlp_proto" {
-		return nil, errors.New("Invalid marshaller specified, gateway will not be configured for AWS S3")
+		return nil, errors.New("invalid marshaller specified, gateway will not be configured for AWS S3")
 	}
 
 	exporterName := "awss3/" + dest.GetID()

@@ -7,4 +7,5 @@ const (
 	OdigosCloudTokenEnvName     = "ODIGOS_CLOUD_TOKEN"
 	OdigosOnpremTokenEnvName    = "ODIGOS_ONPREM_TOKEN"
 	OdigosProSecretTokenKeyName = "odigos-onprem-token"
+	OdigosCentralSecretName     = "odigos-central"
 )

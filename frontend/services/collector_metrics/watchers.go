@@ -141,11 +141,11 @@ func runWatcherLoop(ctx context.Context, w watchers, notifyChan chan<- notificat
 			switch t {
 			case watch.Deleted, watch.Added:
 				app := event.Object.(*v1alpha1.InstrumentationConfig)
-				name, kind, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(app.Name)
+				pw, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(app.Name, app.Namespace)
 				if err != nil {
 					fmt.Printf("error getting workload info: %v\n", err)
 				}
-				notifyChan <- notification{notificationType: source, sourceID: common.SourceID{Kind: kind, Name: name, Namespace: app.Namespace}, eventType: t}
+				notifyChan <- notification{notificationType: source, sourceID: common.SourceID{Kind: pw.Kind, Name: pw.Name, Namespace: pw.Namespace}, eventType: t}
 			}
 		}
 	}

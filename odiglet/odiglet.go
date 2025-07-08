@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/distros/distro"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
+	"github.com/odigos-io/odigos/k8sutils/pkg/metrics"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
@@ -21,8 +23,12 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
+
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/client-go/kubernetes"
 	controllerruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
 
 type Odiglet struct {
@@ -45,23 +51,42 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 		return nil, err
 	}
 
-	mgr, err := kube.CreateManager()
+	mgr, err := kube.CreateManager(instrumentationMgrOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create controller-runtime manager %w", err)
 	}
 
+	provider, err := metrics.NewMeterProviderForController(resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.K8SNodeName(env.Current.NodeName),
+	))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create OpenTelemetry MeterProvider: %w", err)
+	}
+	instrumentationMgrOpts.MeterProvider = provider
+
+	appendEnvVarNames := distro.GetAppendEnvVarNames(instrumentationMgrOpts.DistributionGetter.GetAllDistros())
+
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		return nil, fmt.Errorf("unable to set up health check: %w", err)
+	}
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		return nil, fmt.Errorf("unable to set up ready check: %w", err)
+	}
+
 	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
-	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates)
+	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates, appendEnvVarNames)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ebpf manager %w", err)
 	}
 	criWrapper := criwrapper.CriClient{Logger: log.Logger}
 
 	kubeManagerOptions := kube.KubeManagerOptions{
-		Mgr:           mgr,
-		Clientset:     clientset,
-		ConfigUpdates: configUpdates,
-		CriClient:     &criWrapper,
+		Mgr:               mgr,
+		Clientset:         clientset,
+		ConfigUpdates:     configUpdates,
+		CriClient:         &criWrapper,
+		AppendEnvVarNames: appendEnvVarNames,
 	}
 
 	err = kube.SetupWithManager(kubeManagerOptions)
@@ -168,7 +193,7 @@ func runDeviceManager(clientset *kubernetes.Clientset, otelSdkLsf instrumentatio
 		return fmt.Errorf("failed to create device manager lister %w", err)
 	}
 
-	manager := dpm.NewManager(lister)
+	manager := dpm.NewManager(lister, log.Logger)
 	manager.Run()
 	return nil
 }
@@ -189,13 +214,11 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		os.Exit(-1)
 	}
 
-	odigletInstalledLabel := k8snode.DetermineNodeOdigletInstalledLabelByTier()
-
-	log.Logger.V(0).Info("Adding Label to Node", "odigletLabel", odigletInstalledLabel)
-
-	if err := k8snode.AddLabelToNode(clientset, nn, odigletInstalledLabel, k8sconsts.OdigletInstalledLabelValue); err != nil {
-		log.Logger.Error(err, "Failed to add Odiglet installed label to the node")
+	if err := k8snode.PrepareNodeForOdigosInstallation(clientset, nn); err != nil {
+		log.Logger.Error(err, "Failed to prepare node for Odigos installation")
 		os.Exit(-1)
+	} else {
+		log.Logger.Info("Successfully prepared node for Odigos installation")
 	}
 
 	// SELinux settings should be applied last. This function chroot's to use the host's PATH for

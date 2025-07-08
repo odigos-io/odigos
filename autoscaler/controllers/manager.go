@@ -82,14 +82,14 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 
 			Setting the leader election params to 30s/20s/5s should provide a good balance between stability and quick failover.
 		*/
-		LeaseDuration: durationPointer(30 * time.Second),
-		RenewDeadline: durationPointer(20 * time.Second),
-		RetryPeriod:   durationPointer(5 * time.Second),
+		LeaseDuration:                 durationPointer(30 * time.Second),
+		RenewDeadline:                 durationPointer(20 * time.Second),
+		RetryPeriod:                   durationPointer(5 * time.Second),
+		LeaderElectionReleaseOnCancel: true,
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
 				&appsv1.Deployment{}: {
-					Label: clusterCollectorLabelSelector,
 					Field: nsSelector,
 				},
 				&corev1.Service{}: {
@@ -144,6 +144,10 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				&apiactions.K8sAttributesResolver{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.Action{}: {
+					Field: nsSelector,
+				},
+				&odigosv1.InstrumentationConfig{}: {},
 			},
 		},
 	}
@@ -156,7 +160,6 @@ func durationPointer(d time.Duration) *time.Duration {
 }
 
 func SetupWithManager(mgr manager.Manager, imagePullSecrets []string, odigosVersion string) error {
-
 	err := nodecollector.SetupWithManager(mgr, imagePullSecrets, odigosVersion)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for node collector: %w", err)
@@ -172,4 +175,8 @@ func SetupWithManager(mgr manager.Manager, imagePullSecrets []string, odigosVers
 	}
 
 	return nil
+}
+
+func RegisterWebhooks(mgr manager.Manager) error {
+	return actions.RegisterWebhooks(mgr)
 }

@@ -1,0 +1,31 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: dynamic
+  displayName: Dynamic Destination
+  category: self hosted
+spec:
+  image: opentelemetry.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: DYNAMIC_DESTINATION_TYPE
+      displayName: Destination Type
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: 'otlp'
+        tooltip: The type of OpenTelemetry Collector Exporter to use for the destination.
+    - name: DYNAMIC_CONFIGURATION_DATA
+      displayName: Config
+      componentType: textarea
+      componentProps:
+        type: textarea
+        required: true
+        tooltip: The raw YAML config for the Collector Exporter for this destination.

@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: odigos-instrumentor
+  labels:
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - ''
@@ -23,6 +25,14 @@ rules:
       - ''
     resources:
       - pods
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - 'batch'
+    resources:
+      - cronjobs
     verbs:
       - list
       - watch
@@ -76,15 +86,6 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentedapplications
-    verbs:
-      - delete
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - odigos.io
-    resources:
       - instrumentationconfigs/status
     verbs:
       - get
@@ -118,5 +119,38 @@ rules:
       - odigos.io
     resources:
       - sources/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+    resourceNames:
+      - source-mutating-webhook-configuration
+      - mutating-webhook-configuration
+    verbs:
+      - update
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+    resourceNames:
+      - source-validating-webhook-configuration
     verbs:
       - update

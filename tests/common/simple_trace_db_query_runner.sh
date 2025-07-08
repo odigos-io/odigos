@@ -10,7 +10,7 @@ function verify_yaml_schema() {
   local expected_count=$(yq e '.expected.count' "$file")
   local minimum_count=$(yq e '.expected.minimum' "$file")
 
-  if [[ -z "$query" || ( "$expected_count" == "null"  &&  "$minimum_count" == "null" ) || ( -z "$minimum_count" && -z "$expected_count" ) ]]; then
+  if [[ -z "$query" || ("$expected_count" == "null" && "$minimum_count" == "null") || (-z "$minimum_count" && -z "$expected_count") ]]; then
     echo "Invalid YAML schema in file: $file"
     exit 1
   fi
@@ -18,25 +18,30 @@ function verify_yaml_schema() {
 
 function urlencode() (
   local length="${#1}"
-  for (( i = 0; i < length; i++ )); do
+  for ((i = 0; i < length; i++)); do
     local c="${1:i:1}"
     case $c in
-      [a-zA-Z0-9.~_-]) printf "$c" ;;
-      *) printf '%%%02X' "'$c" ;;
+    [a-zA-Z0-9.~_-]) printf "$c" ;;
+    *) printf '%%%02X' "'$c" ;;
     esac
   done
 )
 
 # Function to process a YAML file
 function process_yaml_file() {
-  local dest_namespace="traces"
-  local dest_service="simple-trace-db"
+  # The syntax of "${1:-traces}" means that if the first argument is not provided, it will use the default value "traces"
+  local dest_namespace="${3:-traces}"
+  local dest_service="${4:-simple-trace-db}"
   local dest_port="4318"
-  local verbose=$2
+  local verbose="${2}"
 
   local file=$1
   file_name=$(basename "$file")
   echo "Running test $file_name"
+  echo "Dest namespace: $dest_namespace"
+  echo "Dest service: $dest_service"
+  echo "Dest port: $dest_port"
+
   query=$(yq '.query' "$file")
   encoded_query=$(urlencode "$query")
   expected_count=$(yq e '.expected.count' "$file")
@@ -88,10 +93,13 @@ if [ "$2" == "--verbose" ]; then
 fi
 
 # Check if yq is installed
-if ! command -v yq &> /dev/null; then
+if ! command -v yq &>/dev/null; then
   echo "yq command not found. Please install yq."
   exit 1
 fi
 
+DESTINATION_NAMESPACE=$3
+DESTINATION_SERVICE=$4
+
 verify_yaml_schema $TEST_FILE
-process_yaml_file $TEST_FILE $VERBOSE
+process_yaml_file $TEST_FILE $VERBOSE $DESTINATION_NAMESPACE $DESTINATION_SERVICE

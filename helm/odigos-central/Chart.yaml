@@ -1,0 +1,8 @@
+apiVersion: v2
+name: odigos-central
+description: Centralized components for Odigos (UI + Backend)
+type: application
+version: '0.0.0'
+appVersion: 'v0.0.0'
+icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+kubeVersion: '>= 1.20.15-0'

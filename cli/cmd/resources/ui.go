@@ -3,19 +3,19 @@ package resources
 import (
 	"context"
 
-	rbacv1 "k8s.io/api/rbac/v1"
-
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
-	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type uiResourceManager struct {
@@ -31,7 +31,11 @@ func (u *uiResourceManager) Name() string {
 	return "UI"
 }
 
-func NewUIDeployment(ns string, version string, imagePrefix string, imageName string) *appsv1.Deployment {
+func NewUIDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+	if nodeSelector == nil {
+		nodeSelector = make(map[string]string)
+	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -61,6 +65,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 					},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector: nodeSelector,
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.UIContainerName,
@@ -94,13 +99,41 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 									"memory": *resource.NewQuantity(67108864, resource.BinarySI),
 								},
 							},
-							SecurityContext: &corev1.SecurityContext{},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "ui-db-storage",
 									MountPath: "/data",
 								},
 							},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/healthz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: 3000,
+										},
+									},
+								},
+								InitialDelaySeconds: 15,
+								TimeoutSeconds:      0,
+								PeriodSeconds:       20,
+								SuccessThreshold:    0,
+								FailureThreshold:    0,
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/readyz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: 3000,
+										},
+									},
+								},
+								PeriodSeconds: 10,
+							},
+							SecurityContext: &corev1.SecurityContext{},
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
@@ -147,11 +180,6 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 			{ // Needed to read odigos-config configmap for settings
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
-				Verbs:     []string{"get", "list"},
-			},
-			{ // Needed for secret values in destinations
-				APIGroups: []string{""},
-				Resources: []string{"secrets"},
 				Verbs:     []string{"get", "list"},
 			},
 			{ // Needed for CRUD on instr. rule and destinations
@@ -263,6 +291,11 @@ func NewUIClusterRole(readonly bool) *rbacv1.ClusterRole {
 				Resources: []string{"deployments", "statefulsets", "daemonsets"},
 				Verbs:     []string{"get", "list"},
 			},
+			{ // Needed to get and instrument sources
+				APIGroups: []string{"batch"},
+				Resources: []string{"cronjobs"},
+				Verbs:     []string{"get", "list"},
+			},
 			{ // Needed for "Describe Source" and for "Describe Odigos"
 				APIGroups: []string{"apps"},
 				Resources: []string{"replicasets"},
@@ -298,9 +331,15 @@ func NewUIClusterRole(readonly bool) *rbacv1.ClusterRole {
 				Resources: []string{"namespaces"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed to get workloads
+			{ // get & list : Needed to get workloads
+				// patch & update: Needed to rollout restart workloads
 				APIGroups: []string{"apps"},
 				Resources: []string{"deployments", "statefulsets", "daemonsets"},
+				Verbs:     []string{"get", "list", "patch", "update"},
+			},
+			{ // Needed to get and instrument sources
+				APIGroups: []string{"batch"},
+				Resources: []string{"cronjobs"},
 				Verbs:     []string{"get", "list"},
 			},
 			{ // Needed for "Describe Source" and for "Describe Odigos"
@@ -408,7 +447,7 @@ func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewUIRoleBinding(u.ns),
 		NewUIClusterRole(u.readonly),
 		NewUIClusterRoleBinding(u.ns),
-		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.managerOpts.ImageReferences.UIImage),
+		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.managerOpts.ImageReferences.UIImage, u.config.NodeSelector),
 		NewUIService(u.ns),
 	}
 	return u.client.ApplyResources(ctx, u.config.ConfigVersion, resources, u.managerOpts)
@@ -420,7 +459,7 @@ func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosC
 		ns:            ns,
 		config:        config,
 		odigosVersion: odigosVersion,
-		readonly:      config.UiMode == common.ReadonlyUiMode,
+		readonly:      config.UiMode == common.UiModeReadonly,
 		managerOpts:   managerOpts,
 	}
 }

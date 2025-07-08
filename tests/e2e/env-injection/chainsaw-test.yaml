@@ -1,27 +1,37 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: multi-apps
+  name: env-injection
 spec:
   description: This e2e test runs a multi-apps scenario
   skipDelete: true
   steps:
     - name: Prepare destination
       try:
-        - apply: 
+        - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
     - name: Install Odigos
       try:
         - script:
-            timeout: 3m
-            content: ../../../cli/odigos install --namespace odigos-test --version e2e-test
+            timeout: 4m
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
         - assert:
+            timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
+
+    - name: Assert config set successfully to default
+      try:
+        - script:
+            timeout: 30s
+            content: ../../common/assert_config_value.sh -k agentEnvVarsInjectionMethod -v loader-fallback-to-pod-manifest
+
     - name: Verify Node Odiglet label has been added
       try:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
-  
+
     - name: Assert Trace DB is up
       try:
         - assert:
@@ -59,9 +69,58 @@ spec:
             timeout: 1m
             file:  ../../common/assert/pipeline-ready.yaml
 
-    - name: Assert Environment Variables
+    - name: 01 - Assert Environment Variables
       try:
         - assert:
-            file: 01-assert-env-vars.yaml
+            timeout: 3m
+            file: assert-env-vars-loader-fallback-pod-manifest.yaml
 
-    
+    - name: Set Env injection method to pod-manifest
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              ../../../cli/odigos config set agent-env-vars-injection-method pod-manifest
+
+    - name: Assert config set successfully
+      try:
+        - script:
+            timeout: 30s
+            content: ../../common/assert_config_value.sh -k agentEnvVarsInjectionMethod -v pod-manifest
+
+    - name: Rollout instrumented apps
+      try:
+        - script:
+            timeout: 1m
+            content: kubectl rollout restart deployment
+
+    - name: 02 - Assert Environment Variables
+      try:
+        - assert:
+            timeout: 1m
+            file: assert-env-vars-pod-manifest.yaml
+
+    - name: Set Env injection method to loader
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              ../../../cli/odigos config set agent-env-vars-injection-method loader
+
+    - name: Assert config set successfully
+      try:
+        - script:
+            timeout: 30s
+            content: ../../common/assert_config_value.sh -k agentEnvVarsInjectionMethod -v loader
+
+    - name: Rollout instrumented apps
+      try:
+        - script:
+            timeout: 1m
+            content: kubectl rollout restart deployment
+
+    - name: 03 - Assert Environment Variables
+      try:
+        - assert:
+            timeout: 1m
+            file: assert-env-vars-loader.yaml

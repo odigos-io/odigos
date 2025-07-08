@@ -42,7 +42,7 @@ jobs:
       fail-fast: false
       matrix:
         provider: [aks, eks]
-        test_scenario: [multi-apps, helm-chart]
+        test_scenario: [source, helm-chart]
 
     steps:
       - name: Checkout Code

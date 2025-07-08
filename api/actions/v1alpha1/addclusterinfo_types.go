@@ -31,6 +31,20 @@ type OtelAttributeWithValue struct {
 	AttributeStringValue *string `json:"attributeStringValue"`
 }
 
+const ActionNameAddClusterInfo = "AddClusterInfo"
+
+type AddClusterInfoConfig struct {
+	ClusterAttributes []OtelAttributeWithValue `json:"clusterAttributes"`
+}
+
+func (AddClusterInfoConfig) ProcessorType() string {
+	return "resource"
+}
+
+func (AddClusterInfoConfig) OrderHint() int {
+	return 1
+}
+
 // AddClusterInfoSpec defines the desired state of AddClusterInfo action
 type AddClusterInfoSpec struct {
 	ActionName string                       `json:"actionName,omitempty"`
@@ -56,8 +70,7 @@ type AddClusterInfoStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=addclusterinfos,scope=Namespaced,shortName=aci
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/config=1
-//+kubebuilder:metadata:labels=metadata.labels.odigos.io/system-object=true
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // AddClusterInfo is the Schema for the addclusterinfo odigos action API
 type AddClusterInfo struct {

@@ -12,19 +12,21 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/detector"
 
 	processdetector "github.com/odigos-io/runtime-detector"
-
+	"go.opentelemetry.io/otel/metric"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type InstrumentationManagerOptions struct {
-	Factories          map[instrumentation.OtelDistribution]instrumentation.Factory
-	DistributionGetter *distros.Getter
+	Factories                  map[string]instrumentation.Factory
+	DistributionGetter         *distros.Getter
+	MeterProvider              metric.MeterProvider
+	OdigletHealthProbeBindPort int
 }
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
 // Instrumentation factories must be provided in order to create the instrumentation objects.
 // Detector options can be provided to configure the process detector, but if not provided, default options will be used.
-func NewManager(client client.Client, logger logr.Logger, opts InstrumentationManagerOptions, configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup]) (instrumentation.Manager, error) {
+func NewManager(client client.Client, logger logr.Logger, opts InstrumentationManagerOptions, configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup], appendEnvVarNames map[string]struct{}) (instrumentation.Manager, error) {
 	if len(opts.Factories) == 0 {
 		return nil, errors.New("instrumentation factories must be provided")
 	}
@@ -33,12 +35,18 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 		return nil, errors.New("distribution getter must be provided")
 	}
 
+	appendEnvVarSlice := make([]string, 0, len(appendEnvVarNames))
+	for env := range appendEnvVarNames {
+		appendEnvVarSlice = append(appendEnvVarSlice, env)
+	}
+
 	managerOpts := instrumentation.ManagerOptions[K8sProcessDetails, K8sConfigGroup]{
 		Logger:          logger,
 		Factories:       opts.Factories,
-		Handler:         newHandler(client),
-		DetectorOptions: detector.DefaultK8sDetectorOptions(logger),
+		Handler:         newHandler(client, opts.DistributionGetter),
+		DetectorOptions: detector.DefaultK8sDetectorOptions(logger, appendEnvVarSlice),
 		ConfigUpdates:   configUpdates,
+		MeterProvider:   opts.MeterProvider,
 	}
 
 	// Add file open triggers from all distributions.
@@ -46,7 +54,7 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	// before it load the required native library (e.g. .so file)
 	// adding this option to the process detector will add an event to the instrumentation event loop
 	fileOpenTriggers := []string{}
-	for _, d := range(opts.DistributionGetter.GetAllDistros()) {
+	for _, d := range opts.DistributionGetter.GetAllDistros() {
 		if d.RuntimeAgent == nil {
 			continue
 		}
@@ -76,7 +84,7 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	return manager, nil
 }
 
-func newHandler(client client.Client) *instrumentation.Handler[K8sProcessDetails, K8sConfigGroup] {
+func newHandler(client client.Client, distributionGetter *distros.Getter) *instrumentation.Handler[K8sProcessDetails, K8sConfigGroup] {
 	reporter := &k8sReporter{
 		client: client,
 	}
@@ -87,7 +95,9 @@ func newHandler(client client.Client) *instrumentation.Handler[K8sProcessDetails
 	settingsGetter := &k8sSettingsGetter{
 		client: client,
 	}
-	distributionMatcher := &podDeviceDistributionMatcher{}
+	distributionMatcher := &podDeviceDistributionMatcher{
+		distributionGetter: distributionGetter,
+	}
 	return &instrumentation.Handler[K8sProcessDetails, K8sConfigGroup]{
 		ProcessDetailsResolver: processDetailsResolver,
 		ConfigGroupResolver:    configGroupResolver,

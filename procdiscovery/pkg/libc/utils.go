@@ -37,13 +37,13 @@ func ModifyEnvVarsForMusl(lang common.ProgrammingLanguage, envs map[string]strin
 }
 
 // InspectType inspects the given process for libc type
-func InspectType(process *process.Details) (*common.LibCType, error) {
-	f, err := elf.Open(fmt.Sprintf("/proc/%d/exe", process.ProcessID))
+func InspectType(pd *process.Details) (*common.LibCType, error) {
+	f, err := elf.Open(fmt.Sprintf("/proc/%d/exe", pd.ProcessID))
 	if err != nil {
 		return nil, err
 	}
 
-	defer f.Close()
+	defer f.Close() // nolint:errcheck // we can't do anything if it fails
 	for _, prog := range f.Progs {
 		if prog.Type != elf.PT_INTERP {
 			continue

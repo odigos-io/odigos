@@ -5,8 +5,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
   labels:
-    metadata.labels.odigos.io/config: "1"
-    metadata.labels.odigos.io/system-object: "true"
+    odigos.io/system-object: "true"
   name: instrumentationrules.odigos.io
 spec:
   group: odigos.io
@@ -75,10 +74,35 @@ spec:
                       if unset, the value will resolve from other relevant rules, or fallback to false
                     type: boolean
                 type: object
+              customInstrumentations:
+                description: Add custom instrumentation probes
+                properties:
+                  probes:
+                    description: Custom instrumentation probes to be added to the
+                      SDK.
+                    items:
+                      properties:
+                        className:
+                          type: string
+                        methodName:
+                          type: string
+                      type: object
+                    type: array
+                type: object
               disabled:
                 description: A boolean field allowing to temporarily disable the rule,
                   but keep it around for future use
                 type: boolean
+              headersCollection:
+                description: Allows to configure the collection of http headers for
+                  different types of payloads.
+                properties:
+                  headerKeys:
+                    description: Limit payload collection to specific header keys.
+                    items:
+                      type: string
+                    type: array
+                type: object
               instrumentationLibraries:
                 description: |-
                   For fine grained control, the user can specify the instrumentation library to use.
@@ -100,8 +124,13 @@ spec:
                       - dotnet
                       - javascript
                       - php
+                      - ruby
+                      - rust
+                      - cplusplus
                       - mysql
                       - nginx
+                      - redis
+                      - postgres
                       - unknown
                       - ignored
                       type: string
@@ -255,6 +284,13 @@ spec:
                   convenience. Odigos does not use or assume any meaning from this
                   field.
                 type: string
+              traceConfig:
+                description: Configure the tracing configuration for the library.
+                properties:
+                  disabled:
+                    description: Disabled will disable tracing for the rule.
+                    type: boolean
+                type: object
               workloads:
                 description: An array of workload objects (name, namespace, kind)
                   to which the rule should be applied. If not specified, the rule

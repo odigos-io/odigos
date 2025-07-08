@@ -5,7 +5,7 @@ import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, upda
 // Tests will fail if you have existing CRDs in the cluster.
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
-const namespace = NAMESPACES.ODIGOS_SYSTEM;
+const namespace = NAMESPACES.ODIGOS_TEST;
 const crdName = CRD_NAMES.DESTINATION;
 const totalEntities = 1;
 
@@ -19,7 +19,7 @@ describe('Destinations CRUD', () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 
-  it(`Should create ${totalEntities} destinations via API, and notify with SSE`, () => {
+  it(`Should create ${totalEntities} destinations via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.ADD_DESTINATION).click();
       cy.get(DATA_IDS.MODAL_ADD_DESTINATION).should('exist');
@@ -48,7 +48,6 @@ describe('Destinations CRUD', () => {
           fieldValue: TEXTS.UPDATED_NAME,
         },
         () => {
-          awaitToast({ message: TEXTS.NOTIF_DESTINATION_UPDATING });
           // Wait for the destination to update
           cy.wait('@gql').then(() => {
             awaitToast({ message: TEXTS.NOTIF_DESTINATION_UPDATED(SELECTED_ENTITIES.DESTINATION.TYPE) });
@@ -66,7 +65,7 @@ describe('Destinations CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} destinations via API, and notify with SSE`, () => {
+  it(`Should delete ${totalEntities} destinations via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       deleteEntity(
         {

@@ -19,5 +19,5 @@ spec:
         - name: curl
           image: curlimages/curl:8.4.0
           imagePullPolicy: IfNotPresent
-          command: [ "curl" ]
-          args: [ "-s","-X","POST","http://frontend:8080/buy?id=123" ]
+          command: ['curl']
+          args: ['-s', '-X', 'POST', 'http://frontend:8080/buy?id=123']

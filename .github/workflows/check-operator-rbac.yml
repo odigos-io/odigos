@@ -1,0 +1,50 @@
+name: Check RBAC Changes
+
+on:
+  pull_request:
+    paths:
+      - 'helm/**/*role.yaml'
+      - 'helm/**/*clusterrole.yaml'
+      - 'operator/config/rbac/role.yaml'
+
+jobs:
+  check-rbac:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for RBAC changes
+        run: |
+          # Check if PR has operator-rbac-approved label
+          PR_LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+          
+          if echo "$PR_LABELS" | grep -q "operator-rbac-approved"; then
+            echo "✅ PR has 'operator-rbac-approved' label - any RBAC changes have been approved"
+            exit 0
+          fi
+
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+          
+          # Check if any helm RBAC files changed
+          HELM_RBAC_CHANGED=false
+          for file in $CHANGED_FILES; do
+            if [[ $file == helm/*role.yaml ]] || [[ $file == helm/*clusterrole.yaml ]]; then
+              HELM_RBAC_CHANGED=true
+              break
+            fi
+          done
+          
+          # Check if operator RBAC file changed
+          OPERATOR_RBAC_CHANGED=false
+          if echo "$CHANGED_FILES" | grep -q "operator/config/rbac/role.yaml"; then
+            OPERATOR_RBAC_CHANGED=true
+          fi
+          
+          # If helm RBAC changed but operator RBAC didn't, fail
+          if [ "$HELM_RBAC_CHANGED" = true ] && [ "$OPERATOR_RBAC_CHANGED" = false ]; then
+            echo "::error::Component RBAC updated without corresponding permissions changed in Operator, please see https://github.com/odigos-io/odigos/tree/main/operator#permissions or apply the 'operator-rbac-approved' label to bypass this check."
+            exit 1
+          fi

@@ -8,11 +8,12 @@ receivers:
             max_connection_age: 15s
             max_connection_age_grace: 2s
         max_recv_msg_size_mib: 128
+        memory_limiter: memory_limiter
       http:
         endpoint: 0.0.0.0:4318
 exporters: {}
 processors:
-  memory_limiter: {}
+  batch/generic-batch-processor: {}
   resource/odigos-version:
     attributes:
     - action: upsert
@@ -21,10 +22,16 @@ processors:
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
+  memory_limiter: {}
   pprof:
     endpoint: 0.0.0.0:1777
+connectors: {}
 service:
   extensions:
   - health_check
   - pprof
+  - memory_limiter
   pipelines: {}
+  telemetry:
+    metrics: {}
+    resource: {}

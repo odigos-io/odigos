@@ -1,5 +1,5 @@
 gqlgen:
-	 go get github.com/99designs/gqlgen@v0.17.49 && go run github.com/99designs/gqlgen generate
+	go get github.com/99designs/gqlgen@v0.17.70 && go run github.com/99designs/gqlgen generate
 
 TOOLS := $(PWD)/.tools
 
@@ -16,7 +16,7 @@ go-licenses: tools
 .PHONY: licenses
 licenses: go-licenses
 	# `modernc.org/mathutil` is licensed under BSD-3-Clause,
-	# which is a permissive open-source license. However, `go-licenses` does not automatically 
+	# which is a permissive open-source license. However, `go-licenses` does not automatically
 	# detect its license file, so we explicitly ignore it to prevent errors.
 	@if [ -d "$(PWD)/licenses" ]; then \
 		rm -rf $(PWD)/licenses; \

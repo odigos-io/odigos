@@ -12,16 +12,18 @@ import { LanguagesCard } from '/snippets/languages-card.mdx';
 Odigos provides automatic instrumentations for the following runtimes:
 
 <LanguagesCard
-  golangUrl="/instrumentations/golang/ebpf"
+  golangUrl="/instrumentations/golang"
   golangDescription="Versions 1.17 and above are supported"
-  javascriptUrl="/instrumentations/nodejs/native"
+  javascriptUrl="/instrumentations/nodejs"
   javascriptDescription="Versions 14 and above are supported"
-  pythonUrl="/instrumentations/python/native"
+  pythonUrl="/instrumentations/python"
   pythonDescription="Versions 3.8 and above are supported"
-  javaUrl="/instrumentations/java/native"
+  javaUrl="/instrumentations/java"
   javaDescription="Versions 8 and above are supported"
-  dotnetUrl="/instrumentations/dotnet/native"
+  dotnetUrl="/instrumentations/dotnet"
   dotnetDescription="Versions 4.6.2 and above are supported"
+  phpUrl="/instrumentations/php"
+  phpDescription="Versions 8.0.0 - 8.4.x are supported"
 />
 
 ## Enrich with OpenTelemetry APIs
@@ -47,6 +49,8 @@ Select a language to learn how to enrich your data with OpenTelemetry APIs:
   javaDescription="For applications written in Java or JVM-based languages"
   dotnetUrl="/instrumentations/dotnet/enrichment"
   dotnetDescription="For applications written in C# or .NET"
+  phpUrl="/instrumentations/php/enrichment"
+  phpDescription="For applications written in PHP"
 />
 
 ## Instrumentation Flow:
@@ -58,3 +62,5 @@ Select a language to learn how to enrich your data with OpenTelemetry APIs:
 5. Kubernetes detects the changes in the manifest, and rollout-restarts the pods with the new `Instrumentation Devices`.
 6. New pods are scheduled and started. Odiglet resolves the resource request by mounting the auto instrumentation code and relevant environment variables into the container.
 7. The auto instrumentation code starts the OpenTelemetry SDK and sends telemetry data to the odigos pipeline.
+
+In case of a failure to instrument a workload, Odigos will disable the instrumentation and rollback the workload, This behaviour can be disabled by running ```bash odigos config set rollback-disabled true``` or via the helm chart ```autoRollback.disabled=false```

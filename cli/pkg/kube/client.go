@@ -30,11 +30,11 @@ import (
 
 type Client struct {
 	kubernetes.Interface
-	Clientset       *kubernetes.Clientset
-	Dynamic         *dynamic.DynamicClient
-	ApiExtensions   apiextensionsclient.Interface
-	OdigosClient    v1alpha1.OdigosV1alpha1Interface
-	Config          *rest.Config
+	Clientset     *kubernetes.Clientset
+	Dynamic       *dynamic.DynamicClient
+	ApiExtensions apiextensionsclient.Interface
+	OdigosClient  v1alpha1.OdigosV1alpha1Interface
+	Config        *rest.Config
 }
 
 // Identical to the Object interface defined in controller-runtime: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client#Object
@@ -117,7 +117,13 @@ func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Objec
 	if labels == nil {
 		labels = make(map[string]string)
 	}
-	labels[k8sconsts.OdigosSystemLabelKey] = k8sconsts.OdigosSystemLabelValue
+
+	labelKey := managerOpts.SystemObjectLabelKey
+	if labelKey == "" {
+		labelKey = k8sconsts.OdigosSystemLabelKey
+	}
+
+	labels[labelKey] = k8sconsts.OdigosSystemLabelValue
 	labels[k8sconsts.OdigosSystemConfigLabelKey] = strconv.Itoa(configVersion)
 	obj.SetLabels(labels)
 

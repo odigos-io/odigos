@@ -1,0 +1,40 @@
+{{- if (include "odigos.secretExists" .) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: redis
+    odigos.io/system-object: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app: redis
+        {{- end }}
+        {{- end }}
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image | quote }}
+          command: ["redis-server"]
+          args: ["--port", "{{ .Values.redis.port }}"]
+          ports:
+            - containerPort: {{ .Values.redis.port }}
+              name: {{ .Values.redis.portName }}
+{{- end }}
+             

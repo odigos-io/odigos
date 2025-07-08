@@ -39,6 +39,15 @@ export const GET_INSTRUMENTATION_RULES = gql`
           namespace
           stacktrace
         }
+        headersCollection {
+          headerKeys
+        }
+        customInstrumentations {
+            probes {
+                className
+                methodName
+            }
+         }
       }
     }
   }

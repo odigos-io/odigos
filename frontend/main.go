@@ -14,18 +14,17 @@ import (
 	"sync"
 	"syscall"
 
-	_ "net/http/pprof"
-
-	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
+
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/kube/watchers"
+	"github.com/odigos-io/odigos/frontend/middlewares"
 	"github.com/odigos-io/odigos/frontend/services"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
 	"github.com/odigos-io/odigos/frontend/services/db"
@@ -82,7 +81,58 @@ func initKubernetesClient(flags *Flags) error {
 	return nil
 }
 
-func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetricsConsumer) (*gin.Engine, error) {
+func startWatchers(ctx context.Context) error {
+	err := watchers.StartInstrumentationConfigWatcher(ctx, "")
+	if err != nil {
+		return fmt.Errorf("error starting InstrumentationConfig watcher: %v", err)
+	}
+	return nil
+}
+
+func startDatabase() error {
+	database, err := db.NewSQLiteDB("/data/data.db")
+
+	if err != nil {
+		// TODO: Move to fatal once db required
+		// return err
+		log.Println(err, "Failed to connect to DB")
+	} else {
+		defer database.Close()
+		db.InitializeDatabaseSchema(database.GetDB())
+	}
+
+	return nil
+}
+
+// Serve React app (if page not found serve index.html)
+func serveClientFiles(ctx context.Context, r *gin.Engine, dist fs.FS) {
+	r.NoRoute(func(c *gin.Context) {
+		// Apply OIDC middleware only for routes serving the frontend (GraphQL & Apollo cannot redirect)
+		middlewares.OidcMiddleware(ctx)(c)
+		if c.IsAborted() {
+			return
+		}
+
+		fs := http.FS(dist)
+		path := c.Request.URL.Path
+
+		_, err := fs.Open(path)
+		if err != nil {
+			// If file not found, serve .html of it (example: /choose-sources -> /choose-sources.html)
+			path += ".html"
+		}
+		_, err = fs.Open(path)
+		if err != nil {
+			// If .html file not found, this route does not exist at all (404) so we should redirect to default
+			path = "/"
+		}
+
+		c.Request.URL.Path = path
+		http.FileServer(fs).ServeHTTP(c.Writer, c.Request)
+	})
+}
+
+func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer) (*gin.Engine, error) {
 	var r *gin.Engine
 	if flags.Debug {
 		r = gin.Default()
@@ -95,81 +145,40 @@ func startHTTPServer(flags *Flags, odigosMetrics *collectormetrics.OdigosMetrics
 	// Enable CORS
 	r.Use(cors.Default())
 
-	// Serve React app
-	dist, err := fs.Sub(uiFS, "webapp/out")
-	if err != nil {
-		return nil, fmt.Errorf("error reading webapp/out directory: %s", err)
-	}
-
-	// Serve React app if page not found serve index.html
-	r.NoRoute(gin.WrapH(httpFileServerWith404(http.FS(dist))))
-
-	// GraphQL handlers
-	gqlHandler := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
-		Resolvers: &graph.Resolver{
-			MetricsConsumer: odigosMetrics,
-			Logger:          logr.FromSlogHandler(slog.Default().Handler()),
-		},
-	}))
-	r.POST("/graphql", func(c *gin.Context) {
-		gqlHandler.ServeHTTP(c.Writer, c.Request)
+	// Readiness and Liveness probes
+	r.GET("/readyz", func(c *gin.Context) {
+		if kube.DefaultClient == nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ready"})
 	})
-	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
+	r.GET("/healthz", func(c *gin.Context) {
+		if kube.DefaultClient == nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not healthy"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+	})
 
+	// OIDC/OAuth2 handlers
+	r.GET("/auth/callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c) })
+	// GraphQL handlers
+	r.POST("/graphql", func(c *gin.Context) { graph.GetGQLHandler(ctx, logger, odigosMetrics).ServeHTTP(c.Writer, c.Request) })
+	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
 	// SSE handler
 	r.GET("/api/events", sse.HandleSSEConnections)
-
 	// Remote CLI handlers
 	r.POST("/token/update", services.UpdateToken)
 	r.GET("/describe/odigos", services.DescribeOdigos)
 	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", services.DescribeSource)
 	r.POST("/source/namespace/:namespace/kind/:kind/name/:name", services.CreateSourceWithAPI)
 	r.DELETE("/source/namespace/:namespace/kind/:kind/name/:name", services.DeleteSourceWithAPI)
+
 	return r, nil
 }
 
-func httpFileServerWith404(fs http.FileSystem) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := fs.Open(r.URL.Path)
-		if err != nil {
-			// If file not found, serve .html of it (example: /choose-sources -> /choose-sources.html)
-			r.URL.Path = r.URL.Path + ".html"
-		}
-		_, err = fs.Open(r.URL.Path)
-		if err != nil {
-			// If .html file not found, this route does not exist at all (404) so we should redirect to default
-			r.URL.Path = "/"
-		}
-		http.FileServer(fs).ServeHTTP(w, r)
-	})
-}
-
-func startWatchers(ctx context.Context, flags *Flags) error {
-	err := watchers.StartInstrumentationConfigWatcher(ctx, "")
-	if err != nil {
-		return fmt.Errorf("error starting InstrumentationConfig watcher: %v", err)
-	}
-
-	err = watchers.StartDestinationWatcher(ctx, flags.Namespace)
-	if err != nil {
-		return fmt.Errorf("error starting Destination watcher: %v", err)
-	}
-
-	return nil
-}
-
 func main() {
-
-	// Initialize SQLite database
-	database, err := db.NewSQLiteDB("/data/data.db")
-	if err != nil {
-		log.Println(err, "Failed to connect to DB") // TODO: Move to fatal once db required
-	}
-	defer database.Close()
-
-	// InitializeDatabaseSchema sets up the initial database schema.
-	db.InitializeDatabaseSchema(database.GetDB())
-
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := parseFlags()
 
@@ -186,12 +195,19 @@ func main() {
 		cancel()
 	}()
 
-	go common.StartPprofServer(ctx, logr.FromSlogHandler(slog.Default().Handler()))
+	logger := logr.FromSlogHandler(slog.Default().Handler())
+	go common.StartPprofServer(ctx, logger)
 
 	// Load destinations data
-	err = destinations.Load()
+	err := destinations.Load()
 	if err != nil {
 		log.Fatalf("Error loading destinations data: %s", err)
+	}
+
+	// Start SQLite database
+	err = startDatabase()
+	if err != nil {
+		log.Fatalf("Error starting database: %s", err)
 	}
 
 	// Connect to Kubernetes
@@ -208,20 +224,27 @@ func main() {
 		odigosMetrics.Run(ctx, flags.Namespace)
 	}()
 
-	// Start server
-	r, err := startHTTPServer(&flags, odigosMetrics)
-	if err != nil {
-		log.Fatalf("Error starting server: %s", err)
-	}
-
 	// Start watchers
-	err = startWatchers(ctx, &flags)
+	err = startWatchers(ctx)
 	if err != nil {
 		log.Fatalf("Error starting watchers: %s", err)
 	}
 
-	log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
+	// Start server
+	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics)
+	if err != nil {
+		log.Fatalf("Error starting server: %s", err)
+	}
+
+	// Serve client (react/next app)
+	dist, err := fs.Sub(uiFS, "webapp/out")
+	if err != nil {
+		log.Fatalf("Error reading webapp/out directory: %s", err)
+	}
+	serveClientFiles(ctx, r, dist)
+
 	go func() {
+		log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
 		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
 		if err != nil {
 			log.Fatalf("Error starting server: %s", err)

@@ -14,11 +14,17 @@ const (
 	InstrumentorRoleBindingName             = InstrumentorDeploymentName
 	InstrumentorClusterRoleName             = InstrumentorDeploymentName
 	InstrumentorClusterRoleBindingName      = InstrumentorDeploymentName
-	InstrumentorCertificateName             = InstrumentorDeploymentName
+	InstrumentorCAName                      = InstrumentorDeploymentName
+	InstrumentorWebhookFieldOwner           = InstrumentorDeploymentName
 	InstrumentorMutatingWebhookName         = "mutating-webhook-configuration"
 	InstrumentorSourceMutatingWebhookName   = "source-mutating-webhook-configuration"
 	InstrumentorSourceValidatingWebhookName = "source-validating-webhook-configuration"
 	InstrumentorContainerName               = "manager"
-	InstrumentorWebhookSecretName           = "webhook-cert"
-	InstrumentorWebhookVolumeName           = "webhook-cert"
+
+	InstrumentorWebhookSecretName = "instrumentor-webhooks-cert"
+	InstrumentorWebhookVolumeName = "instrumentor-webhooks-cert"
+
+	// Deprecated: only use for migration purposes.
+	DeprecatedInstrumentorWebhookSecretName = "webhook-cert"
+	DeprecatedInstrumentorWebhookVolumeName = "webhook-cert"
 )

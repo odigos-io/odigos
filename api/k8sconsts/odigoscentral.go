@@ -9,10 +9,9 @@ const (
 	CentralProxyRoleBindingName    = "central-proxy"
 	CentralProxyLabelAppNameValue  = "central-proxy"
 	CentralProxyContainerName      = "central-proxy"
-
-	CentralProxyContainerPort     = 8080
-	CentralProxyConfigMapResource = "configmaps"
-	CentralProxyImage             = "odigos-enterprise-central-proxy"
+	CentralProxyContainerPort      = 8080
+	CentralProxyConfigMapResource  = "configmaps"
+	CentralProxyImage              = "odigos-enterprise-central-proxy"
 )
 
 const (
@@ -21,4 +20,56 @@ const (
 	CentralCPULimit      = "500m"
 	CentralMemoryRequest = "64Mi"
 	CentralMemoryLimit   = "256Mi"
+)
+
+const (
+	// Odigos Central Backend
+	CentralBackendAppName = "central-backend"
+	CentralBackendName    = "central-backend"
+	CentralBackendImage   = "odigos-enterprise-central-backend"
+)
+
+const (
+	//Odigos Central UI
+	CentralUI               = "central-ui"
+	CentralUIAppName        = "central-ui"
+	CentralUIDeploymentName = "central-ui"
+	CentralUILabelAppValue  = "central-ui"
+	CentralUIContainerName  = "central-ui"
+	CentralUIImage          = "odigos-enterprise-central-ui"
+)
+
+const (
+	RedisResourceManagerName = "Redis"
+	RedisAppName             = "redis"
+	RedisDeploymentName      = "redis"
+	RedisServiceName         = "redis"
+	RedisContainerName       = "redis"
+	RedisImage               = "redis:7.4.2"
+	RedisPort                = 6379
+	RedisPortName            = "redis"
+	RedisCommand             = "redis-server"
+)
+
+const (
+	KeycloakResourceManagerName = "Keycloak"
+	KeycloakAppName             = "keycloak"
+	KeycloakDeploymentName      = "keycloak"
+	KeycloakServiceName         = "keycloak"
+	KeycloakContainerName       = "keycloak"
+	KeycloakImage               = "quay.io/keycloak/keycloak:24.0.3"
+	KeycloakPort                = 8080
+	KeycloakPortName            = "http"
+	KeycloakSecretName          = "keycloak-admin-credentials"
+	KeycloakAdminUsernameKey    = "admin-username"
+	KeycloakAdminPasswordKey    = "admin-password"
+)
+
+const (
+	OdigosSystemLabelCentralKey = "odigos.io/central-system-object"
+)
+
+const (
+	CentralBackendPort = "8081"
+	CentralUIPort      = "3000"
 )

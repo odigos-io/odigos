@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: odigos-scheduler
+  labels:
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - odigos.io
@@ -11,3 +13,11 @@ rules:
       - get
       - list
       - watch
+{{- if .Values.openshift.enabled }}
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps/finalizers
+    verbs:
+      - update
+{{- end }}

@@ -1,6 +1,6 @@
 import { safeJsonParse } from '@odigos/ui-kit/functions';
-import type { ActionInput, FetchedAction, ParsedActionSpec } from '@/types';
-import { ActionType, SignalType, type Action, type ActionFormData } from '@odigos/ui-kit/types';
+import type { ActionInput, FetchedAction, ParsedActionSpec, ParsedAttributeFilter } from '@/types';
+import { ActionType, AttributeFilters, SignalType, type Action, type ActionFormData } from '@odigos/ui-kit/types';
 
 export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
   return items.map((item) => {
@@ -11,6 +11,7 @@ export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
     switch (type) {
       case ActionType.K8sAttributes:
         spec.collectContainerAttributes = parsedSpec.collectContainerAttributes || false;
+        spec.collectReplicaSetAttributes = parsedSpec.collectReplicaSetAttributes || false;
         spec.collectWorkloadId = parsedSpec.collectWorkloadUID || false;
         spec.collectClusterId = parsedSpec.collectClusterUID || false;
         spec.labelsAttributes = parsedSpec.labelsAttributes;
@@ -50,6 +51,68 @@ export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
         }));
         break;
 
+      case ActionType.ServiceNameSampler:
+        spec.servicesNameFilters = parsedSpec.services_name_filters?.map(({ service_name, sampling_ratio, fallback_sampling_ratio }) => ({
+          serviceName: service_name,
+          samplingRatio: sampling_ratio,
+          fallbackSamplingRatio: fallback_sampling_ratio,
+        }));
+        break;
+
+      case ActionType.SpanAttributeSampler:
+        spec.attributeFilters = parsedSpec.attribute_filters?.map(
+          ({ service_name, attribute_key, fallback_sampling_ratio, condition: { string_condition, number_condition, boolean_condition, json_condition } }) => {
+            const condition: AttributeFilters['condition'] = {};
+
+            if (string_condition) {
+              condition.stringCondition = {
+                operation: string_condition.operation,
+              };
+              if (string_condition.expected_value) {
+                condition.stringCondition.expectedValue = string_condition.expected_value;
+              }
+            }
+
+            if (number_condition) {
+              condition.numberCondition = {
+                operation: number_condition.operation,
+              };
+              if (number_condition.expected_value !== undefined) {
+                condition.numberCondition.expectedValue = Number(number_condition.expected_value);
+              }
+            }
+
+            if (boolean_condition) {
+              condition.booleanCondition = {
+                operation: boolean_condition.operation,
+              };
+              if (boolean_condition.expected_value !== undefined) {
+                condition.booleanCondition.expectedValue = Boolean(boolean_condition.expected_value);
+              }
+            }
+
+            if (json_condition) {
+              condition.jsonCondition = {
+                operation: json_condition.operation,
+              };
+              if (json_condition.expected_value) {
+                condition.jsonCondition.expectedValue = json_condition.expected_value;
+              }
+              if (json_condition.json_path) {
+                condition.jsonCondition.jsonPath = json_condition.json_path;
+              }
+            }
+
+            return {
+              serviceName: service_name,
+              attributeKey: attribute_key,
+              fallbackSamplingRatio: fallback_sampling_ratio,
+              condition,
+            };
+          },
+        );
+        break;
+
       default:
         break;
     }
@@ -75,6 +138,7 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
     disabled = false,
     signals,
     collectContainerAttributes,
+    collectReplicaSetAttributes,
     collectWorkloadId,
     collectClusterId,
     labelsAttributes,
@@ -86,6 +150,8 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
     fallbackSamplingRatio,
     samplingPercentage,
     endpointsFilters,
+    servicesNameFilters,
+    attributeFilters,
   } = action;
 
   const payload: ActionInput = {
@@ -101,6 +167,7 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
     case ActionType.K8sAttributes:
       payload['details'] = JSON.stringify({
         collectContainerAttributes,
+        collectReplicaSetAttributes,
         collectWorkloadId,
         collectClusterId,
         labelsAttributes,
@@ -141,6 +208,71 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
             minimum_latency_threshold: minimumLatencyThreshold,
             fallback_sampling_ratio: fallbackSamplingRatio,
           })) || [],
+      });
+      break;
+
+    case ActionType.ServiceNameSampler:
+      payload['details'] = JSON.stringify({
+        services_name_filters:
+          servicesNameFilters?.map(({ serviceName, samplingRatio, fallbackSamplingRatio }) => ({
+            service_name: serviceName,
+            sampling_ratio: samplingRatio,
+            fallback_sampling_ratio: fallbackSamplingRatio,
+          })) || [],
+      });
+      break;
+
+    case ActionType.SpanAttributeSampler:
+      payload['details'] = JSON.stringify({
+        attribute_filters: attributeFilters?.map(({ serviceName, attributeKey, fallbackSamplingRatio, condition: { stringCondition, numberCondition, booleanCondition, jsonCondition } }) => {
+          const condition: ParsedAttributeFilter['condition'] = {};
+
+          if (stringCondition) {
+            condition.string_condition = {
+              operation: stringCondition.operation,
+            };
+            if (stringCondition.expectedValue) {
+              condition.string_condition.expected_value = stringCondition.expectedValue;
+            }
+          }
+
+          if (numberCondition) {
+            condition.number_condition = {
+              operation: numberCondition.operation,
+            };
+            if (numberCondition.expectedValue !== undefined) {
+              condition.number_condition.expected_value = Number(numberCondition.expectedValue);
+            }
+          }
+
+          if (booleanCondition) {
+            condition.boolean_condition = {
+              operation: booleanCondition.operation,
+            };
+            if (booleanCondition.expectedValue !== undefined) {
+              condition.boolean_condition.expected_value = Boolean(booleanCondition.expectedValue);
+            }
+          }
+
+          if (jsonCondition) {
+            condition.json_condition = {
+              operation: jsonCondition.operation,
+            };
+            if (jsonCondition.expectedValue) {
+              condition.json_condition.expected_value = jsonCondition.expectedValue;
+            }
+            if (jsonCondition.jsonPath) {
+              condition.json_condition.json_path = jsonCondition.jsonPath;
+            }
+          }
+
+          return {
+            service_name: serviceName,
+            attribute_key: attributeKey,
+            fallback_sampling_ratio: fallbackSamplingRatio,
+            condition,
+          };
+        }),
       });
       break;
 

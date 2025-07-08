@@ -1,0 +1,73 @@
+image:
+  tag: ''
+imagePrefix: ''
+imagePullSecrets: []
+
+centralBackend:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: []
+
+centralUI:
+  uiMode: normal
+  uiPaginationLimit: 0
+  centralBackendURL: ''
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: []
+
+redis:
+  image: redis:7.4.2
+  port: 6379
+  portName: redis
+
+auth:
+  enabled: true
+  image: quay.io/keycloak/keycloak:24.0.3
+  adminUsername: admin
+  port: 8080
+  portName: http
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: []
+
+openshift:
+  enabled: false
+
+gke:
+  enabled: false
+
+# Refer to the official Kubernetes documentation for structure and field details:
+# https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+#
+# Example: Odigos components should be evenly spread across zones.
+# No need to set labelSelector manually — the Odigos Helm chart will apply it automatically.
+# topologySpreadConstraints:
+#   - maxSkew: 1
+#     topologyKey: "topology.kubernetes.io/zone"
+#     whenUnsatisfiable: "ScheduleAnyway"
+topologySpreadConstraints: []

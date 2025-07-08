@@ -5,8 +5,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
   labels:
-    metadata.labels.odigos.io/config: "1"
-    metadata.labels.odigos.io/system-object: "true"
+    odigos.io/system-object: "true"
   name: addclusterinfos.actions.odigos.io
 spec:
   group: actions.odigos.io

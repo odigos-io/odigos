@@ -24,7 +24,7 @@ var EnvValuesMap = map[string]envValues{
 		delim:               " ",
 		programmingLanguage: common.JavascriptProgrammingLanguage,
 		values: map[common.OtelSdk]string{
-			common.OtelSdkNativeCommunity: "--require /var/odigos/nodejs/autoinstrumentation.js",
+			common.OtelSdkNativeCommunity: "--require /var/odigos/nodejs-community/autoinstrumentation.js",
 			common.OtelSdkEbpfEnterprise:  "--require /var/odigos/nodejs-ebpf/autoinstrumentation.js",
 		},
 	},
@@ -34,16 +34,6 @@ var EnvValuesMap = map[string]envValues{
 		values: map[common.OtelSdk]string{
 			common.OtelSdkNativeCommunity: "/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation",
 			common.OtelSdkEbpfEnterprise:  "/var/odigos/python-ebpf:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation:/var/odigos/python",
-		},
-	},
-	"JAVA_OPTS": {
-		delim:               " ",
-		programmingLanguage: common.JavaProgrammingLanguage,
-		values: map[common.OtelSdk]string{
-			common.OtelSdkNativeCommunity: "-javaagent:/var/odigos/java/javaagent.jar",
-			common.OtelSdkEbpfEnterprise:  "-javaagent:/var/odigos/java-ebpf/dtrace-injector.jar",
-			common.OtelSdkNativeEnterprise: "-javaagent:/var/odigos/java-ext-ebpf/javaagent.jar " +
-				"-Dotel.javaagent.extensions=/var/odigos/java-ext-ebpf/otel_agent_extension.jar",
 		},
 	},
 	"JAVA_TOOL_OPTIONS": {
@@ -62,52 +52,11 @@ var EnvValuesMap = map[string]envValues{
 var EnvVarsForLanguage = map[common.ProgrammingLanguage][]string{
 	common.JavascriptProgrammingLanguage: {"NODE_OPTIONS"},
 	common.PythonProgrammingLanguage:     {"PYTHONPATH"},
-	common.JavaProgrammingLanguage:       {"JAVA_OPTS", "JAVA_TOOL_OPTIONS"},
-}
-
-func GetRelevantEnvVarsKeys() []string {
-	keys := make([]string, 0, len(EnvValuesMap))
-	for key := range EnvValuesMap {
-		keys = append(keys, key)
-	}
-	return keys
+	common.JavaProgrammingLanguage:       {"JAVA_TOOL_OPTIONS"},
 }
 
 func GetPossibleValuesPerEnv(env string) map[common.OtelSdk]string {
 	return EnvValuesMap[env].values
-}
-
-// due to a bug we had with the env overwriter logic,
-// some patched values were recorded incorrectly into the workload annotation for original value.
-// they include odigos values (/var/odigos/...) as if they were the original value in the manifest,
-// and then used to revert odigos changes back to the original value, which is incorrect and can lead to issues.
-// this function sanitizes env values by removing them, and returning a "clean" value back to the user.
-// it's a temporary fix since the env overwriter logic is being removed.
-// TODO: remove this function in odigos 1.1
-func CleanupEnvValueFromOdigosAdditions(envVarName string, envVarValue string) string {
-	overwriteMetadata, exists := EnvValuesMap[envVarName]
-	if !exists {
-		// not managed by odigos, so no need to clean up
-		// not expected to happen, but just in case
-		return envVarValue
-	}
-
-	// if any of the possible values for this env exists, remove it
-	for _, value := range overwriteMetadata.values {
-		// try to remove each value with and without the delimiter.
-		// if odigos value is the only one left, the delimiter will not be present.
-		withSeparator := overwriteMetadata.delim + value
-		envVarValue = strings.ReplaceAll(envVarValue, withSeparator, "")
-		envVarValue = strings.ReplaceAll(envVarValue, value, "")
-	}
-
-	// remove any odigos special values if they exist
-	if envVarName == "JAVA_OPTS" || envVarName == "JAVA_TOOL_OPTIONS" {
-		envVarValue = strings.ReplaceAll(envVarValue, " -javaagent:/opt/sre-agent/sre-agent.jar", "")
-		envVarValue = strings.ReplaceAll(envVarValue, " newrelic/bootstrap", "")
-	}
-
-	return envVarValue
 }
 
 func AppendOdigosAdditionsToEnvVar(envName string, envFromContainerRuntimeValue string, desiredOdigosAddition string) *string {

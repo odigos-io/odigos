@@ -1,3 +1,6 @@
+##################################################
+# Coupon (JavaScript)
+##################################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,11 +19,11 @@ spec:
     spec:
       containers:
         - name: coupon
-          image: registry.odigos.io/odigos-demo-coupon:v0.1
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-coupon:v0.1.27
           imagePullPolicy: IfNotPresent
           env:
             - name: MEMBERSHIP_SERVICE_HOST
-              value: "membership:8080"
+              value: membership:8080
           ports:
             - containerPort: 8080
 ---
@@ -36,7 +39,84 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 8080
+
 ---
+##################################################
+# Currency (PHP)
+##################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currency
+  namespace: default
+  labels:
+    app: currency
+spec:
+  selector:
+    matchLabels:
+      app: currency
+  template:
+    metadata:
+      labels:
+        app: currency
+    spec:
+      containers:
+        - name: currency
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-currency:v0.1.27
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GEOLOCATION_SERVICE_HOST
+              value: geolocation:8080
+          ports:
+            - containerPort: 9000
+        - name: nginx
+          image: nginx:1.27.5
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: currency-nginx-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: currency-nginx-config
+  namespace: default
+data:
+  nginx.conf: |
+    server {
+        listen 8080;
+        server_name localhost;
+
+        location / {
+            include fastcgi_params;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_param SCRIPT_FILENAME /app/index.php;
+        }
+    }
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: currency
+  namespace: default
+spec:
+  selector:
+    app: currency
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+##################################################
+# Frontend (Java)
+##################################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -55,10 +135,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: registry.odigos.io/odigos-demo-frontend:v0.2
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-frontend:v0.1.27
           imagePullPolicy: IfNotPresent
-          securityContext:
-            runAsUser: 1000
           env:
             - name: INVENTORY_SERVICE_HOST
               value: inventory:8080
@@ -66,14 +144,12 @@ spec:
               value: pricing:8080
             - name: COUPON_SERVICE_HOST
               value: coupon:8080
+            - name: CURRENCY_SERVICE_HOST
+              value: currency:8080
+            - name: GEOLOCATION_SERVICE_HOST
+              value: geolocation:8080
           ports:
             - containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: /actuator/health/readiness
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 5
 ---
 kind: Service
 apiVersion: v1
@@ -87,7 +163,68 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 8080
+
 ---
+##################################################
+# Geolocation (Ruby on Rails)
+##################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geolocation
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geolocation
+  template:
+    metadata:
+      labels:
+        app: geolocation
+    spec:
+      containers:
+        - name: geolocation
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-geolocation:v0.1.27
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: RAILS_ENV
+              value: 'production'
+            - name: RAILS_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: rails-master-key
+                  key: master.key
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rails-master-key
+  namespace: default
+type: Opaque
+stringData:
+  master.key: 'df0300c20246e24d331787f6540a72fa'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geolocation
+  namespace: default
+spec:
+  selector:
+    app: geolocation
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 3000
+  type: LoadBalancer
+
+---
+##################################################
+# Inventory (Python)
+##################################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -106,7 +243,7 @@ spec:
     spec:
       containers:
         - name: inventory
-          image: registry.odigos.io/odigos-demo-inventory:v0.1
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-inventory:v0.1.27
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -123,7 +260,11 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 8080
+
 ---
+##################################################
+# Membership (Golang)
+##################################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -142,7 +283,7 @@ spec:
     spec:
       containers:
         - name: membership
-          image: registry.odigos.io/odigos-demo-membership:v0.1
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-membership:v0.1.27
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -159,7 +300,11 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 8080
+
 ---
+##################################################
+# Pricing (.NET)
+##################################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -178,7 +323,7 @@ spec:
     spec:
       containers:
         - name: pricing
-          image: registry.odigos.io/odigos-demo-pricing:v0.1
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-pricing:v0.1.27
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

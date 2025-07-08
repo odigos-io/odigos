@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.18.0
   creationTimestamp: null
   name: odigos.operator.odigos.io
 spec:
@@ -39,6 +39,16 @@ spec:
           spec:
             description: OdigosSpec defines the desired state of Odigos
             properties:
+              agentEnvVarsInjectionMethod:
+                default: pod-manifest
+                description: |-
+                  (Optional) AgentEnvVarsInjectionMethod is the method to inject the Odigos agent env vars into the pod.
+                  Default=pod-manifest
+                enum:
+                - loader
+                - pod-manifest
+                - loader-fallback-to-pod-manifest
+                type: string
               ignoredContainers:
                 description: (Optional) IgnoredContainers is a list of container names
                   to exclude from instrumentation (useful for ignoring sidecars).
@@ -66,6 +76,13 @@ spec:
                 - k8s-virtual-device
                 - k8s-host-path
                 type: string
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: |-
+                  (Optional) NodeSelector is a map of key-value Kubernetes NodeSelector labels to apply to all Odigos components.
+                  Note that Odigos will only be able to instrument applications on the same node.
+                type: object
               onPremToken:
                 description: (Optional) OnPremToken is an enterprise token for Odigos
                   Enterprise.
@@ -102,10 +119,11 @@ spec:
                   In "normal" mode the UI is fully interactive, allowing users to view and edit
                   Odigos configuration and settings. In "readonly" mode, the UI can only be
                   used to view current Odigos configuration and is not interactive.
-                  Default=normal
+                  Default=default
                 enum:
-                - normal
+                - default
                 - readonly
+                - normal
                 type: string
             type: object
           status:

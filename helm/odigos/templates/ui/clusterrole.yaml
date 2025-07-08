@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: odigos-ui
+  labels:
+    odigos.io/system-object: "true"
 rules:
   - apiGroups:
       - ''
@@ -22,6 +24,21 @@ rules:
     verbs:
       - get
       - list
+      {{- if ne .Values.ui.uiMode "readonly" }}
+      - update
+      - patch
+      {{- end }}
+  - apiGroups:
+      - batch
+    resources:
+      - cronjobs
+    verbs:
+      - get
+      - list
+      {{- if ne .Values.ui.uiMode "readonly" }}
+      - update
+      - patch
+      {{- end }}
   - apiGroups:
       - apps
     resources:

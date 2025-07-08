@@ -47,7 +47,11 @@ func TestInvalidRules(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			factory := NewFactory()
 			set := processortest.NewNopSettings(factory.Type())
-			_, err := factory.CreateTraces(context.Background(), set, &Config{TemplatizationRules: []string{test.rule}}, nil)
+			_, err := factory.CreateTraces(context.Background(), set, &Config{
+				TemplatizationConfig: TemplatizationConfig{
+					TemplatizationRules: []string{test.rule},
+				},
+			}, nil)
 			assert.Error(t, err)
 		})
 	}

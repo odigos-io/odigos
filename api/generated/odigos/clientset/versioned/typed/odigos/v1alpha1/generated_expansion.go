@@ -17,6 +17,8 @@ limitations under the License.
 
 package v1alpha1
 
+type ActionExpansion interface{}
+
 type CollectorsGroupExpansion interface{}
 
 type DestinationExpansion interface{}
@@ -26,8 +28,6 @@ type InstrumentationConfigExpansion interface{}
 type InstrumentationInstanceExpansion interface{}
 
 type InstrumentationRuleExpansion interface{}
-
-type InstrumentedApplicationExpansion interface{}
 
 type ProcessorExpansion interface{}
 

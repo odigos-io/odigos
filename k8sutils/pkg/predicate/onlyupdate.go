@@ -10,7 +10,7 @@ import (
 // for example - when monitoring odigos config changes.
 type OnlyUpdatesPredicate struct{}
 
-func (o OnlyUpdatesPredicate) Create(e event.CreateEvent) bool {
+func (i OnlyUpdatesPredicate) Create(e event.CreateEvent) bool {
 	return false
 }
 

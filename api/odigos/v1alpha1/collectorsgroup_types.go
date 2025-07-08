@@ -87,12 +87,20 @@ type CollectorsGroupSpec struct {
 	// This can be used to resolve conflicting ports when a collector is using the host network.
 	CollectorOwnMetricsPort int32 `json:"collectorOwnMetricsPort"`
 
+	// Additional directory to mount in the node collector pod for logs.
+	// This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.
+	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
+
 	// Resources [memory/cpu] settings for the collectors group.
 	// these settings are used to protect the collectors instances from:
 	// - running out of memory and being killed by the k8s OOM killer
 	// - consuming all available memory on the node which can lead to node instability
 	// - pushing back pressure to the instrumented applications
 	ResourcesSettings CollectorsGroupResourcesSettings `json:"resourcesSettings"`
+
+	// ServiceGraphEnabled is a feature that allows you to visualize the service graph of your application.
+	// It is enabled by default and can be disabled by setting the enabled flag to false.
+	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector
@@ -117,7 +125,6 @@ type CollectorsGroupStatus struct {
 //+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:metadata:labels=odigos.io/config=1
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // CollectorsGroup is the Schema for the collectors API

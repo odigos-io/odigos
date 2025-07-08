@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/instrumentation"
+	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
@@ -80,7 +80,7 @@ func distroNameFromProcEvent(event detector.ProcessEvent) (string, bool) {
 
 type k8sConfigGroupResolver struct{}
 
-func (cr *k8sConfigGroupResolver) Resolve(ctx context.Context, d K8sProcessDetails, dist instrumentation.OtelDistribution) (K8sConfigGroup, error) {
+func (cr *k8sConfigGroupResolver) Resolve(ctx context.Context, d K8sProcessDetails, dist *distro.OtelDistro) (K8sConfigGroup, error) {
 	if d.pw == nil {
 		return K8sConfigGroup{}, fmt.Errorf("podWorkload is not provided, cannot resolve config group")
 	}

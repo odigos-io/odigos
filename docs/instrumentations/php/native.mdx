@@ -1,0 +1,129 @@
+---
+title: 'Automatic Instrumentation'
+sidebarTitle: 'Native'
+icon: 'php'
+---
+
+<Info>
+  This language instrumentation is using OpenTelemetry native-php SDK and instrumentation libraries.
+</Info>
+
+## Supported Versions
+
+The minimal supported version of PHP is **8.0.0**.
+The maximal supported version of PHP is **8.4.x**, when PHP releases a new version we'll add the support for it.
+
+<Warning>
+  - PHP version **8.0** has been deprecated and is no longer supported by the PHP team.<br />
+    Instrumentation libraries support for this version have all reached end-of-life.
+
+  - PHP version **8.1** has limited library support and will be the next version to be deprecated.
+
+  - PHP version **8.2+** is the recommended version for new projects.
+</Warning>
+
+## Instrumentation Libraries
+
+The following PHP modules will be auto instrumented by Odigos:
+
+### PHP Standards Recommendations (PSR):
+
+- [`psr/3 (log)`](https://packagist.org/packages/psr/log) versions `>=1`
+<Check>
+  For all PHP versions
+</Check>
+- [`psr/6 (cache)`](https://packagist.org/packages/psr/cache) versions `>=1`
+<Check>
+  For all PHP versions
+</Check>
+- [`psr/16 (simple-cache)`](https://packagist.org/packages/psr/simple-cache) versions `>=1`
+<Check>
+  For all PHP versions
+</Check>
+- [`psr/14 (event-dispatcher)`](https://packagist.org/packages/psr/event-dispatcher) versions `>=1`
+<Check>
+  For all PHP versions
+</Check>
+- [`psr/15 (http-server-middleware)`](https://packagist.org/packages/psr/http-server-middleware) versions `>=1`
+<Check>
+  For all PHP versions
+</Check>
+- [`psr/18 (http-client)`](https://packagist.org/packages/psr/http-client) versions `>=1`
+<Check>
+  For all PHP versions
+</Check>
+
+### HTTP Clients:
+
+- [`php-http/httplug`](https://packagist.org/packages/php-http/httplug) versions `>=2`
+<Check>
+  For all PHP versions
+</Check>
+- [`guzzlehttp/guzzle`](https://packagist.org/packages/guzzlehttp/guzzle) versions `>=7`
+<Check>
+  For all PHP versions
+</Check>
+- [`ext-curl`](https://www.php.net/manual/en/book.curl.php) versions `*`
+<Warning>
+  Only for PHP 8.2+
+</Warning>
+
+### Frameworks:
+
+<Info>
+  We're working on adding support for `laravel`, `cakephp`, `wordpress` and `yii2` frameworks.
+</Info>
+
+- [`slim/slim`](https://packagist.org/packages/slim/slim) versions `>=4`
+<Check>
+  For all PHP versions
+</Check>
+- [`symfony/http-kernel`](https://packagist.org/packages/symfony/http-kernel) versions `*`
+<Check>
+  For all PHP versions
+</Check>
+- [`symfony/http-client-contracts`](https://packagist.org/packages/symfony/http-client-contracts) versions `*`
+<Check>
+  For all PHP versions
+</Check>
+- [`codeigniter4/framework`](https://packagist.org/packages/codeigniter4/framework) versions `>=4.3 <4.5`
+<Check>
+  For all PHP versions
+</Check>
+
+### Databases:
+
+- [`ext-mongodb`](https://www.php.net/manual/en/book.mongodb.php) versions `>=1.13`
+<Check>
+  For all PHP versions
+</Check>
+- [`ext-mysqli`](https://www.php.net/manual/en/book.mysqli.php) versions `*`
+<Warning>
+  Only for PHP 8.2+
+</Warning>
+- [`ext-pdo`](https://www.php.net/manual/en/book.pdo.php) versions `*`
+<Warning>
+  Only for PHP 8.2+
+</Warning>
+- [`doctrine/dbal`](https://packagist.org/packages/doctrine/dbal) versions `>=3`
+<Warning>
+  Only for PHP 8.2+
+</Warning>
+
+### Messaging Systems:
+
+- [`ext-amqp`](https://pecl.php.net/package/amqp) versions `*`
+<Warning>
+  Only for PHP 8.2+
+</Warning>
+- [`ext-rdkafka`](https://pecl.php.net/package/rdkafka) versions `*`
+<Warning>
+  Only for PHP 8.2+
+</Warning>
+
+### Atificial Intelligence:
+
+- [`openai-php/client`](https://packagist.org/packages/openai-php/client) versions `*`
+<Warning>
+  Only for PHP 8.1+
+</Warning>

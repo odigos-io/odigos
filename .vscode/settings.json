@@ -5,5 +5,7 @@
         "instrumentor",
         "odigos",
         "Otel"
-    ]
+    ],
+
+    "go.buildTags": "embed_manifests",
 }

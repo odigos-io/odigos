@@ -24,15 +24,16 @@ import (
 // K8sAttributesSpecApplyConfiguration represents a declarative configuration of the K8sAttributesSpec type for use
 // with apply.
 type K8sAttributesSpecApplyConfiguration struct {
-	ActionName                 *string                                    `json:"actionName,omitempty"`
-	Notes                      *string                                    `json:"notes,omitempty"`
-	Disabled                   *bool                                      `json:"disabled,omitempty"`
-	Signals                    []common.ObservabilitySignal               `json:"signals,omitempty"`
-	CollectContainerAttributes *bool                                      `json:"collectContainerAttributes,omitempty"`
-	CollectWorkloadUID         *bool                                      `json:"collectWorkloadUID,omitempty"`
-	CollectClusterUID          *bool                                      `json:"collectClusterUID,omitempty"`
-	LabelsAttributes           []K8sLabelAttributeApplyConfiguration      `json:"labelsAttributes,omitempty"`
-	AnnotationsAttributes      []K8sAnnotationAttributeApplyConfiguration `json:"annotationsAttributes,omitempty"`
+	ActionName                  *string                                    `json:"actionName,omitempty"`
+	Notes                       *string                                    `json:"notes,omitempty"`
+	Disabled                    *bool                                      `json:"disabled,omitempty"`
+	Signals                     []common.ObservabilitySignal               `json:"signals,omitempty"`
+	CollectContainerAttributes  *bool                                      `json:"collectContainerAttributes,omitempty"`
+	CollectReplicaSetAttributes *bool                                      `json:"collectReplicaSetAttributes,omitempty"`
+	CollectWorkloadUID          *bool                                      `json:"collectWorkloadUID,omitempty"`
+	CollectClusterUID           *bool                                      `json:"collectClusterUID,omitempty"`
+	LabelsAttributes            []K8sLabelAttributeApplyConfiguration      `json:"labelsAttributes,omitempty"`
+	AnnotationsAttributes       []K8sAnnotationAttributeApplyConfiguration `json:"annotationsAttributes,omitempty"`
 }
 
 // K8sAttributesSpecApplyConfiguration constructs a declarative configuration of the K8sAttributesSpec type for use with
@@ -80,6 +81,14 @@ func (b *K8sAttributesSpecApplyConfiguration) WithSignals(values ...common.Obser
 // If called multiple times, the CollectContainerAttributes field is set to the value of the last call.
 func (b *K8sAttributesSpecApplyConfiguration) WithCollectContainerAttributes(value bool) *K8sAttributesSpecApplyConfiguration {
 	b.CollectContainerAttributes = &value
+	return b
+}
+
+// WithCollectReplicaSetAttributes sets the CollectReplicaSetAttributes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the CollectReplicaSetAttributes field is set to the value of the last call.
+func (b *K8sAttributesSpecApplyConfiguration) WithCollectReplicaSetAttributes(value bool) *K8sAttributesSpecApplyConfiguration {
+	b.CollectReplicaSetAttributes = &value
 	return b
 }
 

@@ -5,7 +5,7 @@ import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, upda
 // Tests will fail if you have existing CRDs in the cluster.
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
-const namespace = NAMESPACES.ODIGOS_SYSTEM;
+const namespace = NAMESPACES.ODIGOS_TEST;
 const crdNames = CRD_NAMES.ACTIONS;
 const totalEntities = SELECTED_ENTITIES.ACTIONS.length;
 
@@ -57,15 +57,39 @@ describe('Actions CRUD', () => {
             cy.contains('div', 'Fallback sampling ratio').parent().parent().find('input').type('1');
             break;
           }
-          case 'LatencySampler': {
-            cy.get('tbody').find('input[placeholder="Choose service"]').type('service');
-            cy.get('tbody').find('input[placeholder="e.g. /api/v1/users"]').type('/path');
-            cy.get('tbody').find('input[placeholder="e.g. 1000"]').type('1');
-            cy.get('tbody').find('input[placeholder="e.g. 20"]').type('1');
-            break;
-          }
           case 'ProbabilisticSampler': {
             cy.contains('div', 'Sampling percentage').parent().parent().find('input').type('1');
+            break;
+          }
+          case 'LatencySampler': {
+            cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
+            cy.get('tbody').find('input[placeholder="e.g. /api/v1/users"]').type('/path');
+            cy.get('tbody').find('input[placeholder="e.g. 1000"]').type('1');
+            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
+            break;
+          }
+          case 'ServiceNameSampler': {
+            cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
+            cy.get('tbody').find('input[placeholder="e.g. 10"]').type('1');
+            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
+            break;
+          }
+          case 'SpanAttributeSampler': {
+            cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
+            cy.get('tbody').find('input[placeholder="e.g. http.request.method"]').type('attribute');
+            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
+
+            // All parents: tooltip__TooltipContainer > field-label__Wrapper > dropdown__RootContainer
+            cy.get('tbody').find('div').contains('Condition').parent().parent().parent().children().eq(1).click();
+            cy.get('tbody').find('div').contains('String Condition').click();
+
+            // All parents: tooltip__TooltipContainer > field-label__Wrapper > dropdown__RootContainer
+            cy.get('tbody').find('div').contains('Operation').parent().parent().parent().children().eq(1).click();
+            cy.get('tbody').find('div').contains('Equals').click();
+
+            cy.get('tbody').find('input[placeholder="e.g. GET"]').type('x');
+            // Only for JSON Condition:
+            // cy.get('tbody').find('input[placeholder="e.g. $.user.role"]').type('x');
             break;
           }
 

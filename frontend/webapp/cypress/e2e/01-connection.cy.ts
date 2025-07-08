@@ -9,7 +9,7 @@ describe('Root Connection', () => {
       // Wait for the config to load
       cy.wait('@gql').then(() => {
         // If GraphQL failed to fetch the config, the app will remain on "/", thereby failing the test.
-        cy.location('pathname').should('be.oneOf', [ROUTES.CHOOSE_SOURCES, ROUTES.OVERVIEW]);
+        cy.location('pathname').should('not.equal', [ROUTES.ROOT]);
       });
     });
   });

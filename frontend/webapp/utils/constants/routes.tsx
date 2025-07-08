@@ -1,13 +1,18 @@
 export const ROUTES = {
   ROOT: '/',
+  CHOOSE_STREAM: '/choose-stream',
   CHOOSE_SOURCES: '/choose-sources',
   CHOOSE_DESTINATION: '/choose-destination',
+  SETUP_SUMMARY: '/setup-summary',
   OVERVIEW: '/overview',
   SOURCES: '/sources',
   DESTINATIONS: '/destinations',
   ACTIONS: '/actions',
   INSTRUMENTATION_RULES: '/instrumentation-rules',
+  SERVICE_MAP: '/service-map',
 };
+
+export const SKIP_TO_SUMMERY_QUERY_PARAM = 'skipToSummary';
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 

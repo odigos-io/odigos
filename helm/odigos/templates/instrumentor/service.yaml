@@ -3,10 +3,16 @@ kind: Service
 metadata:
   name: odigos-instrumentor
   namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+    app.kubernetes.io/name: odigos-instrumentor
 spec:
   ports:
     - name: webhook-server
       port: 9443
       targetPort: 9443
+    - name: metrics
+      port: 8080
+      targetPort: 8080
   selector:
     app.kubernetes.io/name: odigos-instrumentor

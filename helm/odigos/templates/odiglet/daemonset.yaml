@@ -3,6 +3,7 @@ kind: DaemonSet
 metadata:
   labels:
     app.kubernetes.io/name: odiglet
+    odigos.io/system-object: "true"
   name: odiglet
   namespace: {{ .Release.Namespace }}
 spec:
@@ -11,7 +12,8 @@ spec:
       app.kubernetes.io/name: odiglet
   updateStrategy:
     rollingUpdate:
-      {{- if semverCompare ">=1.22.0" .Capabilities.KubeVersion.Version }}
+      {{- $version := include "utils.cleanKubeVersion" . }}
+      {{- if semverCompare ">=1.22.0" $version }}
       maxSurge: 0
       {{- end }}
       maxUnavailable: 50%
@@ -21,10 +23,14 @@ spec:
       labels:
         app.kubernetes.io/name: odiglet
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       initContainers:
         - name: init
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          {{- if .Values.onPremToken }}
+          {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
           {{- else }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
@@ -61,23 +67,32 @@ spec:
                 configMapKeyRef:
                   key: ODIGOS_TIER
                   name: odigos-deployment
+            - name: CURRENT_NS
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
       containers:
         - name: odiglet
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          {{- if .Values.onPremToken }}
+          {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
           {{- else }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
+          args:
+            - --health-probe-bind-port={{ .Values.odiglet.readinessAndLivenessProbePort }}
+          command:
+            - /root/odiglet
           env:
             - name: NODE_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}       
+            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
             - name: CONTAINER_RUNTIME_SOCK
               value: {{ .Values.odiglet.customContainerRuntimeSocketPath }}
-            {{- end }}                  
+            {{- end }}
             - name: NODE_IP
               valueFrom:
                 fieldRef:
@@ -88,9 +103,9 @@ spec:
                   fieldPath: metadata.namespace
             - name: OTEL_LOG_LEVEL
               value: info
-            {{- if .Values.onPremToken }}
+            {{- if include "odigos.secretExists" . }}
             - name: OTEL_GO_OFFSETS_FILE
-              value: /offsets/offset_results.json
+              value: /offsets/go_offset_results.json
             - name: ODIGOS_ONPREM_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -107,10 +122,26 @@ spec:
             capabilities:
               add:
                 - SYS_PTRACE
+          {{- if .Values.odiglet.resources }}
+          resources:
+          # if t-shirt size profile set in profiles, use it.
+{{ toYaml .Values.odiglet.resources | indent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
+            periodSeconds: 10
           volumeMounts:
             - name: run-dir
               mountPath: /run
-            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}              
+            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
             - name: custom-container-runtime-socket
               mountPath: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
             {{- end }}
@@ -129,11 +160,12 @@ spec:
               readOnly: true
             - name: kernel-debug
               mountPath: /sys/kernel/debug
-            {{- if .Values.onPremToken }}
             - name: odigos-go-offsets
               mountPath: /offsets
-            {{- end }}
+      {{- $version := include "utils.cleanKubeVersion" . }}
+      {{- if semverCompare "<1.26.0" $version }}
       hostNetwork: true
+      {{- end}}
       hostPID: true
       dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical
@@ -164,11 +196,9 @@ spec:
         - name: kernel-debug
           hostPath:
             path: /sys/kernel/debug
-        {{- if .Values.onPremToken }}
         - name: odigos-go-offsets
           configMap:
             name: odigos-go-offsets
-        {{- end }}
 {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 6 }}

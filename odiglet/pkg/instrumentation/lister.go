@@ -3,6 +3,7 @@ package instrumentation
 import (
 	"context"
 
+	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"k8s.io/client-go/rest"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
-	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"

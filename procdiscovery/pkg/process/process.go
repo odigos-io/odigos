@@ -2,41 +2,66 @@ package process
 
 import (
 	"bufio"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
-
-	"github.com/odigos-io/odigos/common/envOverwrite"
 )
 
 const (
 	NodeVersionConst   = "NODE_VERSION"
 	PythonVersionConst = "PYTHON_VERSION"
 	JavaVersionConst   = "JAVA_VERSION"
+	PhpVersionConst    = "PHP_VERSION"
+	RubyVersionConst   = "RUBY_VERSION"
+)
+
+const (
+	// https://elixir.bootlin.com/linux/v6.5.5/source/include/uapi/linux/auxvec.h
+	AT_SECURE = 23
 )
 
 // LangsVersionEnvs is a map of environment variables used for detecting the versions of different languages
-var LangsVersionEnvs = map[string]struct{}{NodeVersionConst: {}, PythonVersionConst: {}, JavaVersionConst: {}}
+var LangsVersionEnvs = map[string]struct{}{
+	NodeVersionConst:   {},
+	PythonVersionConst: {},
+	JavaVersionConst:   {},
+	PhpVersionConst:    {},
+	RubyVersionConst:   {},
+}
 
 const (
-	NewRelicAgentEnv = "NEW_RELIC_CONFIG_FILE"
+	NewRelicAgentName  = "New Relic Agent"
+	DynatraceAgentName = "Dynatrace Agent"
+	DataDogAgentName   = "Datadog Agent"
+)
+
+const (
+	NewRelicAgentEnv                 = "NEW_RELIC_CONFIG_FILE"
+	DynatraceDynamizerEnv            = "DT_DYNAMIZER_TARGET_EXE"
+	DynatraceDynamizerExeSubString   = "oneagentdynamizer"
+	DynatraceFullStackEnvValuePrefix = "/dynatrace/"
+	DataDogAgentEnv                  = "DD_TRACE_AGENT_URL"
 )
 
 var OtherAgentEnvs = map[string]string{
-	NewRelicAgentEnv: "New Relic Agent",
+	NewRelicAgentEnv:      NewRelicAgentName,
+	DynatraceDynamizerEnv: DynatraceAgentName,
+	DataDogAgentEnv:       DataDogAgentName,
 }
 
 var OtherAgentCmdSubString = map[string]string{
-	"newrelic.jar": "New Relic Agent",
+	"newrelic.jar": NewRelicAgentName,
 }
 
 type Details struct {
-	ProcessID    int
-	ExePath      string
-	CmdLine      string
-	Environments ProcessEnvs
+	ProcessID           int
+	ExePath             string
+	CmdLine             string
+	Environments        ProcessEnvs
+	SecureExecutionMode *bool
 }
 
 // ProcessFile is a read-only interface that supports reading, seeking, and reading at specific positions.
@@ -123,7 +148,7 @@ func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
 
 // Find all processes in the system.
 // The function accepts a predicate function that can be used to filter the results.
-func FindAllProcesses(predicate func(string) bool) ([]Details, error) {
+func FindAllProcesses(predicate func(string) bool, runtimeDetectionEnvs map[string]struct{}) ([]Details, error) {
 	dirs, err := os.ReadDir("/proc")
 	if err != nil {
 		return nil, err
@@ -148,23 +173,29 @@ func FindAllProcesses(predicate func(string) bool) ([]Details, error) {
 			continue
 		}
 
-		details := GetPidDetails(pid)
+		details := GetPidDetails(pid, runtimeDetectionEnvs)
 		result = append(result, details)
 	}
 
 	return result, nil
 }
 
-func GetPidDetails(pid int) Details {
+func GetPidDetails(pid int, runtimeDetectionEnvs map[string]struct{}) Details {
 	exePath := getExePath(pid)
 	cmdLine := getCommandLine(pid)
-	envVars := getRelevantEnvVars(pid)
+	envVars := getRelevantEnvVars(pid, runtimeDetectionEnvs)
+	secureExecutionMode, err := isSecureExecutionMode(pid)
+	secureExecutionModePtr := &secureExecutionMode
+	if err != nil {
+		secureExecutionModePtr = nil
+	}
 
 	return Details{
-		ProcessID:    pid,
-		ExePath:      exePath,
-		CmdLine:      cmdLine,
-		Environments: envVars,
+		ProcessID:           pid,
+		ExePath:             exePath,
+		CmdLine:             cmdLine,
+		Environments:        envVars,
+		SecureExecutionMode: secureExecutionModePtr,
 	}
 }
 
@@ -196,7 +227,7 @@ func getCommandLine(pid int) string {
 	}
 }
 
-func getRelevantEnvVars(pid int) ProcessEnvs {
+func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) ProcessEnvs {
 	envFileName := fmt.Sprintf("/proc/%d/environ", pid)
 	fileContent, err := os.ReadFile(envFileName)
 	if err != nil {
@@ -206,12 +237,6 @@ func getRelevantEnvVars(pid int) ProcessEnvs {
 	}
 
 	r := bufio.NewReader(strings.NewReader(string(fileContent)))
-
-	// We only care about the environment variables that we might overwrite
-	relevantOverwriteEnvVars := make(map[string]interface{})
-	for k := range envOverwrite.EnvValuesMap {
-		relevantOverwriteEnvVars[k] = nil
-	}
 
 	overWriteEnvsResult := make(map[string]string)
 	detailedEnvsResult := make(map[string]string)
@@ -227,22 +252,24 @@ func getRelevantEnvVars(pid int) ProcessEnvs {
 		}
 
 		str = strings.TrimRight(str, "\x00")
-
 		envParts := strings.SplitN(str, "=", 2)
 		if len(envParts) != 2 {
 			continue
 		}
 
-		if _, ok := relevantOverwriteEnvVars[envParts[0]]; ok {
-			overWriteEnvsResult[envParts[0]] = envParts[1]
+		envName := envParts[0]
+		envDetectionValue := envParts[1]
+
+		if _, ok := runtimeDetectionEnvs[envName]; ok {
+			overWriteEnvsResult[envName] = envDetectionValue
 		}
 
-		if _, ok := LangsVersionEnvs[envParts[0]]; ok {
-			detailedEnvsResult[envParts[0]] = envParts[1]
+		if _, ok := LangsVersionEnvs[envName]; ok {
+			detailedEnvsResult[envName] = envDetectionValue
 		}
 
-		if _, ok := OtherAgentEnvs[envParts[0]]; ok {
-			detailedEnvsResult[envParts[0]] = envParts[1]
+		if _, ok := OtherAgentEnvs[envName]; ok {
+			detailedEnvsResult[envName] = envDetectionValue
 		}
 	}
 
@@ -252,4 +279,32 @@ func getRelevantEnvVars(pid int) ProcessEnvs {
 	}
 
 	return envs
+}
+
+func isSecureExecutionMode(pid int) (bool, error) {
+	path := fmt.Sprintf("/proc/%d/auxv", pid)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false, fmt.Errorf("failed to read auxv: %w", err)
+	}
+
+	// https://www.man7.org/linux/man-pages/man5/proc_pid_auxv.5.html
+	for i := 0; i+16 <= len(data); i += 16 {
+		typ := binary.NativeEndian.Uint64(data[i : i+8])
+
+		if typ == 0 {
+			break
+		}
+
+		// from the linux man page:
+		// A binary is executed in secure-execution mode if the AT_SECURE
+		// entry in the auxiliary vector (see getauxval(3)) has a nonzero
+		// value.
+		if typ == AT_SECURE {
+			val := binary.NativeEndian.Uint64(data[i+8 : i+16])
+			return val != 0, nil
+		}
+	}
+
+	return false, fmt.Errorf("AT_SECURE not found")
 }

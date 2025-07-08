@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 	"path/filepath"
+	"strconv"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
@@ -120,10 +121,10 @@ func NewOdigletClusterRole(psp, ownerPermissionEnforcement bool) *rbacv1.Cluster
 				Resources: []string{"pods/status"},
 				Verbs:     []string{"get"},
 			},
-			{ // Needed for virtual device registration
+			{ // Needed for virtual device registration + taint removal in case of Karpenter
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},
-				Verbs:     []string{"get", "list", "watch", "patch"},
+				Verbs:     []string{"get", "list", "watch", "patch", "update"},
 			},
 			{ // Needed for storage of the process instrumentation state
 				APIGroups: []string{"odigos.io"},
@@ -267,8 +268,14 @@ func NewResourceQuota(ns string) *corev1.ResourceQuota {
 }
 
 func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string,
-	odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails, customContainerRuntimeSocketPath string) *appsv1.DaemonSet {
+	odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails, customContainerRuntimeSocketPath string, nodeSelector map[string]string, healthProbeBindPort int) *appsv1.DaemonSet {
+	if nodeSelector == nil {
+		nodeSelector = make(map[string]string)
+	}
 
+	if _, ok := nodeSelector["kubernetes.io/os"]; !ok {
+		nodeSelector["kubernetes.io/os"] = "linux"
+	}
 	dynamicEnv := []corev1.EnvVar{}
 	if odigosTier == common.CloudOdigosTier {
 		dynamicEnv = append(dynamicEnv, odigospro.CloudTokenAsEnvVar())
@@ -301,25 +308,23 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 	additionalVolumes = append(additionalVolumes, customContainerRuntimeSocketVolumes...)
 	additionalVolumeMounts = append(additionalVolumeMounts, customContainerRunetimeSocketVolumeMounts...)
 
-	if odigosTier == common.OnPremOdigosTier {
-		goOffsetsVolume := corev1.Volume{
-			Name: k8sconsts.GoOffsetsConfigMap,
-			VolumeSource: v1.VolumeSource{
-				ConfigMap: &v1.ConfigMapVolumeSource{
-					LocalObjectReference: v1.LocalObjectReference{
-						Name: k8sconsts.GoOffsetsConfigMap,
-					},
+	goOffsetsVolume := corev1.Volume{
+		Name: k8sconsts.GoOffsetsConfigMap,
+		VolumeSource: v1.VolumeSource{
+			ConfigMap: &v1.ConfigMapVolumeSource{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: k8sconsts.GoOffsetsConfigMap,
 				},
 			},
-		}
-		goOffsetsVolumeMount := corev1.VolumeMount{
-			Name:      k8sconsts.GoOffsetsConfigMap,
-			MountPath: k8sconsts.OffsetFileMountPath,
-		}
-		additionalVolumes = append(additionalVolumes, goOffsetsVolume)
-		additionalVolumeMounts = append(additionalVolumeMounts, goOffsetsVolumeMount)
-		dynamicEnv = append(dynamicEnv, v1.EnvVar{Name: k8sconsts.GoOffsetsEnvVar, Value: k8sconsts.OffsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName})
+		},
 	}
+	goOffsetsVolumeMount := corev1.VolumeMount{
+		Name:      k8sconsts.GoOffsetsConfigMap,
+		MountPath: k8sconsts.OffsetFileMountPath,
+	}
+	additionalVolumes = append(additionalVolumes, goOffsetsVolume)
+	additionalVolumeMounts = append(additionalVolumeMounts, goOffsetsVolumeMount)
+	dynamicEnv = append(dynamicEnv, v1.EnvVar{Name: k8sconsts.GoOffsetsEnvVar, Value: k8sconsts.OffsetFileMountPath + "/" + k8sconsts.GoOffsetsFileName})
 
 	// 50% of the nodes can be unavailable during the update.
 	// if we do not set it, the default value is 1.
@@ -369,9 +374,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: map[string]string{
-						"kubernetes.io/os": "linux",
-					},
+					NodeSelector: nodeSelector,
 					Tolerations: []corev1.Toleration{
 						{
 							// This toleration with 'Exists' operator and no key/effect specified
@@ -444,6 +447,14 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 										},
 									},
 								},
+								{
+									Name: "CURRENT_NS",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
+										},
+									},
+								},
 							},
 							Resources: corev1.ResourceRequirements{},
 							VolumeMounts: append([]corev1.VolumeMount{
@@ -465,7 +476,13 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  k8sconsts.OdigletContainerName,
+							Name: k8sconsts.OdigletContainerName,
+							Command: []string{
+								"/root/odiglet",
+							},
+							Args: []string{
+								"--health-probe-bind-port=" + strconv.Itoa(healthProbeBindPort),
+							},
 							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Env: append([]corev1.EnvVar{
 								{
@@ -507,6 +524,38 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								},
 							},
 							Resources: corev1.ResourceRequirements{},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/healthz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: int32(healthProbeBindPort),
+										},
+									},
+								},
+								InitialDelaySeconds: 15,
+								TimeoutSeconds:      0,
+								PeriodSeconds:       20,
+								SuccessThreshold:    0,
+								FailureThreshold:    0,
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/readyz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Type(0),
+											IntVal: int32(healthProbeBindPort),
+										},
+									},
+								},
+								InitialDelaySeconds: 15,
+								TimeoutSeconds:      0,
+								PeriodSeconds:       20,
+								SuccessThreshold:    0,
+								FailureThreshold:    0,
+							},
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
 									Name:      "run-dir",
@@ -539,12 +588,16 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					},
 					DNSPolicy:          "ClusterFirstWithHostNet",
 					ServiceAccountName: k8sconsts.OdigletServiceAccountName,
-					HostNetwork:        true,
 					HostPID:            true,
 					PriorityClassName:  "system-node-critical",
 				},
 			},
 		},
+	}
+
+	// if inetrnal trffic policy is not yet supported in the cluster, fall back to host network
+	if k8sversionInCluster == nil || k8sversionInCluster.LessThan(k8sversion.MustParse("v1.26")) {
+		ds.Spec.Template.Spec.HostNetwork = true
 	}
 
 	return ds
@@ -581,6 +634,41 @@ func NewOdigletGoOffsetsConfigMap(ctx context.Context, client *kube.Client, ns s
 			k8sconsts.GoOffsetsFileName: goOffsetContent,
 		},
 	}, nil
+}
+
+func NewOdigletLocalTrafficService(ns string) *corev1.Service {
+	localTrafficPolicy := v1.ServiceInternalTrafficPolicyLocal
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigletLocalTrafficServiceName,
+			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "op-amp",
+					Port:       int32(consts.OpAMPPort),
+					TargetPort: intstr.FromInt(consts.OpAMPPort),
+				},
+				{
+					Name:       "metrics",
+					Port:       8080,
+					TargetPort: intstr.FromInt(8080),
+				},
+			},
+			InternalTrafficPolicy: &localTrafficPolicy,
+		},
+	}
 }
 
 // used to inject the host volumes into odigos components for selinux update
@@ -677,6 +765,11 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		goOffsetConfigMap,
 	}
 
+	k8sVersion := cmdcontext.K8SVersionFromContext(ctx)
+	if k8sVersion != nil && k8sVersion.AtLeast(k8sversion.MustParse("v1.26")) {
+		resources = append(resources, NewOdigletLocalTrafficService(a.ns))
+	}
+
 	clusterKind := cmdcontext.ClusterKindFromContext(ctx)
 
 	// if openshift is enabled, we need to create additional SCC cluster role binding first
@@ -690,13 +783,18 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		resources = append(resources, NewResourceQuota(a.ns))
 	}
 
+	// if the health probe bind port is not set, use the default value
+	if a.config.OdigletHealthProbeBindPort == 0 {
+		a.config.OdigletHealthProbeBindPort = k8sconsts.OdigletDefaultHealthProbeBindPort
+	}
+
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
 	resources = append(resources,
 		NewOdigletDaemonSet(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.OdigletImage, a.odigosTier, a.config.OpenshiftEnabled,
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
-				K8SVersion: cmdcontext.K8SVersionFromContext(ctx),
-			}, a.config.CustomContainerRuntimeSocketPath))
+				K8SVersion: k8sVersion,
+			}, a.config.CustomContainerRuntimeSocketPath, a.config.NodeSelector, a.config.OdigletHealthProbeBindPort))
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

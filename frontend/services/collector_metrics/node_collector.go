@@ -177,23 +177,28 @@ func (sourcesMetrics *sourcesMetrics) sourcesMetrics() map[common.SourceID]traff
 }
 
 func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
-	name, ok := attrs.Get(ServiceNameKey)
-	if !ok {
-		return common.SourceID{}, errors.New("service name not found")
-	}
-
 	ns, ok := attrs.Get(K8SNamespaceNameKey)
 	if !ok {
 		return common.SourceID{}, errors.New("namespace not found")
 	}
 
 	var kind k8sconsts.WorkloadKind
-	if _, ok := attrs.Get(K8SDeploymentNameKey); ok {
+	var name pcommon.Value
+	if depName, ok := attrs.Get(K8SDeploymentNameKey); ok {
 		kind = k8sconsts.WorkloadKindDeployment
-	} else if _, ok := attrs.Get(K8SStatefulSetNameKey); ok {
+		name = depName
+	} else if ssName, ok := attrs.Get(K8SStatefulSetNameKey); ok {
 		kind = k8sconsts.WorkloadKindStatefulSet
-	} else if _, ok := attrs.Get(K8SDaemonSetNameKey); ok {
+		name = ssName
+	} else if dsName, ok := attrs.Get(K8SDaemonSetNameKey); ok {
 		kind = k8sconsts.WorkloadKindDaemonSet
+		name = dsName
+	} else if cjName, ok := attrs.Get(K8SCronJobNameKey); ok {
+		kind = k8sconsts.WorkloadKindCronJob
+		name = cjName
+	} else if jobName, ok := attrs.Get(K8SJobNameKey); ok {
+		kind = k8sconsts.WorkloadKindJob
+		name = jobName
 	} else {
 		return common.SourceID{}, errors.New("kind not found")
 	}

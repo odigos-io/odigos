@@ -14,5 +14,15 @@ var GreatwallProfile = profile.Profile{
 		"java-ebpf-instrumentations",
 		"legacy-dotnet-instrumentation",
 		"mount-method-k8s-virtual-device",
+		"pod-manifest-env-var-injection",
+	},
+	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
+		// temporary set in profile until we add auto discovery for /var/log symlink target
+		if config.CollectorNode == nil {
+			config.CollectorNode = &common.CollectorNodeConfiguration{}
+		}
+		if config.CollectorNode.K8sNodeLogsDirectory == "" {
+			config.CollectorNode.K8sNodeLogsDirectory = "/mnt/var/log"
+		}
 	},
 }

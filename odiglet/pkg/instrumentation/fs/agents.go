@@ -1,12 +1,15 @@
 package fs
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -52,6 +55,20 @@ func CopyAgentsDirectoryToHost() error {
 	err = copyDirectories(containerDir, k8sconsts.OdigosAgentsDirectory, updatedFilesToKeepMap)
 	if err != nil {
 		log.Logger.Error(err, "Error copying instrumentation directory to host")
+		return err
+	}
+
+	// temporary workaround for dotnet.
+	// dotnet used to have directories containing the arch suffix (linux-glibc-arm64).
+	// this works will with virtual device that knows the arch it is running on.
+	// however, the webhook cannot know in advance which arch the pod is going to run on.
+	// thus, the directory names are renamed so they do not contain the arch suffix (linux-glibc)
+	// which can be used by the webhook.
+	// The following link is a temporary support for the deprecated dotnet virtual devices.
+	// TODO: remove this once we delete the virtual devices.
+	err = createDotnetDeprecatedDirectories(path.Join(k8sconsts.OdigosAgentsDirectory, "dotnet"))
+	if err != nil {
+		log.Logger.Error(err, "Error creating dotnet deprecated directories")
 		return err
 	}
 
@@ -151,11 +168,29 @@ func ApplyOpenShiftSELinuxSettings() error {
 	log.Logger.Info("Applying selinux settings to host")
 	_, err := exec.LookPath(filepath.Join(chrootDir, semanagePath))
 	if err == nil {
+		syscall.Chroot(chrootDir)
+
+		// list existing semanage rules to check if Odigos has already been set
+		cmd := exec.Command(semanagePath, "fcontext", "-l")
+		var out bytes.Buffer
+		cmd.Stdout = &out
+
+		err := cmd.Run()
+		if err != nil {
+			log.Logger.Error(err, "Error executing semanage")
+			return err
+		}
+
+		pattern := regexp.MustCompile(`/var/odigos(\(/.\*\)\?)?\s+.*container_ro_file_t`)
+		if pattern.Match(out.Bytes()) {
+			log.Logger.Info("Rule for /var/odigos already exists with container_ro_file_t.")
+			return nil
+		}
+
 		// Run the semanage command to add the new directory to the container_ro_file_t context
 		// semanage writes SELinux config to host
-		syscall.Chroot(chrootDir)
-		cmd := exec.Command(semanagePath, "fcontext", "-a", "-t", "container_ro_file_t", "/var/odigos(/.*)?")
-		stdoutBytes, err := cmd.Output()
+		cmd = exec.Command(semanagePath, "fcontext", "-a", "-t", "container_ro_file_t", "/var/odigos(/.*)?")
+		stdoutBytes, err := cmd.CombinedOutput()
 		if err != nil {
 			log.Logger.Error(err, "Error running semanage command", "stdout", string(stdoutBytes))
 			if strings.Contains(string(stdoutBytes), "already defined") {

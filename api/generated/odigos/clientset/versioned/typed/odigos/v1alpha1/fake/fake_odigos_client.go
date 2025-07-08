@@ -27,6 +27,10 @@ type FakeOdigosV1alpha1 struct {
 	*testing.Fake
 }
 
+func (c *FakeOdigosV1alpha1) Actions(namespace string) v1alpha1.ActionInterface {
+	return newFakeActions(c, namespace)
+}
+
 func (c *FakeOdigosV1alpha1) CollectorsGroups(namespace string) v1alpha1.CollectorsGroupInterface {
 	return newFakeCollectorsGroups(c, namespace)
 }
@@ -45,10 +49,6 @@ func (c *FakeOdigosV1alpha1) InstrumentationInstances(namespace string) v1alpha1
 
 func (c *FakeOdigosV1alpha1) InstrumentationRules(namespace string) v1alpha1.InstrumentationRuleInterface {
 	return newFakeInstrumentationRules(c, namespace)
-}
-
-func (c *FakeOdigosV1alpha1) InstrumentedApplications(namespace string) v1alpha1.InstrumentedApplicationInterface {
-	return newFakeInstrumentedApplications(c, namespace)
 }
 
 func (c *FakeOdigosV1alpha1) Processors(namespace string) v1alpha1.ProcessorInterface {

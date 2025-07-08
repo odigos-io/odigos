@@ -21,6 +21,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const ActionNameRenameAttribute = "RenameAttribute"
+
+type RenameAttributeConfig struct {
+	// +kubebuilder:validation:Type=object
+	Renames map[string]string `json:"renames"`
+}
+
+func (RenameAttributeConfig) ProcessorType() string {
+	return "transform"
+}
+
+func (RenameAttributeConfig) OrderHint() int {
+	return -50
+}
+
 // RenameAttributeSpec defines the desired state of RenameAttribute action
 type RenameAttributeSpec struct {
 	ActionName string                       `json:"actionName,omitempty"`
@@ -47,7 +62,6 @@ type RenameAttributeStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=renameattributes,scope=Namespaced
-//+kubebuilder:metadata:labels=odigos.io/config=1
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // RenameAttribute is the Schema for the RenameAttribute odigos action API

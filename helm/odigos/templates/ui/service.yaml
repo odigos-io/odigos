@@ -5,6 +5,7 @@ metadata:
   namespace: '{{ .Release.Namespace }}'
   labels:
     app.kubernetes.io/name: odigos-ui
+    odigos.io/system-object: "true"
 spec:
   ports:
     - name: ui

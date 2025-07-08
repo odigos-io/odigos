@@ -23,7 +23,7 @@ func K8SUpdateErrorHandler(err error) (reconcile.Result, error) {
 		return reconcile.Result{}, nil
 	}
 
-	if nativeErrors.Is(err, OtherAgentRunError) {
+	if nativeErrors.Is(err, ErrOtherAgentRun) {
 		// For other agent run no need to log the stack trace
 		return reconcile.Result{}, nil
 	}
