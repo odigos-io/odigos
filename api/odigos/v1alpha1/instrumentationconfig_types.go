@@ -290,8 +290,7 @@ type ContainerAgentConfig struct {
 	// Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
 	DistroParams map[string]string `json:"distroParams,omitempty"`
 
-	// the reconciler resolves which injection method to use for this container.
-	// it is affected (at the moment) by config, runtime inspection and the user defined overrides.
+	// this value is calculated (at the moment) based on the config, runtime inspection and the user defined overrides.
 	// This field carries the following semantics:
 	// - nil: do not inject any "append variables" (PYTHONPATH, NODE_OPTIONS, etc.) at all.
 	// - "loader": inject the LD_PRELOAD env var to the pod manifest which will trigger the odigos loader.

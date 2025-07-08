@@ -316,7 +316,7 @@ func isLoaderInjectionSupportedByRuntimeDetails(containerName string, runtimeDet
 
 	// check if the LD_PRELOAD env var is not already present in the manifest and the runtime details env var is not set or set to the odigos loader path.
 	odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
-	ldPreloadValue, _ := getEnvVarFromRuntimeDetails(runtimeDetails, "LD_PRELOAD")
+	ldPreloadValue, _ := getEnvVarFromRuntimeDetails(runtimeDetails, commonconsts.LdPreloadEnvVarName)
 	ldPreloadUnsetOrExpected := ldPreloadValue == "" || strings.Contains(ldPreloadValue, odigosLoaderPath) // treat empty value as unset (TODO: revisit)
 	if !ldPreloadUnsetOrExpected {
 		return &odigosv1.ContainerAgentConfig{
