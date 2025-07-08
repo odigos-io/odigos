@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
@@ -105,25 +104,24 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 					os.Exit(1)
 				}
 			}
-
 			// If the user only wants to uninstall instrumentation, we exit here.
 			// This flag being used by users who want to remove instrumentation without removing the entire Odigos setup,
 			// And by cleanup jobs that runs as helm pre-uninstall hook before helm uninstall command.
 			if cmd.Flag("instrumentation-only").Changed {
-				if IsOdigosHelmInstallation(odigosDeployment) {
-					// MIGRATION: In older versions of Odigos, a legacy ConfigMap named "odigos-config" was used.
-					// It has since been replaced by "odigos-configuration", which is Helm-managed and does not include hook annotations.
-					// As part of the migration, we explicitly delete the legacy ConfigMap if it still exists.
-					_, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLegacyConfigName, metav1.GetOptions{})
+				// MIGRATION: In older versions of Odigos, a legacy ConfigMap named "odigos-config" was used.
+				// It has since been replaced by "odigos-configuration", which is Helm-managed and does not include hook annotations.
+				// As part of the migration, we explicitly delete the legacy ConfigMap if it still exists.
+				config, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLegacyConfigName, metav1.GetOptions{})
+				if err != nil {
+					fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources successfuly\n")
+					return
+				}
+				if val, ok := config.Labels[k8sconsts.AppManagedByHelmLabel]; ok && val == k8sconsts.AppManagedByHelmValue {
+					err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosLegacyConfigName, metav1.DeleteOptions{})
 					if err != nil {
-						fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled instrumentation resources successfuly\n")
-						return
+						fmt.Printf("\033[31mERROR\033[0m Failed to delete legacy Odigos config ConfigMap %s in namespace %s: %v\n", consts.OdigosLegacyConfigName, ns, err)
+						os.Exit(1)
 					} else {
-						err := client.CoreV1().ConfigMaps(ns).Delete(ctx, consts.OdigosLegacyConfigName, metav1.DeleteOptions{})
-						if err != nil {
-							fmt.Printf("\033[31mERROR\033[0m Failed to delete legacy Odigos config ConfigMap %s in namespace %s: %v\n", consts.OdigosLegacyConfigName, ns, err)
-							os.Exit(1)
-						}
 						fmt.Printf("Deleted legacy Odigos config ConfigMap %s in namespace %s\n", consts.OdigosLegacyConfigName, ns)
 					}
 				}
@@ -821,14 +819,6 @@ func uninstallSecrets(ctx context.Context, client *kube.Client, ns, _ string) er
 func uninstallNamespace(ctx context.Context, client *kube.Client, ns, _ string) error {
 	err := client.CoreV1().Namespaces().Delete(ctx, ns, metav1.DeleteOptions{})
 	return err
-}
-
-func IsOdigosHelmInstallation(cm *v1.ConfigMap) bool {
-	if cm == nil {
-		return false
-	}
-	method := cm.Data[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey]
-	return installationmethod.K8sInstallationMethod(method) == installationmethod.K8sInstallationMethodHelm
 }
 
 func init() {
