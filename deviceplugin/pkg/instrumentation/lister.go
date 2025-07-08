@@ -82,7 +82,6 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf
 		}
 	}
 
-	log.Logger.Info("availablePlugins", "availablePlugins", availablePlugins)
 	// device that only mounts the odigos agent directory.
 	// always present regardless of the otelSdksLsf
 	mountDeviceFunc := func(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
