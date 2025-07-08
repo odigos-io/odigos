@@ -31,8 +31,13 @@ func GetOdigosNamespace(client *kube.Client, ctx context.Context) (string, error
 		}),
 		FieldSelector: fmt.Sprintf("metadata.name=%s", consts.OdigosConfigurationName),
 	})
-	if err != nil && !apierrors.IsNotFound(err) {
-		return "", err
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			fmt.Println("\033[31mERROR\033[0m no odigos installation found in the current cluster")
+			os.Exit(1)
+		} else {
+			return "", err
+		}
 	} else if len(configMap.Items) != 1 {
 		return "", fmt.Errorf("expected to get 1 namespace got %d", len(configMap.Items))
 	}
