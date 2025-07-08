@@ -17,7 +17,7 @@ import (
 )
 
 type InstrumentationManagerOptions struct {
-	Factories                  map[instrumentation.OtelDistribution]instrumentation.Factory
+	Factories                  map[string]instrumentation.Factory
 	DistributionGetter         *distros.Getter
 	MeterProvider              metric.MeterProvider
 	OdigletHealthProbeBindPort int
@@ -43,7 +43,7 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	managerOpts := instrumentation.ManagerOptions[K8sProcessDetails, K8sConfigGroup]{
 		Logger:          logger,
 		Factories:       opts.Factories,
-		Handler:         newHandler(client),
+		Handler:         newHandler(client, opts.DistributionGetter),
 		DetectorOptions: detector.DefaultK8sDetectorOptions(logger, appendEnvVarSlice),
 		ConfigUpdates:   configUpdates,
 		MeterProvider:   opts.MeterProvider,
@@ -84,7 +84,7 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	return manager, nil
 }
 
-func newHandler(client client.Client) *instrumentation.Handler[K8sProcessDetails, K8sConfigGroup] {
+func newHandler(client client.Client, distributionGetter *distros.Getter) *instrumentation.Handler[K8sProcessDetails, K8sConfigGroup] {
 	reporter := &k8sReporter{
 		client: client,
 	}
@@ -95,7 +95,9 @@ func newHandler(client client.Client) *instrumentation.Handler[K8sProcessDetails
 	settingsGetter := &k8sSettingsGetter{
 		client: client,
 	}
-	distributionMatcher := &podDeviceDistributionMatcher{}
+	distributionMatcher := &podDeviceDistributionMatcher{
+		distributionGetter: distributionGetter,
+	}
 	return &instrumentation.Handler[K8sProcessDetails, K8sConfigGroup]{
 		ProcessDetailsResolver: processDetailsResolver,
 		ConfigGroupResolver:    configGroupResolver,

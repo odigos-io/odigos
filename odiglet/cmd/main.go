@@ -108,11 +108,8 @@ func deviceInjectionCallbacks() instrumentation.OtelSdksLsf {
 	}
 }
 
-func ebpfInstrumentationFactories() map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory {
-	return map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory{
-		commonInstrumentation.OtelDistribution{
-			Language: common.GoProgrammingLanguage,
-			OtelSdk:  common.OtelSdkEbpfCommunity,
-		}: sdks.NewGoInstrumentationFactory(),
+func ebpfInstrumentationFactories() map[string]commonInstrumentation.Factory {
+	return map[string]commonInstrumentation.Factory{
+		"golang-community": sdks.NewGoInstrumentationFactory(),
 	}
 }

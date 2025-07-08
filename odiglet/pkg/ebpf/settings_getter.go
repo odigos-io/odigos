@@ -7,6 +7,8 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 	workload "github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -21,8 +23,8 @@ type k8sSettingsGetter struct {
 
 var _ instrumentation.SettingsGetter[K8sProcessDetails] = &k8sSettingsGetter{}
 
-func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sProcessDetails, dist instrumentation.OtelDistribution) (instrumentation.Settings, error) {
-	sdkConfig, serviceName, err := ksg.instrumentationSDKConfig(ctx, kd, dist)
+func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sProcessDetails, dist *distro.OtelDistro) (instrumentation.Settings, error) {
+	sdkConfig, serviceName, err := ksg.instrumentationSDKConfig(ctx, kd, dist.Language)
 	if err != nil {
 		return instrumentation.Settings{}, err
 	}
@@ -39,7 +41,7 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sProcessDetails
 	}, nil
 }
 
-func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K8sProcessDetails, dist instrumentation.OtelDistribution) (*odigosv1.SdkConfig, string, error) {
+func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K8sProcessDetails, lang common.ProgrammingLanguage) (*odigosv1.SdkConfig, string, error) {
 	instrumentationConfig := odigosv1.InstrumentationConfig{}
 	instrumentationConfigKey := client.ObjectKey{
 		Namespace: kd.pw.Namespace,
@@ -50,11 +52,11 @@ func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K
 		return nil, "", err
 	}
 	for _, config := range instrumentationConfig.Spec.SdkConfigs {
-		if config.Language == dist.Language {
+		if config.Language == lang {
 			return &config, instrumentationConfig.Spec.ServiceName, nil
 		}
 	}
-	return nil, "", fmt.Errorf("no sdk config found for language %s", dist.Language)
+	return nil, "", fmt.Errorf("no sdk config found for language %s", lang)
 }
 
 func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, pe detector.ProcessEvent) []attribute.KeyValue {
