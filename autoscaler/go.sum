@@ -84,8 +84,6 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/odigos-io/odigos/cli v0.0.0-20250702105647-24f4dfd7631d h1:kYGJeDcKLNBX6y0Bvybcz+Uskpeqnbcf+AvNcnSewMA=
-github.com/odigos-io/odigos/cli v0.0.0-20250702105647-24f4dfd7631d/go.mod h1:OgLHLNNjAKcHvF+xiF631YKmm3CFN6CWHdDW/2HYCEw=
 github.com/odigos-io/opentelemetry-zap-bridge v0.0.5 h1:UDEKtgab42nGVSvA/F3lLKUYFPETtpl7kpxM9BKBlWk=
 github.com/odigos-io/opentelemetry-zap-bridge v0.0.5/go.mod h1:K98wHhktQ6vCTqeFztcpBDtPTe88vxVgZFlbeGobt24=
 github.com/onsi/ginkgo/v2 v2.22.0 h1:Yed107/8DjTr0lKCNt7Dn8yQ6ybuDRQoMGrNFKzMfHg=

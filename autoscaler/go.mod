@@ -8,7 +8,6 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/cli v0.0.0-20250702105647-24f4dfd7631d
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
