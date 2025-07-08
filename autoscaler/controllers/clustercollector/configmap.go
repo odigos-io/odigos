@@ -188,8 +188,9 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosClusterCollectorConfigMapName,
 			Namespace: gateway.Namespace,
-			Labels:    map[string]string{ k8sconsts.OdigosSystemLabelKey,
+			Labels:    map[string]string{ k8sconsts.OdigosSystemLabelKey:
 				k8sconsts.OdigosSystemLabelValue},
+		},
 		Data: map[string]string{
 			k8sconsts.OdigosClusterCollectorConfigMapKey: desiredData,
 		},
