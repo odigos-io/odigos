@@ -94,6 +94,10 @@ status:
       ready: true
       restartCount: 0
       started: true
+    - name: deviceplugin
+      ready: true
+      restartCount: 0
+      started: true
 ---
 apiVersion: v1
 kind: Pod
@@ -127,6 +131,10 @@ spec:
 status:
   containerStatuses:
     - name: odiglet
+      ready: true
+      restartCount: 0
+      started: true
+    - name: deviceplugin
       ready: true
       restartCount: 0
       started: true
