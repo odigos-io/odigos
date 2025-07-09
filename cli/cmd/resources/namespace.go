@@ -4,13 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/odigos-io/odigos/common/consts"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,13 +31,9 @@ func GetOdigosNamespace(client *kube.Client, ctx context.Context) (string, error
 		FieldSelector: fmt.Sprintf("metadata.name=%s", consts.OdigosConfigurationName),
 	})
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			fmt.Println("\033[31mERROR\033[0m no odigos installation found in the current cluster")
-			os.Exit(1)
-		} else {
-			return "", err
-		}
+		return "", err
 	}
+
 	if len(configMap.Items) == 0 {
 		return "", errNoOdigosNamespaceFound
 	} else if len(configMap.Items) != 1 {
