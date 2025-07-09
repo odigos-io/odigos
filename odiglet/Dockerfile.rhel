@@ -144,6 +144,12 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
+COPY --from=nodejs-agent-build /opentelemetry-node/package.json /instrumentations/opentelemetry-node/package.json
+COPY --from=nodejs-agent-build /opentelemetry-node/LICENSE /instrumentations/opentelemetry-node/LICENSE
+COPY --from=nodejs-agent-build /opentelemetry-node/build /instrumentations/opentelemetry-node/build
+COPY --from=nodejs-agent-build /opentelemetry-node-prod/node_modules /instrumentations/opentelemetry-node/node_modules
+
+# nodejs-community
 COPY --from=nodejs-agent-build /opentelemetry-node/build/src/nodejs-community/autoinstrumentation.js /instrumentations/nodejs-community/autoinstrumentation.js
 
 # .NET
