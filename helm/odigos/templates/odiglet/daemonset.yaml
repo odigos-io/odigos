@@ -168,6 +168,7 @@ spec:
                 - SYS_PTRACE
           {{- if .Values.odiglet.resources }}
           resources:
+          # if t-shirt size profile set in profiles, use it.
 {{ toYaml .Values.odiglet.resources | indent 12 }}
           {{- end }}
           livenessProbe:

@@ -89,5 +89,6 @@ func ebpfInstrumentationFactories() map[commonInstrumentation.OtelDistribution]c
 			Language: common.GoProgrammingLanguage,
 			OtelSdk:  common.OtelSdkEbpfCommunity,
 		}: sdks.NewGoInstrumentationFactory(),
+
 	}
 }
