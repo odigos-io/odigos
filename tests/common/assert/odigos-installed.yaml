@@ -82,7 +82,7 @@ spec:
         capabilities:
           add:
             - SYS_PTRACE
-      privileged: true
+        privileged: true
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
   nodeSelector:
