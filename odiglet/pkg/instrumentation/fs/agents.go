@@ -42,7 +42,7 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
 	}
 
-	// Detect files that haven't changed (same size + mtime)
+	// Detect files that haven't changed (same size)
 	unchangedFiles, err := findUnchangedFiles(containerDir, k8sconsts.OdigosAgentsDirectory)
 	if err != nil {
 		log.Logger.Error(err, "Error finding unchanged files")

@@ -262,11 +262,14 @@ odiglet:
   #   limits:
   #     cpu: 500m
   #     memory: 512Mi
+
+  ## Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.
+  ## There is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.
   initContainerResources:
     requests:
-      cpu: 100m
+      cpu: 200m
     limits:
-      cpu: 100m
+      cpu: 200m
 
   # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
