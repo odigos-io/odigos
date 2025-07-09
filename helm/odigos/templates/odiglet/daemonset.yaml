@@ -100,6 +100,8 @@ spec:
               path: /readyz
               port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
             periodSeconds: 10
+          # NOTE: 'resources' block must appear before the GOMEMLIMIT environment variable in this template
+          # because the GOMEMLIMIT value is dynamically calculated based on 'resources.memory'.  
           resources:
 {{ include "odigos.odiglet.resources" . }}
           env:
