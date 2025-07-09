@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"os"
 
 	"github.com/odigos-io/odigos/common"
@@ -27,7 +26,7 @@ func main() {
 		DeviceInjectionCallbacks: deviceInjectionCallbacks(),
 	})
 
-	if err := dp.Run(context.Background()); err != nil {
+	if err := dp.Run(); err != nil {
 		log.Logger.Error(err, "Device plugin exited with error")
 	}
 }

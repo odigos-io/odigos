@@ -1,7 +1,5 @@
 package pkg
 
-import "context"
-
 // DevicePlugin is the struct representing your plugin runner
 type DevicePlugin struct {
 	opts Options
@@ -13,6 +11,6 @@ func New(opts Options) *DevicePlugin {
 }
 
 // Run starts the device plugin manager
-func (d *DevicePlugin) Run(ctx context.Context) error {
+func (d *DevicePlugin) Run() error {
 	return runDeviceManager(d.opts)
 }
