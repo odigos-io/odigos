@@ -14,7 +14,6 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
@@ -83,12 +82,8 @@ func main() {
 	log.Logger.V(0).Info("odiglet exiting")
 }
 
-func ebpfInstrumentationFactories() map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory {
-	return map[commonInstrumentation.OtelDistribution]commonInstrumentation.Factory{
-		commonInstrumentation.OtelDistribution{
-			Language: common.GoProgrammingLanguage,
-			OtelSdk:  common.OtelSdkEbpfCommunity,
-		}: sdks.NewGoInstrumentationFactory(),
-
+func ebpfInstrumentationFactories() map[string]commonInstrumentation.Factory {
+	return map[string]commonInstrumentation.Factory{
+		"golang-community": sdks.NewGoInstrumentationFactory(),
 	}
 }
