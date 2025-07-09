@@ -82,6 +82,7 @@ spec:
           add:
             - SYS_PTRACE
         privileged: true
+    - name: deviceplugin
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
   nodeSelector:
@@ -91,6 +92,10 @@ spec:
 status:
   containerStatuses:
     - name: odiglet
+      ready: true
+      restartCount: 0
+      started: true
+    - name: deviceplugin
       ready: true
       restartCount: 0
       started: true
