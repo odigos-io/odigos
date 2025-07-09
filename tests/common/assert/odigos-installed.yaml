@@ -75,6 +75,8 @@ metadata:
       name: odiglet
 spec:
   containers:
+  - name: deviceplugin
+  - name: odiglet
     - name: odiglet
       resources: {}
       securityContext:
@@ -82,7 +84,6 @@ spec:
           add:
             - SYS_PTRACE
         privileged: true
-    - name: deviceplugin
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
   nodeSelector:
@@ -91,11 +92,11 @@ spec:
   serviceAccountName: odiglet
 status:
   containerStatuses:
-    - name: odiglet
+    - name: deviceplugin
       ready: true
       restartCount: 0
       started: true
-    - name: deviceplugin
+    - name: odiglet
       ready: true
       restartCount: 0
       started: true
