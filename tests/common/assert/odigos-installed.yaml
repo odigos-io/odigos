@@ -77,12 +77,12 @@ spec:
   containers:
     - name: deviceplugin
     - name: odiglet
-        resources: {}
-        securityContext:
-          capabilities:
-            add:
-              - SYS_PTRACE
-        privileged: true
+      resources: {}
+      securityContext:
+        capabilities:
+          add:
+            - SYS_PTRACE
+      privileged: true
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
   nodeSelector:
