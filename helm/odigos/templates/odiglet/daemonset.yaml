@@ -101,7 +101,6 @@ spec:
               port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
             periodSeconds: 10
           resources:
-          resources:
 {{ include "odigos.odiglet.resolvedResources" . | indent 12 }}
           env:
             - name: NODE_NAME

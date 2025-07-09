@@ -63,9 +63,6 @@ true
 {{- toYaml $resources -}}
 {{- end }}
 
-{{- define "odigos.odiglet.resources" -}}
-{{- include "odigos.odiglet.resolvedResources" . | indent 12 }} 
-{{- end }}
 
 {{- define "odigos.odiglet.gomemlimitFromLimit" -}}
 {{- $resources := include "odigos.odiglet.resolvedResources" . | fromYaml -}}
@@ -79,6 +76,10 @@ true
 {{- if and $number $unit }}
   {{- $num := int $number -}}
   {{- $val := div (mul $num 80) 100 -}}
+  {{- /*
+     GOMEMLIMIT requires units like "MiB" or "GiB", whereas Kubernetes uses "Mi" or "Gi".
+     To ensure Go runtime parses the value correctly, we must always append "B" to the unit.
+*/ -}}
   {{- printf "%d%sB" $val $unit -}}
 {{- else }}
    {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q") -}} 
