@@ -171,7 +171,7 @@ odigos install --image-prefix=$CUSTOM_DOCKER_REGISTRY
 ```bash
 helm repo update
 helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace --set imagePrefix=$CUSTOM_DOCKER_REGISTRY
-kubectl label namespace odigos-test odigos.io/system-object="true"
+kubectl label namespace odigos-system odigos.io/system-object="true"
 ```
   </Tab>
 
