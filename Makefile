@@ -166,7 +166,7 @@ push-scheduler:
 
 .PHONY: push-collector
 push-collector:
-	$(MAKE) push-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) push-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=. SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-ui
 push-ui:
