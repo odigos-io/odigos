@@ -65,14 +65,17 @@ true
 {{- end }}
 
 
-{{- define "odigos.gomemlimitFromLimits" -}}
+{{- define "odigos.odiglet.gomemlimitFromLimit" -}}
 
 {{- $resources := .Values.odiglet.resources | default dict -}}
 {{- $limits := get $resources "limits" | default dict -}}
 {{- $requests := get $resources "requests" | default dict -}}
 
+{{- $memFromLimits := get $limits "memory" -}}
+{{- $memFromRequests := get $requests "memory" -}}
+
 {{/* Use limits.memory if set, otherwise fallback to requests.memory, or default to 512Mi */}}
-{{- $raw := get $limits "memory" | default (get $requests "memory" | default "512Mi") | trim -}}
+{{- $raw := $memFromLimits | default $memFromRequests | default "512Mi" | trim -}}
 
 {{- $number := regexFind "^[0-9]+" $raw -}}
 {{- $unit := regexFind "[a-zA-Z]+$" $raw -}}
@@ -80,10 +83,10 @@ true
 {{- if and $number $unit }}
   {{- $num := int $number -}}
   {{- $val := div (mul $num 80) 100 -}}
-  {{- if hasSuffix $unit "B" -}}
-    {{- printf "%d%s" $val $unit -}}
-  {{- else -}}
-    {{- printf "%d%sB" $val $unit -}}
-  {{- end }}
+  {{/*
+  GOMEMLIMIT must use units like "MiB" or "GiB", while Kubernetes memory limits use "Mi", "Gi", etc.
+  Since we derive GOMEMLIMIT from the memory limit, we append "B" to the unit if it's not already present.
+  */}}
+  {{- printf "%d%sB" $val $unit -}}
 {{- end }}
 {{- end }}

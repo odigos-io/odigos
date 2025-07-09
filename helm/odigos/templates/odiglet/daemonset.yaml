@@ -131,7 +131,7 @@ spec:
                   key: odigos-onprem-token
             {{- end }}
             - name: GOMEMLIMIT
-              value: "{{ include "odigos.gomemlimitFromLimits" . }}"
+              value: "{{ include "odigos.odiglet.gomemlimitFromLimit" . }}"
           envFrom:
             - configMapRef:
                 name: odigos-own-telemetry-otel-config
