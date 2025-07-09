@@ -88,5 +88,8 @@ true
   Since we derive GOMEMLIMIT from the memory limit, we append "B" to the unit if it's not already present.
   */}}
   {{- printf "%d%sB" $val $unit -}}
+{{- else }}
+  {{/* Fallback to a default value if parsing fails */}}
+  {{- "409MiB" -}}
 {{- end }}
 {{- end }}
