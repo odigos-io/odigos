@@ -45,15 +45,13 @@ true
   {{- regexReplaceAll "-.*" .Capabilities.KubeVersion.Version "" -}}
   {{- end }}
 
-{{- define "odigos.odiglet.resources" -}}
-{{- $defaults := dict
-  "cpu"    "500m"
-  "memory" "512Mi"
--}}
+{{- define "odigos.odiglet.resolvedResources" -}}
+{{- $defaults := dict "cpu" "500m" "memory" "512Mi" -}}
+{{- $resources := deepCopy (.Values.odiglet.resources | default dict) -}}
 
-{{- $resources := .Values.odiglet.resources | default dict -}}
 {{- $requests := get $resources "requests" | default dict -}}
 {{- $limits := get $resources "limits" | default dict -}}
+
 {{- if and (empty $limits) (not (empty $requests)) -}}
   {{- $_ := set $resources "limits" $requests -}}
 {{- end }}
@@ -61,35 +59,28 @@ true
   {{- $_ := set $resources "limits" $defaults -}}
   {{- $_ := set $resources "requests" $defaults -}}
 {{- end }}
-{{- toYaml $resources | indent 12 }}
+
+{{- toYaml $resources -}}
 {{- end }}
 
+{{- define "odigos.odiglet.resources" -}}
+{{- include "odigos.odiglet.resolvedResources" . | indent 12 }} 
+{{- end }}
 
 {{- define "odigos.odiglet.gomemlimitFromLimit" -}}
+{{- $resources := include "odigos.odiglet.resolvedResources" . | fromYaml -}}
+{{- $limits := get $resources "limits" -}}
+{{- $requests := get $resources "requests" -}}
 
-{{- $resources := .Values.odiglet.resources | default dict -}}
-{{- $limits := get $resources "limits" | default dict -}}
-{{- $requests := get $resources "requests" | default dict -}}
-
-{{- $memFromLimits := get $limits "memory" -}}
-{{- $memFromRequests := get $requests "memory" -}}
-
-{{/* Use limits.memory if set, otherwise fallback to requests.memory, or default to 512Mi */}}
-{{- $raw := $memFromLimits | default $memFromRequests | default "512Mi" | trim -}}
-
+{{- $raw := (get $limits "memory") | default (get $requests "memory") -}}
 {{- $number := regexFind "^[0-9]+" $raw -}}
 {{- $unit := regexFind "[a-zA-Z]+$" $raw -}}
 
 {{- if and $number $unit }}
   {{- $num := int $number -}}
   {{- $val := div (mul $num 80) 100 -}}
-  {{/*
-  GOMEMLIMIT must use units like "MiB" or "GiB", while Kubernetes memory limits use "Mi", "Gi", etc.
-  Since we derive GOMEMLIMIT from the memory limit, we append "B" to the unit if it's not already present.
-  */}}
   {{- printf "%d%sB" $val $unit -}}
 {{- else }}
-  {{/* Fallback to a default value if parsing fails */}}
-  {{- "409MiB" -}}
+   {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q") -}} 
 {{- end }}
 {{- end }}
