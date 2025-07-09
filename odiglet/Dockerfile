@@ -168,7 +168,7 @@ COPY --from=nodejs-agent-build /opentelemetry-node/build /instrumentations/opent
 COPY --from=nodejs-agent-build /opentelemetry-node-prod/node_modules /instrumentations/opentelemetry-node/node_modules
 
 # nodejs-community
-COPY ./agents/nodejs-community/autoinstrumentation.js /instrumentations/nodejs-community/autoinstrumentation.js
+COPY --from=nodejs-agent-build /opentelemetry-node/build/src/nodejs-community/autoinstrumentation.js /instrumentations/nodejs-community/autoinstrumentation.js
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
