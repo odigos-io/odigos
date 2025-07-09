@@ -22,6 +22,7 @@ spec:
               else
                 helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test  --set nodeSelector."kubernetes\.io/os"=linux
               fi
+              kubectl label namespace odigos-test odigos.io/system-object="true"
 
     - name: Verify Odigos Installation
       try:

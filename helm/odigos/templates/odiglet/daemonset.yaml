@@ -141,7 +141,7 @@ spec:
             - name: run-dir
               mountPath: /run
             {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
-            - name: custom-container-runtime-socket 
+            - name: custom-container-runtime-socket
               mountPath: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
             {{- end }}
             {{- if .Values.openshift.enabled }}
