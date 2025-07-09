@@ -314,10 +314,9 @@ func isLoaderInjectionSupportedByRuntimeDetails(containerName string, runtimeDet
 		}
 	}
 
-	// check if the LD_PRELOAD env var is not already present in the manifest and the runtime details env var is not set or set to the odigos loader path.
 	odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
-	ldPreloadValue, _ := getEnvVarFromRuntimeDetails(runtimeDetails, commonconsts.LdPreloadEnvVarName)
-	ldPreloadUnsetOrExpected := ldPreloadValue == "" || strings.Contains(ldPreloadValue, odigosLoaderPath) // treat empty value as unset (TODO: revisit)
+	runtimeDetailsVal, foundInInspection := getEnvVarFromRuntimeDetails(runtimeDetails, commonconsts.LdPreloadEnvVarName)
+	ldPreloadUnsetOrExpected := !foundInInspection || strings.Contains(runtimeDetailsVal, odigosLoaderPath)
 	if !ldPreloadUnsetOrExpected {
 		return &odigosv1.ContainerAgentConfig{
 			ContainerName:       containerName,
@@ -356,23 +355,22 @@ func getEnvInjectionMethod(
 
 	// If we should try loader, check for this first
 	distroSupportsLoader := distro.RuntimeAgent != nil && distro.RuntimeAgent.LdPreloadInjectionSupported
-	configRequiresLoader := *effectiveConfig.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod
-	configRequestLoader := configRequiresLoader || *effectiveConfig.AgentEnvVarsInjectionMethod == common.LoaderFallbackToPodManifestInjectionMethod
+	loaderRequested := (*effectiveConfig.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod || *effectiveConfig.AgentEnvVarsInjectionMethod == common.LoaderFallbackToPodManifestInjectionMethod)
 
-	if distroSupportsLoader && configRequestLoader {
+	if distroSupportsLoader && loaderRequested {
 		err := isLoaderInjectionSupportedByRuntimeDetails(containerName, runtimeDetails)
-		if err == nil {
-			// loader is requested by config and distro, and supported by the runtime details.
-			// thus, we can use the loader injection method in webhook.
-			loaderInjectionMethod := common.LoaderEnvInjectionMethod
-			return &loaderInjectionMethod, nil
-		} else {
+		if err != nil {
 			// loader is requested by config and distro, but not supported by the runtime details.
-			if configRequiresLoader {
+			if *effectiveConfig.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod {
 				// config requires us to use loader when it is supported by distro,
 				// thus we can't use it and need fail the injection.
 				return nil, err
 			} // else - we will not return and continue to the next injection method.
+		} else {
+			// loader is requested by config and distro, and supported by the runtime details.
+			// thus, we can use the loader injection method in webhook.
+			loaderInjectionMethod := common.LoaderEnvInjectionMethod
+			return &loaderInjectionMethod, nil
 		}
 	}
 
@@ -391,7 +389,7 @@ func getEnvInjectionMethod(
 
 	// at this point we know there are "append env vars" and that they should be used.
 	// we return the injection method accordingly.
-	if configRequestLoader {
+	if loaderRequested {
 		// loader is requested by config, but we falled-back to pod-maifest.
 		// return the 'loader-fallback-to-pod-manifest' to indicate that we tried loader and fallbacked to using pod-manifest.
 		// webhook should interpret this as "use pod-manifest injection method".
