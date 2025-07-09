@@ -17,6 +17,11 @@ const (
 	OdigosUiServicePort = 3000
 )
 
+const (
+	GrpcHealthProbePath  = "unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic"
+	GrpcHealthBinaryPath = "/root/grpc_health_probe"
+)
+
 var (
 	// MinK8SVersionForInstallation is the minimum Kubernetes version required for Odigos installation
 	// this value must be in sync with the one defined in the kubeVersion field in Chart.yaml
