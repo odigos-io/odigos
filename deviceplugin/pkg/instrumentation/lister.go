@@ -12,8 +12,8 @@ import (
 	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/odiglet/pkg/env"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/deviceplugin/pkg/log"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
