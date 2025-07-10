@@ -16,6 +16,18 @@ rules:
       - get
       - list
       - watch
+# migration from the old odigos-config file - this can be removed once we are confident that the old config have been deleted
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+    resourceNames:
+      - odigos-config
+    verbs:
+      - list
+      - watch
+      - get
+      - delete
   - apiGroups:
       - odigos.io
     resources:

@@ -37,7 +37,6 @@ type Instrumentor struct {
 }
 
 func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrumentor, error) {
-	logger := opts.Logger.WithName("instrumentor")
 	err := feature.Setup()
 	if err != nil {
 		return nil, err
@@ -58,7 +57,6 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		Namespace: env.GetCurrentNamespace(),
 		Name:      consts.OdigosLegacyConfigName,
 	}})
-	logger.Info("deleted deprecated webhook secret and legacy configmap if they existed", consts.OdigosLegacyConfigName, "consts.OdigosLegacyConfigName")
 
 	// setup the certificate rotator
 	rotatorSetupFinished := make(chan struct{})

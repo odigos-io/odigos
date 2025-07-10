@@ -27,7 +27,6 @@ func (m *ConfigMapDeleteMigration) NeedLeaderElection() bool {
 }
 
 func (m *ConfigMapDeleteMigration) Start(ctx context.Context) error {
-	m.Logger.Info("!!!!!!!!!!!!!!", "configMap", m.ConfigMap)
 	err := wait.ExponentialBackoff(wait.Backoff{
 		Duration: 100 * time.Millisecond,
 		Factor:   2.0,
@@ -42,7 +41,6 @@ func (m *ConfigMapDeleteMigration) Start(ctx context.Context) error {
 			}
 			return false, nil
 		}
-
 		err = m.Client.Delete(ctx, &cm)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
