@@ -1745,8 +1745,6 @@ go.opentelemetry.io/collector/config/configauth v0.126.0 h1:7FFffzLaiJMC+Y/83QVg
 go.opentelemetry.io/collector/config/configauth v0.126.0/go.mod h1:x9Ifg7oOsY9aaLP2nFEVPhXpnBXGlRCD1xjZhFfYnnk=
 go.opentelemetry.io/collector/config/configcompression v1.32.0 h1:x5+hraAhSAidb7ZWun5ixyUaF3GBDrrzcJFLeLR/dKs=
 go.opentelemetry.io/collector/config/configcompression v1.32.0/go.mod h1:QwbNpaOl6Me+wd0EdFuEJg0Cc+WR42HNjJtdq4TwE6w=
-go.opentelemetry.io/collector/config/configgrpc v0.126.0 h1:s590tizc9e6GYz/w1GWL2jgWYyXo1SdIjNLv/ZjWOBU=
-go.opentelemetry.io/collector/config/configgrpc v0.126.0/go.mod h1:Hxbi6vjNZpTcM3f5IHDh/xKmpimV08k9UanaF0Bgo+o=
 go.opentelemetry.io/collector/config/confighttp v0.126.0 h1:Gap9DLkvWDuA3OVXQfHFS24cwMJ3mtQ30zk+d1dj0b0=
 go.opentelemetry.io/collector/config/confighttp v0.126.0/go.mod h1:2jnuJaYbwugQ2kM2iNDbC2bvq7x46vJPriv6I+OS2+A=
 go.opentelemetry.io/collector/config/configmiddleware v0.126.0 h1:pkNs9lD1KGthnVFYxAB8KDld+RvtuIpI8hjWe+vMaU0=
@@ -1821,6 +1819,8 @@ go.opentelemetry.io/collector/extension/extensionmiddleware/extensionmiddlewaret
 go.opentelemetry.io/collector/extension/extensionmiddleware/extensionmiddlewaretest v0.126.0/go.mod h1:qi7wSIB9GJCqzdfoVMF+yamgblFggUe4JEEzAhPuqqs=
 go.opentelemetry.io/collector/extension/extensiontest v0.126.0 h1:BZueZvfbJmlmx62J17o6P8aNyPS32iFSmDYDfajQkew=
 go.opentelemetry.io/collector/extension/extensiontest v0.126.0/go.mod h1:9Vg70EOtd28TMdHjRECGu2jdEXnFhSCyvh+/oUGnTfA=
+go.opentelemetry.io/collector/extension/memorylimiterextension v0.126.0 h1:wp1Po9l84j7nUMpuQEk+1HT9TzisIxWBzB8e36Bztm4=
+go.opentelemetry.io/collector/extension/memorylimiterextension v0.126.0/go.mod h1:gMd/OH8hZjFBnpr+GCo82yb+l5Zg7CUmGZTaWiieuQM=
 go.opentelemetry.io/collector/extension/xextension v0.126.0 h1:DnqpEtLNK8Ui6ibv6mikoJFTsO2px0oykBDl6Jo0sPg=
 go.opentelemetry.io/collector/extension/xextension v0.126.0/go.mod h1:pcNxReFDd7+LG3YHP3oWNEM86kctqUac6kj9772usY4=
 go.opentelemetry.io/collector/extension/zpagesextension v0.126.0 h1:6qeo94bqz6guPMAP6eaBqkoMQbu4LTZbJYhEP/YLRwQ=

@@ -103,6 +103,7 @@ require (
 	go.opentelemetry.io/collector/exporter/otlpexporter v0.126.0
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.126.0
 	go.opentelemetry.io/collector/extension v1.32.0
+	go.opentelemetry.io/collector/extension/memorylimiterextension v0.126.0
 	go.opentelemetry.io/collector/extension/zpagesextension v0.126.0
 	go.opentelemetry.io/collector/otelcol v0.126.0
 	go.opentelemetry.io/collector/processor v1.32.0
@@ -743,5 +744,7 @@ replace go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ..
 replace github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
 
 replace github.com/odigos-io/odigos/common => ../../common
+
+replace go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
 
 exclude github.com/knadh/koanf v1.5.0

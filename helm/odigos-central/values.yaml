@@ -1,6 +1,6 @@
 image:
-  tag: ""
-imagePrefix: ""
+  tag: ''
+imagePrefix: ''
 imagePullSecrets: []
 
 centralBackend:
@@ -19,7 +19,7 @@ centralBackend:
 centralUI:
   uiMode: normal
   uiPaginationLimit: 0
-  centralBackendURL: ""
+  centralBackendURL: ''
   resources:
     requests:
       cpu: 100m
@@ -36,6 +36,24 @@ redis:
   image: redis:7.4.2
   port: 6379
   portName: redis
+
+auth:
+  enabled: true
+  image: quay.io/keycloak/keycloak:24.0.3
+  adminUsername: admin
+  port: 8080
+  portName: http
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: []
 
 openshift:
   enabled: false

@@ -92,7 +92,7 @@ func TestCalculate(t *testing.T) {
 		nil,
 	)
 	assert.Nil(t, err)
-	assert.Equal(t, config, want)
+	assert.Equal(t, want, config)
 	assert.Equal(t, len(statuses.Destination), 1)
 	assert.Equal(t, len(statuses.Processor), 0)
 	assert.Equal(t, len(signals), 1)

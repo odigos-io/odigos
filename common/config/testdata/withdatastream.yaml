@@ -45,7 +45,6 @@ service:
       receivers:
       - otlp
       processors:
-      - memory_limiter
       - resource/odigos-version
       - resource/dummy-processor
       exporters:
