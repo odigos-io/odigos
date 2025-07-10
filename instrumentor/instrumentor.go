@@ -13,10 +13,12 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/report"
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
+	"github.com/odigos-io/odigos/k8sutils/pkg/configmaps"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
@@ -35,6 +37,7 @@ type Instrumentor struct {
 }
 
 func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrumentor, error) {
+	logger := opts.Logger.WithName("instrumentor")
 	err := feature.Setup()
 	if err != nil {
 		return nil, err
@@ -50,6 +53,12 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		Namespace: env.GetCurrentNamespace(),
 		Name:      k8sconsts.DeprecatedInstrumentorWebhookSecretName,
 	}})
+	// remove the legacy configmap if it exists
+	mgr.Add(&configmaps.ConfigMapDeleteMigration{Client: mgr.GetClient(), Logger: opts.Logger, ConfigMap: types.NamespacedName{
+		Namespace: env.GetCurrentNamespace(),
+		Name:      consts.OdigosLegacyConfigName,
+	}})
+	logger.Info("deleted deprecated webhook secret and legacy configmap if they existed", consts.OdigosLegacyConfigName, "consts.OdigosLegacyConfigName")
 
 	// setup the certificate rotator
 	rotatorSetupFinished := make(chan struct{})
