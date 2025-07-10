@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"github.com/odigos-io/odigos/odiglet/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 )
 

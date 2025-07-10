@@ -16,8 +16,26 @@ spec:
   displayName: 'Dotnet Community Native Instrumentation'
   description: |
     This distribution is for Dotnet applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  environmentVariables:
+    otlpHttpLocalNode: true
+    signalsAsStaticOtelEnvVars: true
+    staticVariables:
+      - envName: 'CORECLR_ENABLE_PROFILING'
+        envValue: '1'
+      - envName: 'CORECLR_PROFILER'
+        envValue: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
+      - envName: 'CORECLR_PROFILER_PATH'
+        envValue: '/var/odigos/dotnet/linux-{{.LIBC_TYPE}}/OpenTelemetry.AutoInstrumentation.Native.so'
+      - envName: 'OTEL_DOTNET_AUTO_HOME'
+        envValue: '/var/odigos/dotnet'
+      - envName: 'DOTNET_STARTUP_HOOKS'
+        envValue: '/var/odigos/dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll'
+      - envName: 'DOTNET_ADDITIONAL_DEPS'
+        envValue: '/var/odigos/dotnet/AdditionalDeps'
+      - envName: 'DOTNET_SHARED_STORE'
+        envValue: '/var/odigos/dotnet/store'
   runtimeAgent:
     directoryNames:
       - '{{ODIGOS_AGENTS_DIR}}/dotnet'
     k8sAttrsViaEnvVars: true
-    device: 'instrumentation.odigos.io/{{param.LIBC_TYPE}}dotnet-native-community'
+    device: 'instrumentation.odigos.io/generic'
