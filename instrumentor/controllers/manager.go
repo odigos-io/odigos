@@ -20,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -58,8 +57,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	odigosEffectiveConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
 	odigosEffectiveConfigSelector := fields.AndSelectors(nsSelector, odigosEffectiveConfigNameSelector)
-	odigosConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosLegacyConfigName)
-	odigosConfigSelector := fields.AndSelectors(nsSelector, odigosConfigNameSelector)
 
 	instrumentedPodReq, _ := labels.NewRequirement(k8sconsts.OdigosAgentsMetaHashLabel, selection.Exists, []string{})
 	instrumentedPodSelector := labels.NewSelector().Add(*instrumentedPodReq)
@@ -127,12 +124,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 					Label:     instrumentedPodSelector,
 					Transform: podsTransformFunc,
 				},
-				&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: consts.OdigosEffectiveConfigName}}: {
+				&corev1.ConfigMap{}: {
 					Field: odigosEffectiveConfigSelector,
 				},
-				&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: consts.OdigosLegacyConfigName}}: {
-					Field: odigosConfigSelector,
-				},				
 				&odigosv1.CollectorsGroup{}: {
 					Field: nsSelector,
 				},
