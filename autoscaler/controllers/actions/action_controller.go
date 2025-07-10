@@ -58,7 +58,7 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 	}
 
 	if action.Spec.K8sAttributes != nil {
-		config, signals, ownerReferences, err := k8sAttributeConfig(ctx, k8sclient, action.Namespace)
+		config, signals, ownerReferences, err := k8sAttributeConfig(ctx, k8sclient, action.Namespace, nil)
 		if err != nil {
 			return nil, err
 		}
