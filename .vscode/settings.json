@@ -8,4 +8,12 @@
     ],
 
     "go.buildTags": "embed_manifests",
+    
+    "go.toolsEnvVars": {
+    "GOPATH": "/Users/avihuhanya/go",
+    "GOMODCACHE": "/Users/avihuhanya/go/pkg/mod"
+    }   
+
+}
+
 }
