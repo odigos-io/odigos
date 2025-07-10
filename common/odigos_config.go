@@ -2,7 +2,8 @@ package common
 
 type ProfileName string
 
-// +kubebuilder:validation:Enum=normal;readonly
+// "normal" is deprecated. Kept here in the enum for backwards compatibility with operator CRD.
+// +kubebuilder:validation:Enum=default;readonly;normal
 type UiMode string
 
 const (

@@ -3,6 +3,10 @@ ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
 ORG ?= registry.odigos.io
+# Override ORG for staging pushes
+ifeq ($(STAGING_ORG),true)
+    ORG = us-central1-docker.pkg.dev/odigos-cloud/staging-components
+endif
 GOLANGCI_LINT_VERSION ?= v2.1.6
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
 GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
@@ -133,6 +137,7 @@ build-images-rhel:
 
 push-image/%:
 	docker buildx build --platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+	$(if $(filter true,$(PUSH_IMAGE)),--push,) \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg VERSION=$(TAG) \
 	--build-arg RELEASE=$(TAG) \
@@ -161,7 +166,7 @@ push-scheduler:
 
 .PHONY: push-collector
 push-collector:
-	$(MAKE) push-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) push-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=. SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-ui
 push-ui:
@@ -353,7 +358,9 @@ helm-install-central:
 		--namespace odigos-central \
 		--set image.tag=$(ODIGOS_CLI_VERSION) \
 		--set onPremToken=$(ONPREM_TOKEN) \
-	kubectl label namespace odigos-central odigos.io/central-system-object="true" --overwrite
+		--set auth.adminUsername=$(CENTRAL_ADMIN_USER) \
+		--set auth.adminPassword=$(CENTRAL_ADMIN_PASSWORD) \
+	kubectl label namespace odigos-central odigos.io/central-system-object="true" --overwrite 
 
 
 .PHONY: api-all
@@ -412,6 +419,7 @@ push-workload-lifecycle-images:
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-supported-manifest-env.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-latest-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-latest-version.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-old-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-old-version.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-unique-exec:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-unique-exec.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-latest-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-latest tests/e2e/workload-lifecycle/services/python-http-server
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-other-agent:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-other-agent tests/e2e/workload-lifecycle/services/python-http-server
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-alpine:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-alpine tests/e2e/workload-lifecycle/services/python-http-server

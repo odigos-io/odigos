@@ -130,6 +130,16 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				Resources: []string{"collectorsgroups/status"},
 				Verbs:     []string{"get", "patch", "update"},
 			},
+			{ // Needed to watch actions in order to transform them to processors
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"actions"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // Update conditions of the action after transforming it to a processor
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"actions/status"},
+				Verbs:     []string{"get", "patch", "update"},
+			},
 		},
 	}
 }
@@ -186,16 +196,6 @@ func NewAutoscalerClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRo
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"instrumentationconfigs"},
 				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // Needed to watch actions in order to transform them to processors
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"actions"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // Update conditions of the action after transforming it to a processor
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"actions/status"},
-				Verbs:     []string{"get", "patch", "update"},
 			},
 			{ // Cert controller syncs the webhooks certificates with the secret, require for reconciler to watch the webhooks configs
 				APIGroups: []string{"admissionregistration.k8s.io"},

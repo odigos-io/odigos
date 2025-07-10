@@ -22,14 +22,14 @@ ARG NODEJS_AGENT_VERSION=main
 RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentelemetry-node && git checkout $NODEJS_AGENT_VERSION
 
 # The second build stage 'nodejs-agent-src' prepares the actual code we are going to compile and embed in odiglet.
-# By default, it uses the previous 'nodejs-agent-clone' stage, but one can override it by setting the 
+# By default, it uses the previous 'nodejs-agent-clone' stage, but one can override it by setting the
 # --build-context nodejs-agent-src=../opentelemetry-node flag in the docker build command.
 # This allows us to use the agent sources and test changes during development.
 # The output of this stage is the resolved source code to be used in the next stage.
 FROM scratch AS nodejs-agent-src
 COPY --from=nodejs-agent-clone /src/opentelemetry-node /
 
-# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for 
+# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for
 # being dependency of the native-community agent.
 FROM node:18 AS nodejs-agent-build
 # Run yarn install to generate the production node_modules directory
@@ -132,6 +132,25 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make build-odiglet
 
+
+# Build deviceplugin binary
+WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
+COPY deviceplugin/ .
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./cmd
+
+# Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.24
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        GRPC_ARCH="arm64"; \
+    else \
+        GRPC_ARCH="amd64"; \
+    fi && \
+    wget -O /tmp/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-${GRPC_ARCH} && \
+    chmod +x /tmp/grpc_health_probe
+
+
 WORKDIR /instrumentations
 
 # Java
@@ -149,7 +168,7 @@ COPY --from=nodejs-agent-build /opentelemetry-node/build /instrumentations/opent
 COPY --from=nodejs-agent-build /opentelemetry-node-prod/node_modules /instrumentations/opentelemetry-node/node_modules
 
 # nodejs-community
-COPY ./agents/nodejs-community/autoinstrumentation.js /instrumentations/nodejs-community/autoinstrumentation.js
+COPY --from=nodejs-agent-build /opentelemetry-node/build/src/nodejs-community/autoinstrumentation.js /instrumentations/nodejs-community/autoinstrumentation.js
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
@@ -173,6 +192,8 @@ RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/
 
 FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
+COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 CMD ["/root/odiglet"]

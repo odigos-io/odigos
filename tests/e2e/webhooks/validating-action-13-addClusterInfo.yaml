@@ -2,7 +2,7 @@ apiVersion: odigos.io/v1alpha1
 kind: Action
 metadata:
   name: 03-action-addclusterinfo
-  namespace: default
+  namespace: odigos-test
 spec:
   signals:
   - TRACES
