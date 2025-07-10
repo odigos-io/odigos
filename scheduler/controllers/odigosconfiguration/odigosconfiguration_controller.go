@@ -156,7 +156,7 @@ func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Conte
 	if err != nil {
 		return err
 	}
-	// to check
+	
 	err = r.Client.Patch(ctx, &effectiveConfigMap, client.RawPatch(types.ApplyYAMLPatchType, objApplyBytes), client.ForceOwnership, client.FieldOwner("scheduler-odigosconfiguration"))
 	if err != nil {
 		return err
