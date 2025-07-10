@@ -3,7 +3,7 @@ package shared
 import (
 	"go.opentelemetry.io/otel/attribute"
 
-	proto "github.com/odigos-io/odigos/instrumentation/plugin/proto/v1"
+	proto "github.com/odigos-io/odigos/odiglet/plugin/proto/v1"
 )
 
 // the following conversion function are from "go.opentelemetry.io/otel/exporters/otlp/otlptrace/internal/tracetransform"

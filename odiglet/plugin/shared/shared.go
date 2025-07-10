@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/odigos-io/odigos/instrumentation"
-	proto "github.com/odigos-io/odigos/instrumentation/plugin/proto/v1"
+	proto "github.com/odigos-io/odigos/odiglet/plugin/proto/v1"
 )
 
 // Handshake is a common handshake that is shared by plugin and host.

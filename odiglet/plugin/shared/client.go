@@ -6,7 +6,7 @@ import (
 	"math"
 
 	"github.com/odigos-io/odigos/instrumentation"
-	proto "github.com/odigos-io/odigos/instrumentation/plugin/proto/v1"
+	proto "github.com/odigos-io/odigos/odiglet/plugin/proto/v1"
 )
 
 type GRPCClient struct {
