@@ -9,8 +9,8 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 
 	"github.com/odigos-io/odigos/instrumentation"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
-	"github.com/odigos-io/odigos/odiglet/pkg/env"
 
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"go.opentelemetry.io/auto"
