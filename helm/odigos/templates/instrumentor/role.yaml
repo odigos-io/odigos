@@ -24,8 +24,6 @@ rules:
     resourceNames:
       - odigos-config
     verbs:
-      - list
-      - watch
       - get
       - delete
   - apiGroups:
