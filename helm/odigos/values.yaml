@@ -268,8 +268,10 @@ odiglet:
   initContainerResources:
     requests:
       cpu: 200m
+      memory: 200Mi
     limits:
       cpu: 200m
+      memory: 200Mi
 
   # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)

@@ -471,10 +471,12 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"cpu": resource.MustParse("200m"),
+									"cpu":    resource.MustParse("200m"),
+									"memory": resource.MustParse("200Mi"),
 								},
 								Requests: corev1.ResourceList{
-									"cpu": resource.MustParse("200m"),
+									"cpu":    resource.MustParse("200m"),
+									"memory": resource.MustParse("200Mi"),
 								},
 							},
 							VolumeMounts: append([]corev1.VolumeMount{
