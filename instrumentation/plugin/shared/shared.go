@@ -18,30 +18,30 @@ var Handshake = plugin.HandshakeConfig{
 	MagicCookieValue: "hello",
 }
 
-const InstrumentationPluginName = "odigos.io.instrumentation.plugin.v1"
+const OdigletPluginName = "odigos.io.odiglet.plugin.v1"
 
 var PluginMap = map[string]plugin.Plugin{
-	InstrumentationPluginName: &InstrumentationPlugin{},
+	OdigletPluginName: &OdigletPlugin{},
 }
 
-type Instrumentation interface {
-	Start(ctx context.Context, pid int, settings instrumentation.Settings) error
+type PluginV1 interface {
+	Attach(ctx context.Context, pid int, settings instrumentation.Settings) error
 	ApplyConfig(ctx context.Context, pid int, config instrumentation.Config) error
-	Close(ctx context.Context, pid int) error
+	Detach(ctx context.Context, pid int) error
 }
 
-type InstrumentationPlugin struct {
+type OdigletPlugin struct {
 	plugin.GRPCPlugin
 	plugin.NetRPCUnsupportedPlugin
 
-	Impl Instrumentation
+	Impl PluginV1
 }
 
-func (p *InstrumentationPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
-	proto.RegisterInstrumentationServer(s, &GRPCServer{Impl: p.Impl})
+func (p *OdigletPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
+	proto.RegisterOdigletPluginV1Server(s, &GRPCServer{Impl: p.Impl})
 	return nil
 }
 
-func (p *InstrumentationPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	return &GRPCClient{client: proto.NewInstrumentationClient(c)}, nil
+func (p *OdigletPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+	return &GRPCClient{client: proto.NewOdigletPluginV1Client(c)}, nil
 }

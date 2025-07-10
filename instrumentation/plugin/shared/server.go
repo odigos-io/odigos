@@ -9,15 +9,15 @@ import (
 )
 
 type GRPCServer struct {
-	proto.UnimplementedInstrumentationServer
-	Impl Instrumentation
+	proto.UnimplementedOdigletPluginV1Server
+	Impl PluginV1
 }
 
-var _ proto.InstrumentationServer = (*GRPCServer)(nil)
+var _ proto.OdigletPluginV1Server = (*GRPCServer)(nil)
 
-func (s *GRPCServer) Start(ctx context.Context, in *proto.InstrumentationRequest) (*emptypb.Empty, error) {
+func (s *GRPCServer) Attach(ctx context.Context, in *proto.AttachRequest) (*emptypb.Empty, error) {
 	var (
-		pid     int
+		pid         int
 		serviceName string
 	)
 
@@ -30,25 +30,24 @@ func (s *GRPCServer) Start(ctx context.Context, in *proto.InstrumentationRequest
 	}
 
 	settings := instrumentation.Settings{
-		ServiceName: serviceName,
+		ServiceName:        serviceName,
 		ResourceAttributes: ToAttributesSlice(in.ResourceAttributes),
 		// TODO: handle InitialConfig
 	}
 
 	// call the actual implementation
-	err := s.Impl.Start(ctx, pid, settings)
+	err := s.Impl.Attach(ctx, pid, settings)
 	return &emptypb.Empty{}, err
 }
 
 // TODO: Implement ApplyConfig
 
-func (s *GRPCServer) Close(ctx context.Context, in *proto.InstrumentationCloseRequest) (*emptypb.Empty, error) {
+func (s *GRPCServer) Detach(ctx context.Context, in *proto.DetachRequest) (*emptypb.Empty, error) {
 	var pid int
 	if in.ProcessId != nil {
 		pid = int(*in.ProcessId)
 	}
 
-	err := s.Impl.Close(ctx, pid)
+	err := s.Impl.Detach(ctx, pid)
 	return &emptypb.Empty{}, err
 }
-
