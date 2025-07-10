@@ -25,4 +25,8 @@ var KratosProfile = profile.Profile{
 		"reduce-span-name-cardinality",
 		"disable-gin",
 	},
+	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
+		rollbackDisabled := true
+		config.RollbackDisabled = &rollbackDisabled
+	},
 }

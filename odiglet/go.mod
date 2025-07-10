@@ -5,9 +5,7 @@ go 1.24.0
 require (
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
-	github.com/google/uuid v1.6.0
 	github.com/moby/sys/mountinfo v0.7.2
-	github.com/odigos-io/odigos-device-plugin v1.19.6
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/distros v0.0.0
@@ -27,7 +25,6 @@ require (
 	k8s.io/api v0.33.1
 	k8s.io/apimachinery v0.33.1
 	k8s.io/client-go v0.33.1
-	k8s.io/kubelet v0.33.1
 	sigs.k8s.io/controller-runtime v0.20.4
 )
 
@@ -49,10 +46,10 @@ require (
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/glog v1.2.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
