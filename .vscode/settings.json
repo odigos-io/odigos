@@ -8,6 +8,4 @@
     ],
 
     "go.buildTags": "embed_manifests",
-    
-
 }
