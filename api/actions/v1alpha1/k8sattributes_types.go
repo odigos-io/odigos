@@ -43,6 +43,46 @@ type K8sAnnotationAttribute struct {
 	AttributeKey string `json:"attributeKey"`
 }
 
+type K8sAttributesConfig struct {
+	// Collect the following container related attributes:
+	// k8s.container.name
+	// container.id
+	// container.image.name
+	// container.image.tag
+	CollectContainerAttributes bool `json:"collectContainerAttributes,omitempty"`
+
+	// collect replicaset related attributes (when relevant, e.g. for deployments):
+	// k8s.replicaset.name
+	// if CollectWorkloadUID is set, also collect:
+	// k8s.replicaset.uid
+	CollectReplicaSetAttributes bool `json:"collectReplicaSetAttributes,omitempty"`
+
+	// Collect the following workload UID attributes:
+	// k8s.deployment.uid
+	// k8s.daemonset.uid
+	// k8s.statefulset.uid
+	CollectWorkloadUID bool `json:"collectWorkloadUID,omitempty"`
+
+	// Collect the k8s.cluster.uid attribute, which is set to the uid of the namespace "kube-system"
+	CollectClusterUID bool `json:"collectClusterUID,omitempty"`
+
+	// list of labels to be extracted from the pod, and the attribute key to be used for the resource attribute created from each label.
+	// +optional
+	LabelsAttributes []K8sLabelAttribute `json:"labelsAttributes,omitempty"`
+
+	// list of annotations to be extracted from the pod, and the attribute key to be used for the resource attribute created from each annotation.
+	// +optional
+	AnnotationsAttributes []K8sAnnotationAttribute `json:"annotationsAttributes,omitempty"`
+}
+
+func (K8sAttributesConfig) ProcessorType() string {
+	return "k8sattributes"
+}
+
+func (K8sAttributesConfig) OrderHint() int {
+	return 0
+}
+
 type K8sAttributesSpec struct {
 	ActionName string                       `json:"actionName,omitempty"`
 	Notes      string                       `json:"notes,omitempty"`

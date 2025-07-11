@@ -405,6 +405,7 @@ var portForwardCentralCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend")
+
 		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUILabelAppValue)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find UI pod: %v\n", err)
@@ -412,10 +413,19 @@ var portForwardCentralCmd = &cobra.Command{
 			wg.Wait()
 			os.Exit(1)
 		}
-
 		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI")
 
+		keycloakPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.KeycloakAppName)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot find Keycloak pod: %v\n", err)
+			cancel()
+			wg.Wait()
+			os.Exit(1)
+		}
+		startPortForward(&wg, ctx, keycloakPod, client, fmt.Sprintf("%d", k8sconsts.KeycloakPort), "Keycloak")
+
 		fmt.Printf("Odigos Central UI is available at: http://localhost:%s\n", k8sconsts.CentralUIPort)
+		fmt.Printf("Odigos Central Backend is available at: http://localhost:%s\n", k8sconsts.CentralBackendPort)
 		fmt.Printf("Press Ctrl+C to stop\n")
 
 		<-sigCh
