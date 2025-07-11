@@ -97,9 +97,6 @@ export const DATA_IDS = {
   TITLE: '[data-id=title]',
   SOURCE_TITLE: '[data-id=sourceName]',
   CHECKBOX: '[data-id=checkbox]',
-
-  NOTIF_MANAGER_BUTTON: '[data-id=notif-manager-button]',
-  NOTIF_MANAGER_CONTENR: '[data-id=notif-manager-content]',
 };
 
 export const BUTTONS = {
