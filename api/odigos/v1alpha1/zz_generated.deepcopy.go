@@ -393,6 +393,11 @@ func (in *ContainerAgentConfig) DeepCopyInto(out *ContainerAgentConfig) {
 			(*out)[key] = val
 		}
 	}
+	if in.EnvInjectionMethod != nil {
+		in, out := &in.EnvInjectionMethod, &out.EnvInjectionMethod
+		*out = new(common.EnvInjectionMethod)
+		**out = **in
+	}
 	if in.Traces != nil {
 		in, out := &in.Traces, &out.Traces
 		*out = new(AgentTracesConfig)

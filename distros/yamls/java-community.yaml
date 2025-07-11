@@ -22,3 +22,4 @@ spec:
       - "{{ODIGOS_AGENTS_DIR}}/java"
     k8sAttrsViaEnvVars: true
     device: 'instrumentation.odigos.io/generic'
+    ldPreloadInjectionSupported: true
