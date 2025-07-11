@@ -44,3 +44,44 @@ true
   {{- define "utils.cleanKubeVersion" -}}
   {{- regexReplaceAll "-.*" .Capabilities.KubeVersion.Version "" -}}
   {{- end }}
+
+{{- define "odigos.odiglet.resolvedResources" -}}
+{{- $defaults := dict "cpu" "500m" "memory" "512Mi" -}}
+{{- $resources := deepCopy (.Values.odiglet.resources | default dict) -}}
+
+{{- $requests := get $resources "requests" | default dict -}}
+{{- $limits := get $resources "limits" | default dict -}}
+
+{{- if and (empty $limits) (not (empty $requests)) -}}
+  {{- $_ := set $resources "limits" $requests -}}
+{{- end }}
+{{- if and (empty $limits) (empty $requests) -}}
+  {{- $_ := set $resources "limits" $defaults -}}
+  {{- $_ := set $resources "requests" $defaults -}}
+{{- end }}
+
+{{- toYaml $resources -}}
+{{- end }}
+
+
+{{- define "odigos.odiglet.gomemlimitFromLimit" -}}
+{{- $resources := include "odigos.odiglet.resolvedResources" . | fromYaml -}}
+{{- $limits := get $resources "limits" -}}
+{{- $requests := get $resources "requests" -}}
+
+{{- $raw := (get $limits "memory") | default (get $requests "memory") -}}
+{{- $number := regexFind "^[0-9]+" $raw -}}
+{{- $unit := regexFind "[a-zA-Z]+$" $raw -}}
+
+{{- if and $number $unit }}
+  {{- $num := int $number -}}
+  {{- $val := div (mul $num 80) 100 -}}
+  {{- /*
+     GOMEMLIMIT requires units like "MiB" or "GiB", whereas Kubernetes uses "Mi" or "Gi".
+     To ensure Go runtime parses the value correctly, we must always append "B" to the unit.
+*/ -}}
+  {{- printf "%d%sB" $val $unit -}}
+{{- else }}
+   {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q") -}} 
+{{- end }}
+{{- end }}
