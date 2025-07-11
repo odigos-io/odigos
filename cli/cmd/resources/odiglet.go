@@ -455,8 +455,30 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 										},
 									},
 								},
+								{
+									// let the Go runtime know how many CPUs are available,
+									// without this, Go will assume all the cores are available.
+									Name: "GOMAXPROCS",
+									ValueFrom: &corev1.EnvVarSource{
+										ResourceFieldRef: &corev1.ResourceFieldSelector{
+											ContainerName: "init",
+											// limitCPU, Kubernetes automatically rounds up the value to an integer
+											// (700m -> 1, 1200m -> 2)
+											Resource: "limits.cpu",
+										},
+									},
+								},
 							},
-							Resources: corev1.ResourceRequirements{},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("200m"),
+									"memory": resource.MustParse("200Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("200m"),
+									"memory": resource.MustParse("200Mi"),
+								},
+							},
 							VolumeMounts: append([]corev1.VolumeMount{
 								{
 									Name:      "odigos",
