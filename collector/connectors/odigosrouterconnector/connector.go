@@ -248,9 +248,34 @@ func (r *routerConnector) ConsumeMetrics(ctx context.Context, md pmetric.Metrics
 		rm := rMetrics.At(i)
 		pipelines, key := determineRoutingPipelines(rm.Resource().Attributes(), *r.routingTable, common.MetricsObservabilitySignal)
 
-		// If no pipeline matched, copy the resource metrics to the default consumer
+		// If no pipeline matched, check if this is a system metric that should go to all data streams
 		if len(pipelines) == 0 {
 			cfg.logger.Debug("no pipelines matched for", zap.Any("key", key))
+			
+			// Check if this is a system metric (kubeletstats, hostmetrics) that should go to all data streams
+			if isSystemMetric(rm.Resource().Attributes()) {
+				// Route to all data streams that have metrics destinations
+				allMetricsPipelines := getAllMetricsPipelines(*r.routingTable)
+				if len(allMetricsPipelines) > 0 {
+					for _, pipeline := range allMetricsPipelines {
+						consumer, err := cfg.consumers.Consumer(collectorpipeline.NewIDWithName(collectorpipeline.SignalMetrics, pipeline))
+						if err != nil {
+							errs = errors.Join(errs, fmt.Errorf("failed to get metrics consumer for pipeline %s: %w", pipeline, err))
+							continue
+						}
+
+						batch, ok := metricsByConsumer[consumer]
+						if !ok {
+							batch = pmetric.NewMetrics()
+						}
+						rm.CopyTo(batch.ResourceMetrics().AppendEmpty())
+						metricsByConsumer[consumer] = batch
+					}
+					continue
+				}
+			}
+			
+			// If not a system metric or no metrics pipelines, send to default
 			rm.CopyTo(defaultMetrics.ResourceMetrics().AppendEmpty())
 			continue
 		}
@@ -354,20 +379,53 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 
 // getDynamicNameAndKind extracts the workload name and kind from a resource's attributes.
 // It searches for known Kubernetes keys such as deployment, statefulset, and daemonset,
-// and returns the first matched workload name and its corresponding kind.
-// If none are found, it returns empty strings for both.
-
-var kindKeyMap = map[string]string{
-	string(semconv1_26.K8SDeploymentNameKey):  "Deployment",
-	string(semconv1_26.K8SStatefulSetNameKey): "StatefulSet",
-	string(semconv1_26.K8SDaemonSetNameKey):   "DaemonSet",
-}
-
+// returning the first match found.
 func getDynamicNameAndKind(attrs pcommon.Map) (name string, kind string) {
-	for key, kindType := range kindKeyMap {
-		if val, ok := attrs.Get(key); ok {
-			return val.Str(), kindType
-		}
+	if v, ok := attrs.Get(string(semconv1_26.K8SDeploymentNameKey)); ok {
+		return v.Str(), "deployment"
+	}
+	if v, ok := attrs.Get(string(semconv1_26.K8SStatefulSetNameKey)); ok {
+		return v.Str(), "statefulset"
+	}
+	if v, ok := attrs.Get(string(semconv1_26.K8SDaemonSetNameKey)); ok {
+		return v.Str(), "daemonset"
 	}
 	return "", ""
+}
+
+// isSystemMetric determines if a metric is a system-level metric (like kubeletstats or hostmetrics)
+// that should be routed to all data streams with metrics destinations.
+// System metrics are identified by the absence of workload-specific attributes.
+func isSystemMetric(attrs pcommon.Map) bool {
+	// Check if this metric has workload-specific attributes
+	name, kind := getDynamicNameAndKind(attrs)
+	
+	// If it doesn't have workload-specific attributes, it's likely a system metric
+	if name == "" || kind == "" {
+		return true
+	}
+	
+	return false
+}
+
+// getAllMetricsPipelines returns all data stream pipeline names that support metrics
+func getAllMetricsPipelines(routingTable SignalRoutingMap) []string {
+	pipelineSet := make(map[string]struct{})
+	
+	// Iterate through all routing entries to find metrics pipelines
+	for _, routingIndex := range routingTable {
+		if metricsPipelines, ok := routingIndex[common.MetricsObservabilitySignal]; ok {
+			for _, pipeline := range metricsPipelines {
+				pipelineSet[pipeline] = struct{}{}
+			}
+		}
+	}
+	
+	// Convert set to slice
+	pipelines := make([]string, 0, len(pipelineSet))
+	for pipeline := range pipelineSet {
+		pipelines = append(pipelines, pipeline)
+	}
+	
+	return pipelines
 }
