@@ -91,6 +91,12 @@ func NewInstrumentorRole(ns string) *rbacv1.Role {
 				ResourceNames: []string{k8sconsts.DeprecatedInstrumentorWebhookSecretName},
 				Verbs:         []string{"delete"},
 			},
+			{ // check for odiglet daemonset ready before starting the instrumentation
+				APIGroups:     []string{"apps"},
+				Resources:     []string{"daemonsets"},
+				ResourceNames: []string{k8sconsts.OdigletDaemonSetName},
+				Verbs:         []string{"get", "list", "watch"},
+			},
 			{
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups"},
