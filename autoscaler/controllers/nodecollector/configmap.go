@@ -10,15 +10,14 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/autoscaler/controllers/servicemonitor"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"github.com/odigos-io/odigos/autoscaler/controllers"
-	"go.opentelemetry.io/otel/semconv/v1.26.0"
-	"golang.org/x/exp/slices"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +26,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -629,10 +627,12 @@ func addServiceMonitorReceiver(ctx context.Context, c client.Client, cfg *config
 		return nil
 	}
 
-	// Get ServiceMonitor targets
-	serviceMonitorTargets, err := controllers.GetServiceMonitorTargets(ctx, c)
+	// Get ServiceMonitor targets - this function safely handles missing CRDs
+	serviceMonitorTargets, err := servicemonitor.GetServiceMonitorTargets(ctx, c)
 	if err != nil {
-		return err
+		// Log error but don't fail the entire configuration
+		log.Log.V(0).Info("Failed to get ServiceMonitor targets", "error", err)
+		return nil
 	}
 
 	if len(serviceMonitorTargets) == 0 {

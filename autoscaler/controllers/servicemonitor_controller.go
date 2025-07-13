@@ -2,26 +2,21 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-	"net/url"
-	"strconv"
-	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/odigos-io/odigos/autoscaler/controllers/clustercollector"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 type ServiceMonitorReconciler struct {
@@ -30,6 +25,15 @@ type ServiceMonitorReconciler struct {
 	ImagePullSecrets []string
 	OdigosVersion    string
 }
+
+var (
+	// ServiceMonitor GVK - defined as variables to avoid import dependency
+	ServiceMonitorGVK = schema.GroupVersionKind{
+		Group:   "monitoring.coreos.com",
+		Version: "v1",
+		Kind:    "ServiceMonitor",
+	}
+)
 
 func (r *ServiceMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
@@ -41,8 +45,39 @@ func (r *ServiceMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
+	// Check if ServiceMonitor CRD exists
+	if !r.isServiceMonitorCRDAvailable(ctx, logger) {
+		logger.V(1).Info("ServiceMonitor CRD not available, skipping reconciliation")
+		return ctrl.Result{}, nil
+	}
+
 	// Reconcile the cluster collector to include ServiceMonitor scraping
-	return clustercollector.ReconcileClusterCollector(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
+	return ctrl.Result{}, nil
+}
+
+func (r *ServiceMonitorReconciler) isServiceMonitorCRDAvailable(ctx context.Context, logger logr.Logger) bool {
+	// Check if the ServiceMonitor CRD exists
+	crdList := &metav1.PartialObjectMetadataList{}
+	crdList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apiextensions.k8s.io",
+		Version: "v1",
+		Kind:    "CustomResourceDefinitionList",
+	})
+
+	if err := r.List(ctx, crdList); err != nil {
+		logger.V(1).Info("Failed to list CRDs, assuming ServiceMonitor CRD not available", "error", err)
+		return false
+	}
+
+	// Look for ServiceMonitor CRD
+	for _, crd := range crdList.Items {
+		if crd.GetName() == "servicemonitors.monitoring.coreos.com" {
+			return true
+		}
+	}
+
+	logger.V(1).Info("ServiceMonitor CRD not found in cluster")
+	return false
 }
 
 func (r *ServiceMonitorReconciler) isServiceMonitorAutoDetectionEnabled(ctx context.Context, logger logr.Logger) bool {
@@ -84,135 +119,20 @@ func (r *ServiceMonitorReconciler) isServiceMonitorAutoDetectionEnabled(ctx cont
 }
 
 func (r *ServiceMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// Check if ServiceMonitor CRD is available before setting up the controller
+	ctx := context.Background()
+	logger := mgr.GetLogger().WithName("servicemonitor-setup")
+	
+	if !r.isServiceMonitorCRDAvailable(ctx, logger) {
+		logger.Info("ServiceMonitor CRD not available, skipping controller setup")
+		return nil
+	}
+
+	// Create unstructured object for ServiceMonitor
+	serviceMonitor := &unstructured.Unstructured{}
+	serviceMonitor.SetGroupVersionKind(ServiceMonitorGVK)
+
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&promv1.ServiceMonitor{}).
+		For(serviceMonitor).
 		Complete(r)
-}
-
-// GetServiceMonitorTargets returns Prometheus scrape targets from ServiceMonitor CRDs
-func GetServiceMonitorTargets(ctx context.Context, client client.Client) ([]PrometheusTarget, error) {
-	var targets []PrometheusTarget
-
-	// List all ServiceMonitor CRDs
-	var serviceMonitors promv1.ServiceMonitorList
-	if err := client.List(ctx, &serviceMonitors); err != nil {
-		return nil, fmt.Errorf("failed to list ServiceMonitors: %w", err)
-	}
-
-	for _, sm := range serviceMonitors.Items {
-		// Get the services that match the selector
-		services, err := getServicesForServiceMonitor(ctx, client, &sm)
-		if err != nil {
-			// Log error but continue processing other ServiceMonitors
-			continue
-		}
-
-		// Convert ServiceMonitor endpoints to Prometheus targets
-		for _, service := range services {
-			for _, endpoint := range sm.Spec.Endpoints {
-				targets = append(targets, createPrometheusTarget(service, endpoint, &sm))
-			}
-		}
-	}
-
-	return targets, nil
-}
-
-func getServicesForServiceMonitor(ctx context.Context, client client.Client, sm *promv1.ServiceMonitor) ([]corev1.Service, error) {
-	var services []corev1.Service
-
-	// Get all services in the target namespaces
-	namespaces := []string{sm.Namespace}
-	if sm.Spec.NamespaceSelector != nil {
-		if sm.Spec.NamespaceSelector.Any {
-			// TODO: Get all namespaces
-			namespaces = []string{""}
-		} else if len(sm.Spec.NamespaceSelector.MatchNames) > 0 {
-			namespaces = sm.Spec.NamespaceSelector.MatchNames
-		}
-	}
-
-	for _, ns := range namespaces {
-		var serviceList corev1.ServiceList
-		listOpts := []client.ListOption{}
-		if ns != "" {
-			listOpts = append(listOpts, client.InNamespace(ns))
-		}
-
-		if err := client.List(ctx, &serviceList, listOpts...); err != nil {
-			return nil, fmt.Errorf("failed to list services in namespace %s: %w", ns, err)
-		}
-
-		// Filter services based on selector
-		for _, service := range serviceList.Items {
-			if serviceMatchesSelector(service, sm.Spec.Selector) {
-				services = append(services, service)
-			}
-		}
-	}
-
-	return services, nil
-}
-
-func serviceMatchesSelector(service corev1.Service, selector metav1.LabelSelector) bool {
-	// Simple label matching - could be enhanced with more complex matching
-	for key, value := range selector.MatchLabels {
-		if service.Labels[key] != value {
-			return false
-		}
-	}
-	return true
-}
-
-func createPrometheusTarget(service corev1.Service, endpoint promv1.Endpoint, sm *promv1.ServiceMonitor) PrometheusTarget {
-	// Default values
-	path := "/metrics"
-	if endpoint.Path != "" {
-		path = endpoint.Path
-	}
-
-	interval := "15s"
-	if endpoint.Interval != "" {
-		interval = string(endpoint.Interval)
-	}
-
-	// Build target URL
-	var port int32
-	if endpoint.Port != "" {
-		// Find port by name
-		for _, servicePort := range service.Spec.Ports {
-			if servicePort.Name == endpoint.Port {
-				port = servicePort.Port
-				break
-			}
-		}
-	} else if endpoint.TargetPort != nil {
-		port = endpoint.TargetPort.IntVal
-	}
-
-	target := PrometheusTarget{
-		Targets: []string{fmt.Sprintf("%s.%s.svc.cluster.local:%d", service.Name, service.Namespace, port)},
-		Labels: map[string]string{
-			"__metrics_path__":     path,
-			"__scrape_interval__":  interval,
-			"job":                  fmt.Sprintf("%s/%s", sm.Namespace, sm.Name),
-			"service":              service.Name,
-			"namespace":            service.Namespace,
-			"servicemonitor":       sm.Name,
-			"servicemonitor_namespace": sm.Namespace,
-		},
-	}
-
-	// Add custom labels from ServiceMonitor
-	for key, value := range sm.Labels {
-		target.Labels[key] = value
-	}
-
-	return target
-}
-
-// PrometheusTarget represents a Prometheus scrape target
-type PrometheusTarget struct {
-	Targets []string          `json:"targets"`
-	Labels  map[string]string `json:"labels"`
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/clustercollector"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -35,7 +34,6 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
 	utilruntime.Must(apiactions.AddToScheme(scheme))
-	utilruntime.Must(promv1.AddToScheme(scheme))
 }
 
 type KubeManagerOptions struct {
