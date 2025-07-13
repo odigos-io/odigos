@@ -73,3 +73,13 @@ rules:
       - webhook-cert
     verbs:
       - delete
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+    resourceNames:
+      - odiglet
+    verbs:
+      - get
+      - list
+      - watch
