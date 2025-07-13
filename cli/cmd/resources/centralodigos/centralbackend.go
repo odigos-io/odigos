@@ -2,6 +2,7 @@ package centralodigos
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -70,6 +71,23 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string) *ap
 											Key: k8sconsts.OdigosOnpremTokenSecretKey,
 										},
 									},
+								},
+								// Keycloak configuration
+								{
+									Name:  "KEYCLOAK_HOST",
+									Value: fmt.Sprintf("http://%s:%d", k8sconsts.KeycloakServiceName, k8sconsts.KeycloakPort),
+								},
+								{
+									Name:  "USE_K8S_SECRETS",
+									Value: "true",
+								},
+								{
+									Name:  "KEYCLOAK_SECRET_NAMESPACE",
+									Value: ns,
+								},
+								{
+									Name:  "KEYCLOAK_SECRET_NAME",
+									Value: k8sconsts.KeycloakSecretName,
 								},
 							},
 							Resources: corev1.ResourceRequirements{
