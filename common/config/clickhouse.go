@@ -44,6 +44,13 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		endpoint = strings.Replace(endpoint, parsedUrl.Host, parsedUrl.Host+":9000", 1)
 	}
 
+	// Append enable_json_type=1 to endpoint query params
+	query := parsedUrl.Query()
+	query.Set("enable_json_type", "1")
+	parsedUrl.RawQuery = query.Encode()
+
+	endpoint = parsedUrl.String()
+
 	username, userExists := dest.GetConfig()[clickhouseUsername]
 
 	exporterName := "clickhouse/clickhouse-" + dest.GetID()
