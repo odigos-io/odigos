@@ -58,12 +58,6 @@ func NewOdigletRole(ns string) *rbacv1.Role {
 				Resources: []string{"collectorsgroups", "collectorsgroups/status"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-			{
-				APIGroups:     []string{""},
-				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosEffectiveConfigName},
-				Verbs:         []string{"get"},
-			},
 		},
 	}
 }

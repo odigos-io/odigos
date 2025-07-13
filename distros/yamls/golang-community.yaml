@@ -11,3 +11,6 @@ spec:
   displayName: Golang Community eBPF Instrumentation
   description: |
     This distribution is for Golang applications using OpenTelemetry eBPF-based SDK and eBPF-based instrumentation libraries from the OpenTelemetry community.
+  runtimeAgent:
+    directoryNames:
+    device: 'instrumentation.odigos.io/generic'
