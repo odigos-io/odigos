@@ -37,9 +37,9 @@ func PrepareNodeForOdigosInstallation(clientset *kubernetes.Clientset, nodeName 
 		return fmt.Errorf("failed to get odigos configuration: %w", err)
 	}
 
-	// If the mount method is not set, or is virtual device, we don't need to add the label to the node
+	// If the mount method is not set (default is virtual device),
+	// or is explicitly set to virtual device, we don't need to add the label to the node
 	if odigosConfiguration.MountMethod == nil || *odigosConfiguration.MountMethod == common.K8sVirtualDeviceMountMethod {
-		fmt.Println("Mount method is not set, or is virtual device, skipping node label addition")
 		return nil
 	}
 
