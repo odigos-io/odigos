@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -199,6 +200,7 @@ func runDeviceManager(clientset *kubernetes.Clientset, otelSdkLsf instrumentatio
 }
 
 func OdigletInitPhase(clientset *kubernetes.Clientset) {
+	odigletInitPhaseStart := time.Now()
 	if err := log.Init(); err != nil {
 		panic(err)
 	}
@@ -228,5 +230,6 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		os.Exit(-1)
 	}
 
+	log.Logger.V(0).Info("Odiglet init phase finished", "duration", time.Since(odigletInitPhaseStart))
 	os.Exit(0)
 }
