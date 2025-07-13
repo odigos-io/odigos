@@ -15,3 +15,11 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - ''
+    resourceNames:
+      - effective-config
+    resources:
+      - configmaps
+    verbs:
+      - get
