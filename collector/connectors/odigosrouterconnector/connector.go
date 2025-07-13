@@ -382,13 +382,13 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 // returning the first match found.
 func getDynamicNameAndKind(attrs pcommon.Map) (name string, kind string) {
 	if v, ok := attrs.Get(string(semconv1_26.K8SDeploymentNameKey)); ok {
-		return v.Str(), "deployment"
+		return v.Str(), "Deployment"
 	}
 	if v, ok := attrs.Get(string(semconv1_26.K8SStatefulSetNameKey)); ok {
-		return v.Str(), "statefulset"
+		return v.Str(), "StatefulSet"
 	}
 	if v, ok := attrs.Get(string(semconv1_26.K8SDaemonSetNameKey)); ok {
-		return v.Str(), "daemonset"
+		return v.Str(), "DaemonSet"
 	}
 	return "", ""
 }
