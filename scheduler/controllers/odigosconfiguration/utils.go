@@ -1,4 +1,4 @@
-package odigosconfig
+package odigosconfiguration
 
 func mergeIgnoredItemLists(l1 []string, l2 []string) []string {
 

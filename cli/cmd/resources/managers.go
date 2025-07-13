@@ -18,7 +18,7 @@ func CreateResourceManagers(client *kube.Client, odigosNs string, odigosTier com
 	// If resource B depends on resource A, then B must be installed after A.
 	resourceManagers := []resourcemanager.ResourceManager{
 		NewOdigosDeploymentResourceManager(client, odigosNs, config, odigosTier, odigosVersion, installationMethod, managerOpts),
-		NewOdigosConfigResourceManager(client, odigosNs, config, odigosTier, managerOpts),
+		NewOdigosConfigurationResourceManager(client, odigosNs, config, odigosTier, managerOpts),
 	}
 
 	if odigosTier != common.CommunityOdigosTier {

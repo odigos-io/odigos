@@ -66,7 +66,7 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 			Namespace: ns,
 		},
 		Rules: []rbacv1.PolicyRule{
-			{ // Needed to react and reconcile odigos-config changes to effective config
+			{ // Needed to react and reconcile odigos-configuration changes to effective config
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
 				Verbs:     []string{"get", "list", "watch"},
