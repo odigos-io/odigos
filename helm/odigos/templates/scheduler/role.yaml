@@ -25,6 +25,15 @@ rules:
       - patch
       - create
       - update
+  # migration from the old odigos-config file - this can be removed once we are confident that the old config have been deleted
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+    resourceNames:
+      - odigos-config
+    verbs:
+      - delete
   - apiGroups:
       - odigos.io
     resources:

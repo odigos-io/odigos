@@ -75,6 +75,7 @@ metadata:
       name: odiglet
 spec:
   containers:
+    - name: deviceplugin
     - name: odiglet
       resources: {}
       securityContext:
@@ -90,6 +91,10 @@ spec:
   serviceAccountName: odiglet
 status:
   containerStatuses:
+    - name: deviceplugin
+      ready: true
+      restartCount: 0
+      started: true
     - name: odiglet
       ready: true
       restartCount: 0
@@ -119,7 +124,7 @@ metadata:
   labels:
     odigos.io/config: '1'
     odigos.io/system-object: "true"
-  name: odigos-config
+  name: odigos-configuration
   namespace: odigos-test
 ---
 apiVersion: apiextensions.k8s.io/v1

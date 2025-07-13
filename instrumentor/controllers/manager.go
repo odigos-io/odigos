@@ -57,6 +57,7 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	odigosEffectiveConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
 	odigosEffectiveConfigSelector := fields.AndSelectors(nsSelector, odigosEffectiveConfigNameSelector)
+
 	instrumentedPodReq, _ := labels.NewRequirement(k8sconsts.OdigosAgentsMetaHashLabel, selection.Exists, []string{})
 	instrumentedPodSelector := labels.NewSelector().Add(*instrumentedPodReq)
 

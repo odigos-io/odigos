@@ -43,13 +43,13 @@ func GetPageLimit(ctx context.Context) (int, error) {
 		return defaultValue, err
 	}
 
-	var odigosConfig common.OdigosConfiguration
-	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig)
+	var odigosConfiguration common.OdigosConfiguration
+	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
 	if err != nil {
 		return defaultValue, err
 	}
 
-	configValue := odigosConfig.UiPaginationLimit
+	configValue := odigosConfiguration.UiPaginationLimit
 	if configValue > 0 {
 		return configValue, nil
 	}

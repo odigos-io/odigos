@@ -42,7 +42,7 @@ func (i ObjectNamePredicate) Generic(e event.GenericEvent) bool {
 
 var _ cr_predicate.Predicate = &ObjectNamePredicate{}
 
-// This predicate will only allow config map events on the "odigos-config" object,
+// This predicate will only allow config map events on the "odigos-configuration" object,
 // and will filter out events for possible other config maps which the reconciler should not handle.
 // Example usage:
 // import odigospredicates "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
