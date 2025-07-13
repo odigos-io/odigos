@@ -64,6 +64,7 @@ const (
 
 	ServiceGraphConnectorName = "servicegraph"
 	ServiceGraphEndpointPort  = 9090
+	ServiceMonitorAutoDetectionProperty = "service-monitor-auto-detection"
 )
 
 // Odigos config properties

@@ -15,15 +15,19 @@ import (
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"github.com/odigos-io/odigos/autoscaler/controllers"
+	"go.opentelemetry.io/otel/semconv/v1.26.0"
+	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -38,7 +42,7 @@ func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigos
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
 
-	desired, err := getDesiredConfigMap(sources, signals, processors, datacollection, scheme)
+	desired, err := getDesiredConfigMap(ctx, c, sources, signals, processors, datacollection, scheme)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
@@ -95,9 +99,9 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 	return desired, nil
 }
 
-func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
+func getDesiredConfigMap(ctx context.Context, c client.Client, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
 	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme) (*v1.ConfigMap, error) {
-	cmData, err := calculateConfigMapData(datacollection, sources, signals, processors)
+	cmData, err := calculateConfigMapData(ctx, c, datacollection, sources, signals, processors)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +191,7 @@ func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
 	return nil
 }
 
-func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal,
+func calculateConfigMapData(ctx context.Context, c client.Client, nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal,
 	processors []*odigosv1.Processor) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
@@ -349,6 +353,12 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 				},
 			},
 		},
+	}
+
+	// Add ServiceMonitor scraping configuration if enabled
+	if err := addServiceMonitorReceiver(ctx, c, &cfg); err != nil {
+		log.Log.V(0).Error(err, "Failed to add ServiceMonitor receiver")
+		// Don't fail the entire configuration if ServiceMonitor setup fails
 	}
 
 	collectLogs := slices.Contains(signals, odigoscommon.LogsObservabilitySignal)
@@ -585,4 +595,116 @@ func getFileLogPipelineProcessors() []string {
 
 func getCommonProcessors() []string {
 	return []string{"resource", "resourcedetection", "odigostrafficmetrics"}
+}
+
+func addServiceMonitorReceiver(ctx context.Context, c client.Client, cfg *config.Config) error {
+	// Check if ServiceMonitor auto-detection is enabled
+	odigosNs := env.GetCurrentNamespace()
+	configMap := &v1.ConfigMap{}
+	err := c.Get(ctx, types.NamespacedName{
+		Name:      consts.OdigosConfigurationName,
+		Namespace: odigosNs,
+	}, configMap)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// Configuration not found, ServiceMonitor auto-detection disabled
+			return nil
+		}
+		return err
+	}
+
+	// Parse the configuration
+	configData, ok := configMap.Data[consts.OdigosConfigurationFileName]
+	if !ok {
+		return nil
+	}
+
+	var odigosConfig common.OdigosConfiguration
+	if err := yaml.Unmarshal([]byte(configData), &odigosConfig); err != nil {
+		return err
+	}
+
+	// Check if ServiceMonitor auto-detection is enabled
+	if odigosConfig.ServiceMonitorAutoDetectionEnabled == nil || !*odigosConfig.ServiceMonitorAutoDetectionEnabled {
+		return nil
+	}
+
+	// Get ServiceMonitor targets
+	serviceMonitorTargets, err := controllers.GetServiceMonitorTargets(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	if len(serviceMonitorTargets) == 0 {
+		return nil
+	}
+
+	// Build Prometheus scrape configs from ServiceMonitor targets
+	scrapeConfigs := make([]config.GenericMap, 0, len(serviceMonitorTargets))
+	for _, target := range serviceMonitorTargets {
+		if len(target.Targets) == 0 {
+			continue
+		}
+
+		scrapeConfig := config.GenericMap{
+			"job_name":        target.Labels["job"],
+			"scrape_interval": target.Labels["__scrape_interval__"],
+			"metrics_path":    target.Labels["__metrics_path__"],
+			"static_configs": []config.GenericMap{
+				{
+					"targets": target.Targets,
+					"labels":  target.Labels,
+				},
+			},
+		}
+
+		// Add relabeling configs to preserve ServiceMonitor labels
+		relabelConfigs := []config.GenericMap{
+			{
+				"source_labels": []string{"__address__"},
+				"target_label":  "instance",
+			},
+			{
+				"target_label": "job",
+				"replacement":  target.Labels["job"],
+			},
+		}
+
+		// Add custom labels as static labels
+		for key, value := range target.Labels {
+			if !strings.HasPrefix(key, "__") && key != "job" && key != "instance" {
+				relabelConfigs = append(relabelConfigs, config.GenericMap{
+					"target_label": key,
+					"replacement":  value,
+				})
+			}
+		}
+
+		scrapeConfig["relabel_configs"] = relabelConfigs
+		scrapeConfigs = append(scrapeConfigs, scrapeConfig)
+	}
+
+	// Add ServiceMonitor Prometheus receiver
+	if len(scrapeConfigs) > 0 {
+		cfg.Receivers["prometheus/servicemonitor"] = config.GenericMap{
+			"config": config.GenericMap{
+				"scrape_configs": scrapeConfigs,
+			},
+		}
+
+		// Add ServiceMonitor metrics to the metrics pipeline
+		if metricsPipeline, exists := cfg.Service.Pipelines["metrics"]; exists {
+			metricsPipeline.Receivers = append(metricsPipeline.Receivers, "prometheus/servicemonitor")
+			cfg.Service.Pipelines["metrics"] = metricsPipeline
+		} else {
+			// Create metrics pipeline if it doesn't exist
+			cfg.Service.Pipelines["metrics"] = config.Pipeline{
+				Receivers:  []string{"prometheus/servicemonitor"},
+				Processors: getAgentPipelineCommonProcessors(),
+				Exporters:  []string{"otlp/gateway"},
+			}
+		}
+	}
+
+	return nil
 }

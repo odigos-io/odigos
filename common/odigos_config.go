@@ -1,5 +1,7 @@
 package common
 
+import "gopkg.in/yaml.v3"
+
 type ProfileName string
 
 // "normal" is deprecated. Kept here in the enum for backwards compatibility with operator CRD.
@@ -170,4 +172,10 @@ type OdigosConfiguration struct {
 	RollbackStabilityWindow          string                         `json:"rollbackStabilityWindow,omitempty"`
 	Oidc                             *OidcConfiguration             `json:"oidc,omitempty"`
 	OdigletHealthProbeBindPort       int                            `json:"odigletHealthProbeBindPort,omitempty"`
+	ServiceMonitorAutoDetectionEnabled *bool                        `json:"serviceMonitorAutoDetectionEnabled,omitempty"`
+}
+
+// UnmarshalYAML unmarshals YAML data into the provided interface
+func UnmarshalYAML(data []byte, v interface{}) error {
+	return yaml.Unmarshal(data, v)
 }

@@ -41,3 +41,11 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - servicemonitors
+    verbs:
+      - get
+      - list
+      - watch

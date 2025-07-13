@@ -59,6 +59,7 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the client secret of the OIDC application.
 	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
   	- "%s": Enable or disable the service graph feature [default: false].
+	- "%s": Enable or disable ServiceMonitor auto-detection [default: false].
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -89,6 +90,7 @@ var configCmd = &cobra.Command{
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.ServiceGraphDisabledProperty,
+		consts.ServiceMonitorAutoDetectionProperty,
 	),
 }
 
@@ -192,7 +194,8 @@ func validatePropertyValue(property string, value []string) error {
 		consts.OidcClientIdProperty,
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
-		consts.ServiceGraphDisabledProperty:
+		consts.ServiceGraphDisabledProperty,
+		consts.ServiceMonitorAutoDetectionProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -207,7 +210,8 @@ func validatePropertyValue(property string, value []string) error {
 			consts.KarpenterEnabledProperty,
 			consts.RollbackDisabledProperty,
 			consts.AutomaticRolloutDisabledProperty,
-			consts.ServiceGraphDisabledProperty:
+			consts.ServiceGraphDisabledProperty,
+			consts.ServiceMonitorAutoDetectionProperty:
 			_, err := strconv.ParseBool(value[0])
 			if err != nil {
 				return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
@@ -412,6 +416,10 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 	case consts.OdigletHealthProbeBindPortProperty:
 		intValue, _ := strconv.Atoi(value[0])
 		config.OdigletHealthProbeBindPort = intValue
+
+	case consts.ServiceMonitorAutoDetectionProperty:
+		boolValue, _ := strconv.ParseBool(value[0])
+		config.ServiceMonitorAutoDetectionEnabled = &boolValue
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
