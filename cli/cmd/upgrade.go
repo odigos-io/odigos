@@ -37,7 +37,7 @@ and apply any required migrations and adaptations.`,
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
-			fmt.Println("No Odigos installation found in cluster to upgrade")
+			fmt.Println("No Odigos installation found in cluster to upgrade", err)
 			os.Exit(1)
 		}
 

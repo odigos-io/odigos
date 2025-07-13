@@ -14,6 +14,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
 func DetermineNodeOdigletInstalledLabelByTier() string {
@@ -30,6 +31,17 @@ func DetermineNodeOdigletInstalledLabelByTier() string {
 
 func PrepareNodeForOdigosInstallation(clientset *kubernetes.Clientset, nodeName string) error {
 	ctx := context.Background()
+
+	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfigurationUsingClientset(ctx, clientset)
+	if err != nil {
+		return fmt.Errorf("failed to get odigos configuration: %w", err)
+	}
+
+	// If the mount method is not set, or is virtual device, we don't need to add the label to the node
+	if odigosConfiguration.MountMethod == nil || *odigosConfiguration.MountMethod == common.K8sVirtualDeviceMountMethod {
+		fmt.Println("Mount method is not set, or is virtual device, skipping node label addition")
+		return nil
+	}
 
 	// Determine Odigos Installed label [OSS/Enterprise]
 	labelKey := DetermineNodeOdigletInstalledLabelByTier()
