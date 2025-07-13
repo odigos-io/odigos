@@ -9,12 +9,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type odigosConfigController struct {
+type odigosConfigurationController struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *odigosConfigController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
+func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	err := sync(ctx, r.Client)
 	return utils.K8SNoEffectiveConfigErrorHandler(err)
 }

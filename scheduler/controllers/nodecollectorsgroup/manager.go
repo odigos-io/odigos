@@ -24,9 +24,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.ConfigMap{}).
-		Named("nodecollectorgroup-odigosconfig").
+		Named("nodecollectorgroup-odigosconfiguration").
 		WithEventFilter(&odigospredicates.OdigosEffectiveConfigMapPredicate).
-		Complete(&odigosConfigController{
+		Complete(&odigosConfigurationController{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})

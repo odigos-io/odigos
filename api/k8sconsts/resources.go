@@ -22,4 +22,8 @@ const (
 	// for resources auto created by a profile, this annotation will record
 	// the name of the profile that created them.
 	OdigosProfileAnnotation = "odigos.io/profile"
+
+	// This label is used to mark resources that are managed by Helm.
+	AppManagedByHelmLabel = "app.kubernetes.io/managed-by"
+	AppManagedByHelmValue = "Helm"
 )

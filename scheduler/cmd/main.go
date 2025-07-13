@@ -35,9 +35,11 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/configmaps"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/dynamic"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -48,7 +50,7 @@ import (
 	"github.com/odigos-io/odigos/scheduler/clusterinfo"
 	"github.com/odigos-io/odigos/scheduler/controllers/clustercollectorsgroup"
 	"github.com/odigos-io/odigos/scheduler/controllers/nodecollectorsgroup"
-	"github.com/odigos-io/odigos/scheduler/controllers/odigosconfig"
+	"github.com/odigos-io/odigos/scheduler/controllers/odigosconfiguration"
 	"github.com/odigos-io/odigos/scheduler/controllers/odigospro"
 	//+kubebuilder:scaffold:imports
 )
@@ -179,9 +181,9 @@ func main() {
 		setupLog.Error(err, "unable to create controllers for node collectors group")
 		os.Exit(1)
 	}
-	err = odigosconfig.SetupWithManager(mgr, tier, odigosVersion, dyanmicClient)
+	err = odigosconfiguration.SetupWithManager(mgr, tier, odigosVersion, dyanmicClient)
 	if err != nil {
-		setupLog.Error(err, "unable to create controllers for odigos config")
+		setupLog.Error(err, "unable to create controllers for odigos configuration")
 		os.Exit(1)
 	}
 	err = odigospro.SetupWithManager(mgr)
@@ -198,6 +200,12 @@ func main() {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
+
+	// remove the legacy configmap if it exists
+	mgr.Add(&configmaps.ConfigMapDeleteMigration{Client: mgr.GetClient(), Logger: setupLog, ConfigMap: types.NamespacedName{
+		Namespace: env.GetCurrentNamespace(),
+		Name:      consts.OdigosLegacyConfigName,
+	}})
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

@@ -5,19 +5,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros/distro"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"github.com/odigos-io/odigos/k8sutils/pkg/metrics"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
-	"github.com/odigos-io/odigos/odiglet/pkg/env"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
@@ -32,12 +30,11 @@ import (
 )
 
 type Odiglet struct {
-	clientset                *kubernetes.Clientset
-	mgr                      controllerruntime.Manager
-	ebpfManager              commonInstrumentation.Manager
-	configUpdates            chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	deviceInjectionCallbacks instrumentation.OtelSdksLsf
-	criClient                *criwrapper.CriClient
+	clientset     *kubernetes.Clientset
+	mgr           controllerruntime.Manager
+	ebpfManager   commonInstrumentation.Manager
+	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	criClient     *criwrapper.CriClient
 }
 
 const (
@@ -45,7 +42,7 @@ const (
 )
 
 // New creates a new Odiglet instance.
-func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentation.OtelSdksLsf, instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (*Odiglet, error) {
+func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (*Odiglet, error) {
 	err := feature.Setup()
 	if err != nil {
 		return nil, err
@@ -95,18 +92,16 @@ func New(clientset *kubernetes.Clientset, deviceInjectionCallbacks instrumentati
 	}
 
 	return &Odiglet{
-		clientset:                clientset,
-		mgr:                      mgr,
-		ebpfManager:              ebpfManager,
-		configUpdates:            configUpdates,
-		deviceInjectionCallbacks: deviceInjectionCallbacks,
-		criClient:                &criWrapper,
+		clientset:     clientset,
+		mgr:           mgr,
+		ebpfManager:   ebpfManager,
+		configUpdates: configUpdates,
+		criClient:     &criWrapper,
 	}, nil
 }
 
 // Run starts the Odiglet components and blocks until the context is cancelled, or a critical error occurs.
 func (o *Odiglet) Run(ctx context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
 	g, groupCtx := errgroup.WithContext(ctx)
 
 	if err := o.criClient.Connect(ctx); err != nil {
@@ -127,20 +122,6 @@ func (o *Odiglet) Run(ctx context.Context) {
 		// and we can run the rest of the components
 		return nil
 	})
-
-	// Start device manager
-	// the device manager library doesn't support passing a context,
-	// however, internally it uses a context to cancel the device manager once SIGTERM or SIGINT is received.
-	// We run it outside of the error group to avoid blocking on Wait() in case of a fatal error.
-	go func() {
-		err := runDeviceManager(o.clientset, o.deviceInjectionCallbacks)
-		if err != nil {
-			log.Logger.Error(err, "Device manager exited with error")
-			cancel()
-		} else {
-			log.Logger.V(0).Info("Device manager exited")
-		}
-	}()
 
 	g.Go(func() error {
 		err := o.ebpfManager.Run(groupCtx)
@@ -181,21 +162,6 @@ func (o *Odiglet) Run(ctx context.Context) {
 	if err != nil {
 		log.Logger.Error(err, "Odiglet exited with error")
 	}
-}
-
-func runDeviceManager(clientset *kubernetes.Clientset, otelSdkLsf instrumentation.OtelSdksLsf) error {
-	log.Logger.V(0).Info("Starting device manager")
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	lister, err := instrumentation.NewLister(ctx, clientset, otelSdkLsf)
-	if err != nil {
-		return fmt.Errorf("failed to create device manager lister %w", err)
-	}
-
-	manager := dpm.NewManager(lister, log.Logger)
-	manager.Run()
-	return nil
 }
 
 func OdigletInitPhase(clientset *kubernetes.Clientset) {

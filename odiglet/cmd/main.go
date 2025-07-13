@@ -14,11 +14,8 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
-	"github.com/odigos-io/odigos/odiglet/pkg/env"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/instrumentlang"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -73,7 +70,7 @@ func main() {
 		OdigletHealthProbeBindPort: healthProbeBindPort,
 	}
 
-	o, err := odiglet.New(clientset, deviceInjectionCallbacks(), instrumentationManagerOptions)
+	o, err := odiglet.New(clientset, instrumentationManagerOptions)
 	if err != nil {
 		log.Logger.Error(err, "Failed to initialize odiglet")
 		os.Exit(1)
@@ -83,29 +80,6 @@ func main() {
 	o.Run(ctx)
 
 	log.Logger.V(0).Info("odiglet exiting")
-}
-
-func deviceInjectionCallbacks() instrumentation.OtelSdksLsf {
-	return map[common.ProgrammingLanguage]map[common.OtelSdk]instrumentation.LangSpecificFunc{
-		common.GoProgrammingLanguage: {
-			common.OtelSdkEbpfCommunity: instrumentlang.Go,
-		},
-		common.JavaProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.Java,
-		},
-		common.PythonProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.Python,
-		},
-		common.JavascriptProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.NodeJS,
-		},
-		common.DotNetProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.DotNet,
-		},
-		common.NginxProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.Nginx,
-		},
-	}
 }
 
 func ebpfInstrumentationFactories() map[string]commonInstrumentation.Factory {

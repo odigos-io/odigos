@@ -30,7 +30,7 @@ RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentele
 FROM scratch AS nodejs-agent-src
 COPY --from=nodejs-agent-clone /src/opentelemetry-node /
 
-# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for 
+# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for
 # being dependency of the native-community agent.
 FROM node:18 AS nodejs-agent-build
 # Run yarn install to generate the production node_modules directory
@@ -136,6 +136,24 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make build-odiglet
 RUN make licenses
 
+# Build deviceplugin binary
+WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
+COPY deviceplugin/ .
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./cmd
+
+# Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.24
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        GRPC_ARCH="arm64"; \
+    else \
+        GRPC_ARCH="amd64"; \
+    fi && \
+    wget -O /tmp/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-${GRPC_ARCH} && \
+    chmod +x /tmp/grpc_health_probe
+
+
 WORKDIR /instrumentations
 
 # Java
@@ -190,6 +208,8 @@ LABEL "description"=$DESCRIPTION
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
+COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
+COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 CMD ["/root/odiglet"]

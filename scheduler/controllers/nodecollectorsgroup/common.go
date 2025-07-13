@@ -41,7 +41,7 @@ const (
 	defaultLimitCPUm = 500
 )
 
-func getResourceSettings(odigosConfig common.OdigosConfiguration) odigosv1.CollectorsGroupResourcesSettings {
+func getResourceSettings(odigosConfiguration common.OdigosConfiguration) odigosv1.CollectorsGroupResourcesSettings {
 	// memory request is expensive on daemonsets since it will consume this memory
 	// on each node in the cluster. setting to 256, but allowing memory to spike higher
 	// to consume more available memory on the node.
@@ -58,7 +58,7 @@ func getResourceSettings(odigosConfig common.OdigosConfiguration) odigosv1.Colle
 	// - limit is set way above request: in case of memory spike, collector will use extra memory available on the node to buffer data, but might get killed by OOM killer if this memory is not available.
 	// currently choosing 512MiB as a balance (200MiB guaranteed for heap, and the rest ~300MiB of buffer from node before start dropping).
 
-	nodeCollectorConfig := odigosConfig.CollectorNode
+	nodeCollectorConfig := odigosConfiguration.CollectorNode
 
 	memoryRequestMiB := defaultRequestMemoryMiB
 	if nodeCollectorConfig != nil && nodeCollectorConfig.RequestMemoryMiB > 0 {
@@ -103,16 +103,16 @@ func getResourceSettings(odigosConfig common.OdigosConfiguration) odigosv1.Colle
 	}
 }
 
-func newNodeCollectorGroup(odigosConfig common.OdigosConfiguration) *odigosv1.CollectorsGroup {
+func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration) *odigosv1.CollectorsGroup {
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
-	if odigosConfig.CollectorNode != nil && odigosConfig.CollectorNode.CollectorOwnMetricsPort != 0 {
-		ownMetricsPort = odigosConfig.CollectorNode.CollectorOwnMetricsPort
+	if odigosConfiguration.CollectorNode != nil && odigosConfiguration.CollectorNode.CollectorOwnMetricsPort != 0 {
+		ownMetricsPort = odigosConfiguration.CollectorNode.CollectorOwnMetricsPort
 	}
 
 	k8sNodeLogsDirectory := ""
-	if odigosConfig.CollectorNode != nil && odigosConfig.CollectorNode.K8sNodeLogsDirectory != "" {
-		k8sNodeLogsDirectory = odigosConfig.CollectorNode.K8sNodeLogsDirectory
+	if odigosConfiguration.CollectorNode != nil && odigosConfiguration.CollectorNode.K8sNodeLogsDirectory != "" {
+		k8sNodeLogsDirectory = odigosConfiguration.CollectorNode.K8sNodeLogsDirectory
 	}
 
 	return &odigosv1.CollectorsGroup{
@@ -128,7 +128,7 @@ func newNodeCollectorGroup(odigosConfig common.OdigosConfiguration) *odigosv1.Co
 			Role:                    odigosv1.CollectorsGroupRoleNodeCollector,
 			CollectorOwnMetricsPort: ownMetricsPort,
 			K8sNodeLogsDirectory:    k8sNodeLogsDirectory,
-			ResourcesSettings:       getResourceSettings(odigosConfig),
+			ResourcesSettings:       getResourceSettings(odigosConfiguration),
 		},
 	}
 }
@@ -154,14 +154,14 @@ func sync(ctx context.Context, c client.Client) error {
 		return client.IgnoreNotFound(err)
 	}
 
-	odigosConfig, err := utils.GetCurrentOdigosConfig(ctx, c)
+	odigosConfiguration, err := utils.GetCurrentOdigosConfiguration(ctx, c)
 	if err != nil {
 		return err
 	}
 
 	clusterCollectorReady := clusterCollectorGroup.Status.Ready
 	if clusterCollectorReady {
-		return utils.ApplyCollectorGroup(ctx, c, newNodeCollectorGroup(odigosConfig))
+		return utils.ApplyCollectorGroup(ctx, c, newNodeCollectorGroup(odigosConfiguration))
 	}
 
 	return nil
