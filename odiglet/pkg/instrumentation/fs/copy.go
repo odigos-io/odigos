@@ -15,17 +15,17 @@ import (
 
 const (
 	// we don't want to overload the CPU so we limit to small number of goroutines
-	maxWorkers = 4
+	workersPerCPU = 4
 
 	// 32 KB buffer for I/O operations
 	bufferSize = 32 * 1024
 )
 
-// getNumberOfWorkers returns the number of workers to use for copying files.
-// It is based on GOMAXPROCS, which reflects the CPU limit set for the init container.
-// The function returns the smaller of maxWorkers and GOMAXPROCS, but always at least 1.
+// getNumberOfWorkers determines the number of concurrent workers to use for copying files.
+// It is based on GOMAXPROCS, which reflects the effective CPU limit set for the init container.
+// The returned value is calculated as GOMAXPROCS * workersPerCPU, where workersPerCPU is a heuristic multiplier representing the desired concurrency level per CPU unit.
 func getNumberOfWorkers() int {
-	return min(maxWorkers, max(1, runtime.GOMAXPROCS(0)))
+	return max(1, runtime.GOMAXPROCS(0)*workersPerCPU)
 }
 
 func copyDirectories(srcDir string, destDir string) error {
