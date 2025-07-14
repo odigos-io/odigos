@@ -5,8 +5,6 @@ on:
   pull_request:
     branches:
       - main
-      - stable
-      - greatwall
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -122,14 +120,16 @@ jobs:
           cluster_name: kind
           config: tests/common/apply/kind-config.yaml
 
-      - name: Download and Load Docker Images to Kind
+      - name: Download Odigos Images
         uses: actions/download-artifact@v4
         with:
           name: odigos-images
-      - run: |
+      
+
+      - name: Load Odigos Images to Kind Cluster
+        run: |
           docker load -i odigos-images.tar
           docker load -i cli-image.tar
-          TAG=e2e-test make load-to-kind
 
       - name: Download CLI binary
         uses: actions/download-artifact@v4
