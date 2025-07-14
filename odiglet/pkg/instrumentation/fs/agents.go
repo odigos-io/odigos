@@ -39,7 +39,7 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/nodejs-ebpf/build/Release/.deps/Release/obj.target/dtrace-injector-native.node.d": {},
 		"/var/odigos/java-ebpf/tracing_probes.so":                                                      {},
 		"/var/odigos/java-ext-ebpf/end_span_usdt.so":                                                   {},
-		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
+		"python-ebpf/pythonUSDT.abi3.so":                                                               {},
 	}
 	empty, err := isDirEmptyOrNotExist(k8sconsts.OdigosAgentsDirectory)
 	if err != nil {
