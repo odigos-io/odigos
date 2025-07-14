@@ -56,7 +56,7 @@ spec:
               # cleanup any existing installation of odigos the might be left over from previous runs while developing
               ./odigos uninstall --yes
               # install odigos from latest release.
-              # use github container registry to avoid pulling images from our own registry and speed up the installation.
+              # use github container registry to pull images fast and free in CI
               ./odigos install --namespace odigos-test --image-prefix ghcr.io/odigos-io
         - assert:
             timeout: 3m
