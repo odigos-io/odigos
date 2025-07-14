@@ -55,8 +55,9 @@ spec:
 
               # cleanup any existing installation of odigos the might be left over from previous runs while developing
               ./odigos uninstall --yes
-              # Run the Odigos CLI installation
-              ./odigos install --namespace odigos-test
+              # install odigos from latest release.
+              # use github container registry to avoid pulling images from our own registry and speed up the installation.
+              ./odigos install --namespace odigos-test --image-prefix ghcr.io/odigos-io
         - assert:
             timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
