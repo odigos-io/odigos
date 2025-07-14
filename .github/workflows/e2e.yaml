@@ -67,9 +67,7 @@ jobs:
     needs:
       - build-odigos-images
       - build-cli
-    # workload-lifecycle test scenario requires more resources, so we use a different instance type
-    # all other test scenarios use the default instance type which is free and fast
-    runs-on: ${{ matrix.test-scenario == 'workload-lifecycle' && 'warp-ubuntu-latest-x64-8x-spot' || 'ubuntu-latest' }}
+    runs-on: warp-ubuntu-latest-x64-8x-spot
     strategy:
       fail-fast: false
       matrix:
@@ -97,15 +95,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '~1.24'
-          check-latest: true
-          cache: true
-          cache-dependency-path: |
-            **/go.sum
-
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
@@ -130,6 +119,7 @@ jobs:
       - name: Load Odigos Images to Kind Cluster
         run: |
           kind load image-archive odigos-images.tar
+          kind load image-archive cli-image.tar
 
       - name: Download CLI binary
         uses: actions/download-artifact@v4
