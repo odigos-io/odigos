@@ -115,6 +115,10 @@ func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.
 		path := field.NewPath("spec").Child("piiMasking")
 		fields[path] = action.Spec.PiiMasking
 	}
+	if action.Spec.K8sAttributes != nil {
+		path := field.NewPath("spec").Child("k8sAttributes")
+		fields[path] = action.Spec.K8sAttributes
+	}
 
 	if len(fields) == 0 {
 		allErrs = append(allErrs, field.Required(field.NewPath("spec"), fmt.Sprintf("At least one of (%s) must be set", strings.Join(validActionConfigNames, ", "))))

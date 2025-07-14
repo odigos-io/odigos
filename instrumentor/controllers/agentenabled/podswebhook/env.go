@@ -129,8 +129,8 @@ func InjectSignalsAsStaticOtelEnvVars(existingEnvNames EnvVarNamesMap, container
 	return existingEnvNames
 }
 
-func InjectUserEnvForLang(odigosConfig *common.OdigosConfiguration, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig) {
-	languageSpecificEnvs := odigosConfig.UserInstrumentationEnvs.Languages
+func InjectUserEnvForLang(odigosConfiguration *common.OdigosConfiguration, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig) {
+	languageSpecificEnvs := odigosConfiguration.UserInstrumentationEnvs.Languages
 
 	// Check for conatiner language and inject env vars if they not exists
 	for _, containerDetailes := range ic.Status.RuntimeDetailsByContainer {

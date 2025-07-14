@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/report"
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"

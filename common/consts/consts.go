@@ -5,11 +5,13 @@ import (
 )
 
 const (
-	CurrentNamespaceEnvVar      = "CURRENT_NS"
-	OdigosVersionEnvVarName     = "ODIGOS_VERSION"
-	OdigosTierEnvVarName        = "ODIGOS_TIER"
-	DefaultOdigosNamespace      = "odigos-system"
-	OdigosConfigurationName     = "odigos-config"
+	CurrentNamespaceEnvVar  = "CURRENT_NS"
+	OdigosVersionEnvVarName = "ODIGOS_VERSION"
+	OdigosTierEnvVarName    = "ODIGOS_TIER"
+	DefaultOdigosNamespace  = "odigos-system"
+	OdigosConfigurationName = "odigos-configuration"
+	// Deprecated: only used for migrations
+	OdigosLegacyConfigName      = "odigos-config"
 	OdigosEffectiveConfigName   = "effective-config"
 	OdigosConfigurationFileName = "config.yaml"
 	OTLPPort                    = 4317
@@ -126,6 +128,7 @@ const (
 const (
 	GenericBatchProcessorConfigKey = "batch/generic-batch-processor"
 	SmallBatchesProcessor          = "batch/small-batches"
+	MemoryLimiterExtensionKey      = "memory_limiter"
 )
 
 // Auto rollback related consts
