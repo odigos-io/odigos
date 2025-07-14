@@ -129,8 +129,10 @@ spec:
     - name: Upgrade to HEAD version with the current compiled cli
       try:
         - script:
-            content: ../../../cli/odigos upgrade --version e2e-test --skip-version-check # since the tag e2e-test is not a valid semantic version, we need to bypass it with --skip-version-check
-            timeout: 3m
+            content: |
+              ../../../cli/odigos upgrade --version e2e-test --skip-version-check # since the tag e2e-test is not a valid semantic version, we need to bypass it with --skip-version-check
+              # unset the image prefix, since the e2e-test tag uploaded to the kind cluster is on this imgae prefix
+              ../../../cli/odigos config set image-prefix registry.odigos.io
         - assert:
             file: ../../common/assert/odigos-upgraded.yaml
             timeout: 3m
