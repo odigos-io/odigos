@@ -57,7 +57,6 @@ func CopyAgentsDirectoryToHost() error {
 		log.Logger.Info("Odigos agents directory is not empty, syncing files with rsync")
 		updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
 
-		fmt.Println("updatedFilesToKeepMap", updatedFilesToKeepMap)
 		if err != nil {
 			log.Logger.Error(err, "Error getting changed files")
 		}
@@ -286,7 +285,6 @@ func writeKeeplist(file string, keeps map[string]struct{}) error {
 		// Convert absolute path to relative path for rsync exclude pattern
 		relativePath := strings.TrimPrefix(hostPath, "/var/odigos/")
 		fmt.Fprintln(w, relativePath)
-		fmt.Println("hostPath", relativePath)
 	}
 	return w.Flush()
 }

@@ -31,13 +31,7 @@ func getNumberOfWorkers() int {
 func copyDirectories(srcDir string, destDir string) error {
 	start := time.Now()
 
-	hostContainEbpfDir := HostContainsEbpfDir(destDir)
-
-	// If the host directory NOT contains ebpf directories we copy all files
-	CopyCFiles := !hostContainEbpfDir
-	log.Logger.V(0).Info("Copying instrumentation files to host", "srcDir", srcDir, "destDir", destDir, "CopyCFiles", CopyCFiles)
-
-	files, err := getFiles(srcDir, CopyCFiles)
+	files, err := getFiles(srcDir)
 	if err != nil {
 		return err
 	}
@@ -117,7 +111,7 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
-func getFiles(dir string, CopyCFiles bool) ([]string, error) {
+func getFiles(dir string) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
