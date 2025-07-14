@@ -57,6 +57,8 @@ func CopyAgentsDirectoryToHost() error {
 	} else {
 		log.Logger.Info("Odigos agents directory is not empty, syncing files with rsync")
 		updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
+
+		fmt.Println("updatedFilesToKeepMap", updatedFilesToKeepMap)
 		if err != nil {
 			log.Logger.Error(err, "Error getting changed files")
 		}
@@ -318,6 +320,7 @@ func writeKeeplist(file string, keeps map[string]struct{}) error {
 	w := bufio.NewWriter(f)
 	for hostPath := range keeps {
 		fmt.Fprintln(w, hostPath)
+		fmt.Println("hostPath", hostPath)
 	}
 	return w.Flush()
 }
