@@ -108,8 +108,12 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
+	karpenterDisabled := odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled
+	mountIsVirtualDevice := odigosConfiguration.MountMethod == nil || *odigosConfiguration.MountMethod == common.K8sVirtualDeviceMountMethod
+
 	// Add odiglet installed node-affinity to the pod, for non Karpenter installations
-	if odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled {
+	// and if the mount method is not virtual device (which is the default)
+	if karpenterDisabled && !mountIsVirtualDevice {
 		podutils.AddOdigletInstalledAffinity(pod)
 	}
 
