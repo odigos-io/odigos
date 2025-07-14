@@ -66,7 +66,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
@@ -77,7 +77,8 @@ jobs:
           python sync-dest-doc.py
       - name: Check for changes in Destinations docs
         run: |
-          if [[ -n $(git status --porcelain) ]]; then
+          # Exclude mint.json from the git status check (the script applies a formatting change, which is not relevant to the actual docs generation)
+          if [[ -n $(git status --porcelain -- . ':!docs/mint.json') ]]; then
             git diff
             echo "Destinations docs need to be updated. Please run 'cd docs && python sync-dest-doc.py', then commit the changes."
             exit 1
@@ -91,7 +92,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
