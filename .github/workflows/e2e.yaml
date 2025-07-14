@@ -121,7 +121,6 @@ jobs:
       - name: Load Odigos Images to Kind Cluster
         run: |
           kind load image-archive odigos-images.tar
-          kind load image-archive cli-image.tar
 
       - name: Download CLI binary
         uses: actions/download-artifact@v4
