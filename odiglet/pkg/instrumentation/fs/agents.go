@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/sha256"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"regexp"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
@@ -23,14 +25,12 @@ const (
 	chrootDir      = "/host"
 	semanagePath   = "/sbin/semanage"
 	restoreconPath = "/sbin/restorecon"
+	keeplistPath   = "/var/odigos/keeplist"
 )
 
 func CopyAgentsDirectoryToHost() error {
-	// remove the current content of /var/odigos
-	// as we want a fresh copy of instrumentation agents with no files leftover from previous odigos versions.
-	// we cannot remove /var/odigos itself: "unlinkat /var/odigos: device or resource busy"
-	// so we will just remove it's content
 
+	startTime := time.Now()
 	// We kept the following list of files to avoid removing instrumentations that are already loaded in the process memory
 	filesToKeep := map[string]struct{}{
 		"/var/odigos/nodejs-ebpf/build/Release/dtrace-injector-native.node":                            {},
@@ -41,29 +41,35 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/java-ext-ebpf/end_span_usdt.so":                                                   {},
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
 	}
-
-	// Detect files that haven't changed (same size)
-	unchangedFiles, err := findUnchangedFiles(containerDir, k8sconsts.OdigosAgentsDirectory)
+	empty, err := isDirEmptyOrNotExist(k8sconsts.OdigosAgentsDirectory)
 	if err != nil {
-		log.Logger.Error(err, "Error finding unchanged files")
-		return err
+		return fmt.Errorf("failed to inspect destination: %w", err)
 	}
 
-	updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
-	if err != nil {
-		log.Logger.Error(err, "Error getting changed files")
-	}
+	if empty {
+		// if empty, we can just copy the directory to the host
+		log.Logger.Info("Odigos agents directory is empty, copying agents directory to host")
+		err = copyDirectories(containerDir, k8sconsts.OdigosAgentsDirectory)
+		if err != nil {
+			log.Logger.Error(err, "Error copying instrumentation directory to host")
+			return err
+		}
+	} else {
+		log.Logger.Info("Odigos agents directory is not empty, syncing files with rsync")
+		updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
+		if err != nil {
+			log.Logger.Error(err, "Error getting changed files")
+		}
 
-	err = removeFilesInDir(k8sconsts.OdigosAgentsDirectory, unchangedFiles, updatedFilesToKeepMap)
-	if err != nil {
-		log.Logger.Error(err, "Error removing instrumentation directory from host")
-		return err
-	}
+		if err := writeKeeplist(keeplistPath, updatedFilesToKeepMap); err != nil {
+			log.Logger.Error(err, "failed to write keeplist")
+			return err
+		}
 
-	err = copyDirectories(containerDir, k8sconsts.OdigosAgentsDirectory, unchangedFiles, updatedFilesToKeepMap)
-	if err != nil {
-		log.Logger.Error(err, "Error copying instrumentation directory to host")
-		return err
+		if err := runSingleRsyncSync(containerDir, k8sconsts.OdigosAgentsDirectory, keeplistPath); err != nil {
+			log.Logger.Error(err, "rsync failed")
+			return err
+		}
 	}
 
 	// temporary workaround for dotnet.
@@ -79,6 +85,8 @@ func CopyAgentsDirectoryToHost() error {
 		log.Logger.Error(err, "Error creating dotnet deprecated directories")
 		return err
 	}
+
+	log.Logger.Info("Odigos agents directory copied to host", "elapsed", time.Since(startTime))
 
 	return nil
 }
@@ -275,4 +283,71 @@ func findUnchangedFiles(srcDir, destDir string) (map[string]struct{}, error) {
 	})
 
 	return unchanged, err
+}
+
+func isDirEmptyOrNotExist(dir string) (bool, error) {
+	info, err := os.Stat(dir)
+	if os.IsNotExist(err) {
+		return true, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if !info.IsDir() {
+		return false, fmt.Errorf("not a directory: %s", dir)
+	}
+	f, err := os.Open(dir)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+	_, err = f.Readdirnames(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err
+}
+
+func writeKeeplist(file string, keeps map[string]struct{}) error {
+	f, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	w := bufio.NewWriter(f)
+	for hostPath := range keeps {
+		fmt.Fprintln(w, hostPath)
+	}
+	return w.Flush()
+}
+
+// runSingleRsyncSync performs a single-threaded rsync from srcDir to dstDir using the given exclude file.
+// This is used when the destination already contains files and we want to sync changes while keeping versioned files.
+func runSingleRsyncSync(srcDir, dstDir, excludeFile string) error {
+	// rsync flags:
+	// -a: archive mode (preserves permissions, symlinks, modification times, etc.)
+	// -v: verbose output (shows which files were copied)
+	// --delete: removes files in dstDir that are not in srcDir (clean sync)
+	// --whole-file: disables delta-transfer algorithm (lower CPU, better for local copying)
+	// --inplace: update files in-place without temp files (avoids disk pressure)
+	// --exclude-from: skip deleting or overwriting files listed in keeplist.txt
+	args := []string{
+		"-av", "--delete", "--whole-file", "--inplace",
+		fmt.Sprintf("--exclude-from=%s", excludeFile),
+		srcDir + "/", dstDir + "/",
+	}
+
+	cmd := exec.Command("rsync", args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Logger.Error(err, "rsync failed", "stderr", stderr.String())
+		return err
+	}
+
+	log.Logger.V(0).Info("rsync completed")
+	return nil
 }

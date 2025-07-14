@@ -28,7 +28,7 @@ func getNumberOfWorkers() int {
 	return min(maxWorkers, max(1, runtime.GOMAXPROCS(0)))
 }
 
-func copyDirectories(srcDir string, destDir string, unchangedFiles map[string]struct{}, filesToKeep map[string]struct{}) error {
+func copyDirectories(srcDir string, destDir string) error {
 	start := time.Now()
 
 	hostContainEbpfDir := HostContainsEbpfDir(destDir)
@@ -37,7 +37,7 @@ func copyDirectories(srcDir string, destDir string, unchangedFiles map[string]st
 	CopyCFiles := !hostContainEbpfDir
 	log.Logger.V(0).Info("Copying instrumentation files to host", "srcDir", srcDir, "destDir", destDir, "CopyCFiles", CopyCFiles)
 
-	files, err := getFiles(srcDir, CopyCFiles, unchangedFiles, filesToKeep)
+	files, err := getFiles(srcDir, CopyCFiles)
 	if err != nil {
 		return err
 	}
@@ -117,27 +117,13 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
-func getFiles(dir string, CopyCFiles bool, unchangedFiles map[string]struct{}, filesToKeep map[string]struct{}) ([]string, error) {
+func getFiles(dir string, CopyCFiles bool) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
-			destPath := strings.Replace(path, "/instrumentations/", "/var/odigos/", 1)
-
-			if !CopyCFiles {
-				if _, found := filesToKeep[destPath]; found {
-					log.Logger.V(0).Info("Skipping copying file", "file", path)
-					return nil
-				}
-			}
-
-			if _, unchanged := unchangedFiles[destPath]; unchanged {
-				log.Logger.V(1).Info("Skipping unchanged file", "file", path)
-				return nil
-			}
-
 			files = append(files, path)
 		}
 		return nil

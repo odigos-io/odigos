@@ -151,6 +151,31 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
     chmod +x /tmp/grpc_health_probe
 
 
+# Compile rsync statically for distroless image
+ARG RSYNC_VERSION=3.2.7
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    wget \
+    ca-certificates \
+    libacl1-dev \
+    libattr1-dev \
+    libpopt-dev \
+    liblz4-dev \
+    libzstd-dev \
+    libxxhash-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN wget https://download.samba.org/pub/rsync/src/rsync-${RSYNC_VERSION}.tar.gz \
+    && tar -xzf rsync-${RSYNC_VERSION}.tar.gz \
+    && cd rsync-${RSYNC_VERSION} \
+    && ./configure --prefix=/usr LDFLAGS="-static" \
+    && make \
+    && make install DESTDIR=/rsync-install \
+    && cd .. \
+    && rm -rf rsync-${RSYNC_VERSION}*
+
+
 WORKDIR /instrumentations
 
 # Java
@@ -194,6 +219,8 @@ FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
+# Copy statically compiled rsync (no shared libraries needed)
+COPY --from=builder /rsync-install/usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 CMD ["/root/odiglet"]
