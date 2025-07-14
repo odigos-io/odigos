@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
@@ -165,6 +166,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 }
 
 func OdigletInitPhase(clientset *kubernetes.Clientset) {
+	odigletInitPhaseStart := time.Now()
 	if err := log.Init(); err != nil {
 		panic(err)
 	}
@@ -194,5 +196,6 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		os.Exit(-1)
 	}
 
+	log.Logger.V(0).Info("Odiglet init phase finished", "duration", time.Since(odigletInitPhaseStart))
 	os.Exit(0)
 }
