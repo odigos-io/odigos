@@ -250,6 +250,7 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
+      packages: 'write'
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
