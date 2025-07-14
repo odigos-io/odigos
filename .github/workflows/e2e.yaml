@@ -69,7 +69,9 @@ jobs:
     needs:
       - build-odigos-images
       - build-cli
-    runs-on: ${{ matrix.test-scenario == 'workload-lifecycle' && 'warp-ubuntu-latest-x64-16x-spot' || 'ubuntu-latest' }}
+    # workload-lifecycle test scenario requires more resources, so we use a different instance type
+    # all other test scenarios use the default instance type which is free and fast
+    runs-on: ${{ matrix.test-scenario == 'workload-lifecycle' && 'warp-ubuntu-latest-x64-8x-spot' || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
