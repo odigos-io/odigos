@@ -71,7 +71,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: init
+                  resource: limits.cpu
+          resources:
+{{ toYaml .Values.odiglet.initContainerResources | indent 12 }}
       containers:
         - name: deviceplugin
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
@@ -128,6 +134,25 @@ spec:
             - --health-probe-bind-port={{ .Values.odiglet.readinessAndLivenessProbePort }}
           command:
             - /root/odiglet
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - SYS_PTRACE
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
+            periodSeconds: 10
+          resources:
+{{ include "odigos.odiglet.resolvedResources" . | indent 12 }}
           env:
             - name: NODE_NAME
               valueFrom:
@@ -156,32 +181,12 @@ spec:
                   name: odigos-pro
                   key: odigos-onprem-token
             {{- end }}
+            - name: GOMEMLIMIT
+              value: {{ include "odigos.odiglet.gomemlimitFromLimit" . }}
           envFrom:
             - configMapRef:
                 name: odigos-own-telemetry-otel-config
                 optional: true
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-            capabilities:
-              add:
-                - SYS_PTRACE
-          {{- if .Values.odiglet.resources }}
-          resources:
-          # if t-shirt size profile set in profiles, use it.
-{{ toYaml .Values.odiglet.resources | indent 12 }}
-          {{- end }}
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
-            initialDelaySeconds: 15
-            periodSeconds: 20
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
-            periodSeconds: 10
           volumeMounts:
             - name: run-dir
               mountPath: /run

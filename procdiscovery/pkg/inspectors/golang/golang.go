@@ -59,7 +59,14 @@ func (g *GolangInspector) GetRuntimeVersion(pcx *process.ProcessContext, contain
 	if err != nil || buildInfo == nil {
 		return nil
 	}
+	// versionRegex matches "go1.21.3" and captures "1.21.3" in match[1]
+	// match[0] contains the full match including "go" prefix
+	// match[1] contains just the version number we want to extract
 	match := versionRegex.FindStringSubmatch(buildInfo.GoVersion)
-
+	if len(match) < 2 {
+		// It is observed that go1.17.0 and maybe others are failing here.
+		// check the match expected length before accessing it so not to panic
+		return nil
+	}
 	return common.GetVersion(match[1])
 }

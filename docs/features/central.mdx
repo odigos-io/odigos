@@ -1,0 +1,113 @@
+---
+title: 'Odigos Central'
+description: 'Odigos Central is the centralized deployment mode of Odigos, allowing organizations to manage observability configurations from a single UI across multiple Kubernetes clusters.'
+sidebarTitle: 'Odigos Central'
+icon: 'folder-tree'
+---
+
+<Note>
+  This feature is available in Odigos Enterprise tier only. Please contact the
+  Odigos team to inquire about access to the Enterprise version.
+</Note>
+
+<Warning>
+  **Beta Feature**: Odigos Central is currently in beta. The API and
+  functionality may change in future releases.
+</Warning>
+
+## What does Odigos Central include?
+
+Odigos Central consists of three main components:
+
+- **Central UI** – A user interface for managing all connected clusters, sources, destinations, and sampling configurations.
+- **Central Backend** – The brain of the centralized system; stores configuration and communicates with remote clusters via a proxy.
+- **Central Proxy** – A lightweight service deployed in each connected (remote) cluster. It securely forwards requests from the central backend to the local Odigos services (which run without public internet access).
+
+## Why use Odigos Central?
+
+If you're running multiple Kubernetes clusters, Odigos Central helps you:
+
+- Manage instrumentation, sampling, and observability pipelines from one place
+- Avoid logging into each cluster separately
+- Centralize authentication and access management control
+
+## Getting Started
+
+To get started with Odigos Central, you need to install the central components and configure remote clusters to connect to them.
+
+<Steps>
+  <Step title="Install Odigos Central">
+    You can install Odigos Central using the CLI or Helm chart.
+    <Tabs>
+      <Tab title="CLI">
+        Use the [`odigos pro central install`](/cli/odigos_pro_central_install) command:
+
+        ```bash
+        odigos pro central install \
+          --onprem-token <token> \
+          --central-admin-password <password>
+        ```
+
+        This installs:
+        - central-backend
+        - central-ui
+        - redis (for state)
+        - keycloak (as identity provider)
+      </Tab>
+      <Tab title="Helm">
+        You can use the Helm chart to install Odigos Central:
+
+        ```bash
+        helm repo add odigos https://odigos-io.github.io/odigos/
+        helm repo update
+        helm upgrade --install odigos-central odigos/odigos-central \
+          --namespace odigos-central \
+          --create-namespace \
+          --set onPremToken=<token> \
+          --set auth.adminUsername=admin \
+          --set auth.adminPassword=<password>
+        ```
+
+      </Tab>
+    </Tabs>
+
+  </Step>
+  <Step title="Access the Central UI">
+    After installation, you can access the Central UI using port-forward:
+
+    ```bash
+    odigos pro central ui
+    ```
+
+    This will forward the Central UI to `http://localhost:3000` and the Central Backend to `http://localhost:8081`.
+
+  </Step>
+  <Step title="Connect Remote Clusters">
+    To connect remote clusters to your Central deployment, you can use the `odigos config set` command to configure the central backend URL and cluster name:
+
+    ```bash
+    # Set the central backend URL
+    odigos config set central-backend-url <your-central-backend-url>
+
+    # Set the cluster name for identification in Central
+    odigos config set cluster-name <your-cluster-name>
+    ```
+
+    **Example:**
+    ```bash
+    # Configure cluster to connect to Central Backend running on port 8081
+    odigos config set central-backend-url http://central-backend.example.com:8081
+    odigos config set cluster-name production-cluster-1
+    ```
+
+    <Info>
+      The `central-backend-url` should point to your Central Backend service and must include the port number. If you're using port-forward, this would be `http://localhost:8081`.
+    </Info>
+
+  </Step>
+</Steps>
+
+<Warning>
+  Odigos Central is an Enterprise feature and requires a valid license token.
+  Make sure your `--onprem-token` is valid and has the necessary permissions.
+</Warning>
