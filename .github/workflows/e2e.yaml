@@ -124,12 +124,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: odigos-images
-      
 
       - name: Load Odigos Images to Kind Cluster
         run: |
-          docker load -i odigos-images.tar
-          docker load -i cli-image.tar
+          kind load image-archive odigos-images.tar
+          kind load image-archive cli-image.tar
 
       - name: Download CLI binary
         uses: actions/download-artifact@v4
