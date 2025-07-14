@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path"
@@ -240,52 +239,6 @@ func ApplyOpenShiftSELinuxSettings() error {
 	}
 	return nil
 }
-func findUnchangedFiles(srcDir, destDir string) (map[string]struct{}, error) {
-	unchanged := make(map[string]struct{})
-
-	srcDir = filepath.Clean(srcDir)
-	destDir = filepath.Clean(destDir)
-
-	err := filepath.WalkDir(srcDir, func(srcPath string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return err
-		}
-
-		srcPath = filepath.Clean(srcPath)
-
-		relPath, err := filepath.Rel(srcDir, srcPath)
-		if err != nil {
-			return err
-		}
-
-		destPath := filepath.Join(destDir, relPath)
-
-		// TEMPORARY: skip dotnet files — they are symlinked manually later
-		if strings.HasPrefix(destPath, filepath.Join(destDir, "dotnet")) {
-			return nil
-		}
-
-		srcInfo, err := os.Stat(srcPath)
-		if err != nil {
-			return err
-		}
-
-		destInfo, err := os.Stat(destPath)
-		if os.IsNotExist(err) {
-			return nil // no matching destination file
-		} else if err != nil {
-			return err
-		}
-
-		if srcInfo.Size() == destInfo.Size() {
-			unchanged[filepath.Clean(destPath)] = struct{}{}
-		}
-
-		return nil
-	})
-
-	return unchanged, err
-}
 
 func isDirEmptyOrNotExist(dir string) (bool, error) {
 	info, err := os.Stat(dir)
@@ -310,6 +263,17 @@ func isDirEmptyOrNotExist(dir string) (bool, error) {
 	return false, err
 }
 
+// writeKeeplist creates an exclude file for rsync with relative paths.
+// rsync --exclude-from expects patterns relative to the source directory, not absolute paths.
+// Since we're syncing to /var/odigos, we need to convert absolute paths like:
+//
+//	/var/odigos/python-ebpf/pythonUSDT.abi3_hash_version-e3b0c44298fc.so
+//
+// to relative patterns like:
+//
+//	python-ebpf/pythonUSDT.abi3_hash_version-e3b0c44298fc.so
+//
+// This ensures the --delete flag won't remove files we want to keep.
 func writeKeeplist(file string, keeps map[string]struct{}) error {
 	f, err := os.Create(file)
 	if err != nil {
@@ -319,8 +283,10 @@ func writeKeeplist(file string, keeps map[string]struct{}) error {
 
 	w := bufio.NewWriter(f)
 	for hostPath := range keeps {
-		fmt.Fprintln(w, hostPath)
-		fmt.Println("hostPath", hostPath)
+		// Convert absolute path to relative path for rsync exclude pattern
+		relativePath := strings.TrimPrefix(hostPath, "/var/odigos/")
+		fmt.Fprintln(w, relativePath)
+		fmt.Println("hostPath", relativePath)
 	}
 	return w.Flush()
 }
