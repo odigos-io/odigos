@@ -19,7 +19,7 @@ spec:
               #!/bin/bash
               
               # Add Odigos Helm repository
-              helm repo add odigos https://keyval-dev.github.io/odigos-charts/
+              helm repo add odigos https://odigos-io.github.io/odigos --force-update
               helm repo update
               
               # Get the latest chart version
