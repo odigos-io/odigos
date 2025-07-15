@@ -75,12 +75,8 @@ fi
 
 prefix 'helm-chart-' *.tgz
 
-# Use different index files for RC vs stable
-if [ -n "$RC_SUBDIR" ]; then
-	helm repo index . --merge index.yaml --url "$HELM_REPO_URL"
-else
-	helm repo index . --merge index.yaml --url "$HELM_REPO_URL"
-fi
+# Generate the index file
+helm repo index . --merge index.yaml --url "$HELM_REPO_URL"
 git diff -G apiVersion
 
 # The check avoids pushing the same tag twice and only pushes if there's a new entry in the index
@@ -93,11 +89,7 @@ if [[ $(git diff -G apiVersion | wc -c) -ne 0 ]]; then
 	fi
 
 	# Add the appropriate index file
-	if [ -n "$RC_SUBDIR" ]; then
-		git add "$RC_SUBDIR/index.yaml"
-	else
-		git add index.yaml
-	fi
+	git add index.yaml
 	
 	git commit -m "$COMMIT_MSG" && git push
 	popd
