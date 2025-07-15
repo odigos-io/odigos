@@ -372,6 +372,9 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					Labels: map[string]string{
 						"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
 					},
+					Annotations: map[string]string{
+						"kubectl.kubernetes.io/default-container": k8sconsts.OdigletContainerName,
+					},
 				},
 				Spec: corev1.PodSpec{
 					NodeSelector: nodeSelector,
