@@ -81,6 +81,7 @@ jobs:
           - 'ui'
           - 'helm-chart'
           - 'cli-upgrade'
+          - 'helm-upgrade'
           - 'workload-lifecycle'
           - 'source'
           - 'webhooks'
