@@ -18,8 +18,8 @@ prefix () {
 # Function to detect if this is a release candidate
 is_release_candidate() {
 	local tag="$1"
-	# Check if tag contains rc, alpha, beta, or pre-release indicators
-	if [[ "$tag" =~ -(rc) ]]; then
+	# Check if tag contains rc release candidate indicators
+	if [[ "$tag" =~ -rc ]]; then
 		return 0  # true
 	else
 		return 1  # false
