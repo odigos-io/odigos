@@ -24,7 +24,7 @@ const (
 	chrootDir      = "/host"
 	semanagePath   = "/sbin/semanage"
 	restoreconPath = "/sbin/restorecon"
-	keeplistPath   = "/var/odigos/keeplist"
+	keeplistPath   = "/tmp/keeplist"
 )
 
 func CopyAgentsDirectoryToHost() error {
@@ -283,7 +283,7 @@ func writeKeeplist(file string, keeps map[string]struct{}) error {
 	w := bufio.NewWriter(f)
 	for hostPath := range keeps {
 		// Convert absolute path to relative path for rsync exclude pattern
-		relativePath := strings.TrimPrefix(hostPath, "/var/odigos/")
+		relativePath := strings.TrimPrefix(hostPath, k8sconsts.OdigosAgentsDirectory+"/")
 		fmt.Fprintln(w, relativePath)
 	}
 	return w.Flush()
@@ -306,8 +306,7 @@ func runSingleRsyncSync(srcDir, dstDir, excludeFile string) error {
 	}
 
 	cmd := exec.Command("rsync", args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
+	var _, stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
