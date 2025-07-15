@@ -89,7 +89,7 @@
             "cli/odigos_upgrade",
             "cli/odigos_version",
             "cli/odigos_sources",
-            "cli/odigos_config"
+            "cli/odigos_configuration"
           ]
         },
         {
@@ -160,9 +160,7 @@
         {
           "group": "Advanced",
           "icon": "gear",
-          "pages": [
-            "instrumentations/configuration/mount-method"
-          ]
+          "pages": ["instrumentations/configuration/mount-method"]
         }
       ]
     },
@@ -314,16 +312,11 @@
     },
     {
       "group": "Feature Guidelines",
-      "pages": [
-        "features/oidc"
-      ]
+      "pages": ["features/oidc", "features/central"]
     },
     {
       "group": "Contribution Guidelines",
-      "pages": [
-        "adding-new-dest",
-        "debugging"
-      ]
+      "pages": ["adding-new-dest", "debugging"]
     },
     {
       "group": "VM Agent",

@@ -52,7 +52,7 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 		return ctrl.Result{}, listErr
 	}
 
-	conf, err := k8sutils.GetCurrentOdigosConfig(ctx, c)
+	conf, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
