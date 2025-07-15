@@ -11,27 +11,44 @@ spec:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
     
-    - name: Install Odigos latest release from Helm repository for pre upgrade setup
+    - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
             timeout: 6m # longer timeout since the images are being pulled from dockerhub
             content: |
               #!/bin/bash
-              
-              # Add Odigos Helm repository
-              helm repo add odigos https://odigos-io.github.io/odigos --force-update
-              helm repo update
-              
-              # Get the latest chart version
-              LATEST_VERSION=$(helm search repo odigos/odigos --output json | jq -r '.[0].version')
-              echo "Installing Odigos Helm chart version: $LATEST_VERSION"
-              
+
+              # Define variables
+              REPO_URL="https://api.github.com/repos/odigos-io/odigos/releases/latest"
+
+              # Fetch the release assets from GitHub API with retry
+              # --retry 5: retry up to 5 times
+              # --retry-delay 1: wait 1 second between retries
+              # --retry-max-time 30: maximum time to spend retrying (30 seconds)
+              ASSETS_JSON=$(curl -s --retry 5 --retry-delay 1 --retry-max-time 30 "$REPO_URL")
+
+              # Find the download URL for the helm chart
+              CHART_DOWNLOAD_URL=$(echo "$ASSETS_JSON" | grep "browser_download_url" | grep "helm-chart-odigos-" | cut -d '"' -f 4)
+
+              # Check if the download URL was found
+              if [ -z "$CHART_DOWNLOAD_URL" ]; then
+                  echo "No matching helm chart found in latest release"
+                  exit 1
+              fi
+
+              echo "Downloading Helm chart from: $CHART_DOWNLOAD_URL"
+
+              # Download the helm chart with retry
+              # --retry 5: retry up to 5 times
+              # --retry-delay 1: wait 1 second between retries
+              # --retry-max-time 60: maximum time to spend retrying (60 seconds for download)
+              curl -L -o odigos-latest-chart.tgz --retry 5 --retry-delay 1 --retry-max-time 60 "$CHART_DOWNLOAD_URL"
+
               # Cleanup any existing installation that might be left over from previous runs
               helm uninstall odigos -n odigos-test --ignore-not-found
-              
-              # Install the latest version from the official repository
-              helm upgrade --install odigos odigos/odigos \
-                --version "$LATEST_VERSION" \
+
+              # Install the latest version from the downloaded chart
+              helm upgrade --install odigos ./odigos-latest-chart.tgz \
                 --create-namespace \
                 --namespace odigos-test \
                 --set nodeSelector."kubernetes\.io/os"=linux
