@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -23,20 +24,69 @@ type SpanAttributeConfig struct {
 	FallbackSamplingRatio float64 `json:"fallback_sampling_ratio" mapstructure:"fallback_sampling_ratio"`
 }
 
+func (h *SpanAttributeSamplerHandler) ConvertLegacyToAction(legacyAction metav1.Object) metav1.Object {
+	// If the action is already an odigos action, return it
+	if _, ok := legacyAction.(*odigosv1.Action); ok {
+		return legacyAction
+	}
+	legacySpanAttributeSampler := legacyAction.(*actionv1.SpanAttributeSampler)
+	action := &odigosv1.Action{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "odigos.io/v1alpha1",
+			Kind:       "Action",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      legacySpanAttributeSampler.Name,
+			Namespace: legacySpanAttributeSampler.Namespace,
+		},
+		Spec: odigosv1.ActionSpec{
+			ActionName: legacySpanAttributeSampler.Spec.ActionName,
+			Notes:      legacySpanAttributeSampler.Spec.Notes,
+			Disabled:   legacySpanAttributeSampler.Spec.Disabled,
+			Signals:    legacySpanAttributeSampler.Spec.Signals,
+			Samplers: &actionv1.SamplersConfig{
+				SpanAttributeSampler: &actionv1.SpanAttributeSamplerConfig{
+					AttributeFilters: legacySpanAttributeSampler.Spec.AttributeFilters,
+				},
+			},
+		},
+	}
+	return action
+}
+
 func (h *SpanAttributeSamplerHandler) List(ctx context.Context, c client.Client, namespace string) ([]metav1.Object, error) {
-	var list actionv1.SpanAttributeSamplerList
+	var legacyList actionv1.SpanAttributeSamplerList
+	if err := c.List(ctx, &legacyList, client.InNamespace(namespace)); err != nil && client.IgnoreNotFound(err) != nil {
+		return nil, err
+	}
+
+	// Handle the migration from legacy spanattributesampler to odigos action, convert legacy spanattributesampler to odigos action
+	// and add the new odigos action to the list
+	legacyItems := make([]metav1.Object, len(legacyList.Items))
+	for i, item := range legacyList.Items {
+		legacyItems[i] = &item
+	}
+
+	var list odigosv1.ActionList
 	if err := c.List(ctx, &list, client.InNamespace(namespace)); err != nil && client.IgnoreNotFound(err) != nil {
 		return nil, err
 	}
 	items := make([]metav1.Object, len(list.Items))
-	for i := range list.Items {
-		items[i] = &list.Items[i]
+	for i, item := range list.Items {
+		if item.Spec.Samplers.SpanAttributeSampler != nil {
+			items[i] = &item
+		}
 	}
+	items = append(legacyItems, items...)
 	return items, nil
 }
 
 func (h *SpanAttributeSamplerHandler) IsActionDisabled(action metav1.Object) bool {
-	return action.(*actionv1.SpanAttributeSampler).Spec.Disabled
+	// Handle migration from legacy spanattributesampler to odigos action
+	if a, ok := action.(*actionv1.SpanAttributeSampler); ok {
+		return a.Spec.Disabled
+	}
+	return action.(*odigosv1.Action).Spec.Disabled
 }
 
 func (h *SpanAttributeSamplerHandler) ValidateRuleConfig(config []Rule) error {
@@ -49,10 +99,18 @@ func (h *SpanAttributeSamplerHandler) ValidateRuleConfig(config []Rule) error {
 }
 
 func (h *SpanAttributeSamplerHandler) GetRuleConfig(action metav1.Object) []Rule {
-	attrAction := action.(*actionv1.SpanAttributeSampler)
-	rules := make([]Rule, 0, len(attrAction.Spec.AttributeFilters))
+	var spanAttributeSampler *odigosv1.Action
+	// Handle migration from legacy spanattributesampler to odigos action
+	if a, ok := action.(*actionv1.SpanAttributeSampler); ok {
+		spanAttributeSampler = h.ConvertLegacyToAction(a).(*odigosv1.Action)
+	}
+	if a, ok := action.(*odigosv1.Action); ok {
+		spanAttributeSampler = a
+	}
 
-	for _, filter := range attrAction.Spec.AttributeFilters {
+	rules := make([]Rule, 0, len(spanAttributeSampler.Spec.Samplers.SpanAttributeSampler.AttributeFilters))
+
+	for _, filter := range spanAttributeSampler.Spec.Samplers.SpanAttributeSampler.AttributeFilters {
 		var (
 			cType         string
 			operation     string
@@ -107,13 +165,24 @@ func (h *SpanAttributeSamplerHandler) GetRuleConfig(action metav1.Object) []Rule
 }
 
 func (h *SpanAttributeSamplerHandler) GetActionReference(action metav1.Object) metav1.OwnerReference {
-	a := action.(*actionv1.SpanAttributeSampler)
-	return metav1.OwnerReference{
-		APIVersion: a.APIVersion,
-		Kind:       a.Kind,
-		Name:       a.Name,
-		UID:        a.UID,
+	// Handle migration from legacy spanattributesampler to odigos action
+	if a, ok := action.(*actionv1.SpanAttributeSampler); ok {
+		return metav1.OwnerReference{
+			APIVersion: a.APIVersion,
+			Kind:       a.Kind,
+			Name:       a.Name,
+			UID:        a.UID,
+		}
 	}
+	if a, ok := action.(*odigosv1.Action); ok {
+		return metav1.OwnerReference{
+			APIVersion: a.APIVersion,
+			Kind:       a.Kind,
+			Name:       a.Name,
+			UID:        a.UID,
+		}
+	}
+	return metav1.OwnerReference{}
 }
 
 func (h *SpanAttributeSamplerHandler) GetActionScope(action metav1.Object) string {
