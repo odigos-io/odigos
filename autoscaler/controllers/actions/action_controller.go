@@ -11,7 +11,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
@@ -22,6 +25,7 @@ type ActionReconciler struct {
 type ActionConfig interface {
 	ProcessorType() string
 	OrderHint() int
+	CollectorRoles() []k8sconsts.CollectorRole
 }
 
 // giving an action, return it's specific processor details
@@ -92,6 +96,58 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 		return processor, nil
 	}
 
+	if action.Spec.Samplers != nil {
+		// Handle probabilistic sampler separately since it has different processor requirements
+		if action.Spec.Samplers.ProbabilisticSampler != nil {
+			// Convert string percentage to float
+			config, err := probabilisticSamplerConfig(action.Spec.Samplers.ProbabilisticSampler.SamplingPercentage)
+			if err != nil {
+				return nil, err
+			}
+
+			// Create probabilistic sampler processor using its own config
+			return convertToDefaultProcessor(action, action.Spec.Samplers.ProbabilisticSampler, config)
+		} else {
+			// Handle other samplers using the unified sampling approach
+			// For non-probabilistic samplers, we need to create a composite config
+			// that can be used with the odigossampling processor
+			config, ownerReferences, err := samplersConfig(ctx, k8sclient, action.Namespace)
+			if err != nil {
+				return nil, err
+			}
+
+			samplingConfigJson, err := json.Marshal(config)
+			if err != nil {
+				return nil, err
+			}
+
+			groupByTraceProcessor := getGroupByTraceProcessor(action.Namespace, ownerReferences)
+			if err := k8sclient.Patch(ctx, groupByTraceProcessor, client.Apply, client.FieldOwner("groupbytrace"), client.ForceOwnership); err != nil {
+				return nil, err
+			}
+
+			processor := &v1.Processor{
+				TypeMeta: metav1.TypeMeta{APIVersion: "odigos.io/v1alpha1", Kind: "Processor"},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            "sampling-processor",
+					Namespace:       action.Namespace,
+					OwnerReferences: ownerReferences,
+				},
+				Spec: v1.ProcessorSpec{
+					Type:            action.Spec.Samplers.ProcessorType(),
+					ProcessorName:   action.Spec.Samplers.ProcessorType(),
+					Disabled:        false, // In case related actions are disabled, the processor won't be created
+					Signals:         []common.ObservabilitySignal{common.TracesObservabilitySignal},
+					CollectorRoles:  []v1.CollectorsGroupRole{v1.CollectorsGroupRoleClusterGateway},
+					OrderHint:       action.Spec.Samplers.OrderHint(),
+					ProcessorConfig: runtime.RawExtension{Raw: samplingConfigJson},
+				},
+			}
+
+			return processor, nil
+		}
+	}
+
 	return nil, errors.New("no supported action found in resource")
 }
 
@@ -107,6 +163,11 @@ func convertToDefaultProcessor(action *odigosv1.Action, actionConfig ActionConfi
 	configJson, err := json.Marshal(processorConfig)
 	if err != nil {
 		return nil, err
+	}
+
+	collectorRoles := []odigosv1.CollectorsGroupRole{}
+	for _, role := range actionConfig.CollectorRoles() {
+		collectorRoles = append(collectorRoles, odigosv1.CollectorsGroupRole(role))
 	}
 
 	processor := odigosv1.Processor{
@@ -132,7 +193,7 @@ func convertToDefaultProcessor(action *odigosv1.Action, actionConfig ActionConfi
 			Disabled:        action.Spec.Disabled,
 			Notes:           action.Spec.Notes,
 			Signals:         action.Spec.Signals,
-			CollectorRoles:  []odigosv1.CollectorsGroupRole{odigosv1.CollectorsGroupRoleClusterGateway},
+			CollectorRoles:  collectorRoles,
 			OrderHint:       actionConfig.OrderHint(),
 			ProcessorConfig: runtime.RawExtension{Raw: configJson},
 		},

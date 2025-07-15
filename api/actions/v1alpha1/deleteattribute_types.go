@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,6 +34,12 @@ func (DeleteAttributeConfig) ProcessorType() string {
 
 func (DeleteAttributeConfig) OrderHint() int {
 	return -100
+}
+
+func (DeleteAttributeConfig) CollectorRoles() []k8sconsts.CollectorRole {
+	return []k8sconsts.CollectorRole{
+		k8sconsts.CollectorsRoleClusterGateway,
+	}
 }
 
 // DeleteAttributeSpec defines the desired state of DeleteAttribute action

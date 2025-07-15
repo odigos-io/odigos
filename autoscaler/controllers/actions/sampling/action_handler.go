@@ -31,4 +31,6 @@ type ActionHandler interface {
 	IsActionDisabled(action metav1.Object) bool
 	// GetActionScope returns the scope of the action [global/service/endpoint]
 	GetActionScope(action metav1.Object) string
+	// ConvertLegacyToAction converts a legacy action to a new action
+	ConvertLegacyToAction(legacyAction metav1.Object) metav1.Object
 }

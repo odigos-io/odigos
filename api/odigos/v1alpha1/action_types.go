@@ -70,6 +70,9 @@ type ActionSpec struct {
 
 	// K8sAttributes is the config for the K8sAttributes Action.
 	K8sAttributes *actionsv1.K8sAttributesConfig `json:"k8sAttributes,omitempty"`
+
+	// Samplers is the config for the Samplers Action.
+	Samplers *actionsv1.SamplersConfig `json:"samplers,omitempty"`
 }
 
 type ActionStatus struct {

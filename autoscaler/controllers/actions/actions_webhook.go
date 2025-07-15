@@ -39,6 +39,8 @@ var validActionConfigNames = []string{
 	actionsv1alpha1.ActionNameDeleteAttribute,
 	actionsv1alpha1.ActionNameRenameAttribute,
 	actionsv1alpha1.ActionNamePiiMasking,
+	actionsv1alpha1.ActionNameK8sAttributes,
+	actionsv1alpha1.ActionNameSamplers,
 }
 
 type ActionsValidator struct {
@@ -118,6 +120,10 @@ func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.
 	if action.Spec.K8sAttributes != nil {
 		path := field.NewPath("spec").Child("k8sAttributes")
 		fields[path] = action.Spec.K8sAttributes
+	}
+	if action.Spec.Samplers != nil {
+		path := field.NewPath("spec").Child("samplers")
+		fields[path] = action.Spec.Samplers
 	}
 
 	if len(fields) == 0 {
