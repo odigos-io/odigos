@@ -34,13 +34,7 @@ helm install odigos odigos-rc/odigos --version 1.1.0-rc.1
 
 ### For Developers
 
-To set up the release candidate subdirectory (one-time setup):
-
-```bash
-./scripts/setup-rc-repo.sh
-```
-
-To create a release candidate:
+To create a release candidate (this get's run in CI automatically):
 
 ```bash
 # Create and push a release candidate tag
@@ -67,7 +61,7 @@ Release candidates are intended for:
 When a release candidate is ready for production:
 
 1. Create a stable release tag (e.g., `v1.1.0`)
-2. Run the release script - it will automatically detect it as a stable release
+2. Release automation runs and releases the stable version
 3. The stable version will be available in the main repository
 
 Users can then upgrade from the RC to the stable version:
@@ -91,11 +85,9 @@ The `gh-pages` branch will contain:
 ```
 gh-pages/
 ├── index.yaml          # Stable releases index
-├── helm-chart-*.tgz    # Stable release packages
 └── rc/
     ├── index.yaml      # Release candidates index
     ├── README.md       # RC usage instructions
-    └── helm-chart-*.tgz # RC packages
 ```
 
 This approach keeps everything in one repository while providing clear separation between stable and pre-release versions. 
