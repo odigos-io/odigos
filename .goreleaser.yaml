@@ -40,7 +40,7 @@ changelog:
 brews:
   - repository:
       owner: keyval-dev
-      name: homebrew-odigos-cli
+      name: '{{ if eq .Env.IS_RC "true" }}homebrew-odigos-cli-rc{{ else }}homebrew-odigos-cli{{ end }}'
       token: "{{ .Env.HOMEBREW_GITHUB_API_TOKEN }}"
     commit_msg_template: "release: {{ .Tag }}"
     ids:

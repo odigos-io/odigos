@@ -33,6 +33,16 @@ jobs:
             exit 1
           fi
 
+      - name: Check Release Candidate
+        run: |
+          if [[ "${{ env.TAG }}" == *"-rc"* ]]; then
+            echo "IS_RC=true" >> $GITHUB_ENV
+            echo "This is a Release Candidate build"
+          else
+            echo "IS_RC=false" >> $GITHUB_ENV
+            echo "This is a regular release build"
+          fi
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -104,6 +114,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
+          IS_RC: ${{ env.IS_RC }}
 
       - uses: ko-build/setup-ko@v0.9
 
