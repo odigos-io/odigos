@@ -444,6 +444,46 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			}
 		} else {
 			fmt.Printf("Skipping logs pipeline configuration, using EBPF logs!\n")
+			err := updateOrCreateK8sAttributesForLogs(&cfg)
+			if err != nil {
+				return "", err
+			}
+			// remove logs processors from CRD logsProcessors in case it is there so not to add it twice
+			for i, processor := range logsProcessors {
+				if processor == k8sAttributesProcessorName {
+					logsProcessors = append(logsProcessors[:i], logsProcessors[i+1:]...)
+					break
+				}
+			}
+
+			// set "service.name" for logs same as the workload name.
+			// note: this does not respect the override service name a user can set in sources.
+			cfg.Processors[logsServiceNameProcessorName] = config.GenericMap{
+				"attributes": []config.GenericMap{
+					{
+						"key":            string(semconv.ServiceNameKey),
+						"from_attribute": string(semconv.K8SDeploymentNameKey),
+						"action":         "insert", // avoid overwriting existing value
+					},
+					{
+						"key":            string(semconv.ServiceNameKey),
+						"from_attribute": string(semconv.K8SStatefulSetNameKey),
+						"action":         "insert", // avoid overwriting existing value
+					},
+					{
+						"key":            string(semconv.ServiceNameKey),
+						"from_attribute": string(semconv.K8SDaemonSetNameKey),
+						"action":         "insert", // avoid overwriting existing value
+					},
+				},
+			}
+
+			cfg.Service.Pipelines["logs"] = config.Pipeline{
+				Receivers:  []string{"otlp"},
+				Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
+				Exporters:  []string{"otlp/gateway"},
+			}
+
 		}
 	}
 
