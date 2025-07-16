@@ -11,3 +11,7 @@ spec:
   displayName: Golang Community eBPF Instrumentation
   description: |
     This distribution is for Golang applications using OpenTelemetry eBPF-based SDK and eBPF-based instrumentation libraries from the OpenTelemetry community.
+  # Device not needed in go, but adding the device mount here ensures Go pods are scheduled only on nodes with the Odiglet installed,
+  # since we intentionally skip setting node affinity when the mount method is 'virtual device'.
+  runtimeAgent:
+    device: 'instrumentation.odigos.io/generic'
