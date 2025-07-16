@@ -3,11 +3,13 @@ package podswebhook
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
 	"text/template"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
@@ -154,6 +156,12 @@ func InjectUserEnvForLang(odigosConfiguration *common.OdigosConfiguration, pod *
 			)
 		}
 	}
+}
+
+func InjectLoaderEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
+	odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
+	existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, consts.LdPreloadEnvVarName, odigosLoaderPath)
+	return existingEnvNames
 }
 
 func getContainerByName(pod *corev1.Pod, name string) *corev1.Container {
