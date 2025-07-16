@@ -3,12 +3,12 @@ import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import { safeJsonParse } from '@odigos/ui-kit/functions';
 import { ArrowIcon, OdigosLogoText } from '@odigos/ui-kit/icons';
+import { DEFAULT_DATA_STREAM_NAME } from '@odigos/ui-kit/constants';
 import { Destination, DestinationFormData } from '@odigos/ui-kit/types';
 import { useDataStreamStore, useSetupStore } from '@odigos/ui-kit/store';
 import { useDataStreamsCRUD, useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos/ui-kit/components';
 import { type DataStreamSelectionFormRef, ToggleDarkMode, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
-import { DEFAULT_DATA_STREAM_NAME } from '@odigos/ui-kit/constants';
 
 interface SetupHeaderProps {
   step: number;
