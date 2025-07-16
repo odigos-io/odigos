@@ -25,3 +25,4 @@ spec:
       - "{{ODIGOS_AGENTS_DIR}}/python"
     device: 'instrumentation.odigos.io/generic'
     k8sAttrsViaEnvVars: true
+    ldPreloadInjectionSupported: true
