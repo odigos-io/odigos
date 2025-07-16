@@ -17,6 +17,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.27
 	go.opentelemetry.io/collector/component v1.36.0
 	go.opentelemetry.io/collector/component/componenttest v0.130.0
+	go.opentelemetry.io/collector/config/configoptional v0.130.0
 	go.opentelemetry.io/collector/confmap v1.36.0
 	go.opentelemetry.io/collector/confmap/xconfmap v0.130.0
 	go.opentelemetry.io/collector/exporter v0.130.0
@@ -47,7 +48,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	go.opentelemetry.io/collector/config/configmiddleware v0.130.0 // indirect
-	go.opentelemetry.io/collector/config/configoptional v0.130.0 // indirect
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.130.0 // indirect
 	go.opentelemetry.io/collector/pdata/xpdata v0.130.0 // indirect
 	go.opentelemetry.io/collector/receiver/receiverhelper v0.130.0 // indirect
@@ -82,7 +82,7 @@ require (
 	go.opentelemetry.io/collector v0.130.0 // indirect
 	go.opentelemetry.io/collector/config/configauth v0.130.0 // indirect
 	go.opentelemetry.io/collector/config/configcompression v1.36.0 // indirect
-	go.opentelemetry.io/collector/config/configgrpc v0.130.0 // indirect
+	go.opentelemetry.io/collector/config/configgrpc v0.130.0
 	go.opentelemetry.io/collector/config/confighttp v0.130.0 // indirect
 	go.opentelemetry.io/collector/config/confignet v1.36.0 // indirect
 	go.opentelemetry.io/collector/config/configopaque v1.36.0 // indirect
