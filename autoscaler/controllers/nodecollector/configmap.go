@@ -353,96 +353,98 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 
 	collectLogs := slices.Contains(signals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
-		// TODO // FIXME // david : need to if "enterprise" here!
-		if 0 {
-		includes := make([]string, 0)
-		for _, element := range sources.Items {
-			// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
-			// Pod specifiers
-			// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[~10]>-<pod suffix[~5]>_<pod ID>
-			// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[~5]            >_<pod ID>
-			// 	StatefulSet: <namespace>_<statefulset name>-<        ordinal index integer        >_<pod ID>
-			// The suffixes are not the same lenght always, so we cannot match the pattern reliably.
-			// We expect there to exactly one OwnerReference
-			if len(element.OwnerReferences) != 1 {
-				log.Log.V(0).Error(
-					fmt.Errorf("Unexpected number of OwnerReferences: %d", len(element.OwnerReferences)),
-					"failed to compile include list for configmap",
-				)
-				continue
+		// Odigos Community run OTEL log collector
+		tier := env.GetOdigosTierFromEnv()
+		if tier == odigoscommon.CommunityOdigosTier {
+			includes := make([]string, 0)
+			for _, element := range sources.Items {
+				// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
+				// Pod specifiers
+				// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[~10]>-<pod suffix[~5]>_<pod ID>
+				// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[~5]            >_<pod ID>
+				// 	StatefulSet: <namespace>_<statefulset name>-<        ordinal index integer        >_<pod ID>
+				// The suffixes are not the same lenght always, so we cannot match the pattern reliably.
+				// We expect there to exactly one OwnerReference
+				if len(element.OwnerReferences) != 1 {
+					log.Log.V(0).Error(
+						fmt.Errorf("Unexpected number of OwnerReferences: %d", len(element.OwnerReferences)),
+						"failed to compile include list for configmap",
+					)
+					continue
+				}
+				owner := element.OwnerReferences[0]
+				name := owner.Name
+				includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
 			}
-			owner := element.OwnerReferences[0]
-			name := owner.Name
-			includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
-		}
 
-		odigosSystemNamespaceName := env.GetCurrentNamespace()
-		cfg.Receivers["filelog"] = config.GenericMap{
-			"include":           includes,
-			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},
-			"start_at":          "end",
-			"include_file_path": true,
-			"include_file_name": false,
-			"operators": []config.GenericMap{
-				{
-					"id":   "container-parser",
-					"type": "container",
+			odigosSystemNamespaceName := env.GetCurrentNamespace()
+			cfg.Receivers["filelog"] = config.GenericMap{
+				"include":           includes,
+				"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},
+				"start_at":          "end",
+				"include_file_path": true,
+				"include_file_name": false,
+				"operators": []config.GenericMap{
+					{
+						"id":   "container-parser",
+						"type": "container",
+					},
 				},
-			},
-			"retry_on_failure": config.GenericMap{
-				// From documentation:
-				// When true, the receiver will pause reading a file and attempt to resend the current batch of logs
-				//  if it encounters an error from downstream components.
-				//
-				// filelog might get overwhelmed when it just starts and there are already a lot of logs to process in the node.
-				// when downstream components (cluster collector and receiving destination) are under too much pressure,
-				// they will reject the data, slowing down the filelog receiver and allowing it to retry the data and adjust to
-				// downstream pressure.
-				"enabled": true,
-			},
-		}
-
-		err := updateOrCreateK8sAttributesForLogs(&cfg)
-		if err != nil {
-			return "", err
-		}
-		// remove logs processors from CRD logsProcessors in case it is there so not to add it twice
-		for i, processor := range logsProcessors {
-			if processor == k8sAttributesProcessorName {
-				logsProcessors = append(logsProcessors[:i], logsProcessors[i+1:]...)
-				break
+				"retry_on_failure": config.GenericMap{
+					// From documentation:
+					// When true, the receiver will pause reading a file and attempt to resend the current batch of logs
+					//  if it encounters an error from downstream components.
+					//
+					// filelog might get overwhelmed when it just starts and there are already a lot of logs to process in the node.
+					// when downstream components (cluster collector and receiving destination) are under too much pressure,
+					// they will reject the data, slowing down the filelog receiver and allowing it to retry the data and adjust to
+					// downstream pressure.
+					"enabled": true,
+				},
 			}
-		}
 
-		// set "service.name" for logs same as the workload name.
-		// note: this does not respect the override service name a user can set in sources.
-		cfg.Processors[logsServiceNameProcessorName] = config.GenericMap{
-			"attributes": []config.GenericMap{
-				{
-					"key":            string(semconv.ServiceNameKey),
-					"from_attribute": string(semconv.K8SDeploymentNameKey),
-					"action":         "insert", // avoid overwriting existing value
-				},
-				{
-					"key":            string(semconv.ServiceNameKey),
-					"from_attribute": string(semconv.K8SStatefulSetNameKey),
-					"action":         "insert", // avoid overwriting existing value
-				},
-				{
-					"key":            string(semconv.ServiceNameKey),
-					"from_attribute": string(semconv.K8SDaemonSetNameKey),
-					"action":         "insert", // avoid overwriting existing value
-				},
-			},
-		}
+			err := updateOrCreateK8sAttributesForLogs(&cfg)
+			if err != nil {
+				return "", err
+			}
+			// remove logs processors from CRD logsProcessors in case it is there so not to add it twice
+			for i, processor := range logsProcessors {
+				if processor == k8sAttributesProcessorName {
+					logsProcessors = append(logsProcessors[:i], logsProcessors[i+1:]...)
+					break
+				}
+			}
 
-		cfg.Service.Pipelines["logs"] = config.Pipeline{
-			Receivers:  []string{"filelog"},
-			Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
-			Exporters:  []string{"otlp/gateway"},
+			// set "service.name" for logs same as the workload name.
+			// note: this does not respect the override service name a user can set in sources.
+			cfg.Processors[logsServiceNameProcessorName] = config.GenericMap{
+				"attributes": []config.GenericMap{
+					{
+						"key":            string(semconv.ServiceNameKey),
+						"from_attribute": string(semconv.K8SDeploymentNameKey),
+						"action":         "insert", // avoid overwriting existing value
+					},
+					{
+						"key":            string(semconv.ServiceNameKey),
+						"from_attribute": string(semconv.K8SStatefulSetNameKey),
+						"action":         "insert", // avoid overwriting existing value
+					},
+					{
+						"key":            string(semconv.ServiceNameKey),
+						"from_attribute": string(semconv.K8SDaemonSetNameKey),
+						"action":         "insert", // avoid overwriting existing value
+					},
+				},
+			}
+
+			cfg.Service.Pipelines["logs"] = config.Pipeline{
+				Receivers:  []string{"filelog"},
+				Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
+				Exporters:  []string{"otlp/gateway"},
+			}
+		} else {
+			fmt.Printf("Skipping logs pipeline configuration, using EBPF logs!\n")
 		}
-	} else {
-		fmt.Printf("Skipping logs pipeline configuration, EBPF logs!\n")
 	}
 
 	collectTraces := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
