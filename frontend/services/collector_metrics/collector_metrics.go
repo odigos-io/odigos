@@ -199,7 +199,7 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 		panic("failed to cast default config to otlpreceiver.Config")
 	}
 
-	InsertDefault(&cfg.GRPC, configgrpc.ServerConfig{})
+	InsertDefault(&cfg.GRPC)
 	grpcCfg := cfg.GRPC.Get()
 	grpcCfg.NetAddr.Endpoint = "0.0.0.0:4317"
 	cfg.GRPC = configoptional.Some(*grpcCfg)
@@ -217,9 +217,9 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 	closeWg.Wait()
 }
 
-func InsertDefault[T any](opt *configoptional.Optional[T], defaultValue T) {
+func InsertDefault(opt *configoptional.Optional[configgrpc.ServerConfig]) {
 	if !opt.HasValue() {
-		*opt = configoptional.Some(defaultValue)
+		*opt = configoptional.Some(configgrpc.ServerConfig{})
 	}
 }
 
