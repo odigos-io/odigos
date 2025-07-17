@@ -288,7 +288,7 @@ var activateCmd = &cobra.Command{
 
 		fmt.Println("Starting activation of Enterprise tier from Community...")
 
-		odigosConfig, err := resources.GetCurrentConfig(ctx, client, ns)
+		odigosConfiguration, err := resources.GetCurrentConfig(ctx, client, ns)
 		if err != nil {
 			fmt.Printf("Error reading odigos configuration: %v\n", err)
 			os.Exit(1)
@@ -297,7 +297,7 @@ var activateCmd = &cobra.Command{
 		// Since Karpenter uses a different labeling system that has no separation between OSS and enterprise,
 		// we want to avoid potential user apps from crashing in case they are scheduled on a node where the
 		// enterprise files are not yet found in the /var/odigos mount.
-		if odigosConfig.KarpenterEnabled != nil && *odigosConfig.KarpenterEnabled {
+		if odigosConfiguration.KarpenterEnabled != nil && *odigosConfiguration.KarpenterEnabled {
 			fmt.Println("\033[31mERROR\033[0m Activation is not supported when odigos is installed with 'KarpenterEnabled' option. uninstall odigos community and reinstall odigos with enterprise onprem token")
 			os.Exit(1)
 		}
@@ -319,7 +319,7 @@ var activateCmd = &cobra.Command{
 
 		onPremToken := cmd.Flag("onprem-token").Value.String()
 		resourceManagers := resources.CreateResourceManagers(
-			client, ns, common.OnPremOdigosTier, &onPremToken, odigosConfig, odigosVersion,
+			client, ns, common.OnPremOdigosTier, &onPremToken, odigosConfiguration, odigosVersion,
 			installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Synching")
@@ -405,6 +405,7 @@ var portForwardCentralCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend")
+
 		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUILabelAppValue)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find UI pod: %v\n", err)
@@ -412,10 +413,19 @@ var portForwardCentralCmd = &cobra.Command{
 			wg.Wait()
 			os.Exit(1)
 		}
-
 		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI")
 
+		keycloakPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.KeycloakAppName)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot find Keycloak pod: %v\n", err)
+			cancel()
+			wg.Wait()
+			os.Exit(1)
+		}
+		startPortForward(&wg, ctx, keycloakPod, client, fmt.Sprintf("%d", k8sconsts.KeycloakPort), "Keycloak")
+
 		fmt.Printf("Odigos Central UI is available at: http://localhost:%s\n", k8sconsts.CentralUIPort)
+		fmt.Printf("Odigos Central Backend is available at: http://localhost:%s\n", k8sconsts.CentralBackendPort)
 		fmt.Printf("Press Ctrl+C to stop\n")
 
 		<-sigCh

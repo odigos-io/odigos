@@ -26,38 +26,73 @@ type ActionConfig interface {
 
 // giving an action, return it's specific processor details
 // returns the type of the processors, order hint, config, and error
-func actionProcessorDetails(action *odigosv1.Action) (ActionConfig, any, error) {
+func convertActionToProcessor(ctx context.Context, k8sclient client.Client, action *odigosv1.Action) (*odigosv1.Processor, error) {
 	var config any
 	if action.Spec.AddClusterInfo != nil {
 		config = addClusterInfoConfig(action.Spec.AddClusterInfo.ClusterAttributes)
-		return action.Spec.AddClusterInfo, config, nil
+		return convertToDefaultProcessor(action, action.Spec.AddClusterInfo, config)
 	}
 
 	if action.Spec.DeleteAttribute != nil {
 		config, err := deleteAttributeConfig(action.Spec.DeleteAttribute.AttributeNamesToDelete, action.Spec.Signals)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		return action.Spec.AddClusterInfo, config, nil
+		return convertToDefaultProcessor(action, action.Spec.DeleteAttribute, config)
 	}
 
 	if action.Spec.PiiMasking != nil {
 		config, err := piiMaskingConfig(action.Spec.PiiMasking.PiiCategories)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		return action.Spec.PiiMasking, config, nil
+		return convertToDefaultProcessor(action, action.Spec.PiiMasking, config)
 	}
 
 	if action.Spec.RenameAttribute != nil {
 		config, err := renameAttributeConfig(action.Spec.RenameAttribute.Renames, action.Spec.Signals)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		return action.Spec.PiiMasking, config, nil
+		return convertToDefaultProcessor(action, action.Spec.RenameAttribute, config)
 	}
 
-	return nil, nil, errors.New("no supported action found in resource")
+	if action.Spec.K8sAttributes != nil {
+		config, signals, ownerReferences, err := k8sAttributeConfig(ctx, k8sclient, action.Namespace, nil)
+		if err != nil {
+			return nil, err
+		}
+		configJson, err := json.Marshal(config)
+		if err != nil {
+			return nil, err
+		}
+		processor := &odigosv1.Processor{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "odigos.io/v1alpha1",
+				Kind:       "Processor",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            "odigos-k8sattributes",
+				Namespace:       action.Namespace,
+				OwnerReferences: ownerReferences,
+			},
+			Spec: odigosv1.ProcessorSpec{
+				Type:            action.Spec.K8sAttributes.ProcessorType(),
+				ProcessorName:   "Unified Kubernetes Attributes",
+				Disabled:        false,
+				Notes:           action.Spec.Notes,
+				CollectorRoles:  []odigosv1.CollectorsGroupRole{odigosv1.CollectorsGroupRoleNodeCollector},
+				OrderHint:       action.Spec.K8sAttributes.OrderHint(),
+				ProcessorConfig: runtime.RawExtension{Raw: configJson},
+			},
+		}
+		for signal := range signals {
+			processor.Spec.Signals = append(processor.Spec.Signals, signal)
+		}
+		return processor, nil
+	}
+
+	return nil, errors.New("no supported action found in resource")
 }
 
 // returns a processor object with:
@@ -67,7 +102,7 @@ func actionProcessorDetails(action *odigosv1.Action) (ActionConfig, any, error) 
 // - type and order hint based on the function input
 // - config based on the function input, stringified in JSON
 // - collector roles set to ClusterGateway
-func convertToProcessor(action *odigosv1.Action, actionConfig ActionConfig, processorConfig any) (*odigosv1.Processor, error) {
+func convertToDefaultProcessor(action *odigosv1.Action, actionConfig ActionConfig, processorConfig any) (*odigosv1.Processor, error) {
 
 	configJson, err := json.Marshal(processorConfig)
 	if err != nil {
@@ -146,7 +181,6 @@ func (r *ActionReconciler) reportReconciledToProcessor(ctx context.Context, acti
 }
 
 func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
 	logger := ctrl.LoggerFrom(ctx)
 
 	action := &odigosv1.Action{}
@@ -155,14 +189,7 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	actionConfig, config, err := actionProcessorDetails(action)
-	if err != nil {
-		logger.Error(err, "Failed to get processor details from action")
-		err = r.reportReconciledToProcessorFailed(ctx, action, odigosv1.ActionTransformedToProcessorReasonFailedToTransformToProcessorReason, err)
-		return utils.K8SUpdateErrorHandler(err) // return error of setting status, or nil if success (since the original error is not retryable and logged)
-	}
-
-	processor, err := convertToProcessor(action, actionConfig, config)
+	processor, err := convertActionToProcessor(ctx, r.Client, action)
 	if err != nil {
 		logger.Error(err, "Failed to convert action to processor")
 		err = r.reportReconciledToProcessorFailed(ctx, action, odigosv1.ActionTransformedToProcessorReasonFailedToTransformToProcessorReason, err)
