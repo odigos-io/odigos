@@ -37,6 +37,8 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+release:
+  prerelease: "auto"
 brews:
   - repository:
       owner: odigos-io
