@@ -10,9 +10,9 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/common v1.0.63
-	github.com/odigos-io/odigos/destinations v0.0.0-20240223090638-df3328a088bc
-	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/destinations v0.0.0
+	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/stretchr/testify v1.10.0
 	github.com/vektah/gqlparser/v2 v2.5.27
 	go.opentelemetry.io/collector/component v1.36.0
@@ -82,7 +82,7 @@ require (
 	go.opentelemetry.io/collector v0.130.0 // indirect
 	go.opentelemetry.io/collector/config/configauth v0.130.0 // indirect
 	go.opentelemetry.io/collector/config/configcompression v1.36.0 // indirect
-	go.opentelemetry.io/collector/config/configgrpc v0.130.0 // indirect
+	go.opentelemetry.io/collector/config/configgrpc v0.130.0
 	go.opentelemetry.io/collector/config/confighttp v0.130.0 // indirect
 	go.opentelemetry.io/collector/config/confignet v1.36.0 // indirect
 	go.opentelemetry.io/collector/config/configopaque v1.36.0 // indirect

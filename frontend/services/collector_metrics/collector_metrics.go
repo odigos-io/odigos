@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/services/common"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/configgrpc"
@@ -200,7 +199,10 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 		panic("failed to cast default config to otlpreceiver.Config")
 	}
 
-	
+	InsertDefault(&cfg.GRPC, configgrpc.ServerConfig{})
+	grpcCfg := cfg.GRPC.Get()
+	grpcCfg.NetAddr.Endpoint = "0.0.0.0:4317"
+	cfg.GRPC = configoptional.Some(*grpcCfg)
 
 	r, err := f.CreateMetrics(ctx, receivertest.NewNopSettings(f.Type()), cfg, c)
 	if err != nil {
