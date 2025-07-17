@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/services/common"
 	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/config/configgrpc"
 	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -199,8 +200,13 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 		panic("failed to cast default config to otlpreceiver.Config")
 	}
 
+	endpoint := fmt.Sprintf("0.0.0.0:%d", consts.OTLPPort)
 	grpcCfg := cfg.GRPC.Get()
-	grpcCfg.NetAddr.Endpoint = fmt.Sprintf("0.0.0.0:%d", consts.OTLPPort)
+	fmt.Print("grpcCfg: ", grpcCfg)
+	if grpcCfg == nil {
+		grpcCfg = &configgrpc.ServerConfig{} // provide default
+	}
+	grpcCfg.NetAddr.Endpoint = endpoint
 	cfg.GRPC = configoptional.Some(*grpcCfg)
 
 	r, err := f.CreateMetrics(ctx, receivertest.NewNopSettings(f.Type()), cfg, c)
