@@ -200,14 +200,7 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 		panic("failed to cast default config to otlpreceiver.Config")
 	}
 
-	endpoint := fmt.Sprintf("0.0.0.0:%d", consts.OTLPPort)
-	grpcCfg := cfg.GRPC.Get()
-	fmt.Print("grpcCfg: ", grpcCfg)
-	if grpcCfg == nil {
-		grpcCfg = &configgrpc.ServerConfig{} // provide default
-	}
-	grpcCfg.NetAddr.Endpoint = endpoint
-	cfg.GRPC = configoptional.Some(*grpcCfg)
+	
 
 	r, err := f.CreateMetrics(ctx, receivertest.NewNopSettings(f.Type()), cfg, c)
 	if err != nil {
@@ -220,6 +213,12 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 	log.Println("OTLP receiver is running")
 	<-ctx.Done()
 	closeWg.Wait()
+}
+
+func InsertDefault[T any](opt *configoptional.Optional[T], defaultValue T) {
+	if !opt.HasValue() {
+		*opt = configoptional.Some(defaultValue)
+	}
 }
 
 func (c *OdigosMetricsConsumer) GetSingleSourceMetrics(sID common.SourceID) (trafficMetrics, bool) {
