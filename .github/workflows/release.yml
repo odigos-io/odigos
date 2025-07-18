@@ -197,7 +197,6 @@ jobs:
             echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
           else
             echo "Unknown event type"
-            echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
             exit 1
           fi
 
@@ -205,6 +204,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ env.TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
 
       - name: Configure Git
         run: |
