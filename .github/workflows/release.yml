@@ -145,6 +145,7 @@ jobs:
           DEST_IMAGE: ${{ env.DOCKERHUB_ORG }}/odigos-cli
         run: |
           crane copy ${SOURCE_IMAGE}:${{ env.TAG }} ${DEST_IMAGE}:${{ env.TAG }}
+          crane copy ${SOURCE_IMAGE}:latest ${DEST_IMAGE}:latest
 
       - name: Notify Slack End
         env:
