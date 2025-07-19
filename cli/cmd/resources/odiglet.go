@@ -40,28 +40,6 @@ func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 	}
 }
 
-func NewOdigletRole(ns string) *rbacv1.Role {
-	return &rbacv1.Role{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Role",
-			APIVersion: "rbac.authorization.k8s.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.OdigletRoleName,
-			Namespace: ns,
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				// Needed for reading the enabled signals for each source
-				// TODO: rely on inctr. config instead of collectorsgroups, then remove this
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups", "collectorsgroups/status"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		},
-	}
-}
-
 func NewOdigletRoleBinding(ns string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
@@ -837,7 +815,6 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	}
 	resources := []kube.Object{
 		NewOdigletServiceAccount(a.ns),
-		NewOdigletRole(a.ns),
 		NewOdigletRoleBinding(a.ns),
 		NewOdigletClusterRole(a.config.Psp, a.config.OpenshiftEnabled),
 		NewOdigletClusterRoleBinding(a.ns),

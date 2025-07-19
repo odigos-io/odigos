@@ -33,23 +33,8 @@ func main() {
 
 func deviceInjectionCallbacks() instrumentation.OtelSdksLsf {
 	return map[common.ProgrammingLanguage]map[common.OtelSdk]instrumentation.LangSpecificFunc{
-		common.GoProgrammingLanguage: {
-			common.OtelSdkEbpfCommunity: instrumentlang.Go,
-		},
-		common.JavaProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.Java,
-		},
-		common.PythonProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.Python,
-		},
-		common.JavascriptProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.NodeJS,
-		},
 		common.DotNetProgrammingLanguage: {
 			common.OtelSdkNativeCommunity: instrumentlang.DotNet,
-		},
-		common.NginxProgrammingLanguage: {
-			common.OtelSdkNativeCommunity: instrumentlang.Nginx,
 		},
 	}
 }

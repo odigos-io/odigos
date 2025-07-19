@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
@@ -30,7 +29,7 @@ const (
 	sharedStore           = "/var/odigos/dotnet/store"
 )
 
-func DotNet(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
+func DotNet(deviceId string) *v1beta1.ContainerAllocateResponse {
 	return &v1beta1.ContainerAllocateResponse{
 		Envs: map[string]string{
 			enableProfilingEnvVar: "1",
