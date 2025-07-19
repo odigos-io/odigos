@@ -4,9 +4,7 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
-	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"k8s.io/client-go/rest"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 
 	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
@@ -48,22 +46,15 @@ func (l *lister) NewPlugin(s string) dpm.PluginInterface {
 // Otel SDKs frequently requires to set some environment variables and mount some fs dirs for it to work.
 type OtelSdksLsf map[common.ProgrammingLanguage]map[common.OtelSdk]LangSpecificFunc
 
-func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf OtelSdksLsf) (dpm.ListerInterface, error) {
-	maxPods, err := getInitialDeviceAmount(clientset)
-	if err != nil {
-		return nil, err
-	}
+func NewLister(ctx context.Context, otelSdksLsf OtelSdksLsf) (dpm.ListerInterface, error) {
+
+	// each "device" has an amount that it can offer to the node (like real device),
+	// and everytime it is used, it will be reduced by 1.
+	// we (as a virtual device) have no limits on how much "instrumentation" we can offer to the node,
+	// thus set it to a large number to avoid any pod being rejected due to no available device amount.
+	initialDeviceSize := int64(1024)
 
 	isEbpfSupported := env.Current.IsEBPFSupported()
-
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		log.Logger.Error(err, "Failed to init Kubernetes API client")
-	}
-	odigosKubeClient, err := odigosclientset.NewForConfig(cfg)
-	if err != nil {
-		log.Logger.Error(err, "Failed to init odigos client")
-	}
 
 	availablePlugins := map[string]dpm.PluginInterface{}
 	for lang, otelSdkLsfMap := range otelSdksLsf {
@@ -72,12 +63,12 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf
 				continue
 			}
 			pluginName := common.InstrumentationPluginName(lang, otelSdk, nil)
-			availablePlugins[pluginName] = NewPlugin(maxPods, lsf, odigosKubeClient)
+			availablePlugins[pluginName] = NewPlugin(initialDeviceSize, lsf)
 
 			if libc.ShouldInspectForLanguage(lang) {
 				musl := common.Musl
 				pluginNameMusl := common.InstrumentationPluginName(lang, otelSdk, &musl)
-				availablePlugins[pluginNameMusl] = NewMuslPlugin(lang, maxPods, lsf, odigosKubeClient)
+				availablePlugins[pluginNameMusl] = NewMuslPlugin(lang, initialDeviceSize, lsf)
 			}
 		}
 	}
@@ -95,7 +86,7 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf
 			},
 		}
 	}
-	availablePlugins["generic"] = NewPlugin(maxPods, mountDeviceFunc, odigosKubeClient)
+	availablePlugins["generic"] = NewPlugin(initialDeviceSize, mountDeviceFunc)
 
 	return &lister{
 		plugins: availablePlugins,

@@ -6,7 +6,6 @@ import (
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
-	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/instrumentation/devices"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/log"
@@ -19,28 +18,26 @@ type plugin struct {
 	idsManager       devices.DeviceManager
 	stopCh           chan struct{}
 	LangSpecificFunc LangSpecificFunc
-	odigosKubeClient *odigosclientset.Clientset
 }
 
-func NewPlugin(maxPods int64, lsf LangSpecificFunc, odigosKubeClient *odigosclientset.Clientset) dpm.PluginInterface {
-	idManager := devices.NewIDManager(maxPods)
+func NewPlugin(initialSize int64, lsf LangSpecificFunc) dpm.PluginInterface {
+	idManager := devices.NewIDManager(initialSize)
 
 	return &plugin{
 		idsManager:       idManager,
 		stopCh:           make(chan struct{}),
 		LangSpecificFunc: lsf,
-		odigosKubeClient: odigosKubeClient,
 	}
 }
 
-func NewMuslPlugin(lang common.ProgrammingLanguage, maxPods int64, lsf LangSpecificFunc, odigosKubeClient *odigosclientset.Clientset) dpm.PluginInterface {
+func NewMuslPlugin(lang common.ProgrammingLanguage, maxPods int64, lsf LangSpecificFunc) dpm.PluginInterface {
 	wrappedLsf := func(deviceId string) *v1beta1.ContainerAllocateResponse {
 		res := lsf(deviceId)
 		libc.ModifyEnvVarsForMusl(lang, res.Envs)
 		return res
 	}
 
-	return NewPlugin(maxPods, wrappedLsf, odigosKubeClient)
+	return NewPlugin(maxPods, wrappedLsf)
 }
 
 func (p *plugin) GetDevicePluginOptions(ctx context.Context, empty *v1beta1.Empty) (*v1beta1.DevicePluginOptions, error) {
