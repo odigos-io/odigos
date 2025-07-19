@@ -1,7 +1,5 @@
 package common
 
-import "strings"
-
 type OdigosInstrumentationDevice string
 
 // This is the resource namespace of the lister in k8s device plugin manager.
@@ -30,30 +28,4 @@ func InstrumentationPluginName(language ProgrammingLanguage, otelSdk OtelSdk, li
 	}
 
 	return result
-}
-
-func InstrumentationPluginNameToComponents(pluginName string) (ProgrammingLanguage, OtelSdk) {
-	components := strings.Split(pluginName, "-")
-	if len(components) > 3 {
-		// This is a musl libc plugin
-		pluginName = strings.Join(components[1:], "-")
-		components = strings.Split(pluginName, "-")
-	}
-
-	otelSdk := OtelSdk{SdkType: OtelSdkType(components[1]), SdkTier: OtelSdkTier(components[2])}
-	return ProgrammingLanguage(components[0]), otelSdk
-}
-
-func InstrumentationDeviceName(language ProgrammingLanguage, otelSdk OtelSdk, libc *LibCType) OdigosInstrumentationDevice {
-	pluginName := InstrumentationPluginName(language, otelSdk, libc)
-	return OdigosInstrumentationDevice(OdigosResourceNamespace + "/" + pluginName)
-}
-
-func InstrumentationDeviceNameToComponents(deviceName string) (ProgrammingLanguage, OtelSdk) {
-	pluginName := strings.Split(deviceName, "/")[1]
-	return InstrumentationPluginNameToComponents(pluginName)
-}
-
-func IsResourceNameOdigosInstrumentation(resourceName string) bool {
-	return strings.HasPrefix(resourceName, OdigosResourceNamespace)
 }

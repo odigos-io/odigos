@@ -52,8 +52,6 @@ func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (c
 	log.Logger.V(0).Info("Starting reconcileres for runtime details")
 	ctrl.SetLogger(log.Logger)
 
-	odigosNs := env.Current.Namespace
-	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	currentNodeSelector := fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName)
 
 	metricsBindAddress := "0"
@@ -72,9 +70,6 @@ func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (c
 			ByObject: map[client.Object]cache.ByObject{
 				&corev1.Pod{}: {
 					Field: currentNodeSelector,
-				},
-				&odigosv1.CollectorsGroup{}: { // Used by OpAMP server to figure out which signals are collected
-					Field: nsSelector,
 				},
 			},
 		},
