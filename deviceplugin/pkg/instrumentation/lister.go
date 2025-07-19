@@ -10,14 +10,7 @@ import (
 	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/deviceplugin/pkg/log"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-)
-
-const (
-	defaultMaxDevices = 100
 )
 
 type lister struct {
@@ -91,20 +84,4 @@ func NewLister(ctx context.Context, otelSdksLsf OtelSdksLsf) (dpm.ListerInterfac
 	return &lister{
 		plugins: availablePlugins,
 	}, nil
-}
-
-func getInitialDeviceAmount(clientset *kubernetes.Clientset) (int64, error) {
-	// get max pods per current node
-	node, err := clientset.CoreV1().Nodes().Get(context.Background(), env.Current.NodeName, metav1.GetOptions{})
-	if err != nil {
-		return 0, err
-	}
-
-	maxPods, ok := node.Status.Allocatable.Pods().AsInt64()
-	if !ok {
-		log.Logger.V(0).Info("Failed to get max pods from node status, using default value", "default", defaultMaxDevices)
-		maxPods = defaultMaxDevices
-	}
-
-	return maxPods, nil
 }
