@@ -113,9 +113,6 @@ RUN for v in ${RUBY_VERSIONS}; do \
     done
 
 
-FROM busybox:1.36.1 AS cp-builder
-RUN cp /bin/cp /cp
-
 ######### ODIGLET #########
 FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
 
@@ -176,5 +173,4 @@ LABEL "description"=$DESCRIPTION
 
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
-COPY --from=cp-builder /cp /cp
 

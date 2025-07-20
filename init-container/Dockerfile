@@ -112,9 +112,6 @@ RUN for v in ${RUBY_VERSIONS}; do \
     done
 
 
-FROM busybox:1.36.1 AS cp-builder
-RUN cp /bin/cp /cp
-
 ######### ODIGLET #########
 FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
 
@@ -160,7 +157,14 @@ ARG TARGETARCH
 ARG ODIGOS_LOADER_VERSION=v0.0.4
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
-FROM gcr.io/distroless/base:latest
+
+# Use BusyBox for the final image instead of distroless.
+# Rationale:
+# - Provides built-in `sh`, `cp`, and other essential Unix tools.
+# - Allows `sh -c` command chaining (`cp dir1 dst1 && cp dir2 dst2`) in init containers.
+# - Very small (~1MB), making it good for init containers.
+FROM busybox:1.36.1
 WORKDIR /instrumentations/
+
+# Copy all instrumentation assets from the build stage
 COPY --from=builder /instrumentations/ .
-COPY --from=cp-builder /cp /cp
