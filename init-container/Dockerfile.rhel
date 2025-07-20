@@ -1,4 +1,3 @@
-
 ######### python Native Community Agent #########
 
 FROM python:3.11.9 AS python-builder
