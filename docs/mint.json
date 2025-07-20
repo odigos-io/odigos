@@ -142,19 +142,27 @@
           ]
         },
         {
-          "group": ".NET",
-          "icon": "code",
-          "pages": [
-            "instrumentations/dotnet/native",
-            "instrumentations/dotnet/enrichment"
-          ]
-        },
-        {
           "group": "PHP",
           "icon": "php",
           "pages": [
             "instrumentations/php/native",
             "instrumentations/php/enrichment"
+          ]
+        },
+        {
+          "group": "Ruby",
+          "icon": "code",
+          "pages": [
+            "instrumentations/ruby/native",
+            "instrumentations/ruby/enrichment"
+          ]
+        },
+        {
+          "group": ".NET",
+          "icon": "code",
+          "pages": [
+            "instrumentations/dotnet/native",
+            "instrumentations/dotnet/enrichment"
           ]
         },
         {
