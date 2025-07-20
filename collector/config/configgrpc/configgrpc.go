@@ -118,10 +118,6 @@ type ClientConfig struct {
 	MemoryLimiter *component.ID `mapstructure:"memory_limiter"`
 }
 
-func ptr[T any](v T) *T {
-	return &v
-}
-
 // NewDefaultClientConfig returns a new instance of ClientConfig with default values.
 func NewDefaultClientConfig() ClientConfig {
 	return ClientConfig{
@@ -133,8 +129,8 @@ func NewDefaultClientConfig() ClientConfig {
 
 // KeepaliveServerConfig is the configuration for keepalive.
 type KeepaliveServerConfig struct {
-	ServerParameters  *KeepaliveServerParameters  `mapstructure:"server_parameters,omitempty"`
-	EnforcementPolicy *KeepaliveEnforcementPolicy `mapstructure:"enforcement_policy,omitempty"`
+	ServerParameters  configoptional.Optional[KeepaliveServerParameters]  `mapstructure:"server_parameters,omitempty"`
+	EnforcementPolicy configoptional.Optional[KeepaliveEnforcementPolicy] `mapstructure:"enforcement_policy,omitempty"`
 	// prevent unkeyed literal initialization
 	_ struct{}
 }
@@ -142,8 +138,8 @@ type KeepaliveServerConfig struct {
 // NewDefaultKeepaliveServerConfig returns a new instance of KeepaliveServerConfig with default values.
 func NewDefaultKeepaliveServerConfig() KeepaliveServerConfig {
 	return KeepaliveServerConfig{
-		ServerParameters:  ptr(NewDefaultKeepaliveServerParameters()),
-		EnforcementPolicy: ptr(NewDefaultKeepaliveEnforcementPolicy()),
+		ServerParameters:  configoptional.Some(NewDefaultKeepaliveServerParameters()),
+		EnforcementPolicy: configoptional.Some(NewDefaultKeepaliveEnforcementPolicy()),
 	}
 }
 
@@ -180,6 +176,8 @@ func NewDefaultKeepaliveEnforcementPolicy() KeepaliveEnforcementPolicy {
 	return KeepaliveEnforcementPolicy{}
 }
 
+type memoryLimiterExtension = interface{ MustRefuse() bool }
+
 // ServerConfig defines common settings for a gRPC server configuration.
 type ServerConfig struct {
 	// Server net.Addr config. For transport only "tcp" and "unix" are valid options.
@@ -213,16 +211,14 @@ type ServerConfig struct {
 	// Include propagates the incoming connection's metadata to downstream consumers.
 	IncludeMetadata bool `mapstructure:"include_metadata,omitempty"`
 
+	MemoryLimiter *component.ID `mapstructure:"memory_limiter"`
+
 	// Middlewares for the gRPC server.
 	Middlewares []configmiddleware.Config `mapstructure:"middlewares,omitempty"`
-
-	MemoryLimiter *component.ID `mapstructure:"memory_limiter"`
 
 	// prevent unkeyed literal initialization
 	_ struct{}
 }
-
-type memoryLimiterExtension = interface{ MustRefuse() bool }
 
 // NewDefaultServerConfig returns a new instance of ServerConfig with default values.
 func NewDefaultServerConfig() ServerConfig {
@@ -497,8 +493,8 @@ func (gss *ServerConfig) getGrpcServerOptions(
 	// https://github.com/grpc/grpc-go/blob/120728e1f775e40a2a764341939b78d666b08260/internal/transport/http2_server.go#L184-L200
 	if gss.Keepalive.HasValue() {
 		keepaliveConfig := gss.Keepalive.Get()
-		if keepaliveConfig.ServerParameters != nil {
-			svrParams := keepaliveConfig.ServerParameters
+		if keepaliveConfig.ServerParameters.HasValue() {
+			svrParams := keepaliveConfig.ServerParameters.Get()
 			opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
 				MaxConnectionIdle:     svrParams.MaxConnectionIdle,
 				MaxConnectionAge:      svrParams.MaxConnectionAge,
@@ -511,8 +507,8 @@ func (gss *ServerConfig) getGrpcServerOptions(
 		// to apply them over zero/nil values before passing these as grpc.ServerOptions.
 		// The following shows the server code for applying default grpc.ServerOptions.
 		// https://github.com/grpc/grpc-go/blob/120728e1f775e40a2a764341939b78d666b08260/internal/transport/http2_server.go#L202-L205
-		if keepaliveConfig.EnforcementPolicy != nil {
-			enfPol := keepaliveConfig.EnforcementPolicy
+		if keepaliveConfig.EnforcementPolicy.HasValue() {
+			enfPol := keepaliveConfig.EnforcementPolicy.Get()
 			opts = append(opts, grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
 				MinTime:             enfPol.MinTime,
 				PermitWithoutStream: enfPol.PermitWithoutStream,
@@ -542,6 +538,7 @@ func (gss *ServerConfig) getGrpcServerOptions(
 		if err != nil {
 			return nil, err
 		}
+
 		uInterceptors = append(uInterceptors, func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 			return memoryLimiterUnaryServerInterceptor(ctx, req, info, handler, memoryLimiter)
 		})
@@ -585,6 +582,7 @@ func memoryLimiterUnaryServerInterceptor(ctx context.Context, req any, _ *grpc.U
 	if ml.MustRefuse() {
 		return nil, errMemoryLimitReached
 	}
+
 	return handler(ctx, req)
 }
 
@@ -593,6 +591,7 @@ func memoryLimiterStreamServerInterceptor(srv any, stream grpc.ServerStream, _ *
 	if ml.MustRefuse() {
 		return errMemoryLimitReached
 	}
+
 	return handler(srv, wrapServerStream(ctx, stream))
 }
 
@@ -603,6 +602,7 @@ func getMemoryLimiterExtension(extID *component.ID, extensions map[component.ID]
 		}
 		return nil, fmt.Errorf("requested MemoryLimiter, %s, is not a memoryLimiterExtension", extID)
 	}
+
 	return nil, fmt.Errorf("failed to resolve memoryLimiterExtension %q: %s", extID, "memory limiter extension not found")
 }
 
