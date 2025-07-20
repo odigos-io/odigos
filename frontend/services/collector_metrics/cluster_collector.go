@@ -4,7 +4,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"fmt"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -30,7 +29,7 @@ const (
 	// but since we need our processor anyway, we use our custom metrics from it to reduce the handling of breaking changes by the collector.
 	// These metrics are used to estimate the average size of spans/metrics/logs.
 	processorAcceptedSpansMetricName   = "otelcol_odigos_accepted_spans_{spans}_total"
-	processorAcceptedMetricsMetricName = "otelcol_odigos_accepted_metric_points_{datapoints}__total"
+	processorAcceptedMetricsMetricName = "otelcol_odigos_accepted_metric_points_{datapoints}_total"
 	processorAcceptedLogsMetricName    = "otelcol_odigos_accepted_log_records_{records}_total"
 )
 
@@ -315,7 +314,6 @@ func (dm *clusterCollectorMetrics) handleClusterCollectorMetrics(senderPod strin
 			sm := smSlice.At(j)
 			for k := 0; k < sm.Metrics().Len(); k++ {
 				m := sm.Metrics().At(k)
-				fmt.Println("Unknown metric name in cluster collector metrics handler:", m.Name())
 				switch m.Name() {
 				case exporterSentSpansMetricName, exporterSentLogsMetricName, exporterSentMetricsMetricName:
 					for dataPointIndex := 0; dataPointIndex < m.Sum().DataPoints().Len(); dataPointIndex++ {
