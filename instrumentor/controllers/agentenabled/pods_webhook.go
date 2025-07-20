@@ -378,27 +378,25 @@ func CreateInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}) {
 	const (
 		initContainerName    = "odigos-init-container"
 		instrumentationsPath = "/instrumentations"
-		imageName            = "busybox:latest" // replace with your custom image later
+		imageName            = "registry.odigos.io/odigos-init-container:v1.0.212"
 	)
 
 	if len(dirsToCopy) == 0 {
 		return
 	}
 
-	// Build the `cp` command from map keys
-	var copyCmds []string
+	// Build argument list for cp: ["/cp", "-r", "/src1", "/dest1", "/src2", "/dest2", ...]
+	args := []string{"/cp", "-r"}
 	for dir := range dirsToCopy {
 		from := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, instrumentationsPath)
 		to := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, k8sconsts.OdigosAgentsDirectory)
-		copyCmds = append(copyCmds, fmt.Sprintf("cp -r %s %s", from, to))
+		args = append(args, from, to)
 	}
-	// Combine all copy commands with && so failure is propagated
-	cmd := strings.Join(copyCmds, " && ")
 
 	initContainer := corev1.Container{
 		Name:    initContainerName,
 		Image:   imageName,
-		Command: []string{"sh", "-c", cmd},
+		Command: args,
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      k8sconsts.OdigosAgentMountVolumeName,
@@ -407,10 +405,9 @@ func CreateInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}) {
 		},
 	}
 
-	// Only add if the init container does not already exist
 	for _, existing := range pod.Spec.InitContainers {
 		if existing.Name == initContainerName {
-			return // avoid duplication
+			return
 		}
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, initContainer)
