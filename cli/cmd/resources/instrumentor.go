@@ -598,6 +598,17 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
+								{
+									Name: consts.OdigosVersionEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapVersionKey,
+										},
+									},
+								},
 							}, dynamicEnv...),
 							EnvFrom: []corev1.EnvFromSource{
 								{

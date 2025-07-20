@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -159,7 +160,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		// only mount the volume if at least one container has a volume to mount
 		podswebhook.MountPodVolumeToEmptyDir(pod)
 		// Create the init container that will copy the directories to the empty dir based on dirsToCopy
-		CreateInitContainer(pod, dirsToCopy)
+		CreateInitContainer(pod, dirsToCopy, odigosConfiguration)
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
@@ -374,29 +375,40 @@ func getRuntimeInfoForContainerName(ic *odigosv1.InstrumentationConfig, containe
 	return nil
 }
 
-func CreateInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}) {
+func CreateInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, odigosConfiguration common.OdigosConfiguration) {
 	const (
-		initContainerName    = "odigos-init-container"
 		instrumentationsPath = "/instrumentations"
-		imageName            = "registry.odigos.io/odigos-init-container:v1.0.212"
 	)
+	imageVersion := os.Getenv(consts.OdigosVersionEnvVarName)
+	imageName := odigosConfiguration.ImagePrefix + "/" + k8sconsts.OdigosInitContainerName + ":" + imageVersion
 
 	if len(dirsToCopy) == 0 {
 		return
 	}
 
-	// Build argument list for cp: ["/cp", "-r", "/src1", "/dest1", "/src2", "/dest2", ...]
-	args := []string{"/cp", "-r"}
+	var copyCommands []string
 	for dir := range dirsToCopy {
 		from := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, instrumentationsPath)
 		to := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, k8sconsts.OdigosAgentsDirectory)
-		args = append(args, from, to)
+		copyCommands = append(copyCommands, fmt.Sprintf("cp -r %s %s", from, to))
 	}
 
+	// TODO: Check injection method before copying loader
+	// For now, always attempt to copy /instrumentations/loader → /var/odigos/loader
+	copyCommands = append(copyCommands, "cp -r /instrumentations/loader /var/odigos/loader")
+
+	// The init container uses 'sh -c' to run multiple 'cp' commands in sequence.
+	// Each 'cp -r <src> <dst>' copies agent directories from the image's /instrumentations/
+	// into the shared /var/odigos volume (an EmptyDir). This allows sidecar injection of
+	// required binaries without writing to the host filesystem.
 	initContainer := corev1.Container{
-		Name:    initContainerName,
-		Image:   imageName,
-		Command: args,
+		Name:  k8sconsts.OdigosInitContainerName,
+		Image: imageName,
+		Command: []string{
+			"sh",
+			"-c",
+			strings.Join(copyCommands, " && "),
+		},
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      k8sconsts.OdigosAgentMountVolumeName,
@@ -406,7 +418,7 @@ func CreateInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}) {
 	}
 
 	for _, existing := range pod.Spec.InitContainers {
-		if existing.Name == initContainerName {
+		if existing.Name == k8sconsts.OdigosInitContainerName {
 			return
 		}
 	}
