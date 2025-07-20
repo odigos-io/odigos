@@ -17,8 +17,10 @@ import (
 	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,6 +43,24 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 
 	if !ok {
 		logger.Error(errors.New("expected a Pod but got a %T"), "failed to inject odigos agent")
+		return nil
+	}
+
+	// the following check is another safety guard which is meant to avoid injecting the agent any instrumentation
+	// (including the device) in case the odiglet daemonset is not ready.
+	// it can cover cases like that odiglet is deleted and no replicas are ready.
+	odigosNamespace := env.GetCurrentNamespace()
+	odigletDaemonset := &appsv1.DaemonSet{}
+	if err := p.Get(ctx, client.ObjectKey{Namespace: odigosNamespace, Name: k8sconsts.OdigletDaemonSetName}, odigletDaemonset); err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Info("odiglet daemonset not found, skipping Injection of ODIGOS agent")
+		} else {
+			logger.Error(err, "failed to verify odiglet daemonset ready for instrumented pod. Skipping Injection of ODIGOS agent")
+		}
+		return nil
+	}
+	if odigletDaemonset.Status.NumberReady == 0 {
+		logger.Error(errors.New("odiglet daemonset is not ready. Skipping Injection of ODIGOS agent"), "failed to verify odiglet daemonset ready for instrumented pod")
 		return nil
 	}
 
@@ -88,8 +108,12 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
+	karpenterDisabled := odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled
+	mountIsVirtualDevice := odigosConfiguration.MountMethod == nil || *odigosConfiguration.MountMethod == common.K8sVirtualDeviceMountMethod
+
 	// Add odiglet installed node-affinity to the pod, for non Karpenter installations
-	if odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled {
+	// and if the mount method is not virtual device (which is the default)
+	if karpenterDisabled && !mountIsVirtualDevice {
 		podutils.AddOdigletInstalledAffinity(pod)
 	}
 
@@ -241,10 +265,11 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 			}
 
 			// if loader is enabled, mount the loader directory
-			if config.AgentEnvVarsInjectionMethod != nil &&
+			if config.AgentEnvVarsInjectionMethod != nil && distroMetadata.RuntimeAgent.LdPreloadInjectionSupported &&
 				(*config.AgentEnvVarsInjectionMethod == common.LoaderFallbackToPodManifestInjectionMethod ||
 					*config.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod) {
 				podswebhook.MountDirectory(podContainerSpec, filepath.Join(k8sconsts.OdigosAgentsDirectory, consts.OdigosLoaderDirName))
+				volumeMounted = true
 			}
 		}
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {

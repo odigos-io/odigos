@@ -57,6 +57,13 @@ func WithAttributes(identifying []odigosv1.Attribute, nonIdentifying []odigosv1.
 	})
 }
 
+func WithComponents(components []odigosv1.InstrumentationLibraryStatus) InstrumentationInstanceOption {
+	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
+		s.Components = components
+		return s
+	})
+}
+
 //nolint:all
 func updateInstrumentationInstanceStatus(status odigosv1.InstrumentationInstanceStatus, options ...InstrumentationInstanceOption) odigosv1.InstrumentationInstanceStatus {
 	for _, option := range options {

@@ -5,8 +5,6 @@ on:
   pull_request:
     branches:
       - main
-      - stable
-      - greatwall
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -69,7 +67,9 @@ jobs:
     needs:
       - build-odigos-images
       - build-cli
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    # workload-lifecycle test scenario requires more resources, so we use a different instance type
+    # all other test scenarios use the default instance type which is free and fast
+    runs-on: ${{ matrix.test-scenario == 'workload-lifecycle' && 'warp-ubuntu-latest-x64-8x-spot' || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -97,15 +97,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '~1.24'
-          check-latest: true
-          cache: true
-          cache-dependency-path: |
-            **/go.sum
-
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
@@ -122,14 +113,15 @@ jobs:
           cluster_name: kind
           config: tests/common/apply/kind-config.yaml
 
-      - name: Download and Load Docker Images to Kind
+      - name: Download Odigos Images
         uses: actions/download-artifact@v4
         with:
           name: odigos-images
-      - run: |
-          docker load -i odigos-images.tar
-          docker load -i cli-image.tar
-          TAG=e2e-test make load-to-kind
+
+      - name: Load Odigos Images to Kind Cluster
+        run: |
+          kind load image-archive odigos-images.tar
+          kind load image-archive cli-image.tar
 
       - name: Download CLI binary
         uses: actions/download-artifact@v4

@@ -156,7 +156,7 @@ func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Conte
 	if err != nil {
 		return err
 	}
-	
+
 	err = r.Client.Patch(ctx, &effectiveConfigMap, client.RawPatch(types.ApplyYAMLPatchType, objApplyBytes), client.ForceOwnership, client.FieldOwner("scheduler-odigosconfiguration"))
 	if err != nil {
 		return err
@@ -260,6 +260,7 @@ func (r *odigosConfigurationController) applySingleProfileManifest(ctx context.C
 	resourceClient := r.DynamicClient.Resource(gvr).Namespace(env.GetCurrentNamespace())
 	_, err = resourceClient.Apply(ctx, obj.GetName(), obj, metav1.ApplyOptions{
 		FieldManager: "scheduler-odigosconfiguration",
+		Force:        true,
 	})
 	if err != nil {
 		return err
