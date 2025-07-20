@@ -238,8 +238,8 @@ func validatePropertyValue(property string, value []string) error {
 
 		case consts.MountMethodProperty:
 			mountMethod := common.MountMethod(value[0])
-			if mountMethod != common.K8sHostPathMountMethod && mountMethod != common.K8sVirtualDeviceMountMethod {
-				return fmt.Errorf("invalid mount method: %s (valid values: %s, %s)", value[0], common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod)
+			if mountMethod != common.K8sHostPathMountMethod && mountMethod != common.K8sVirtualDeviceMountMethod && mountMethod != common.K8sInitContainerMountMethod {
+				return fmt.Errorf("invalid mount method: %s (valid values: %s, %s, %s)", value[0], common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod, common.K8sInitContainerMountMethod)
 			}
 
 		case consts.AgentEnvVarsInjectionMethod:

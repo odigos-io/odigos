@@ -416,6 +416,8 @@ func resolveMountMethod(odigosConfiguration *common.OdigosConfiguration) {
 		return
 	case common.K8sVirtualDeviceMountMethod:
 		return
+	case common.K8sInitContainerMountMethod:
+		return
 	default:
 		// any illegal value will be defaulted to host-path
 		// TODO: emit some error here and think how to handle it
