@@ -214,7 +214,7 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 	}
 
 	if err := r.Start(ctx, componenttest.NewNopHost()); err != nil {
-		log.Fatalf("failed to start OTLP receiver: %v", err)
+		log.Printf("failed to start OTLP receiver: %v", err)
 	}
 
 	defer r.Shutdown(ctx)
