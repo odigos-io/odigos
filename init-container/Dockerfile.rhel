@@ -1,9 +1,10 @@
+
 ######### python Native Community Agent #########
 
 FROM python:3.11.9 AS python-builder
 ARG ODIGOS_VERSION
 WORKDIR /python-instrumentation
-COPY agents/python ./agents/configurator
+COPY ../agents/python ./agents/configurator
 RUN pip install ./agents/configurator/  --target workspace
 RUN echo "VERSION = \"$ODIGOS_VERSION\";" > /python-instrumentation/workspace/initializer/version.py
 
@@ -160,7 +161,20 @@ ARG TARGETARCH
 ARG ODIGOS_LOADER_VERSION=v0.0.4
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
-FROM gcr.io/distroless/base:latest
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest
+ARG VERSION
+ARG RELEASE
+ARG SUMMARY
+ARG DESCRIPTION
+LABEL "name"="Odigos-Init-Container"
+LABEL "vendor"="Odigos"
+LABEL "maintainer"="Odigos"
+LABEL "version"=$VERSION
+LABEL "release"=$RELEASE
+LABEL "summary"=$SUMMARY
+LABEL "description"=$DESCRIPTION
+
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 COPY --from=cp-builder /cp /cp
+
