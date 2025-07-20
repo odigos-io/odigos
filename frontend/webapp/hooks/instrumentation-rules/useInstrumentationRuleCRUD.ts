@@ -18,7 +18,7 @@ interface UseInstrumentationRuleCrud {
 }
 
 export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
-  const { isReadonly } = useConfig();
+  const { isReadonly, isEnterprise } = useConfig();
   const { addNotification } = useNotificationStore();
   const { instrumentationRulesLoading, setEntitiesLoading, instrumentationRules, addEntities, removeEntities } = useEntityStore();
 
@@ -76,6 +76,8 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
   const createInstrumentationRule: UseInstrumentationRuleCrud['createInstrumentationRule'] = (instrumentationRule) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else if (!isEnterprise) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.ENTERPRISE_TIER, FORM_ALERTS.ENTERPRISE_ONLY(DISPLAY_TITLES.INSTRUMENTATION_RULE), undefined, true);
     } else {
       mutateCreate({ variables: { instrumentationRule } });
     }
@@ -84,6 +86,8 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
   const updateInstrumentationRule: UseInstrumentationRuleCrud['updateInstrumentationRule'] = (ruleId, instrumentationRule) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else if (!isEnterprise) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.ENTERPRISE_TIER, FORM_ALERTS.ENTERPRISE_ONLY(DISPLAY_TITLES.INSTRUMENTATION_RULE), undefined, true);
     } else {
       mutateUpdate({ variables: { ruleId, instrumentationRule } });
     }
@@ -92,6 +96,8 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
   const deleteInstrumentationRule: UseInstrumentationRuleCrud['deleteInstrumentationRule'] = (ruleId) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else if (!isEnterprise) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.ENTERPRISE_TIER, FORM_ALERTS.ENTERPRISE_ONLY(DISPLAY_TITLES.INSTRUMENTATION_RULE), undefined, true);
     } else {
       mutateDelete({ variables: { ruleId } });
     }

@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -31,6 +32,9 @@ func (m *centralBackendResourceManager) Name() string { return k8sconsts.Central
 
 func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) error {
 	return m.client.ApplyResources(ctx, 1, []kube.Object{
+		NewCentralBackendServiceAccount(m.ns),
+		NewCentralBackendRole(m.ns),
+		NewCentralBackendRoleBinding(m.ns),
 		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion),
 		NewCentralBackendService(m.ns),
 	}, m.managerOpts)
@@ -56,6 +60,7 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string) *ap
 					Labels: map[string]string{"app": k8sconsts.CentralBackendAppName},
 				},
 				Spec: corev1.PodSpec{
+					ServiceAccountName: k8sconsts.CentralBackendServiceAccountName,
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.CentralBackendAppName,
@@ -142,4 +147,62 @@ func NewCentralBackendService(ns string) *corev1.Service {
 
 func intstrFromInt(val int) intstr.IntOrString {
 	return intstr.IntOrString{Type: intstr.Int, IntVal: int32(val)}
+}
+
+func NewCentralBackendServiceAccount(ns string) *corev1.ServiceAccount {
+	return &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceAccount",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.CentralBackendServiceAccountName,
+			Namespace: ns,
+		},
+	}
+}
+
+func NewCentralBackendRole(ns string) *rbacv1.Role {
+	return &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Role",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.CentralBackendRoleName,
+			Namespace: ns,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs:     []string{"get"},
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+			},
+		},
+	}
+}
+
+func NewCentralBackendRoleBinding(ns string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.CentralBackendRoleBindingName,
+			Namespace: ns,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      k8sconsts.CentralBackendServiceAccountName,
+				Namespace: ns,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "Role",
+			Name:     k8sconsts.CentralBackendRoleName,
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
 }
