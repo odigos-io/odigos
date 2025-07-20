@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/common"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/configgrpc"
+	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -199,28 +200,28 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 		panic("failed to cast default config to otlpreceiver.Config")
 	}
 
-	InsertDefault(&cfg.GRPC)
-	grpcCfg := cfg.GRPC.Get()
-	grpcCfg.NetAddr.Endpoint = "0.0.0.0:4317"
-	cfg.GRPC = configoptional.Some(*grpcCfg)
+	// Modify the gRPC listener address
+	cfg.GRPC = configoptional.Some(configgrpc.ServerConfig{
+		NetAddr: confignet.AddrConfig{
+			Endpoint:  "0.0.0.0:4317",
+			Transport: confignet.TransportTypeTCP,
+		},
+	})
 
 	r, err := f.CreateMetrics(ctx, receivertest.NewNopSettings(f.Type()), cfg, c)
 	if err != nil {
 		panic("failed to create receiver")
 	}
 
-	r.Start(ctx, componenttest.NewNopHost())
+	if err := r.Start(ctx, componenttest.NewNopHost()); err != nil {
+		log.Fatalf("failed to start OTLP receiver: %v", err)
+	}
+
 	defer r.Shutdown(ctx)
 
 	log.Println("OTLP receiver is running")
 	<-ctx.Done()
 	closeWg.Wait()
-}
-
-func InsertDefault(opt *configoptional.Optional[configgrpc.ServerConfig]) {
-	if !opt.HasValue() {
-		*opt = configoptional.Some(configgrpc.ServerConfig{})
-	}
 }
 
 func (c *OdigosMetricsConsumer) GetSingleSourceMetrics(sID common.SourceID) (trafficMetrics, bool) {
