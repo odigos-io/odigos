@@ -5,9 +5,10 @@ import (
 	"slices"
 	"strings"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"gopkg.in/yaml.v2"
+
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
@@ -395,5 +396,4 @@ func insertClusterMetricsResources(currentConfig *config.Config) {
 
 	pipeline.Receivers = append(pipeline.Receivers, "k8s_cluster")
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
-
 }
