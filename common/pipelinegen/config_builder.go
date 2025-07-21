@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"gopkg.in/yaml.v2"
 
@@ -19,10 +20,10 @@ func GetGatewayConfig(
 	memoryLimiterConfig config.GenericMap,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
-	serviceGraphDisabled *bool,
+	gateway *odigosv1.CollectorsGroup,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig := GetBasicConfig(memoryLimiterConfig)
-	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, serviceGraphDisabled)
+	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, gateway)
 }
 
 //nolint:funlen // This function handles complex gateway configuration logic that is difficult to break down further
@@ -32,7 +33,7 @@ func CalculateGatewayConfig(
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
-	serviceGraphDisabled *bool,
+	gateway *odigosv1.CollectorsGroup,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := config.LoadConfigers()
 	if err != nil {
@@ -146,8 +147,13 @@ func CalculateGatewayConfig(
 		}
 	}
 
-	if tracesEnabled && !*serviceGraphDisabled {
+	if tracesEnabled && !*gateway.Spec.ServiceGraphDisabled {
 		insertServiceGraphPipeline(currentConfig)
+	}
+
+	// currently enabling cluster metrics is only supported from helm-chart
+	if metricsEnabled && *gateway.Spec.ClusterMetricsEnabled {
+		insertClusterMetricsResources(currentConfig)
 	}
 
 	// Final marshal to YAML
@@ -363,4 +369,31 @@ func AddServiceGraphScrapeConfig(c *config.Config) error {
 	receiver["config"] = configMap
 	c.Receivers["prometheus/self-metrics"] = receiver
 	return nil
+}
+
+func insertClusterMetricsResources(currentConfig *config.Config) {
+	// setup the leader elector extension, this is to avoid all gateways instances to scrape the cluster metrics at the same time
+	currentConfig.Extensions["k8s_leader_elector"] = config.GenericMap{
+		"lease_name":      "odigos-gateway-leader",
+		"lease_namespace": "odigos-system",
+	}
+
+	// add this to the service.extensions
+	currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, "k8s_leader_elector")
+
+	// setup the k8s_cluster_receiver
+	currentConfig.Receivers["k8s_cluster"] = config.GenericMap{
+		"k8s_leader_elector": "k8s_leader_elector",
+	}
+
+	// Add the cluster metrics resources to the root metrics pipeline
+	rootPipelineName := GetTelemetryRootPipelineName(common.MetricsObservabilitySignal)
+	pipeline, exists := currentConfig.Service.Pipelines[rootPipelineName]
+	if !exists {
+		return
+	}
+
+	pipeline.Receivers = append(pipeline.Receivers, "k8s_cluster")
+	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
+
 }
