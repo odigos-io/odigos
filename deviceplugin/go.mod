@@ -20,8 +20,8 @@ require (
 	github.com/odigos-io/odigos-device-plugin v1.19.8
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
-	github.com/odigos-io/odigos/procdiscovery v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/k8sutils v0.0.0
+	github.com/odigos-io/odigos/procdiscovery v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
 	go.uber.org/zap v1.27.0
 	k8s.io/kubelet v0.33.1
