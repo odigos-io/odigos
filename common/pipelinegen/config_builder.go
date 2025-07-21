@@ -8,8 +8,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"gopkg.in/yaml.v2"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
@@ -21,10 +19,11 @@ func GetGatewayConfig(
 	memoryLimiterConfig config.GenericMap,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
-	gateway *odigosv1.CollectorsGroup,
+	ServiceGraphDisabled *bool,
+	ClusterMetricsEnabled *bool,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig := GetBasicConfig(memoryLimiterConfig)
-	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, gateway)
+	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, ServiceGraphDisabled, ClusterMetricsEnabled)
 }
 
 //nolint:funlen // This function handles complex gateway configuration logic that is difficult to break down further
@@ -34,7 +33,8 @@ func CalculateGatewayConfig(
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
-	gateway *odigosv1.CollectorsGroup,
+	ServiceGraphDisabled *bool,
+	ClusterMetricsEnabled *bool,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := config.LoadConfigers()
 	if err != nil {
@@ -152,10 +152,10 @@ func CalculateGatewayConfig(
 	// Defaults:
 	// - ServiceGraphDisabled: assume false (enabled) if nil
 	// - ClusterMetricsEnabled: assume false (disabled) if nil
-	if tracesEnabled && (gateway.Spec.ServiceGraphDisabled == nil || !*gateway.Spec.ServiceGraphDisabled) {
+	if tracesEnabled && (ServiceGraphDisabled == nil || !*ServiceGraphDisabled) {
 		insertServiceGraphPipeline(currentConfig)
 	}
-	if metricsEnabled && gateway.Spec.ClusterMetricsEnabled != nil && *gateway.Spec.ClusterMetricsEnabled {
+	if metricsEnabled && ClusterMetricsEnabled != nil && *ClusterMetricsEnabled {
 		insertClusterMetricsResources(currentConfig)
 	}
 
