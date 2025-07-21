@@ -102,9 +102,11 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	if isLoggingEnabled(dest) {
 		// Patch endpoint with enable_json_type=1 to enable JSON type support
 		query := parsedUrl.Query()
-		query.Set("enable_json_type", "1")
-		parsedUrl.RawQuery = query.Encode()
-		exporterConfig["endpoint"] = parsedUrl.String()
+		if query.Get("enable_json_type") != "1" {
+			query.Set("enable_json_type", "1")
+			parsedUrl.RawQuery = query.Encode()
+			exporterConfig["endpoint"] = parsedUrl.String()
+		}		
 
 		logsPipelineName := "logs/clickhouse-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
