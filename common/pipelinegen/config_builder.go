@@ -148,12 +148,14 @@ func CalculateGatewayConfig(
 		}
 	}
 
-	if tracesEnabled && !*gateway.Spec.ServiceGraphDisabled {
+	// Defensive nil-checks to avoid panic on optional *bool fields.
+	// Defaults:
+	// - ServiceGraphDisabled: assume false (enabled) if nil
+	// - ClusterMetricsEnabled: assume false (disabled) if nil
+	if tracesEnabled && (gateway.Spec.ServiceGraphDisabled == nil || !*gateway.Spec.ServiceGraphDisabled) {
 		insertServiceGraphPipeline(currentConfig)
 	}
-
-	// currently enabling cluster metrics is only supported from helm-chart
-	if metricsEnabled && *gateway.Spec.ClusterMetricsEnabled {
+	if metricsEnabled && gateway.Spec.ClusterMetricsEnabled != nil && *gateway.Spec.ClusterMetricsEnabled {
 		insertClusterMetricsResources(currentConfig)
 	}
 
