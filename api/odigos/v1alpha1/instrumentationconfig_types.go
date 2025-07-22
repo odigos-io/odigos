@@ -370,9 +370,6 @@ type SdkConfig struct {
 	// default configuration for library tracing.
 	DefaultTraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
 
-	// default configuration for library metrics.
-	DefaultMetricsConfig *instrumentationrules.MetricsConfig `json:"metricsConfig,omitempty"`
-
 	// default configuration for custom instrumentations, in case the instrumentation library does not provide a configuration.
 	DefaultCustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }

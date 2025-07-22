@@ -23,6 +23,11 @@ type k8sSettingsGetter struct {
 
 var _ instrumentation.SettingsGetter[K8sProcessDetails] = &k8sSettingsGetter{}
 
+type ExtConfig struct {
+	odigosv1.SdkConfig
+	IsMetricsEnabled bool
+}
+
 func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sProcessDetails, dist *distro.OtelDistro) (instrumentation.Settings, error) {
 	sdkConfig, serviceName, err := ksg.instrumentationSDKConfig(ctx, kd, dist.Language)
 	if err != nil {
@@ -41,7 +46,7 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sProcessDetails
 	}, nil
 }
 
-func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K8sProcessDetails, lang common.ProgrammingLanguage) (*odigosv1.SdkConfig, string, error) {
+func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K8sProcessDetails, lang common.ProgrammingLanguage) (*ExtConfig, string, error) {
 	instrumentationConfig := odigosv1.InstrumentationConfig{}
 	instrumentationConfigKey := client.ObjectKey{
 		Namespace: kd.pw.Namespace,
@@ -59,9 +64,12 @@ func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K
 	}
 	for _, config := range instrumentationConfig.Spec.SdkConfigs {
 		if config.Language == lang {
-			config.DefaultMetricsConfig.Enabled = isMetricsEnabled
+			extConfig := &ExtConfig{
+				SdkConfig:        config,
+				IsMetricsEnabled: isMetricsEnabled,
+			}
 			fmt.Printf("Metrics enabled for language %s\n", lang)
-			return &config, instrumentationConfig.Spec.ServiceName, nil
+			return extConfig, instrumentationConfig.Spec.ServiceName, nil
 		}
 	}
 	return nil, "", fmt.Errorf("no sdk config found for language %s", lang)
