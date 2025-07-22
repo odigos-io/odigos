@@ -103,7 +103,7 @@ collectorGateway:
   # Cluster Metrics is a feature that allows you to enable the cluster metrics.
   # [https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver]
   # It is disabled by default and can be enabled by setting the enabled flag to true.
-  clusterMetricsEnabled: false
+  clusterMetricsEnabled: true
 
 
 collectorNode:

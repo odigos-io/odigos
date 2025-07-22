@@ -141,6 +141,12 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		ServiceGraphDisabled:  gateway.Spec.ServiceGraphDisabled,
+		ClusterMetricsEnabled: gateway.Spec.ClusterMetricsEnabled,
+		OdigosNamespace:       env.GetCurrentNamespace(),
+	}
+
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		common.ToExporterConfigurerArray(dests),
 		common.ToProcessorConfigurerArray(processors),
@@ -148,7 +154,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
 			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines)
 		},
-		dataStreams, gateway.Spec.ServiceGraphDisabled, gateway.Spec.ClusterMetricsEnabled,
+		dataStreams, gatewayOptions,
 	)
 
 	if err != nil {
