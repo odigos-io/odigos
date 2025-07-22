@@ -254,7 +254,7 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'init-container']
+        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'odigos-agents']
         include:
           - service: autoscaler
             runner: ubuntu-latest
