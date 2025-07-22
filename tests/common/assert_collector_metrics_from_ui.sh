@@ -157,11 +157,16 @@ if [[ "$service_count" -ne 3 ]]; then
     exit 1
 fi
 
-# Find 'frontend' and validate it has 5 downstream services [coupon, currency, geolocation, inventory, pricing]
-frontend_service_count=$(echo "$services_node" | jq '[.[] | select(.serviceName == "frontend") | .services | length] | first')
+# Try to get the downstream count for 'frontend'
+frontend_count=$(echo "$services_node" | jq '[.[] | select(.serviceName == "frontend") | .services | length] | first')
 
-if [[ "$frontend_service_count" -ne 5 ]]; then
-    echo "❌ Error: Expected 'frontend' to have 5 downstream services, found $frontend_service_count."
+# If not found, fallback to 'frontend-reported', e.g for the source e2e test
+if [[ -z "$frontend_count" || "$frontend_count" == "null" ]]; then
+    frontend_count=$(echo "$services_node" | jq '[.[] | select(.serviceName == "frontend-reported") | .services | length] | first')
+fi
+
+if [[ "$frontend_count" -ne 5 ]]; then
+    echo "❌ Error: Expected 'frontend' or 'frontend-reported' to have 5 downstream services, found $frontend_count."
     exit 1
 fi
 
