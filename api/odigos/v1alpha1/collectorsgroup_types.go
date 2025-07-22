@@ -101,6 +101,10 @@ type CollectorsGroupSpec struct {
 	// ServiceGraphEnabled is a feature that allows you to visualize the service graph of your application.
 	// It is enabled by default and can be disabled by setting the enabled flag to false.
 	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
+
+	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector
