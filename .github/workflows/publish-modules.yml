@@ -254,7 +254,7 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'odigos-agents']
+        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
         include:
           - service: autoscaler
             runner: ubuntu-latest
@@ -284,7 +284,7 @@ jobs:
             runner: ubuntu-latest
             summary: 'Odigos Operator'
             description: 'The Odigos Operator installs and manages Odigos in a cluster'
-          - service: odigos-agents
+          - service: agents
             runner: ubuntu-latest
             summary: 'Odigos Agents'
             description: 'The Odigos Agents used to copy Odigos agent relevant files into the user workloads.'
@@ -363,7 +363,7 @@ jobs:
                 matrix.service == 'collector' && format('collector/{0}', matrix.dockerfile) ||
                 matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
                 matrix.service == 'operator' && format('operator/{0}', matrix.dockerfile) ||
-                matrix.service == 'odigos-agents' && format('odigos-agents/{0}', matrix.dockerfile) ||
+                matrix.service == 'agents' && format('agents/{0}', matrix.dockerfile) ||
                 matrix.dockerfile }}
 
       - name: Notify Slack End
