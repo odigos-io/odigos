@@ -126,9 +126,44 @@ grahphqlServiceGraphPayload='{
 # Send the GraphQL request and store the response
 response=$(curl -s -X POST http://localhost:$LOCAL_PORT/graphql \
     -H "Content-Type: application/json" \
-    -d "$grahphqlOverviewPayload")
+    -d "$grahphqlServiceGraphPayload")
 
 echo "🔍 Service Graph Response: $response"
+
+if [[ -z "$response" ]]; then
+    echo "❌ Error: Empty response from server."
+    exit 1
+fi
+
+# Check for GraphQL errors
+error_message=$(echo "$response" | jq -r '.errors[0].message // empty')
+if [[ -n "$error_message" ]]; then
+    echo "❌ GraphQL Error: $error_message"
+    exit 1
+fi
+
+# Validate presence of getServiceMap.services
+services_node=$(echo "$response" | jq '.data.getServiceMap.services')
+if [[ "$services_node" == "null" || -z "$services_node" ]]; then
+    echo "❌ Error: Missing 'getServiceMap.services' in the response."
+    exit 1
+fi
+
+
+# Assert total number of top-level services [user, frontend, coupon]
+service_count=$(echo "$services_node" | jq 'length')
+if [[ "$service_count" -ne 3 ]]; then
+    echo "❌ Error: Expected 3 top-level services, found $service_count."
+    exit 1
+fi
+
+# Find 'frontend' and validate it has 5 downstream services [coupon, currency, geolocation, inventory, pricing]
+frontend_service_count=$(echo "$services_node" | jq '[.[] | select(.serviceName == "frontend") | .services | length] | first')
+
+if [[ "$frontend_service_count" -ne 5 ]]; then
+    echo "❌ Error: Expected 'frontend' to have 5 downstream services, found $frontend_service_count."
+    exit 1
+fi
 
 
 echo "✅ All checks passed: Sources ($valid_sources_count) and Destinations ($valid_destinations_count) meet the expected criteria."
