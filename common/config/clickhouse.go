@@ -42,6 +42,7 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	if parsedUrl.Port() == "" {
 		endpoint = strings.Replace(endpoint, parsedUrl.Host, parsedUrl.Host+":9000", 1)
+		parsedUrl, _ = url.Parse(endpoint)
 	}
 
 	username, userExists := dest.GetConfig()[clickhouseUsername]
@@ -80,6 +81,7 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	}
 
 	currentConfig.Exporters[exporterName] = exporterConfig
+
 	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/clickhouse-" + dest.GetID()
@@ -98,6 +100,14 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	}
 
 	if isLoggingEnabled(dest) {
+		// Patch endpoint with enable_json_type=1 to enable JSON type support
+		query := parsedUrl.Query()
+		if query.Get("enable_json_type") != "1" {
+			query.Set("enable_json_type", "1")
+			parsedUrl.RawQuery = query.Encode()
+			exporterConfig["endpoint"] = parsedUrl.String()
+		}		
+
 		logsPipelineName := "logs/clickhouse-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
@@ -107,3 +117,4 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	return pipelineNames, nil
 }
+
