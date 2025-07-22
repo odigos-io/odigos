@@ -51,8 +51,16 @@ func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K
 		// this can be valid when the instrumentation config is deleted and current pods will go down soon
 		return nil, "", err
 	}
+	isMetricsEnabled := false
+	for _, config := range instrumentationConfig.Spec.Containers {
+		if config.ContainerName == kd.containerName {
+			isMetricsEnabled = config.Metrics != nil
+		}
+	}
 	for _, config := range instrumentationConfig.Spec.SdkConfigs {
 		if config.Language == lang {
+			config.DefaultMetricsConfig.Enabled = isMetricsEnabled
+			fmt.Printf("Metrics enabled for language %s\n", lang)
 			return &config, instrumentationConfig.Spec.ServiceName, nil
 		}
 	}
