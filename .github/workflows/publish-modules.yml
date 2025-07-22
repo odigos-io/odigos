@@ -284,10 +284,10 @@ jobs:
             runner: ubuntu-latest
             summary: 'Odigos Operator'
             description: 'The Odigos Operator installs and manages Odigos in a cluster'
-          - service: odigos-agents
+          - service: init-container
             runner: ubuntu-latest
-            summary: 'Odigos Copy Agents Container'
-            description: 'The Odigos Copy Agents Container is used to copy the Odigos agent into the user workloads.'
+            summary: 'Odigos Init Container'
+            description: 'The Odigos Init Container is used to inject the Odigos agent into the user workloads.'
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
@@ -363,7 +363,7 @@ jobs:
                 matrix.service == 'collector' && format('collector/{0}', matrix.dockerfile) ||
                 matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
                 matrix.service == 'operator' && format('operator/{0}', matrix.dockerfile) ||
-                matrix.service == 'odigos-agents' && format('odigos-agents/{0}', matrix.dockerfile) ||
+                matrix.service == 'init-container' && format('init-container/{0}', matrix.dockerfile) ||
                 matrix.dockerfile }}
 
       - name: Notify Slack End

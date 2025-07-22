@@ -21,6 +21,14 @@ WORKDIR /src
 ARG NODEJS_AGENT_VERSION=main
 RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentelemetry-node && git checkout $NODEJS_AGENT_VERSION
 
+# The second build stage 'nodejs-agent-src' prepares the actual code we are going to compile and embed in odiglet.
+# By default, it uses the previous 'nodejs-agent-clone' stage, but one can override it by setting the
+# --build-context nodejs-agent-src=../opentelemetry-node flag in the docker build command.
+# This allows us to use the agent sources and test changes during development.
+# The output of this stage is the resolved source code to be used in the next stage.
+FROM scratch AS nodejs-agent-src
+COPY --from=nodejs-agent-clone /src/opentelemetry-node /
+
 # The third step 'nodejs-agent-build' compiles the agent sources and prepares it for
 # being dependency of the native-community agent.
 FROM node:18 AS nodejs-agent-build
