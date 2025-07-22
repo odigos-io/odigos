@@ -50,6 +50,7 @@ import (
 	basicauthextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension"
 	bearertokenauthextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension"
 	healthcheckextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
+	k8sleaderelector "github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector"
 	oauth2clientauthextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension"
 	pprofextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension"
 	azureblobstorageexporter "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter"
@@ -80,6 +81,7 @@ import (
 	transformprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	filelogreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"
 	hostmetricsreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
+	k8sclusterreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 	kubeletstatsreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
 	prometheusreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	zipkinreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver"
@@ -118,6 +120,7 @@ func components() (otelcol.Factories, error) {
 		basicauthextension.NewFactory(),
 		bearertokenauthextension.NewFactory(),
 		oauth2clientauthextension.NewFactory(),
+		k8sleaderelector.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -138,6 +141,7 @@ func components() (otelcol.Factories, error) {
 		kubeletstatsreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
 		prometheusreceiver.NewFactory(),
+		k8sclusterreceiver.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err

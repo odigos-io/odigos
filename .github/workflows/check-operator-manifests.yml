@@ -17,6 +17,7 @@ jobs:
           go-version: '1.24'
 
       - name: Check operator manifests are up to date
+        id: check-manifests
         run: |
           cd operator
           USE_IMAGE_DIGESTS=true make generate manifests
@@ -26,4 +27,20 @@ jobs:
             echo "::error::Please run cd operator/ && USE_IMAGE_DIGESTS=true make generate manifests"
             git diff
             exit 1
-          fi 
+          fi
+
+      - name: Add operator owners as reviewers if check-operator-manifests failed
+        if: failure() && steps.check-manifests.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const ownersText = fs.readFileSync('operator/OWNERS', 'utf8');
+            const usernames = ownersText.trim().split('\n').filter(line => line.trim() !== '');
+            
+            github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              reviewers: usernames
+            }); 
