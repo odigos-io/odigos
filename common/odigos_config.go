@@ -107,7 +107,9 @@ type CollectorGatewayConfiguration struct {
 	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
 
 	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
+	// https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver
 	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	// This feature is only available when metrics destination is configured.
 	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
 }
 type UserInstrumentationEnvs struct {
