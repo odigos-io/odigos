@@ -39,6 +39,16 @@ Below are the ClusterRoles used by Odigos components.
 | apps | replicasets<br />deployments<br />daemonsets<br />statefulsets | \* | get<br />list<br />watch |
 | \* | endpoints | \* | get<br />list<br />watch |
 
+### odigos-gateway
+
+| APIGroups | Resources | Resource Names | Verbs |
+|---|---|---|---|
+| \* | events<br />namespaces<br />namespaces/status<br />nodes<br />nodes/spec<br />pods<br />pods/status<br />replicationcontrollers<br />replicationcontrollers/status<br />resourcequotas<br />services | \* | get<br />list<br />watch |
+| apps | daemonsets<br />deployments<br />replicasets<br />statefulsets | \* | get<br />list<br />watch |
+| extensions | daemonsets<br />deployments<br />replicasets | \* | get<br />list<br />watch |
+| batch | jobs<br />cronjobs | \* | get<br />list<br />watch |
+| autoscaling | horizontalpodautoscalers | \* | get<br />list<br />watch |
+
 ### odigos-instrumentor
 
 | APIGroups | Resources | Resource Names | Verbs |
@@ -140,6 +150,7 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
 | \* | configmaps | odigos-gateway | get<br />list<br />watch |
+| coordination.k8s.io | leases | \* | get<br />list<br />watch<br />create<br />update<br />patch<br />delete |
 
 ### odigos-instrumentor
 
