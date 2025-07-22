@@ -165,11 +165,16 @@ if [[ -z "$frontend_count" || "$frontend_count" == "null" ]]; then
     frontend_count=$(echo "$services_node" | jq '[.[] | select(.serviceName == "frontend-reported") | .services | length] | first')
 fi
 
+if [[ -z "$frontend_count" || "$frontend_count" == "null" ]]; then
+    echo "❌ Error: Neither 'frontend' nor 'frontend-reported' services found in Service Graph."
+    exit 1
+fi
+
 if [[ "$frontend_count" -ne 5 ]]; then
     echo "❌ Error: Expected 'frontend' or 'frontend-reported' to have 5 downstream services, found $frontend_count."
     exit 1
 fi
 
 
-echo "✅ All checks passed: Sources ($valid_sources_count) and Destinations ($valid_destinations_count) meet the expected criteria."
+echo "✅ All checks passed: Sources ($valid_sources_count), Destinations ($valid_destinations_count), and Service Graph structure (frontend with $frontend_count downstream services) meet the expected criteria."
 exit 0
