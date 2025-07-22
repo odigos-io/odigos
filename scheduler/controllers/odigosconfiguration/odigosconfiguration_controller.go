@@ -293,21 +293,6 @@ func reconcileCronJob(ctx context.Context, kubeClient client.Client, ns string, 
 	return nil
 }
 
-func deleteCronJob(ctx context.Context, client client.Client, ns string, cronJobName string, cronJob client.Object) error {
-	err := client.Get(ctx, types.NamespacedName{Namespace: ns, Name: cronJobName}, cronJob)
-	if err == nil {
-		// CronJob exists, delete it
-		err = client.Delete(ctx, cronJob)
-		if err != nil {
-			return fmt.Errorf("failed to delete go offsets CronJob: %v", err)
-		}
-	} else if !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to check for go offsets CronJob: %v", err)
-	}
-
-	return nil
-}
-
 func (r *odigosConfigurationController) applyProfileManifests(ctx context.Context, effectiveProfiles []common.ProfileName) error {
 
 	profileDeploymentHash := calculateProfilesDeploymentHash(effectiveProfiles, r.OdigosVersion)
