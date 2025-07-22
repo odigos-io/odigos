@@ -19,11 +19,10 @@ func GetGatewayConfig(
 	memoryLimiterConfig config.GenericMap,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
-	ServiceGraphDisabled *bool,
-	ClusterMetricsEnabled *bool,
+	serviceGraphDisabled *bool, clusterMetricsEnabled *bool,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig := GetBasicConfig(memoryLimiterConfig)
-	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, ServiceGraphDisabled, ClusterMetricsEnabled)
+	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, serviceGraphDisabled, clusterMetricsEnabled)
 }
 
 //nolint:funlen // This function handles complex gateway configuration logic that is difficult to break down further
@@ -33,8 +32,7 @@ func CalculateGatewayConfig(
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
-	ServiceGraphDisabled *bool,
-	ClusterMetricsEnabled *bool,
+	serviceGraphDisabled *bool, clusterMetricsEnabled *bool,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := config.LoadConfigers()
 	if err != nil {
@@ -152,10 +150,10 @@ func CalculateGatewayConfig(
 	// Defaults:
 	// - ServiceGraphDisabled: assume false (enabled) if nil
 	// - ClusterMetricsEnabled: assume false (disabled) if nil
-	if tracesEnabled && (ServiceGraphDisabled == nil || !*ServiceGraphDisabled) {
+	if tracesEnabled && (serviceGraphDisabled == nil || !*serviceGraphDisabled) {
 		insertServiceGraphPipeline(currentConfig)
 	}
-	if metricsEnabled && ClusterMetricsEnabled != nil && *ClusterMetricsEnabled {
+	if metricsEnabled && clusterMetricsEnabled != nil && *clusterMetricsEnabled {
 		insertClusterMetricsResources(currentConfig)
 	}
 
