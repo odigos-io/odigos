@@ -3,6 +3,7 @@ package instrumentation_ebpf
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -31,7 +32,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
+	fmt.Printf("@@@@ Reconciling InstrumentationConfig for workload: %s/%s\n", podWorkload.Namespace, podWorkload.Name)
 	// Fetch the InstrumentationConfig instrumentationConfig
 	instrumentationConfig := &odigosv1.InstrumentationConfig{}
 	err = i.Get(ctx, req.NamespacedName, instrumentationConfig)
