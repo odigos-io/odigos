@@ -75,7 +75,7 @@ if ! nc -z localhost $LOCAL_PORT 2>/dev/null; then
     exit 1
 fi
 
-grahphqlPayload='{
+grahphqlOverviewPayload='{
   "operationName": "GetOverviewMetrics",
   "variables": {},
   "query": "query GetOverviewMetrics { getOverviewMetrics { sources { namespace kind name totalDataSent throughput } destinations { id totalDataSent throughput } } }"
@@ -84,7 +84,7 @@ grahphqlPayload='{
 # Send the GraphQL request and store the response
 response=$(curl -s -X POST http://localhost:$LOCAL_PORT/graphql \
     -H "Content-Type: application/json" \
-    -d "$grahphqlPayload")
+    -d "$grahphqlOverviewPayload")
 
 if [[ -z "$response" ]]; then
     echo "❌ Error: Empty response from server."
@@ -116,6 +116,20 @@ if [[ "$valid_destinations_count" -lt "1" ]]; then
     echo "❌ Error: Expected at least 1 valid destinations metrics, but found only $valid_destinations_count."
     exit 1
 fi
+
+grahphqlServiceGraphPayload='{
+  "operationName": "GetServiceMap",
+  "variables": {},
+  "query": "query GetServiceMap { getServiceMap { services { serviceName services { serviceName requests dateTime } } } }"
+}'
+
+# Send the GraphQL request and store the response
+response=$(curl -s -X POST http://localhost:$LOCAL_PORT/graphql \
+    -H "Content-Type: application/json" \
+    -d "$grahphqlOverviewPayload")
+
+echo "🔍 Service Graph Response: $response"
+
 
 echo "✅ All checks passed: Sources ($valid_sources_count) and Destinations ($valid_destinations_count) meet the expected criteria."
 exit 0
