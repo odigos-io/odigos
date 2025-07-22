@@ -22,6 +22,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: odiglet
+      annotations:
+        kubectl.kubernetes.io/default-container: odiglet
     spec:
       {{- if .Values.nodeSelector }}
       nodeSelector:
