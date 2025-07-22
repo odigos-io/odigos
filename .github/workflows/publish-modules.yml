@@ -254,7 +254,7 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator']
+        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
         include:
           - service: autoscaler
             runner: ubuntu-latest
@@ -284,6 +284,10 @@ jobs:
             runner: ubuntu-latest
             summary: 'Odigos Operator'
             description: 'The Odigos Operator installs and manages Odigos in a cluster'
+          - service: agents
+            runner: ubuntu-latest
+            summary: 'Odigos Agents'
+            description: 'The Odigos Agents used to copy Odigos agent relevant files into the user workloads.'
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
@@ -332,7 +336,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}  
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker Image for ${{ matrix.service }}
         uses: docker/build-push-action@v6
@@ -359,6 +363,7 @@ jobs:
                 matrix.service == 'collector' && format('collector/{0}', matrix.dockerfile) ||
                 matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
                 matrix.service == 'operator' && format('operator/{0}', matrix.dockerfile) ||
+                matrix.service == 'agents' && format('agents/{0}', matrix.dockerfile) ||
                 matrix.dockerfile }}
 
       - name: Notify Slack End
