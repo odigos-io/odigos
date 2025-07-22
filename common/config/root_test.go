@@ -61,13 +61,17 @@ func openTestData(t *testing.T, path string) string {
 func TestCalculateMinimal(t *testing.T) {
 	want := openTestData(t, "testdata/minimal.yaml")
 
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		ServiceGraphDisabled:  nil,
+		ClusterMetricsEnabled: nil,
+		OdigosNamespace:       "odigos-system",
+	}
 	config, err, statuses, signals := pipelinegen.GetGatewayConfig(
 		make([]config.ExporterConfigurer, 0),
 		make([]config.ProcessorConfigurer, 0),
 		make(config.GenericMap),
 		nil,
-		nil,
-		nil,
+		nil, gatewayOptions,
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, config, want)
@@ -79,6 +83,11 @@ func TestCalculateMinimal(t *testing.T) {
 func TestCalculate(t *testing.T) {
 	want := openTestData(t, "testdata/debugexporter.yaml")
 
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		ServiceGraphDisabled:  nil,
+		ClusterMetricsEnabled: nil,
+		OdigosNamespace:       "odigos-system",
+	}
 	config, err, statuses, signals := pipelinegen.GetGatewayConfig(
 		[]config.ExporterConfigurer{
 			DummyDestination{
@@ -88,8 +97,7 @@ func TestCalculate(t *testing.T) {
 		make([]config.ProcessorConfigurer, 0),
 		make(config.GenericMap),
 		nil,
-		nil,
-		nil,
+		nil, gatewayOptions,
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, want, config)
@@ -102,6 +110,11 @@ func TestCalculate(t *testing.T) {
 func TestCalculateWithBaseMinimal(t *testing.T) {
 	want := openTestData(t, "testdata/withbaseminimal.yaml")
 
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		ServiceGraphDisabled:  nil,
+		ClusterMetricsEnabled: nil,
+		OdigosNamespace:       "odigos-system",
+	}
 	config, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
 		&config.Config{
 			Receivers: config.GenericMap{
@@ -125,8 +138,7 @@ func TestCalculateWithBaseMinimal(t *testing.T) {
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
 		nil,
-		nil,
-		nil,
+		nil, gatewayOptions,
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, config, want)
@@ -136,6 +148,11 @@ func TestCalculateWithBaseMinimal(t *testing.T) {
 }
 
 func TestCalculateWithBaseNoOTLP(t *testing.T) {
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		ServiceGraphDisabled:  nil,
+		ClusterMetricsEnabled: nil,
+		OdigosNamespace:       "odigos-system",
+	}
 	_, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
 		&config.Config{
 			Receivers:  config.GenericMap{},
@@ -149,8 +166,8 @@ func TestCalculateWithBaseNoOTLP(t *testing.T) {
 		},
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
-		nil, nil,
 		nil,
+		nil, gatewayOptions,
 	)
 	assert.Contains(t, err.Error(), "required receiver")
 	assert.Equal(t, len(statuses.Destination), 0)
@@ -161,6 +178,11 @@ func TestCalculateWithBaseNoOTLP(t *testing.T) {
 // TestCalculateDataStreamAndDestinations tests the case where we have a datastream with sources and a destination
 func TestCalculateDataStreamAndDestinations(t *testing.T) {
 	want := openTestData(t, "testdata/withdatastream.yaml")
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		ServiceGraphDisabled:  nil,
+		ClusterMetricsEnabled: nil,
+		OdigosNamespace:       "odigos-system",
+	}
 	dummyDest := DummyDestination{
 		ID: "dummy",
 	}
@@ -202,8 +224,7 @@ func TestCalculateDataStreamAndDestinations(t *testing.T) {
 		},
 		[]config.ExporterConfigurer{dummyDest},
 		dummyProcessors,
-		nil, dataStreamDetails,
-		nil,
+		nil, dataStreamDetails, gatewayOptions,
 	)
 
 	assert.Equal(t, config, want)
@@ -218,6 +239,11 @@ func TestCalculateDataStreamAndDestinations(t *testing.T) {
 func TestCalculateDataStreamMissingSources(t *testing.T) {
 	want := openTestData(t, "testdata/destnosources.yaml")
 
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		ServiceGraphDisabled:  nil,
+		ClusterMetricsEnabled: nil,
+		OdigosNamespace:       "odigos-system",
+	}
 	dummyDest := DummyDestination{
 		ID: "dummy",
 	}
@@ -259,8 +285,7 @@ func TestCalculateDataStreamMissingSources(t *testing.T) {
 		},
 		[]config.ExporterConfigurer{dummyDest},
 		dummyProcessors,
-		nil, dataStreamDetails,
-		nil,
+		nil, dataStreamDetails, gatewayOptions,
 	)
 
 	assert.Equal(t, config, want)
@@ -275,6 +300,11 @@ func TestCalculateDataStreamMissingSources(t *testing.T) {
 func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 	want := openTestData(t, "testdata/sourcesnodest.yaml")
 
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		ServiceGraphDisabled:  nil,
+		ClusterMetricsEnabled: nil,
+		OdigosNamespace:       "odigos-system",
+	}
 	dummyProcessors := []config.ProcessorConfigurer{
 		DummyProcessor{
 			ID: "dummy-processor",
@@ -318,8 +348,7 @@ func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 		},
 		[]config.ExporterConfigurer{},
 		dummyProcessors,
-		nil, dataStreamDetails,
-		nil,
+		nil, dataStreamDetails, gatewayOptions,
 	)
 
 	assert.Equal(t, config, want)

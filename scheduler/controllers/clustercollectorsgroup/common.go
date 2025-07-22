@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings, serviceGraphDisabled *bool) *odigosv1.CollectorsGroup {
+func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings, serviceGraphDisabled *bool, clusterMetricsEnabled *bool) *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -26,6 +26,7 @@ func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.Coll
 			CollectorOwnMetricsPort: k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault,
 			ResourcesSettings:       *resourcesSettings,
 			ServiceGraphDisabled:    serviceGraphDisabled,
+			ClusterMetricsEnabled:   clusterMetricsEnabled,
 		},
 	}
 }
@@ -47,12 +48,19 @@ func sync(ctx context.Context, c client.Client) error {
 		serviceGraphDisabled = &result
 	}
 
+	// default cluster metrics is disabled (clusterMetricsEnabled to false)
+	clusterMetricsEnabled := odigosConfiguration.CollectorGateway.ClusterMetricsEnabled
+	if clusterMetricsEnabled == nil {
+		result := false
+		clusterMetricsEnabled = &result
+	}
+
 	// cluster collector is always set and never deleted at the moment.
 	// this is to accelerate spinup time and avoid errors while things are gradually being reconciled
 	// and started.
 	// in the future we might want to support a deployment of instrumentations only and allow user
 	// to setup their own collectors, then we would avoid adding the cluster collector by default.
-	err = utils.ApplyCollectorGroup(ctx, c, newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled))
+	err = utils.ApplyCollectorGroup(ctx, c, newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled, clusterMetricsEnabled))
 	if err != nil {
 		return err
 	}
