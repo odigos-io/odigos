@@ -28,6 +28,7 @@ require (
 	go.opentelemetry.io/collector/receiver/receivertest v0.126.0
 	go.opentelemetry.io/otel v1.36.0
 	golang.org/x/sync v0.14.0
+	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.33.1
 	k8s.io/apimachinery v0.33.1
 	k8s.io/client-go v0.33.1
@@ -51,7 +52,6 @@ require (
 	go.opentelemetry.io/collector/receiver/receiverhelper v0.126.0 // indirect
 	go.opentelemetry.io/contrib/bridges/otelzap v0.10.0 // indirect
 	go.opentelemetry.io/otel/log v0.11.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	modernc.org/libc v1.22.5 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.5.0 // indirect
