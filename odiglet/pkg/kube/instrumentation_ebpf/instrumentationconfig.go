@@ -55,8 +55,18 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		defer cancel()
 
 		configUpdate := instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]{}
+		isMetricsEnabled := false
+		for _, config := range instrumentationConfig.Spec.Containers {
+
+			fmt.Printf("@@ Metrics %v for container %s\n", config.Metrics != nil, config.ContainerName)
+		}
 		for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
+			// extConfig := &ebpf.ExtConfig{
+			// 	SdkConfig:        sdkConfig,
+			// 	IsMetricsEnabled: isMetricsEnabled,
+			// }
 			cg := ebpf.K8sConfigGroup{Pw: podWorkload, Lang: sdkConfig.Language}
+			fmt.Printf("@@ cg %+v, sdkConfig %+v, isMetricsEnabled %t\n", cg, sdkConfig, isMetricsEnabled)
 			currentConfig := sdkConfig
 			configUpdate[cg] = &currentConfig
 		}
