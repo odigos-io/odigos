@@ -63,7 +63,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 			}
 		}
 		for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
-			extConfig := &ebpf.ExtConfig{
+			extConfig := ebpf.ExtConfig{
 				SdkConfig:        sdkConfig,
 				IsMetricsEnabled: isMetricsEnabled,
 			}
