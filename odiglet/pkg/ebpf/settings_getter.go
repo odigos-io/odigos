@@ -39,11 +39,14 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sProcessDetails
 		OtelServiceName = kd.pw.Name
 	}
 
-	return instrumentation.Settings{
+	settings := instrumentation.Settings{
 		ServiceName:        OtelServiceName,
 		ResourceAttributes: getResourceAttributes(kd.pw, kd.pod.Name, kd.procEvent),
 		InitialConfig:      sdkConfig,
-	}, nil
+	}
+	fmt.Printf("@@ Returning settings with InitialConfig type: %T\n", settings.InitialConfig)
+	fmt.Printf("@@ InitialConfig value: %+v\n", settings.InitialConfig)
+	return settings, nil
 }
 
 func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K8sProcessDetails, lang common.ProgrammingLanguage) (*ExtConfig, string, error) {
@@ -60,6 +63,7 @@ func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K
 	for _, config := range instrumentationConfig.Spec.Containers {
 		if config.ContainerName == kd.containerName {
 			isMetricsEnabled = config.Metrics != nil
+			fmt.Printf("Metrics enabled for container %s in workload %s/%s: %v isMetricsEnabled %t\n", kd.containerName, kd.pw.Namespace, kd.pw.Name, config.Metrics, isMetricsEnabled)
 		}
 	}
 	for _, config := range instrumentationConfig.Spec.SdkConfigs {
