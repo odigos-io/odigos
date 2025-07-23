@@ -159,6 +159,7 @@ type OdigosConfiguration struct {
 	CentralBackendURL                string                         `json:"centralBackendURL,omitempty"`
 	ClusterName                      string                         `json:"clusterName,omitempty"`
 	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
+	CheckDeviceHealthBeforeInjection *bool                          `json:"checkDeviceHealthBeforeInjection,omitempty"`
 	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
 	AgentEnvVarsInjectionMethod      *EnvInjectionMethod            `json:"agentEnvVarsInjectionMethod,omitempty"`
 	UserInstrumentationEnvs          *UserInstrumentationEnvs       `json:"UserInstrumentationEnvs,omitempty"`

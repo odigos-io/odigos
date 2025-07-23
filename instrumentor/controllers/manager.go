@@ -17,9 +17,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -61,9 +59,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 
 	odigletDaemonsetNameSelector := fields.OneTermEqualSelector("metadata.name", k8sconsts.OdigletDaemonSetName)
 	odigletDaemonsetSelector := fields.AndSelectors(nsSelector, odigletDaemonsetNameSelector)
-
-	instrumentedPodReq, _ := labels.NewRequirement(k8sconsts.OdigosAgentsMetaHashLabel, selection.Exists, []string{})
-	instrumentedPodSelector := labels.NewSelector().Add(*instrumentedPodReq)
 
 	podsTransformFunc := func(obj interface{}) (interface{}, error) {
 		pod, ok := obj.(*corev1.Pod)
@@ -125,7 +120,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
 				&corev1.Pod{}: {
-					Label:     instrumentedPodSelector,
 					Transform: podsTransformFunc,
 				},
 				&corev1.ConfigMap{}: {

@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
+	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
@@ -331,7 +332,7 @@ func rolloutCondition(rolloutErr error) metav1.Condition {
 // podHasCrashLoop returns true if any (init)-container in the pod is in CrashLoopBackOff.
 func podHasCrashLoop(p *corev1.Pod) bool {
 	for _, cs := range append(p.Status.InitContainerStatuses, p.Status.ContainerStatuses...) {
-		if cs.State.Waiting != nil && cs.State.Waiting.Reason == "CrashLoopBackOff" {
+		if containerutils.IsContainerInCrashLoopBackOff(&cs) {
 			return true
 		}
 	}

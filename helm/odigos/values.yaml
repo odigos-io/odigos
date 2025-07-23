@@ -217,6 +217,12 @@ instrumentor:
   # k8s-virtual-device: default method using a virtual device
   # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
   mountMethod: ''
+  # checkDeviceHealthBeforeInjection is relevant only when mountMethod is k8s-virtual-device.
+  # before injecting odigos agent into a new pod, it will check that all odiglet "deviceplugin"
+  # containers are not in crash loop backoff.
+  # this is to avoid adding a device (as resource request on a container)
+  # where an odiglet might not be able to provide the device on the node and fail k8s scheduling for instrumented pods on all nodes.
+  checkDeviceHealthBeforeInjection: false
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
