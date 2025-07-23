@@ -72,7 +72,7 @@ func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K
 				SdkConfig:        config,
 				IsMetricsEnabled: isMetricsEnabled,
 			}
-			fmt.Printf("Metrics enabled for language %s\n", lang)
+			fmt.Printf("Returning SDK config for language %s: Metrics enabled %v\n", lang, extConfig.IsMetricsEnabled)
 			return extConfig, instrumentationConfig.Spec.ServiceName, nil
 		}
 	}
