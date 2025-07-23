@@ -40,7 +40,7 @@ func CheckDevicePluginContainersHealth(ctx context.Context, kubeClient client.Cl
 	odigletPods := corev1.PodList{}
 	err := kubeClient.List(ctx, &odigletPods, &client.ListOptions{
 		Namespace:     odigosNamespace,
-		LabelSelector: labels.SelectorFromSet(odigletDaemonset.Spec.Template.Labels),
+		LabelSelector: labels.SelectorFromSet(odigletDaemonset.Spec.Selector.MatchLabels),
 	})
 	if err != nil {
 		return err

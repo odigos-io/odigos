@@ -83,8 +83,9 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		logger.Error(errors.New("mount method is not set in ODIGOS config"), "Skipping Injection of ODIGOS agent")
 		return nil
 	}
+	mountMethod := *odigosConfiguration.MountMethod
 
-	if *odigosConfiguration.MountMethod == common.K8sVirtualDeviceMountMethod && odigosConfiguration.CheckDeviceHealthBeforeInjection != nil && *odigosConfiguration.CheckDeviceHealthBeforeInjection {
+	if mountMethod == common.K8sVirtualDeviceMountMethod && odigosConfiguration.CheckDeviceHealthBeforeInjection != nil && *odigosConfiguration.CheckDeviceHealthBeforeInjection {
 		err := podswebhook.CheckDevicePluginContainersHealth(ctx, p.Client, odigosNamespace)
 		if err != nil {
 			logger.Error(err, "odiglet device plugin containers are not healthy. Skipping Injection of ODIGOS agent")
@@ -100,7 +101,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	karpenterDisabled := odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled
-	mountIsVirtualDevice := odigosConfiguration.MountMethod == nil || *odigosConfiguration.MountMethod == common.K8sVirtualDeviceMountMethod
+	mountIsVirtualDevice := (mountMethod == common.K8sVirtualDeviceMountMethod)
 
 	// Add odiglet installed node-affinity to the pod, for non Karpenter installations
 	// and if the mount method is not virtual device (which is the default)
@@ -129,7 +130,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		volumeMounted = volumeMounted || containerVolumeMounted
 	}
 
-	if *odigosConfiguration.MountMethod == common.K8sHostPathMountMethod && volumeMounted {
+	if mountMethod == common.K8sHostPathMountMethod && volumeMounted {
 		// only mount the volume if at least one container has a volume to mount
 		podswebhook.MountPodVolume(pod)
 	}
