@@ -9,15 +9,11 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/pkg/log"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 	"github.com/spf13/cobra"
-
-	// new ones for the odigos describe config command
-	"github.com/odigos-io/odigos/cli/pkg/log"
-	//"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
-	// "github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
-	// "github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 )
 
 var (
@@ -388,6 +384,10 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 		}
 		fmt.Println(describeText)
 	},
+}
+
+func printStringTypes(config *common.OdigosConfiguration) {
+
 }
 
 func executeRemoteOdigosDescribe(ctx context.Context, client *kube.Client, odigosNs string) string {
