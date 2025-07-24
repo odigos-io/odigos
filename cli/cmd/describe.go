@@ -128,91 +128,91 @@ var describeConfigCmd = &cobra.Command{
 		
 		Configurable properties:`)
 
-		log.Print(fmt.Sprintf("- %s: Enables or disables telemetry %t.", consts.TelemetryEnabledProperty, config.TelemetryEnabled))
+		log.Print(fmt.Sprintf("- %s: Enables or disables telemetry %t.\n", consts.TelemetryEnabledProperty, config.TelemetryEnabled))
 
-		log.Print(fmt.Sprintf("- %s: Enables or disables OpenShift support %t.", consts.OpenshiftEnabledProperty, config.OpenshiftEnabled))
+		log.Print(fmt.Sprintf("- %s: Enables or disables OpenShift support %t.\n", consts.OpenshiftEnabledProperty, config.OpenshiftEnabled))
 
-		log.Print(fmt.Sprintf("- %s: Enables or disables Pod Security Policies %t.", consts.PspProperty, config.Psp))
+		log.Print(fmt.Sprintf("- %s: Enables or disables Pod Security Policies %t.\n", consts.PspProperty, config.Psp))
 
-		log.Print(fmt.Sprintf("- %s: Skips webhook issuer creation %t.", consts.SkipWebhookIssuerCreationProperty, config.SkipWebhookIssuerCreation))
+		log.Print(fmt.Sprintf("- %s: Skips webhook issuer creation %t.\n", consts.SkipWebhookIssuerCreationProperty, config.SkipWebhookIssuerCreation))
 
 		if config.AllowConcurrentAgents != nil {
-			log.Print(fmt.Sprintf("- %s: Allows concurrent agents %t.", consts.AllowConcurrentAgentsProperty, *config.AllowConcurrentAgents))
+			log.Print(fmt.Sprintf("- %s: Allows concurrent agents %t.\n", consts.AllowConcurrentAgentsProperty, *config.AllowConcurrentAgents))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Allows concurrent agents (not set)", consts.AllowConcurrentAgentsProperty))
+			log.Print(fmt.Sprintf("- %s: Allows concurrent agents (not set)\n", consts.AllowConcurrentAgentsProperty))
 		}
 
 		if config.ImagePrefix == "" {
-			log.Print(fmt.Sprintf("- %s: Sets the image prefix (not set)", consts.ImagePrefixProperty))
+			log.Print(fmt.Sprintf("- %s: Sets the image prefix (not set)\n", consts.ImagePrefixProperty))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Sets the image prefix. %s", consts.ImagePrefixProperty, config.ImagePrefix))
+			log.Print(fmt.Sprintf("- %s: Sets the image prefix. %s\n", consts.ImagePrefixProperty, config.ImagePrefix))
 		}
 
 		if config.UiMode == "" {
-			log.Print(fmt.Sprintf("- %s: Sets the UI mode. (not set)", consts.UiModeProperty))
+			log.Print(fmt.Sprintf("- %s: Sets the UI mode. (not set)\n", consts.UiModeProperty))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Sets the UI mode. %s.", consts.UiModeProperty, config.UiMode))
+			log.Print(fmt.Sprintf("- %s: Sets the UI mode. %s.\n", consts.UiModeProperty, config.UiMode))
 		}
 
-		log.Print(fmt.Sprintf("- %s: Controls the number of items to fetch per paginated-batch in the UI. %d.",
+		log.Print(fmt.Sprintf("- %s: Controls the number of items to fetch per paginated-batch in the UI. %d.\n",
 			consts.UiPaginationLimitProperty, config.UiPaginationLimit))
 
 		if config.UiRemoteUrl == "" {
-			log.Print(fmt.Sprintf("- %s: Sets the URL of the Odigos Central Backend. (not set)", consts.UiRemoteUrlProperty))
+			log.Print(fmt.Sprintf("- %s: Sets the URL of the Odigos Central Backend. (not set)\n", consts.UiRemoteUrlProperty))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Sets the URL of the Odigos Central Backend. %s.", consts.UiRemoteUrlProperty, config.UiRemoteUrl))
+			log.Print(fmt.Sprintf("- %s: Sets the URL of the Odigos Central Backend. %s.\n", consts.UiRemoteUrlProperty, config.UiRemoteUrl))
 		}
 
 		if config.CentralBackendURL == "" {
-			log.Print(fmt.Sprintf("- %s: Sets the name of this cluster, for Odigos Central. (not set)", consts.CentralBackendURLProperty))
+			log.Print(fmt.Sprintf("- %s: Sets the name of this cluster, for Odigos Central. (not set)\n", consts.CentralBackendURLProperty))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Sets the name of this cluster, for Odigos Central. %s.", consts.CentralBackendURLProperty, config.CentralBackendURL))
+			log.Print(fmt.Sprintf("- %s: Sets the name of this cluster, for Odigos Central. %s.\n", consts.CentralBackendURLProperty, config.CentralBackendURL))
 		}
 
-		log.Print(fmt.Sprintf("- %s: List of namespaces to be ignored.", consts.IgnoredNamespacesProperty))
+		log.Print(fmt.Sprintf("- %s: List of namespaces to be ignored.\n", consts.IgnoredNamespacesProperty))
 		if len(config.IgnoredNamespaces) == 0 {
-			log.Print("none found")
+			log.Print("none found\n")
 		} else {
 			for i := 0; i < len(config.IgnoredNamespaces); i++ {
-				log.Print(fmt.Sprintf("- %s", config.IgnoredNamespaces[i]))
+				log.Print(fmt.Sprintf("- %s\n", config.IgnoredNamespaces[i]))
 			}
 		}
 
-		log.Print(fmt.Sprintf("- %s: List of containers to be ignored.", consts.IgnoredContainersProperty))
+		log.Print(fmt.Sprintf("- %s: List of containers to be ignored.\n", consts.IgnoredContainersProperty))
 		if len(config.IgnoredContainers) == 0 {
-			log.Print("none found")
+			log.Print("none found\n")
 		} else {
 			for i := 0; i < len(config.IgnoredContainers); i++ {
-				log.Print(fmt.Sprintf("- %s", config.IgnoredContainers[i]))
+				log.Print(fmt.Sprintf("- %s\n", config.IgnoredContainers[i]))
 			}
 		}
 
 		if config.MountMethod != nil {
-			log.Print(fmt.Sprintf("- %s: Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection). %s", consts.UiModeProperty, *config.MountMethod))
+			log.Print(fmt.Sprintf("- %s: Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection). %s\n", consts.UiModeProperty, *config.MountMethod))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection). (not set)", consts.UiModeProperty))
+			log.Print(fmt.Sprintf("- %s: Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection). (not set)\n", consts.UiModeProperty))
 		}
 
 		if config.CustomContainerRuntimeSocketPath == "" {
-			log.Print(fmt.Sprintf("- %s: Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock). (not set)", consts.CustomContainerRuntimeSocketPath))
+			log.Print(fmt.Sprintf("- %s: Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock). (not set)\n", consts.CustomContainerRuntimeSocketPath))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock). %s.", consts.CustomContainerRuntimeSocketPath, config.CustomContainerRuntimeSocketPath))
+			log.Print(fmt.Sprintf("- %s: Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock). %s.\n", consts.CustomContainerRuntimeSocketPath, config.CustomContainerRuntimeSocketPath))
 		}
 
 		if config.CollectorNode == nil {
-			log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). (not set)", consts.K8sNodeLogsDirectory))
+			log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). (not set)\n", consts.K8sNodeLogsDirectory))
 		} else {
 			if config.CollectorNode.K8sNodeLogsDirectory == "" {
-				log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). (not set)", consts.K8sNodeLogsDirectory))
+				log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). (not set)\n", consts.K8sNodeLogsDirectory))
 			} else {
-				log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). %s.", consts.K8sNodeLogsDirectory, config.CollectorNode.K8sNodeLogsDirectory))
+				log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). %s.\n", consts.K8sNodeLogsDirectory, config.CollectorNode.K8sNodeLogsDirectory))
 			}
 		}
 
 		if config.UserInstrumentationEnvs == nil {
-			log.Print(fmt.Sprintf("- %s: JSON string defining per-language env vars to customize instrumentation. (not set)", consts.UserInstrumentationEnvsProperty))
+			log.Print(fmt.Sprintf("- %s: JSON string defining per-language env vars to customize instrumentation. (not set)\n", consts.UserInstrumentationEnvsProperty))
 		} else if len(config.UserInstrumentationEnvs.Languages) == 0 {
-			log.Print(fmt.Sprintf("- %s: JSON string defining per-language env vars to customize instrumentation. (not set)", consts.UserInstrumentationEnvsProperty))
+			log.Print(fmt.Sprintf("- %s: JSON string defining per-language env vars to customize instrumentation. (not set)\n", consts.UserInstrumentationEnvsProperty))
 		} else {
 			log.Print(fmt.Sprintf("- %s: JSON string defining per-language env vars to customize instrumentation. \n", consts.UserInstrumentationEnvsProperty))
 			for lang, env := range config.UserInstrumentationEnvs.Languages {
@@ -221,13 +221,13 @@ var describeConfigCmd = &cobra.Command{
 		}
 
 		if *config.AgentEnvVarsInjectionMethod == "" {
-			log.Print(fmt.Sprintf("- %s: Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest. (not set)", consts.AgentEnvVarsInjectionMethod))
+			log.Print(fmt.Sprintf("- %s: Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest. (not set)\n", consts.AgentEnvVarsInjectionMethod))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest. %s.", consts.AgentEnvVarsInjectionMethod, *config.AgentEnvVarsInjectionMethod))
+			log.Print(fmt.Sprintf("- %s: Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest. %s.\n", consts.AgentEnvVarsInjectionMethod, *config.AgentEnvVarsInjectionMethod))
 		}
 
 		if len(config.NodeSelector) == 0 {
-			log.Print(fmt.Sprintf("- %s: Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: 'kubernetes.io/os=linux mylabel=foo'). (not set)", consts.UserInstrumentationEnvsProperty))
+			log.Print(fmt.Sprintf("- %s: Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: 'kubernetes.io/os=linux mylabel=foo'). (not set)\n", consts.UserInstrumentationEnvsProperty))
 		} else {
 			log.Print(fmt.Sprintf("- %s: Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: 'kubernetes.io/os=linux mylabel=foo'). \n", consts.UserInstrumentationEnvsProperty))
 			for key, val := range config.NodeSelector {
@@ -236,64 +236,64 @@ var describeConfigCmd = &cobra.Command{
 		}
 
 		if config.KarpenterEnabled != nil {
-			log.Print(fmt.Sprintf("- %s: Enables or disables Karpenter support (true/false). %t.", consts.KarpenterEnabledProperty, *config.KarpenterEnabled))
+			log.Print(fmt.Sprintf("- %s: Enables or disables Karpenter support (true/false). %t.\n", consts.KarpenterEnabledProperty, *config.KarpenterEnabled))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Enables or disables Karpenter support (true/false). (not set)", consts.KarpenterEnabledProperty))
+			log.Print(fmt.Sprintf("- %s: Enables or disables Karpenter support (true/false). (not set)\n", consts.KarpenterEnabledProperty))
 		}
 
 		if config.RollbackDisabled != nil {
-			log.Print(fmt.Sprintf("- %s: Disable auto rollback feature for failing instrumentations. %t.", consts.RollbackDisabledProperty, *config.RollbackDisabled))
+			log.Print(fmt.Sprintf("- %s: Disable auto rollback feature for failing instrumentations. %t.\n", consts.RollbackDisabledProperty, *config.RollbackDisabled))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Disable auto rollback feature for failing instrumentations. (not set)", consts.RollbackDisabledProperty))
+			log.Print(fmt.Sprintf("- %s: Disable auto rollback feature for failing instrumentations. (not set)\n", consts.RollbackDisabledProperty))
 		}
 
-		log.Print(fmt.Sprintf("- %s: Grace time before uninstrumenting an application [default: 5m]. %s.", consts.RollbackGraceTimeProperty, config.RollbackGraceTime))
+		log.Print(fmt.Sprintf("- %s: Grace time before uninstrumenting an application [default: 5m]. %s.\n", consts.RollbackGraceTimeProperty, config.RollbackGraceTime))
 
-		log.Print(fmt.Sprintf("- %s: Time windows where the auto rollback can happen [default: 1h]. %s.", consts.RollbackStabilityWindow, config.RollbackStabilityWindow))
+		log.Print(fmt.Sprintf("- %s: Time windows where the auto rollback can happen [default: 1h]. %s.\n", consts.RollbackStabilityWindow, config.RollbackStabilityWindow))
 
 		if config.Rollout.AutomaticRolloutDisabled == nil {
-			log.Print(fmt.Sprintf("- %s: Disable auto rollout feature for workloads when instrumenting or uninstrumenting. (not set).", consts.AutomaticRolloutDisabledProperty))
+			log.Print(fmt.Sprintf("- %s: Disable auto rollout feature for workloads when instrumenting or uninstrumenting. (not set).\n", consts.AutomaticRolloutDisabledProperty))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Disable auto rollout feature for workloads when instrumenting or uninstrumenting. %t", consts.AutomaticRolloutDisabledProperty, *config.Rollout.AutomaticRolloutDisabled))
+			log.Print(fmt.Sprintf("- %s: Disable auto rollout feature for workloads when instrumenting or uninstrumenting. %t\n", consts.AutomaticRolloutDisabledProperty, *config.Rollout.AutomaticRolloutDisabled))
 		}
 
 		if config.Oidc == nil {
-			log.Print(fmt.Sprintf("- %s: Sets the URL of the OIDC tenant. (not set)", consts.OidcTenantUrlProperty))
+			log.Print(fmt.Sprintf("- %s: Sets the URL of the OIDC tenant. (not set)\n", consts.OidcTenantUrlProperty))
 		} else {
 			if config.Oidc.TenantUrl == "" {
-				log.Print(fmt.Sprintf("- %s: Sets the URL of the OIDC tenant. (not set)", consts.OidcTenantUrlProperty))
+				log.Print(fmt.Sprintf("- %s: Sets the URL of the OIDC tenant. (not set)\n", consts.OidcTenantUrlProperty))
 			} else {
-				log.Print(fmt.Sprintf("- %s: Sets the URL of the OIDC tenant. %s", consts.OidcTenantUrlProperty, config.Oidc.TenantUrl))
+				log.Print(fmt.Sprintf("- %s: Sets the URL of the OIDC tenant. %s\n", consts.OidcTenantUrlProperty, config.Oidc.TenantUrl))
 			}
 		}
 
 		if config.Oidc == nil {
-			log.Print(fmt.Sprintf("- %s: Sets the client ID of the OIDC application. (not set)", consts.OidcClientIdProperty))
+			log.Print(fmt.Sprintf("- %s: Sets the client ID of the OIDC application. (not set)\n", consts.OidcClientIdProperty))
 		} else {
 			if config.Oidc.ClientId == "" {
-				log.Print(fmt.Sprintf("- %s: Sets the client ID of the OIDC application. (not set)", consts.OidcClientIdProperty))
+				log.Print(fmt.Sprintf("- %s: Sets the client ID of the OIDC application. (not set)\n", consts.OidcClientIdProperty))
 			} else {
-				log.Print(fmt.Sprintf("- %s: Sets the client ID of the OIDC application. %s", consts.OidcClientIdProperty, config.Oidc.ClientId))
+				log.Print(fmt.Sprintf("- %s: Sets the client ID of the OIDC application. %s\n", consts.OidcClientIdProperty, config.Oidc.ClientId))
 			}
 		}
 
 		// maybe don't show the secret for security reasons?
 		if config.Oidc == nil {
-			log.Print(fmt.Sprintf("- %s: Sets the client secret of the OIDC application. (not set)", consts.OidcClientSecretProperty))
+			log.Print(fmt.Sprintf("- %s: Sets the client secret of the OIDC application. (not set)\n", consts.OidcClientSecretProperty))
 		} else {
 			if config.Oidc.ClientSecret == "" {
-				log.Print(fmt.Sprintf("- %s: Sets the client secret of the OIDC application. (not set)", consts.OidcClientSecretProperty))
+				log.Print(fmt.Sprintf("- %s: Sets the client secret of the OIDC application. (not set)\n", consts.OidcClientSecretProperty))
 			} else {
-				log.Print(fmt.Sprintf("- %s: Sets the client secret of the OIDC application. %s", consts.OidcClientSecretProperty, config.Oidc.ClientSecret))
+				log.Print(fmt.Sprintf("- %s: Sets the client secret of the OIDC application. %s\n", consts.OidcClientSecretProperty, config.Oidc.ClientSecret))
 			}
 		}
 
-		log.Print(fmt.Sprintf("- %s: Time windows where the auto rollback can happen [default: 1h]. %d.", consts.OdigletHealthProbeBindPortProperty, config.OdigletHealthProbeBindPort))
+		log.Print(fmt.Sprintf("- %s: Time windows where the auto rollback can happen [default: 1h]. %d.\n", consts.OdigletHealthProbeBindPortProperty, config.OdigletHealthProbeBindPort))
 
 		if config.CollectorGateway.ServiceGraphDisabled == nil {
-			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. (not set).", consts.ServiceGraphConnectorName))
+			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. (not set).\n", consts.ServiceGraphConnectorName))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. %t", consts.ServiceGraphConnectorName, *config.CollectorGateway.ServiceGraphDisabled))
+			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. %t\n", consts.ServiceGraphConnectorName, *config.CollectorGateway.ServiceGraphDisabled))
 		}
 	},
 }
