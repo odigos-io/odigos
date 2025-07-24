@@ -47,6 +47,26 @@ jobs:
           build-args: SERVICE_NAME=scheduler
           file: ${{ matrix.dockerfile }}
 
+  build-agents:
+    name: build-agents
+    strategy:
+      matrix:
+        dockerfile: ['Dockerfile', 'Dockerfile.rhel']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Agents Image
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: agents:pr-${{ github.event.number }}
+          provenance: false
+          file: ${{ matrix.dockerfile }}
+          build-args: SERVICE_NAME=agents
+
   build-and-test-instrumentor:
     name: build-and-test-instrumentor
     strategy:
