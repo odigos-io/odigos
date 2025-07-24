@@ -435,11 +435,12 @@ func init() {
 	describeCmd.AddCommand(describeSourceCmd)
 	describeSourceCmd.PersistentFlags().StringVarP(&describeNamespaceFlag, "namespace", "n", "default", "namespace of the source being described")
 
+	// config
+	describeCmd.AddCommand(describeConfigCmd)
+
 	// source kinds
 	describeSourceCmd.AddCommand(describeSourceDeploymentCmd)
 	describeSourceCmd.AddCommand(describeSourceDaemonSetCmd)
 	describeSourceCmd.AddCommand(describeSourceStatefulSetCmd)
 
-	// config
-	describeSourceCmd.AddCommand(describeConfigCmd)
 }
