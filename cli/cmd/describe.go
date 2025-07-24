@@ -296,7 +296,9 @@ var describeConfigCmd = &cobra.Command{
 
 		log.Print(fmt.Sprintf("- %s: Time windows where the auto rollback can happen [default: 1h]. %d.\n", consts.OdigletHealthProbeBindPortProperty, config.OdigletHealthProbeBindPort))
 
-		if config.CollectorGateway.ServiceGraphDisabled == nil {
+		if config.CollectorGateway == nil {
+			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. (not set).\n", consts.ServiceGraphConnectorName))
+		} else if config.CollectorGateway.ServiceGraphDisabled == nil {
 			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. (not set).\n", consts.ServiceGraphConnectorName))
 		} else {
 			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. %t\n", consts.ServiceGraphConnectorName, *config.CollectorGateway.ServiceGraphDisabled))
