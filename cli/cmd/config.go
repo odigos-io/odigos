@@ -28,9 +28,8 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage Odigos configuration",
-	Long:  "something, fill in later",
+	Long:  "Displays information about features in odigos map, and options the user has to turn certain features on or off, or add things, etc.",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Map length:", len(consts.ConfigDisplay))
 
 		log.Print(`Manage Odigos configuration settings to customize system behavior.` + "\n")
 		log.Print(`Configurable properties:` + "\n")

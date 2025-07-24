@@ -113,6 +113,12 @@ var describeConfigCmd = &cobra.Command{
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		ns, err := resources.GetOdigosNamespace(client, ctx)
+
+		if err != nil {
+			log.Print("unable to get the Odigos Namespace")
+			os.Exit(1)
+		}
+
 		config, err := resources.GetCurrentConfig(ctx, client, ns)
 
 		if err != nil {
@@ -154,15 +160,21 @@ var describeConfigCmd = &cobra.Command{
 			consts.UiPaginationLimitProperty, config.UiPaginationLimit))
 
 		if config.UiRemoteUrl == "" {
-			log.Print(fmt.Sprintf("- %s: Sets the URL of the Odigos Central Backend. status: not set\n", consts.UiRemoteUrlProperty))
+			log.Print(fmt.Sprintf("- %s: Sets the public URL of a remotely, self-hosted UI. status: not set\n", consts.UiRemoteUrlProperty))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Sets the URL of the Odigos Central Backend. status: %s\n", consts.UiRemoteUrlProperty, config.UiRemoteUrl))
+			log.Print(fmt.Sprintf("- %s: Sets the public URL of a remotely, self-hosted UI. status: %s\n", consts.UiRemoteUrlProperty, config.UiRemoteUrl))
 		}
 
 		if config.CentralBackendURL == "" {
-			log.Print(fmt.Sprintf("- %s: Sets the name of this cluster, for Odigos Central. status: not set\n", consts.CentralBackendURLProperty))
+			log.Print(fmt.Sprintf("- %s: Sets the URL of the Odigos Central Backend. status: not set\n", consts.CentralBackendURLProperty))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Sets the name of this cluster, for Odigos Central. status: %s\n", consts.CentralBackendURLProperty, config.CentralBackendURL))
+			log.Print(fmt.Sprintf("- %s: Sets the URL of the Odigos Central Backend. status: %s\n", consts.CentralBackendURLProperty, config.CentralBackendURL))
+		}
+
+		if config.ClusterName == "" {
+			log.Print(fmt.Sprintf("- %s: Sets the name of this cluster, for Odigos Central. status: not set\n", consts.ClusterNameProperty))
+		} else {
+			log.Print(fmt.Sprintf("- %s: Sets the name of this cluster, for Odigos Central. status: %s\n", consts.ClusterNameProperty, config.ClusterName))
 		}
 
 		log.Print(fmt.Sprintf("- %s: List of namespaces to be ignored.\n", consts.IgnoredNamespacesProperty))
@@ -217,19 +229,19 @@ var describeConfigCmd = &cobra.Command{
 		}
 
 		if config.AgentEnvVarsInjectionMethod == nil {
-			log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). status: not set\n", consts.AgentEnvVarsInjectionMethod))
+			log.Print(fmt.Sprintf("- %s: Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest. status: not set\n", consts.AgentEnvVarsInjectionMethod))
 		} else {
 			if *config.AgentEnvVarsInjectionMethod == "" {
-				log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). status: not set\n", consts.AgentEnvVarsInjectionMethod))
+				log.Print(fmt.Sprintf("- %s: Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest. status: not set\n", consts.AgentEnvVarsInjectionMethod))
 			} else {
-				log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). status: %s\n", consts.AgentEnvVarsInjectionMethod, *config.AgentEnvVarsInjectionMethod))
+				log.Print(fmt.Sprintf("- %s: Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest. status: %s\n", consts.AgentEnvVarsInjectionMethod, *config.AgentEnvVarsInjectionMethod))
 			}
 		}
 
 		if len(config.NodeSelector) == 0 {
-			log.Print(fmt.Sprintf("- %s: Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: 'kubernetes.io/os=linux mylabel=foo'). status: not set\n", consts.UserInstrumentationEnvsProperty))
+			log.Print(fmt.Sprintf("- %s: Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: 'kubernetes.io/os=linux mylabel=foo'). status: not set\n", consts.NodeSelectorProperty))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: 'kubernetes.io/os=linux mylabel=foo'). \n", consts.UserInstrumentationEnvsProperty))
+			log.Print(fmt.Sprintf("- %s: Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: 'kubernetes.io/os=linux mylabel=foo'). \n", consts.NodeSelectorProperty))
 			for key, val := range config.NodeSelector {
 				fmt.Printf("key: %+v, value: %+v\n", key, val)
 			}
@@ -279,7 +291,6 @@ var describeConfigCmd = &cobra.Command{
 			}
 		}
 
-		// maybe don't show the secret for security reasons?
 		if config.Oidc == nil {
 			log.Print(fmt.Sprintf("- %s: Sets the client secret of the OIDC application. status: not set\n", consts.OidcClientSecretProperty))
 		} else {
@@ -290,14 +301,14 @@ var describeConfigCmd = &cobra.Command{
 			}
 		}
 
-		log.Print(fmt.Sprintf("- %s: Time windows where the auto rollback can happen [default: 1h]. status: %d.\n", consts.OdigletHealthProbeBindPortProperty, config.OdigletHealthProbeBindPort))
+		log.Print(fmt.Sprintf("- %s: Sets the port for the Odiglet health probes (readiness/liveness). status: %d.\n", consts.OdigletHealthProbeBindPortProperty, config.OdigletHealthProbeBindPort))
 
 		if config.CollectorGateway == nil {
-			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. status: not set\n", consts.ServiceGraphConnectorName))
+			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. status: not set\n", consts.ServiceGraphDisabledProperty))
 		} else if config.CollectorGateway.ServiceGraphDisabled == nil {
-			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. status: not set\n", consts.ServiceGraphConnectorName))
+			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. status: not set\n", consts.ServiceGraphDisabledProperty))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. status: %t\n", consts.ServiceGraphConnectorName, *config.CollectorGateway.ServiceGraphDisabled))
+			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. status: %t\n", consts.ServiceGraphDisabledProperty, *config.CollectorGateway.ServiceGraphDisabled))
 		}
 	},
 }
