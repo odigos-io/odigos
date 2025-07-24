@@ -255,7 +255,9 @@ var describeConfigCmd = &cobra.Command{
 
 		log.Print(fmt.Sprintf("- %s: Time windows where the auto rollback can happen [default: 1h]. %s.\n", consts.RollbackStabilityWindow, config.RollbackStabilityWindow))
 
-		if config.Rollout.AutomaticRolloutDisabled == nil {
+		if config.Rollout == nil {
+			log.Print(fmt.Sprintf("- %s: Disable auto rollout feature for workloads when instrumenting or uninstrumenting. (not set).\n", consts.AutomaticRolloutDisabledProperty))
+		} else if config.Rollout.AutomaticRolloutDisabled == nil {
 			log.Print(fmt.Sprintf("- %s: Disable auto rollout feature for workloads when instrumenting or uninstrumenting. (not set).\n", consts.AutomaticRolloutDisabledProperty))
 		} else {
 			log.Print(fmt.Sprintf("- %s: Disable auto rollout feature for workloads when instrumenting or uninstrumenting. %t\n", consts.AutomaticRolloutDisabledProperty, *config.Rollout.AutomaticRolloutDisabled))
