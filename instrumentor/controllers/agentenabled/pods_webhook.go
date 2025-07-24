@@ -120,6 +120,9 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	volumeMounted := false
+	// If at least one container has LD_PRELOAD injection supported, we will copy the loader directory to the shared volume
+	anyLdPreloadInjectionSupported := false
+
 	dirsToCopy := make(map[string]struct{})
 	for i := range pod.Spec.Containers {
 		podContainerSpec := &pod.Spec.Containers[i]
@@ -149,6 +152,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 			continue
 		}
 		volumeMounted = volumeMounted || containerVolumeMounted
+		anyLdPreloadInjectionSupported = anyLdPreloadInjectionSupported || distroMetadata.RuntimeAgent.LdPreloadInjectionSupported
 	}
 
 	if *odigosConfiguration.MountMethod == common.K8sHostPathMountMethod && volumeMounted {
@@ -160,7 +164,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		// only mount the volume if at least one container has a volume to mount
 		podswebhook.MountPodVolumeToEmptyDir(pod)
 		// Create the init container that will copy the directories to the empty dir based on dirsToCopy
-		CreateInitContainer(pod, dirsToCopy, odigosConfiguration)
+		CreateInitContainer(pod, dirsToCopy, odigosConfiguration, anyLdPreloadInjectionSupported)
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
@@ -375,12 +379,12 @@ func getRuntimeInfoForContainerName(ic *odigosv1.InstrumentationConfig, containe
 	return nil
 }
 
-func CreateInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, odigosConfiguration common.OdigosConfiguration) {
+func CreateInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config common.OdigosConfiguration, anyLdPreloadInjectionSupported bool) {
 	const (
 		instrumentationsPath = "/instrumentations"
 	)
 	imageVersion := os.Getenv(consts.OdigosVersionEnvVarName)
-	imageName := odigosConfiguration.ImagePrefix + "/" + k8sconsts.OdigosInitContainerName + ":" + imageVersion
+	imageName := config.ImagePrefix + "/" + k8sconsts.OdigosInitContainerName + ":" + imageVersion
 
 	if len(dirsToCopy) == 0 {
 		return
@@ -393,9 +397,14 @@ func CreateInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, odigos
 		copyCommands = append(copyCommands, fmt.Sprintf("cp -r %s %s", from, to))
 	}
 
-	// TODO: Check injection method before copying loader
-	// For now, always attempt to copy /instrumentations/loader → /var/odigos/loader
-	copyCommands = append(copyCommands, "cp -r /instrumentations/loader /var/odigos/loader")
+	// The directory is copied to the shared volume if LD_PRELOAD injection is supported and enabled by at least one container.
+	// The actual mounting of the loader directory into the application container happens in the injectOdigosToContainer function.
+	if config.AgentEnvVarsInjectionMethod != nil && anyLdPreloadInjectionSupported &&
+		(*config.AgentEnvVarsInjectionMethod == common.LoaderFallbackToPodManifestInjectionMethod ||
+			*config.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod) {
+		// Copy the loader directory only if the injection method is supported and enabled
+		copyCommands = append(copyCommands, "cp -r /instrumentations/loader /var/odigos/loader")
+	}
 
 	// The init container uses 'sh -c' to run multiple 'cp' commands in sequence.
 	// Each 'cp -r <src> <dst>' copies agent directories from the image's /instrumentations/
@@ -417,6 +426,7 @@ func CreateInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, odigos
 		},
 	}
 
+	// Check if the init container already exists, this is done for safety and should never happen.
 	for _, existing := range pod.Spec.InitContainers {
 		if existing.Name == k8sconsts.OdigosInitContainerName {
 			return
