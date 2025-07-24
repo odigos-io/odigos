@@ -126,7 +126,7 @@ var describeConfigCmd = &cobra.Command{
 
 		log.Print(`Manage Odigos configuration settings to customize system behavior. 
 		
-		Configurable properties:`)
+		Configurable properties:` + "\n")
 
 		log.Print(fmt.Sprintf("- %s: Enables or disables telemetry %t.\n", consts.TelemetryEnabledProperty, config.TelemetryEnabled))
 
@@ -188,9 +188,9 @@ var describeConfigCmd = &cobra.Command{
 		}
 
 		if config.MountMethod != nil {
-			log.Print(fmt.Sprintf("- %s: Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection). %s\n", consts.UiModeProperty, *config.MountMethod))
+			log.Print(fmt.Sprintf("- %s: Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection). %s\n", consts.MountMethodProperty, *config.MountMethod))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection). (not set)\n", consts.UiModeProperty))
+			log.Print(fmt.Sprintf("- %s: Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection). (not set)\n", consts.MountMethodProperty))
 		}
 
 		if config.CustomContainerRuntimeSocketPath == "" {
@@ -220,10 +220,14 @@ var describeConfigCmd = &cobra.Command{
 			}
 		}
 
-		if *config.AgentEnvVarsInjectionMethod == "" {
-			log.Print(fmt.Sprintf("- %s: Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest. (not set)\n", consts.AgentEnvVarsInjectionMethod))
+		if config.AgentEnvVarsInjectionMethod == nil {
+			log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). (not set)\n", consts.AgentEnvVarsInjectionMethod))
 		} else {
-			log.Print(fmt.Sprintf("- %s: Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest. %s.\n", consts.AgentEnvVarsInjectionMethod, *config.AgentEnvVarsInjectionMethod))
+			if *config.AgentEnvVarsInjectionMethod == "" {
+				log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). (not set)\n", consts.AgentEnvVarsInjectionMethod))
+			} else {
+				log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). %s.\n", consts.AgentEnvVarsInjectionMethod, *config.AgentEnvVarsInjectionMethod))
+			}
 		}
 
 		if len(config.NodeSelector) == 0 {
