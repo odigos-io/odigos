@@ -372,11 +372,14 @@ func crashLoopBackOffDuration(ctx context.Context, c client.Client, obj client.O
 	if selector == nil {
 		return 0, fmt.Errorf("crashLoopBackOffDuration: workload has nil selector")
 	}
-	selector.MatchExpressions = append(selector.MatchExpressions, metav1.LabelSelectorRequirement{
+
+	// Create a deep copy of the selector to avoid mutating the original
+	selectorCopy := selector.DeepCopy()
+	selectorCopy.MatchExpressions = append(selectorCopy.MatchExpressions, metav1.LabelSelectorRequirement{
 		Key:      k8sconsts.OdigosAgentsMetaHashLabel,
 		Operator: metav1.LabelSelectorOpExists,
 	})
-	sel, err := metav1.LabelSelectorAsSelector(selector)
+	sel, err := metav1.LabelSelectorAsSelector(selectorCopy)
 	if err != nil {
 		return 0, fmt.Errorf("crashLoopBackOffDuration: invalid selector: %w", err)
 	}
