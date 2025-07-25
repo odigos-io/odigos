@@ -189,6 +189,8 @@ rules:
   resources:
   - cronjobs
   verbs:
+  - create
+  - delete
   - get
   - list
   - patch
