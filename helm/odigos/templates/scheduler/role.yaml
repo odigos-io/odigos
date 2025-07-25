@@ -89,5 +89,7 @@ rules:
       - 'apps'
     resources:
       - 'daemonsets'
+    resourceNames:
+      - 'odiglet'
     verbs:
       - 'patch'

@@ -237,7 +237,7 @@ func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Conte
 				},
 			},
 		}
-		return reconcileCronJob(ctx, r.Client, ns, cronJob, config)
+		return applyCronJob(ctx, r.Client, ns, cronJob, config)
 	}
 	cronJob := &batchv1.CronJob{
 		TypeMeta:   typeMeta,
@@ -251,7 +251,7 @@ func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Conte
 			},
 		},
 	}
-	return reconcileCronJob(ctx, r.Client, ns, cronJob, config)
+	return applyCronJob(ctx, r.Client, ns, cronJob, config)
 }
 
 func deleteCronJob(ctx context.Context, kubeClient client.Client, ns string, apiVersion string) error {
@@ -278,7 +278,7 @@ func deleteCronJob(ctx context.Context, kubeClient client.Client, ns string, api
 	return nil
 }
 
-func reconcileCronJob(ctx context.Context, kubeClient client.Client, ns string, cronJob client.Object, config *common.OdigosConfiguration) error {
+func applyCronJob(ctx context.Context, kubeClient client.Client, ns string, cronJob client.Object, config *common.OdigosConfiguration) error {
 	// Apply the CronJob
 	objApplyBytes, err := yaml.Marshal(cronJob)
 	if err != nil {

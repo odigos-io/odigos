@@ -98,14 +98,16 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				Verbs:     []string{"get", "list", "watch"},
 			},
 			{ // manage go offsets CronJob
-				APIGroups: []string{"batch"},
-				Resources: []string{"cronjobs"},
-				Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+				APIGroups:     []string{"batch"},
+				Resources:     []string{"cronjobs"},
+				ResourceNames: []string{k8sconsts.OffsetCronJobName},
+				Verbs:         []string{"get", "list", "watch", "create", "update", "patch", "delete"},
 			},
 			{ // restart odiglet daemonset after updating go offsets
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets"},
-				Verbs:     []string{"patch"},
+				APIGroups:     []string{"apps"},
+				Resources:     []string{"daemonsets"},
+				ResourceNames: []string{k8sconsts.OdigletDaemonSetName},
+				Verbs:         []string{"patch"},
 			},
 		},
 	}
