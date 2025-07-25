@@ -77,6 +77,8 @@ rules:
       - 'batch'
     resources:
       - cronjobs
+    resourceNames:
+      - 'odigos-go-offsets-updater'
     verbs:
       - get
       - list
