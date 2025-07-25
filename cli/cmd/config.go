@@ -195,6 +195,7 @@ func validatePropertyValue(property string, value []string) error {
 		consts.OidcClientIdProperty,
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
+		consts.GoAutoOffsetsCronProperty,
 		consts.ServiceGraphDisabledProperty:
 
 		if len(value) != 1 {
