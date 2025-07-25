@@ -130,186 +130,8 @@ var describeConfigCmd = &cobra.Command{
 
 		log.Print(`Configurable properties` + "\n")
 
-		log.Print(fmt.Sprintf("- %s: Enables or disables telemetry. status: %t\n", consts.TelemetryEnabledProperty, config.TelemetryEnabled))
-
-		log.Print(fmt.Sprintf("- %s: Enables or disables OpenShift support. status: %t\n", consts.OpenshiftEnabledProperty, config.OpenshiftEnabled))
-
-		log.Print(fmt.Sprintf("- %s: Enables or disables Pod Security Policies. status: %t\n", consts.PspProperty, config.Psp))
-
-		log.Print(fmt.Sprintf("- %s: Skips webhook issuer creation. status: %t\n", consts.SkipWebhookIssuerCreationProperty, config.SkipWebhookIssuerCreation))
-
-		if config.AllowConcurrentAgents != nil {
-			log.Print(fmt.Sprintf("- %s: Allows concurrent agents. status: %t\n", consts.AllowConcurrentAgentsProperty, *config.AllowConcurrentAgents))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Allows concurrent agents. status: not set\n", consts.AllowConcurrentAgentsProperty))
-		}
-
-		if config.ImagePrefix == "" {
-			log.Print(fmt.Sprintf("- %s: Sets the image prefix. status: not set\n", consts.ImagePrefixProperty))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Sets the image prefix. status: %s\n", consts.ImagePrefixProperty, config.ImagePrefix))
-		}
-
-		if config.UiMode == "" {
-			log.Print(fmt.Sprintf("- %s: Sets the UI mode. status: not set\n", consts.UiModeProperty))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Sets the UI mode. status: %s\n", consts.UiModeProperty, config.UiMode))
-		}
-
-		log.Print(fmt.Sprintf("- %s: Controls the number of items to fetch per paginated-batch in the UI. status: %d\n",
-			consts.UiPaginationLimitProperty, config.UiPaginationLimit))
-
-		if config.UiRemoteUrl == "" {
-			log.Print(fmt.Sprintf("- %s: Sets the public URL of a remotely, self-hosted UI. status: not set\n", consts.UiRemoteUrlProperty))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Sets the public URL of a remotely, self-hosted UI. status: %s\n", consts.UiRemoteUrlProperty, config.UiRemoteUrl))
-		}
-
-		if config.CentralBackendURL == "" {
-			log.Print(fmt.Sprintf("- %s: Sets the URL of the Odigos Central Backend. status: not set\n", consts.CentralBackendURLProperty))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Sets the URL of the Odigos Central Backend. status: %s\n", consts.CentralBackendURLProperty, config.CentralBackendURL))
-		}
-
-		if config.ClusterName == "" {
-			log.Print(fmt.Sprintf("- %s: Sets the name of this cluster, for Odigos Central. status: not set\n", consts.ClusterNameProperty))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Sets the name of this cluster, for Odigos Central. status: %s\n", consts.ClusterNameProperty, config.ClusterName))
-		}
-
-		log.Print(fmt.Sprintf("- %s: List of namespaces to be ignored.\n", consts.IgnoredNamespacesProperty))
-		if len(config.IgnoredNamespaces) == 0 {
-			log.Print("none found\n")
-		} else {
-			for i := 0; i < len(config.IgnoredNamespaces); i++ {
-				log.Print(fmt.Sprintf("- %s\n", config.IgnoredNamespaces[i]))
-			}
-		}
-
-		log.Print(fmt.Sprintf("- %s: List of containers to be ignored.\n", consts.IgnoredContainersProperty))
-		if len(config.IgnoredContainers) == 0 {
-			log.Print("none found\n")
-		} else {
-			for i := 0; i < len(config.IgnoredContainers); i++ {
-				log.Print(fmt.Sprintf("- %s\n", config.IgnoredContainers[i]))
-			}
-		}
-
-		if config.MountMethod != nil {
-			log.Print(fmt.Sprintf("- %s: Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection). status: %s\n", consts.MountMethodProperty, *config.MountMethod))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection). status: not set\n", consts.MountMethodProperty))
-		}
-
-		if config.CustomContainerRuntimeSocketPath == "" {
-			log.Print(fmt.Sprintf("- %s: Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock). status: not set\n", consts.CustomContainerRuntimeSocketPath))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock). status: %s\n", consts.CustomContainerRuntimeSocketPath, config.CustomContainerRuntimeSocketPath))
-		}
-
-		if config.CollectorNode == nil {
-			log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). status: not set\n", consts.K8sNodeLogsDirectory))
-		} else {
-			if config.CollectorNode.K8sNodeLogsDirectory == "" {
-				log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). status: not set\n", consts.K8sNodeLogsDirectory))
-			} else {
-				log.Print(fmt.Sprintf("- %s: Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log). status: %s\n", consts.K8sNodeLogsDirectory, config.CollectorNode.K8sNodeLogsDirectory))
-			}
-		}
-
-		if config.UserInstrumentationEnvs == nil {
-			log.Print(fmt.Sprintf("- %s: JSON string defining per-language env vars to customize instrumentation. status: not set\n", consts.UserInstrumentationEnvsProperty))
-		} else if len(config.UserInstrumentationEnvs.Languages) == 0 {
-			log.Print(fmt.Sprintf("- %s: JSON string defining per-language env vars to customize instrumentation. status: not set\n", consts.UserInstrumentationEnvsProperty))
-		} else {
-			log.Print(fmt.Sprintf("- %s: JSON string defining per-language env vars to customize instrumentation. \n", consts.UserInstrumentationEnvsProperty))
-			for lang, env := range config.UserInstrumentationEnvs.Languages {
-				fmt.Printf("Language: %+v, Mode: %+v\n", lang, env)
-			}
-		}
-
-		if config.AgentEnvVarsInjectionMethod == nil {
-			log.Print(fmt.Sprintf("- %s: Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest. status: not set\n", consts.AgentEnvVarsInjectionMethod))
-		} else {
-			if *config.AgentEnvVarsInjectionMethod == "" {
-				log.Print(fmt.Sprintf("- %s: Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest. status: not set\n", consts.AgentEnvVarsInjectionMethod))
-			} else {
-				log.Print(fmt.Sprintf("- %s: Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest. status: %s\n", consts.AgentEnvVarsInjectionMethod, *config.AgentEnvVarsInjectionMethod))
-			}
-		}
-
-		if len(config.NodeSelector) == 0 {
-			log.Print(fmt.Sprintf("- %s: Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: 'kubernetes.io/os=linux mylabel=foo'). status: not set\n", consts.NodeSelectorProperty))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: 'kubernetes.io/os=linux mylabel=foo'). \n", consts.NodeSelectorProperty))
-			for key, val := range config.NodeSelector {
-				fmt.Printf("key: %+v, value: %+v\n", key, val)
-			}
-		}
-
-		if config.KarpenterEnabled != nil {
-			log.Print(fmt.Sprintf("- %s: Enables or disables Karpenter support (true/false). status: %t\n", consts.KarpenterEnabledProperty, *config.KarpenterEnabled))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Enables or disables Karpenter support (true/false). status: not set\n", consts.KarpenterEnabledProperty))
-		}
-
-		if config.RollbackDisabled != nil {
-			log.Print(fmt.Sprintf("- %s: Disable auto rollback feature for failing instrumentations. status: %t\n", consts.RollbackDisabledProperty, *config.RollbackDisabled))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Disable auto rollback feature for failing instrumentations. status: not set\n", consts.RollbackDisabledProperty))
-		}
-
-		log.Print(fmt.Sprintf("- %s: Grace time before uninstrumenting an application [default: 5m]. status: %s\n", consts.RollbackGraceTimeProperty, config.RollbackGraceTime))
-
-		log.Print(fmt.Sprintf("- %s: Time windows where the auto rollback can happen [default: 1h]. status: %s\n", consts.RollbackStabilityWindow, config.RollbackStabilityWindow))
-
-		if config.Rollout == nil {
-			log.Print(fmt.Sprintf("- %s: Disable auto rollout feature for workloads when instrumenting or uninstrumenting. status: not set\n", consts.AutomaticRolloutDisabledProperty))
-		} else if config.Rollout.AutomaticRolloutDisabled == nil {
-			log.Print(fmt.Sprintf("- %s: Disable auto rollout feature for workloads when instrumenting or uninstrumenting. status: not set\n", consts.AutomaticRolloutDisabledProperty))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Disable auto rollout feature for workloads when instrumenting or uninstrumenting. status: %t\n", consts.AutomaticRolloutDisabledProperty, *config.Rollout.AutomaticRolloutDisabled))
-		}
-
-		if config.Oidc == nil {
-			log.Print(fmt.Sprintf("- %s: Sets the URL of the OIDC tenant. status: not set\n", consts.OidcTenantUrlProperty))
-		} else {
-			if config.Oidc.TenantUrl == "" {
-				log.Print(fmt.Sprintf("- %s: Sets the URL of the OIDC tenant. status: not set\n", consts.OidcTenantUrlProperty))
-			} else {
-				log.Print(fmt.Sprintf("- %s: Sets the URL of the OIDC tenant. status: %s\n", consts.OidcTenantUrlProperty, config.Oidc.TenantUrl))
-			}
-		}
-
-		if config.Oidc == nil {
-			log.Print(fmt.Sprintf("- %s: Sets the client ID of the OIDC application. status: not set\n", consts.OidcClientIdProperty))
-		} else {
-			if config.Oidc.ClientId == "" {
-				log.Print(fmt.Sprintf("- %s: Sets the client ID of the OIDC application. status: not set\n", consts.OidcClientIdProperty))
-			} else {
-				log.Print(fmt.Sprintf("- %s: Sets the client ID of the OIDC application. status: %s\n", consts.OidcClientIdProperty, config.Oidc.ClientId))
-			}
-		}
-
-		if config.Oidc == nil {
-			log.Print(fmt.Sprintf("- %s: Sets the client secret of the OIDC application. status: not set\n", consts.OidcClientSecretProperty))
-		} else {
-			if config.Oidc.ClientSecret == "" {
-				log.Print(fmt.Sprintf("- %s: Sets the client secret of the OIDC application. status: not set\n", consts.OidcClientSecretProperty))
-			} else {
-				log.Print(fmt.Sprintf("- %s: Sets the client secret of the OIDC application. status: %s\n", consts.OidcClientSecretProperty, config.Oidc.ClientSecret))
-			}
-		}
-
-		log.Print(fmt.Sprintf("- %s: Sets the port for the Odiglet health probes (readiness/liveness). status: %d.\n", consts.OdigletHealthProbeBindPortProperty, config.OdigletHealthProbeBindPort))
-
-		if config.CollectorGateway == nil {
-			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. status: not set\n", consts.ServiceGraphDisabledProperty))
-		} else if config.CollectorGateway.ServiceGraphDisabled == nil {
-			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. status: not set\n", consts.ServiceGraphDisabledProperty))
-		} else {
-			log.Print(fmt.Sprintf("- %s: Enable or disable the service graph feature [default: false]. status: %t\n", consts.ServiceGraphDisabledProperty, *config.CollectorGateway.ServiceGraphDisabled))
-		}
+		populateConfValues(config)
+		printAll(config)
 	},
 }
 
@@ -397,8 +219,202 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 	},
 }
 
-func printStringTypes(config *common.OdigosConfiguration) {
+// work on later
+func populateConfValues(config *common.OdigosConfiguration) {
+	consts.ConfigValues[consts.TelemetryEnabledProperty] = config.TelemetryEnabled
+	consts.ConfigValues[consts.OpenshiftEnabledProperty] = config.OpenshiftEnabled
+	consts.ConfigValues[consts.PspProperty] = config.Psp
+	consts.ConfigValues[consts.SkipWebhookIssuerCreationProperty] = config.SkipWebhookIssuerCreation
+	consts.ConfigValues[consts.AllowConcurrentAgentsProperty] = config.AllowConcurrentAgents
+	consts.ConfigValues[consts.ImagePrefixProperty] = config.ImagePrefix
+	consts.ConfigValues[consts.UiModeProperty] = config.UiMode
+	consts.ConfigValues[consts.UiPaginationLimitProperty] = config.UiPaginationLimit
+	consts.ConfigValues[consts.UiRemoteUrlProperty] = config.UiRemoteUrl
+	consts.ConfigValues[consts.CentralBackendURLProperty] = config.CentralBackendURL
+	consts.ConfigValues[consts.ClusterNameProperty] = config.ClusterName
+	consts.ConfigValues[consts.IgnoredNamespacesProperty] = config.IgnoredNamespaces
+	consts.ConfigValues[consts.IgnoredContainersProperty] = config.IgnoredContainers
+	consts.ConfigValues[consts.MountMethodProperty] = config.MountMethod
+	consts.ConfigValues[consts.CustomContainerRuntimeSocketPath] = config.CustomContainerRuntimeSocketPath
+	consts.ConfigValues[consts.K8sNodeLogsDirectory] = config.CollectorNode.K8sNodeLogsDirectory
+	consts.ConfigValues[consts.UserInstrumentationEnvsProperty] = config.UserInstrumentationEnvs
+	consts.ConfigValues[consts.AgentEnvVarsInjectionMethod] = config.AgentEnvVarsInjectionMethod
+	consts.ConfigValues[consts.NodeSelectorProperty] = config.NodeSelector
+	consts.ConfigValues[consts.KarpenterEnabledProperty] = config.KarpenterEnabled
+	consts.ConfigValues[consts.RollbackDisabledProperty] = config.RollbackDisabled
+	consts.ConfigValues[consts.RollbackGraceTimeProperty] = config.RollbackGraceTime
+	consts.ConfigValues[consts.RollbackStabilityWindow] = config.RollbackStabilityWindow
+	if config.Rollout == nil {
+		consts.ConfigValues[consts.AutomaticRolloutDisabledProperty] = nil
+	} else {
+		consts.ConfigValues[consts.AutomaticRolloutDisabledProperty] = config.Rollout.AutomaticRolloutDisabled
+	}
+	if config.Oidc == nil {
+		consts.ConfigValues[consts.OidcTenantUrlProperty] = nil
+		consts.ConfigValues[consts.OidcClientIdProperty] = nil
+		consts.ConfigValues[consts.OidcClientSecretProperty] = nil
+	} else {
+		consts.ConfigValues[consts.OidcTenantUrlProperty] = config.Oidc.TenantUrl
+		consts.ConfigValues[consts.OidcClientIdProperty] = config.Oidc.ClientId
+		consts.ConfigValues[consts.OidcClientSecretProperty] = config.Oidc.ClientSecret
+	}
+	consts.ConfigValues[consts.OdigletHealthProbeBindPortProperty] = config.OdigletHealthProbeBindPort
+	if config.CollectorGateway == nil {
+		consts.ConfigValues[consts.ServiceGraphDisabledProperty] = nil
+	} else {
+		consts.ConfigValues[consts.ServiceGraphDisabledProperty] = config.CollectorGateway.ServiceGraphDisabled
+	}
+}
 
+func printAll(config *common.OdigosConfiguration) {
+	for key, value := range consts.ConfigValues {
+		switch v := value.(type) {
+		case string:
+			printString(v, key)
+		case bool:
+			printBool(v, key)
+		case *bool:
+			printPointerBool(v, key)
+		case *common.MountMethod:
+			printPointerFileStuff(v, key)
+		case *common.EnvInjectionMethod:
+			printPointerFileStuff2(v, key)
+		case *common.CollectorNodeConfiguration:
+			printStructStuff(v, key)
+		case *common.UserInstrumentationEnvs:
+			printUserEnv(v, key)
+		case map[string]string:
+			printNodeSelector(v, key)
+		case *common.RolloutConfiguration:
+			printStructStuff2(v, key)
+		case *common.OidcConfiguration:
+			printStructStuff3(v, key)
+		case *common.CollectorGatewayConfiguration:
+			printStructStuff4(v, key)
+		default:
+			printDefault(v, key)
+		}
+	}
+
+}
+
+func printDefault(featureSetting interface{}, featureName string) {
+	log.Print(fmt.Sprintf("- %s: %s status: %v\n", featureName, consts.ConfigDisplay[featureName], featureSetting))
+}
+
+func printString(featureSetting string, featureName string) {
+	if featureSetting == "" {
+		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+	} else {
+		log.Print(fmt.Sprintf("- %s: %s status: %s\n", featureName, consts.ConfigDisplay[featureName], featureSetting))
+	}
+}
+
+func printBool(featureSetting bool, featureName string) {
+	log.Print(fmt.Sprintf("- %s: %s status: %t\n", featureName, consts.ConfigDisplay[featureName], featureSetting))
+}
+
+func printPointerBool(featureSetting *bool, featureName string) {
+	if featureSetting != nil {
+		log.Print(fmt.Sprintf("- %s: %s status: %t\n", featureName, consts.ConfigDisplay[featureName], *featureSetting))
+	} else {
+		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+	}
+}
+
+func printLists(featureSetting []string, featureName string) {
+	log.Print(fmt.Sprintf("- %s: List of what should be ignored.\n", featureName))
+	if len(featureSetting) == 0 {
+		log.Print("none found\n")
+	} else {
+		for i := 0; i < len(featureSetting); i++ {
+			log.Print(fmt.Sprintf("- %s\n", featureSetting[i]))
+		}
+	}
+}
+
+func printPointerFileStuff(featureSetting *common.MountMethod, featureName string) {
+	if featureSetting != nil {
+		log.Print(fmt.Sprintf("- %s: %s status: %t\n", featureName, consts.ConfigDisplay[featureName], *featureSetting))
+	} else {
+		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+	}
+}
+
+func printPointerFileStuff2(featureSetting *common.EnvInjectionMethod, featureName string) {
+	if featureSetting != nil {
+		log.Print(fmt.Sprintf("- %s: %s status: %t\n", featureName, consts.ConfigDisplay[featureName], *featureSetting))
+	} else {
+		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+	}
+}
+
+func printStructStuff(featureSetting *common.CollectorNodeConfiguration, featureName string) {
+	if featureSetting == nil {
+		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+	} else {
+		if featureSetting.K8sNodeLogsDirectory == "" {
+			log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+		} else {
+			log.Print(fmt.Sprintf("- %s: %s status: %t\n", featureName, consts.ConfigDisplay[featureName], featureSetting.K8sNodeLogsDirectory))
+		}
+	}
+}
+
+func printStructStuff2(featureSetting *common.RolloutConfiguration, featureName string) {
+	if featureSetting == nil {
+		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+	} else {
+		printPointerBool(featureSetting.AutomaticRolloutDisabled, featureName)
+	}
+}
+
+func printStructStuff3(featureSetting *common.OidcConfiguration, featureName string) {
+	if featureSetting != nil {
+		if featureName == consts.OidcTenantUrlProperty {
+			printString(featureSetting.TenantUrl, featureName)
+		}
+		if featureName == consts.OidcClientIdProperty {
+			printString(featureSetting.ClientId, featureName)
+		}
+		if featureName == consts.OidcClientSecretProperty {
+			printString(featureSetting.ClientSecret, featureName)
+		}
+	} else {
+		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+	}
+}
+
+func printStructStuff4(featureSetting *common.CollectorGatewayConfiguration, featureName string) {
+	if featureSetting == nil {
+		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+	} else {
+		printPointerBool(featureSetting.ServiceGraphDisabled, featureName)
+	}
+}
+
+func printUserEnv(featureSetting *common.UserInstrumentationEnvs, featureName string) {
+	if featureSetting == nil {
+		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+	} else if len(featureSetting.Languages) == 0 {
+		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+	} else {
+		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+		for lang, env := range featureSetting.Languages {
+			fmt.Printf("Language: %+v, Mode: %+v\n", lang, env)
+		}
+	}
+}
+
+func printNodeSelector(featureSetting map[string]string, featureName string) {
+	if len(featureSetting) == 0 {
+		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
+	} else {
+		log.Print(fmt.Sprintf("- %s: %s\n", featureName, consts.ConfigDisplay[featureName]))
+		for key, val := range featureName {
+			fmt.Printf("key: %+v, value: %+v\n", key, val)
+		}
+	}
 }
 
 func executeRemoteOdigosDescribe(ctx context.Context, client *kube.Client, odigosNs string) string {

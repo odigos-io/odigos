@@ -135,6 +135,9 @@ var ConfigDisplay = map[string]string{
 	ServiceGraphDisabledProperty:       "Enable or disable the service graph feature [default: false].",
 }
 
+// var ConfigValues map[string]interface{}
+var ConfigValues = map[string]interface{}{}
+
 var ConfigDisplayOrder = []string{
 	TelemetryEnabledProperty,
 	OpenshiftEnabledProperty,
