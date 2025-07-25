@@ -24,5 +24,10 @@ var GreatwallProfile = profile.Profile{
 		if config.CollectorNode.K8sNodeLogsDirectory == "" {
 			config.CollectorNode.K8sNodeLogsDirectory = "/mnt/var/log"
 		}
+		// for greatwall, always enable the checking for the odiglet device plugin containers health for extra stability.
+		if config.CheckDeviceHealthBeforeInjection == nil {
+			checkDeviceHealthBeforeInjection := true
+			config.CheckDeviceHealthBeforeInjection = &checkDeviceHealthBeforeInjection
+		}
 	},
 }
