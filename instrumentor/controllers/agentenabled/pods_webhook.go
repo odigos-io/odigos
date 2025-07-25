@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	podutils "github.com/odigos-io/odigos/instrumentor/internal/pod"
@@ -109,15 +111,19 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	karpenterDisabled := odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled
-	mountIsVirtualDevice := odigosConfiguration.MountMethod == nil || *odigosConfiguration.MountMethod == common.K8sVirtualDeviceMountMethod
+	mountIsHostPath := odigosConfiguration.MountMethod == nil || *odigosConfiguration.MountMethod == common.K8sHostPathMountMethod
 
 	// Add odiglet installed node-affinity to the pod, for non Karpenter installations
-	// and if the mount method is not virtual device (which is the default)
-	if karpenterDisabled && !mountIsVirtualDevice {
+	// and if the mount method is host path
+	if karpenterDisabled && mountIsHostPath {
 		podutils.AddOdigletInstalledAffinity(pod)
 	}
 
 	volumeMounted := false
+	// If at least one container has LD_PRELOAD injection supported, we will copy the loader directory to the shared volume
+	anyLdPreloadInjectionSupported := false
+
+	dirsToCopy := make(map[string]struct{})
 	for i := range pod.Spec.Containers {
 		podContainerSpec := &pod.Spec.Containers[i]
 		containerConfig := ic.Spec.GetContainerAgentConfig(podContainerSpec.Name)
@@ -130,17 +136,35 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 			continue
 		}
 
-		containerVolumeMounted, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, odigosConfiguration)
+		distroName := containerConfig.OtelDistroName
+		distroMetadata := p.DistrosGetter.GetDistroByName(distroName)
+		if distroMetadata == nil {
+			return fmt.Errorf("distribution %s not found", distroName)
+		}
+
+		for _, dir := range distroMetadata.RuntimeAgent.DirectoryNames {
+			dirsToCopy[dir] = struct{}{}
+		}
+
+		containerVolumeMounted, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, odigosConfiguration, distroMetadata)
 		if err != nil {
 			logger.Error(err, "failed to inject ODIGOS agent to container")
 			continue
 		}
 		volumeMounted = volumeMounted || containerVolumeMounted
+		anyLdPreloadInjectionSupported = anyLdPreloadInjectionSupported || distroMetadata.RuntimeAgent.LdPreloadInjectionSupported
 	}
 
 	if *odigosConfiguration.MountMethod == common.K8sHostPathMountMethod && volumeMounted {
 		// only mount the volume if at least one container has a volume to mount
-		podswebhook.MountPodVolume(pod)
+		podswebhook.MountPodVolumeToHostPath(pod)
+	}
+
+	if *odigosConfiguration.MountMethod == common.K8sInitContainerMountMethod && volumeMounted {
+		// only mount the volume if at least one container has a volume to mount
+		podswebhook.MountPodVolumeToEmptyDir(pod)
+		// Create the init container that will copy the directories to the empty dir based on dirsToCopy
+		CreateInitContainer(pod, dirsToCopy, odigosConfiguration, anyLdPreloadInjectionSupported)
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
@@ -224,14 +248,9 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 	return nil
 }
 
-func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container, pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration) (bool, error) {
+func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container,
+	pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration, distroMetadata *distro.OtelDistro) (bool, error) {
 	var err error
-
-	distroName := containerConfig.OtelDistroName
-	distroMetadata := p.DistrosGetter.GetDistroByName(distroName)
-	if distroMetadata == nil {
-		return false, fmt.Errorf("distribution %s not found", distroName)
-	}
 
 	// check for existing env vars so we don't introduce them again
 	existingEnvNames := podswebhook.GetEnvVarNamesSet(podContainerSpec)
@@ -241,7 +260,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	if err != nil {
 		return false, err
 	}
-	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroName, pw.Namespace)
+	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroMetadata.Name, pw.Namespace)
 	if distroMetadata.EnvironmentVariables.OpAmpClientEnvironments {
 		existingEnvNames = podswebhook.InjectOpampServerEnvVar(existingEnvNames, podContainerSpec)
 	}
@@ -257,8 +276,8 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 
 	volumeMounted := false
 	if distroMetadata.RuntimeAgent != nil {
-		if *config.MountMethod == common.K8sHostPathMountMethod {
-			// mount directory only if the mount type is host-path
+		if *config.MountMethod == common.K8sHostPathMountMethod || *config.MountMethod == common.K8sInitContainerMountMethod {
+			// mount directory only if the mount type is host-path or init container
 			for _, agentDirectoryName := range distroMetadata.RuntimeAgent.DirectoryNames {
 				podswebhook.MountDirectory(podContainerSpec, agentDirectoryName)
 				volumeMounted = true
@@ -272,8 +291,9 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 				volumeMounted = true
 			}
 		}
+
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
-			podswebhook.InjectOtelResourceAndServiceNameEnvVars(existingEnvNames, podContainerSpec, distroName, pw, serviceName)
+			podswebhook.InjectOtelResourceAndServiceNameEnvVars(existingEnvNames, podContainerSpec, distroMetadata.Name, pw, serviceName)
 		}
 		// TODO: once we have a flag to enable/disable device injection, we should check it here.
 		if distroMetadata.RuntimeAgent.Device != nil {
@@ -357,4 +377,60 @@ func getRuntimeInfoForContainerName(ic *odigosv1.InstrumentationConfig, containe
 
 	// if both are not found, return we don't have runtime info for this container
 	return nil
+}
+
+func CreateInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config common.OdigosConfiguration, anyLdPreloadInjectionSupported bool) {
+	const (
+		instrumentationsPath = "/instrumentations"
+	)
+	imageVersion := os.Getenv(consts.OdigosVersionEnvVarName)
+	imageName := config.ImagePrefix + "/" + k8sconsts.OdigosInitContainerName + ":" + imageVersion
+
+	if len(dirsToCopy) == 0 {
+		return
+	}
+
+	var copyCommands []string
+	for dir := range dirsToCopy {
+		from := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, instrumentationsPath)
+		to := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, k8sconsts.OdigosAgentsDirectory)
+		copyCommands = append(copyCommands, fmt.Sprintf("cp -r %s %s", from, to))
+	}
+
+	// The directory is copied to the shared volume if LD_PRELOAD injection is supported and enabled by at least one container.
+	// The actual mounting of the loader directory into the application container happens in the injectOdigosToContainer function.
+	if config.AgentEnvVarsInjectionMethod != nil && anyLdPreloadInjectionSupported &&
+		(*config.AgentEnvVarsInjectionMethod == common.LoaderFallbackToPodManifestInjectionMethod ||
+			*config.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod) {
+		// Copy the loader directory only if the injection method is supported and enabled
+		copyCommands = append(copyCommands, "cp -r /instrumentations/loader /var/odigos/loader")
+	}
+
+	// The init container uses 'sh -c' to run multiple 'cp' commands in sequence.
+	// Each 'cp -r <src> <dst>' copies agent directories from the image's /instrumentations/
+	// into the shared /var/odigos volume (an EmptyDir). This allows sidecar injection of
+	// required binaries without writing to the host filesystem.
+	initContainer := corev1.Container{
+		Name:  k8sconsts.OdigosInitContainerName,
+		Image: imageName,
+		Command: []string{
+			"sh",
+			"-c",
+			strings.Join(copyCommands, " && "),
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      k8sconsts.OdigosAgentMountVolumeName,
+				MountPath: k8sconsts.OdigosAgentsDirectory,
+			},
+		},
+	}
+
+	// Check if the init container already exists, this is done for safety and should never happen.
+	for _, existing := range pod.Spec.InitContainers {
+		if existing.Name == k8sconsts.OdigosInitContainerName {
+			return
+		}
+	}
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, initContainer)
 }

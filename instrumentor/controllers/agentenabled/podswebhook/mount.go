@@ -31,8 +31,7 @@ func MountDirectory(containerSpec *corev1.Container, dir string) {
 	})
 }
 
-func MountPodVolume(pod *corev1.Pod) {
-
+func mountPodVolumeIfNotExists(pod *corev1.Pod, volumeSource corev1.VolumeSource) {
 	// make sure we are idempotent, not adding ourselves multiple times
 	for _, volume := range pod.Spec.Volumes {
 		if volume.Name == k8sconsts.OdigosAgentMountVolumeName {
@@ -42,11 +41,21 @@ func MountPodVolume(pod *corev1.Pod) {
 	}
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-		Name: k8sconsts.OdigosAgentMountVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			HostPath: &corev1.HostPathVolumeSource{
-				Path: k8sconsts.OdigosAgentsDirectory,
-			},
+		Name:         k8sconsts.OdigosAgentMountVolumeName,
+		VolumeSource: volumeSource,
+	})
+}
+
+func MountPodVolumeToHostPath(pod *corev1.Pod) {
+	mountPodVolumeIfNotExists(pod, corev1.VolumeSource{
+		HostPath: &corev1.HostPathVolumeSource{
+			Path: k8sconsts.OdigosAgentsDirectory,
 		},
+	})
+}
+
+func MountPodVolumeToEmptyDir(pod *corev1.Pod) {
+	mountPodVolumeIfNotExists(pod, corev1.VolumeSource{
+		EmptyDir: &corev1.EmptyDirVolumeSource{},
 	})
 }
