@@ -46,6 +46,10 @@ func CheckDevicePluginContainersHealth(ctx context.Context, kubeClient client.Cl
 		return err
 	}
 
+	if len(odigletPods.Items) == 0 {
+		return fmt.Errorf("no odiglet pods found")
+	}
+
 	for i := range odigletPods.Items {
 		pod := &odigletPods.Items[i]
 		for j := range pod.Status.ContainerStatuses {
