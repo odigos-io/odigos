@@ -1,4 +1,4 @@
-name: 'Create a new release candidate'
+name: 'Create Release Candidate'
 
 on:
   workflow_dispatch:
@@ -76,7 +76,7 @@ jobs:
             git pull origin $STABLE_RELEASE_BRANCH_NAME
           fi
 
-      - name: Create Pre-release PR
+      - name: Create or Update Pre-release PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -85,20 +85,40 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           
           RELEASE_BRANCH="${{ steps.create_branch.outputs.stable_release_branch_name }}"
+          PR_BRANCH="pre-release-${{ steps.rc_version.outputs.rc_version }}"
           PR_TITLE="Pre-release PR for ${{ steps.rc_version.outputs.rc_version }}"
           
-          # Create a new branch for the PR
-          PR_BRANCH="pre-release-${{ steps.rc_version.outputs.rc_version }}"
-          git checkout $RELEASE_BRANCH
-          git checkout -b $PR_BRANCH
-          
-          # Create empty commit
-          git commit --allow-empty -m "Pre-release commit for ${{ steps.rc_version.outputs.rc_version }}"
-          git push origin $PR_BRANCH
-          
-          # Create PR
-          gh pr create \
-            --base $RELEASE_BRANCH \
-            --head $PR_BRANCH \
-            --title "$PR_TITLE" \
-            --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }}"
+          # Check if the PR branch already exists
+          if git ls-remote --heads origin $PR_BRANCH | grep -q "^[0-9a-f]*\s*refs/heads/$(echo "$PR_BRANCH" | sed 's/\./\\./g')$"; then
+            echo "PR branch $PR_BRANCH already exists, updating it..."
+            
+            # Check out the existing PR branch
+            git checkout $PR_BRANCH
+            git pull origin $PR_BRANCH
+            
+            # Reset the branch to point to the current release branch head
+            git reset --hard origin/$RELEASE_BRANCH
+            
+            # Create a new commit to trigger the PR checks
+            git commit --allow-empty -m "Update pre-release for ${{ steps.rc_version.outputs.rc_version }} - $(date)"
+            git push origin $PR_BRANCH --force
+            
+            echo "Updated existing PR branch $PR_BRANCH"
+          else
+            echo "Creating new PR branch $PR_BRANCH..."
+            
+            # Create a new branch for the PR
+            git checkout $RELEASE_BRANCH
+            git checkout -b $PR_BRANCH
+            
+            # Create empty commit
+            git commit --allow-empty -m "Pre-release commit for ${{ steps.rc_version.outputs.rc_version }}"
+            git push origin $PR_BRANCH
+            
+            # Create PR
+            gh pr create \
+              --base $RELEASE_BRANCH \
+              --head $PR_BRANCH \
+              --title "$PR_TITLE" \
+              --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }}"
+          fi
