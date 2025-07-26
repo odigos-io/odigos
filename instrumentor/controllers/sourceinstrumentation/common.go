@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -109,7 +108,6 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	obj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := k8sClient.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, obj)
 	if err != nil {
-		fmt.Println("err ===========================================", err)
 		// if err is not nil it means obj is invalid, so we must return.
 		// instrumentation config has the workload as owner, so it will be deleted automatically by k8s,
 		// thus NotFound is expected and we can return without error.
