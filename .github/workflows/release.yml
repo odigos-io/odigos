@@ -134,7 +134,7 @@ jobs:
           SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
           DATE: ${{ steps.vars.outputs.date }}
         run: |
-          ko build --bare --tags latest --tags ${{ env.TAG }} --platform=all .
+          ko build --bare --tags ${{ env.TAG }} $([ "${{ env.IS_RC }}" = "false" ] && echo "--tags latest") --platform=all .
 
       - name: Install crane
         uses: imjasonh/setup-crane@v0.4
@@ -145,7 +145,9 @@ jobs:
           DEST_IMAGE: ${{ env.DOCKERHUB_ORG }}/odigos-cli
         run: |
           crane copy ${SOURCE_IMAGE}:${{ env.TAG }} ${DEST_IMAGE}:${{ env.TAG }}
-          crane copy ${SOURCE_IMAGE}:latest ${DEST_IMAGE}:latest
+          if [ "${{ env.IS_RC }}" = "false" ]; then
+            crane copy ${SOURCE_IMAGE}:latest ${DEST_IMAGE}:latest
+          fi
 
       - name: Notify Slack End
         env:
