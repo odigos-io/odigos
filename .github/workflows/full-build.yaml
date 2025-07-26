@@ -4,6 +4,10 @@ on:
   pull_request:
     branches:
       - 'releases/**'
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
   build-all-services:
