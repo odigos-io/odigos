@@ -1,0 +1,99 @@
+name: 'Create a new release candidate'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-release-candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest stable version
+        id: get_version
+        run: |
+          # Get all tags and filter for stable versions (no -rc or other suffixes)
+          # Sort them and get the latest one
+          LATEST_STABLE=$(git tag -l | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+          echo "Latest stable version is: $LATEST_STABLE"
+          echo "latest_stable=$LATEST_STABLE" >> $GITHUB_OUTPUT
+
+      - name: Calculate next stable version
+        id: next_version
+        run: |
+          LATEST_STABLE=${{ steps.get_version.outputs.latest_stable }}
+          
+          # Extract version components
+          IFS='.' read -r major minor patch <<< "${LATEST_STABLE#v}"
+          
+          # Increment patch version
+          next_patch=$((patch + 1))
+          
+          # Construct next stable version
+          NEXT_STABLE="v$major.$minor.$next_patch"
+          echo "Next stable version will be: $NEXT_STABLE"
+          echo "next_stable=$NEXT_STABLE" >> $GITHUB_OUTPUT
+
+      - name: Calculate RC version
+        id: rc_version
+        run: |
+          NEXT_STABLE="${{ steps.next_version.outputs.next_stable }}"
+          
+          # Find all RC versions for the next stable version
+          RC_VERSIONS=$(git tag -l "${NEXT_STABLE}-rc*" | sort -V)
+          
+          if [ -z "$RC_VERSIONS" ]; then
+            # No RC versions exist, start with rc0
+            RC_VERSION="${NEXT_STABLE}-rc0"
+          else
+            # Get the latest RC version and increment its number
+            LATEST_RC=$(echo "$RC_VERSIONS" | tail -n 1)
+            RC_NUM=$(echo "$LATEST_RC" | grep -oE 'rc[0-9]+' | grep -oE '[0-9]+')
+            NEXT_RC_NUM=$((RC_NUM + 1))
+            RC_VERSION="${NEXT_STABLE}-rc${NEXT_RC_NUM}"
+          fi
+          
+          echo "Release candidate version will be: $RC_VERSION"
+          echo "rc_version=$RC_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create release branch if not exists
+        run: |
+          STABLE_RELEASE_BRANCH_NAME="release-${{ steps.next_version.outputs.next_stable }}"
+          echo "stable_release_branch_name=$STABLE_RELEASE_BRANCH_NAME" >> $GITHUB_OUTPUT
+          if ! git ls-remote --heads origin $STABLE_RELEASE_BRANCH_NAME | grep -q $STABLE_RELEASE_BRANCH_NAME; then
+            echo "Creating new branch $STABLE_RELEASE_BRANCH_NAME from main"
+            git checkout main
+            git pull origin main
+            git checkout -b $STABLE_RELEASE_BRANCH_NAME
+            git push origin $STABLE_RELEASE_BRANCH_NAME
+          else
+            echo "Branch $STABLE_RELEASE_BRANCH_NAME already exists"
+          fi
+
+      - name: Create Pre-release PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_BRANCH="${{ steps.next_version.outputs.stable_release_branch_name }}"
+          PR_TITLE="Pre-release PR for ${{ steps.rc_version.outputs.rc_version }}"
+          
+          # Create a new branch for the PR
+          PR_BRANCH="pre-release-${{ steps.rc_version.outputs.rc_version }}"
+          git checkout $RELEASE_BRANCH
+          git checkout -b $PR_BRANCH
+          
+          # Create empty commit
+          git commit --allow-empty -m "Pre-release commit for ${{ steps.rc_version.outputs.rc_version }}"
+          git push origin $PR_BRANCH
+          
+          # Create PR
+          gh pr create \
+            --base $RELEASE_BRANCH \
+            --head $PR_BRANCH \
+            --title "$PR_TITLE" \
+            --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }}"
+
+    
+    
