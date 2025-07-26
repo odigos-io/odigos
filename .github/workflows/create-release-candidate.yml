@@ -63,7 +63,7 @@ jobs:
         run: |
           STABLE_RELEASE_BRANCH_NAME="release-${{ steps.next_version.outputs.next_stable }}"
           echo "stable_release_branch_name=$STABLE_RELEASE_BRANCH_NAME" >> $GITHUB_OUTPUT
-          if ! git ls-remote --heads origin $STABLE_RELEASE_BRANCH_NAME | grep -q $STABLE_RELEASE_BRANCH_NAME; then
+          if ! git ls-remote --heads origin $STABLE_RELEASE_BRANCH_NAME | grep -q "^[0-9a-f]*\s*refs/heads/$STABLE_RELEASE_BRANCH_NAME$"; then
             echo "Creating new branch $STABLE_RELEASE_BRANCH_NAME from main"
             git checkout main
             git pull origin main
@@ -71,6 +71,9 @@ jobs:
             git push origin $STABLE_RELEASE_BRANCH_NAME
           else
             echo "Branch $STABLE_RELEASE_BRANCH_NAME already exists"
+            # Check out the existing branch and pull latest changes
+            git checkout $STABLE_RELEASE_BRANCH_NAME
+            git pull origin $STABLE_RELEASE_BRANCH_NAME
           fi
 
       - name: Create Pre-release PR
