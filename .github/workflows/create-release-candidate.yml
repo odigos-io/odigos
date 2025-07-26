@@ -64,7 +64,7 @@ jobs:
           STABLE_RELEASE_BRANCH_NAME="releases/${{ steps.next_version.outputs.next_stable }}"
           echo "stable_release_branch_name=$STABLE_RELEASE_BRANCH_NAME" >> $GITHUB_OUTPUT
           # Escape all regex metacharacters properly
-          ESCAPED_BRANCH_NAME=$(echo "$STABLE_RELEASE_BRANCH_NAME" | sed 's/[[\.*^$()+?{|]/\\&/g')
+          ESCAPED_BRANCH_NAME=$(echo "$STABLE_RELEASE_BRANCH_NAME" | sed 's/[[\.*^$()+?{|/]/\\&/g')
           if ! git ls-remote --heads origin $STABLE_RELEASE_BRANCH_NAME | grep -q "^[0-9a-f]*\s*refs/heads/${ESCAPED_BRANCH_NAME}$"; then
             echo "Creating new branch $STABLE_RELEASE_BRANCH_NAME from main"
             git checkout main
@@ -91,7 +91,7 @@ jobs:
           PR_TITLE="Pre-release PR for ${{ steps.rc_version.outputs.rc_version }}"
           
           # Escape all regex metacharacters properly for branch detection
-          ESCAPED_PR_BRANCH=$(echo "$PR_BRANCH" | sed 's/[[\.*^$()+?{|]/\\&/g')
+          ESCAPED_PR_BRANCH=$(echo "$PR_BRANCH" | sed 's/[[\.*^$()+?{|/]/\\&/g')
           
           # Check if the PR branch already exists
           if git ls-remote --heads origin $PR_BRANCH | grep -q "^[0-9a-f]*\s*refs/heads/${ESCAPED_PR_BRANCH}$"; then
