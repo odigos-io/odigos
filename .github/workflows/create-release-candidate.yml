@@ -80,6 +80,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Configure Git user identity for the workflow using the actor who triggered it
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}"
+          
           RELEASE_BRANCH="${{ steps.create_branch.outputs.stable_release_branch_name }}"
           PR_TITLE="Pre-release PR for ${{ steps.rc_version.outputs.rc_version }}"
           
