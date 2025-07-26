@@ -1273,6 +1273,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otl
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.126.0/go.mod h1:+LJj/UrcAdk3ALRIwBQGSAVr57ocKsicNolUCBgzBfA=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.126.0 h1:IPzKUYR0CJ/+hyC85r+jbi1AYGnyYvAqoMozQvVQcVQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.126.0/go.mod h1:84W9MiVXcyPUz2j5FyJOPfBFoopPJI0CqbytMW8+mR0=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.126.0 h1:fd0zlAYvRi22i89/CviwbVkYSb2jlgLa1/SwIGywu7M=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.126.0/go.mod h1:OIXZlttdmZFYxNh3ZWparbOiG8jWH/Cq6l1JD3nYHhg=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.126.0 h1:0osG0G6G2DNUnN3DCG6bxXTZPERuM5Me+1hBkhYb+9E=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.126.0/go.mod h1:7/NufHSTKvNGv1KN9db5zu8qPenXOgmP7KUTBTrrR3E=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.126.0 h1:6xtTLFmApqn2NofbVI/+EvtrkxD43XTHPt5EaGgpV20=
@@ -1405,6 +1407,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiv
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.126.0/go.mod h1:R+kLdaJ9/ZlynI088ykveGhi93NWiXZfl6CnhNMrZXk=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.126.0 h1:T/ROQp12iQqkJtqR7m+lBgzyItcTMKoOMgRxoi2ZtZI=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.126.0/go.mod h1:L/A4JlnwZyu6EqWmssn2hfOw8nFu5WMpjF8oYp99Aq8=
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.126.0 h1:7FIEJWt0czAYlly5J16mSencPLyfE74dj5XRB/6N8BA=
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.126.0/go.mod h1:WJwzNOVkhi6tl3v57X63uvLVcSRK74XZ205gwayR1Ig=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.126.0 h1:nfgPL8RExAwuJ6y9Uv7Q6q++kayLo8WNroB4xRi6bZQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.126.0/go.mod h1:s1wM6q4xXH/YDrLB7O14i5jZVft973tfgwJ6SxeY2qs=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/opencensusreceiver v0.126.0 h1:KF6vU9KE422VbOJt/wf8QTaYeKO2epehHXjaFtixTc8=
