@@ -2,13 +2,17 @@ package sourceinstrumentation
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/version"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
@@ -64,6 +68,39 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		})
 	if err != nil {
 		return err
+	}
+
+	ver, err := utils.ClusterVersion()
+	if err != nil {
+		return err
+	}
+
+	if ver.LessThan(version.MustParseSemantic("1.21.0")) {
+		err = builder.
+			ControllerManagedBy(mgr).
+			Named("sourceinstrumentation-cronjob").
+			For(&batchv1beta1.CronJob{}).
+			WithEventFilter(&odigospredicate.CreationPredicate{}).
+			Complete(&CronJobReconciler{
+				Client: mgr.GetClient(),
+				Scheme: mgr.GetScheme(),
+			})
+		if err != nil {
+			return err
+		}
+	} else {
+		err = builder.
+			ControllerManagedBy(mgr).
+			Named("sourceinstrumentation-cronjob").
+			For(&batchv1.CronJob{}).
+			WithEventFilter(&odigospredicate.CreationPredicate{}).
+			Complete(&CronJobReconciler{
+				Client: mgr.GetClient(),
+				Scheme: mgr.GetScheme(),
+			})
+		if err != nil {
+			return err
+		}
 	}
 
 	err = builder.
