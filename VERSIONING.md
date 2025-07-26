@@ -10,9 +10,10 @@ Stable releases are the default and recommended version to install. Release cand
 
 ### Stable Release Process
 
-Next stable version is currently the latest version, with the patch number incremented by 1. This will be changed in the future to align with semantic versioning.
+The “next stable” version is currently defined as the latest version with its patch number increased by one.
+(In the future, this definition will change to follow proper semantic versioning.)
 
-Stable versions is the latest release candidate version, being promoted after it completes the release candidate process.
+A stable version is a release candidate that has successfully completed the release‑candidate process and is then promoted to stable.
 
 ### Release Candidate Process
 
