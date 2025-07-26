@@ -59,6 +59,7 @@ jobs:
           echo "rc_version=$RC_VERSION" >> $GITHUB_OUTPUT
 
       - name: Create release branch if not exists
+        id: create_branch
         run: |
           STABLE_RELEASE_BRANCH_NAME="release-${{ steps.next_version.outputs.next_stable }}"
           echo "stable_release_branch_name=$STABLE_RELEASE_BRANCH_NAME" >> $GITHUB_OUTPUT
@@ -76,7 +77,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RELEASE_BRANCH="${{ steps.next_version.outputs.stable_release_branch_name }}"
+          RELEASE_BRANCH="${{ steps.create_branch.outputs.stable_release_branch_name }}"
           PR_TITLE="Pre-release PR for ${{ steps.rc_version.outputs.rc_version }}"
           
           # Create a new branch for the PR
@@ -94,6 +95,3 @@ jobs:
             --head $PR_BRANCH \
             --title "$PR_TITLE" \
             --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }}"
-
-    
-    
