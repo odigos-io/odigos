@@ -1,0 +1,3 @@
+# temporary files that might be downloaded during the test
+*.tar.gz
+*.tgz
