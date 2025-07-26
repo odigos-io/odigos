@@ -1,0 +1,92 @@
+name: full odigos build
+
+on:
+  pull_request:
+    branches:
+      - 'release-**'
+
+jobs:
+  build-all-services:
+    name: build-all-services
+    strategy:
+      matrix:
+        include:
+          - service: autoscaler
+            dockerfile: Dockerfile
+            context: .
+            build-args: SERVICE_NAME=autoscaler
+          - service: autoscaler
+            dockerfile: Dockerfile.rhel
+            context: .
+            build-args: SERVICE_NAME=autoscaler
+          - service: scheduler
+            dockerfile: Dockerfile
+            context: .
+            build-args: SERVICE_NAME=scheduler
+          - service: scheduler
+            dockerfile: Dockerfile.rhel
+            context: .
+            build-args: SERVICE_NAME=scheduler
+          - service: instrumentor
+            dockerfile: Dockerfile
+            context: .
+            build-args: SERVICE_NAME=instrumentor
+          - service: instrumentor
+            dockerfile: Dockerfile.rhel
+            context: .
+            build-args: SERVICE_NAME=instrumentor
+          - service: odigos-collector
+            dockerfile: collector/Dockerfile
+            context: .
+          - service: odigos-collector
+            dockerfile: collector/Dockerfile.rhel
+            context: .
+          - service: odiglet
+            dockerfile: odiglet/Dockerfile
+            context: .
+          - service: odiglet
+            dockerfile: odiglet/Dockerfile.rhel
+            context: .
+          - service: frontend
+            dockerfile: frontend/Dockerfile
+            context: .
+          - service: frontend
+            dockerfile: frontend/Dockerfile.rhel
+            context: .
+          - service: operator
+            dockerfile: operator/Dockerfile
+            context: .
+          - service: operator
+            dockerfile: operator/Dockerfile.rhel
+            context: .
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Build ${{ matrix.service }} Image
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: ${{ matrix.service }}:pr-${{ github.event.number }}
+          provenance: false
+          file: ${{ matrix.dockerfile }}
+          context: ${{ matrix.context }}
+          build-args: ${{ matrix.build-args }}
+
+  build-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.0'
+      - name: Set up Goreleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          args: build --snapshot --clean
