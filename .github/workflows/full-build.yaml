@@ -3,7 +3,7 @@ name: full odigos build
 on:
   pull_request:
     branches:
-      - 'release-**'
+      - 'releases/**'
 
 jobs:
   build-all-services:
