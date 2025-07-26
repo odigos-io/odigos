@@ -31,7 +31,6 @@ import (
 
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -58,9 +57,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	odigosEffectiveConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
 	odigosEffectiveConfigSelector := fields.AndSelectors(nsSelector, odigosEffectiveConfigNameSelector)
-
-	odigletDaemonsetNameSelector := fields.OneTermEqualSelector("metadata.name", k8sconsts.OdigletDaemonSetName)
-	odigletDaemonsetSelector := fields.AndSelectors(nsSelector, odigletDaemonsetNameSelector)
 
 	instrumentedPodReq, _ := labels.NewRequirement(k8sconsts.OdigosAgentsMetaHashLabel, selection.Exists, []string{})
 	instrumentedPodSelector := labels.NewSelector().Add(*instrumentedPodReq)
@@ -130,9 +126,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				},
 				&corev1.ConfigMap{}: {
 					Field: odigosEffectiveConfigSelector,
-				},
-				&appsv1.DaemonSet{}: {
-					Field: odigletDaemonsetSelector,
 				},
 				&odigosv1.CollectorsGroup{}: {
 					Field: nsSelector,
