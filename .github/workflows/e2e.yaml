@@ -78,15 +78,15 @@ jobs:
           - "1.23"
           - "1.32"
         test-scenario:
-          - 'ui'
-          - 'helm-chart'
-          - 'cli-upgrade'
-          - 'helm-upgrade'
-          - 'workload-lifecycle'
-          - 'source'
-          - 'webhooks'
-          - 'env-injection'
-          - 'data-streams'
+          - "ui"
+          - "helm-chart"
+          - "cli-upgrade"
+          - "helm-upgrade"
+          - "workload-lifecycle"
+          - "source"
+          - "webhooks"
+          - "env-injection"
+          - "data-streams"
         include:
           - kube-version: "1.20.15"
             kind-image: "kindest/node:v1.20.15@sha256:a32bf55309294120616886b5338f95dd98a2f7231519c7dedcec32ba29699394"
@@ -139,9 +139,11 @@ jobs:
       - name: Run E2E Tests
         run: |
           MINOR_VERSION=$(echo ${{ matrix.kube-version }} | sed -E 's/^1\.([0-9]+).*$/\1/')
+          IS_HELM=${{ matrix.test-scenario == 'helm-chart' || matrix.test-scenario == 'helm-upgrade' }}
 
           chainsaw test tests/e2e/${{ matrix.test-scenario }} --values - <<EOF
           k8sMinorVersion: ${MINOR_VERSION}
+          isHelm: ${IS_HELM}
           EOF
 
       - name: Run diagnose command
