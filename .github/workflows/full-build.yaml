@@ -10,55 +10,26 @@ jobs:
     name: build-all-services
     strategy:
       matrix:
+        service: [autoscaler, scheduler, instrumentor, odigos-collector, odiglet, frontend, operator]
+        dockerfile_variant: [Dockerfile, Dockerfile.rhel]
         include:
           - service: autoscaler
-            dockerfile: Dockerfile
-            context: .
-            build-args: SERVICE_NAME=autoscaler
-          - service: autoscaler
-            dockerfile: Dockerfile.rhel
-            context: .
+            dockerfile_path: .
             build-args: SERVICE_NAME=autoscaler
           - service: scheduler
-            dockerfile: Dockerfile
-            context: .
-            build-args: SERVICE_NAME=scheduler
-          - service: scheduler
-            dockerfile: Dockerfile.rhel
-            context: .
+            dockerfile_path: .
             build-args: SERVICE_NAME=scheduler
           - service: instrumentor
-            dockerfile: Dockerfile
-            context: .
-            build-args: SERVICE_NAME=instrumentor
-          - service: instrumentor
-            dockerfile: Dockerfile.rhel
-            context: .
+            dockerfile_path: .
             build-args: SERVICE_NAME=instrumentor
           - service: odigos-collector
-            dockerfile: collector/Dockerfile
-            context: .
-          - service: odigos-collector
-            dockerfile: collector/Dockerfile.rhel
-            context: .
+            dockerfile_path: collector
           - service: odiglet
-            dockerfile: odiglet/Dockerfile
-            context: .
-          - service: odiglet
-            dockerfile: odiglet/Dockerfile.rhel
-            context: .
+            dockerfile_path: odiglet
           - service: frontend
-            dockerfile: frontend/Dockerfile
-            context: .
-          - service: frontend
-            dockerfile: frontend/Dockerfile.rhel
-            context: .
+            dockerfile_path: frontend
           - service: operator
-            dockerfile: operator/Dockerfile
-            context: .
-          - service: operator
-            dockerfile: operator/Dockerfile.rhel
-            context: .
+            dockerfile_path: operator/Dockerfile
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,8 +44,8 @@ jobs:
           push: false
           tags: ${{ matrix.service }}:pr-${{ github.event.number }}
           provenance: false
-          file: ${{ matrix.dockerfile }}
-          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile_path }}/${{ matrix.dockerfile_variant }}
+          context: .
           build-args: ${{ matrix.build-args }}
 
   build-cli:
