@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -129,6 +130,7 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("sourceList ===========================================", len(sourceList.Items), "kind", pw.Kind, "name", pw.Name, "namespace", namespace)
 		if len(sourceList.Items) > 1 {
 			return nil, ErrorTooManySources
 		}
