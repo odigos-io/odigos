@@ -140,9 +140,15 @@ jobs:
         run: |
           MINOR_VERSION=$(echo ${{ matrix.kube-version }} | sed -E 's/^1\.([0-9]+).*$/\1/')
 
+          if [[ "${{ matrix.test-scenario }}" == "helm-chart" || "${{ matrix.test-scenario }}" == "helm-upgrade" ]]; then
+            IS_HELM="true"
+          else
+            IS_HELM="false"
+          fi
+
           chainsaw test tests/e2e/${{ matrix.test-scenario }} --values - <<EOF
           k8sMinorVersion: ${MINOR_VERSION}
-          isHelm: ${{ matrix.test-scenario == 'helm-chart' || matrix.test-scenario == 'helm-upgrade' }}
+          isHelm: ${IS_HELM}
           EOF
 
       - name: Run diagnose command
