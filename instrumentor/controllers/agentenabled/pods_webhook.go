@@ -111,10 +111,13 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	}
 
 	karpenterDisabled := odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled
-	mountIsHostPath := odigosConfiguration.MountMethod == nil || *odigosConfiguration.MountMethod == common.K8sHostPathMountMethod
+	mountIsHostPath := odigosConfiguration.MountMethod != nil && *odigosConfiguration.MountMethod == common.K8sHostPathMountMethod
 
-	// Add odiglet installed node-affinity to the pod, for non Karpenter installations
-	// and if the mount method is host path
+	// Add odiglet-installed node affinity to the pod for non-Karpenter installations,
+	// but only when the mount method is hostPath. This ensures that the pod is scheduled
+	// only on nodes where odiglet is already installed.
+	// For the device mount method, this is unnecessary because the device is guaranteed
+	// to be present on the node before the pod is scheduled.
 	if karpenterDisabled && mountIsHostPath {
 		podutils.AddOdigletInstalledAffinity(pod)
 	}
