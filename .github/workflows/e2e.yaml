@@ -81,6 +81,7 @@ jobs:
           - "ui"
           - "helm-chart"
           - "cli-upgrade"
+          - "helm-upgrade"
           - "workload-lifecycle"
           - "source"
           - "webhooks"
@@ -141,6 +142,7 @@ jobs:
 
           chainsaw test tests/e2e/${{ matrix.test-scenario }} --values - <<EOF
           k8sMinorVersion: ${MINOR_VERSION}
+          isHelm: ${{ matrix.test-scenario == 'helm-chart' || matrix.test-scenario == 'helm-upgrade' }}
           EOF
 
       - name: Run diagnose command
