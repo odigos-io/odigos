@@ -42,7 +42,7 @@ brew update && brew install odigos-io/homebrew-odigos-cli-rc/odigos
 ```bash
 helm repo add odigos https://odigos-io.github.io/odigos
 helm repo update
-helm install odigos odigos-io/odigos --version v1.0.X-rcY
+helm install odigos odigos/odigos --version v1.0.X-rcY
 ```
 
 - **cli binray** - browse to https://github.com/odigos-io/odigos/releases and download the cli binary for the specific release candidate version.
