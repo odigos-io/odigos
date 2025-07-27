@@ -163,7 +163,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		podswebhook.MountPodVolumeToHostPath(pod)
 	}
 
-	if *odigosConfiguration.MountMethod == common.K8sInitContainerMountMethod && volumeMounted {
+	if odigosConfiguration.MountMethod != nil && *odigosConfiguration.MountMethod == common.K8sInitContainerMountMethod && volumeMounted {
 		// only mount the volume if at least one container has a volume to mount
 		podswebhook.MountPodVolumeToEmptyDir(pod)
 		// Create the init container that will copy the directories to the empty dir based on dirsToCopy
