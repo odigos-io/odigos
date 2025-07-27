@@ -30,7 +30,7 @@ Odigos should always default to using a stable version for any installation meth
 
 To install a release candidate version, one needs to "hop-in" to the release candidate version.
 
-- **brew** - use the "rc" tap (`homebrew-odigos-cli-rc/odigos`) which is not the default tap. this will always install the latest release candidate version.
+- **brew** - use the "rc" tap (`homebrew-odigos-cli-rc/odigos`) which is not the default tap. this will always install the latest release candidate version. **Notice**, the tap for stable releases is `homebrew-odigos-cli/odigos`, so pay attention to the tap name and the version you are using to avoid installing the wrong version.
 
 ```bash
 brew update && brew install odigos-io/homebrew-odigos-cli-rc/odigos
