@@ -29,6 +29,7 @@ const (
 	GoOffsetsFileName   = "go_offset_results.json"
 	GoOffsetsEnvVar     = "OTEL_GO_OFFSETS_FILE"
 	OffsetFileMountPath = "/offsets"
+	OffsetCronJobName   = "odigos-go-offsets-updater"
 
 	OdigletLocalTrafficServiceName = "odiglet-local"
 	OdigletMetricsServerPort       = 8080

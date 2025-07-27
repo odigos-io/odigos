@@ -1,0 +1,244 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: helm-upgrade
+spec:
+  description: Check successful upgrade from latest version of Helm chart
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+    
+    - name: Install Odigos latest release from GitHub for pre upgrade setup
+      try:
+        - script:
+            timeout: 6m # longer timeout since the images are being pulled from dockerhub
+            content: |
+              #!/bin/bash
+
+              # Define variables
+              REPO_URL="https://api.github.com/repos/odigos-io/odigos/releases/latest"
+
+              # Fetch the release assets from GitHub API with retry
+              # --retry 5: retry up to 5 times
+              # --retry-delay 1: wait 1 second between retries
+              # --retry-max-time 30: maximum time to spend retrying (30 seconds)
+              ASSETS_JSON=$(curl -s --retry 5 --retry-delay 1 --retry-max-time 30 "$REPO_URL")
+
+              # Find the download URL for the helm chart
+              CHART_DOWNLOAD_URL=$(echo "$ASSETS_JSON" | grep "browser_download_url" | grep "helm-chart-odigos-" | cut -d '"' -f 4)
+
+              # Check if the download URL was found
+              if [ -z "$CHART_DOWNLOAD_URL" ]; then
+                  echo "No matching helm chart found in latest release"
+                  exit 1
+              fi
+
+              echo "Downloading Helm chart from: $CHART_DOWNLOAD_URL"
+
+              # Download the helm chart with retry
+              # --retry 5: retry up to 5 times
+              # --retry-delay 1: wait 1 second between retries
+              # --retry-max-time 60: maximum time to spend retrying (60 seconds for download)
+              curl -L -o odigos-latest-chart.tgz --retry 5 --retry-delay 1 --retry-max-time 60 "$CHART_DOWNLOAD_URL"
+
+              # Cleanup any existing installation that might be left over from previous runs
+              helm uninstall odigos -n odigos-test --ignore-not-found
+
+              # Install the latest version from the downloaded chart
+              helm upgrade --install odigos ./odigos-latest-chart.tgz \
+                --create-namespace \
+                --namespace odigos-test \
+                --set nodeSelector."kubernetes\.io/os"=linux
+              
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+    
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Install - Simple Demo Apps
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+        - script:
+            timeout: 2m
+            content: |
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
+        - assert:
+            file: ../../common/assert/simple-demo-installed.yaml
+
+    - name: Instrument Namespace
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Ruby Detected, Rollout Restart
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/ruby-partial-runtime-detected.yaml
+        - script:
+            timeout: 1m
+            content: |
+              kubectl rollout restart deployment geolocation
+              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=60s
+
+    - name: Assert Runtime Detected
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Odigos pipeline pods ready
+      # We make sure that the pipeline pods are ready before proceeding with the next steps
+      # This is intentionally different from pipeline-ready.yaml, which checks for the pipeline CRDs
+      # When adding a feature related to the pipeline, if we would use the same assert before the upgrade, the test would fail.
+      # Since the version installed here is latest official one.
+      try:
+        - script:
+            content: ../../common/assert_pipeline_pods_ready.sh
+            timeout: 5m
+
+    - name: Simple-demo instrumented after destination added
+      try:
+        - assert:
+            file: ../../common/assert/simple-demo-instrumented.yaml
+
+    - name: Upgrade to HEAD version with local Helm chart
+      try:
+        - script:
+            content: |
+              # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
+              P="../../.."
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                helm upgrade odigos $P/helm/odigos \
+                  --namespace odigos-test \
+                  --set image.tag="$COMMIT_HASH" \
+                  --set imagePrefix=public.ecr.aws/y2v0v6s7 \
+                  --set nodeSelector."kubernetes\.io/os"=linux
+              else
+                helm upgrade odigos $P/helm/odigos \
+                  --namespace odigos-test \
+                  --set image.tag=e2e-test \
+                  --set nodeSelector."kubernetes\.io/os"=linux
+              fi
+            timeout: 3m
+        - assert:
+            file: ../../common/assert/odigos-upgraded.yaml
+            timeout: 3m
+      catch:
+        - get:
+            apiVersion: v1
+            kind: Pod
+
+    - name: Verify Helm upgrade version
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              echo "Starting Odigos version check after upgrade..."
+              export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
+              echo "Actual Version: $ACTUAL_VERSION"
+              echo "Commit Hash: $COMMIT_HASH"
+
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                if [ "$ACTUAL_VERSION" != "$COMMIT_HASH" ]; then
+                  echo "❌ Odigos version is not the expected commit hash, got $ACTUAL_VERSION"
+                  exit 1
+                fi
+              else
+                if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
+                  echo "❌ Odigos version is not e2e-test, got $ACTUAL_VERSION"
+                  exit 1
+                fi
+              fi
+              echo "✅ Odigos version verification passed"
+
+    - name: Odigos pipeline ready after upgrade
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Simple-demo instrumented after upgrade
+      try:
+        - assert:
+            file: ../../common/assert/simple-demo-instrumented.yaml
+
+    - name: Generate Traffic
+      try:
+        - apply:
+            file: ../../common/apply/generate-traffic-job.yaml
+        - script:
+            timeout: 1m
+            content: |
+              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+        - delete:
+            file: ../../common/apply/generate-traffic-job.yaml
+
+    - name: Wait For Trace
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 1
+              done
+      catch:
+        - script:
+            content: |
+              java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
+              kubectl logs $java_pod_name -n default
+
+    - name: Verify Trace - Context Propagation
+      try:
+        - script:
+            content: |
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
+
+    - name: Verify Trace - Resource Attributes
+      try:
+        - script:
+            content: |
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/resource-attributes.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
+
+    - name: Verify Trace - Span Attributes
+      try:
+        - script:
+            content: |
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/span-attributes.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
