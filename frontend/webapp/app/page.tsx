@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { ROUTES } from '@/utils';
 import { useConfig } from '@/hooks';
 import { useRouter } from 'next/navigation';
-import { ConfigInstallation } from '@/types';
+import { InstallationStatus } from '@/types';
 import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 
 export default function App() {
@@ -13,9 +13,9 @@ export default function App() {
 
   useEffect(() => {
     if (config) {
-      const { installation, readonly } = config;
+      const { installationStatus, readonly } = config;
 
-      if (installation === ConfigInstallation.New && !readonly) {
+      if (installationStatus === InstallationStatus.New && !readonly) {
         router.push(ROUTES.CHOOSE_SOURCES);
       } else {
         router.push(ROUTES.OVERVIEW);

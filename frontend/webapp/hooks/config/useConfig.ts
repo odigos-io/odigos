@@ -5,7 +5,7 @@ import { GET_CONFIG } from '@/graphql';
 import type { FetchedConfig } from '@/types';
 import { useSuspenseQuery } from '@apollo/client';
 import { useNotificationStore } from '@odigos/ui-kit/store';
-import { Crud, StatusType, Tier } from '@odigos/ui-kit/types';
+import { Crud, InstallationMethod, StatusType, Tier } from '@odigos/ui-kit/types';
 
 export const useConfig = () => {
   const { addNotification } = useNotificationStore();
@@ -26,8 +26,9 @@ export const useConfig = () => {
 
   const config = data?.config;
   const isReadonly = data?.config?.readonly || false;
+  const installationMethod = data?.config?.installationMethod || InstallationMethod.Cli;
   const isCommunity = (config?.tier && [Tier.Community].includes(config.tier)) || false;
   const isEnterprise = (config?.tier && [Tier.Onprem].includes(config.tier)) || false;
 
-  return { config, isReadonly, isCommunity, isEnterprise };
+  return { config, isReadonly, installationMethod, isCommunity, isEnterprise };
 };

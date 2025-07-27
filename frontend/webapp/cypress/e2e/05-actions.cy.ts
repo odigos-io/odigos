@@ -36,8 +36,8 @@ describe('Actions CRUD', () => {
             break;
           }
           case 'AddClusterInfo': {
-            cy.contains('div', 'Resource Attributes').parent().parent().find('input[placeholder="Attribute name"]').type('key');
-            cy.contains('div', 'Resource Attributes').parent().parent().find('input[placeholder="Attribute value"]').type('val');
+            cy.contains('div', 'Resource Attributes').parent().parent().find('input[placeholder="Key"]').type('key');
+            cy.contains('div', 'Resource Attributes').parent().parent().find('input[placeholder="Value"]').type('val');
             break;
           }
           case 'DeleteAttribute': {
@@ -45,8 +45,8 @@ describe('Actions CRUD', () => {
             break;
           }
           case 'RenameAttribute': {
-            cy.contains('div', 'Attributes to rename').parent().parent().find('input[placeholder="Attribute name"]').type('1');
-            cy.contains('div', 'Attributes to rename').parent().parent().find('input[placeholder="Attribute value"]').type('one');
+            cy.contains('div', 'Attributes to rename').parent().parent().find('input[placeholder="Key"]').type('1');
+            cy.contains('div', 'Attributes to rename').parent().parent().find('input[placeholder="Value"]').type('one');
             break;
           }
           case 'PiiMasking': {
