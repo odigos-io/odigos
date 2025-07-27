@@ -40,7 +40,7 @@ brew update && brew install odigos-io/homebrew-odigos-cli-rc/odigos
 - **helm repo** - release candidates are published to the same repo and are ignored by helm by default. to install a release candidate, first `helm repo update` then use `--version` flag to specify the release candidate version.
 
 ```bash
-helm repo add odigos-rc https://odigos-io.github.io/odigos
+helm repo add odigos https://odigos-io.github.io/odigos
 helm repo update
 helm install odigos odigos-io/odigos --version v1.0.X-rcY
 ```
