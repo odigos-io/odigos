@@ -1,0 +1,374 @@
+### Simple-demo Pods ###
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: frontend
+spec:
+  initContainers:
+    - name: odigos-agents
+      command:
+        - sh
+        - -c
+        - cp -r /instrumentations/java /var/odigos/java && cp -r /instrumentations/loader /var/odigos/loader
+      volumeMounts:
+        - name: odigos-agent
+          mountPath: /var/odigos
+  volumes:
+    - name: odigos-agent
+      emptyDir: {}
+  containers:
+    - name: frontend
+status:
+  containerStatuses:
+    - name: frontend
+      ready: true
+      restartCount: 0
+      started: true
+  initContainerStatuses:
+    - name: odigos-agents
+      ready: true
+      restartCount: 0
+      state:
+        terminated:
+          exitCode: 0
+          reason: Completed
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: coupon
+spec:
+  initContainers:
+    - name: odigos-agents
+      command:
+        - sh
+        - -c
+        - cp -r /instrumentations/nodejs-community /var/odigos/nodejs-community && cp -r /instrumentations/opentelemetry-node /var/odigos/opentelemetry-node && cp -r /instrumentations/loader /var/odigos/loader
+      volumeMounts:
+        - name: odigos-agent
+          mountPath: /var/odigos
+  volumes:
+    - name: odigos-agent
+      emptyDir: {}
+  containers:
+    - name: coupon
+status:
+  containerStatuses:
+    - name: coupon
+      ready: true
+      restartCount: 0
+      started: true
+  initContainerStatuses:
+    - name: odigos-agents
+      ready: true
+      restartCount: 0
+      state:
+        terminated:
+          exitCode: 0
+          reason: Completed
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: inventory
+spec:
+  initContainers:
+    - name: odigos-agents
+      command:
+        - sh
+        - -c
+        - cp -r /instrumentations/python /var/odigos/python && cp -r /instrumentations/loader /var/odigos/loader
+      volumeMounts:
+        - name: odigos-agent
+          mountPath: /var/odigos
+  volumes:
+    - name: odigos-agent
+      emptyDir: {}
+  containers:
+    - name: inventory
+status:
+  containerStatuses:
+    - name: inventory
+      ready: true
+      restartCount: 0
+      started: true
+  initContainerStatuses:
+    - name: odigos-agents
+      ready: true
+      restartCount: 0
+      state:
+        terminated:
+          exitCode: 0
+          reason: Completed
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: membership
+spec:
+  initContainers:
+    - name: odigos-agents
+  containers:
+    - name: membership
+status:
+  containerStatuses:
+    - name: membership
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: pricing
+spec:
+  initContainers:
+    - name: odigos-agents
+      command:
+        - sh
+        - -c
+        - cp -r /instrumentations/dotnet /var/odigos/dotnet
+      volumeMounts:
+        - name: odigos-agent
+          mountPath: /var/odigos
+  volumes:
+    - name: odigos-agent
+      emptyDir: {}
+  containers:
+    - name: pricing
+status:
+  containerStatuses:
+    - name: pricing
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: currency
+spec:
+  initContainers:
+    - name: odigos-agents
+      command:
+        - sh
+        - -c
+        - cp -r /instrumentations/php /var/odigos/php
+      volumeMounts:
+        - name: odigos-agent
+          mountPath: /var/odigos
+  volumes:
+    - name: odigos-agent
+      emptyDir: {}
+  containers:
+    - name: currency
+    - name: nginx
+status:
+  containerStatuses:
+    - name: currency
+      ready: true
+      restartCount: 0
+      started: true
+    - name: nginx
+      ready: true
+      restartCount: 0
+      started: true
+  initContainerStatuses:
+    - name: odigos-agents
+      ready: true
+      restartCount: 0
+      state:
+        terminated:
+          exitCode: 0
+          reason: Completed
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: geolocation
+spec:
+  initContainers:
+    - name: odigos-agents
+      command:
+        - sh
+        - -c
+        - cp -r /instrumentations/ruby /var/odigos/ruby
+      volumeMounts:
+        - name: odigos-agent
+          mountPath: /var/odigos
+  volumes:
+    - name: odigos-agent
+      emptyDir: {}
+  containers:
+    - name: geolocation
+status:
+  containerStatuses:
+    - name: geolocation
+      ready: true
+      restartCount: 0
+      started: true
+  initContainerStatuses:
+    - name: odigos-agents
+      ready: true
+      restartCount: 0
+      state:
+        terminated:
+          exitCode: 0
+          reason: Completed
+  phase: Running
+---
+#### Instrumentation Configs ####
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-coupon
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: coupon
+status:
+  runtimeDetailsByContainer:
+    - containerName: coupon
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-frontend
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: frontend
+status:
+  runtimeDetailsByContainer:
+    - containerName: frontend
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-inventory
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: inventory
+status:
+  runtimeDetailsByContainer:
+    - containerName: inventory
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-membership
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: membership
+status:
+  runtimeDetailsByContainer:
+    - containerName: membership
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-pricing
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: pricing
+status:
+  runtimeDetailsByContainer:
+    - containerName: pricing
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-currency
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: currency
+status:
+  (runtimeDetailsByContainer[?containerName=='currency']):
+    - language: php
+  (runtimeDetailsByContainer[?containerName=='nginx']):
+    - language: nginx
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-geolocation
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: geolocation
+status:
+  (runtimeDetailsByContainer[?containerName=='geolocation']):
+    - language: ruby
+---
+### Instrumentation Instances ###
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-coupon
+status:
+  healthy: true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-inventory
+status:
+  healthy: true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-membership
+status:
+  healthy: true
