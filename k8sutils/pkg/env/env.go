@@ -65,3 +65,15 @@ func GetOdigosTierFromEnv() common.OdigosTier {
 		return common.CommunityOdigosTier
 	}
 }
+
+// GetOdigosLogsSrcEnvVar returns true if the ODIGOS_EBPF_LOGS environment variable is set to true
+func GetOdigosLogsSrcEnvVar() bool {
+	val := os.Getenv(consts.OdigosEbpfLogsName)
+	if val != "" {
+		boolVal, err := strconv.ParseBool(val)
+		if err == nil {
+			return boolVal
+		}
+	}
+	return false
+}

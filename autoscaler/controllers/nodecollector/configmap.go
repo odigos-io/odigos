@@ -355,7 +355,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	if collectLogs {
 		// Odigos Community run OTEL log collector
 		tier := env.GetOdigosTierFromEnv()
-		if tier == odigoscommon.CommunityOdigosTier {
+		if tier == odigoscommon.CommunityOdigosTier || env.GetOdigosLogsSrcEnvVar() == false {
 			includes := make([]string, 0)
 			for _, element := range sources.Items {
 				// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
