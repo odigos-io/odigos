@@ -32,6 +32,12 @@ spec:
             timeout: 1m
             content: ../../../cli/odigos config set mount-method k8s-init-container
 
+    - name: '[1 - Setup] Assert config set successfully'
+      try:
+        - script:
+            timeout: 30s
+            content: ../../common/assert_config_value.sh -k mount-method -v k8s-init-container
+
     - name: '[1 - Setup] Verify Node Odiglet label has been added'
       try:
         - assert:
