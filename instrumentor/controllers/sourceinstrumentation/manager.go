@@ -9,13 +9,13 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
-func SetupWithManager(mgr ctrl.Manager) error {
+func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 	err := builder.
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-source").
@@ -70,37 +70,24 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	ver, err := utils.ClusterVersion()
-	if err != nil {
-		return err
+	var cronJobObject client.Object
+	if k8sVersion.LessThan(version.MustParseSemantic("1.21.0")) {
+		cronJobObject = &batchv1beta1.CronJob{}
+	} else {
+		cronJobObject = &batchv1.CronJob{}
 	}
 
-	if ver.LessThan(version.MustParseSemantic("1.21.0")) {
-		err = builder.
-			ControllerManagedBy(mgr).
-			Named("sourceinstrumentation-cronjob").
-			For(&batchv1beta1.CronJob{}).
-			WithEventFilter(&odigospredicate.CreationPredicate{}).
-			Complete(&CronJobReconciler{
-				Client: mgr.GetClient(),
-				Scheme: mgr.GetScheme(),
-			})
-		if err != nil {
-			return err
-		}
-	} else {
-		err = builder.
-			ControllerManagedBy(mgr).
-			Named("sourceinstrumentation-cronjob").
-			For(&batchv1.CronJob{}).
-			WithEventFilter(&odigospredicate.CreationPredicate{}).
-			Complete(&CronJobReconciler{
-				Client: mgr.GetClient(),
-				Scheme: mgr.GetScheme(),
-			})
-		if err != nil {
-			return err
-		}
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("sourceinstrumentation-cronjob").
+		For(cronJobObject).
+		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		Complete(&CronJobReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
 	}
 
 	err = builder.
