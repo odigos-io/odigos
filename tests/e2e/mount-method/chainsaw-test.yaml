@@ -36,7 +36,7 @@ spec:
       try:
         - script:
             timeout: 30s
-            content: ../../common/assert_config_value.sh -k mount-method -v k8s-init-container
+            content: ../../common/assert_config_value.sh -k mountMethod -v k8s-init-container
 
     - name: '[1 - Setup] Verify Node Odiglet label has been added'
       try:
