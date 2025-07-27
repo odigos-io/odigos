@@ -15,11 +15,25 @@ spec:
       volumeMounts:
         - name: odigos-agent
           mountPath: /var/odigos
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
   volumes:
+    - (name != null): true
     - name: odigos-agent
       emptyDir: {}
   containers:
     - name: frontend
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /var/odigos/java
+          name: odigos-agent
+          readOnly: true
+          subPath: java
+        - mountPath: /var/odigos/loader
+          name: odigos-agent
+          readOnly: true
+          subPath: loader
 status:
   containerStatuses:
     - name: frontend
@@ -52,11 +66,29 @@ spec:
       volumeMounts:
         - name: odigos-agent
           mountPath: /var/odigos
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
   volumes:
+    - (name != null): true
     - name: odigos-agent
       emptyDir: {}
   containers:
     - name: coupon
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /var/odigos/nodejs-community
+          name: odigos-agent
+          readOnly: true
+          subPath: nodejs-community
+        - mountPath: /var/odigos/opentelemetry-node
+          name: odigos-agent
+          readOnly: true
+          subPath: opentelemetry-node
+        - mountPath: /var/odigos/loader
+          name: odigos-agent
+          readOnly: true
+          subPath: loader
 status:
   containerStatuses:
     - name: coupon
@@ -89,11 +121,25 @@ spec:
       volumeMounts:
         - name: odigos-agent
           mountPath: /var/odigos
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
   volumes:
+    - (name != null): true
     - name: odigos-agent
       emptyDir: {}
   containers:
     - name: inventory
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /var/odigos/python
+          name: odigos-agent
+          readOnly: true
+          subPath: python
+        - mountPath: /var/odigos/loader
+          name: odigos-agent
+          readOnly: true
+          subPath: loader
 status:
   containerStatuses:
     - name: inventory
@@ -117,8 +163,6 @@ metadata:
   labels:
     app: membership
 spec:
-  initContainers:
-    - name: odigos-agents
   containers:
     - name: membership
 status:
@@ -145,11 +189,21 @@ spec:
       volumeMounts:
         - name: odigos-agent
           mountPath: /var/odigos
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
   volumes:
+    - (name != null): true
     - name: odigos-agent
       emptyDir: {}
   containers:
     - name: pricing
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /var/odigos/dotnet
+          name: odigos-agent
+          readOnly: true
+          subPath: dotnet
 status:
   containerStatuses:
     - name: pricing
@@ -174,11 +228,22 @@ spec:
       volumeMounts:
         - name: odigos-agent
           mountPath: /var/odigos
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
   volumes:
+    - (name != null): true
+    - (name != null): true
     - name: odigos-agent
       emptyDir: {}
   containers:
     - name: currency
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /var/odigos/php
+          name: odigos-agent
+          readOnly: true
+          subPath: php
     - name: nginx
 status:
   containerStatuses:
@@ -216,11 +281,21 @@ spec:
       volumeMounts:
         - name: odigos-agent
           mountPath: /var/odigos
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
   volumes:
+    - (name != null): true
     - name: odigos-agent
       emptyDir: {}
   containers:
     - name: geolocation
+      volumeMounts:
+        - (name != null): true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /var/odigos/ruby
+          name: odigos-agent
+          readOnly: true
+          subPath: ruby
 status:
   containerStatuses:
     - name: geolocation
