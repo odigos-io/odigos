@@ -79,7 +79,6 @@ func (g *GoOtelEbpfSdk) Close(_ context.Context) error {
 }
 
 func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, sdkConfig instrumentation.Config) error {
-	fmt.Println("@@@ Applying config to Go instrumentation")
 	updatedConfig, err := convertToGoInstrumentationConfig(sdkConfig)
 	if err != nil {
 		return err
@@ -91,7 +90,6 @@ func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, sdkConfig instrumentati
 func convertToGoInstrumentationConfig(sdkConfig instrumentation.Config) (auto.InstrumentationConfig, error) {
 	initialConfig, ok := sdkConfig.(*ebpf.ExtConfig)
 	if !ok {
-		fmt.Errorf("invalid initial config type, expected *ebpf.ExtConfig, got %T", sdkConfig)
 		return auto.InstrumentationConfig{}, fmt.Errorf("invalid initial config type, expected *ebpf.ExtConfig, got %T", sdkConfig)
 	}
 	ic := auto.InstrumentationConfig{}

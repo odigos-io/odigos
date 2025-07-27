@@ -424,7 +424,6 @@ func (m *manager[ProcessDetails, ConfigGroup]) applyInstrumentationConfiguration
 			continue
 		}
 		m.logger.Info("applying configuration to instrumentation", "process group details", instDetails.pd, "configGroup", configGroup)
-		fmt.Printf("@@ applying configuration to instrumentation %T for process group details %v with config group %v config[%+v]\n", instDetails.inst, instDetails.pd, configGroup, config)
 		applyErr := instDetails.inst.ApplyConfig(ctx, config)
 		err = errors.Join(err, applyErr)
 	}
