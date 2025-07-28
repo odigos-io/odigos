@@ -4,7 +4,6 @@ module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
 go 1.24.0
 
-toolchain go1.24.4
 
 require (
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.130.0
