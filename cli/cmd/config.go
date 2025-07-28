@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -34,7 +35,14 @@ var configCmd = &cobra.Command{
 		log.Print(`Manage Odigos configuration settings to customize system behavior.` + "\n")
 		log.Print(`Configurable properties:` + "\n")
 
-		for _, key := range consts.ConfigDisplayOrder {
+		var order []string
+		for k := range consts.ConfigDisplay {
+			order = append(order, k)
+		}
+
+		sort.Strings(order)
+
+		for _, key := range order {
 			fmt.Printf("- %s: %s\n", key, consts.ConfigDisplay[key])
 		}
 	},
