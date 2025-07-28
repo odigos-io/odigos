@@ -4,6 +4,8 @@ module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
 go 1.24.0
 
+toolchain go1.24.4
+
 require (
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.130.0
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.130.0
@@ -55,7 +57,6 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.130.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter v0.130.0
@@ -86,7 +87,6 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.130.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.130.0
