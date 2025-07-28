@@ -9,14 +9,19 @@ import (
 )
 
 const (
-	clickhouseEndpoint     = "CLICKHOUSE_ENDPOINT"
-	clickhouseUsername     = "CLICKHOUSE_USERNAME"
-	clickhousePassword     = "${CLICKHOUSE_PASSWORD}"
-	clickhouseCreateSchema = "CLICKHOUSE_CREATE_SCHEME"
-	clickhouseDatabaseName = "CLICKHOUSE_DATABASE_NAME"
-	clickhouseTracesTable  = "CLICKHOUSE_TRACES_TABLE"
-	clickhouseMetricsTable = "CLICKHOUSE_METRICS_TABLE"
-	clickhouseLogsTable    = "CLICKHOUSE_LOGS_TABLE"
+	clickhouseEndpoint                 = "CLICKHOUSE_ENDPOINT"
+	clickhouseUsername                 = "CLICKHOUSE_USERNAME"
+	clickhousePassword                 = "${CLICKHOUSE_PASSWORD}"
+	clickhouseCreateSchema             = "CLICKHOUSE_CREATE_SCHEME"
+	clickhouseDatabaseName             = "CLICKHOUSE_DATABASE_NAME"
+	clickhouseTracesTable              = "CLICKHOUSE_TRACES_TABLE"
+	clickhouseLogsTable                = "CLICKHOUSE_LOGS_TABLE"
+	clickhouseMetricsTableSum          = "CLICKHOUSE_METRICS_TABLE_SUM"
+	clickhouseMetricsTableGauge        = "CLICKHOUSE_METRICS_TABLE_GAUGE"
+	clickhouseMetricsTableHistogram    = "CLICKHOUSE_METRICS_TABLE_HISTOGRAM"
+	clickhouseMetricsTableSummary      = "CLICKHOUSE_METRICS_TABLE_SUMMARY"
+	clickhouseMetricsTableExpHistogram = "CLICKHOUSE_METRICS_TABLE_EXP_HISTOGRAM"
+	clickhouseUseJsonType              = "CLICKHOUSE_USE_JSON_TYPE"
 )
 
 type Clickhouse struct{}
@@ -40,18 +45,27 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		return nil, errors.New("clickhouse endpoint is not a valid URL")
 	}
 
+	// Default port fallback
 	if parsedUrl.Port() == "" {
 		endpoint = strings.Replace(endpoint, parsedUrl.Host, parsedUrl.Host+":9000", 1)
 		parsedUrl, _ = url.Parse(endpoint)
 	}
 
-	username, userExists := dest.GetConfig()[clickhouseUsername]
+	// Conditionally enable JSON type
+	useJson := dest.GetConfig()[clickhouseUseJsonType] == "true"
+	if useJson {
+		q := parsedUrl.Query()
+		q.Set("enable_json_type", "1")
+		parsedUrl.RawQuery = q.Encode()
+		endpoint = parsedUrl.String()
+	}
 
 	exporterName := "clickhouse/clickhouse-" + dest.GetID()
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 	}
-	if userExists {
+
+	if username, userExists := dest.GetConfig()[clickhouseUsername]; userExists {
 		exporterConfig["username"] = username
 		exporterConfig["password"] = clickhousePassword
 	}
@@ -65,56 +79,52 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	}
 	exporterConfig["database"] = dbName
 
-	tracesTable, exists := dest.GetConfig()[clickhouseTracesTable]
-	if exists {
+	if tracesTable, ok := dest.GetConfig()[clickhouseTracesTable]; ok {
 		exporterConfig["traces_table_name"] = tracesTable
 	}
 
-	metricsTable, exists := dest.GetConfig()[clickhouseMetricsTable]
-	if exists {
-		exporterConfig["metrics_table_name"] = metricsTable
-	}
-
-	logsTable, exists := dest.GetConfig()[clickhouseLogsTable]
-	if exists {
+	if logsTable, ok := dest.GetConfig()[clickhouseLogsTable]; ok {
 		exporterConfig["logs_table_name"] = logsTable
 	}
+
+	// Handle each metric table separately if provided
+	metricsTables := GenericMap{}
+	if sum, ok := dest.GetConfig()[clickhouseMetricsTableSum]; ok {
+		metricsTables["sum"] = GenericMap{"name": sum}
+	}
+	if gauge, ok := dest.GetConfig()[clickhouseMetricsTableGauge]; ok {
+		metricsTables["gauge"] = GenericMap{"name": gauge}
+	}
+	if hist, ok := dest.GetConfig()[clickhouseMetricsTableHistogram]; ok {
+		metricsTables["histogram"] = GenericMap{"name": hist}
+	}
+	if summary, ok := dest.GetConfig()[clickhouseMetricsTableSummary]; ok {
+		metricsTables["summary"] = GenericMap{"name": summary}
+	}
+	if expHist, ok := dest.GetConfig()[clickhouseMetricsTableExpHistogram]; ok {
+		metricsTables["exponential_histogram"] = GenericMap{"name": expHist}
+	}
+
+	exporterConfig["metrics_tables"] = metricsTables
 
 	currentConfig.Exporters[exporterName] = exporterConfig
 
 	var pipelineNames []string
 	if isTracingEnabled(dest) {
-		tracesPipelineName := "traces/clickhouse-" + dest.GetID()
-		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
-			Exporters: []string{exporterName},
-		}
-		pipelineNames = append(pipelineNames, tracesPipelineName)
+		name := "traces/clickhouse-" + dest.GetID()
+		currentConfig.Service.Pipelines[name] = Pipeline{Exporters: []string{exporterName}}
+		pipelineNames = append(pipelineNames, name)
 	}
-
 	if isMetricsEnabled(dest) {
-		metricsPipelineName := "metrics/clickhouse-" + dest.GetID()
-		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
-			Exporters: []string{exporterName},
-		}
-		pipelineNames = append(pipelineNames, metricsPipelineName)
+		name := "metrics/clickhouse-" + dest.GetID()
+		currentConfig.Service.Pipelines[name] = Pipeline{Exporters: []string{exporterName}}
+		pipelineNames = append(pipelineNames, name)
 	}
-
 	if isLoggingEnabled(dest) {
-		// Patch endpoint with enable_json_type=1 to enable JSON type support
-		query := parsedUrl.Query()
-		if query.Get("enable_json_type") != "1" {
-			query.Set("enable_json_type", "1")
-			parsedUrl.RawQuery = query.Encode()
-			exporterConfig["endpoint"] = parsedUrl.String()
-		}		
-
-		logsPipelineName := "logs/clickhouse-" + dest.GetID()
-		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
-			Exporters: []string{exporterName},
-		}
-		pipelineNames = append(pipelineNames, logsPipelineName)
+		name := "logs/clickhouse-" + dest.GetID()
+		currentConfig.Service.Pipelines[name] = Pipeline{Exporters: []string{exporterName}}
+		pipelineNames = append(pipelineNames, name)
 	}
 
 	return pipelineNames, nil
 }
-
