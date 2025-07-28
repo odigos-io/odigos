@@ -59,6 +59,7 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the client secret of the OIDC application.
 	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
   	- "%s": Enable or disable the service graph feature [default: false].
+	- "%s": Enable or disable the Clickhouse JSON type for logs [default: false].
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -89,6 +90,7 @@ var configCmd = &cobra.Command{
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.ServiceGraphDisabledProperty,
+		consts.ClickhouseJsonTypeEnabledProperty,
 	),
 }
 
@@ -192,7 +194,8 @@ func validatePropertyValue(property string, value []string) error {
 		consts.OidcClientIdProperty,
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
-		consts.ServiceGraphDisabledProperty:
+		consts.ServiceGraphDisabledProperty,
+		consts.ClickhouseJsonTypeEnabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -412,6 +415,10 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 	case consts.OdigletHealthProbeBindPortProperty:
 		intValue, _ := strconv.Atoi(value[0])
 		config.OdigletHealthProbeBindPort = intValue
+
+	case consts.ClickhouseJsonTypeEnabledProperty:
+		boolValue, _ := strconv.ParseBool(value[0])
+		config.ClickhouseJsonTypeEnabledProperty = &boolValue
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)

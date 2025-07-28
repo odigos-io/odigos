@@ -97,6 +97,7 @@ const (
 	OidcClientSecretProperty           = "oidc-client-secret"
 	OdigletHealthProbeBindPortProperty = "odiglet-health-probe-bind-port"
 	ServiceGraphDisabledProperty       = "service-graph-disabled"
+	ClickhouseJsonTypeEnabledProperty  = "clickhouse-json-type-enabled"
 )
 
 var (
