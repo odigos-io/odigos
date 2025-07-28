@@ -74,7 +74,7 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 			{ // Needed to apply effective config after reconciling (defaulting and profile applying) and react to it
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosEffectiveConfigName, k8sconsts.OdigosDeploymentConfigMapName},
+				ResourceNames: []string{consts.OdigosEffectiveConfigName, k8sconsts.OdigosDeploymentConfigMapName, k8sconsts.GoOffsetsConfigMap},
 				Verbs:         []string{"patch", "create", "update"},
 			},
 			{ // Needed because the scheduler is managing the collectorsgroups
@@ -96,6 +96,18 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				APIGroups: []string{""},
 				Resources: []string{"secrets"},
 				Verbs:     []string{"get", "list", "watch"},
+			},
+			{ // manage go offsets CronJob
+				APIGroups:     []string{"batch"},
+				Resources:     []string{"cronjobs"},
+				ResourceNames: []string{k8sconsts.OffsetCronJobName},
+				Verbs:         []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+			{ // restart odiglet daemonset after updating go offsets
+				APIGroups:     []string{"apps"},
+				Resources:     []string{"daemonsets"},
+				ResourceNames: []string{k8sconsts.OdigletDaemonSetName},
+				Verbs:         []string{"patch"},
 			},
 		},
 	}
@@ -131,6 +143,16 @@ func NewSchedulerClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
 			APIGroups: []string{"odigos.io"},
 			Resources: []string{"instrumentationconfigs"},
 			Verbs:     []string{"get", "list", "watch"},
+		},
+		{ // manage go offsets CronJob
+			APIGroups: []string{"batch"},
+			Resources: []string{"cronjobs"},
+			Verbs:     []string{"list", "watch"},
+		},
+		{ // Needed to get Odigos namespace for update offsets cronjob
+			APIGroups: []string{""},
+			Resources: []string{"configmaps"},
+			Verbs:     []string{"list"},
 		},
 	}
 

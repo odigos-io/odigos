@@ -13,12 +13,12 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 	"github.com/odigos-io/odigos/instrumentor/controllers/workloadmigrations"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/version"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -29,7 +29,6 @@ import (
 
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -56,9 +55,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	odigosEffectiveConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
 	odigosEffectiveConfigSelector := fields.AndSelectors(nsSelector, odigosEffectiveConfigNameSelector)
-
-	odigletDaemonsetNameSelector := fields.OneTermEqualSelector("metadata.name", k8sconsts.OdigletDaemonSetName)
-	odigletDaemonsetSelector := fields.AndSelectors(nsSelector, odigletDaemonsetNameSelector)
 
 	podsTransformFunc := func(obj interface{}) (interface{}, error) {
 		pod, ok := obj.(*corev1.Pod)
@@ -113,9 +109,10 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 
 			Setting the leader election params to 30s/20s/5s should provide a good balance between stability and quick failover.
 		*/
-		LeaseDuration: durationPointer(30 * time.Second),
-		RenewDeadline: durationPointer(20 * time.Second),
-		RetryPeriod:   durationPointer(5 * time.Second),
+		LeaseDuration:                 durationPointer(30 * time.Second),
+		RenewDeadline:                 durationPointer(20 * time.Second),
+		RetryPeriod:                   durationPointer(5 * time.Second),
+		LeaderElectionReleaseOnCancel: true,
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
@@ -124,9 +121,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				},
 				&corev1.ConfigMap{}: {
 					Field: odigosEffectiveConfigSelector,
-				},
-				&appsv1.DaemonSet{}: {
-					Field: odigletDaemonsetSelector,
 				},
 				&odigosv1.CollectorsGroup{}: {
 					Field: nsSelector,
@@ -165,13 +159,13 @@ func durationPointer(d time.Duration) *time.Duration {
 	return &d
 }
 
-func SetupWithManager(mgr manager.Manager, dp *distros.Provider) error {
+func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *version.Version) error {
 	err := agentenabled.SetupWithManager(mgr, dp)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for agent enabled: %w", err)
 	}
 
-	err = sourceinstrumentation.SetupWithManager(mgr)
+	err = sourceinstrumentation.SetupWithManager(mgr, k8sVersion)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for start language detection: %w", err)
 	}
