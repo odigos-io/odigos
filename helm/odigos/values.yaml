@@ -374,3 +374,10 @@ rollout:
 # PDBs are disabled by default and can be enabled in production environments where stability during disruptions is important.
 pdb:
   enabled: false
+
+# The ClickHouse JSON type to use for the Odigos data.
+# This is used to configure the ClickHouse table schema for the Odigos data.
+# If not set, the default MAP type will be used.
+clickhouseDestinationJsonType:
+  enabled: true
+ 
