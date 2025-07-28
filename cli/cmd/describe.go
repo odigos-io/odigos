@@ -270,29 +270,29 @@ func printAll() {
 	for key, value := range consts.ConfigValues {
 		switch v := value.(type) {
 		case string:
-			printString(v, key)
+			printStringValues(v, key)
 		case bool:
-			printBool(v, key)
+			printBoolValues(v, key)
 		case *bool:
-			printPointerBool(v, key)
+			printPointersToBool(v, key)
 		case *common.MountMethod:
-			printPointerFileStuff(v, key)
+			printMountMethod(v, key)
 		case *common.EnvInjectionMethod:
-			printPointerFileStuff2(v, key)
+			printEnvInjectionMethod(v, key)
 		case []string:
 			printLists(v, key)
 		case *common.CollectorNodeConfiguration:
-			printStructStuff(v, key)
+			printCollectorNodeStruct(v, key)
 		case *common.UserInstrumentationEnvs:
 			printUserEnv(v, key)
 		case map[string]string:
 			printNodeSelector(v, key)
 		case *common.RolloutConfiguration:
-			printStructStuff2(v, key)
+			printRolloutConfigstruct(v, key)
 		case *common.OidcConfiguration:
-			printStructStuff3(v, key)
+			printOidcConfigStruct(v, key)
 		case *common.CollectorGatewayConfiguration:
-			printStructStuff4(v, key)
+			printCollectorGatewayStruct(v, key)
 		default:
 			printDefault(v, key)
 		}
@@ -308,7 +308,7 @@ func printDefault(featureSetting interface{}, featureName string) {
 	}
 }
 
-func printString(featureSetting string, featureName string) {
+func printStringValues(featureSetting string, featureName string) {
 	if featureSetting == "" {
 		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
 	} else {
@@ -316,11 +316,11 @@ func printString(featureSetting string, featureName string) {
 	}
 }
 
-func printBool(featureSetting bool, featureName string) {
+func printBoolValues(featureSetting bool, featureName string) {
 	log.Print(fmt.Sprintf("- %s: %s status: %t\n", featureName, consts.ConfigDisplay[featureName], featureSetting))
 }
 
-func printPointerBool(featureSetting *bool, featureName string) {
+func printPointersToBool(featureSetting *bool, featureName string) {
 	if featureSetting != nil {
 		log.Print(fmt.Sprintf("- %s: %s status: %t\n", featureName, consts.ConfigDisplay[featureName], *featureSetting))
 	} else {
@@ -339,7 +339,7 @@ func printLists(featureSetting []string, featureName string) {
 	}
 }
 
-func printPointerFileStuff(featureSetting *common.MountMethod, featureName string) {
+func printMountMethod(featureSetting *common.MountMethod, featureName string) {
 	if featureSetting != nil {
 		log.Print(fmt.Sprintf("- %s: %s status: %s\n", featureName, consts.ConfigDisplay[featureName], *featureSetting))
 	} else {
@@ -347,7 +347,7 @@ func printPointerFileStuff(featureSetting *common.MountMethod, featureName strin
 	}
 }
 
-func printPointerFileStuff2(featureSetting *common.EnvInjectionMethod, featureName string) {
+func printEnvInjectionMethod(featureSetting *common.EnvInjectionMethod, featureName string) {
 	if featureSetting != nil {
 		log.Print(fmt.Sprintf("- %s: %s status: %s\n", featureName, consts.ConfigDisplay[featureName], *featureSetting))
 	} else {
@@ -355,7 +355,7 @@ func printPointerFileStuff2(featureSetting *common.EnvInjectionMethod, featureNa
 	}
 }
 
-func printStructStuff(featureSetting *common.CollectorNodeConfiguration, featureName string) {
+func printCollectorNodeStruct(featureSetting *common.CollectorNodeConfiguration, featureName string) {
 	if featureSetting == nil {
 		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
 	} else {
@@ -367,31 +367,31 @@ func printStructStuff(featureSetting *common.CollectorNodeConfiguration, feature
 	}
 }
 
-func printStructStuff2(featureSetting *common.RolloutConfiguration, featureName string) {
+func printRolloutConfigstruct(featureSetting *common.RolloutConfiguration, featureName string) {
 	if featureSetting.AutomaticRolloutDisabled == nil {
 		log.Print(fmt.Sprintf("- %s: %s status: not set \n", featureName, consts.ConfigDisplay[featureName]))
 	} else {
-		printPointerBool(featureSetting.AutomaticRolloutDisabled, featureName)
+		printPointersToBool(featureSetting.AutomaticRolloutDisabled, featureName)
 	}
 }
 
-func printStructStuff3(featureSetting *common.OidcConfiguration, featureName string) {
+func printOidcConfigStruct(featureSetting *common.OidcConfiguration, featureName string) {
 	switch featureName {
 	case consts.OidcTenantUrlProperty:
-		printString(featureSetting.TenantUrl, featureName)
+		printStringValues(featureSetting.TenantUrl, featureName)
 	case consts.OidcClientIdProperty:
-		printString(featureSetting.ClientId, featureName)
+		printStringValues(featureSetting.ClientId, featureName)
 	case consts.OidcClientSecretProperty:
-		printString(featureSetting.ClientSecret, featureName)
+		printStringValues(featureSetting.ClientSecret, featureName)
 	}
 
 }
 
-func printStructStuff4(featureSetting *common.CollectorGatewayConfiguration, featureName string) {
+func printCollectorGatewayStruct(featureSetting *common.CollectorGatewayConfiguration, featureName string) {
 	if featureSetting.ServiceGraphDisabled == nil {
 		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
 	} else {
-		printPointerBool(featureSetting.ServiceGraphDisabled, featureName)
+		printPointersToBool(featureSetting.ServiceGraphDisabled, featureName)
 	}
 }
 
@@ -413,7 +413,7 @@ func printNodeSelector(featureSetting map[string]string, featureName string) {
 		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
 	} else {
 		log.Print(fmt.Sprintf("- %s: %s\n", featureName, consts.ConfigDisplay[featureName]))
-		for key, val := range featureName {
+		for key, val := range featureSetting {
 			fmt.Printf("key: %+v, value: %+v\n", key, val)
 		}
 	}
