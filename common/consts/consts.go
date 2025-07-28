@@ -135,41 +135,6 @@ var ConfigDisplay = map[string]string{
 	ServiceGraphDisabledProperty:       "Enable or disable the service graph feature [default: false].",
 }
 
-// var ConfigValues map[string]interface{}
-var ConfigValues = map[string]interface{}{}
-
-var ConfigDisplayOrder = []string{
-	TelemetryEnabledProperty,
-	OpenshiftEnabledProperty,
-	PspProperty,
-	SkipWebhookIssuerCreationProperty,
-	AllowConcurrentAgentsProperty,
-	ImagePrefixProperty,
-	UiModeProperty,
-	UiPaginationLimitProperty,
-	UiRemoteUrlProperty,
-	CentralBackendURLProperty,
-	ClusterNameProperty,
-	IgnoredNamespacesProperty,
-	IgnoredContainersProperty,
-	MountMethodProperty,
-	CustomContainerRuntimeSocketPath,
-	K8sNodeLogsDirectory,
-	UserInstrumentationEnvsProperty,
-	AgentEnvVarsInjectionMethod,
-	NodeSelectorProperty,
-	KarpenterEnabledProperty,
-	RollbackDisabledProperty,
-	RollbackGraceTimeProperty,
-	RollbackStabilityWindow,
-	AutomaticRolloutDisabledProperty,
-	OidcTenantUrlProperty,
-	OidcClientIdProperty,
-	OidcClientSecretProperty,
-	OdigletHealthProbeBindPortProperty,
-	ServiceGraphDisabledProperty,
-}
-
 var (
 	ErrorPodsNotFound = errors.New("could not find a ready pod")
 )

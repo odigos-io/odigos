@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -219,55 +220,64 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 	},
 }
 
-// work on later
+var ConfigValues = map[string]interface{}{}
+
 func populateConfValues(config *common.OdigosConfiguration) {
-	consts.ConfigValues[consts.TelemetryEnabledProperty] = config.TelemetryEnabled
-	consts.ConfigValues[consts.OpenshiftEnabledProperty] = config.OpenshiftEnabled
-	consts.ConfigValues[consts.PspProperty] = config.Psp
-	consts.ConfigValues[consts.SkipWebhookIssuerCreationProperty] = config.SkipWebhookIssuerCreation
-	consts.ConfigValues[consts.AllowConcurrentAgentsProperty] = config.AllowConcurrentAgents
-	consts.ConfigValues[consts.ImagePrefixProperty] = config.ImagePrefix
-	consts.ConfigValues[consts.UiModeProperty] = config.UiMode
-	consts.ConfigValues[consts.UiPaginationLimitProperty] = config.UiPaginationLimit
-	consts.ConfigValues[consts.UiRemoteUrlProperty] = config.UiRemoteUrl
-	consts.ConfigValues[consts.CentralBackendURLProperty] = config.CentralBackendURL
-	consts.ConfigValues[consts.ClusterNameProperty] = config.ClusterName
-	consts.ConfigValues[consts.IgnoredNamespacesProperty] = config.IgnoredNamespaces
-	consts.ConfigValues[consts.IgnoredContainersProperty] = config.IgnoredContainers
-	consts.ConfigValues[consts.MountMethodProperty] = config.MountMethod
-	consts.ConfigValues[consts.CustomContainerRuntimeSocketPath] = config.CustomContainerRuntimeSocketPath
-	consts.ConfigValues[consts.K8sNodeLogsDirectory] = config.CollectorNode.K8sNodeLogsDirectory
-	consts.ConfigValues[consts.UserInstrumentationEnvsProperty] = config.UserInstrumentationEnvs
-	consts.ConfigValues[consts.AgentEnvVarsInjectionMethod] = config.AgentEnvVarsInjectionMethod
-	consts.ConfigValues[consts.NodeSelectorProperty] = config.NodeSelector
-	consts.ConfigValues[consts.KarpenterEnabledProperty] = config.KarpenterEnabled
-	consts.ConfigValues[consts.RollbackDisabledProperty] = config.RollbackDisabled
-	consts.ConfigValues[consts.RollbackGraceTimeProperty] = config.RollbackGraceTime
-	consts.ConfigValues[consts.RollbackStabilityWindow] = config.RollbackStabilityWindow
+	ConfigValues[consts.TelemetryEnabledProperty] = config.TelemetryEnabled
+	ConfigValues[consts.OpenshiftEnabledProperty] = config.OpenshiftEnabled
+	ConfigValues[consts.PspProperty] = config.Psp
+	ConfigValues[consts.SkipWebhookIssuerCreationProperty] = config.SkipWebhookIssuerCreation
+	ConfigValues[consts.AllowConcurrentAgentsProperty] = config.AllowConcurrentAgents
+	ConfigValues[consts.ImagePrefixProperty] = config.ImagePrefix
+	ConfigValues[consts.UiModeProperty] = config.UiMode
+	ConfigValues[consts.UiPaginationLimitProperty] = config.UiPaginationLimit
+	ConfigValues[consts.UiRemoteUrlProperty] = config.UiRemoteUrl
+	ConfigValues[consts.CentralBackendURLProperty] = config.CentralBackendURL
+	ConfigValues[consts.ClusterNameProperty] = config.ClusterName
+	ConfigValues[consts.IgnoredNamespacesProperty] = config.IgnoredNamespaces
+	ConfigValues[consts.IgnoredContainersProperty] = config.IgnoredContainers
+	ConfigValues[consts.MountMethodProperty] = config.MountMethod
+	ConfigValues[consts.CustomContainerRuntimeSocketPath] = config.CustomContainerRuntimeSocketPath
+	ConfigValues[consts.K8sNodeLogsDirectory] = config.CollectorNode.K8sNodeLogsDirectory
+	ConfigValues[consts.UserInstrumentationEnvsProperty] = config.UserInstrumentationEnvs
+	ConfigValues[consts.AgentEnvVarsInjectionMethod] = config.AgentEnvVarsInjectionMethod
+	ConfigValues[consts.NodeSelectorProperty] = config.NodeSelector
+	ConfigValues[consts.KarpenterEnabledProperty] = config.KarpenterEnabled
+	ConfigValues[consts.RollbackDisabledProperty] = config.RollbackDisabled
+	ConfigValues[consts.RollbackGraceTimeProperty] = config.RollbackGraceTime
+	ConfigValues[consts.RollbackStabilityWindow] = config.RollbackStabilityWindow
 	if config.Rollout == nil {
-		consts.ConfigValues[consts.AutomaticRolloutDisabledProperty] = nil
+		ConfigValues[consts.AutomaticRolloutDisabledProperty] = nil
 	} else {
-		consts.ConfigValues[consts.AutomaticRolloutDisabledProperty] = config.Rollout
+		ConfigValues[consts.AutomaticRolloutDisabledProperty] = config.Rollout
 	}
 	if config.Oidc == nil {
-		consts.ConfigValues[consts.OidcTenantUrlProperty] = nil
-		consts.ConfigValues[consts.OidcClientIdProperty] = nil
-		consts.ConfigValues[consts.OidcClientSecretProperty] = nil
+		ConfigValues[consts.OidcTenantUrlProperty] = nil
+		ConfigValues[consts.OidcClientIdProperty] = nil
+		ConfigValues[consts.OidcClientSecretProperty] = nil
 	} else {
-		consts.ConfigValues[consts.OidcTenantUrlProperty] = config.Oidc.TenantUrl
-		consts.ConfigValues[consts.OidcClientIdProperty] = config.Oidc.ClientId
-		consts.ConfigValues[consts.OidcClientSecretProperty] = config.Oidc.ClientSecret
+		ConfigValues[consts.OidcTenantUrlProperty] = config.Oidc.TenantUrl
+		ConfigValues[consts.OidcClientIdProperty] = config.Oidc.ClientId
+		ConfigValues[consts.OidcClientSecretProperty] = config.Oidc.ClientSecret
 	}
-	consts.ConfigValues[consts.OdigletHealthProbeBindPortProperty] = config.OdigletHealthProbeBindPort
+	ConfigValues[consts.OdigletHealthProbeBindPortProperty] = config.OdigletHealthProbeBindPort
 	if config.CollectorGateway == nil {
-		consts.ConfigValues[consts.ServiceGraphDisabledProperty] = nil
+		ConfigValues[consts.ServiceGraphDisabledProperty] = nil
 	} else {
-		consts.ConfigValues[consts.ServiceGraphDisabledProperty] = config.CollectorGateway.ServiceGraphDisabled
+		ConfigValues[consts.ServiceGraphDisabledProperty] = config.CollectorGateway.ServiceGraphDisabled
 	}
 }
 
 func printAll() {
-	for key, value := range consts.ConfigValues {
+	var order []string
+	for k := range consts.ConfigDisplay {
+		order = append(order, k)
+	}
+
+	sort.Strings(order)
+
+	for _, key := range order {
+		var value = ConfigValues[key]
 		switch v := value.(type) {
 		case string:
 			printStringValues(v, key)
