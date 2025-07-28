@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/report"
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
@@ -91,8 +92,13 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		return nil, fmt.Errorf("unable to add cert rotator: %w", err)
 	}
 
+	k8sVersion, err := utils.ClusterVersion()
+	if err != nil {
+		return nil, err
+	}
+
 	// wire up the controllers and webhooks
-	err = controllers.SetupWithManager(mgr, dp)
+	err = controllers.SetupWithManager(mgr, dp, k8sVersion)
 	if err != nil {
 		return nil, err
 	}

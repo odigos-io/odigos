@@ -176,4 +176,5 @@ type OdigosConfiguration struct {
 	RollbackStabilityWindow          string                         `json:"rollbackStabilityWindow,omitempty"`
 	Oidc                             *OidcConfiguration             `json:"oidc,omitempty"`
 	OdigletHealthProbeBindPort       int                            `json:"odigletHealthProbeBindPort,omitempty"`
+	GoAutoOffsetsCron                string                         `json:"goAutoOffsetsCron,omitempty"`
 }

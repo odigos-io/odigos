@@ -21,6 +21,7 @@ rules:
     resourceNames:
       - effective-config
       - odigos-deployment
+      - odigos-go-offsets
     verbs:
       - patch
       - create
@@ -72,3 +73,25 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - 'batch'
+    resources:
+      - cronjobs
+    resourceNames:
+      - 'odigos-go-offsets-updater'
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - 'apps'
+    resources:
+      - 'daemonsets'
+    resourceNames:
+      - 'odiglet'
+    verbs:
+      - 'patch'
