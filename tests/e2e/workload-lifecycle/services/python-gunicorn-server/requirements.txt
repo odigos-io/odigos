@@ -2,9 +2,6 @@
 gunicorn==22.0.0
 uvicorn==0.20.0
 
-# Observability and monitoring tools
-newrelic==6.10.0.165
-
 importlib_metadata==1.7.0
 
 starlette==0.13.8
