@@ -21,3 +21,16 @@ rules:
     verbs:
       - update
 {{- end }}
+  - apiGroups:
+      - 'batch'
+    resources:
+      - cronjobs
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+    verbs:
+      - list

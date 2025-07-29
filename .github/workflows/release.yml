@@ -122,6 +122,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
           IS_RC: ${{ env.IS_RC }}
+          GORELEASER_CURRENT_TAG: ${{ env.TAG }}
 
       - uses: ko-build/setup-ko@v0.9
 

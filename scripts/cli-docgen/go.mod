@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/scripts/cli-docgen
 go 1.24.0
 
 require (
-	github.com/odigos-io/odigos/cli v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/cli v0.0.0
 	github.com/spf13/cobra v1.9.1
 )
 
@@ -37,6 +37,7 @@ require (
 	github.com/odigos-io/odigos/k8sutils v0.0.0 // indirect
 	github.com/odigos-io/odigos/profiles v0.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/x448/float16 v0.8.4 // indirect

@@ -2,28 +2,30 @@
 title: "Overview"
 description: "Odigos will automatically apply instrumentation to your selected workloads to record observability signals from your services such as collecting traces, metrics, and logs without any code changes."
 sidebarTitle: "Overview"
-icon: 'house'
+icon: "house"
 ---
 
-import { LanguagesCard } from '/snippets/languages-card.mdx';
+import { LanguagesCard } from "/snippets/languages-card.mdx";
 
 ## Supported Runtimes
 
 Odigos provides automatic instrumentations for the following runtimes:
 
 <LanguagesCard
-  golangUrl="/instrumentations/golang"
+  golangUrl="/instrumentations/golang/ebpf"
   golangDescription="Versions 1.17 and above are supported"
-  javascriptUrl="/instrumentations/nodejs"
+  javascriptUrl="/instrumentations/nodejs/native"
   javascriptDescription="Versions 14 and above are supported"
-  pythonUrl="/instrumentations/python"
+  pythonUrl="/instrumentations/python/native"
   pythonDescription="Versions 3.8 and above are supported"
-  javaUrl="/instrumentations/java"
+  javaUrl="/instrumentations/java/native"
   javaDescription="Versions 8 and above are supported"
-  dotnetUrl="/instrumentations/dotnet"
-  dotnetDescription="Versions 4.6.2 and above are supported"
-  phpUrl="/instrumentations/php"
+  phpUrl="/instrumentations/php/native"
   phpDescription="Versions 8.0.0 - 8.4.x are supported"
+  rubyUrl="/instrumentations/ruby/native"
+  rubyDescription="Versions 3.1.0 - 3.5.x are supported"
+  dotnetUrl="/instrumentations/dotnet/native"
+  dotnetDescription="Versions 4.6.2 and above are supported"
 />
 
 ## Enrich with OpenTelemetry APIs
@@ -33,7 +35,8 @@ Additional trace spans, metrics datapoints and log records can be added using th
 Odigos will automatically capture this data and deliver it to the chosen [destination](/backends-overview) alongside the automatically generated data.
 
 <Note>
-  No need to configure the OpenTelemetry SDK, Odigos will automatically configure it for you.
+  No need to configure the OpenTelemetry SDK, Odigos will automatically
+  configure it for you.
 </Note>
 
 Select a language to learn how to enrich your data with OpenTelemetry APIs:
@@ -51,6 +54,8 @@ Select a language to learn how to enrich your data with OpenTelemetry APIs:
   dotnetDescription="For applications written in C# or .NET"
   phpUrl="/instrumentations/php/enrichment"
   phpDescription="For applications written in PHP"
+  rubyUrl="/instrumentations/ruby/enrichment"
+  rubyDescription="For applications written in Ruby"
 />
 
 ## Instrumentation Flow:
@@ -63,4 +68,4 @@ Select a language to learn how to enrich your data with OpenTelemetry APIs:
 6. New pods are scheduled and started. Odiglet resolves the resource request by mounting the auto instrumentation code and relevant environment variables into the container.
 7. The auto instrumentation code starts the OpenTelemetry SDK and sends telemetry data to the odigos pipeline.
 
-In case of a failure to instrument a workload, Odigos will disable the instrumentation and rollback the workload, This behaviour can be disabled by running ```bash odigos config set rollback-disabled true``` or via the helm chart ```autoRollback.disabled=false```
+In case of a failure to instrument a workload, Odigos will disable the instrumentation and rollback the workload, This behaviour can be disabled by running `bash odigos config set rollback-disabled true` or via the helm chart `autoRollback.disabled=false`

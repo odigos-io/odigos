@@ -70,6 +70,7 @@ data:
       goMemLimitMiB: {{ . }}
       {{- end }}
       serviceGraphDisabled: {{ .Values.collectorGateway.serviceGraphDisabled }}
+      clusterMetricsEnabled: {{ .Values.collectorGateway.clusterMetricsEnabled }}
     {{- end }}
     {{- if .Values.collectorNode }}
     collectorNode:

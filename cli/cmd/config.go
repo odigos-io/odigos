@@ -18,6 +18,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
+	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -59,6 +60,7 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the client secret of the OIDC application.
 	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
   	- "%s": Enable or disable the service graph feature [default: false].
+	- "%s": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
 	- "%s": Enable or disable the Clickhouse JSON type for logs [default: false].
 	`,
 		consts.TelemetryEnabledProperty,
@@ -90,6 +92,7 @@ var configCmd = &cobra.Command{
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.ServiceGraphDisabledProperty,
+		consts.GoAutoOffsetsCronProperty,
 		consts.ClickhouseJsonTypeEnabledProperty,
 	),
 }
@@ -194,6 +197,7 @@ func validatePropertyValue(property string, value []string) error {
 		consts.OidcClientIdProperty,
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
+		consts.GoAutoOffsetsCronProperty,
 		consts.ServiceGraphDisabledProperty,
 		consts.ClickhouseJsonTypeEnabledProperty:
 
@@ -415,6 +419,18 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 	case consts.OdigletHealthProbeBindPortProperty:
 		intValue, _ := strconv.Atoi(value[0])
 		config.OdigletHealthProbeBindPort = intValue
+	case consts.GoAutoOffsetsCronProperty:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		cronValue := value[0]
+		if cronValue != "" {
+			parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+			if _, err := parser.Parse(cronValue); err != nil {
+				return fmt.Errorf("invalid cron schedule: %v", err)
+			}
+		}
+		config.GoAutoOffsetsCron = cronValue
 
 	case consts.ClickhouseJsonTypeEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])

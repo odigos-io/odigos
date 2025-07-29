@@ -9,6 +9,7 @@ require (
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/profiles v0.0.0-00010101000000-000000000000
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	gopkg.in/yaml.v2 v2.4.0
