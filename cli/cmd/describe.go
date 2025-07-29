@@ -2,17 +2,15 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/log"
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 	"github.com/spf13/cobra"
 )
@@ -131,9 +129,8 @@ var describeConfigCmd = &cobra.Command{
 
 		log.Print(`Configurable properties` + "\n")
 
-		configValues := map[string]interface{}{}
-		populateConfValues(config, configValues)
-		printAll(configValues)
+		printConfigMap(config)
+
 	},
 }
 
@@ -221,217 +218,21 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 	},
 }
 
-// var ConfigValues = map[string]interface{}{}
-
-func populateConfValues(config *common.OdigosConfiguration, configvalues map[string]interface{}) {
-	configvalues[consts.TelemetryEnabledProperty] = config.TelemetryEnabled
-	configvalues[consts.OpenshiftEnabledProperty] = config.OpenshiftEnabled
-	configvalues[consts.PspProperty] = config.Psp
-	configvalues[consts.SkipWebhookIssuerCreationProperty] = config.SkipWebhookIssuerCreation
-	configvalues[consts.AllowConcurrentAgentsProperty] = config.AllowConcurrentAgents
-	configvalues[consts.ImagePrefixProperty] = config.ImagePrefix
-	configvalues[consts.UiModeProperty] = config.UiMode
-	configvalues[consts.UiPaginationLimitProperty] = config.UiPaginationLimit
-	configvalues[consts.UiRemoteUrlProperty] = config.UiRemoteUrl
-	configvalues[consts.CentralBackendURLProperty] = config.CentralBackendURL
-	configvalues[consts.ClusterNameProperty] = config.ClusterName
-	configvalues[consts.IgnoredNamespacesProperty] = config.IgnoredNamespaces
-	configvalues[consts.IgnoredContainersProperty] = config.IgnoredContainers
-	configvalues[consts.MountMethodProperty] = config.MountMethod
-	configvalues[consts.CustomContainerRuntimeSocketPath] = config.CustomContainerRuntimeSocketPath
-	if config.CollectorNode == nil {
-		configvalues[consts.K8sNodeLogsDirectory] = ""
-	} else {
-		configvalues[consts.K8sNodeLogsDirectory] = config.CollectorNode
-	}
-	configvalues[consts.UserInstrumentationEnvsProperty] = config.UserInstrumentationEnvs
-	configvalues[consts.AgentEnvVarsInjectionMethod] = config.AgentEnvVarsInjectionMethod
-	configvalues[consts.NodeSelectorProperty] = config.NodeSelector
-	configvalues[consts.KarpenterEnabledProperty] = config.KarpenterEnabled
-	configvalues[consts.RollbackDisabledProperty] = config.RollbackDisabled
-	configvalues[consts.RollbackGraceTimeProperty] = config.RollbackGraceTime
-	configvalues[consts.RollbackStabilityWindow] = config.RollbackStabilityWindow
-	if config.Rollout == nil {
-		configvalues[consts.AutomaticRolloutDisabledProperty] = nil
-	} else {
-		configvalues[consts.AutomaticRolloutDisabledProperty] = config.Rollout
-	}
-	if config.Oidc == nil {
-		configvalues[consts.OidcTenantUrlProperty] = nil
-		configvalues[consts.OidcClientIdProperty] = nil
-		configvalues[consts.OidcClientSecretProperty] = nil
-	} else {
-		configvalues[consts.OidcTenantUrlProperty] = config.Oidc
-		configvalues[consts.OidcClientIdProperty] = config.Oidc
-		configvalues[consts.OidcClientSecretProperty] = config.Oidc
-	}
-	configvalues[consts.OdigletHealthProbeBindPortProperty] = config.OdigletHealthProbeBindPort
-	if config.CollectorGateway == nil {
-		configvalues[consts.ServiceGraphDisabledProperty] = nil
-	} else {
-		configvalues[consts.ServiceGraphDisabledProperty] = config.CollectorGateway
-	}
+func structToMap(i interface{}) map[string]interface{} {
+	var result map[string]interface{}
+	j, _ := json.Marshal(i)
+	json.Unmarshal(j, &result)
+	return result
 }
 
-func printAll(configvalues map[string]interface{}) {
-	var order []string
-	for k := range consts.ConfigDisplay {
-		order = append(order, k)
+func printConfigMap(cfg interface{}) {
+	data := structToMap(cfg)
+	new_print, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		fmt.Println("Error marshaling config:", err)
+		return
 	}
-
-	sort.Strings(order)
-
-	for _, key := range order {
-		var value = configvalues[key]
-		switch v := value.(type) {
-		case string:
-			printStringValues(v, key)
-		case bool:
-			printBoolValues(v, key)
-		case *bool:
-			printPointersToBool(v, key)
-		case *common.MountMethod:
-			printMountMethod(v, key)
-		case *common.EnvInjectionMethod:
-			printEnvInjectionMethod(v, key)
-		case []string:
-			printLists(v, key)
-		case *common.CollectorNodeConfiguration:
-			printCollectorNodeStruct(v, key)
-		case *common.UserInstrumentationEnvs:
-			printUserEnv(v, key)
-		case map[string]string:
-			printNodeSelector(v, key)
-		case *common.RolloutConfiguration:
-			printRolloutConfigstruct(v, key)
-		case *common.OidcConfiguration:
-			printOidcConfigStruct(v, key)
-		case *common.CollectorGatewayConfiguration:
-			printCollectorGatewayStruct(v, key)
-		default:
-			printDefault(v, key)
-		}
-	}
-
-}
-
-func printDefault(featureSetting interface{}, featureName string) {
-	if featureSetting == nil {
-		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
-	} else {
-		log.Print(fmt.Sprintf("- %s: %s status: %v\n", featureName, consts.ConfigDisplay[featureName], featureSetting))
-	}
-}
-
-func printStringValues(featureSetting string, featureName string) {
-	if featureSetting == "" {
-		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
-	} else {
-		log.Print(fmt.Sprintf("- %s: %s status: %s\n", featureName, consts.ConfigDisplay[featureName], featureSetting))
-	}
-}
-
-func printBoolValues(featureSetting bool, featureName string) {
-	log.Print(fmt.Sprintf("- %s: %s status: %t\n", featureName, consts.ConfigDisplay[featureName], featureSetting))
-}
-
-func printPointersToBool(featureSetting *bool, featureName string) {
-	if featureSetting != nil {
-		log.Print(fmt.Sprintf("- %s: %s status: %t\n", featureName, consts.ConfigDisplay[featureName], *featureSetting))
-	} else {
-		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
-	}
-}
-
-func printLists(featureSetting []string, featureName string) {
-	log.Print(fmt.Sprintf("- %s: List of what should be ignored.\n", featureName))
-	if len(featureSetting) == 0 {
-		log.Print("none found\n")
-	} else {
-		for i := 0; i < len(featureSetting); i++ {
-			log.Print(fmt.Sprintf("- %s\n", featureSetting[i]))
-		}
-	}
-}
-
-func printMountMethod(featureSetting *common.MountMethod, featureName string) {
-	if featureSetting != nil {
-		log.Print(fmt.Sprintf("- %s: %s status: %s\n", featureName, consts.ConfigDisplay[featureName], *featureSetting))
-	} else {
-		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
-	}
-}
-
-func printEnvInjectionMethod(featureSetting *common.EnvInjectionMethod, featureName string) {
-	if featureSetting != nil {
-		log.Print(fmt.Sprintf("- %s: %s status: %s\n", featureName, consts.ConfigDisplay[featureName], *featureSetting))
-	} else {
-		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
-	}
-}
-
-func printCollectorNodeStruct(featureSetting *common.CollectorNodeConfiguration, featureName string) {
-	if featureSetting == nil {
-		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
-	} else {
-		if featureSetting.K8sNodeLogsDirectory == "" {
-			log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
-		} else {
-			log.Print(fmt.Sprintf("- %s: %s status: %s\n", featureName, consts.ConfigDisplay[featureName], featureSetting.K8sNodeLogsDirectory))
-		}
-	}
-}
-
-func printRolloutConfigstruct(featureSetting *common.RolloutConfiguration, featureName string) {
-	if featureSetting.AutomaticRolloutDisabled == nil {
-		log.Print(fmt.Sprintf("- %s: %s status: not set \n", featureName, consts.ConfigDisplay[featureName]))
-	} else {
-		printPointersToBool(featureSetting.AutomaticRolloutDisabled, featureName)
-	}
-}
-
-func printOidcConfigStruct(featureSetting *common.OidcConfiguration, featureName string) {
-	switch featureName {
-	case consts.OidcTenantUrlProperty:
-		printStringValues(featureSetting.TenantUrl, featureName)
-	case consts.OidcClientIdProperty:
-		printStringValues(featureSetting.ClientId, featureName)
-	case consts.OidcClientSecretProperty:
-		printStringValues(featureSetting.ClientSecret, featureName)
-	}
-
-}
-
-func printCollectorGatewayStruct(featureSetting *common.CollectorGatewayConfiguration, featureName string) {
-	if featureSetting.ServiceGraphDisabled == nil {
-		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
-	} else {
-		printPointersToBool(featureSetting.ServiceGraphDisabled, featureName)
-	}
-}
-
-func printUserEnv(featureSetting *common.UserInstrumentationEnvs, featureName string) {
-	if featureSetting == nil {
-		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
-	} else if len(featureSetting.Languages) == 0 {
-		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
-	} else {
-		log.Print(fmt.Sprintf("- %s: %s status: \n", featureName, consts.ConfigDisplay[featureName]))
-		for lang, env := range featureSetting.Languages {
-			fmt.Printf("Language: %+v, Mode: %+v\n", lang, env)
-		}
-	}
-}
-
-func printNodeSelector(featureSetting map[string]string, featureName string) {
-	if len(featureSetting) == 0 {
-		log.Print(fmt.Sprintf("- %s: %s status: not set\n", featureName, consts.ConfigDisplay[featureName]))
-	} else {
-		log.Print(fmt.Sprintf("- %s: %s\n", featureName, consts.ConfigDisplay[featureName]))
-		for key, val := range featureSetting {
-			fmt.Printf("key: %+v, value: %+v\n", key, val)
-		}
-	}
+	fmt.Println(string(new_print))
 }
 
 func executeRemoteOdigosDescribe(ctx context.Context, client *kube.Client, odigosNs string) string {
