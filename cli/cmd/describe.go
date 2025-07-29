@@ -226,13 +226,13 @@ func structToMap(i interface{}) map[string]interface{} {
 }
 
 func printConfigMap(cfg interface{}) {
-	data := structToMap(cfg)
-	new_print, err := json.MarshalIndent(data, "", "  ")
+	dataAsAMap := structToMap(cfg)
+	OrganisedMap, err := json.MarshalIndent(dataAsAMap, "", "  ")
 	if err != nil {
 		fmt.Println("Error marshaling config:", err)
 		return
 	}
-	fmt.Println(string(new_print))
+	fmt.Println(string(OrganisedMap))
 }
 
 func executeRemoteOdigosDescribe(ctx context.Context, client *kube.Client, odigosNs string) string {
