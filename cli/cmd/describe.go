@@ -131,8 +131,9 @@ var describeConfigCmd = &cobra.Command{
 
 		log.Print(`Configurable properties` + "\n")
 
-		populateConfValues(config)
-		printAll()
+		configValues := map[string]interface{}{}
+		populateConfValues(config, configValues)
+		printAll(configValues)
 	},
 }
 
@@ -220,55 +221,59 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 	},
 }
 
-var ConfigValues = map[string]interface{}{}
+// var ConfigValues = map[string]interface{}{}
 
-func populateConfValues(config *common.OdigosConfiguration) {
-	ConfigValues[consts.TelemetryEnabledProperty] = config.TelemetryEnabled
-	ConfigValues[consts.OpenshiftEnabledProperty] = config.OpenshiftEnabled
-	ConfigValues[consts.PspProperty] = config.Psp
-	ConfigValues[consts.SkipWebhookIssuerCreationProperty] = config.SkipWebhookIssuerCreation
-	ConfigValues[consts.AllowConcurrentAgentsProperty] = config.AllowConcurrentAgents
-	ConfigValues[consts.ImagePrefixProperty] = config.ImagePrefix
-	ConfigValues[consts.UiModeProperty] = config.UiMode
-	ConfigValues[consts.UiPaginationLimitProperty] = config.UiPaginationLimit
-	ConfigValues[consts.UiRemoteUrlProperty] = config.UiRemoteUrl
-	ConfigValues[consts.CentralBackendURLProperty] = config.CentralBackendURL
-	ConfigValues[consts.ClusterNameProperty] = config.ClusterName
-	ConfigValues[consts.IgnoredNamespacesProperty] = config.IgnoredNamespaces
-	ConfigValues[consts.IgnoredContainersProperty] = config.IgnoredContainers
-	ConfigValues[consts.MountMethodProperty] = config.MountMethod
-	ConfigValues[consts.CustomContainerRuntimeSocketPath] = config.CustomContainerRuntimeSocketPath
-	ConfigValues[consts.K8sNodeLogsDirectory] = config.CollectorNode.K8sNodeLogsDirectory
-	ConfigValues[consts.UserInstrumentationEnvsProperty] = config.UserInstrumentationEnvs
-	ConfigValues[consts.AgentEnvVarsInjectionMethod] = config.AgentEnvVarsInjectionMethod
-	ConfigValues[consts.NodeSelectorProperty] = config.NodeSelector
-	ConfigValues[consts.KarpenterEnabledProperty] = config.KarpenterEnabled
-	ConfigValues[consts.RollbackDisabledProperty] = config.RollbackDisabled
-	ConfigValues[consts.RollbackGraceTimeProperty] = config.RollbackGraceTime
-	ConfigValues[consts.RollbackStabilityWindow] = config.RollbackStabilityWindow
-	if config.Rollout == nil {
-		ConfigValues[consts.AutomaticRolloutDisabledProperty] = nil
+func populateConfValues(config *common.OdigosConfiguration, configvalues map[string]interface{}) {
+	configvalues[consts.TelemetryEnabledProperty] = config.TelemetryEnabled
+	configvalues[consts.OpenshiftEnabledProperty] = config.OpenshiftEnabled
+	configvalues[consts.PspProperty] = config.Psp
+	configvalues[consts.SkipWebhookIssuerCreationProperty] = config.SkipWebhookIssuerCreation
+	configvalues[consts.AllowConcurrentAgentsProperty] = config.AllowConcurrentAgents
+	configvalues[consts.ImagePrefixProperty] = config.ImagePrefix
+	configvalues[consts.UiModeProperty] = config.UiMode
+	configvalues[consts.UiPaginationLimitProperty] = config.UiPaginationLimit
+	configvalues[consts.UiRemoteUrlProperty] = config.UiRemoteUrl
+	configvalues[consts.CentralBackendURLProperty] = config.CentralBackendURL
+	configvalues[consts.ClusterNameProperty] = config.ClusterName
+	configvalues[consts.IgnoredNamespacesProperty] = config.IgnoredNamespaces
+	configvalues[consts.IgnoredContainersProperty] = config.IgnoredContainers
+	configvalues[consts.MountMethodProperty] = config.MountMethod
+	configvalues[consts.CustomContainerRuntimeSocketPath] = config.CustomContainerRuntimeSocketPath
+	if config.CollectorNode == nil {
+		configvalues[consts.K8sNodeLogsDirectory] = ""
 	} else {
-		ConfigValues[consts.AutomaticRolloutDisabledProperty] = config.Rollout
+		configvalues[consts.K8sNodeLogsDirectory] = config.CollectorNode
+	}
+	configvalues[consts.UserInstrumentationEnvsProperty] = config.UserInstrumentationEnvs
+	configvalues[consts.AgentEnvVarsInjectionMethod] = config.AgentEnvVarsInjectionMethod
+	configvalues[consts.NodeSelectorProperty] = config.NodeSelector
+	configvalues[consts.KarpenterEnabledProperty] = config.KarpenterEnabled
+	configvalues[consts.RollbackDisabledProperty] = config.RollbackDisabled
+	configvalues[consts.RollbackGraceTimeProperty] = config.RollbackGraceTime
+	configvalues[consts.RollbackStabilityWindow] = config.RollbackStabilityWindow
+	if config.Rollout == nil {
+		configvalues[consts.AutomaticRolloutDisabledProperty] = nil
+	} else {
+		configvalues[consts.AutomaticRolloutDisabledProperty] = config.Rollout
 	}
 	if config.Oidc == nil {
-		ConfigValues[consts.OidcTenantUrlProperty] = nil
-		ConfigValues[consts.OidcClientIdProperty] = nil
-		ConfigValues[consts.OidcClientSecretProperty] = nil
+		configvalues[consts.OidcTenantUrlProperty] = nil
+		configvalues[consts.OidcClientIdProperty] = nil
+		configvalues[consts.OidcClientSecretProperty] = nil
 	} else {
-		ConfigValues[consts.OidcTenantUrlProperty] = config.Oidc.TenantUrl
-		ConfigValues[consts.OidcClientIdProperty] = config.Oidc.ClientId
-		ConfigValues[consts.OidcClientSecretProperty] = config.Oidc.ClientSecret
+		configvalues[consts.OidcTenantUrlProperty] = config.Oidc
+		configvalues[consts.OidcClientIdProperty] = config.Oidc
+		configvalues[consts.OidcClientSecretProperty] = config.Oidc
 	}
-	ConfigValues[consts.OdigletHealthProbeBindPortProperty] = config.OdigletHealthProbeBindPort
+	configvalues[consts.OdigletHealthProbeBindPortProperty] = config.OdigletHealthProbeBindPort
 	if config.CollectorGateway == nil {
-		ConfigValues[consts.ServiceGraphDisabledProperty] = nil
+		configvalues[consts.ServiceGraphDisabledProperty] = nil
 	} else {
-		ConfigValues[consts.ServiceGraphDisabledProperty] = config.CollectorGateway.ServiceGraphDisabled
+		configvalues[consts.ServiceGraphDisabledProperty] = config.CollectorGateway
 	}
 }
 
-func printAll() {
+func printAll(configvalues map[string]interface{}) {
 	var order []string
 	for k := range consts.ConfigDisplay {
 		order = append(order, k)
@@ -277,7 +282,7 @@ func printAll() {
 	sort.Strings(order)
 
 	for _, key := range order {
-		var value = ConfigValues[key]
+		var value = configvalues[key]
 		switch v := value.(type) {
 		case string:
 			printStringValues(v, key)
