@@ -61,7 +61,7 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
   	- "%s": Enable or disable the service graph feature [default: false].
 	- "%s": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
-	- "%s": Enable or disable the Clickhouse JSON type for logs [default: false].
+	- "%s": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
