@@ -21,7 +21,6 @@ const (
 	clickhouseMetricsTableHistogram    = "CLICKHOUSE_METRICS_TABLE_HISTOGRAM"
 	clickhouseMetricsTableSummary      = "CLICKHOUSE_METRICS_TABLE_SUMMARY"
 	clickhouseMetricsTableExpHistogram = "CLICKHOUSE_METRICS_TABLE_EXP_HISTOGRAM"
-	clickhouseUseJsonType              = "CLICKHOUSE_USE_JSON_TYPE"
 )
 
 type Clickhouse struct{}
@@ -47,15 +46,6 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	if parsedUrl.Port() == "" {
 		endpoint = strings.Replace(endpoint, parsedUrl.Host, parsedUrl.Host+":9000", 1)
-		parsedUrl, _ = url.Parse(endpoint)
-	}
-
-	useJson := dest.GetConfig()[clickhouseUseJsonType] == "true"
-	if useJson {
-		q := parsedUrl.Query()
-		q.Set("enable_json_type", "1")
-		parsedUrl.RawQuery = q.Encode()
-		endpoint = parsedUrl.String()
 	}
 
 	exporterName := "clickhouse/clickhouse-" + dest.GetID()

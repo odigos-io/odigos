@@ -44,13 +44,6 @@ spec:
         required: true
         tooltip: 'Should the destination create the schema for you? Set to `false` if you manage your own schema, or `true` to have Odigos create the schema for you'
       initialValue: true
-    - name: CLICKHOUSE_USE_JSON_TYPE
-      displayName: Enable JSON Type (ClickHouse v25.3+)
-      componentType: checkbox
-      componentProps:
-        required: true
-        tooltip: 'Enable native JSON column support in ClickHouse for storing structured data.'
-      initialValue: false
     - name: CLICKHOUSE_DATABASE_NAME
       displayName: Database Name
       componentType: input
