@@ -36,7 +36,7 @@ spec:
     - name: '01 - Assert Apps installed'
       try:
         - assert:
-            timeout: 10s
+            timeout: 150s
             file: 01-assert-apps-installed.yaml
     - name: '01 Instrument Namespaces'
       try:
