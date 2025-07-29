@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/api
 go 1.24.0
 
 require (
-	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/common v0.0.0
 	github.com/stretchr/testify v1.10.0
 	k8s.io/api v0.33.1
 	k8s.io/apimachinery v0.33.1

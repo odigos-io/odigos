@@ -9,7 +9,7 @@ require (
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/distros v0.0.0
-	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.37.0
 	go.opentelemetry.io/otel v1.37.0
