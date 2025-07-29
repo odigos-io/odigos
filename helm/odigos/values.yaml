@@ -105,7 +105,7 @@ collectorGateway:
   # It is disabled by default and can be enabled by setting the enabled flag to true.
   clusterMetricsEnabled: false
 
-
+# Settings for Odigos data-collection daemonset pods
 collectorNode:
   # The port to use for exposing the collector's own metrics as a prometheus endpoint.
   # This can be used to resolve conflicting ports when a collector is using the host network.
