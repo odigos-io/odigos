@@ -27,6 +27,9 @@ const (
 	CentralBackendAppName = "central-backend"
 	CentralBackendName    = "central-backend"
 	CentralBackendImage   = "odigos-enterprise-central-backend"
+	CentralBackendServiceAccountName = "central-backend"
+	CentralBackendRoleName           = "central-backend"
+	CentralBackendRoleBindingName    = "central-backend"
 )
 
 const (

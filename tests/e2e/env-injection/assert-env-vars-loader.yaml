@@ -42,8 +42,7 @@ spec:
       # LD_PRELOAD is declared in the Dockerfile, hence we can't add the loader
       # in this test the user specified the env var injection to be loader only,
       # hence we assert here that nothing is added from our side.
-      (env[?name=='JAVA_TOOL_OPTIONS']): []
-      (env[?name=='LD_PRELOAD']): []
+      (env == null): true
 ---
 apiVersion: v1
 kind: Pod
@@ -93,7 +92,7 @@ spec:
   containers:
     - image: registry.odigos.io/odigos-demo-frontend:v0.1.14
       name: frontend
-      # the user defined PYTHONPATH remains unchanged
+      # the user defined JAVA_TOOL_OPTIONS remains unchanged
       # and we add the loader.
       (env[?name=='JAVA_TOOL_OPTIONS']):
        - valueFrom:

@@ -265,10 +265,11 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 			}
 
 			// if loader is enabled, mount the loader directory
-			if config.AgentEnvVarsInjectionMethod != nil &&
+			if config.AgentEnvVarsInjectionMethod != nil && distroMetadata.RuntimeAgent.LdPreloadInjectionSupported &&
 				(*config.AgentEnvVarsInjectionMethod == common.LoaderFallbackToPodManifestInjectionMethod ||
 					*config.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod) {
 				podswebhook.MountDirectory(podContainerSpec, filepath.Join(k8sconsts.OdigosAgentsDirectory, consts.OdigosLoaderDirName))
+				volumeMounted = true
 			}
 		}
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
