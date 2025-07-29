@@ -36,7 +36,7 @@ spec:
     - name: '01 - Assert Apps installed'
       try:
         - assert:
-            timeout: 150s
+            timeout: 10s
             file: 01-assert-apps-installed.yaml
     - name: '01 Instrument Namespaces'
       try:
@@ -61,6 +61,19 @@ spec:
         - assert:
             timeout: 3m
             file: 01-assert-instrumented.yaml
+        - script:
+            content: |
+              EXPECTED_COUNT=6
+              ACTUAL_COUNT=$(kubectl get instrumentationinstance | grep gunicorn | wc -l)
+
+              if [ "$ACTUAL_COUNT" -eq "$EXPECTED_COUNT" ]; then
+                echo "✅ Found $EXPECTED_COUNT gunicorn instrumentation instances."
+                exit 0
+              else
+                echo "❌ Expected $EXPECTED_COUNT gunicorn instances, but found $ACTUAL_COUNT."
+                exit 1
+              fi
+
 
     - name: '01 Assert Workloads'
       try:
