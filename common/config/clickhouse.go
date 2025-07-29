@@ -45,13 +45,11 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		return nil, errors.New("clickhouse endpoint is not a valid URL")
 	}
 
-	// Default port fallback
 	if parsedUrl.Port() == "" {
 		endpoint = strings.Replace(endpoint, parsedUrl.Host, parsedUrl.Host+":9000", 1)
 		parsedUrl, _ = url.Parse(endpoint)
 	}
 
-	// Conditionally enable JSON type
 	useJson := dest.GetConfig()[clickhouseUseJsonType] == "true"
 	if useJson {
 		q := parsedUrl.Query()

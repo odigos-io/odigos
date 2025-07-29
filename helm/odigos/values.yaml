@@ -380,9 +380,9 @@ rollout:
 pdb:
   enabled: false
 
-# The ClickHouse JSON type to use for the Odigos data.
-# This is used to configure the ClickHouse table schema for the Odigos data.
-# If not set, the default MAP type will be used.
+# Enable support for ClickHouse JSON column type when storing Odigos data.
+# When set to true, Odigos will use a new schema with JSON-typed columns (requires ClickHouse v25.3+).
+# If set to false, the default schema using Map-type columns will be used instead.
 clickhouseDestinationJsonType:
-  enabled: true
+  enabled: false
  
