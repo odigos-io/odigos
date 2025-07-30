@@ -24,13 +24,13 @@ jobs:
         id: next_version
         run: |
           LATEST_STABLE=${{ steps.get_version.outputs.latest_stable }}
-          
+
           # Extract version components
           IFS='.' read -r major minor patch <<< "${LATEST_STABLE#v}"
-          
+
           # Increment patch version
           next_patch=$((patch + 1))
-          
+
           # Construct next stable version
           NEXT_STABLE="v$major.$minor.$next_patch"
           echo "Next stable version will be: $NEXT_STABLE"
@@ -40,10 +40,10 @@ jobs:
         id: rc_version
         run: |
           NEXT_STABLE="${{ steps.next_version.outputs.next_stable }}"
-          
+
           # Find all RC versions for the next stable version
           RC_VERSIONS=$(git tag -l "${NEXT_STABLE}-rc*" | sort -V)
-          
+
           if [ -z "$RC_VERSIONS" ]; then
             # No RC versions exist, start with rc0
             RC_VERSION="${NEXT_STABLE}-rc0"
@@ -54,7 +54,7 @@ jobs:
             NEXT_RC_NUM=$((RC_NUM + 1))
             RC_VERSION="${NEXT_STABLE}-rc${NEXT_RC_NUM}"
           fi
-          
+
           echo "Release candidate version will be: $RC_VERSION"
           echo "rc_version=$RC_VERSION" >> $GITHUB_OUTPUT
 
@@ -78,6 +78,13 @@ jobs:
             git pull origin $STABLE_RELEASE_BRANCH_NAME
           fi
 
+          # Write RC version to file and commit it
+          RC_VERSION="${{ steps.rc_version.outputs.rc_version }}"
+          echo "$RC_VERSION" > rc-version.txt
+          git add rc-version.txt
+          git commit -m "Update RC version: $RC_VERSION" || echo "No changes to commit"
+          git push origin "$STABLE_RELEASE_BRANCH_NAME"
+
       - name: Create or Update Pre-release PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -85,18 +92,18 @@ jobs:
           # Configure Git user identity for the workflow using the actor who triggered it
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
           git config --global user.name "${{ github.actor }}"
-          
+
           RELEASE_BRANCH="${{ steps.create_branch.outputs.stable_release_branch_name }}"
           PR_BRANCH="pre-releases/${{ steps.rc_version.outputs.rc_version }}"
           PR_TITLE="Pre-release PR for ${{ steps.rc_version.outputs.rc_version }}"
-          
+
           # Escape all regex metacharacters properly for branch detection
           ESCAPED_PR_BRANCH=$(echo "$PR_BRANCH" | sed 's/[[\.*^$()+?{|/]/\\&/g')
-          
+
           # Check if the PR branch already exists
           if git ls-remote --heads origin $PR_BRANCH | grep -q "^[0-9a-f]*\s*refs/heads/${ESCAPED_PR_BRANCH}$"; then
             echo "PR branch $PR_BRANCH already exists, updating it..."
-            
+
             # Check out the existing PR branch (create local tracking branch if needed)
             if git show-ref --verify --quiet refs/heads/$PR_BRANCH; then
               git checkout $PR_BRANCH
@@ -104,16 +111,16 @@ jobs:
               git checkout -b $PR_BRANCH origin/$PR_BRANCH
             fi
             git pull origin $PR_BRANCH
-            
+
             # Reset the branch to point to the current release branch head
             git reset --hard origin/$RELEASE_BRANCH
-            
+
             # Create a new commit to trigger the PR checks
             git commit --allow-empty -m "Update pre-release for ${{ steps.rc_version.outputs.rc_version }} - $(date)"
             git push origin $PR_BRANCH --force
-            
+
             echo "Updated existing PR branch $PR_BRANCH"
-            
+
             # Check if PR exists for this branch, recreate if it doesn't
             if ! gh pr list --head $PR_BRANCH --json number --jq '.[0].number' | grep -q '[0-9]'; then
               echo "PR for branch $PR_BRANCH doesn't exist, creating new PR..."
@@ -127,15 +134,15 @@ jobs:
             fi
           else
             echo "Creating new PR branch $PR_BRANCH..."
-            
+
             # Create a new branch for the PR
             git checkout $RELEASE_BRANCH
             git checkout -b $PR_BRANCH
-            
+
             # Create empty commit
             git commit --allow-empty -m "Pre-release commit for ${{ steps.rc_version.outputs.rc_version }}"
             git push origin $PR_BRANCH
-            
+
             # Create PR
             gh pr create \
               --base $RELEASE_BRANCH \
