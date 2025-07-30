@@ -78,12 +78,6 @@ jobs:
             git pull origin $STABLE_RELEASE_BRANCH_NAME
           fi
 
-          # Write RC version to file and commit it
-          RC_VERSION="${{ steps.rc_version.outputs.rc_version }}"
-          echo "$RC_VERSION" > rc-version.txt
-          git add rc-version.txt
-          git commit -m "Update RC version: $RC_VERSION" || echo "No changes to commit"
-          git push origin "$STABLE_RELEASE_BRANCH_NAME"
 
       - name: Create or Update Pre-release PR
         env:
@@ -116,7 +110,10 @@ jobs:
             git reset --hard origin/$RELEASE_BRANCH
 
             # Create a new commit to trigger the PR checks
-            git commit --allow-empty -m "Update pre-release for ${{ steps.rc_version.outputs.rc_version }} - $(date)"
+            RC_VERSION="${{ steps.rc_version.outputs.rc_version }}"
+            echo "$RC_VERSION" > rc-version.txt
+            git add rc-version.txt
+            git commit -m "Update RC version in PR branch: $RC_VERSION" || echo "No changes to commit"
             git push origin $PR_BRANCH --force
 
             echo "Updated existing PR branch $PR_BRANCH"
