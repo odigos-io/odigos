@@ -141,7 +141,7 @@ jobs:
             echo "$RC_VERSION" > rc-version.txt
             git add rc-version.txt
             git commit -m "Update RC version in PR branch: $RC_VERSION" || echo "No changes to commit"
-            git push origin $PR_BRANCH --force            git push origin $PR_BRANCH
+            git push origin $PR_BRANCH --force
 
             # Create PR
             gh pr create \
