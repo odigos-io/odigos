@@ -136,9 +136,12 @@ jobs:
             git checkout $RELEASE_BRANCH
             git checkout -b $PR_BRANCH
 
-            # Create empty commit
-            git commit --allow-empty -m "Pre-release commit for ${{ steps.rc_version.outputs.rc_version }}"
-            git push origin $PR_BRANCH
+            # Create a new commit to trigger the PR checks
+            RC_VERSION="${{ steps.rc_version.outputs.rc_version }}"
+            echo "$RC_VERSION" > rc-version.txt
+            git add rc-version.txt
+            git commit -m "Update RC version in PR branch: $RC_VERSION" || echo "No changes to commit"
+            git push origin $PR_BRANCH --force            git push origin $PR_BRANCH
 
             # Create PR
             gh pr create \
