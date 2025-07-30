@@ -109,13 +109,6 @@ jobs:
             # Reset the branch to point to the current release branch head
             git reset --hard origin/$RELEASE_BRANCH
 
-            # Create a new commit to trigger the PR checks
-            RC_VERSION="${{ steps.rc_version.outputs.rc_version }}"
-            echo "$RC_VERSION" > rc-version.txt
-            git add rc-version.txt
-            git commit -m "Update RC version in PR branch: $RC_VERSION" || echo "No changes to commit"
-            git push origin $PR_BRANCH --force
-
             echo "Updated existing PR branch $PR_BRANCH"
 
             # Check if PR exists for this branch, recreate if it doesn't
@@ -135,13 +128,6 @@ jobs:
             # Create a new branch for the PR
             git checkout $RELEASE_BRANCH
             git checkout -b $PR_BRANCH
-
-            # Create a new commit to trigger the PR checks
-            RC_VERSION="${{ steps.rc_version.outputs.rc_version }}"
-            echo "$RC_VERSION" > rc-version.txt
-            git add rc-version.txt
-            git commit -m "Update RC version in PR branch: $RC_VERSION" || echo "No changes to commit"
-            git push origin $PR_BRANCH --force
 
             # Create PR
             gh pr create \
