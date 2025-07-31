@@ -6,8 +6,6 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 )
 
-// later in another function, assign in a map, key being names from constant
-// values from here, look at Abser example, then in describe.go loop through that map
 type ConfigField interface {
 	ToString()
 }
