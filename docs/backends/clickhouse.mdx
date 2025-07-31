@@ -118,16 +118,24 @@ Important Settings:
   - This field is optional
 - **CLICKHOUSE_PASSWORD** `string` : Password. If Clickhouse Authentication is used, provide the password
   - This field is optional
-- **CLICKHOUSE_CREATE_SCHEME** `boolean` : Create Scheme. Should the destination create the schema for you? Set to `false` if you manage your own schema, or `true` to have Odigos create the schema for you
+- **CLICKHOUSE_CREATE_SCHEME** `boolean` : Create Schema. Should the destination create the schema for you? Set to `false` if you manage your own schema, or `true` to have Odigos create the schema for you
   - This field is required and defaults to `True`
 - **CLICKHOUSE_DATABASE_NAME** `string` : Database Name. The name of the Clickhouse Database where the telemetry data will be stored. The Database will not be created when not exists, so make sure you have created it before
   - This field is required and defaults to `otel`
 - **CLICKHOUSE_TRACES_TABLE** `string` : Traces Table. Name of the ClickHouse Table to use for storing trace spans. This name should be used in span queries
   - This field is required and defaults to `otel_traces`
-- **CLICKHOUSE_METRICS_TABLE** `string` : Metrics Table. Name of the ClickHouse Table to use for storing metrics. This name should be used in metric queries
-  - This field is required and defaults to `otel_metrics`
-- **CLICKHOUSE_LOGS_TABLE** `string` : Logs Table. Name of the ClickHouse Table to use for storing logs. This name should be used in log queries
+- **CLICKHOUSE_LOGS_TABLE** `string` : Logs Table. Name of the ClickHouse Table to use for storing logs
   - This field is required and defaults to `otel_logs`
+- **CLICKHOUSE_METRICS_TABLE_EXP_HISTOGRAM** `string` : Metrics Table - Exp. Histogram. Name of the table for storing exponential histogram metrics
+  - This field is required and defaults to `otel_metrics_exponential_histogram`
+- **CLICKHOUSE_METRICS_TABLE_GAUGE** `string` : Metrics Table - Gauge. Name of the table for storing gauge metrics
+  - This field is required and defaults to `otel_metrics_gauge`
+- **CLICKHOUSE_METRICS_TABLE_HISTOGRAM** `string` : Metrics Table - Histogram. Name of the table for storing histogram metrics
+  - This field is required and defaults to `otel_metrics_histogram`
+- **CLICKHOUSE_METRICS_TABLE_SUM** `string` : Metrics Table - Sum. Name of the table for storing sum metrics
+  - This field is required and defaults to `otel_metrics_sum`
+- **CLICKHOUSE_METRICS_TABLE_SUMMARY** `string` : Metrics Table - Summary. Name of the table for storing summary metrics
+  - This field is required and defaults to `otel_metrics_summary`
 
 ### Adding Destination to Odigos
 
@@ -160,11 +168,16 @@ There are two primary methods for configuring destinations in Odigos:
       namespace: odigos-system
     spec:
       data:
-        CLICKHOUSE_CREATE_SCHEME: '<Create Scheme (default: True)>'
+        CLICKHOUSE_CREATE_SCHEME: '<Create Schema (default: True)>'
         CLICKHOUSE_DATABASE_NAME: '<Database Name (default: otel)>'
         CLICKHOUSE_ENDPOINT: <Endpoint>
         CLICKHOUSE_LOGS_TABLE: '<Logs Table (default: otel_logs)>'
-        CLICKHOUSE_METRICS_TABLE: '<Metrics Table (default: otel_metrics)>'
+        CLICKHOUSE_METRICS_TABLE_EXP_HISTOGRAM: '<Metrics Table - Exp. Histogram (default:
+          otel_metrics_exponential_histogram)>'
+        CLICKHOUSE_METRICS_TABLE_GAUGE: '<Metrics Table - Gauge (default: otel_metrics_gauge)>'
+        CLICKHOUSE_METRICS_TABLE_HISTOGRAM: '<Metrics Table - Histogram (default: otel_metrics_histogram)>'
+        CLICKHOUSE_METRICS_TABLE_SUM: '<Metrics Table - Sum (default: otel_metrics_sum)>'
+        CLICKHOUSE_METRICS_TABLE_SUMMARY: '<Metrics Table - Summary (default: otel_metrics_summary)>'
         CLICKHOUSE_TRACES_TABLE: '<Traces Table (default: otel_traces)>'
         # Note: The commented fields below are optional.
         # CLICKHOUSE_USERNAME: <Username>

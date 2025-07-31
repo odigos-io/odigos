@@ -38,7 +38,7 @@ spec:
         required: false
         tooltip: 'If Clickhouse Authentication is used, provide the password'
     - name: CLICKHOUSE_CREATE_SCHEME
-      displayName: Create Scheme
+      displayName: Create Schema
       componentType: checkbox
       componentProps:
         required: true
@@ -60,19 +60,56 @@ spec:
         required: true
         tooltip: 'Name of the ClickHouse Table to use for storing trace spans. This name should be used in span queries'
       initialValue: otel_traces
-    - name: CLICKHOUSE_METRICS_TABLE
-      displayName: Metrics Table
-      componentType: input
-      componentProps:
-        type: text
-        required: true
-        tooltip: 'Name of the ClickHouse Table to use for storing metrics. This name should be used in metric queries'
-      initialValue: otel_metrics
     - name: CLICKHOUSE_LOGS_TABLE
       displayName: Logs Table
       componentType: input
       componentProps:
         type: text
         required: true
-        tooltip: 'Name of the ClickHouse Table to use for storing logs. This name should be used in log queries'
+        tooltip: 'Name of the ClickHouse Table to use for storing logs'
       initialValue: otel_logs
+    - name: CLICKHOUSE_METRICS_TABLE_EXP_HISTOGRAM
+      displayName: Metrics Table - Exp. Histogram
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: 'Name of the table for storing exponential histogram metrics'
+      initialValue: otel_metrics_exponential_histogram
+
+    - name: CLICKHOUSE_METRICS_TABLE_GAUGE
+      displayName: Metrics Table - Gauge
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: 'Name of the table for storing gauge metrics'
+      initialValue: otel_metrics_gauge
+
+    - name: CLICKHOUSE_METRICS_TABLE_HISTOGRAM
+      displayName: Metrics Table - Histogram
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: 'Name of the table for storing histogram metrics'
+      initialValue: otel_metrics_histogram
+
+    - name: CLICKHOUSE_METRICS_TABLE_SUM
+      displayName: Metrics Table - Sum
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: 'Name of the table for storing sum metrics'
+      initialValue: otel_metrics_sum
+
+    - name: CLICKHOUSE_METRICS_TABLE_SUMMARY
+      displayName: Metrics Table - Summary
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: 'Name of the table for storing summary metrics'
+      initialValue: otel_metrics_summary
+
