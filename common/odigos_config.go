@@ -167,7 +167,7 @@ type OdigosConfiguration struct {
 	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
 	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
 	AgentEnvVarsInjectionMethod      *EnvInjectionMethod            `json:"agentEnvVarsInjectionMethod,omitempty"`
-	UserInstrumentationEnvs          *UserInstrumentationEnvs       `json:"UserInstrumentationEnvs,omitempty"`
+	UserInstrumentationEnvs          *UserInstrumentationEnvs       `json:"userInstrumentationEnvs,omitempty"`
 	NodeSelector                     map[string]string              `json:"nodeSelector,omitempty"`
 	KarpenterEnabled                 *bool                          `json:"karpenterEnabled,omitempty"`
 	Rollout                          *RolloutConfiguration          `json:"rollout,omitempty"`
