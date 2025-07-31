@@ -13,7 +13,7 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/consts"
-
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,7 +57,7 @@ func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Collector
 
 	// Use the hash of the secrets  to make sure the gateway will restart when the secrets (mounted as environment variables) changes
 	configDataHash := common.Sha256Hash(secretsVersionHash)
-	desiredDeployment, err := getDesiredDeployment(dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, odigletNodeSelector, autoScalerTopologySpreadConstraints)
+	desiredDeployment, err := getDesiredDeployment(ctx, c, dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, odigletNodeSelector, autoScalerTopologySpreadConstraints)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
 	}
@@ -100,9 +100,8 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 	return existing, nil
 }
 
-func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string,
+func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.DestinationList, configDataHash string,
 	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, nodeSelector map[string]string, topologySpreadConstraints []corev1.TopologySpreadConstraint) (*appsv1.Deployment, error) {
-
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -149,9 +148,10 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  containerName,
-							Image: commonconfig.ControllerConfig.CollectorImage,
-							Command: []string{containerCommand, fmt.Sprintf("--config=%s:%s/%s/%s",
+							Name:    containerName,
+							Image:   commonconfig.ControllerConfig.CollectorImage,
+							Command: []string{containerCommand},
+							Args: []string{fmt.Sprintf("--config=%s:%s/%s/%s",
 								k8sconsts.OdigosCollectorConfigMapProviderScheme,
 								gateway.Namespace,
 								k8sconsts.OdigosClusterCollectorConfigMapName,
@@ -251,7 +251,18 @@ func getDesiredDeployment(dests *odigosv1.DestinationList, configDataHash string
 		desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints = adjusted
 	}
 
-	err := ctrl.SetControllerReference(gateway, desiredDeployment, scheme)
+	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("failed to get current odigos configuration"))
+	}
+	if odigosConfiguration.ClickhouseJsonTypeEnabledProperty != nil && *odigosConfiguration.ClickhouseJsonTypeEnabledProperty {
+		desiredDeployment.Spec.Template.Spec.Containers[0].Args = append(
+			desiredDeployment.Spec.Template.Spec.Containers[0].Args,
+			"--feature-gates=clickhouse.json",
+		)
+	}
+
+	err = ctrl.SetControllerReference(gateway, desiredDeployment, scheme)
 	if err != nil {
 		return nil, err
 	}
