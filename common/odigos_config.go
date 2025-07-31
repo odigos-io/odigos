@@ -1,5 +1,231 @@
 package common
 
+import (
+	"fmt"
+
+	"github.com/odigos-io/odigos/common/consts"
+)
+
+// later in another function, assign in a map, key being names from constant
+// values from here, look at Abser example, then in describe.go loop through that map
+type ConfigField interface {
+	ToString()
+}
+
+type ConfigBool bool
+
+func (data ConfigBool) ToString() {
+	fmt.Printf(": %t\n", data)
+}
+
+type ConfigBoolPointer struct {
+	Value *bool
+}
+
+func (data ConfigBoolPointer) ToString() {
+	if data.Value == nil {
+		fmt.Printf(": not set\n")
+	} else {
+		fmt.Printf(": %v\n", *data.Value)
+	}
+}
+
+type ConfigInt int
+
+func (data ConfigInt) ToString() {
+	fmt.Printf(": %b\n", data)
+}
+
+type ConfigString string
+
+func (data ConfigString) ToString() {
+	if data == "" {
+		fmt.Println(": not set")
+	} else {
+		fmt.Printf(": %s\n", data)
+	}
+}
+
+type ConfigStringList []string
+
+func (data ConfigStringList) ToString() {
+	fmt.Printf(": \n")
+	for _, value := range data {
+		fmt.Printf("%s,\n", value)
+	}
+
+}
+
+type ConfigCollectorNode CollectorNodeConfiguration
+
+func (data *ConfigCollectorNode) ToString() {
+	if data == nil {
+		fmt.Println(": not set")
+		return
+	} else if data.K8sNodeLogsDirectory == "" {
+		fmt.Println(": not set")
+	} else {
+		fmt.Printf(": %s\n", data.K8sNodeLogsDirectory)
+	}
+}
+
+// go doesn't allow type to deal with pointers, so it is wrapping around MountMethod
+type ConfigMountMethod MountMethod
+
+func (data *ConfigMountMethod) ToString() {
+	if data == nil {
+		fmt.Printf(": not set\n")
+	} else {
+		fmt.Printf(": %v\n", data)
+	}
+}
+
+// could possibly delete
+type ConfigUIMode UiMode
+
+func (data ConfigUIMode) ToString() {
+	fmt.Printf(": %v\n", data)
+}
+
+type ConfigEnvInjection EnvInjectionMethod
+
+func (data *ConfigEnvInjection) ToString() {
+	if data == nil {
+		fmt.Printf(": not set\n")
+	} else {
+		fmt.Printf(": %v\n", data)
+	}
+}
+
+type ConfigNodeSelector map[string]string
+
+func (data ConfigNodeSelector) ToString() {
+	if len(data) == 0 {
+		fmt.Printf(": not set\n")
+	} else {
+		fmt.Printf(": \n")
+		for key, value := range data {
+			fmt.Printf("key: %+v, value: %+v\n", key, value)
+		}
+	}
+}
+
+type ConfigUserEnv UserInstrumentationEnvs
+
+func (data *ConfigUserEnv) ToString() {
+	if data == nil {
+		fmt.Printf(": not set\n")
+	} else if len(data.Languages) == 0 {
+		fmt.Printf(": not set\n")
+	} else {
+		fmt.Printf(": \n")
+		for key, value := range data.Languages {
+			fmt.Printf("language: %+v, mode: %+v\n", key, value)
+		}
+	}
+}
+
+type ConfigRollout RolloutConfiguration
+
+func (data *ConfigRollout) ToString() {
+	if data.AutomaticRolloutDisabled == nil || data == nil {
+		fmt.Printf(": not set\n")
+	} else {
+		fmt.Printf(": %v\n", *data.AutomaticRolloutDisabled)
+	}
+}
+
+type ConfigOidcTenant OidcConfiguration
+
+func (data *ConfigOidcTenant) ToString() {
+	if data == nil {
+		fmt.Printf(": not set\n")
+	} else {
+		fmt.Printf(": %s\n", data)
+	}
+}
+
+type ConfigOidcClientId OidcConfiguration
+
+func (data *ConfigOidcClientId) ToString() {
+	if data == nil {
+		fmt.Printf(": not set\n")
+	} else {
+		fmt.Printf(": %s\n", data)
+	}
+}
+
+type ConfigOidcClientSecret OidcConfiguration
+
+func (data *ConfigOidcClientSecret) ToString() {
+	if data == nil {
+		fmt.Printf(": not set\n")
+	} else {
+		fmt.Printf(": %s\n", data)
+	}
+}
+
+func makeAMap(config *OdigosConfiguration) map[string]ConfigField {
+	var rolloutValue *bool
+	if config.Rollout != nil {
+		rolloutValue = config.Rollout.AutomaticRolloutDisabled
+	}
+	var karpenterValue *bool
+	if config.KarpenterEnabled != nil {
+		karpenterValue = config.KarpenterEnabled
+	}
+	var serviceValue *bool
+	if config.CollectorGateway != nil {
+		serviceValue = config.CollectorGateway.ServiceGraphDisabled
+	}
+	displayData := map[string]ConfigField{
+		consts.TelemetryEnabledProperty:           ConfigBool(config.TelemetryEnabled),
+		consts.OpenshiftEnabledProperty:           ConfigBool(config.OpenshiftEnabled),
+		consts.PspProperty:                        ConfigBool(config.Psp),
+		consts.SkipWebhookIssuerCreationProperty:  ConfigBool(config.SkipWebhookIssuerCreation),
+		consts.AllowConcurrentAgentsProperty:      ConfigBoolPointer{Value: config.AllowConcurrentAgents},
+		consts.ImagePrefixProperty:                ConfigString(config.ImagePrefix),
+		consts.UiModeProperty:                     ConfigString(config.UiMode),
+		consts.UiPaginationLimitProperty:          ConfigInt(config.UiPaginationLimit),
+		consts.UiRemoteUrlProperty:                ConfigString(config.UiRemoteUrl),
+		consts.CentralBackendURLProperty:          ConfigString(config.CentralBackendURL),
+		consts.ClusterNameProperty:                ConfigString(config.ClusterName),
+		consts.IgnoredNamespacesProperty:          ConfigStringList(config.IgnoredNamespaces),
+		consts.IgnoredContainersProperty:          ConfigStringList(config.IgnoredContainers),
+		consts.MountMethodProperty:                (*ConfigMountMethod)(config.MountMethod),
+		consts.CustomContainerRuntimeSocketPath:   ConfigString(config.CustomContainerRuntimeSocketPath),
+		consts.K8sNodeLogsDirectory:               (*ConfigCollectorNode)(config.CollectorNode),
+		consts.UserInstrumentationEnvsProperty:    (*ConfigUserEnv)(config.UserInstrumentationEnvs),
+		consts.AgentEnvVarsInjectionMethod:        (*ConfigEnvInjection)(config.AgentEnvVarsInjectionMethod),
+		consts.NodeSelectorProperty:               ConfigNodeSelector(config.NodeSelector),
+		consts.KarpenterEnabledProperty:           ConfigBoolPointer{Value: karpenterValue},
+		consts.RollbackDisabledProperty:           ConfigBoolPointer{Value: config.RollbackDisabled},
+		consts.RollbackGraceTimeProperty:          ConfigString(config.RollbackGraceTime),
+		consts.RollbackStabilityWindow:            ConfigString(config.RollbackStabilityWindow),
+		consts.AutomaticRolloutDisabledProperty:   ConfigBoolPointer{Value: rolloutValue},
+		consts.OidcTenantUrlProperty:              (*ConfigOidcTenant)(config.Oidc),
+		consts.OidcClientIdProperty:               (*ConfigOidcClientId)(config.Oidc),
+		consts.OidcClientSecretProperty:           (*ConfigOidcClientSecret)(config.Oidc),
+		consts.OdigletHealthProbeBindPortProperty: ConfigInt(config.OdigletHealthProbeBindPort),
+		consts.ServiceGraphDisabledProperty:       ConfigBoolPointer{Value: serviceValue},
+		consts.GoAutoOffsetsCronProperty:          ConfigString(config.GoAutoOffsetsCron),
+	}
+
+	return displayData
+}
+
+func PrintMap(config *OdigosConfiguration) {
+	display := makeAMap(config)
+	for key, val := range display {
+		fmt.Printf("%s", key)
+		if val == nil {
+			fmt.Println(": not set")
+		} else {
+			val.ToString()
+		}
+	}
+}
+
 type ProfileName string
 
 // "normal" is deprecated. Kept here in the enum for backwards compatibility with operator CRD.
