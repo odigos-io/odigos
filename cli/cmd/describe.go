@@ -11,6 +11,7 @@ import (
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/log"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 	"github.com/spf13/cobra"
 )
@@ -27,7 +28,6 @@ var describeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
-
 		odigosNs, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
 			if resources.IsErrNoOdigosNamespaceFound(err) {
@@ -129,7 +129,11 @@ var describeConfigCmd = &cobra.Command{
 
 		log.Print(`Configurable properties` + "\n")
 
-		printConfigMap(config)
+		common.PrintMap(config)
+
+		fmt.Printf("\n\n\n")
+
+		//printConfigMap(config)
 
 	},
 }
