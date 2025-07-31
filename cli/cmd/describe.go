@@ -124,9 +124,9 @@ var describeConfigCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		log.Print(`Manage Odigos configuration settings to customize system behavior.` + "\n")
+		log.Print(`Manage Odigos configuration settings to customize system behavior.` + "\n" + "\n")
 
-		log.Print(`Configurable properties` + "\n")
+		log.Print(`	Configurable properties` + "\n")
 
 		common.PrintMap(config)
 
