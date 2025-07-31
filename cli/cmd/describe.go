@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -131,10 +130,6 @@ var describeConfigCmd = &cobra.Command{
 
 		common.PrintMap(config)
 
-		fmt.Printf("\n\n\n")
-
-		//printConfigMap(config)
-
 	},
 }
 
@@ -220,23 +215,6 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 		}
 		fmt.Println(describeText)
 	},
-}
-
-func structToMap(i interface{}) map[string]interface{} {
-	var result map[string]interface{}
-	j, _ := json.Marshal(i)
-	json.Unmarshal(j, &result)
-	return result
-}
-
-func printConfigMap(cfg interface{}) {
-	dataAsAMap := structToMap(cfg)
-	OrganisedMap, err := json.MarshalIndent(dataAsAMap, "", "  ")
-	if err != nil {
-		fmt.Println("Error marshaling config:", err)
-		return
-	}
-	fmt.Println(string(OrganisedMap))
 }
 
 func executeRemoteOdigosDescribe(ctx context.Context, client *kube.Client, odigosNs string) string {
