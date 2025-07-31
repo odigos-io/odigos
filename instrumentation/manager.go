@@ -330,7 +330,7 @@ func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context
 	}
 
 	inst, initErr := factory.CreateInstrumentation(ctx, e.PID, settings)
-	reporterErr := m.handler.Reporter.OnInit(ctx, e.PID, err, pd)
+	reporterErr := m.handler.Reporter.OnInit(ctx, e.PID, initErr, pd)
 	if reporterErr != nil {
 		m.logger.Error(reporterErr, "failed to report instrumentation init", "initialized", initErr == nil, "pid", e.PID, "process group details", pd)
 	}

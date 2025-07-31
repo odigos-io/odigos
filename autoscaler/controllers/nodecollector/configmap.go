@@ -166,6 +166,9 @@ func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
 		// if the processor does not exist, create it with the default configuration
 		cfg.Processors[k8sAttributesProcessorName] = config.GenericMap{
 			"auth_type": "serviceAccount",
+			"filter": config.GenericMap{
+				"node_from_env_var": k8sconsts.NodeNameEnvVar,
+			},
 			"extract": config.GenericMap{
 				"metadata": []string{
 					string(semconv.K8SDeploymentNameKey),

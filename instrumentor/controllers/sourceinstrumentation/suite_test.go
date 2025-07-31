@@ -23,6 +23,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/util/version"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -81,7 +83,15 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = sourceinstrumentation.SetupWithManager(k8sManager)
+	// Get the actual Kubernetes version from the cluster
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
+	Expect(err).ToNot(HaveOccurred())
+
+	k8sVersion, err := discoveryClient.ServerVersion()
+	Expect(err).ToNot(HaveOccurred())
+
+	parsedVersion := version.MustParseSemantic(k8sVersion.String())
+	err = sourceinstrumentation.SetupWithManager(k8sManager, parsedVersion)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
