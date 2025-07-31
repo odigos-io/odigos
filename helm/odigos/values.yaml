@@ -379,3 +379,7 @@ rollout:
 # PDBs are disabled by default and can be enabled in production environments where stability during disruptions is important.
 pdb:
   enabled: false
+
+# Setting for allowing Odigos to run concurrently with other agents
+allowConcurrentAgents:
+  enabled: true

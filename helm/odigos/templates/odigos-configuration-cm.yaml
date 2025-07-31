@@ -171,3 +171,6 @@ data:
       automaticRolloutDisabled: {{ .Values.rollout.automaticRolloutDisabled }}
       {{- end }}
     {{- end }}
+    {{- if .Values.allowConcurrentAgents.enabled }}
+    allowConcurrentAgents: {{ .Values.allowConcurrentAgents.enabled }}
+    {{- end }}
