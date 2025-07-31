@@ -33,6 +33,14 @@ docker pull registry.odigos.io/odigos-odiglet:$VERSION
 docker pull registry.odigos.io/odigos-collector:$VERSION
 ```
 
+If you are using the [k8s-init-container](/instrumentations/configuration/mount-method#3-InitContainer) mount method
+make sure the odigos-agents image is also pulled, as it's required by the injected InitContainer.
+**This is not the default configuration**, if you're unsure what this means, you can safely ignore this step and continue with the standard setup.
+
+```bash
+docker pull registry.odigos.io/odigos-agents:$VERSION
+```
+
 <Warning>
 Odigos component images are published in multi-arch for ARM64 and AMD64 architectures. When pulling these images, be sure to specify the correct architecture *for the environment they will be deployed*.
 </Warning>
@@ -88,6 +96,16 @@ docker pull registry.odigos.io/odigos-autoscaler:$VERSION
 docker pull registry.odigos.io/odigos-enterprise-odiglet:$VERSION
 docker pull registry.odigos.io/odigos-collector:$VERSION
 ```
+
+If you are using the [k8s-init-container](/instrumentations/configuration/mount-method#3-InitContainer) mount method
+make sure the odigos-agents image is also pulled, as it's required by the injected InitContainer.
+**This is not the default configuration**, if you're unsure what this means, you can safely ignore this step and continue with the standard setup.
+
+```bash
+docker pull registry.odigos.io/odigos-enterprise-agents:$VERSION
+```
+
+
 <Warning>
 Odigos component images are published in multi-arch for ARM64 and AMD64 architectures. When pulling these images, be sure to specify the correct architecture *for the environment they will be deployed*.
 </Warning>
