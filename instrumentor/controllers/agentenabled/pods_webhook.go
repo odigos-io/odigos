@@ -155,8 +155,10 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	if odigosConfiguration.MountMethod != nil && *odigosConfiguration.MountMethod == common.K8sInitContainerMountMethod && volumeMounted {
 		// only mount the volume if at least one container has a volume to mount
 		podswebhook.MountPodVolumeToEmptyDir(pod)
-		// Create the init container that will copy the directories to the empty dir based on dirsToCopy
-		CreateInitContainer(pod, dirsToCopy, odigosConfiguration)
+		if len(dirsToCopy) > 0 {
+			// Create the init container that will copy the directories to the empty dir based on dirsToCopy
+			createInitContainer(pod, dirsToCopy, odigosConfiguration)
+		}
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
@@ -265,7 +267,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	if err != nil {
 		return false, nil, err
 	}
-	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroMetadata.Name, pw.Namespace)
+	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroName, pw.Namespace)
 	if distroMetadata.EnvironmentVariables.OpAmpClientEnvironments {
 		existingEnvNames = podswebhook.InjectOpampServerEnvVar(existingEnvNames, podContainerSpec)
 	}
@@ -301,7 +303,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		}
 
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
-			podswebhook.InjectOtelResourceAndServiceNameEnvVars(existingEnvNames, podContainerSpec, distroMetadata.Name, pw, serviceName)
+			podswebhook.InjectOtelResourceAndServiceNameEnvVars(existingEnvNames, podContainerSpec, distroName, pw, serviceName)
 		}
 		// TODO: once we have a flag to enable/disable device injection, we should check it here.
 		if distroMetadata.RuntimeAgent.Device != nil {
@@ -387,16 +389,12 @@ func getRuntimeInfoForContainerName(ic *odigosv1.InstrumentationConfig, containe
 	return nil
 }
 
-func CreateInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config common.OdigosConfiguration) {
+func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config common.OdigosConfiguration) {
 	const (
 		instrumentationsPath = "/instrumentations"
 	)
 	imageVersion := os.Getenv(consts.OdigosVersionEnvVarName)
 	imageName := config.ImagePrefix + "/" + k8sconsts.OdigosInitContainerName + ":" + imageVersion
-
-	if len(dirsToCopy) == 0 {
-		return
-	}
 
 	var copyCommands []string
 	for dir := range dirsToCopy {
