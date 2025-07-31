@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/odigos-io/odigos/common/consts"
 )
@@ -49,7 +50,7 @@ type ConfigStringList []string
 func (data ConfigStringList) ToString() {
 	fmt.Printf(": \n")
 	for _, value := range data {
-		fmt.Printf("%s,\n", value)
+		fmt.Printf("		-%s,\n", value)
 	}
 
 }
@@ -207,6 +208,7 @@ func makeAMap(config *OdigosConfiguration) map[string]ConfigField {
 		consts.OdigletHealthProbeBindPortProperty: ConfigInt(config.OdigletHealthProbeBindPort),
 		consts.ServiceGraphDisabledProperty:       ConfigBoolPointer{Value: serviceValue},
 		consts.GoAutoOffsetsCronProperty:          ConfigString(config.GoAutoOffsetsCron),
+		consts.ClickhouseJsonTypeEnabledProperty:  ConfigBoolPointer{Value: config.ClickhouseJsonTypeEnabledProperty},
 	}
 
 	return displayData
@@ -214,14 +216,31 @@ func makeAMap(config *OdigosConfiguration) map[string]ConfigField {
 
 func PrintMap(config *OdigosConfiguration) {
 	display := makeAMap(config)
-	for key, val := range display {
-		fmt.Printf("%s", key)
-		if val == nil {
+
+	var order []string
+	for k := range consts.ConfigDisplay {
+		order = append(order, k)
+	}
+
+	sort.Strings(order)
+
+	for _, key := range order {
+		fmt.Printf("	- %s", key)
+		if display[key] == nil {
 			fmt.Println(": not set")
 		} else {
-			val.ToString()
+			display[key].ToString()
 		}
 	}
+
+	// for key, val := range display {
+	// 	fmt.Printf("	- %s", key)
+	// 	if val == nil {
+	// 		fmt.Println(": not set")
+	// 	} else {
+	// 		val.ToString()
+	// 	}
+	// }
 }
 
 type ProfileName string

@@ -133,6 +133,8 @@ var ConfigDisplay = map[string]string{
 	OidcClientSecretProperty:           "Sets the client secret of the OIDC application.",
 	OdigletHealthProbeBindPortProperty: "Sets the port for the Odiglet health probes (readiness/liveness).",
 	ServiceGraphDisabledProperty:       "Enable or disable the service graph feature [default: false].",
+	GoAutoOffsetsCronProperty:          "Cron schedule for automatic Go offsets updates (e.g. `0 0 * * *` for daily at midnight). Set to empty string to disable.",
+	ClickhouseJsonTypeEnabledProperty:  "Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]",
 }
 
 var (
