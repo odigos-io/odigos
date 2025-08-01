@@ -232,15 +232,6 @@ func PrintMap(config *OdigosConfiguration) {
 			display[key].ToString()
 		}
 	}
-
-	// for key, val := range display {
-	// 	fmt.Printf("	- %s", key)
-	// 	if val == nil {
-	// 		fmt.Println(": not set")
-	// 	} else {
-	// 		val.ToString()
-	// 	}
-	// }
 }
 
 type ProfileName string
