@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -28,73 +29,23 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage Odigos configuration",
-	Long: fmt.Sprintf(`Manage Odigos configuration settings to customize system behavior.
+	Long:  "Displays information about features in odigos map, and options the user has to turn certain features on or off, or add things, etc.",
+	Run: func(cmd *cobra.Command, args []string) {
 
-	Configurable properties:
-	- "%s": Enables or disables telemetry (true/false).
-	- "%s": Enables or disables OpenShift support (true/false).
-	- "%s": Enables or disables Pod Security Policies (true/false).
-	- "%s": Skips webhook issuer creation (true/false).
-	- "%s": Allows concurrent agents (true/false).
-	- "%s": Sets the image prefix.
-	- "%s": Sets the UI mode (default/readonly).
-	- "%s": Controls the number of items to fetch per paginated-batch in the UI.
-	- "%s": Sets the public URL of a remotely, self-hosted UI.
-	- "%s": Sets the URL of the Odigos Central Backend.
-	- "%s": Sets the name of this cluster, for Odigos Central.
-	- "%s": List of namespaces to be ignored.
-	- "%s": List of containers to be ignored.
-	- "%s": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
-	- "%s": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
-	- "%s": Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log).
-	- "%s": JSON string defining per-language env vars to customize instrumentation, e.g., `+"`"+`{"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}`+"`"+`
-	- "%s": Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest.
-	- "%s": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
-	- "%s": Enables or disables Karpenter support (true/false).
-	- "%s": Disable auto rollback feature for failing instrumentations.
-	- "%s": Grace time before uninstrumenting an application [default: 5m].
-	- "%s": Time windows where the auto rollback can happen [default: 1h].
-	- "%s": Disable auto rollout feature for workloads when instrumenting or uninstrumenting.
-	- "%s": Sets the URL of the OIDC tenant.
-	- "%s": Sets the client ID of the OIDC application.
-	- "%s": Sets the client secret of the OIDC application.
-	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
-  	- "%s": Enable or disable the service graph feature [default: false].
-	- "%s": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
-	- "%s": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
-	`,
-		consts.TelemetryEnabledProperty,
-		consts.OpenshiftEnabledProperty,
-		consts.PspProperty,
-		consts.SkipWebhookIssuerCreationProperty,
-		consts.AllowConcurrentAgentsProperty,
-		consts.ImagePrefixProperty,
-		consts.UiModeProperty,
-		consts.UiPaginationLimitProperty,
-		consts.UiRemoteUrlProperty,
-		consts.CentralBackendURLProperty,
-		consts.ClusterNameProperty,
-		consts.IgnoredNamespacesProperty,
-		consts.IgnoredContainersProperty,
-		consts.MountMethodProperty,
-		consts.CustomContainerRuntimeSocketPath,
-		consts.K8sNodeLogsDirectory,
-		consts.UserInstrumentationEnvsProperty,
-		consts.AgentEnvVarsInjectionMethod,
-		consts.NodeSelectorProperty,
-		consts.KarpenterEnabledProperty,
-		consts.RollbackDisabledProperty,
-		consts.RollbackGraceTimeProperty,
-		consts.RollbackStabilityWindow,
-		consts.AutomaticRolloutDisabledProperty,
-		consts.OidcTenantUrlProperty,
-		consts.OidcClientIdProperty,
-		consts.OidcClientSecretProperty,
-		consts.OdigletHealthProbeBindPortProperty,
-		consts.ServiceGraphDisabledProperty,
-		consts.GoAutoOffsetsCronProperty,
-		consts.ClickhouseJsonTypeEnabledProperty,
-	),
+		log.Print(`Manage Odigos configuration settings to customize system behavior.` + "\n")
+		log.Print(`Configurable properties:` + "\n")
+
+		var order []string
+		for k := range consts.ConfigDisplay {
+			order = append(order, k)
+		}
+
+		sort.Strings(order)
+
+		for _, key := range order {
+			fmt.Printf("- %s: %s\n", key, consts.ConfigDisplay[key])
+		}
+	},
 }
 
 // `odigos config set <property> <value>`
