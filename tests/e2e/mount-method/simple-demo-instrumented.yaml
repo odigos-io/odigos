@@ -11,7 +11,7 @@ spec:
       command:
         - sh
         - -c
-        - cp -r /instrumentations/loader /var/odigos/loader && cp -r /instrumentations/java /var/odigos/java
+        - cp -r /instrumentations/java /var/odigos/java && cp -r /instrumentations/loader /var/odigos/loader
       volumeMounts:
         - name: odigos-agent
           mountPath: /var/odigos
