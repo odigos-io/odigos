@@ -1,0 +1,293 @@
+
+# filter for sources.
+# each empty value means no filter for that field.
+# for example, if namespace is not empty and other fields are, it will return all sources in the namespace.
+input SourceFilter {
+  namespace: String
+  workloadKind: K8sResourceKind
+  workloadName: String
+  markedForInstrumentation: Boolean
+}
+
+type DesiredConditionStatus {
+
+  # name of the condition, in lowercase with spaces ("runtime detection", "agent enabled", etc.)
+  name: String!
+
+  # shows if the actual state of the condition vs the desired state.
+  status: DesiredStateProgress!
+
+  # reasonEnum is a String, out of close set of enum values per condition type.
+  reasonEnum: String
+
+  # message is a human readable, high cardinality, free form text,
+  # that describes the status for this condition.
+  # it is used to provide additional context for the status.
+  message: String!
+}
+
+type K8sSourceMakredForInstrumentation {
+
+  # markedForInstrumentation is the reconciled decision for this source.
+  # a source can be marked or unmakred for instrumentation due to the presence
+  # of Source CR, there can be workload sources and namespace sources.
+  markedForInstrumentation: Boolean!
+
+  # decisionEnum is a String, out of close set of enum values, 
+  # that describes the reason for the markedForInstrumentation value
+  decisionEnum: String!
+
+  # the message is a human readable, high cardinality, free form text,
+  # that describes the reason for the markedForInstrumentation value.
+  # it is used to provide additional context for the decision.
+  message: String!
+
+  # TODO: add "Source" info here.
+}
+
+type EnvVar {
+  name: String!
+  value: String!
+}
+
+type K8sSourceRuntimeInfoContainer {
+  # the name of the container in the pod manifest.
+  containerName: String!
+
+  # the programming language of the container.
+  language: ProgrammingLanguage!
+
+  # the runtime version of the container, or empty if not found.
+  # odigos has a heuristic approch and is not guaranteed to always find the runtime version.
+  runtimeVersion: String
+
+  # the environment variables that are relevant for odigos injection,
+  # as seen in the process environment (read from "/proc/N/environ")
+  processEnvVars: [EnvVar!]!
+
+  # relevant odigos environment variables that are set by container runtime (for example, set as ENV layer in Dockerfile)
+  # if a relevant env is set in the container runtime, it is set here.
+  # there are some rare cases where value can be set in this list but not comming from container runtime.
+  containerRuntimeEnvVars: [EnvVar!]
+
+  # if there was any cri error, the containerRuntimeEnvVars will be empty, 
+  # criErrorMessage will be set to the error message, and containerRuntimeEnvVars is unknown.
+  criErrorMessage: String
+
+  # the libc type of the container, or empty if not found.
+  # values are "glibc" or "musl"
+  libcType: String
+
+  # if the container is running in secure execution mode or not.
+  # if empty, the detection could not be completed.
+  secureExecutionMode: Boolean
+
+  # if other instrumentation agent is detected to run in the container,
+  # this will be the name of the detected agent.
+  # will be empty most of the times, when no other agent is detected in the container.
+  otherAgentName: String
+}
+
+type K8sSourceRuntimeInfo {
+
+  # completed is true if the runtime info has been calculated for the source.
+  completed: Boolean!
+
+  # the status of the runtime info detection process.
+  completedStatus: DesiredConditionStatus!
+
+  # containers is a list of containers that are part of the source.
+  # it contains the runtime info for each container.
+  # all containers are always included.
+  containers: [K8sSourceRuntimeInfoContainer!]
+}
+
+type DistroParam {
+  key: String!
+  value: String!
+}
+
+# currently empty, will be populated in the future.
+type K8sSourceAgentEnabledContainerTraces {
+  enabled: Boolean!
+}
+
+# currently empty, will be populated in the future.
+type K8sSourceAgentEnabledContainerMetrics {
+  enabled: Boolean!
+}
+
+# currently empty, will be populated in the future.
+type K8sSourceAgentEnabledContainerLogs {
+  enabled: Boolean!
+}
+
+# describes the agent enabled info for a container.
+type K8sSourceAgentEnabledContainer {
+  # the name of the container in the pod manifest.
+  containerName: String!
+
+  # if an agent is enabled for this container.
+  agentEnabled: Boolean!
+
+  # the status info of the agentEnabled decision for this container.
+  agentEnabledStatus: DesiredConditionStatus!
+
+  # the otel distro name that is used for this container.
+  otelDistroName: String
+
+  # the env injection method that is used for this container.
+  # it can have 3 values:
+  # - "loader": inject the LD_PRELOAD env var to the pod manifest which will trigger the odigos loader.
+  # - "pod-manifest": inject the runtime specific agent loading env vars (e.g PYTHONPATH, NODE_OPTIONS) to the pod manifest as specified in the distro manifest.
+  # - "loader-fallback-to-pod-manifest" - it means we tried LD_PRELOAD and it failed, so we falled-back to using the pod manifest.
+  envInjectionMethod: String
+
+  # the distro params that are used for this container.
+  distroParams: [DistroParam!]
+
+  # if traces are enabled for this container, this field will be populated.
+  traces: K8sSourceAgentEnabledContainerTraces
+
+  # if metrics are enabled for this container, this field will be populated.
+  metrics: K8sSourceAgentEnabledContainerMetrics
+
+  # if logs are enabled for this container, this field will be populated.
+  logs: K8sSourceAgentEnabledContainerLogs
+}
+
+# agentEnabled is the reconciled decision for odigos if an agent should be injected into the source pods.
+# it is based on the runtimeInfo and additional configurations (instrumentation rules, odigos config, agent manifests)
+# enabling the agent means that odigos is attempting to initiate instrumentation for the source.
+# pods for this workload are expected to have the agent injected, but it is not guaranteed.
+# only the actual state on each pod describe if the agent was indeed injected or not.
+type K8sSourceAgentEnabled {
+
+  # when enabled is true, odigos will attempt to inject the agent 
+  # into relevant containers of future new pods from this source.
+  # this value is true when at least one container is enabled.
+  # to view the detailed decision for each container, see the containers field.
+  agentEnabled: Boolean!
+
+  # the status of the agentEnabled decision.
+  enabledStatus: DesiredConditionStatus!
+
+  # containers is a list of containers that are part of the source.
+  # it contains the agentEnabled decision for each container.
+  # all containers are always included, even if the agent is not enabled for them for any reason.
+  containers: [K8sSourceAgentEnabledContainer!]
+}
+
+type K8sSourceRollout {
+    # the status of the rollout. that is being tracked by odigos.
+    rolloutStatus: DesiredConditionStatus!
+}
+
+# show all info for a specific source container.
+type K8sSourceContainer {
+  containerName: String!
+  runtimeInfo: K8sSourceRuntimeInfoContainer
+  agentEnabled: K8sSourceAgentEnabledContainer
+}
+
+type K8sSourcePodContainerProcessAttribute {
+    key: String!
+    value: String!
+}
+
+type K8sSourcePodContainerProcess {
+
+    # if the agent instrumenting this process is reporting healthy or not.
+    # if the agent is still starting up, this will be empty.
+    healthy: Boolean
+
+    # the status of the health of the process.
+    healthStatus: DesiredConditionStatus!
+
+    # attributes are key value pairs that are reported as part of this process resource attributes in telemetry.
+    # it contains just some of the attributes and may not be complete.
+    identifyingAttributes: [K8sSourcePodContainerProcessAttribute!]!
+}
+
+type K8sSourcePodContainer {
+    # the name of the container in the pod manifest.
+    containerName: String!
+
+    # if this container is using an instrumentation device, this will be set to the device name.
+    instrumentationDeviceName: String
+
+    # if the container is marked as started in k8s.
+    started: Boolean
+
+    # if the container is marked as ready in k8s.
+    ready: Boolean
+
+    # if the container is in crash loop back off.
+    isCrashLoop: Boolean
+
+    # the status of the health of the container itself, which is not directly related to the agent and instrumentation.
+    # it tracks the started, ready, and crash loop back off and present a unified status to show container health.
+    healthStatus: DesiredConditionStatus!
+
+    processes: [K8sSourcePodContainerProcess!]!
+}
+
+type K8sSourcePod {
+  # the name of the pod resource in k8s.
+  podName: String!
+
+  # the name of the node that the pod is running on.
+  nodeName: String!
+
+  startTime: String!
+
+  # if the agent is injected into the pod.
+  # agent injection is decided at pod creation time, 
+  # and depends on the agentEnabled decision for the source 
+  # and the availability of the instrumentor webhook to handle requests.
+  agentInjected: Boolean!
+
+  # the status of the agentInjected decision.
+  # this status is not a condition on a resource, it's a calculated value based on the observed state of the pod.
+  # it is used to track if the agent injected state is as desired, or if there are any issues.
+  agentInjectedStatus: DesiredConditionStatus!
+
+  # during rollout, pods can be running more than one revision of the workload.
+  # this value indicates if a specific pod is running the latest revision of the workload.
+  runningLatestWorkloadRevision: String
+
+  # all containers that are part of the pod.
+  # all containers are always included, even if the agent is not enabled for them for any reason.
+  containers: [K8sSourcePodContainer!]!
+}
+
+type K8sSource {
+  namespace: String!
+  kind: K8sResourceKind!
+  name: String!
+
+  # an aggregated status for all the conditions that are relevant for the source.
+  # if there is any issue with the source, this value will track it.
+  sourceHealthStatus: DesiredConditionStatus!
+
+  markedForInstrumentation: K8sSourceMakredForInstrumentation!
+
+  # runtimeInfo is empty if source is not marked for instrumentation,
+  # or if the source has not been processed by odigos yet.
+  # once a source that is makred for instrumentation is processed, this field will be set.
+  runtimeInfo: K8sSourceRuntimeInfo
+
+  agentEnabled: K8sSourceAgentEnabled
+
+  rollout: K8sSourceRollout
+
+  # show all info for a specific source container.
+  containers: [K8sSourceContainer!]
+
+  # show all info for all pods that are part of the source.
+  # pods are always included, even if the agent is not enabled for them for any reason.
+  pods: [K8sSourcePod!]
+
+  # tracks if all pods in this source are in the desired state, and an error message if not.
+  podsDesiredState: DesiredConditionStatus!
+}

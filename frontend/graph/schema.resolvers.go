@@ -1203,6 +1203,16 @@ func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceCo
 	return services.GetOtherConditionsForSources(ctx, "", "", "")
 }
 
+// Sources is the resolver for the sources field.
+func (r *queryResolver) Sources(ctx context.Context, filter *model.SourceFilter) ([]*model.K8sSource, error) {
+	src1 := model.K8sSource{
+		Namespace: "foo",
+		Kind:      model.K8sResourceKindDeployment,
+		Name:      "bar",
+	}
+	return []*model.K8sSource{&src1}, nil
+}
+
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	gqlHandler "github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
 	gqlTransport "github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/frontend/middlewares"
@@ -29,6 +30,7 @@ func GetGQLHandler(ctx context.Context, logger logr.Logger, odigosMetrics *colle
 	srv.AddTransport(gqlTransport.POST{})
 	srv.AddTransport(gqlTransport.Websocket{KeepAlivePingInterval: 10 * time.Second})
 	srv.Use(middlewares.OperationInterceptor())
+	srv.Use(extension.Introspection{}) // allows us to see documentation for the schema in the gql playground
 
 	return srv
 }

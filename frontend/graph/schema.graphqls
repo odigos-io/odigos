@@ -804,6 +804,9 @@ type Query {
   describeOdigos: OdigosAnalyze!
   describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
   sourceConditions: [SourceConditions!]!
+
+  # get all sources that match the filter
+  sources(filter: SourceFilter): [K8sSource!]!
 }
 
 type Mutation {

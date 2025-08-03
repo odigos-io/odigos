@@ -1,0 +1,37 @@
+
+enum DesiredStateProgress {
+
+    # actual state matches the desired state.
+    Success
+
+    # actual state is different than the desired state,
+    # and it is not expected to recover.
+    # the state should be investigated by a user, and may be fixed by a user or by reporting an issue to odigos team.
+    Failure
+
+    # actual state is different from the desired state,
+    # but the system is in progress, and it is expected to reconcile shortly.
+    Waiting
+
+    # actual state is different than the desired state,
+    # and the transition depends on some long lasting process that is waiting to complete.
+    # for example: wait for cronjob to trigger for runtime detection.
+    Pending
+
+    # actual state is different than the desired state,
+    # but due to normal behavior of the system.
+    # it indicates that something is not supported, or odigos is configured to slip it.
+    # the user has no action items to take, other than being informed.
+    Disabled
+
+    # the actual state matches the desired state,
+    # but the user should be notified and has action items to take.
+    Notice
+
+    # when odigos failed to determine the current or desired state due to some internal error.
+    # the actual status is not known and can be anything.
+    Error
+
+    # when the current or desired state are not relevant or available, and this is ok.
+    Unknown
+}
