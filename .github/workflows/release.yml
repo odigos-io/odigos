@@ -33,17 +33,34 @@ jobs:
             exit 1
           fi
 
+      # get the latest stable version. this is used for stable releases to have the correct changelog.
+      - name: Get latest stable version
+        id: get_latest_stable_version
+        run: |
+          # Get all tags and filter for stable versions (no -rc or other suffixes)
+          # Sort them and get the latest one
+          LATEST_STABLE=$(git tag -l | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+          echo "Latest stable version is: $LATEST_STABLE"
+          echo "latest_stable=$LATEST_STABLE" >> $GITHUB_OUTPUT
+  
       - name: Check Release Type
         run: |
           TAG="${{ env.TAG }}"
+          LATEST_STABLE="${{ steps.get_latest_stable_version.outputs.latest_stable }}"
           
           # Check if it's a pre-release (has additional suffix after vX.Y.Z)
-          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+- ]]; then
-            echo "IS_PRERELEASE=true" >> $GITHUB_ENV
-            echo "This is a pre-release: $TAG"
-          else
+          # Also calculate the reference version for the changelog.
+
+          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "IS_PRERELEASE=false" >> $GITHUB_ENV
+            echo "CHANGELOG_REFERENCE_TAG=$LATEST_STABLE" >> $GITHUB_ENV
             echo "This is a stable release: $TAG"
+          else
+            echo "IS_PRERELEASE=true" >> $GITHUB_ENV
+            # TODO: what should the changelog reference tag be for pre-releases?
+            # latest stable version? or the previous release from the same type?
+            echo "CHANGELOG_REFERENCE_TAG=$LATEST_STABLE" >> $GITHUB_ENV
+            echo "This is a pre-release: $TAG"
           fi
 
       - uses: actions/checkout@v4
@@ -126,6 +143,8 @@ jobs:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
           IS_PRERELEASE: ${{ env.IS_PRERELEASE }}
           GORELEASER_CURRENT_TAG: ${{ env.TAG }}
+          # set the previous tag so the changelog includes all relevant changes
+          GORELEASER_PREVIOUS_TAG: ${{ env.CHANGELOG_REFERENCE_TAG }}
 
       - uses: ko-build/setup-ko@v0.9
 
