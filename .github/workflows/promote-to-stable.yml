@@ -169,7 +169,7 @@ jobs:
         id: vars
         run: |
           SHORT_COMMIT=$(git rev-parse --short HEAD)
-          echo "short_commit=${SHORT_COMMIT}" >> $GITHUB_ENV
+          echo "short_commit=${SHORT_COMMIT}" >> $GITHUB_OUTPUT
           echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
 
       - uses: actions/setup-go@v5
