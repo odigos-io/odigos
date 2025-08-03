@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -397,7 +398,17 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 	imageName := getInitContainerImage(config)
 
 	var copyCommands []string
+
+	// Sort the map keys to ensure deterministic order.
+	// This is important only for tests due to limitations,
+	// which require consistent command ordering for reliable assertions.
+	var dirs []string
 	for dir := range dirsToCopy {
+		dirs = append(dirs, dir)
+	}
+	sort.Strings(dirs)
+
+	for _, dir := range dirs {
 		from := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, instrumentationsPath)
 		to := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, k8sconsts.OdigosAgentsDirectory)
 		copyCommands = append(copyCommands, fmt.Sprintf("cp -r %s %s", from, to))
