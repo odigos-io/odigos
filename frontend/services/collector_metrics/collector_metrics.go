@@ -10,9 +10,11 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/services/common"
 	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/config/configgrpc"
+	"go.opentelemetry.io/collector/config/confignet"
+	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
@@ -198,14 +200,23 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 		panic("failed to cast default config to otlpreceiver.Config")
 	}
 
-	cfg.GRPC.NetAddr.Endpoint = fmt.Sprintf("0.0.0.0:%d", consts.OTLPPort)
+	// Modify the gRPC listener address
+	cfg.GRPC = configoptional.Some(configgrpc.ServerConfig{
+		NetAddr: confignet.AddrConfig{
+			Endpoint:  "0.0.0.0:4317",
+			Transport: confignet.TransportTypeTCP,
+		},
+	})
 
 	r, err := f.CreateMetrics(ctx, receivertest.NewNopSettings(f.Type()), cfg, c)
 	if err != nil {
 		panic("failed to create receiver")
 	}
 
-	r.Start(ctx, componenttest.NewNopHost())
+	if err := r.Start(ctx, componenttest.NewNopHost()); err != nil {
+		log.Printf("failed to start OTLP receiver: %v", err)
+	}
+
 	defer r.Shutdown(ctx)
 
 	log.Println("OTLP receiver is running")

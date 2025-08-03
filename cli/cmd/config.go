@@ -61,6 +61,7 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
   	- "%s": Enable or disable the service graph feature [default: false].
 	- "%s": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
+	- "%s": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -92,6 +93,7 @@ var configCmd = &cobra.Command{
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.ServiceGraphDisabledProperty,
 		consts.GoAutoOffsetsCronProperty,
+		consts.ClickhouseJsonTypeEnabledProperty,
 	),
 }
 
@@ -196,7 +198,8 @@ func validatePropertyValue(property string, value []string) error {
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.GoAutoOffsetsCronProperty,
-		consts.ServiceGraphDisabledProperty:
+		consts.ServiceGraphDisabledProperty,
+		consts.ClickhouseJsonTypeEnabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -428,6 +431,10 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 			}
 		}
 		config.GoAutoOffsetsCron = cronValue
+
+	case consts.ClickhouseJsonTypeEnabledProperty:
+		boolValue, _ := strconv.ParseBool(value[0])
+		config.ClickhouseJsonTypeEnabledProperty = &boolValue
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
