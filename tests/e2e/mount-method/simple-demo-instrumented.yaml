@@ -62,7 +62,7 @@ spec:
       command:
         - sh
         - -c
-        - cp -r /instrumentations/loader /var/odigos/loader && cp -r /instrumentations/nodejs-community /var/odigos/nodejs-community && cp -r /instrumentations/opentelemetry-node /var/odigos/opentelemetry-node
+        - cp -r /instrumentations/nodejs-community /var/odigos/nodejs-community && cp -r /instrumentations/opentelemetry-node /var/odigos/opentelemetry-node && cp -r /instrumentations/loader /var/odigos/loader
       volumeMounts:
         - name: odigos-agent
           mountPath: /var/odigos
@@ -117,7 +117,7 @@ spec:
       command:
         - sh
         - -c
-        - cp -r /instrumentations/loader /var/odigos/loader && cp -r /instrumentations/python /var/odigos/python
+        - cp -r /instrumentations/python /var/odigos/python && cp -r /instrumentations/loader /var/odigos/loader
       volumeMounts:
         - name: odigos-agent
           mountPath: /var/odigos

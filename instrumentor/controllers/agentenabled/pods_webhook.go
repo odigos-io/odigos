@@ -393,8 +393,8 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 	const (
 		instrumentationsPath = "/instrumentations"
 	)
-	imageVersion := os.Getenv(consts.OdigosVersionEnvVarName)
-	imageName := config.ImagePrefix + "/" + k8sconsts.OdigosInitContainerName + ":" + imageVersion
+
+	imageName := getInitContainerImage(config)
 
 	var copyCommands []string
 	for dir := range dirsToCopy {
@@ -430,4 +430,17 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 		}
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, initContainer)
+}
+
+func getInitContainerImage(config common.OdigosConfiguration) string {
+	initContainerImage := k8sconsts.OdigosInitContainerImageName
+	imageVersion := os.Getenv(consts.OdigosVersionEnvVarName)
+
+	// In the installation/upgrade we always set the init container image as env var, so we can use it here
+	if initContainerImageEnv, ok := os.LookupEnv(k8sconsts.OdigosInitContainerEnvVarName); ok {
+		return initContainerImageEnv
+	}
+
+	// This is a fallback for the case where the init container image is not set as env var for some reason.
+	return config.ImagePrefix + "/" + initContainerImage + ":" + imageVersion
 }
