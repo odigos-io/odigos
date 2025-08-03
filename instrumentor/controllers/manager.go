@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/version"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -114,9 +115,10 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 
 			Setting the leader election params to 30s/20s/5s should provide a good balance between stability and quick failover.
 		*/
-		LeaseDuration: durationPointer(30 * time.Second),
-		RenewDeadline: durationPointer(20 * time.Second),
-		RetryPeriod:   durationPointer(5 * time.Second),
+		LeaseDuration:                 durationPointer(30 * time.Second),
+		RenewDeadline:                 durationPointer(20 * time.Second),
+		RetryPeriod:                   durationPointer(5 * time.Second),
+		LeaderElectionReleaseOnCancel: true,
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
@@ -164,13 +166,13 @@ func durationPointer(d time.Duration) *time.Duration {
 	return &d
 }
 
-func SetupWithManager(mgr manager.Manager, dp *distros.Provider) error {
+func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *version.Version) error {
 	err := agentenabled.SetupWithManager(mgr, dp)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for agent enabled: %w", err)
 	}
 
-	err = sourceinstrumentation.SetupWithManager(mgr)
+	err = sourceinstrumentation.SetupWithManager(mgr, k8sVersion)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for start language detection: %w", err)
 	}
@@ -204,13 +206,13 @@ func RegisterWebhooks(mgr manager.Manager, dp *distros.Provider) error {
 	}
 
 	err = builder.
-	WebhookManagedBy(mgr).
-	For(&corev1.Pod{}).
-	WithDefaulter(&agentenabled.PodsWebhook{
-		Client:        mgr.GetClient(),
-		DistrosGetter: dp.Getter,
-	}).
-	Complete()
+		WebhookManagedBy(mgr).
+		For(&corev1.Pod{}).
+		WithDefaulter(&agentenabled.PodsWebhook{
+			Client:        mgr.GetClient(),
+			DistrosGetter: dp.Getter,
+		}).
+		Complete()
 	if err != nil {
 		return err
 	}

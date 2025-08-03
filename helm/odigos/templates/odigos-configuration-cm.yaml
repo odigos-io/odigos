@@ -70,6 +70,7 @@ data:
       goMemLimitMiB: {{ . }}
       {{- end }}
       serviceGraphDisabled: {{ .Values.collectorGateway.serviceGraphDisabled }}
+      clusterMetricsEnabled: {{ .Values.collectorGateway.clusterMetricsEnabled }}
     {{- end }}
     {{- if .Values.collectorNode }}
     collectorNode:
@@ -136,10 +137,10 @@ data:
       {{- toYaml .Values.ignoredContainers | nindent 6 }}
     {{- end }}
     {{- if .Values.instrumentor.mountMethod }}
-      {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device") }}
+      {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device" "k8s-init-container") }}
     mountMethod: {{ .Values.instrumentor.mountMethod }}
       {{- else }}
-        {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path' and 'k8s-virtual-device'." }}
+        {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path', 'k8s-virtual-device' and 'k8s-init-container'." }}
       {{- end }}
     {{- end }}
     {{- $envMethod := .Values.instrumentor.agentEnvVarsInjectionMethod }}
@@ -169,4 +170,7 @@ data:
       {{- if .Values.rollout.automaticRolloutDisabled }}
       automaticRolloutDisabled: {{ .Values.rollout.automaticRolloutDisabled }}
       {{- end }}
+    {{- end }}
+    {{- if .Values.clickhouseDestinationJsonType.enabled }}
+    clickhouseDestinationJsonType: {{ .Values.clickhouseDestinationJsonType.enabled }}
     {{- end }}

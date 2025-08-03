@@ -30,14 +30,6 @@ func createDefaultConfig() component.Config {
 		TimeoutConfig:    exporterhelper.NewDefaultTimeoutConfig(),
 		RetryConfig:      configretry.NewDefaultBackOffConfig(),
 		QueueConfig:      exporterhelper.NewDefaultQueueConfig(),
-		BatcherConfig: exporterhelper.BatcherConfig{
-			Enabled:      true,
-			FlushTimeout: 200 * time.Millisecond,
-			SizeConfig: exporterhelper.SizeConfig{
-				Sizer:   exporterhelper.RequestSizerTypeItems,
-				MinSize: 8192,
-			},
-		},
 	}
 }
 
@@ -61,7 +53,6 @@ func createLogsExporter(
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
 		exporterhelper.WithQueue(pCfg.QueueConfig),
-		exporterhelper.WithBatcher(pCfg.BatcherConfig),
 	)
 }
 
@@ -85,7 +76,6 @@ func createTracesExporter(
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
 		exporterhelper.WithQueue(pCfg.QueueConfig),
-		exporterhelper.WithBatcher(pCfg.BatcherConfig),
 	)
 }
 
@@ -109,6 +99,5 @@ func createMetricsExporter(
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
 		exporterhelper.WithQueue(pCfg.QueueConfig),
-		exporterhelper.WithBatcher(pCfg.BatcherConfig),
 	)
 }

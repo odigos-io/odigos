@@ -91,6 +91,12 @@ func NewInstrumentorRole(ns string) *rbacv1.Role {
 				ResourceNames: []string{k8sconsts.DeprecatedInstrumentorWebhookSecretName},
 				Verbs:         []string{"delete"},
 			},
+			{ // check for odiglet daemonset ready before starting the instrumentation
+				APIGroups:     []string{"apps"},
+				Resources:     []string{"daemonsets"},
+				ResourceNames: []string{k8sconsts.OdigletDaemonSetName},
+				Verbs:         []string{"get", "list", "watch"},
+			},
 			{
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups"},
@@ -490,7 +496,7 @@ func NewInstrumentorTLSSecret(ns string) *corev1.Secret {
 	}
 }
 
-func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, tier common.OdigosTier, nodeSelector map[string]string) *appsv1.Deployment {
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, tier common.OdigosTier, nodeSelector map[string]string, initContainerImage string) *appsv1.Deployment {
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -579,6 +585,11 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
+								// This env var is used to set the image (ubi9 or not) of the init container (odigos-agents)
+								{
+									Name:  k8sconsts.OdigosInitContainerEnvVarName,
+									Value: containers.GetImageName(imagePrefix, initContainerImage, version),
+								},
 								// TODO: this tier env var should be removed once we complete the transition to
 								// enterprise and community images, and the webhook code won't rely on this env var
 								{
@@ -589,6 +600,17 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 												Name: k8sconsts.OdigosDeploymentConfigMapName,
 											},
 											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
+										},
+									},
+								},
+								{
+									Name: consts.OdigosVersionEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapVersionKey,
 										},
 									},
 								},
@@ -725,7 +747,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(a.config.OpenshiftEnabled),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.managerOpts.ImageReferences.InstrumentorImage, a.tier, a.config.NodeSelector),
+		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.managerOpts.ImageReferences.InstrumentorImage, a.tier, a.config.NodeSelector, a.managerOpts.ImageReferences.InitContainerImage),
 		NewInstrumentorService(a.ns),
 	}
 

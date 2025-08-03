@@ -41,6 +41,11 @@ spec:
           spec:
             description: CollectorsGroupSpec defines the desired state of Collector
             properties:
+              clusterMetricsEnabled:
+                description: |-
+                  ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
+                  It is disabled by default and can be enabled by setting the enabled flag to true.
+                type: boolean
               collectorOwnMetricsPort:
                 description: |-
                   The port to use for exposing the collector's own metrics as a prometheus endpoint.

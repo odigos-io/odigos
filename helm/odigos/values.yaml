@@ -99,6 +99,11 @@ collectorGateway:
   # Service Graph is a feature that allows you to visualize the service graph of your application.
   # It is enabled by default and can be disabled by setting the disabled flag to true.
   serviceGraphDisabled: false
+  # Cluster Metrics settings
+  # Cluster Metrics is a feature that allows you to enable the cluster metrics.
+  # [https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver]
+  # It is disabled by default and can be enabled by setting the enabled flag to true.
+  clusterMetricsEnabled: false
 
 
 collectorNode:
@@ -216,6 +221,7 @@ instrumentor:
   # which mount method to use for odigos agent directory
   # k8s-virtual-device: default method using a virtual device
   # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
+  # k8s-init-container: alternative which uses an init container to copy the agent files to the shared volume
   mountMethod: ''
   nodeSelector:
     kubernetes.io/os: linux
@@ -270,6 +276,16 @@ odiglet:
       limits:
         cpu: 50m
         memory: 150Mi
+
+  ## Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.
+  ## There is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.
+  initContainerResources:
+    requests:
+      cpu: 200m
+      memory: 200Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
 
   # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
@@ -364,3 +380,10 @@ rollout:
 # PDBs are disabled by default and can be enabled in production environments where stability during disruptions is important.
 pdb:
   enabled: false
+
+# Enable support for ClickHouse JSON column type when storing Odigos data.
+# When set to true, Odigos will use a new schema with JSON-typed columns (requires ClickHouse v25.3+).
+# If set to false, the default schema using Map-type columns will be used instead.
+clickhouseDestinationJsonType:
+  enabled: false
+ 

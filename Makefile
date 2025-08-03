@@ -91,6 +91,11 @@ build-operator:
 build-odiglet:
 	$(MAKE) build-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
+.PHONY: build-agents
+build-agents:
+	$(MAKE) build-image/agents DOCKERFILE=agents/$(DOCKERFILE) SUMMARY="Init container for Odigos" DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+
+
 .PHONY: build-autoscaler
 build-autoscaler:
 	$(MAKE) build-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
@@ -129,7 +134,7 @@ verify-nodejs-agent:
 .PHONY: build-images
 build-images:
 	# prefer to build timeconsuimg images first to make better use of parallelism
-	make -j $(nproc) build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make -j $(nproc) build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor build-agents TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: build-images-rhel
 build-images-rhel:
@@ -185,7 +190,7 @@ load-to-kind-%:
 
 .PHONY: load-to-kind
 load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: restart-ui
 restart-ui:
@@ -214,7 +219,11 @@ restart-collector:
 	-kubectl -n odigos-system patch daemonset odigos-data-collection -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
 
 deploy-%:
-	make build-$* ORG=$(ORG) TAG=$(TAG) DOCKERFILE=$(DOCKERFILE) IMG_SUFFIX=$(IMG_SUFFIX) && make load-to-kind-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) && make restart-$*
+	make build-$* ORG=$(ORG) TAG=$(TAG) DOCKERFILE=$(DOCKERFILE) IMG_SUFFIX=$(IMG_SUFFIX)
+	make load-to-kind-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
+	@if [ "$*" != "agents" ]; then \
+		make restart-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX); \
+	fi
 
 .PHONY: deploy
 deploy:
@@ -252,10 +261,10 @@ update-dep/%: DIR=$*
 update-dep/%:
 	cd $(DIR) && go get $(MODULE)@$(VERSION)
 
-UNSTABLE_COLLECTOR_VERSION=v0.126.0
-STABLE_COLLECTOR_VERSION=v1.32.0
-STABLE_OTEL_GO_VERSION=v1.35.0
-UNSTABLE_OTEL_GO_VERSION=v0.60.0
+UNSTABLE_COLLECTOR_VERSION=v0.130.0
+STABLE_COLLECTOR_VERSION=v1.36.0
+STABLE_OTEL_GO_VERSION=v1.37.0
+UNSTABLE_OTEL_GO_VERSION=v0.62.0
 
 .PHONY: update-otel
 update-otel:
@@ -360,7 +369,7 @@ helm-install-central:
 		--set onPremToken=$(ONPREM_TOKEN) \
 		--set auth.adminUsername=$(CENTRAL_ADMIN_USER) \
 		--set auth.adminPassword=$(CENTRAL_ADMIN_PASSWORD) \
-	kubectl label namespace odigos-central odigos.io/central-system-object="true" --overwrite 
+	kubectl label namespace odigos-central odigos.io/central-system-object="true" --overwrite
 
 
 .PHONY: api-all
