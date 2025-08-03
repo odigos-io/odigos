@@ -39,6 +39,8 @@ jobs:
 
       - name: Push RC tag to upstream
         if: steps.extract_tag.outputs.rc_tag != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
           # Configure Git user identity for the workflow using the actor who triggered it
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
@@ -56,14 +58,10 @@ jobs:
           git tag "$RC_TAG"
           git push origin "$RC_TAG"
 
-      - name: Notify Slack on Success
-        if: ${{ success() }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
+          # Notify Slack on success
           curl -X POST -H 'Content-type: application/json' \
-            --data '{"text":"✅ Odigos release candidate pushed successfully with the tag: ${{ env.TAG }}"}' \
-            $SLACK_WEBHOOK_URL
+          --data '{"text":"✅ Odigos release candidate pushed successfully with the tag: $RC_TAG"}' \
+          $SLACK_WEBHOOK_URL
 
       - name: Notify Slack on Failure
         if: ${{ failure() }}
