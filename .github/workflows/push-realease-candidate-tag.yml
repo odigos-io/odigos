@@ -34,11 +34,10 @@ jobs:
           fi
 
           echo "Found RC tag: $RC_TAG"
-          echo "rc_tag=$RC_TAG" >> $GITHUB_OUTPUT
           echo "TAG=$RC_TAG" >> $GITHUB_ENV
 
       - name: Push RC tag to upstream
-        if: steps.extract_tag.outputs.rc_tag != ''
+        if: env.TAG != ''
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
@@ -46,7 +45,7 @@ jobs:
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
           git config --global user.name "${{ github.actor }}"
 
-          RC_TAG="${{ steps.extract_tag.outputs.rc_tag }}"
+          RC_TAG="${{ env.TAG }}"
 
           # Check if tag already exists
           if git rev-parse "$RC_TAG" >/dev/null 2>&1; then
