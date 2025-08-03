@@ -165,7 +165,7 @@ jobs:
           git push origin ${{ env.STABLE_TAG }} 
           echo "Successfully created and pushed stable tag ${{ env.STABLE_TAG }}"
 
-      - name: Set env
+      - name: Set Artifact Variables
         id: vars
         run: |
           SHORT_COMMIT=$(git rev-parse --short HEAD)
