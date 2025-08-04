@@ -621,6 +621,7 @@ type OdigosConfiguration struct {
 	ImagePrefix                      *string               `json:"imagePrefix,omitempty"`
 	IgnoredNamespaces                []*string             `json:"ignoredNamespaces,omitempty"`
 	IgnoredContainers                []*string             `json:"ignoredContainers,omitempty"`
+	Profiles                         []*string             `json:"profiles,omitempty"`
 	MountMethod                      *string               `json:"mountMethod,omitempty"`
 	AgentEnvVarsInjectionMethod      *string               `json:"agentEnvVarsInjectionMethod,omitempty"`
 	CustomContainerRuntimeSocketPath *string               `json:"customContainerRuntimeSocketPath,omitempty"`
@@ -644,6 +645,7 @@ type OdigosConfigurationInput struct {
 	ImagePrefix                      *string                    `json:"imagePrefix,omitempty"`
 	IgnoredNamespaces                []*string                  `json:"ignoredNamespaces,omitempty"`
 	IgnoredContainers                []*string                  `json:"ignoredContainers,omitempty"`
+	Profiles                         []*string                  `json:"profiles,omitempty"`
 	MountMethod                      *string                    `json:"mountMethod,omitempty"`
 	AgentEnvVarsInjectionMethod      *string                    `json:"agentEnvVarsInjectionMethod,omitempty"`
 	CustomContainerRuntimeSocketPath *string                    `json:"customContainerRuntimeSocketPath,omitempty"`

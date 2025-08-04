@@ -70,6 +70,7 @@ type OdigosConfiguration {
   imagePrefix: String
   ignoredNamespaces: [String]
   ignoredContainers: [String]
+  profiles: [String]
   mountMethod: String
   agentEnvVarsInjectionMethod: String
   customContainerRuntimeSocketPath: String
@@ -127,6 +128,7 @@ input OdigosConfigurationInput {
   imagePrefix: String
   ignoredNamespaces: [String]
   ignoredContainers: [String]
+  profiles: [String]
   mountMethod: String
   agentEnvVarsInjectionMethod: String
   customContainerRuntimeSocketPath: String

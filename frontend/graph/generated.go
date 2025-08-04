@@ -465,6 +465,7 @@ type ComplexityRoot struct {
 		NodeSelector                     func(childComplexity int) int
 		OdigletHealthProbeBindPort       func(childComplexity int) int
 		Oidc                             func(childComplexity int) int
+		Profiles                         func(childComplexity int) int
 		RollbackDisabled                 func(childComplexity int) int
 		RollbackGraceTime                func(childComplexity int) int
 		RollbackStabilityWindow          func(childComplexity int) int
@@ -2738,6 +2739,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OdigosConfiguration.Oidc(childComplexity), true
+
+	case "OdigosConfiguration.profiles":
+		if e.complexity.OdigosConfiguration.Profiles == nil {
+			break
+		}
+
+		return e.complexity.OdigosConfiguration.Profiles(childComplexity), true
 
 	case "OdigosConfiguration.rollbackDisabled":
 		if e.complexity.OdigosConfiguration.RollbackDisabled == nil {
@@ -17193,6 +17201,47 @@ func (ec *executionContext) fieldContext_OdigosConfiguration_ignoredContainers(_
 	return fc, nil
 }
 
+func (ec *executionContext) _OdigosConfiguration_profiles(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OdigosConfiguration_profiles(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Profiles, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OdigosConfiguration_profiles(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OdigosConfiguration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _OdigosConfiguration_mountMethod(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OdigosConfiguration_mountMethod(ctx, field)
 	if err != nil {
@@ -20133,6 +20182,8 @@ func (ec *executionContext) fieldContext_Query_odigosConfig(_ context.Context, f
 				return ec.fieldContext_OdigosConfiguration_ignoredNamespaces(ctx, field)
 			case "ignoredContainers":
 				return ec.fieldContext_OdigosConfiguration_ignoredContainers(ctx, field)
+			case "profiles":
+				return ec.fieldContext_OdigosConfiguration_profiles(ctx, field)
 			case "mountMethod":
 				return ec.fieldContext_OdigosConfiguration_mountMethod(ctx, field)
 			case "agentEnvVarsInjectionMethod":
@@ -26736,7 +26787,7 @@ func (ec *executionContext) unmarshalInputOdigosConfigurationInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"karpenterEnabled", "allowConcurrentAgents", "uiPaginationLimit", "centralBackendURL", "oidc", "clusterName", "imagePrefix", "ignoredNamespaces", "ignoredContainers", "mountMethod", "agentEnvVarsInjectionMethod", "customContainerRuntimeSocketPath", "odigletHealthProbeBindPort", "rollbackDisabled", "rollbackGraceTime", "rollbackStabilityWindow", "rollout", "collectorNode", "collectorGateway", "nodeSelector"}
+	fieldsInOrder := [...]string{"karpenterEnabled", "allowConcurrentAgents", "uiPaginationLimit", "centralBackendURL", "oidc", "clusterName", "imagePrefix", "ignoredNamespaces", "ignoredContainers", "profiles", "mountMethod", "agentEnvVarsInjectionMethod", "customContainerRuntimeSocketPath", "odigletHealthProbeBindPort", "rollbackDisabled", "rollbackGraceTime", "rollbackStabilityWindow", "rollout", "collectorNode", "collectorGateway", "nodeSelector"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -26806,6 +26857,13 @@ func (ec *executionContext) unmarshalInputOdigosConfigurationInput(ctx context.C
 				return it, err
 			}
 			it.IgnoredContainers = data
+		case "profiles":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("profiles"))
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Profiles = data
 		case "mountMethod":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("mountMethod"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -30350,6 +30408,8 @@ func (ec *executionContext) _OdigosConfiguration(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._OdigosConfiguration_ignoredNamespaces(ctx, field, obj)
 		case "ignoredContainers":
 			out.Values[i] = ec._OdigosConfiguration_ignoredContainers(ctx, field, obj)
+		case "profiles":
+			out.Values[i] = ec._OdigosConfiguration_profiles(ctx, field, obj)
 		case "mountMethod":
 			out.Values[i] = ec._OdigosConfiguration_mountMethod(ctx, field, obj)
 		case "agentEnvVarsInjectionMethod":

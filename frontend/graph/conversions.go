@@ -192,6 +192,12 @@ func convertOdigosConfigToK8s(cfg *model.OdigosConfigurationInput) (*common.Odig
 			odigosConfig.IgnoredContainers[i] = *cont
 		}
 	}
+	if len(cfg.Profiles) > 0 {
+		odigosConfig.Profiles = make([]common.ProfileName, len(cfg.Profiles))
+		for i := range cfg.Profiles {
+			odigosConfig.Profiles[i] = common.ProfileName(*cfg.Profiles[i])
+		}
+	}
 	if cfg.MountMethod != nil {
 		m := common.MountMethod(*cfg.MountMethod)
 		odigosConfig.MountMethod = &m
@@ -307,6 +313,13 @@ func convertOdigosConfigToGql(cfg *common.OdigosConfiguration) (*model.OdigosCon
 
 	if cfg.UiPaginationLimit > 0 {
 		odigosConfig.UIPaginationLimit = &cfg.UiPaginationLimit
+	}
+	if len(cfg.Profiles) > 0 {
+		odigosConfig.Profiles = make([]*string, len(cfg.Profiles))
+		for i := range cfg.Profiles {
+			profile := string(cfg.Profiles[i])
+			odigosConfig.Profiles[i] = &profile
+		}
 	}
 	if cfg.MountMethod != nil {
 		mountMethod := string(*cfg.MountMethod)
