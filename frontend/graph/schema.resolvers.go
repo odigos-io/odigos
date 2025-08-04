@@ -1154,7 +1154,7 @@ func (r *queryResolver) OdigosConfig(ctx context.Context) (*model.OdigosConfigur
 		return nil, fmt.Errorf("failed to convert odigos configuration: %v", err)
 	}
 	oidcSecret, err := services.GetOidcSecret(ctx)
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get oidc secret: %v", err)
 	}
 	if odigosConfig.Oidc != nil {
