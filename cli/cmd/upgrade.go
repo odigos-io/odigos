@@ -107,6 +107,9 @@ and apply any required migrations and adaptations.`,
 		if uiMode != "" {
 			config.UiMode = common.UiMode(uiMode)
 		}
+		if config.UiPaginationLimit == 0 {
+			config.UiPaginationLimit = 100
+		}
 
 		// Migrate images from prior to registry.odigos.io
 		if config.ImagePrefix == "" {
