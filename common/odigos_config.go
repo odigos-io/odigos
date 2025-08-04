@@ -61,10 +61,9 @@ func (data *ConfigCollectorNode) ToString() {
 	if data == nil {
 		fmt.Println(": not set")
 		return
-	} else if data.K8sNodeLogsDirectory == "" {
-		fmt.Println(": not set")
 	} else {
-		fmt.Printf(": %s\n", data.K8sNodeLogsDirectory)
+		var placeholder ConfigString = ConfigString(data.K8sNodeLogsDirectory)
+		placeholder.ToString()
 	}
 }
 
@@ -127,10 +126,22 @@ func (data *ConfigUserEnv) ToString() {
 type ConfigRollout RolloutConfiguration
 
 func (data *ConfigRollout) ToString() {
-	if data == nil || data.AutomaticRolloutDisabled == nil {
+	if data == nil {
 		fmt.Printf(": not set\n")
 	} else {
-		fmt.Printf(": %v\n", *data.AutomaticRolloutDisabled)
+		placeholder := ConfigBoolPointer{Value: data.AutomaticRolloutDisabled}
+		placeholder.ToString()
+	}
+}
+
+type ConfigCollectorGateway CollectorGatewayConfiguration
+
+func (data *ConfigCollectorGateway) ToString() {
+	if data == nil {
+		fmt.Printf(": not set\n")
+	} else {
+		placeholder := ConfigBoolPointer{Value: data.ServiceGraphDisabled}
+		placeholder.ToString()
 	}
 }
 
@@ -140,7 +151,8 @@ func (data *ConfigOidcTenant) ToString() {
 	if data == nil {
 		fmt.Printf(": not set\n")
 	} else {
-		fmt.Printf(": %s\n", *data)
+		var placeholder ConfigString = ConfigString(data.TenantUrl)
+		placeholder.ToString()
 	}
 }
 
@@ -150,7 +162,8 @@ func (data *ConfigOidcClientId) ToString() {
 	if data == nil {
 		fmt.Printf(": not set\n")
 	} else {
-		fmt.Printf(": %s\n", *data)
+		var placeholder ConfigString = ConfigString(data.ClientId)
+		placeholder.ToString()
 	}
 }
 
@@ -160,23 +173,12 @@ func (data *ConfigOidcClientSecret) ToString() {
 	if data == nil {
 		fmt.Printf(": not set\n")
 	} else {
-		fmt.Printf(": %s\n", *data)
+		var placeholder ConfigString = ConfigString(data.ClientSecret)
+		placeholder.ToString()
 	}
 }
 
 func makeAMap(config *OdigosConfiguration) map[string]ConfigField {
-	var rolloutValue *bool
-	if config.Rollout != nil {
-		rolloutValue = config.Rollout.AutomaticRolloutDisabled
-	}
-	var karpenterValue *bool
-	if config.KarpenterEnabled != nil {
-		karpenterValue = config.KarpenterEnabled
-	}
-	var serviceValue *bool
-	if config.CollectorGateway != nil {
-		serviceValue = config.CollectorGateway.ServiceGraphDisabled
-	}
 	displayData := map[string]ConfigField{
 		consts.TelemetryEnabledProperty:           ConfigBool(config.TelemetryEnabled),
 		consts.OpenshiftEnabledProperty:           ConfigBool(config.OpenshiftEnabled),
@@ -197,16 +199,16 @@ func makeAMap(config *OdigosConfiguration) map[string]ConfigField {
 		consts.UserInstrumentationEnvsProperty:    (*ConfigUserEnv)(config.UserInstrumentationEnvs),
 		consts.AgentEnvVarsInjectionMethod:        (*ConfigEnvInjection)(config.AgentEnvVarsInjectionMethod),
 		consts.NodeSelectorProperty:               ConfigNodeSelector(config.NodeSelector),
-		consts.KarpenterEnabledProperty:           ConfigBoolPointer{Value: karpenterValue},
+		consts.KarpenterEnabledProperty:           ConfigBoolPointer{Value: config.KarpenterEnabled},
 		consts.RollbackDisabledProperty:           ConfigBoolPointer{Value: config.RollbackDisabled},
 		consts.RollbackGraceTimeProperty:          ConfigString(config.RollbackGraceTime),
 		consts.RollbackStabilityWindow:            ConfigString(config.RollbackStabilityWindow),
-		consts.AutomaticRolloutDisabledProperty:   ConfigBoolPointer{Value: rolloutValue},
+		consts.AutomaticRolloutDisabledProperty:   (*ConfigRollout)(config.Rollout),
 		consts.OidcTenantUrlProperty:              (*ConfigOidcTenant)(config.Oidc),
 		consts.OidcClientIdProperty:               (*ConfigOidcClientId)(config.Oidc),
 		consts.OidcClientSecretProperty:           (*ConfigOidcClientSecret)(config.Oidc),
 		consts.OdigletHealthProbeBindPortProperty: ConfigInt(config.OdigletHealthProbeBindPort),
-		consts.ServiceGraphDisabledProperty:       ConfigBoolPointer{Value: serviceValue},
+		consts.ServiceGraphDisabledProperty:       (*ConfigCollectorGateway)(config.CollectorGateway),
 		consts.GoAutoOffsetsCronProperty:          ConfigString(config.GoAutoOffsetsCron),
 		consts.ClickhouseJsonTypeEnabledProperty:  ConfigBoolPointer{Value: config.ClickhouseJsonTypeEnabledProperty},
 	}
