@@ -32,7 +32,7 @@ func (data ConfigBoolPointer) ToString() {
 type ConfigInt int
 
 func (data ConfigInt) ToString() {
-	fmt.Printf(": %b\n", data)
+	fmt.Printf(": %d\n", data)
 }
 
 type ConfigString string
@@ -75,7 +75,7 @@ func (data *ConfigMountMethod) ToString() {
 	if data == nil {
 		fmt.Printf(": not set\n")
 	} else {
-		fmt.Printf(": %v\n", data)
+		fmt.Printf(": %v\n", *data)
 	}
 }
 
@@ -92,7 +92,7 @@ func (data *ConfigEnvInjection) ToString() {
 	if data == nil {
 		fmt.Printf(": not set\n")
 	} else {
-		fmt.Printf(": %v\n", data)
+		fmt.Printf(": %v\n", *data)
 	}
 }
 
@@ -127,7 +127,7 @@ func (data *ConfigUserEnv) ToString() {
 type ConfigRollout RolloutConfiguration
 
 func (data *ConfigRollout) ToString() {
-	if data.AutomaticRolloutDisabled == nil || data == nil {
+	if data == nil || data.AutomaticRolloutDisabled == nil {
 		fmt.Printf(": not set\n")
 	} else {
 		fmt.Printf(": %v\n", *data.AutomaticRolloutDisabled)
@@ -140,7 +140,7 @@ func (data *ConfigOidcTenant) ToString() {
 	if data == nil {
 		fmt.Printf(": not set\n")
 	} else {
-		fmt.Printf(": %s\n", data)
+		fmt.Printf(": %s\n", *data)
 	}
 }
 
@@ -150,7 +150,7 @@ func (data *ConfigOidcClientId) ToString() {
 	if data == nil {
 		fmt.Printf(": not set\n")
 	} else {
-		fmt.Printf(": %s\n", data)
+		fmt.Printf(": %s\n", *data)
 	}
 }
 
@@ -160,7 +160,7 @@ func (data *ConfigOidcClientSecret) ToString() {
 	if data == nil {
 		fmt.Printf(": not set\n")
 	} else {
-		fmt.Printf(": %s\n", data)
+		fmt.Printf(": %s\n", *data)
 	}
 }
 
