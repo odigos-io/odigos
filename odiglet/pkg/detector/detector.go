@@ -2,11 +2,18 @@ package detector
 
 import (
 	"log/slog"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 	detector "github.com/odigos-io/runtime-detector"
+)
+
+const (
+	durationFilterMillisEnvKey = "ODIGOS_PROCESS_DURATION_FILTER_MILLIS"
 )
 
 func DefaultK8sDetectorOptions(logger logr.Logger, appendEnvVarNames []string) []detector.DetectorOption {
@@ -28,6 +35,18 @@ func DefaultK8sDetectorOptions(logger logr.Logger, appendEnvVarNames []string) [
 			"/sbin/tini",
 			"/usr/bin/tini",
 		),
+	}
+
+	if val, ok := os.LookupEnv(durationFilterMillisEnvKey); ok {
+		valI, err := strconv.Atoi(val)
+		if err != nil {
+			logger.Error(err, "Failed to parse ODIGOS_PROCESS_DURATION_FILTER_MILLIS env var, ignoring", "value", val)
+			return opts
+		}
+
+		d := time.Duration(valI) * time.Millisecond
+		logger.Info("Using duration filter from env var", "value", d)
+		opts = append(opts, detector.WithMinDuration(d))
 	}
 
 	return opts

@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/distros v0.0.0
-	github.com/odigos-io/runtime-detector v0.0.9
+	github.com/odigos-io/runtime-detector v0.0.15
 	go.opentelemetry.io/otel v1.37.0
 	go.opentelemetry.io/otel/metric v1.37.0
 	golang.org/x/sync v0.16.0

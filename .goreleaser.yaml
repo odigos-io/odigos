@@ -42,7 +42,7 @@ release:
 brews:
   - repository:
       owner: odigos-io
-      name: '{{ if eq .Env.IS_RC "true" }}homebrew-odigos-cli-rc{{ else }}homebrew-odigos-cli{{ end }}'
+      name: '{{ if eq .Env.IS_PRERELEASE "true" }}homebrew-odigos-cli-rc{{ else }}homebrew-odigos-cli{{ end }}'
       token: "{{ .Env.HOMEBREW_GITHUB_API_TOKEN }}"
     commit_msg_template: "release: {{ .Tag }}"
     ids:
