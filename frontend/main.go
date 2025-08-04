@@ -145,6 +145,14 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	// Enable CORS
 	r.Use(cors.Default())
 
+	// Enable security headers
+	r.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Content-Security-Policy", "default-src 'self'")
+		c.Writer.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+		c.Writer.Header().Set("X-Frame-Options", "DENY")
+		c.Next()
+	})
+
 	// Readiness and Liveness probes
 	r.GET("/readyz", func(c *gin.Context) {
 		if kube.DefaultClient == nil {
