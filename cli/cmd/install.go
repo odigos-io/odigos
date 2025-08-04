@@ -377,6 +377,7 @@ func CreateOdigosConfiguration(odigosTier common.OdigosTier, nodeSelector map[st
 		ImagePrefix:               imagePrefix,
 		Profiles:                  selectedProfiles,
 		UiMode:                    common.UiMode(uiMode),
+		UiPaginationLimit:         100,
 		ClusterName:               clusterName,
 		CentralBackendURL:         centralBackendURL,
 		UserInstrumentationEnvs:   parsedUserJson,
