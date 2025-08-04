@@ -8,6 +8,7 @@ const (
 	CurrentNamespaceEnvVar  = "CURRENT_NS"
 	OdigosVersionEnvVarName = "ODIGOS_VERSION"
 	OdigosTierEnvVarName    = "ODIGOS_TIER"
+	OdigosEbpfLogsName      = "ODIGOS_EBPF_LOGS"
 	DefaultOdigosNamespace  = "odigos-system"
 	OdigosConfigurationName = "odigos-configuration"
 	// Deprecated: only used for migrations
