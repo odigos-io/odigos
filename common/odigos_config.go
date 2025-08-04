@@ -166,16 +166,17 @@ type OdigosConfiguration struct {
 	ClusterName               string                         `json:"clusterName,omitempty" yaml:"clusterName"`
 	MountMethod               *MountMethod                   `json:"mountMethod,omitempty" yaml:"mountMethod"`
 	//nolint:lll // CustomContainerRuntimeSocketPath line is long due to struct tag requirements
-	CustomContainerRuntimeSocketPath string                   `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
-	AgentEnvVarsInjectionMethod      *EnvInjectionMethod      `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
-	UserInstrumentationEnvs          *UserInstrumentationEnvs `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
-	NodeSelector                     map[string]string        `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
-	KarpenterEnabled                 *bool                    `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
-	Rollout                          *RolloutConfiguration    `json:"rollout,omitempty" yaml:"rollout"`
-	RollbackDisabled                 *bool                    `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
-	RollbackGraceTime                string                   `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
-	RollbackStabilityWindow          string                   `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
-	Oidc                             *OidcConfiguration       `json:"oidc,omitempty" yaml:"oidc"`
-	OdigletHealthProbeBindPort       int                      `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
-  GoAutoOffsetsCron                string                   `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
+	CustomContainerRuntimeSocketPath  string                   `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
+	AgentEnvVarsInjectionMethod       *EnvInjectionMethod      `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
+	UserInstrumentationEnvs           *UserInstrumentationEnvs `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
+	NodeSelector                      map[string]string        `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
+	KarpenterEnabled                  *bool                    `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
+	Rollout                           *RolloutConfiguration    `json:"rollout,omitempty" yaml:"rollout"`
+	RollbackDisabled                  *bool                    `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
+	RollbackGraceTime                 string                   `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
+	RollbackStabilityWindow           string                   `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
+	Oidc                              *OidcConfiguration       `json:"oidc,omitempty" yaml:"oidc"`
+	OdigletHealthProbeBindPort        int                      `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
+	GoAutoOffsetsCron                 string                   `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
+	ClickhouseJsonTypeEnabledProperty *bool                    `json:"clickhouseJsonTypeEnabled,omitempty"`
 }

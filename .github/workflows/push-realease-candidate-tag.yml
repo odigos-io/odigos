@@ -1,0 +1,72 @@
+name: 'Push RC Tag After Merge'
+
+on:
+  push:
+    branches:
+      - 'releases/**'
+
+permissions:
+  contents: write  # Required to push tags using the GITHUB_TOKEN
+
+jobs:
+  tag-rc-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history required to create tags
+          token: ${{ secrets.RELEASE_BOT_TOKEN }}
+
+      - name: Extract RC tag from commit message
+        id: extract_tag
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          echo "Commit message: $COMMIT_MSG"
+
+          # Extract the tag version from the message (e.g., v1.0.214-rc3)
+          RC_TAG=$(echo "$COMMIT_MSG" | grep -oE '^This is an automated PR for the release candidate v[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+')
+
+          if [[ -z "$RC_TAG" ]]; then
+            echo "No RC tag found in commit message. Skipping."
+            exit 0
+          fi
+
+          echo "Found RC tag: $RC_TAG"
+          echo "TAG=$RC_TAG" >> $GITHUB_ENV
+
+      - name: Push RC tag to upstream
+        if: env.TAG != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          # Configure Git user identity for the workflow using the actor who triggered it
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}"
+
+          RC_TAG="${{ env.TAG }}"
+
+          # Check if tag already exists
+          if git rev-parse "$RC_TAG" >/dev/null 2>&1; then
+            echo "Tag $RC_TAG already exists. Skipping push."
+            exit 0
+          fi
+
+          # Create and push the tag
+          git tag "$RC_TAG"
+          git push origin "$RC_TAG"
+
+          # Notify Slack on success
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"✅ Odigos release candidate pushed successfully with the tag: $RC_TAG"}' \
+          $SLACK_WEBHOOK_URL
+
+      - name: Notify Slack on Failure
+        if: ${{ failure() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"❌ Odigos release candidate push failed for tag: ${{ env.TAG }}"}' \
+            $SLACK_WEBHOOK_URL

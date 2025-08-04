@@ -33,14 +33,17 @@ jobs:
             exit 1
           fi
 
-      - name: Check Release Candidate
+      - name: Check Release Type
         run: |
-          if [[ "${{ env.TAG }}" == *"-rc"* ]]; then
-            echo "IS_RC=true" >> $GITHUB_ENV
-            echo "This is a Release Candidate build"
+          TAG="${{ env.TAG }}"
+          
+          # Check if it's a pre-release (has additional suffix after vX.Y.Z)
+          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+- ]]; then
+            echo "IS_PRERELEASE=true" >> $GITHUB_ENV
+            echo "This is a pre-release: $TAG"
           else
-            echo "IS_RC=false" >> $GITHUB_ENV
-            echo "This is a regular release build"
+            echo "IS_PRERELEASE=false" >> $GITHUB_ENV
+            echo "This is a stable release: $TAG"
           fi
 
       - uses: actions/checkout@v4
@@ -121,7 +124,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
-          IS_RC: ${{ env.IS_RC }}
+          IS_PRERELEASE: ${{ env.IS_PRERELEASE }}
+          GORELEASER_CURRENT_TAG: ${{ env.TAG }}
 
       - uses: ko-build/setup-ko@v0.9
 
@@ -151,7 +155,13 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos CLI released successfully", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+          if [[ "${{ env.IS_PRERELEASE }}" == "false" ]]; then
+            DESCRIPTION="Odigos CLI stable release completed successfully"
+          else
+            DESCRIPTION="Odigos CLI pre-release completed successfully"
+          fi
+          
+          curl -X POST -H 'Content-type: application/json' --data "{\"description\":\"$DESCRIPTION\", \"tag\":\"${{ env.TAG }}\"}" ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack on Failure
         if: ${{ failure() || cancelled() }}
