@@ -41,6 +41,7 @@ type Config struct {
 type ResolverRoot interface {
 	ComputePlatform() ComputePlatformResolver
 	K8sActualNamespace() K8sActualNamespaceResolver
+	K8sSource() K8sSourceResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 }
@@ -772,6 +773,9 @@ type ComputePlatformResolver interface {
 }
 type K8sActualNamespaceResolver interface {
 	Sources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error)
+}
+type K8sSourceResolver interface {
+	MarkedForInstrumentation(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceMakredForInstrumentation, error)
 }
 type MutationResolver interface {
 	UpdateAPIToken(ctx context.Context, token string) (bool, error)
@@ -14186,7 +14190,7 @@ func (ec *executionContext) _K8sSource_markedForInstrumentation(ctx context.Cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MarkedForInstrumentation, nil
+		return ec.resolvers.K8sSource().MarkedForInstrumentation(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14207,8 +14211,8 @@ func (ec *executionContext) fieldContext_K8sSource_markedForInstrumentation(_ co
 	fc = &graphql.FieldContext{
 		Object:     "K8sSource",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "markedForInstrumentation":
@@ -31267,28 +31271,59 @@ func (ec *executionContext) _K8sSource(ctx context.Context, sel ast.SelectionSet
 		case "namespace":
 			out.Values[i] = ec._K8sSource_namespace(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "kind":
 			out.Values[i] = ec._K8sSource_kind(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._K8sSource_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "sourceHealthStatus":
 			out.Values[i] = ec._K8sSource_sourceHealthStatus(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "markedForInstrumentation":
-			out.Values[i] = ec._K8sSource_markedForInstrumentation(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sSource_markedForInstrumentation(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "runtimeInfo":
 			out.Values[i] = ec._K8sSource_runtimeInfo(ctx, field, obj)
 		case "agentEnabled":
@@ -31302,7 +31337,7 @@ func (ec *executionContext) _K8sSource(ctx context.Context, sel ast.SelectionSet
 		case "podsDesiredState":
 			out.Values[i] = ec._K8sSource_podsDesiredState(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -35991,6 +36026,10 @@ func (ec *executionContext) unmarshalNK8sSourceId2ᚕᚖgithubᚗcomᚋodigosᚑ
 func (ec *executionContext) unmarshalNK8sSourceId2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceID(ctx context.Context, v any) (*model.K8sSourceID, error) {
 	res, err := ec.unmarshalInputK8sSourceId(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNK8sSourceMakredForInstrumentation2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceMakredForInstrumentation(ctx context.Context, sel ast.SelectionSet, v model.K8sSourceMakredForInstrumentation) graphql.Marshaler {
+	return ec._K8sSourceMakredForInstrumentation(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNK8sSourceMakredForInstrumentation2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceMakredForInstrumentation(ctx context.Context, sel ast.SelectionSet, v *model.K8sSourceMakredForInstrumentation) graphql.Marshaler {

@@ -1205,12 +1205,26 @@ func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceCo
 
 // Sources is the resolver for the sources field.
 func (r *queryResolver) Sources(ctx context.Context, filter *model.SourceFilter) ([]*model.K8sSource, error) {
-	src1 := model.K8sSource{
-		Namespace: "foo",
-		Kind:      model.K8sResourceKindDeployment,
-		Name:      "bar",
+
+	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
 	}
-	return []*model.K8sSource{&src1}, nil
+
+	sources := make([]*model.K8sSource, 0)
+	for _, config := range instrumentationConfigs.Items {
+		pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(config.Name, config.Namespace)
+		if err != nil {
+			return nil, err
+		}
+
+		sources = append(sources, &model.K8sSource{
+			Namespace: pw.Namespace,
+			Kind:      model.K8sResourceKind(pw.Kind),
+			Name:      pw.Name,
+		})
+	}
+	return sources, nil
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.

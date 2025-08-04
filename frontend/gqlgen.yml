@@ -66,4 +66,7 @@ models:
     fields:
       sources:
         resolver: true
-    
+  K8sSource:
+    fields:
+      markedForInstrumentation:
+        resolver: true
