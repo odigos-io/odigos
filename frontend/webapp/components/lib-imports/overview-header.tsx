@@ -3,16 +3,17 @@ import { useStatusStore } from '@/store';
 import { StatusType } from '@odigos/ui-kit/types';
 import { OdigosLogoText } from '@odigos/ui-kit/icons';
 import { FORM_ALERTS } from '@odigos/ui-kit/constants';
-import { useConfig, useDescribe, useTokenCRUD } from '@/hooks';
 import { Header, Status, Tooltip } from '@odigos/ui-kit/components';
-import { NotificationManager, SlackInvite, SystemOverview, ToggleDarkMode } from '@odigos/ui-kit/containers';
+import { useConfig, useDescribe, useOdigosConfigCRUD, useTokenCRUD } from '@/hooks';
+import { NotificationManager, SlackInvite, SystemOverview, SystemSettings, ToggleDarkMode } from '@odigos/ui-kit/containers';
 
 const OverviewHeader = () => {
   const { status, title, message } = useStatusStore();
 
-  const { isReadonly } = useConfig();
+  const { isReadonly, installationMethod } = useConfig();
   const { fetchDescribeOdigos } = useDescribe();
   const { tokens, updateToken } = useTokenCRUD();
+  const { fetchOdigosConfig, updateOdigosConfig } = useOdigosConfigCRUD();
 
   return (
     <Header
@@ -27,8 +28,9 @@ const OverviewHeader = () => {
       ]}
       right={[
         <ToggleDarkMode key='toggle-theme' />,
-        <SystemOverview key='system-overview' tokens={tokens} saveToken={updateToken} fetchDescribeOdigos={fetchDescribeOdigos} />,
         <NotificationManager key='notifs' />,
+        <SystemOverview key='system-overview' tokens={tokens} saveToken={updateToken} fetchDescribeOdigos={fetchDescribeOdigos} />,
+        <SystemSettings key='system-settings' installationMethod={installationMethod} fetchSettings={fetchOdigosConfig} onSave={updateOdigosConfig} />,
         <SlackInvite key='slack' />,
       ]}
     />
