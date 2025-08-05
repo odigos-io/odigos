@@ -293,6 +293,20 @@ spec:
               from_field: "db.system"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
+          "go.opentelemetry.io/auto/github.com/go-redis/redis/v8":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+          "go.opentelemetry.io/auto/github.com/go-redis/redis/v9":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
           "go.opentelemetry.io/auto/github.com/elastic/go-elasticsearch":
             - new_attribute: "odigos.category"
               value: "Database"
