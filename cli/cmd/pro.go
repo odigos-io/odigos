@@ -297,7 +297,7 @@ var activateCmd = &cobra.Command{
 		// Since Karpenter uses a different labeling system that has no separation between OSS and enterprise,
 		// we want to avoid potential user apps from crashing in case they are scheduled on a node where the
 		// enterprise files are not yet found in the /var/odigos mount.
-		if odigosConfiguration.KarpenterEnabled != nil && *odigosConfiguration.KarpenterEnabled {
+		if odigosConfiguration.KarpenterEnabled.Value != nil && *odigosConfiguration.KarpenterEnabled.Value {
 			fmt.Println("\033[31mERROR\033[0m Activation is not supported when odigos is installed with 'KarpenterEnabled' option. uninstall odigos community and reinstall odigos with enterprise onprem token")
 			os.Exit(1)
 		}

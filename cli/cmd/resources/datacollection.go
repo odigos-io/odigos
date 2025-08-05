@@ -25,7 +25,7 @@ func NewDataCollectionServiceAccount(ns string) *corev1.ServiceAccount {
 	}
 }
 
-func NewDataCollectionClusterRole(psp bool) *rbacv1.ClusterRole {
+func NewDataCollectionClusterRole(psp common.ConfigBool) *rbacv1.ClusterRole {
 	clusterrole := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",

@@ -272,7 +272,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get current odigos configuration"))
 	}
-	if odigosConfiguration.ClickhouseJsonTypeEnabledProperty != nil && *odigosConfiguration.ClickhouseJsonTypeEnabledProperty {
+	if odigosConfiguration.ClickhouseJsonTypeEnabledProperty.Value != nil && *odigosConfiguration.ClickhouseJsonTypeEnabledProperty.Value {
 		desiredDeployment.Spec.Template.Spec.Containers[0].Args = append(
 			desiredDeployment.Spec.Template.Spec.Containers[0].Args,
 			"--feature-gates=clickhouse.json",

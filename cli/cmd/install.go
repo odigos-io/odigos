@@ -63,6 +63,53 @@ var (
 	autoRollbackStabilityWindows string
 )
 
+// makes copies of all variables above that has those variables as the common.[] version. needed because value types in odigos_config.go
+// changed, it affects functions all over, it won't accept a bool now but a ConfigBool (for example)
+var (
+	namespaceFlagNew                    string
+	versionFlagNew                      string
+	skipWaitNew                         bool
+	telemetryEnabledNew                 common.ConfigBool
+	openshiftEnabledNew                 common.ConfigBool
+	skipWebhookIssuerCreationNew        common.ConfigBool
+	pspNew                              common.ConfigBool
+	userInputIgnoredNamespacesNew       []string
+	userInputIgnoredContainersNew       []string
+	userInputInstallProfilesNew         []string
+	uiModeNew                           string
+	customContainerRuntimeSocketPathNew common.ConfigString
+	k8sNodeLogsDirectoryNew             string
+	instrumentorImageNew                string
+	odigletImageNew                     string
+	autoScalerImageNew                  string
+	imagePrefixNew                      common.ConfigString
+	nodeSelectorFlagNew                 string
+	karpenterEnabledNew                 bool
+
+	clusterNameNew       common.ConfigString
+	centralBackendURLNew common.ConfigString
+
+	userInstrumentationEnvsRawNew string
+
+	autoRollbackDisabledNew         common.ConfigBoolPointer
+	autoRollbackGraceTimeNew        common.ConfigString
+	autoRollbackStabilityWindowsNew common.ConfigString
+)
+
+func updateVariables() {
+	telemetryEnabledNew = common.ConfigBool(telemetryEnabled)
+	openshiftEnabledNew = common.ConfigBool(openshiftEnabled)
+	skipWebhookIssuerCreationNew = common.ConfigBool(skipWebhookIssuerCreation)
+	pspNew = common.ConfigBool(psp)
+	imagePrefixNew = common.ConfigString(imagePrefix)
+	clusterNameNew = common.ConfigString(clusterName)
+	centralBackendURLNew = common.ConfigString(centralBackendURL)
+	customContainerRuntimeSocketPathNew = common.ConfigString(customContainerRuntimeSocketPath)
+	autoRollbackGraceTimeNew = common.ConfigString(autoRollbackGraceTime)
+	autoRollbackStabilityWindowsNew = common.ConfigString(autoRollbackStabilityWindows)
+	autoRollbackDisabledNew = common.ConfigBoolPointer{Value: &autoRollbackDisabled}
+}
+
 type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error
 
 // installCmd represents the install command
@@ -362,29 +409,31 @@ func CreateOdigosConfiguration(odigosTier common.OdigosTier, nodeSelector map[st
 		}
 	}
 
+	updateVariables()
+
 	return common.OdigosConfiguration{
 		ConfigVersion:                    1, // config version starts at 1 and incremented on every config change
-		TelemetryEnabled:                 telemetryEnabled,
-		OpenshiftEnabled:                 openshiftEnabled,
+		TelemetryEnabled:                 telemetryEnabledNew,
+		OpenshiftEnabled:                 openshiftEnabledNew,
 		IgnoredNamespaces:                userInputIgnoredNamespaces,
-		CustomContainerRuntimeSocketPath: customContainerRuntimeSocketPath,
+		CustomContainerRuntimeSocketPath: customContainerRuntimeSocketPathNew,
 		CollectorNode: &common.CollectorNodeConfiguration{
 			K8sNodeLogsDirectory: k8sNodeLogsDirectory,
 		},
 		IgnoredContainers:         userInputIgnoredContainers,
-		SkipWebhookIssuerCreation: skipWebhookIssuerCreation,
-		Psp:                       psp,
-		ImagePrefix:               imagePrefix,
+		SkipWebhookIssuerCreation: skipWebhookIssuerCreationNew,
+		Psp:                       pspNew,
+		ImagePrefix:               imagePrefixNew,
 		Profiles:                  selectedProfiles,
 		UiMode:                    common.UiMode(uiMode),
 		UiPaginationLimit:         100,
-		ClusterName:               clusterName,
-		CentralBackendURL:         centralBackendURL,
+		ClusterName:               clusterNameNew,
+		CentralBackendURL:         centralBackendURLNew,
 		UserInstrumentationEnvs:   parsedUserJson,
 		NodeSelector:              nodeSelector,
-		RollbackDisabled:          &autoRollbackDisabled,
-		RollbackGraceTime:         autoRollbackGraceTime,
-		RollbackStabilityWindow:   autoRollbackStabilityWindows,
+		RollbackDisabled:          autoRollbackDisabledNew,
+		RollbackGraceTime:         autoRollbackGraceTimeNew,
+		RollbackStabilityWindow:   autoRollbackStabilityWindowsNew,
 	}
 
 }

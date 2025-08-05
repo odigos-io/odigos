@@ -169,37 +169,37 @@ func (data *ConfigOidcClientSecret) ToString() {
 
 func makeAMap(config *OdigosConfiguration) map[string]ConfigField {
 	displayData := map[string]ConfigField{
-		consts.TelemetryEnabledProperty:           ConfigBool(config.TelemetryEnabled),
-		consts.OpenshiftEnabledProperty:           ConfigBool(config.OpenshiftEnabled),
-		consts.PspProperty:                        ConfigBool(config.Psp),
-		consts.SkipWebhookIssuerCreationProperty:  ConfigBool(config.SkipWebhookIssuerCreation),
-		consts.AllowConcurrentAgentsProperty:      ConfigBoolPointer{Value: config.AllowConcurrentAgents},
-		consts.ImagePrefixProperty:                ConfigString(config.ImagePrefix),
-		consts.UiModeProperty:                     ConfigString(config.UiMode),
-		consts.UiPaginationLimitProperty:          ConfigInt(config.UiPaginationLimit),
-		consts.UiRemoteUrlProperty:                ConfigString(config.UiRemoteUrl),
-		consts.CentralBackendURLProperty:          ConfigString(config.CentralBackendURL),
-		consts.ClusterNameProperty:                ConfigString(config.ClusterName),
-		consts.IgnoredNamespacesProperty:          ConfigStringList(config.IgnoredNamespaces),
-		consts.IgnoredContainersProperty:          ConfigStringList(config.IgnoredContainers),
+		consts.TelemetryEnabledProperty:           config.TelemetryEnabled,
+		consts.OpenshiftEnabledProperty:           config.OpenshiftEnabled,
+		consts.PspProperty:                        config.Psp,
+		consts.SkipWebhookIssuerCreationProperty:  config.SkipWebhookIssuerCreation,
+		consts.AllowConcurrentAgentsProperty:      config.AllowConcurrentAgents,
+		consts.ImagePrefixProperty:                config.ImagePrefix,
+		consts.UiModeProperty:                     config.UiMode,
+		consts.UiPaginationLimitProperty:          config.UiPaginationLimit,
+		consts.UiRemoteUrlProperty:                config.UiRemoteUrl,
+		consts.CentralBackendURLProperty:          config.CentralBackendURL,
+		consts.ClusterNameProperty:                config.ClusterName,
+		consts.IgnoredNamespacesProperty:          config.IgnoredNamespaces,
+		consts.IgnoredContainersProperty:          config.IgnoredContainers,
 		consts.MountMethodProperty:                config.MountMethod,
-		consts.CustomContainerRuntimeSocketPath:   ConfigString(config.CustomContainerRuntimeSocketPath),
+		consts.CustomContainerRuntimeSocketPath:   config.CustomContainerRuntimeSocketPath,
 		consts.K8sNodeLogsDirectory:               config.CollectorNode,
 		consts.UserInstrumentationEnvsProperty:    config.UserInstrumentationEnvs,
 		consts.AgentEnvVarsInjectionMethod:        config.AgentEnvVarsInjectionMethod,
-		consts.NodeSelectorProperty:               ConfigNodeSelector(config.NodeSelector),
-		consts.KarpenterEnabledProperty:           ConfigBoolPointer{Value: config.KarpenterEnabled},
-		consts.RollbackDisabledProperty:           ConfigBoolPointer{Value: config.RollbackDisabled},
-		consts.RollbackGraceTimeProperty:          ConfigString(config.RollbackGraceTime),
-		consts.RollbackStabilityWindow:            ConfigString(config.RollbackStabilityWindow),
+		consts.NodeSelectorProperty:               config.NodeSelector,
+		consts.KarpenterEnabledProperty:           config.KarpenterEnabled,
+		consts.RollbackDisabledProperty:           config.RollbackDisabled,
+		consts.RollbackGraceTimeProperty:          config.RollbackGraceTime,
+		consts.RollbackStabilityWindow:            config.RollbackStabilityWindow,
 		consts.AutomaticRolloutDisabledProperty:   config.Rollout,
 		consts.OidcTenantUrlProperty:              (*ConfigOidcTenant)(config.Oidc),
 		consts.OidcClientIdProperty:               (*ConfigOidcClientId)(config.Oidc),
 		consts.OidcClientSecretProperty:           (*ConfigOidcClientSecret)(config.Oidc),
-		consts.OdigletHealthProbeBindPortProperty: ConfigInt(config.OdigletHealthProbeBindPort),
+		consts.OdigletHealthProbeBindPortProperty: config.OdigletHealthProbeBindPort,
 		consts.ServiceGraphDisabledProperty:       config.CollectorGateway,
-		consts.GoAutoOffsetsCronProperty:          ConfigString(config.GoAutoOffsetsCron),
-		consts.ClickhouseJsonTypeEnabledProperty:  ConfigBoolPointer{Value: config.ClickhouseJsonTypeEnabledProperty},
+		consts.GoAutoOffsetsCronProperty:          config.GoAutoOffsetsCron,
+		consts.ClickhouseJsonTypeEnabledProperty:  config.ClickhouseJsonTypeEnabledProperty,
 	}
 
 	return displayData
@@ -390,40 +390,40 @@ type OidcConfiguration struct {
 }
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
+// the types are changed to the redefined types for the ToString()
 type OdigosConfiguration struct {
 	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
-	TelemetryEnabled          bool                           `json:"telemetryEnabled,omitempty" yaml:"telemetryEnabled"`
-	OpenshiftEnabled          bool                           `json:"openshiftEnabled,omitempty" yaml:"openshiftEnabled"`
-	IgnoredNamespaces         []string                       `json:"ignoredNamespaces,omitempty" yaml:"ignoredNamespaces"`
-	IgnoredContainers         []string                       `json:"ignoredContainers,omitempty" yaml:"ignoredContainers"`
-	Psp                       bool                           `json:"psp,omitempty" yaml:"psp"`
-	ImagePrefix               string                         `json:"imagePrefix,omitempty" yaml:"imagePrefix"`
-	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty" yaml:"skipWebhookIssuerCreation"`
+	TelemetryEnabled          ConfigBool                     `json:"telemetryEnabled,omitempty" yaml:"telemetryEnabled"`
+	OpenshiftEnabled          ConfigBool                     `json:"openshiftEnabled,omitempty" yaml:"openshiftEnabled"`
+	IgnoredNamespaces         ConfigStringList               `json:"ignoredNamespaces,omitempty" yaml:"ignoredNamespaces"`
+	IgnoredContainers         ConfigStringList               `json:"ignoredContainers,omitempty" yaml:"ignoredContainers"`
+	Psp                       ConfigBool                     `json:"psp,omitempty" yaml:"psp"`
+	ImagePrefix               ConfigString                   `json:"imagePrefix,omitempty" yaml:"imagePrefix"`
+	SkipWebhookIssuerCreation ConfigBool                     `json:"skipWebhookIssuerCreation,omitempty" yaml:"skipWebhookIssuerCreation"`
 	CollectorGateway          *CollectorGatewayConfiguration `json:"collectorGateway,omitempty" yaml:"collectorGateway"`
 	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty" yaml:"collectorNode"`
 	Profiles                  []ProfileName                  `json:"profiles,omitempty" yaml:"profiles"`
-	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty" yaml:"allowConcurrentAgents"`
+	AllowConcurrentAgents     ConfigBoolPointer              `json:"allowConcurrentAgents,omitempty" yaml:"allowConcurrentAgents"`
 	UiMode                    UiMode                         `json:"uiMode,omitempty" yaml:"uiMode"`
-	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty" yaml:"uiPaginationLimit"`
-	UiRemoteUrl               string                         `json:"uiRemoteUrl,omitempty" yaml:"uiRemoteUrl"`
-	CentralBackendURL         string                         `json:"centralBackendURL,omitempty" yaml:"centralBackendURL"`
-	ClusterName               string                         `json:"clusterName,omitempty" yaml:"clusterName"`
+	UiPaginationLimit         ConfigInt                      `json:"uiPaginationLimit,omitempty" yaml:"uiPaginationLimit"`
+	UiRemoteUrl               ConfigString                   `json:"uiRemoteUrl,omitempty" yaml:"uiRemoteUrl"`
+	CentralBackendURL         ConfigString                   `json:"centralBackendURL,omitempty" yaml:"centralBackendURL"`
+	ClusterName               ConfigString                   `json:"clusterName,omitempty" yaml:"clusterName"`
 	MountMethod               *MountMethod                   `json:"mountMethod,omitempty" yaml:"mountMethod"`
 	//nolint:lll // CustomContainerRuntimeSocketPath line is long due to struct tag requirements
-	CustomContainerRuntimeSocketPath  string                   `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
+
+	CustomContainerRuntimeSocketPath  ConfigString             `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
 	AgentEnvVarsInjectionMethod       *EnvInjectionMethod      `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
 	UserInstrumentationEnvs           *UserInstrumentationEnvs `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
-	NodeSelector                      map[string]string        `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
-	KarpenterEnabled                  *bool                    `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
+	NodeSelector                      ConfigNodeSelector       `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
+	KarpenterEnabled                  ConfigBoolPointer        `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
 	Rollout                           *RolloutConfiguration    `json:"rollout,omitempty" yaml:"rollout"`
-	RollbackDisabled                  *bool                    `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
-	RollbackGraceTime                 string                   `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
-	RollbackStabilityWindow           string                   `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
+	RollbackDisabled                  ConfigBoolPointer        `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
+	RollbackGraceTime                 ConfigString             `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
+	RollbackStabilityWindow           ConfigString             `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
 	Oidc                              *OidcConfiguration       `json:"oidc,omitempty" yaml:"oidc"`
-	OdigletHealthProbeBindPort        int                      `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
-	GoAutoOffsetsCron                 string                   `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
-	ClickhouseJsonTypeEnabledProperty *bool                    `json:"clickhouseJsonTypeEnabled,omitempty"`
-	CheckDeviceHealthBeforeInjection  *bool                    `json:"checkDeviceHealthBeforeInjection,omitempty"`
-
-	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
+	OdigletHealthProbeBindPort        ConfigInt                `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
+	GoAutoOffsetsCron                 ConfigString             `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
+	ClickhouseJsonTypeEnabledProperty ConfigBoolPointer        `json:"clickhouseJsonTypeEnabled,omitempty"`
+	AllowedTestConnectionHosts        []string                 `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
 }

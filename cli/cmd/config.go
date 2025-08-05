@@ -225,42 +225,52 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 	switch property {
 	case consts.TelemetryEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.TelemetryEnabled = boolValue
+		val := common.ConfigBool(boolValue)
+		config.TelemetryEnabled = val
 
 	case consts.OpenshiftEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.OpenshiftEnabled = boolValue
+		val := common.ConfigBool(boolValue)
+		config.OpenshiftEnabled = val
 
 	case consts.PspProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.Psp = boolValue
+		val := common.ConfigBool(boolValue)
+		config.Psp = val
 
 	case consts.SkipWebhookIssuerCreationProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.SkipWebhookIssuerCreation = boolValue
+		val := common.ConfigBool(boolValue)
+		config.SkipWebhookIssuerCreation = val
 
 	case consts.AllowConcurrentAgentsProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.AllowConcurrentAgents = &boolValue
+		val := common.ConfigBoolPointer{Value: &boolValue}
+		config.AllowConcurrentAgents = val
 
 	case consts.ImagePrefixProperty:
-		config.ImagePrefix = value[0]
+		val := common.ConfigString(value[0])
+		config.ImagePrefix = val
 
 	case consts.UiModeProperty:
 		config.UiMode = common.UiMode(value[0])
 
 	case consts.UiPaginationLimitProperty:
 		intValue, _ := strconv.Atoi(value[0])
-		config.UiPaginationLimit = intValue
+		val := common.ConfigInt(intValue)
+		config.UiPaginationLimit = val
 
 	case consts.UiRemoteUrlProperty:
-		config.UiRemoteUrl = value[0]
+		val := common.ConfigString(value[0])
+		config.UiRemoteUrl = val
 
 	case consts.CentralBackendURLProperty:
-		config.CentralBackendURL = value[0]
+		val := common.ConfigString(value[0])
+		config.CentralBackendURL = val
 
 	case consts.ClusterNameProperty:
-		config.ClusterName = value[0]
+		val := common.ConfigString(value[0])
+		config.ClusterName = val
 
 	case consts.IgnoredNamespacesProperty:
 		config.IgnoredNamespaces = value
@@ -273,7 +283,8 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 		config.MountMethod = &mountMethod
 
 	case consts.CustomContainerRuntimeSocketPath:
-		config.CustomContainerRuntimeSocketPath = value[0]
+		val := common.ConfigString(value[0])
+		config.CustomContainerRuntimeSocketPath = val
 
 	case consts.K8sNodeLogsDirectory:
 		if config.CollectorNode == nil {
@@ -300,17 +311,21 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 
 	case consts.KarpenterEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.KarpenterEnabled = &boolValue
+		val := common.ConfigBoolPointer{Value: &boolValue}
+		config.KarpenterEnabled = val
 
 	case consts.RollbackDisabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.RollbackDisabled = &boolValue
+		val := common.ConfigBoolPointer{Value: &boolValue}
+		config.RollbackDisabled = val
 
 	case consts.RollbackGraceTimeProperty:
-		config.RollbackGraceTime = value[0]
+		val := common.ConfigString(value[0])
+		config.RollbackGraceTime = val
 
 	case consts.RollbackStabilityWindow:
-		config.RollbackStabilityWindow = value[0]
+		val := common.ConfigString(value[0])
+		config.RollbackStabilityWindow = val
 
 	case consts.AutomaticRolloutDisabledProperty:
 		if config.Rollout == nil {
@@ -379,7 +394,8 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 
 	case consts.OdigletHealthProbeBindPortProperty:
 		intValue, _ := strconv.Atoi(value[0])
-		config.OdigletHealthProbeBindPort = intValue
+		val := common.ConfigInt(intValue)
+		config.OdigletHealthProbeBindPort = val
 	case consts.GoAutoOffsetsCronProperty:
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -391,11 +407,13 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 				return fmt.Errorf("invalid cron schedule: %v", err)
 			}
 		}
-		config.GoAutoOffsetsCron = cronValue
+		val := common.ConfigString(cronValue)
+		config.GoAutoOffsetsCron = val
 
 	case consts.ClickhouseJsonTypeEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.ClickhouseJsonTypeEnabledProperty = &boolValue
+		val := common.ConfigBoolPointer{Value: &boolValue}
+		config.ClickhouseJsonTypeEnabledProperty = val
 
 	case consts.AllowedTestConnectionHostsProperty:
 		config.AllowedTestConnectionHosts = value
