@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"os"
 	"sort"
 
 	"github.com/odigos-io/odigos/common/consts"
@@ -14,7 +15,7 @@ type ConfigField interface {
 type ConfigBool bool
 
 func (data ConfigBool) ToString() {
-	fmt.Printf(": %t\n", data)
+	fmt.Printf("%t\n", data)
 }
 
 type ConfigBoolPointer struct {
@@ -23,43 +24,43 @@ type ConfigBoolPointer struct {
 
 func (data ConfigBoolPointer) ToString() {
 	if data.Value == nil {
-		fmt.Printf(": not set\n")
+		fmt.Printf("not set\n")
 	} else {
-		fmt.Printf(": %v\n", *data.Value)
+		fmt.Printf("%v\n", *data.Value)
 	}
 }
 
 type ConfigInt int
 
 func (data ConfigInt) ToString() {
-	fmt.Printf(": %d\n", data)
+	fmt.Printf("%d\n", data)
 }
 
 type ConfigString string
 
 func (data ConfigString) ToString() {
 	if data == "" {
-		fmt.Println(": not set")
-	} else {
-		fmt.Printf(": %s\n", data)
+		fmt.Println("not set")
+		return
 	}
+	fmt.Printf("%s\n", data)
 }
 
 type ConfigStringList []string
 
 func (data ConfigStringList) ToString() {
-	fmt.Printf(": \n")
+	fmt.Printf("\n")
 	for _, value := range data {
 		fmt.Printf("		-%s,\n", value)
 	}
 
 }
 
-type ConfigCollectorNode CollectorNodeConfiguration
-
-func (data *ConfigCollectorNode) ToString() {
+// no need for a new type, since most of the ones comming up are already types that are structs
+// just give them this ToString() function to make it part of the interface
+func (data *CollectorNodeConfiguration) ToString() {
 	if data == nil {
-		fmt.Println(": not set")
+		fmt.Println("not set")
 		return
 	} else {
 		var placeholder ConfigString = ConfigString(data.K8sNodeLogsDirectory)
@@ -67,31 +68,23 @@ func (data *ConfigCollectorNode) ToString() {
 	}
 }
 
-// go doesn't allow type to deal with pointers, so it is wrapping around MountMethod
-type ConfigMountMethod MountMethod
-
-func (data *ConfigMountMethod) ToString() {
+func (data *MountMethod) ToString() {
 	if data == nil {
-		fmt.Printf(": not set\n")
+		fmt.Printf("not set\n")
 	} else {
-		fmt.Printf(": %v\n", *data)
+		fmt.Printf("%v\n", *data)
 	}
 }
 
-// could possibly delete
-type ConfigUIMode UiMode
-
-func (data ConfigUIMode) ToString() {
-	fmt.Printf(": %v\n", data)
+func (data UiMode) ToString() {
+	fmt.Printf("%v\n", data)
 }
 
-type ConfigEnvInjection EnvInjectionMethod
-
-func (data *ConfigEnvInjection) ToString() {
+func (data *EnvInjectionMethod) ToString() {
 	if data == nil {
-		fmt.Printf(": not set\n")
+		fmt.Printf("not set\n")
 	} else {
-		fmt.Printf(": %v\n", *data)
+		fmt.Printf("%v\n", *data)
 	}
 }
 
@@ -99,57 +92,53 @@ type ConfigNodeSelector map[string]string
 
 func (data ConfigNodeSelector) ToString() {
 	if len(data) == 0 {
-		fmt.Printf(": not set\n")
+		fmt.Printf("not set\n")
 	} else {
-		fmt.Printf(": \n")
+		fmt.Printf("\n")
 		for key, value := range data {
-			fmt.Printf("key: %+v, value: %+v\n", key, value)
+			fmt.Printf("		- key: %+v, value: %+v\n", key, value)
 		}
 	}
 }
 
-type ConfigUserEnv UserInstrumentationEnvs
-
-func (data *ConfigUserEnv) ToString() {
+func (data *UserInstrumentationEnvs) ToString() {
 	if data == nil {
-		fmt.Printf(": not set\n")
+		fmt.Printf("not set\n")
 	} else if len(data.Languages) == 0 {
-		fmt.Printf(": not set\n")
+		fmt.Printf("not set\n")
 	} else {
-		fmt.Printf(": \n")
+		fmt.Printf("\n")
 		for key, value := range data.Languages {
-			fmt.Printf("language: %+v, mode: %+v\n", key, value)
+			fmt.Printf("		- language: %+v, mode: %+v\n", key, value)
 		}
 	}
 }
 
-type ConfigRollout RolloutConfiguration
-
-func (data *ConfigRollout) ToString() {
+func (data *RolloutConfiguration) ToString() {
 	if data == nil {
-		fmt.Printf(": not set\n")
+		fmt.Printf("not set\n")
 	} else {
 		placeholder := ConfigBoolPointer{Value: data.AutomaticRolloutDisabled}
 		placeholder.ToString()
 	}
 }
 
-type ConfigCollectorGateway CollectorGatewayConfiguration
-
-func (data *ConfigCollectorGateway) ToString() {
+func (data *CollectorGatewayConfiguration) ToString() {
 	if data == nil {
-		fmt.Printf(": not set\n")
+		fmt.Printf("not set\n")
 	} else {
 		placeholder := ConfigBoolPointer{Value: data.ServiceGraphDisabled}
 		placeholder.ToString()
 	}
 }
 
+// i will keep the redefining here in order to differentiate between the three values
+// i cannot have 3 ToString() functions for the same struct
 type ConfigOidcTenant OidcConfiguration
 
 func (data *ConfigOidcTenant) ToString() {
 	if data == nil {
-		fmt.Printf(": not set\n")
+		fmt.Printf("not set\n")
 	} else {
 		var placeholder ConfigString = ConfigString(data.TenantUrl)
 		placeholder.ToString()
@@ -160,7 +149,7 @@ type ConfigOidcClientId OidcConfiguration
 
 func (data *ConfigOidcClientId) ToString() {
 	if data == nil {
-		fmt.Printf(": not set\n")
+		fmt.Printf("not set\n")
 	} else {
 		var placeholder ConfigString = ConfigString(data.ClientId)
 		placeholder.ToString()
@@ -171,7 +160,7 @@ type ConfigOidcClientSecret OidcConfiguration
 
 func (data *ConfigOidcClientSecret) ToString() {
 	if data == nil {
-		fmt.Printf(": not set\n")
+		fmt.Printf("not set\n")
 	} else {
 		var placeholder ConfigString = ConfigString(data.ClientSecret)
 		placeholder.ToString()
@@ -193,22 +182,22 @@ func makeAMap(config *OdigosConfiguration) map[string]ConfigField {
 		consts.ClusterNameProperty:                ConfigString(config.ClusterName),
 		consts.IgnoredNamespacesProperty:          ConfigStringList(config.IgnoredNamespaces),
 		consts.IgnoredContainersProperty:          ConfigStringList(config.IgnoredContainers),
-		consts.MountMethodProperty:                (*ConfigMountMethod)(config.MountMethod),
+		consts.MountMethodProperty:                config.MountMethod,
 		consts.CustomContainerRuntimeSocketPath:   ConfigString(config.CustomContainerRuntimeSocketPath),
-		consts.K8sNodeLogsDirectory:               (*ConfigCollectorNode)(config.CollectorNode),
-		consts.UserInstrumentationEnvsProperty:    (*ConfigUserEnv)(config.UserInstrumentationEnvs),
-		consts.AgentEnvVarsInjectionMethod:        (*ConfigEnvInjection)(config.AgentEnvVarsInjectionMethod),
+		consts.K8sNodeLogsDirectory:               config.CollectorNode,
+		consts.UserInstrumentationEnvsProperty:    config.UserInstrumentationEnvs,
+		consts.AgentEnvVarsInjectionMethod:        config.AgentEnvVarsInjectionMethod,
 		consts.NodeSelectorProperty:               ConfigNodeSelector(config.NodeSelector),
 		consts.KarpenterEnabledProperty:           ConfigBoolPointer{Value: config.KarpenterEnabled},
 		consts.RollbackDisabledProperty:           ConfigBoolPointer{Value: config.RollbackDisabled},
 		consts.RollbackGraceTimeProperty:          ConfigString(config.RollbackGraceTime),
 		consts.RollbackStabilityWindow:            ConfigString(config.RollbackStabilityWindow),
-		consts.AutomaticRolloutDisabledProperty:   (*ConfigRollout)(config.Rollout),
+		consts.AutomaticRolloutDisabledProperty:   config.Rollout,
 		consts.OidcTenantUrlProperty:              (*ConfigOidcTenant)(config.Oidc),
 		consts.OidcClientIdProperty:               (*ConfigOidcClientId)(config.Oidc),
 		consts.OidcClientSecretProperty:           (*ConfigOidcClientSecret)(config.Oidc),
 		consts.OdigletHealthProbeBindPortProperty: ConfigInt(config.OdigletHealthProbeBindPort),
-		consts.ServiceGraphDisabledProperty:       (*ConfigCollectorGateway)(config.CollectorGateway),
+		consts.ServiceGraphDisabledProperty:       config.CollectorGateway,
 		consts.GoAutoOffsetsCronProperty:          ConfigString(config.GoAutoOffsetsCron),
 		consts.ClickhouseJsonTypeEnabledProperty:  ConfigBoolPointer{Value: config.ClickhouseJsonTypeEnabledProperty},
 	}
@@ -227,13 +216,25 @@ func PrintMap(config *OdigosConfiguration) {
 	sort.Strings(order)
 
 	for _, key := range order {
-		fmt.Printf("	- %s", key)
+		fmt.Printf("	- %s: ", key)
 		if display[key] == nil {
-			fmt.Println(": not set")
+			fmt.Println("not set")
 		} else {
 			display[key].ToString()
 		}
 	}
+}
+
+func SpecificFeature(config *OdigosConfiguration, keyword string) {
+	result := makeAMap(config)
+	feature, err := result[keyword]
+	if !err {
+		fmt.Printf("That feature does not exist")
+		os.Exit(1)
+	}
+
+	fmt.Printf("	- %s: ", keyword)
+	feature.ToString()
 }
 
 type ProfileName string
