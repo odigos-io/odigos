@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -345,11 +346,23 @@ func (r *odigosConfigurationController) applyProfileManifests(ctx context.Contex
 		}
 	}
 
+	k8sattributesresolversList := actionsv1alpha1.K8sAttributesResolverList{}
+	err = r.Client.List(ctx, &k8sattributesresolversList, listOptions)
+	if err != nil {
+		return err
+	}
+
+	for i := range k8sattributesresolversList.Items {
+		err = r.Client.Delete(ctx, &k8sattributesresolversList.Items[i])
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 func (r *odigosConfigurationController) applySingleProfileManifest(ctx context.Context, profileName common.ProfileName, yamlBytes []byte, profileDeploymentHash string) error {
-
 	obj := &unstructured.Unstructured{}
 	err := yaml.Unmarshal(yamlBytes, obj)
 	if err != nil {
