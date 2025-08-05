@@ -300,7 +300,7 @@ spec:
               from_field: "db.system"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
-          "go.opentelemetry.io/auto/github.com/go-redis/redis/v9":
+          "go.opentelemetry.io/auto/github.com/redis/go-redis/v9":
             - new_attribute: "odigos.category"
               value: "Database"
             - new_attribute: "odigos.sub_category"
