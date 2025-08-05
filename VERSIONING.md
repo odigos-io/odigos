@@ -1,10 +1,37 @@
 # Versioning
 
-Odigos publishes 2 release types:
--  stable releases (`v1.0.X`)
--  release candidates (`v1.0.x-rcY`)
+## Release Types
 
-Stable releases are the default and recommended version to install. Release candidates are opt-in and require the user to explicitly take an action to install them.
+### Stable Releases
+
+Version of the form `v1.0.X` where X is a number, is a stable release.
+
+This is the default and recommended version to install. For production clusters, it is recommended to use only stable releases.
+
+These are versions which run the full test suite, and also been manually verified for few days by odigos team and the community.
+
+Stable releases are published once a week on Sunday, if no blockers are found.
+
+### Release Candidates
+
+Version of the form `v1.0.X-rcY` where X is a number and Y is a number starting from 0, is a release candidate.
+
+Release candidate for the next stable release is published once a week on Thursday. It includes the current state of odigos "main" branch at the time of the release candidate first initiation.
+
+Once a release candidate is published, it is used, tested, and verified by odigos team and the community. Any issue found during this process should be fixed and cherry-picked to the release branch, and a new release candidate should be published that includes the fix.
+
+Any new feature, or non-critical bug fixes during the release candidate period are merged to "main" branch normally and scheduled for the following stable release.
+
+### "Preview" or "Pre-release" Versions
+
+Version of the form `v1.0.X-prY` where X is a number and Y is a number starting from 0, is a "preview" or "pre-release" version.
+
+These versions allow a user to opt-in and test the latest features and bug fixes which are not yet scheduled for any stable release.
+
+Preview versions are published directly off the "main" branch, and are thus less stable. They should be used for testing only when the cutting edge features and bug fixes are needed.
+
+Preview versions are published on demand by odigos team based on the need.
+
 
 ## Release Process
 
@@ -15,15 +42,31 @@ The “next stable” version is currently defined as the latest version with it
 
 A stable version is a release candidate that has successfully completed the release‑candidate process and is then promoted to stable.
 
+To promote a release candidate to a stable release, trigger the [promote-to-stable](https://github.com/odigos-io/odigos/actions/workflows/promote-to-stable.yml) workflow with the tag of the release candidate.
+
+Promoting a release candidate to a stable release will:
+
+- Copy all existing images of the relevant release-candidate tag to the new stable tag.
+- Create a new stable tag (on the same commit as the release candidate tag)
+- Release odigos-cli (with the relevant embedded version and date)
+- Create a new release on github with changelog based on latest stable.
+- Trigger OpenShift Preflight and helm release.
+
 ### Release Candidate Process
 
-Before releasing a new stable version, we release a new "release candidate" (rc) version. This allows the odigos team to test and validate the new version, and for the community to pull in latest bug fixes and features and provide feedback.
+Use the [create-release-candidate](https://github.com/odigos-io/odigos/actions/workflows/create-release-candidate.yml) workflow to create a new release candidate for the next stable version.
 
-If any bugs are found in the release candidate, they should be fixed and a new release candidate should be released with the "rc" suffix incremented by 1.
+Release candidates are made from release branch in the formath "releases/v1.0.X". the first time a release candidate is triggered for a stable version, the release branch is created off the "main" branch and any future commits to the "main" branch will not be included by default in the next release.
 
-After a release candidate is tested and validated, it is promoted to a stable release.
+The workflow will check what the next stable version is, and if a release branch already exists for that version, it will use it. It will calculate the next release candidate number, and create a "Release Candidate Pull Request" to the release branch.
 
-Release candidates are always made against the next stable version, with the "-rcY" suffix, where Y is the release candidate number, starting from 0 and incrementing by 1 on every new release candidate to the same stable release version.
+This Pull Request will run the full suite of tests and validations, and requires an approver to review and approve it. Once merged, the CI will create and push a tag for the release candidate, which will trigger odigos release process.
+
+### Preview or Pre-release Process
+
+Currently it is triggered manually by pushing a tag to the repo.
+
+When triggering this release, check what the next stable version is (not the current stable), and check if there are any existing "-pr" tags. then use "-pr0" for first preview, or increment the number for the next preview.
 
 ## Consuming Odigos Versions
 
