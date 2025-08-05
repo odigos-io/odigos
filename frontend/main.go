@@ -168,15 +168,16 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	})
 
 	// CSRF token endpoint
-	r.GET("/api/csrf-token", middlewares.CSRFTokenHandler())
-
+	r.GET("/auth/csrf-token", middlewares.CSRFTokenHandler())
 	// OIDC/OAuth2 handlers
-	r.GET("/auth/callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c) })
+	r.GET("/auth/oidc-callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c) })
+
 	// GraphQL handlers
 	r.POST("/graphql", func(c *gin.Context) { graph.GetGQLHandler(ctx, logger, odigosMetrics).ServeHTTP(c.Writer, c.Request) })
 	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
 	// SSE handler
 	r.GET("/api/events", sse.HandleSSEConnections)
+
 	// Remote CLI handlers
 	r.POST("/token/update", services.UpdateToken)
 	r.GET("/describe/odigos", services.DescribeOdigos)

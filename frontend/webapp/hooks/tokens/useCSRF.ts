@@ -43,7 +43,7 @@ export const getCSRFTokenFromServer = async (): Promise<{
   error: string | null;
 }> => {
   try {
-    const response = await fetch('/api/csrf-token', {
+    const response = await fetch('/auth/csrf-token', {
       method: 'GET',
       credentials: 'include', // Include cookies for session validation
       headers: {

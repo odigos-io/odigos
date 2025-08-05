@@ -13,27 +13,11 @@ func CSRFMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		csrfService := services.GetCSRFService()
 
-		// Skip CSRF validation for safe methods (GET, HEAD, OPTIONS)
-		method := strings.ToUpper(c.Request.Method)
-		if method == "GET" || method == "HEAD" || method == "OPTIONS" {
+		// Skip CSRF validation for non-GraphQL endpoints
+		if !strings.HasPrefix(c.Request.URL.Path, "/graphql") {
 			c.Next()
 			return
 		}
-
-		// Skip CSRF validation for health and readiness endpoints
-		if strings.HasPrefix(c.Request.URL.Path, "/healthz") ||
-			strings.HasPrefix(c.Request.URL.Path, "/readyz") {
-			c.Next()
-			return
-		}
-
-		// Skip CSRF validation for OIDC callback (it's handled by external provider)
-		if strings.HasPrefix(c.Request.URL.Path, "/auth/callback") {
-			c.Next()
-			return
-		}
-
-		// Note: GraphQL mutations will be validated here since they use POST method
 
 		// Validate CSRF token for state-changing operations
 		if err := csrfService.ValidateRequest(c.Request); err != nil {

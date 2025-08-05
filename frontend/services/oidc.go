@@ -82,8 +82,8 @@ func getOidcValuesFromConfig(ctx context.Context) (string, string, string, strin
 	if uiRemoteUrl == "" {
 		uiRemoteUrl = "http://localhost:3000"
 	}
-	if !strings.HasSuffix(uiRemoteUrl, "/auth/callback") {
-		uiRemoteUrl = fmt.Sprintf("%s/auth/callback", uiRemoteUrl)
+	if !strings.HasSuffix(uiRemoteUrl, "/auth/oidc-callback") {
+		uiRemoteUrl = fmt.Sprintf("%s/auth/oidc-callback", uiRemoteUrl)
 	}
 
 	// OIDC values
