@@ -31,7 +31,9 @@ func (u *uiResourceManager) Name() string {
 	return "UI"
 }
 
-func NewUIDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+func NewUIDeployment(ns string, version string, imagePrefix common.ConfigString, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+	// fills in for imagePrefix because it is not accepted by the function GetImageName, imagePrefix is common.ConfigString, not accepted
+	iPrefix := string(imagePrefix)
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -69,7 +71,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.UIContainerName,
-							Image: containers.GetImageName(imagePrefix, imageName, version),
+							Image: containers.GetImageName(iPrefix, imageName, version),
 							Args: []string{
 								"--namespace=$(CURRENT_NS)",
 							},
