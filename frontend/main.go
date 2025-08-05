@@ -148,6 +148,9 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	// Add security headers middleware
 	r.Use(middlewares.SecurityHeadersMiddleware)
 
+	// Add CSRF protection middleware
+	r.Use(middlewares.CSRFMiddleware())
+
 	// Readiness and Liveness probes
 	r.GET("/readyz", func(c *gin.Context) {
 		if kube.DefaultClient == nil {
@@ -163,6 +166,9 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
+
+	// CSRF token endpoint
+	r.GET("/api/csrf-token", middlewares.CSRFTokenHandler())
 
 	// OIDC/OAuth2 handlers
 	r.GET("/auth/callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c) })
