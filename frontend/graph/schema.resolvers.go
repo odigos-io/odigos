@@ -1205,7 +1205,6 @@ func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceCo
 
 // Sources is the resolver for the sources field.
 func (r *queryResolver) Sources(ctx context.Context, filter *model.SourceFilter) ([]*model.K8sSource, error) {
-
 	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err

@@ -70,3 +70,5 @@ models:
     fields:
       markedForInstrumentation:
         resolver: true
+      runtimeInfo:
+        resolver: true

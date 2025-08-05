@@ -6,61 +6,17 @@ package graph
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func getWorkloadSources(ctx context.Context, namespace string, kind model.K8sResourceKind, name string) (*v1alpha1.WorkloadSources, error) {
-
-	sources := v1alpha1.WorkloadSources{}
-
-	workloadSources, err := kube.DefaultClient.OdigosClient.Sources(namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s,%s=%s,%s=%s",
-			k8sconsts.WorkloadNameLabel, name,
-			k8sconsts.WorkloadNamespaceLabel, namespace,
-			k8sconsts.WorkloadKindLabel, string(kind),
-		),
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(workloadSources.Items) > 1 {
-		return nil, errors.New("found multiple sources for the same workload")
-	}
-	if len(workloadSources.Items) > 0 {
-		sources.Workload = &workloadSources.Items[0]
-	}
-
-	nsSources, err := kube.DefaultClient.OdigosClient.Sources(namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s,%s=%s,%s=%s",
-			k8sconsts.WorkloadNameLabel, namespace,
-			k8sconsts.WorkloadNamespaceLabel, namespace,
-			k8sconsts.WorkloadKindLabel, k8sconsts.WorkloadKindNamespace,
-		),
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(nsSources.Items) > 1 {
-		return nil, errors.New("found multiple sources for the same namespace")
-	}
-	if len(nsSources.Items) > 1 {
-		sources.Namespace = &nsSources.Items[0]
-	}
-
-	return &sources, nil
-}
-
 // MarkedForInstrumentation is the resolver for the markedForInstrumentation field.
 func (r *k8sSourceResolver) MarkedForInstrumentation(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceMakredForInstrumentation, error) {
-
 	sources, err := getWorkloadSources(ctx, obj.Namespace, obj.Kind, obj.Name)
 	if err != nil {
 		return nil, err
@@ -76,6 +32,60 @@ func (r *k8sSourceResolver) MarkedForInstrumentation(ctx context.Context, obj *m
 		DecisionEnum:             string(reason.Reason),
 		Message:                  reason.Message,
 	}, nil
+}
+
+// RuntimeInfo is the resolver for the runtimeInfo field.
+func (r *k8sSourceResolver) RuntimeInfo(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceRuntimeInfo, error) {
+	icName := workload.CalculateWorkloadRuntimeObjectName(obj.Name, string(obj.Kind))
+	ic, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(obj.Namespace).Get(ctx, icName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	var runtimeInfoReason *string
+	var runtimeInfoMessage string = "runtime detection status not yet available"
+	for _, c := range ic.Status.Conditions {
+		if c.Type == v1alpha1.RuntimeDetectionStatusConditionType {
+			runtimeInfoReason = &c.Reason
+			runtimeInfoMessage = c.Message
+		}
+	}
+
+	containers := make([]*model.K8sSourceRuntimeInfoContainer, len(ic.Status.RuntimeDetailsByContainer))
+	for i, container := range ic.Status.RuntimeDetailsByContainer {
+		var runtimeVersion *string
+		if container.RuntimeVersion != "" {
+			runtimeVersion = &container.RuntimeVersion
+		}
+		var otherAgentName *string
+		if container.OtherAgent != nil {
+			otherAgentName = &container.OtherAgent.Name
+		}
+		containers[i] = &model.K8sSourceRuntimeInfoContainer{
+			ContainerName:           container.ContainerName,
+			Language:                model.ProgrammingLanguage(container.Language),
+			RuntimeVersion:          runtimeVersion,
+			ProcessEnvVars:          envVarsToModel(container.EnvVars),
+			ContainerRuntimeEnvVars: envVarsToModel(container.EnvFromContainerRuntime),
+			CriErrorMessage:         container.CriErrorMessage,
+			LibcType:                (*string)(container.LibCType),
+			SecureExecutionMode:     container.SecureExecutionMode,
+			OtherAgentName:          otherAgentName,
+		}
+	}
+
+	runtimeInfo := &model.K8sSourceRuntimeInfo{
+		Completed: len(ic.Status.RuntimeDetailsByContainer) > 0,
+		CompletedStatus: &model.DesiredConditionStatus{
+			Name:       v1alpha1.RuntimeDetectionStatusConditionType,
+			Status:     runtimeDetectionStatusCondition(runtimeInfoReason),
+			ReasonEnum: runtimeInfoReason,
+			Message:    runtimeInfoMessage,
+		},
+		Containers: containers,
+	}
+
+	return runtimeInfo, nil
 }
 
 // K8sSource returns K8sSourceResolver implementation.
