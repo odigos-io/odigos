@@ -133,6 +133,34 @@ var describeConfigCmd = &cobra.Command{
 	},
 }
 
+var describeConfigFeatureCmd = &cobra.Command{
+	Use:   "feature <name>",
+	Short: "Show details of a specific feature in the odigos-config configmap",
+	Long:  "Print description of a specific feature in the odigos-config map giving info on whether it is are on or off",
+	Run: func(cmd *cobra.Command, args []string) {
+		name := args[0]
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		ns, err := resources.GetOdigosNamespace(client, ctx)
+
+		if err != nil {
+			log.Print("unable to get the Odigos Namespace")
+			os.Exit(1)
+		}
+
+		config, err := resources.GetCurrentConfig(ctx, client, ns)
+
+		if err != nil {
+			log.Print("unable to read the current Odigos configuration")
+			os.Exit(1)
+		}
+
+		common.SpecificFeature(config, name)
+
+	},
+}
+
 var describeSourceDeploymentCmd = &cobra.Command{
 	Use:     "deployment <name>",
 	Short:   "Show details of a specific odigos source of type deployment",
@@ -264,6 +292,7 @@ func init() {
 
 	// config
 	describeCmd.AddCommand(describeConfigCmd)
+	describeConfigCmd.AddCommand(describeConfigFeatureCmd)
 
 	// source kinds
 	describeSourceCmd.AddCommand(describeSourceDeploymentCmd)
