@@ -228,7 +228,7 @@ func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Conte
 			TypeMeta:   typeMeta,
 			ObjectMeta: objectMeta,
 			Spec: batchv1beta1.CronJobSpec{
-				Schedule: config.GoAutoOffsetsCron,
+				Schedule: string(config.GoAutoOffsetsCron),
 				JobTemplate: batchv1beta1.JobTemplateSpec{
 					Spec: batchv1.JobSpec{
 						Template: template,
@@ -242,7 +242,7 @@ func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Conte
 		TypeMeta:   typeMeta,
 		ObjectMeta: objectMeta,
 		Spec: batchv1.CronJobSpec{
-			Schedule: config.GoAutoOffsetsCron,
+			Schedule: string(config.GoAutoOffsetsCron),
 			JobTemplate: batchv1.JobTemplateSpec{
 				Spec: batchv1.JobSpec{
 					Template: template,

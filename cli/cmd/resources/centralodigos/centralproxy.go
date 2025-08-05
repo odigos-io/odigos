@@ -43,7 +43,9 @@ func (m *centralProxyResourceManager) InstallFromScratch(ctx context.Context) er
 	return m.client.ApplyResources(ctx, m.config.ConfigVersion, resources, m.managerOpts)
 }
 
-func NewCentralProxyDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+func NewCentralProxyDeployment(ns string, version string, imagePrefix common.ConfigString, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+	// fills in for imagePrefix because it is not accepted by the function GetImageName, imagePrefix is common.ConfigString, not accepted
+	iPrefix := string(imagePrefix)
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -73,12 +75,12 @@ func NewCentralProxyDeployment(ns string, version string, imagePrefix string, im
 					},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: nodeSelector,
+					NodeSelector:       nodeSelector,
 					ServiceAccountName: k8sconsts.CentralProxyServiceAccountName,
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.CentralProxyContainerName,
-							Image: containers.GetImageName(imagePrefix, imageName, version),
+							Image: containers.GetImageName(iPrefix, imageName, version),
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: k8sconsts.CentralProxyContainerPort,

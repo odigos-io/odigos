@@ -168,7 +168,7 @@ func NewAutoscalerRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewAutoscalerClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRole {
+func NewAutoscalerClusterRole(ownerPermissionEnforcement common.ConfigBool) *rbacv1.ClusterRole {
 	finalizersUpdate := []rbacv1.PolicyRule{}
 	if ownerPermissionEnforcement {
 		finalizersUpdate = append(finalizersUpdate, rbacv1.PolicyRule{
@@ -270,8 +270,9 @@ func NewAutoscalerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imageName string, collectorImage string, nodeSelector map[string]string) *appsv1.Deployment {
-
+func NewAutoscalerDeployment(ns string, version string, imagePrefix common.ConfigString, imageName string, collectorImage string, nodeSelector map[string]string) *appsv1.Deployment {
+	// fills in for imagePrefix because it is not accepted by the function GetImageName, imagePrefix is common.ConfigString, not accepted
+	iPrefix := string(imagePrefix)
 	optionalEnvs := []corev1.EnvVar{}
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
@@ -310,7 +311,7 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.AutoScalerContainerName,
-							Image: containers.GetImageName(imagePrefix, imageName, version),
+							Image: containers.GetImageName(iPrefix, imageName, version),
 							Command: []string{
 								"/app",
 							},
@@ -334,7 +335,7 @@ func NewAutoscalerDeployment(ns string, version string, imagePrefix string, imag
 								},
 								{
 									Name:  "ODIGOS_COLLECTOR_IMAGE",
-									Value: containers.GetImageName(imagePrefix, collectorImage, version),
+									Value: containers.GetImageName(iPrefix, collectorImage, version),
 								},
 								{
 									Name: consts.OdigosVersionEnvVarName,
