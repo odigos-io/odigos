@@ -60,7 +60,6 @@ var (
 		string(semconv.K8SDeploymentUIDKey),
 		string(semconv.K8SDaemonSetUIDKey),
 		string(semconv.K8SStatefulSetUIDKey),
-		string(semconv.K8SCronJobUIDKey),
 		string(semconv.K8SJobUIDKey),
 	}
 
