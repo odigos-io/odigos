@@ -5,7 +5,6 @@ import { API } from '@/utils';
 import { useCSRF } from '@/hooks';
 import { onError } from '@apollo/client/link/error';
 import { ApolloLink, HttpLink } from '@apollo/client';
-import type { OperationDefinitionNode } from 'graphql';
 import { setContext } from '@apollo/client/link/context';
 import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 import { ApolloNextAppProvider, InMemoryCache, ApolloClient, SSRMultipartLink } from '@apollo/client-integration-nextjs';
