@@ -1,33 +1,15 @@
-apiVersion: odigos.io/v1alpha1
-kind: Processor
+apiVersion: actions.odigos.io/v1alpha1
+kind: Action
 metadata:
   name: label-attributes
   namespace: odigos-system
 spec:
-  type: k8sattributes
-  processorName: Unified Kubernetes Attributes
-  notes: "Collect Kubernetes attributes for observability"
-  disabled: false
-  orderHint: 0
-  collectorRoles:
-    - NODE_COLLECTOR
   signals:
+    - LOGS
     - TRACES
-  processorConfig:
-    auth_type: serviceAccount
-    passthrough: false
-    extract:
-      labels:
-        - tag_name: vm.app
-          key: vm.app
-          from: pod
-        - tag_name: vm.env
-          key: vm.env
-          from: pod
-    pod_association:
-      - sources:
-        - from: resource_attribute
-          name: k8s.pod.name
-        - from: resource_attribute
-          name: k8s.namespace.name
-
+  k8sAttributes:
+    labels:
+      - attributeKey: vm.app
+        labelKey: vm.app
+      - attributeKey: vm.env
+        labelKey: vm.env

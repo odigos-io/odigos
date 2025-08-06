@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -52,7 +51,6 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
 	odigosConfiguration := common.OdigosConfiguration{}
 	err = yaml.Unmarshal([]byte(odigosConfigMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
 	if err != nil {
@@ -346,14 +344,14 @@ func (r *odigosConfigurationController) applyProfileManifests(ctx context.Contex
 		}
 	}
 
-	k8sattributesresolversList := actionsv1alpha1.K8sAttributesResolverList{}
-	err = r.Client.List(ctx, &k8sattributesresolversList, listOptions)
+	ActionsList := odigosv1alpha1.ActionList{}
+	err = r.Client.List(ctx, &ActionsList, listOptions)
 	if err != nil {
 		return err
 	}
 
-	for i := range k8sattributesresolversList.Items {
-		err = r.Client.Delete(ctx, &k8sattributesresolversList.Items[i])
+	for i := range ActionsList.Items {
+		err = r.Client.Delete(ctx, &ActionsList.Items[i])
 		if err != nil {
 			return err
 		}

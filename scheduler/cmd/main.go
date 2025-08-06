@@ -33,7 +33,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/configmaps"
@@ -64,7 +63,6 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
-	utilruntime.Must(actionsv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -112,6 +110,9 @@ func main() {
 					Field: nsSelector,
 				},
 				&odigosv1.InstrumentationRule{}: {
+					Field: nsSelector,
+				},
+				&odigosv1.Action{}: {
 					Field: nsSelector,
 				},
 				&corev1.Secret{}: {
