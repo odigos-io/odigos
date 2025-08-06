@@ -9,6 +9,12 @@ input SourceFilter {
   markedForInstrumentation: Boolean
 }
 
+type K8sWorkload {
+  namespace: String!
+  kind: K8sResourceKind!
+  name: String!
+}
+
 type DesiredConditionStatus {
 
   # name of the condition, in lowercase with spaces ("runtime detection", "agent enabled", etc.)
@@ -262,9 +268,7 @@ type K8sSourcePod {
 }
 
 type K8sSource {
-  namespace: String!
-  kind: K8sResourceKind!
-  name: String!
+  id: K8sWorkload!
 
   # an aggregated status for all the conditions that are relevant for the source.
   # if there is any issue with the source, this value will track it.

@@ -8,16 +8,15 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
-	"github.com/odigos-io/odigos/frontend/kube"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // MarkedForInstrumentation is the resolver for the markedForInstrumentation field.
 func (r *k8sSourceResolver) MarkedForInstrumentation(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceMakredForInstrumentation, error) {
-	sources, err := getWorkloadSources(ctx, obj.Namespace, obj.Kind, obj.Name)
+	l := loaders.For(ctx)
+	sources, err := l.GetSources(ctx, *obj.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -36,10 +35,10 @@ func (r *k8sSourceResolver) MarkedForInstrumentation(ctx context.Context, obj *m
 
 // RuntimeInfo is the resolver for the runtimeInfo field.
 func (r *k8sSourceResolver) RuntimeInfo(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceRuntimeInfo, error) {
-	icName := workload.CalculateWorkloadRuntimeObjectName(obj.Name, string(obj.Kind))
-	ic, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(obj.Namespace).Get(ctx, icName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
+	l := loaders.For(ctx)
+	ic := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if ic == nil {
+		return nil, nil
 	}
 
 	var runtimeInfoReason *string

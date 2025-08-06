@@ -22,6 +22,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph"
+	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/kube/watchers"
 	"github.com/odigos-io/odigos/frontend/middlewares"
@@ -164,7 +165,10 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	// OIDC/OAuth2 handlers
 	r.GET("/auth/callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c) })
 	// GraphQL handlers
-	r.POST("/graphql", func(c *gin.Context) { graph.GetGQLHandler(ctx, logger, odigosMetrics).ServeHTTP(c.Writer, c.Request) })
+	r.POST("/graphql", func(c *gin.Context) {
+		c.Request = c.Request.WithContext(loaders.WithLoaders(c.Request.Context(), loaders.NewLoaders()))
+		graph.GetGQLHandler(c.Request.Context(), logger, odigosMetrics).ServeHTTP(c.Writer, c.Request)
+	})
 	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
 	// SSE handler
 	r.GET("/api/events", sse.HandleSSEConnections)

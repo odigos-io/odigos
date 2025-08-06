@@ -499,9 +499,7 @@ type K8sNamespaceID struct {
 }
 
 type K8sSource struct {
-	Namespace                string                             `json:"namespace"`
-	Kind                     K8sResourceKind                    `json:"kind"`
-	Name                     string                             `json:"name"`
+	ID                       *K8sWorkload                       `json:"id"`
 	SourceHealthStatus       *DesiredConditionStatus            `json:"sourceHealthStatus"`
 	MarkedForInstrumentation *K8sSourceMakredForInstrumentation `json:"markedForInstrumentation"`
 	RuntimeInfo              *K8sSourceRuntimeInfo              `json:"runtimeInfo,omitempty"`
@@ -611,6 +609,12 @@ type K8sSourceRuntimeInfoContainer struct {
 	LibcType                *string             `json:"libcType,omitempty"`
 	SecureExecutionMode     *bool               `json:"secureExecutionMode,omitempty"`
 	OtherAgentName          *string             `json:"otherAgentName,omitempty"`
+}
+
+type K8sWorkload struct {
+	Namespace string          `json:"namespace"`
+	Kind      K8sResourceKind `json:"kind"`
+	Name      string          `json:"name"`
 }
 
 type LatencySamplerAction struct {

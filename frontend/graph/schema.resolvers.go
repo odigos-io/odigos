@@ -14,6 +14,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -1205,22 +1206,17 @@ func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceCo
 
 // Sources is the resolver for the sources field.
 func (r *queryResolver) Sources(ctx context.Context, filter *model.SourceFilter) ([]*model.K8sSource, error) {
-	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
+	// Extract value from context
+	l := loaders.For(ctx)
+	err := l.SetFilters(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 
 	sources := make([]*model.K8sSource, 0)
-	for _, config := range instrumentationConfigs.Items {
-		pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(config.Name, config.Namespace)
-		if err != nil {
-			return nil, err
-		}
-
+	for _, sourceId := range l.GetWorkloadIds() {
 		sources = append(sources, &model.K8sSource{
-			Namespace: pw.Namespace,
-			Kind:      model.K8sResourceKind(pw.Kind),
-			Name:      pw.Name,
+			ID: &sourceId,
 		})
 	}
 	return sources, nil
