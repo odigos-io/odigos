@@ -29,6 +29,6 @@ var KratosProfile = profile.Profile{
 	},
 	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
 		rollbackDisabled := true
-		config.RollbackDisabled.Value = &rollbackDisabled
+		config.RollbackDisabled = &rollbackDisabled
 	},
 }

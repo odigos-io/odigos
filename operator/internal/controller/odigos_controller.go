@@ -328,15 +328,15 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		nodeSelector = odigos.Spec.NodeSelector
 	}
 
-	odigosConfiguration.TelemetryEnabled = odigos.Spec.TelemetryEnabled
-	odigosConfiguration.OpenshiftEnabled = odigos.Spec.OpenShiftEnabled
+	odigosConfiguration.TelemetryEnabled = common.ConfigBool(odigos.Spec.TelemetryEnabled)
+	odigosConfiguration.OpenshiftEnabled = common.ConfigBool(odigos.Spec.OpenShiftEnabled)
 	odigosConfiguration.IgnoredNamespaces = odigos.Spec.IgnoredNamespaces
 	odigosConfiguration.IgnoredContainers = odigos.Spec.IgnoredContainers
-	odigosConfiguration.SkipWebhookIssuerCreation = odigos.Spec.SkipWebhookIssuerCreation
-	odigosConfiguration.Psp = odigos.Spec.PodSecurityPolicy
-	odigosConfiguration.ImagePrefix = odigos.Spec.ImagePrefix
+	odigosConfiguration.SkipWebhookIssuerCreation = common.ConfigBool(odigos.Spec.SkipWebhookIssuerCreation)
+	odigosConfiguration.Psp = common.ConfigBool(odigos.Spec.PodSecurityPolicy)
+	odigosConfiguration.ImagePrefix = common.ConfigString(odigos.Spec.ImagePrefix)
 	odigosConfiguration.Profiles = odigos.Spec.Profiles
-	
+
 	// "normal" is deprecated. Kept here for backwards compatibility with operator CRD.
 	if odigos.Spec.UIMode == "normal" {
 		odigosConfiguration.UiMode = common.UiModeDefault

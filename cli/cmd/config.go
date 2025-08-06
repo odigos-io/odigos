@@ -245,8 +245,7 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 
 	case consts.AllowConcurrentAgentsProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		val := common.ConfigBoolPointer{Value: &boolValue}
-		config.AllowConcurrentAgents = val
+		config.AllowConcurrentAgents = &boolValue
 
 	case consts.ImagePrefixProperty:
 		val := common.ConfigString(value[0])
@@ -311,13 +310,11 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 
 	case consts.KarpenterEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		val := common.ConfigBoolPointer{Value: &boolValue}
-		config.KarpenterEnabled = val
+		config.KarpenterEnabled = &boolValue
 
 	case consts.RollbackDisabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		val := common.ConfigBoolPointer{Value: &boolValue}
-		config.RollbackDisabled = val
+		config.RollbackDisabled = &boolValue
 
 	case consts.RollbackGraceTimeProperty:
 		val := common.ConfigString(value[0])
@@ -412,8 +409,7 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 
 	case consts.ClickhouseJsonTypeEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		val := common.ConfigBoolPointer{Value: &boolValue}
-		config.ClickhouseJsonTypeEnabledProperty = val
+		config.ClickhouseJsonTypeEnabledProperty = &boolValue
 
 	case consts.AllowedTestConnectionHostsProperty:
 		config.AllowedTestConnectionHosts = value

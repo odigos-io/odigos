@@ -63,35 +63,19 @@ var (
 	autoRollbackStabilityWindows string
 )
 
-// makes copies of all variables above that has those variables as the common.[] version. needed because value types in odigos_config.go
+// makes copies of all variables above that are affected by the type change in odigos_config.go. needed because value types in odigos_config.go
 // changed, it affects functions all over, it won't accept a bool now but a ConfigBool (for example)
 var (
-	namespaceFlagNew                    string
-	versionFlagNew                      string
-	skipWaitNew                         bool
 	telemetryEnabledNew                 common.ConfigBool
 	openshiftEnabledNew                 common.ConfigBool
 	skipWebhookIssuerCreationNew        common.ConfigBool
 	pspNew                              common.ConfigBool
-	userInputIgnoredNamespacesNew       []string
-	userInputIgnoredContainersNew       []string
-	userInputInstallProfilesNew         []string
-	uiModeNew                           string
 	customContainerRuntimeSocketPathNew common.ConfigString
-	k8sNodeLogsDirectoryNew             string
-	instrumentorImageNew                string
-	odigletImageNew                     string
-	autoScalerImageNew                  string
 	imagePrefixNew                      common.ConfigString
-	nodeSelectorFlagNew                 string
-	karpenterEnabledNew                 bool
 
 	clusterNameNew       common.ConfigString
 	centralBackendURLNew common.ConfigString
 
-	userInstrumentationEnvsRawNew string
-
-	autoRollbackDisabledNew         common.ConfigBoolPointer
 	autoRollbackGraceTimeNew        common.ConfigString
 	autoRollbackStabilityWindowsNew common.ConfigString
 )
@@ -107,7 +91,6 @@ func updateVariables() {
 	customContainerRuntimeSocketPathNew = common.ConfigString(customContainerRuntimeSocketPath)
 	autoRollbackGraceTimeNew = common.ConfigString(autoRollbackGraceTime)
 	autoRollbackStabilityWindowsNew = common.ConfigString(autoRollbackStabilityWindows)
-	autoRollbackDisabledNew = common.ConfigBoolPointer{Value: &autoRollbackDisabled}
 }
 
 type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error
@@ -431,7 +414,7 @@ func CreateOdigosConfiguration(odigosTier common.OdigosTier, nodeSelector map[st
 		CentralBackendURL:         centralBackendURLNew,
 		UserInstrumentationEnvs:   parsedUserJson,
 		NodeSelector:              nodeSelector,
-		RollbackDisabled:          autoRollbackDisabledNew,
+		RollbackDisabled:          &autoRollbackDisabled,
 		RollbackGraceTime:         autoRollbackGraceTimeNew,
 		RollbackStabilityWindow:   autoRollbackStabilityWindowsNew,
 	}
