@@ -111,7 +111,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
-	karpenterDisabled := odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled
+	karpenterDisabled := odigosConfiguration.KarpenterEnabled.Value == nil || !*odigosConfiguration.KarpenterEnabled.Value
 	mountIsHostPath := odigosConfiguration.MountMethod != nil && *odigosConfiguration.MountMethod == common.K8sHostPathMountMethod
 
 	// Add odiglet-installed node affinity to the pod for non-Karpenter installations,
@@ -453,5 +453,5 @@ func getInitContainerImage(config common.OdigosConfiguration) string {
 	}
 
 	// This is a fallback for the case where the init container image is not set as env var for some reason.
-	return config.ImagePrefix + "/" + initContainerImage + ":" + imageVersion
+	return string(config.ImagePrefix) + "/" + initContainerImage + ":" + imageVersion
 }
