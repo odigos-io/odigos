@@ -133,7 +133,16 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
-	dataStreams, err := calculateDataStreams(ctx, c, dests)
+	enabledDests := &odigosv1.DestinationList{Items: []odigosv1.Destination{}}
+	for _, dest := range dests.Items {
+		// skip disabled destinations
+		if dest.Spec.Disabled != nil && *dest.Spec.Disabled {
+			continue
+		}
+		enabledDests.Items = append(enabledDests.Items, dest)
+	}
+
+	dataStreams, err := calculateDataStreams(ctx, c, enabledDests)
 	if err != nil {
 		logger.Error(err, "Failed to build group details")
 		return nil, err
@@ -148,7 +157,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	}
 
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
-		common.ToExporterConfigurerArray(dests),
+		common.ToExporterConfigurerArray(enabledDests),
 		common.ToProcessorConfigurerArray(processors),
 		memoryLimiterConfiguration,
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
@@ -174,7 +183,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	}
 
 	// Update destination status conditions in k8s
-	for _, dest := range dests.Items {
+	for _, dest := range enabledDests.Items {
 		if destErr, found := status.Destination[dest.ObjectMeta.Name]; found {
 			if destErr != nil {
 				err := odgiosK8s.UpdateStatusConditions(ctx, c, &dest, &dest.Status.Conditions, metav1.ConditionFalse, destinationConfiguredType, "ErrConfigDestination", destErr.Error())
@@ -291,8 +300,12 @@ func calculateDataStreams(
 
 	dataStreamsMap := make(map[string]*pipelinegen.DataStreams)
 
-	for _, dest := range dests.Items {
+	// Handle case where no enabled destinations exist
+	if dests == nil || len(dests.Items) == 0 {
+		return []pipelinegen.DataStreams{}, nil
+	}
 
+	for _, dest := range dests.Items {
 		// If the destination has no source selector, use the default data stream
 		// Otherwise, use the data streams specified in the source selector
 		dataStreams := []string{}

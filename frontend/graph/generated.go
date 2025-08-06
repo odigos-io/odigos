@@ -205,6 +205,7 @@ type ComplexityRoot struct {
 		Conditions      func(childComplexity int) int
 		DataStreamNames func(childComplexity int) int
 		DestinationType func(childComplexity int) int
+		Disabled        func(childComplexity int) int
 		ExportedSignals func(childComplexity int) int
 		Fields          func(childComplexity int) int
 		ID              func(childComplexity int) int
@@ -1471,6 +1472,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Destination.DestinationType(childComplexity), true
+
+	case "Destination.disabled":
+		if e.complexity.Destination.Disabled == nil {
+			break
+		}
+
+		return e.complexity.Destination.Disabled(childComplexity), true
 
 	case "Destination.exportedSignals":
 		if e.complexity.Destination.ExportedSignals == nil {
@@ -7870,6 +7878,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_destinations(_ context.
 				return ec.fieldContext_Destination_type(ctx, field)
 			case "name":
 				return ec.fieldContext_Destination_name(ctx, field)
+			case "disabled":
+				return ec.fieldContext_Destination_disabled(ctx, field)
 			case "dataStreamNames":
 				return ec.fieldContext_Destination_dataStreamNames(ctx, field)
 			case "exportedSignals":
@@ -9483,6 +9493,50 @@ func (ec *executionContext) fieldContext_Destination_name(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Destination_disabled(ctx context.Context, field graphql.CollectedField, obj *model.Destination) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Destination_disabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Disabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Destination_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Destination",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -15091,6 +15145,8 @@ func (ec *executionContext) fieldContext_Mutation_createNewDestination(ctx conte
 				return ec.fieldContext_Destination_type(ctx, field)
 			case "name":
 				return ec.fieldContext_Destination_name(ctx, field)
+			case "disabled":
+				return ec.fieldContext_Destination_disabled(ctx, field)
 			case "dataStreamNames":
 				return ec.fieldContext_Destination_dataStreamNames(ctx, field)
 			case "exportedSignals":
@@ -15164,6 +15220,8 @@ func (ec *executionContext) fieldContext_Mutation_updateDestination(ctx context.
 				return ec.fieldContext_Destination_type(ctx, field)
 			case "name":
 				return ec.fieldContext_Destination_name(ctx, field)
+			case "disabled":
+				return ec.fieldContext_Destination_disabled(ctx, field)
 			case "dataStreamNames":
 				return ec.fieldContext_Destination_dataStreamNames(ctx, field)
 			case "exportedSignals":
@@ -26671,7 +26729,7 @@ func (ec *executionContext) unmarshalInputDestinationInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "type", "currentStreamName", "exportedSignals", "fields"}
+	fieldsInOrder := [...]string{"name", "type", "currentStreamName", "exportedSignals", "fields", "disabled"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -26713,6 +26771,13 @@ func (ec *executionContext) unmarshalInputDestinationInput(ctx context.Context, 
 				return it, err
 			}
 			it.Fields = data
+		case "disabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Disabled = data
 		}
 	}
 
@@ -29018,6 +29083,11 @@ func (ec *executionContext) _Destination(ctx context.Context, sel ast.SelectionS
 			}
 		case "name":
 			out.Values[i] = ec._Destination_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "disabled":
+			out.Values[i] = ec._Destination_disabled(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
