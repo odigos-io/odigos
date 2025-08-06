@@ -102,7 +102,6 @@ spec:
             required:
             - data
             - destinationName
-            - disabled
             - signals
             - type
             type: object
