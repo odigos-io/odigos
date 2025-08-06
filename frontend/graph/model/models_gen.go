@@ -633,6 +633,7 @@ type OdigosConfiguration struct {
 	CollectorNode                    *CollectorNode        `json:"collectorNode,omitempty"`
 	CollectorGateway                 *CollectorGateway     `json:"collectorGateway,omitempty"`
 	NodeSelector                     *string               `json:"nodeSelector,omitempty"`
+	AllowedTestConnectionHosts       []*string             `json:"allowedTestConnectionHosts,omitempty"`
 }
 
 type OdigosConfigurationInput struct {
@@ -657,6 +658,7 @@ type OdigosConfigurationInput struct {
 	CollectorNode                    *CollectorNodeInput        `json:"collectorNode,omitempty"`
 	CollectorGateway                 *CollectorGatewayInput     `json:"collectorGateway,omitempty"`
 	NodeSelector                     *string                    `json:"nodeSelector,omitempty"`
+	AllowedTestConnectionHosts       []*string                  `json:"allowedTestConnectionHosts,omitempty"`
 }
 
 type OidcConfiguration struct {
