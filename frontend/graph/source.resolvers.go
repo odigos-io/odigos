@@ -37,7 +37,7 @@ func (r *k8sSourceResolver) MarkedForInstrumentation(ctx context.Context, obj *m
 func (r *k8sSourceResolver) RuntimeInfo(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceRuntimeInfo, error) {
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
-	if err != nil {
+	if err != nil || ic == nil {
 		return nil, err
 	}
 
@@ -60,6 +60,11 @@ func (r *k8sSourceResolver) RuntimeInfo(ctx context.Context, obj *model.K8sSourc
 		if container.OtherAgent != nil {
 			otherAgentName = &container.OtherAgent.Name
 		}
+		var libcType *string
+		if container.LibCType != nil {
+			libcTypeStr := string(*container.LibCType)
+			libcType = &libcTypeStr
+		}
 		containers[i] = &model.K8sSourceRuntimeInfoContainer{
 			ContainerName:           container.ContainerName,
 			Language:                model.ProgrammingLanguage(container.Language),
@@ -67,7 +72,7 @@ func (r *k8sSourceResolver) RuntimeInfo(ctx context.Context, obj *model.K8sSourc
 			ProcessEnvVars:          envVarsToModel(container.EnvVars),
 			ContainerRuntimeEnvVars: envVarsToModel(container.EnvFromContainerRuntime),
 			CriErrorMessage:         container.CriErrorMessage,
-			LibcType:                (*string)(container.LibCType),
+			LibcType:                libcType,
 			SecureExecutionMode:     container.SecureExecutionMode,
 			OtherAgentName:          otherAgentName,
 		}
@@ -91,7 +96,7 @@ func (r *k8sSourceResolver) RuntimeInfo(ctx context.Context, obj *model.K8sSourc
 func (r *k8sSourceResolver) AgentEnabled(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceAgentEnabled, error) {
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
-	if err != nil {
+	if err != nil || ic == nil {
 		return nil, err
 	}
 
@@ -158,6 +163,37 @@ func (r *k8sSourceResolver) AgentEnabled(ctx context.Context, obj *model.K8sSour
 		AgentEnabled:  ic.Spec.AgentInjectionEnabled,
 		EnabledStatus: agentEnabledStatus,
 		Containers:    containers,
+	}, nil
+}
+
+// Rollout is the resolver for the rollout field.
+func (r *k8sSourceResolver) Rollout(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceRollout, error) {
+	l := loaders.For(ctx)
+	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil || ic == nil {
+		return nil, err
+	}
+
+	var rolloutStatus *model.DesiredConditionStatus
+	for _, c := range ic.Status.Conditions {
+		if c.Type == v1alpha1.WorkloadRolloutStatusConditionType {
+			conditionStatus := workloadRolloutStatusCondition(&c.Reason)
+			rolloutStatus = &model.DesiredConditionStatus{
+				Name:       c.Type,
+				Status:     conditionStatus,
+				ReasonEnum: &c.Reason,
+				Message:    c.Message,
+			}
+			break
+		}
+	}
+
+	if rolloutStatus == nil {
+		return nil, nil
+	}
+
+	return &model.K8sSourceRollout{
+		RolloutStatus: rolloutStatus,
 	}, nil
 }
 

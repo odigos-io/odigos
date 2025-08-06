@@ -74,3 +74,5 @@ models:
         resolver: true
       agentEnabled:
         resolver: true
+      rollout:
+        resolver: true
