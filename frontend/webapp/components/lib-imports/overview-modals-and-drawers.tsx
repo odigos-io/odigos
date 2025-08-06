@@ -22,9 +22,9 @@ const OverviewModalsAndDrawers = () => {
   const { testConnection } = useTestConnection();
   const { restartWorkloads } = useWorkloadUtils();
   const { categories } = useDestinationCategories();
-  const { persistSources, updateSource } = useSourceCRUD();
   const { potentialDestinations } = usePotentialDestinations();
   const { createAction, updateAction, deleteAction } = useActionCRUD();
+  const { persistSources, updateSource, fetchSourceById, fetchSourceLibraries } = useSourceCRUD();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
   const { createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
@@ -45,7 +45,14 @@ const OverviewModalsAndDrawers = () => {
       <ActionModal createAction={createAction} />
 
       {/* drawers */}
-      <SourceDrawer persistSources={persistSources} updateSource={updateSource} fetchDescribeSource={fetchDescribeSource} restartWorkloads={restartWorkloads} />
+      <SourceDrawer
+        persistSources={persistSources}
+        restartWorkloads={restartWorkloads}
+        updateSource={updateSource}
+        fetchSourceById={fetchSourceById}
+        fetchSourceDescribe={fetchDescribeSource}
+        fetchSourceLibraries={fetchSourceLibraries}
+      />
       <DestinationDrawer categories={categories} updateDestination={updateDestination} deleteDestination={deleteDestination} testConnection={testConnection} />
       <InstrumentationRuleDrawer updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />
       <ActionDrawer updateAction={updateAction} deleteAction={deleteAction} />

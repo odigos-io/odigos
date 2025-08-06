@@ -6,8 +6,8 @@ import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import type { PaginatedData, SourceConditions, SourceInstrumentInput } from '@/types';
 import { addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
-import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCES, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud } from '@odigos/ui-kit/types';
+import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCE_LIBRARIES, GET_SOURCES, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent } from '@odigos/ui-kit/types';
 import {
   type NamespaceSelectionFormData,
   type SourceSelectionFormData,
@@ -23,7 +23,8 @@ interface UseSourceCrud {
   sources: Source[];
   sourcesLoading: boolean;
   fetchSourcesPaginated: (getAll?: boolean, nextPage?: string) => Promise<void>;
-  fetchSourceById: (id: WorkloadId, bypassPaginationLoader?: boolean) => Promise<void>;
+  fetchSourceById: (id: WorkloadId, bypassPaginationLoader?: boolean) => Promise<Source | undefined>;
+  fetchSourceLibraries: (req: { variables: WorkloadId }) => Promise<{ data?: { instrumentationInstanceComponents: InstrumentationInstanceComponent[] } }>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
@@ -45,6 +46,9 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const [queryByPage] = useLazyQuery<{ computePlatform: { sources: PaginatedData<Source> } }, { nextPage: string }>(GET_SOURCES);
   const [queryById] = useLazyQuery<{ computePlatform: { source: Source } }, { sourceId: WorkloadId }>(GET_SOURCE);
   const [queryOtherConditions] = useLazyQuery<{ sourceConditions: SourceConditions[] }>(GET_SOURCE_CONDITIONS);
+  const [querySourceLibraries] = useLazyQuery<{ instrumentationInstanceComponents: InstrumentationInstanceComponent[] }, WorkloadId>(GET_SOURCE_LIBRARIES, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message),
+  });
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCES, {
     onError: (error) => {
@@ -119,7 +123,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     }
   };
 
-  const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false) => {
+  const fetchSourceById = async (id: WorkloadId, bypassPaginationLoader: boolean = false): Promise<Source | undefined> => {
     if (!shouldFetchSource(bypassPaginationLoader)) return;
 
     const { error, data } = await queryById({ variables: { sourceId: id } });
@@ -127,7 +131,9 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (error) {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
     } else if (data?.computePlatform?.source) {
-      addEntities(EntityTypes.Source, [data.computePlatform.source]);
+      const { source } = data.computePlatform;
+      addEntities(EntityTypes.Source, [source]);
+      return source;
     }
   };
 
@@ -184,6 +190,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     sourcesLoading,
     fetchSourcesPaginated,
     fetchSourceById,
+    fetchSourceLibraries: querySourceLibraries,
     persistSources,
     updateSource,
   };
