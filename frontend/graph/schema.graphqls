@@ -82,7 +82,6 @@ type OdigosConfiguration {
   collectorNode: CollectorNode
   collectorGateway: CollectorGateway
   nodeSelector: String # JSON string representation of key-value pairs
-  allowedTestConnectionHosts: [String]
 }
 
 type OidcConfiguration {
@@ -141,7 +140,6 @@ input OdigosConfigurationInput {
   collectorNode: CollectorNodeInput
   collectorGateway: CollectorGatewayInput
   nodeSelector: String # JSON string representation of language mappings
-  allowedTestConnectionHosts: [String]
 }
 
 input OidcConfigurationInput {

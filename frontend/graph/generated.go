@@ -452,7 +452,6 @@ type ComplexityRoot struct {
 	OdigosConfiguration struct {
 		AgentEnvVarsInjectionMethod      func(childComplexity int) int
 		AllowConcurrentAgents            func(childComplexity int) int
-		AllowedTestConnectionHosts       func(childComplexity int) int
 		CentralBackendURL                func(childComplexity int) int
 		ClusterName                      func(childComplexity int) int
 		CollectorGateway                 func(childComplexity int) int
@@ -2649,13 +2648,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OdigosConfiguration.AllowConcurrentAgents(childComplexity), true
-
-	case "OdigosConfiguration.allowedTestConnectionHosts":
-		if e.complexity.OdigosConfiguration.AllowedTestConnectionHosts == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.AllowedTestConnectionHosts(childComplexity), true
 
 	case "OdigosConfiguration.centralBackendURL":
 		if e.complexity.OdigosConfiguration.CentralBackendURL == nil {
@@ -17745,47 +17737,6 @@ func (ec *executionContext) fieldContext_OdigosConfiguration_nodeSelector(_ cont
 	return fc, nil
 }
 
-func (ec *executionContext) _OdigosConfiguration_allowedTestConnectionHosts(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_allowedTestConnectionHosts(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AllowedTestConnectionHosts, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*string)
-	fc.Result = res
-	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_allowedTestConnectionHosts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _OidcConfiguration_tenantUrl(ctx context.Context, field graphql.CollectedField, obj *model.OidcConfiguration) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OidcConfiguration_tenantUrl(ctx, field)
 	if err != nil {
@@ -20255,8 +20206,6 @@ func (ec *executionContext) fieldContext_Query_odigosConfig(_ context.Context, f
 				return ec.fieldContext_OdigosConfiguration_collectorGateway(ctx, field)
 			case "nodeSelector":
 				return ec.fieldContext_OdigosConfiguration_nodeSelector(ctx, field)
-			case "allowedTestConnectionHosts":
-				return ec.fieldContext_OdigosConfiguration_allowedTestConnectionHosts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type OdigosConfiguration", field.Name)
 		},
@@ -26838,7 +26787,7 @@ func (ec *executionContext) unmarshalInputOdigosConfigurationInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"karpenterEnabled", "allowConcurrentAgents", "uiPaginationLimit", "centralBackendURL", "oidc", "clusterName", "imagePrefix", "ignoredNamespaces", "ignoredContainers", "profiles", "mountMethod", "agentEnvVarsInjectionMethod", "customContainerRuntimeSocketPath", "odigletHealthProbeBindPort", "rollbackDisabled", "rollbackGraceTime", "rollbackStabilityWindow", "rollout", "collectorNode", "collectorGateway", "nodeSelector", "allowedTestConnectionHosts"}
+	fieldsInOrder := [...]string{"karpenterEnabled", "allowConcurrentAgents", "uiPaginationLimit", "centralBackendURL", "oidc", "clusterName", "imagePrefix", "ignoredNamespaces", "ignoredContainers", "profiles", "mountMethod", "agentEnvVarsInjectionMethod", "customContainerRuntimeSocketPath", "odigletHealthProbeBindPort", "rollbackDisabled", "rollbackGraceTime", "rollbackStabilityWindow", "rollout", "collectorNode", "collectorGateway", "nodeSelector"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -26992,13 +26941,6 @@ func (ec *executionContext) unmarshalInputOdigosConfigurationInput(ctx context.C
 				return it, err
 			}
 			it.NodeSelector = data
-		case "allowedTestConnectionHosts":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("allowedTestConnectionHosts"))
-			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AllowedTestConnectionHosts = data
 		}
 	}
 
@@ -30490,8 +30432,6 @@ func (ec *executionContext) _OdigosConfiguration(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._OdigosConfiguration_collectorGateway(ctx, field, obj)
 		case "nodeSelector":
 			out.Values[i] = ec._OdigosConfiguration_nodeSelector(ctx, field, obj)
-		case "allowedTestConnectionHosts":
-			out.Values[i] = ec._OdigosConfiguration_allowedTestConnectionHosts(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
