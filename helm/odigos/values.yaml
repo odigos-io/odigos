@@ -271,11 +271,11 @@ odiglet:
   deviceplugin:
     resources:
       requests:
-        cpu: 20m
-        memory: 100Mi
+        cpu: 40m
+        memory: 200Mi
       limits:
-        cpu: 50m
-        memory: 150Mi
+        cpu: 100m
+        memory: 300Mi
 
   ## Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.
   ## There is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.
@@ -386,4 +386,3 @@ pdb:
 # If set to false, the default schema using Map-type columns will be used instead.
 clickhouseDestinationJsonType:
   enabled: false
- 
