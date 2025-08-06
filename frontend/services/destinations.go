@@ -230,8 +230,9 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 
 	return model.Destination{
 		ID:              k8sDest.Name,
-		Name:            destName,
 		Type:            string(destType),
+		Name:            destName,
+		Disabled:        k8sDest.Spec.Disabled,
 		DataStreamNames: ExtractDataStreamsFromDestination(k8sDest),
 		ExportedSignals: &model.ExportedSignals{
 			Traces:  isSignalExported(k8sDest, common.TracesObservabilitySignal),

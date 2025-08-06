@@ -263,6 +263,7 @@ type Destination struct {
 	ID              string                        `json:"id"`
 	Type            string                        `json:"type"`
 	Name            string                        `json:"name"`
+	Disabled        bool                          `json:"disabled"`
 	DataStreamNames []*string                     `json:"dataStreamNames"`
 	ExportedSignals *ExportedSignals              `json:"exportedSignals"`
 	Fields          string                        `json:"fields"`

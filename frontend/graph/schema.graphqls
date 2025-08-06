@@ -456,6 +456,7 @@ type Destination {
   id: ID!
   type: String!
   name: String!
+  disabled: Boolean!
   dataStreamNames: [String]!
   exportedSignals: ExportedSignals!
   fields: String!
