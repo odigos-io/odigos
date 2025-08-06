@@ -57,14 +57,20 @@ func CSRFTokenHandler() gin.HandlerFunc {
 		csrfService := services.GetCSRFService()
 
 		// Check if there's an existing token in cookie
-		existingToken := csrfService.GetCSRFToken(c.Request)
+		csrfCookie := csrfService.GetCSRFToken(c.Request)
+
+		// If no CSRF cookie is set, assume it's not a browser (Postman/curl/etc)
+		if csrfCookie == "" {
+			c.Next()
+			return
+		}
 
 		var token string
 		var err error
 
 		// If existing token is valid, return it; otherwise generate new one
-		if existingToken != "" && csrfService.ValidateToken(existingToken) == nil {
-			token = existingToken
+		if csrfCookie != "" && csrfService.ValidateToken(csrfCookie) == nil {
+			token = csrfCookie
 		} else {
 			token, err = csrfService.GenerateToken()
 			if err != nil {

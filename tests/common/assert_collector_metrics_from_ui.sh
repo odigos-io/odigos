@@ -75,15 +75,6 @@ if ! nc -z localhost $LOCAL_PORT 2>/dev/null; then
     exit 1
 fi
 
-# Get CSRF token
-csrf_token=$(curl -s http://localhost:$LOCAL_PORT/auth/csrf-token | jq -r '.csrf_token')
-
-if [[ -z "$csrf_token" ]]; then
-    echo "❌ Error: Unable to get CSRF token."
-    exit 1
-fi
-
-
 grahphqlOverviewPayload='{
   "operationName": "GetOverviewMetrics",
   "variables": {},
@@ -93,7 +84,6 @@ grahphqlOverviewPayload='{
 # Send the GraphQL request and store the response
 response=$(curl -s -X POST http://localhost:$LOCAL_PORT/graphql \
     -H "Content-Type: application/json" \
-    -H "X-CSRF-Token: $csrf_token" \
     -d "$grahphqlOverviewPayload")
 
 if [[ -z "$response" ]]; then
@@ -136,7 +126,6 @@ grahphqlServiceGraphPayload='{
 # Send the GraphQL request and store the response
 response=$(curl -s -X POST http://localhost:$LOCAL_PORT/graphql \
     -H "Content-Type: application/json" \
-    -H "X-CSRF-Token: $csrf_token" \
     -d "$grahphqlServiceGraphPayload")
 
 echo "🔍 Service Graph Response: $response"
