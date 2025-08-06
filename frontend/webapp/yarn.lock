@@ -436,10 +436,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@^0.0.77":
-  version "0.0.77"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.77.tgz#342e86a35cbc209abcfcda8ddee288355aa3f4b5"
-  integrity sha512-FUcOCtVmW/E9a/AMTqZ/4GzMAsHW2Ve+pC1aseBSgziSgLF7YfKIe6s6xeGukfoFi7Kx7JcY9KYcsx4gKY6N9A==
+"@odigos/ui-kit@^0.0.78":
+  version "0.0.78"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.78.tgz#a4c7bd974bb5f3f62c68befe4c5c4e547235bb76"
+  integrity sha512-thJ9+ZoOvMCHiufAXXdMMkQv6FRf+PxNJuQWXXf0anCQU27xIL5oEJl2W1hjv6zxZjL5U4lEpaFnLmJPhVyCLw==
   dependencies:
     "@xyflow/react" "^12.8.2"
     javascript-time-ago "^2.5.11"
