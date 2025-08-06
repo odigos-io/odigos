@@ -145,6 +145,9 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	// Enable CORS
 	r.Use(cors.Default())
 
+	// Add security headers middleware
+	r.Use(middlewares.SecurityHeadersMiddleware)
+
 	// Readiness and Liveness probes
 	r.GET("/readyz", func(c *gin.Context) {
 		if kube.DefaultClient == nil {
