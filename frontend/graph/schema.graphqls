@@ -456,6 +456,7 @@ type Destination {
   id: ID!
   type: String!
   name: String!
+  disabled: Boolean!
   dataStreamNames: [String]!
   exportedSignals: ExportedSignals!
   fields: String!
@@ -476,6 +477,7 @@ input DestinationInput {
   currentStreamName: String!
   exportedSignals: ExportedSignalsInput!
   fields: [FieldInput!]!
+  disabled: Boolean
 }
 
 input FieldInput {

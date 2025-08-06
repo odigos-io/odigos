@@ -529,6 +529,11 @@ func (in *DestinationSpec) DeepCopyInto(out *DestinationSpec) {
 		*out = make([]common.ObservabilitySignal, len(*in))
 		copy(*out, *in)
 	}
+	if in.Disabled != nil {
+		in, out := &in.Disabled, &out.Disabled
+		*out = new(bool)
+		**out = **in
+	}
 	if in.SourceSelector != nil {
 		in, out := &in.SourceSelector, &out.SourceSelector
 		*out = new(SourceSelector)
