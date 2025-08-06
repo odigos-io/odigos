@@ -268,14 +268,16 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 	var allActions []*odigosv1.Action
 
 	// Convert legacy K8sAttributesResolver to Action format
-	for i := range legacyActions.Items {
-		allActions = append(allActions, convertK8sAttributesResolverToAction(&legacyActions.Items[i]))
-		ownerReferences = append(ownerReferences, metav1.OwnerReference{
-			APIVersion: legacyActions.Items[i].APIVersion,
-			Kind:       legacyActions.Items[i].Kind,
-			Name:       legacyActions.Items[i].Name,
-			UID:        legacyActions.Items[i].UID,
-		})
+	if legacyActions != nil {
+		for i := range legacyActions.Items {
+			allActions = append(allActions, convertK8sAttributesResolverToAction(&legacyActions.Items[i]))
+			ownerReferences = append(ownerReferences, metav1.OwnerReference{
+				APIVersion: legacyActions.Items[i].APIVersion,
+				Kind:       legacyActions.Items[i].Kind,
+				Name:       legacyActions.Items[i].Name,
+				UID:        legacyActions.Items[i].UID,
+			})
+		}
 	}
 
 	for i := range actionList.Items {
