@@ -1,0 +1,26 @@
+apiVersion: odigos.io/v1alpha1
+kind: Processor
+metadata:
+  name: semconvdynamo
+  namespace: odigos-system
+spec:
+  type: attributes
+  processorName: "semconvdynamo-attributes"
+  notes: "Auto generated rule from semconvdynamo profile. Converts db.system.name to db.system for AWS DynamoDB spans."
+  processorConfig:
+    include:
+      match_type: strict
+      attributes:
+        - key: db.system.name
+          value: "aws.dynamodb"
+    actions:
+      - key: db.system
+        value: "aws.dynamodb"
+        action: insert
+      - key: db.operation
+        action: insert
+        from_attribute: rpc.method
+  signals:
+    - TRACES
+  collectorRoles:
+    - CLUSTER_GATEWAY 

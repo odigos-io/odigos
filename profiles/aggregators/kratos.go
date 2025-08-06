@@ -24,6 +24,7 @@ var KratosProfile = profile.Profile{
 		"mount-method-k8s-host-path",
 		"reduce-span-name-cardinality",
 		"disable-gin",
+		"semconvdynamo",
 	},
 	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
 		rollbackDisabled := true
