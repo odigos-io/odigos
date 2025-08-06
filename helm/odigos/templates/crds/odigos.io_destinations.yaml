@@ -47,6 +47,8 @@ spec:
                 type: object
               destinationName:
                 type: string
+              disabled:
+                type: boolean
               secretRef:
                 description: |-
                   LocalObjectReference contains enough information to let you locate the
@@ -100,6 +102,7 @@ spec:
             required:
             - data
             - destinationName
+            - disabled
             - signals
             - type
             type: object
