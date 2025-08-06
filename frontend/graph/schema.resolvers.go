@@ -682,6 +682,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 			DestinationName: destName,
 			Data:            dataField,
 			Signals:         services.ExportedSignalsObjectToSlice(destination.ExportedSignals),
+			Disabled:        destination.Disabled,
 		},
 	}
 	if destination.CurrentStreamName != "" {
@@ -810,6 +811,7 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	dest.Spec.DestinationName = destName
 	dest.Spec.Data = dataFields
 	dest.Spec.Signals = services.ExportedSignalsObjectToSlice(destination.ExportedSignals)
+	dest.Spec.Disabled = destination.Disabled
 
 	if destination.CurrentStreamName != "" {
 		// Init empty struct if nil
