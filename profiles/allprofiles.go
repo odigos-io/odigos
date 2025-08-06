@@ -24,6 +24,7 @@ var AllProfiles = []profile.Profile{
 	attributes.QueryOperationDetector,
 	attributes.SemconvUpgraderProfile,
 	attributes.ReduceSpanNameCardinalityProfile,
+	attributes.LabelAttributeProfile,
 
 	instrumentation.AllowConcurrentAgents,
 	instrumentation.JavaEbpfInstrumentationsProfile,
