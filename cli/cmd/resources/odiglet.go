@@ -510,7 +510,16 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("50m"),
+									"memory": resource.MustParse("150Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("20m"),
+									"memory": resource.MustParse("100Mi"),
+								},
+							},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
 									Exec: &corev1.ExecAction{
