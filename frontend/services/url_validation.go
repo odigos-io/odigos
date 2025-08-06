@@ -81,9 +81,6 @@ func normalizeDomain(domain string) string {
 	return domain
 }
 
-// ValidateDestinationURLs checks if the destination contains any URLs that need to be validated
-// against the AllowedTestConnectionHosts configuration. It extracts URLs from common endpoint fields
-// and validates them using the ValidateURLForTestConnection function.
 func ValidateDestinationURLs(ctx context.Context, destination model.DestinationInput) error {
 
 	endpointFields := []string{

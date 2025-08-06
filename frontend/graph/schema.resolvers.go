@@ -881,7 +881,7 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 		reason := string(testconnection.FailedToConnect)
 		return &model.TestConnectionResponse{
 			Succeeded:       false,
-			StatusCode:      403, // Forbidden
+			StatusCode:      403,
 			DestinationType: (*string)(&destType),
 			Message:         &errMsg,
 			Reason:          &reason,

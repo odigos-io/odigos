@@ -234,12 +234,6 @@ func convertOdigosConfigToK8s(cfg *model.OdigosConfigurationInput) (*common.Odig
 		}
 		odigosConfig.NodeSelector = jsonParsed
 	}
-	if cfg.AllowedTestConnectionHosts != nil {
-		odigosConfig.AllowedTestConnectionHosts = make([]string, len(cfg.AllowedTestConnectionHosts))
-		for i, domain := range cfg.AllowedTestConnectionHosts {
-			odigosConfig.AllowedTestConnectionHosts[i] = *domain
-		}
-	}
 	if cfg.CollectorNode != nil {
 		odigosConfig.CollectorNode = &common.CollectorNodeConfiguration{}
 		if cfg.CollectorNode.CollectorOwnMetricsPort != nil {
@@ -375,13 +369,7 @@ func convertOdigosConfigToGql(cfg *common.OdigosConfiguration) (*model.OdigosCon
 			odigosConfig.NodeSelector = &nodeSelectorStr
 		}
 	}
-	if len(cfg.AllowedTestConnectionHosts) > 0 {
-		allowedHosts := make([]*string, len(cfg.AllowedTestConnectionHosts))
-		for i, host := range cfg.AllowedTestConnectionHosts {
-			allowedHosts[i] = &host
-		}
-		odigosConfig.AllowedTestConnectionHosts = allowedHosts
-	}
+
 	if cfg.CollectorNode != nil {
 		odigosConfig.CollectorNode = &model.CollectorNode{
 			K8sNodeLogsDirectory: &cfg.CollectorNode.K8sNodeLogsDirectory,
