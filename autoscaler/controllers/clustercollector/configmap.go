@@ -133,18 +133,11 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	logger := log.FromContext(ctx)
 	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
-	var enabledDests *odigosv1.DestinationList
+	enabledDests := &odigosv1.DestinationList{Items: []odigosv1.Destination{}}
 	for _, dest := range dests.Items {
 		// skip disabled destinations
 		if dest.Spec.Disabled {
 			continue
-		}
-
-		if enabledDests == nil {
-			enabledDests = &odigosv1.DestinationList{}
-		}
-		if enabledDests.Items == nil {
-			enabledDests.Items = []odigosv1.Destination{}
 		}
 		enabledDests.Items = append(enabledDests.Items, dest)
 	}
