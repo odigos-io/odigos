@@ -76,6 +76,7 @@ var (
 	clusterNameNew       common.ConfigString
 	centralBackendURLNew common.ConfigString
 
+	autoRollbackDisabledNew         common.ConfigBoolPointer
 	autoRollbackGraceTimeNew        common.ConfigString
 	autoRollbackStabilityWindowsNew common.ConfigString
 )
@@ -91,6 +92,7 @@ func updateVariables() {
 	customContainerRuntimeSocketPathNew = common.ConfigString(customContainerRuntimeSocketPath)
 	autoRollbackGraceTimeNew = common.ConfigString(autoRollbackGraceTime)
 	autoRollbackStabilityWindowsNew = common.ConfigString(autoRollbackStabilityWindows)
+	autoRollbackDisabledNew = common.ConfigBoolPointer{Value: &autoRollbackDisabled}
 }
 
 type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error
@@ -414,7 +416,7 @@ func CreateOdigosConfiguration(odigosTier common.OdigosTier, nodeSelector map[st
 		CentralBackendURL:         centralBackendURLNew,
 		UserInstrumentationEnvs:   parsedUserJson,
 		NodeSelector:              nodeSelector,
-		RollbackDisabled:          &autoRollbackDisabled,
+		RollbackDisabled:          autoRollbackDisabledNew,
 		RollbackGraceTime:         autoRollbackGraceTimeNew,
 		RollbackStabilityWindow:   autoRollbackStabilityWindowsNew,
 	}

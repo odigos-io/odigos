@@ -78,7 +78,7 @@ func getOidcValuesFromConfig(ctx context.Context) (string, string, string, strin
 	}
 
 	// UI values
-	uiRemoteUrl := odigosConfiguration.UiRemoteUrl
+	uiRemoteUrl := string(odigosConfiguration.UiRemoteUrl)
 	if uiRemoteUrl == "" {
 		uiRemoteUrl = "http://localhost:3000"
 	}
