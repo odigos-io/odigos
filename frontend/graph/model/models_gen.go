@@ -263,6 +263,7 @@ type Destination struct {
 	ID              string                        `json:"id"`
 	Type            string                        `json:"type"`
 	Name            string                        `json:"name"`
+	Disabled        bool                          `json:"disabled"`
 	DataStreamNames []*string                     `json:"dataStreamNames"`
 	ExportedSignals *ExportedSignals              `json:"exportedSignals"`
 	Fields          string                        `json:"fields"`
@@ -294,6 +295,7 @@ type DestinationInput struct {
 	CurrentStreamName string                `json:"currentStreamName"`
 	ExportedSignals   *ExportedSignalsInput `json:"exportedSignals"`
 	Fields            []*FieldInput         `json:"fields"`
+	Disabled          *bool                 `json:"disabled,omitempty"`
 }
 
 type DestinationTypesCategoryItem struct {
