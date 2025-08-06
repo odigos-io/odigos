@@ -31,30 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// validateDestinationURLs checks if the destination contains any URLs that need to be validated
-// against the AllowedTestConnectionHosts configuration. It extracts URLs from common endpoint fields
-// and validates them using the services.ValidateURLForTestConnection function.
-func validateDestinationURLs(ctx context.Context, destination model.DestinationInput) error {
-
-	endpointFields := []string{
-		"OTLP_HTTP_ENDPOINT",
-	}
-
-	for _, field := range destination.Fields {
-		for _, endpointField := range endpointFields {
-			if field.Key == endpointField && field.Value != "" {
-				err := services.ValidateURLForTestConnection(ctx, field.Value)
-				if err != nil {
-					return err
-				}
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 // APITokens is the resolver for the apiTokens field.
 func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.ComputePlatform) ([]*model.APIToken, error) {
 	ns := env.GetCurrentNamespace()
@@ -899,7 +875,7 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 	}
 
 	// Validate URLs for test connection based on AllowedTestConnectionHosts configuration
-	err = validateDestinationURLs(ctx, destination)
+	err = services.ValidateDestinationURLs(ctx, destination)
 	if err != nil {
 		errMsg := err.Error()
 		reason := string(testconnection.FailedToConnect)
