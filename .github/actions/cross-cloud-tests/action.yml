@@ -19,6 +19,13 @@ runs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
+    - name: Skip - ARM on AKS not yet supported
+      if: ${{ inputs.platform == 'arm' && inputs.provider == 'aks' }}
+      shell: bash
+      run: |
+        echo "ARM platform on AKS is not supported; skipping workflow."
+        exit 78
+
     # 2) Validate Cloud Provider Input & Directory
     - name: Validate Cloud Provider Input & Directory
       shell: bash
