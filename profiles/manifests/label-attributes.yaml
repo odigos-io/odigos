@@ -1,15 +1,16 @@
-apiVersion: actions.odigos.io/v1alpha1
+apiVersion: odigos.io/v1alpha1
 kind: Action
 metadata:
   name: label-attributes
   namespace: odigos-system
 spec:
+  actionName: label-attributes
   signals:
     - LOGS
     - TRACES
   k8sAttributes:
-    labels:
-      - attributeKey: vm.app
-        labelKey: vm.app
-      - attributeKey: vm.env
-        labelKey: vm.env
+    labelsAttributes:
+      - labelKey: vm.app
+        attributeKey: vm_app
+      - labelKey: vm.env
+        attributeKey: vm_env
