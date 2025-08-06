@@ -81,3 +81,15 @@ export const GET_SOURCE_CONDITIONS = gql`
     }
   }
 `;
+
+export const GET_SOURCE_LIBRARIES = gql`
+  query GetSourceLibraries($namespace: String!, $kind: String!, $name: String!) {
+    instrumentationInstanceComponents(namespace: $namespace, kind: $kind, name: $name) {
+      name
+      nonIdentifyingAttributes {
+        key
+        value
+      }
+    }
+  }
+`;
