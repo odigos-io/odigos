@@ -135,16 +135,18 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 
 	var enabledDests *odigosv1.DestinationList
 	for _, dest := range dests.Items {
+		// skip disabled destinations
 		if dest.Spec.Disabled {
 			continue
 		}
-		if enabledDests.Items == nil {
-			enabledDests = &odigosv1.DestinationList{
-				Items: []odigosv1.Destination{dest},
-			}
-		} else {
-			enabledDests.Items = append(enabledDests.Items, dest)
+
+		if enabledDests == nil {
+			enabledDests = &odigosv1.DestinationList{}
 		}
+		if enabledDests.Items == nil {
+			enabledDests.Items = []odigosv1.Destination{}
+		}
+		enabledDests.Items = append(enabledDests.Items, dest)
 	}
 
 	dataStreams, err := calculateDataStreams(ctx, c, enabledDests)
@@ -304,6 +306,11 @@ func calculateDataStreams(
 ) ([]pipelinegen.DataStreams, error) {
 
 	dataStreamsMap := make(map[string]*pipelinegen.DataStreams)
+
+	// Handle case where no enabled destinations exist
+	if dests == nil || len(dests.Items) == 0 {
+		return []pipelinegen.DataStreams{}, nil
+	}
 
 	for _, dest := range dests.Items {
 		// If the destination has no source selector, use the default data stream
