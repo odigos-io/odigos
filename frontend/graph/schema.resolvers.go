@@ -535,6 +535,15 @@ func (r *mutationResolver) UpdateOdigosConfig(ctx context.Context, odigosConfig 
 	return true, nil
 }
 
+// UninstrumentCluster is the resolver for the uninstrumentCluster field.
+func (r *mutationResolver) UninstrumentCluster(ctx context.Context) (bool, error) {
+	err := services.UninstrumentCluster(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to uninstrument cluster: %v", err)
+	}
+	return true, nil
+}
+
 // PersistK8sNamespaces is the resolver for the persistK8sNamespaces field.
 func (r *mutationResolver) PersistK8sNamespaces(ctx context.Context, namespaces []*model.PersistNamespaceItemInput) (bool, error) {
 	persistObjects := []*model.PersistNamespaceSourceInput{}

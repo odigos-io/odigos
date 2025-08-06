@@ -410,6 +410,7 @@ type ComplexityRoot struct {
 		PersistK8sSources            func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
 		RestartWorkloads             func(childComplexity int, sourceIds []*model.K8sSourceID) int
 		TestConnectionForDestination func(childComplexity int, destination model.DestinationInput) int
+		UninstrumentCluster          func(childComplexity int) int
 		UpdateAPIToken               func(childComplexity int, token string) int
 		UpdateAction                 func(childComplexity int, id string, action model.ActionInput) int
 		UpdateDataStream             func(childComplexity int, id string, dataStream model.DataStreamInput) int
@@ -721,6 +722,7 @@ type K8sActualNamespaceResolver interface {
 type MutationResolver interface {
 	UpdateAPIToken(ctx context.Context, token string) (bool, error)
 	UpdateOdigosConfig(ctx context.Context, odigosConfig model.OdigosConfigurationInput) (bool, error)
+	UninstrumentCluster(ctx context.Context) (bool, error)
 	PersistK8sNamespaces(ctx context.Context, namespaces []*model.PersistNamespaceItemInput) (bool, error)
 	PersistK8sSources(ctx context.Context, sources []*model.PersistNamespaceSourceInput) (bool, error)
 	UpdateK8sActualSource(ctx context.Context, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) (bool, error)
@@ -2415,6 +2417,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.TestConnectionForDestination(childComplexity, args["destination"].(model.DestinationInput)), true
+
+	case "Mutation.uninstrumentCluster":
+		if e.complexity.Mutation.UninstrumentCluster == nil {
+			break
+		}
+
+		return e.complexity.Mutation.UninstrumentCluster(childComplexity), true
 
 	case "Mutation.updateApiToken":
 		if e.complexity.Mutation.UpdateAPIToken == nil {
@@ -14877,6 +14886,50 @@ func (ec *executionContext) fieldContext_Mutation_updateOdigosConfig(ctx context
 	if fc.Args, err = ec.field_Mutation_updateOdigosConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_uninstrumentCluster(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_uninstrumentCluster(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UninstrumentCluster(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_uninstrumentCluster(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -30423,6 +30476,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateOdigosConfig":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateOdigosConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "uninstrumentCluster":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_uninstrumentCluster(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
