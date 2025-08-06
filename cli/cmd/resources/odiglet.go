@@ -518,7 +518,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									},
 								},
 								InitialDelaySeconds: 5,
-								FailureThreshold:    1,
+								FailureThreshold:    3,
 								PeriodSeconds:       10,
 							},
 							ReadinessProbe: &corev1.Probe{
@@ -528,7 +528,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									},
 								},
 								InitialDelaySeconds: 5,
-								FailureThreshold:    1,
+								FailureThreshold:    3,
 								PeriodSeconds:       10,
 							},
 							VolumeMounts: []corev1.VolumeMount{
