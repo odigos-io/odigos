@@ -510,16 +510,26 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("100m"),
+									"memory": resource.MustParse("300Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("40m"),
+									"memory": resource.MustParse("200Mi"),
+								},
+							},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{k8sconsts.GrpcHealthBinaryPath, "-addr=" + k8sconsts.GrpcHealthProbePath},
 									},
 								},
-								InitialDelaySeconds: 5,
-								FailureThreshold:    1,
+								InitialDelaySeconds: 10,
+								FailureThreshold:    3,
 								PeriodSeconds:       10,
+								TimeoutSeconds:      10,
 							},
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -527,9 +537,10 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 										Command: []string{k8sconsts.GrpcHealthBinaryPath, "-addr=" + k8sconsts.GrpcHealthProbePath},
 									},
 								},
-								InitialDelaySeconds: 5,
-								FailureThreshold:    1,
+								InitialDelaySeconds: 10,
+								FailureThreshold:    3,
 								PeriodSeconds:       10,
+								TimeoutSeconds:      10,
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{

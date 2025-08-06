@@ -58,6 +58,7 @@ rules:
     resources:
       - instrumentationrules
       - processors
+      - actions
     verbs:
       - get
       - list
