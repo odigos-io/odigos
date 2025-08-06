@@ -49,7 +49,7 @@ func GetPageLimit(ctx context.Context) (int, error) {
 		return defaultValue, err
 	}
 
-	configValue := odigosConfiguration.UiPaginationLimit
+	configValue := int(odigosConfiguration.UiPaginationLimit)
 	if configValue > 0 {
 		return configValue, nil
 	}

@@ -151,16 +151,16 @@ func convertOdigosConfigToK8s(cfg *model.OdigosConfigurationInput) (*common.Odig
 	odigosConfig := common.OdigosConfiguration{}
 
 	if cfg.KarpenterEnabled != nil {
-		odigosConfig.KarpenterEnabled = cfg.KarpenterEnabled
+		odigosConfig.KarpenterEnabled.Value = cfg.KarpenterEnabled
 	}
 	if cfg.AllowConcurrentAgents != nil {
-		odigosConfig.AllowConcurrentAgents = cfg.AllowConcurrentAgents
+		odigosConfig.AllowConcurrentAgents.Value = cfg.AllowConcurrentAgents
 	}
 	if cfg.UIPaginationLimit != nil {
-		odigosConfig.UiPaginationLimit = *cfg.UIPaginationLimit
+		odigosConfig.UiPaginationLimit = common.ConfigInt(*cfg.UIPaginationLimit)
 	}
 	if cfg.CentralBackendURL != nil {
-		odigosConfig.CentralBackendURL = *cfg.CentralBackendURL
+		odigosConfig.CentralBackendURL = common.ConfigString(*cfg.CentralBackendURL)
 	}
 	if cfg.Oidc != nil {
 		odigosConfig.Oidc = &common.OidcConfiguration{}
@@ -175,10 +175,10 @@ func convertOdigosConfigToK8s(cfg *model.OdigosConfigurationInput) (*common.Odig
 		}
 	}
 	if cfg.ClusterName != nil {
-		odigosConfig.ClusterName = *cfg.ClusterName
+		odigosConfig.ClusterName = common.ConfigString(*cfg.ClusterName)
 	}
 	if cfg.ImagePrefix != nil {
-		odigosConfig.ImagePrefix = *cfg.ImagePrefix
+		odigosConfig.ImagePrefix = common.ConfigString(*cfg.ImagePrefix)
 	}
 	if cfg.IgnoredNamespaces != nil {
 		odigosConfig.IgnoredNamespaces = make([]string, len(cfg.IgnoredNamespaces))
@@ -207,19 +207,19 @@ func convertOdigosConfigToK8s(cfg *model.OdigosConfigurationInput) (*common.Odig
 		odigosConfig.AgentEnvVarsInjectionMethod = &m
 	}
 	if cfg.CustomContainerRuntimeSocketPath != nil {
-		odigosConfig.CustomContainerRuntimeSocketPath = *cfg.CustomContainerRuntimeSocketPath
+		odigosConfig.CustomContainerRuntimeSocketPath = common.ConfigString(*cfg.CustomContainerRuntimeSocketPath)
 	}
 	if cfg.OdigletHealthProbeBindPort != nil {
-		odigosConfig.OdigletHealthProbeBindPort = *cfg.OdigletHealthProbeBindPort
+		odigosConfig.OdigletHealthProbeBindPort = common.ConfigInt(*cfg.OdigletHealthProbeBindPort)
 	}
 	if cfg.RollbackDisabled != nil {
-		odigosConfig.RollbackDisabled = cfg.RollbackDisabled
+		odigosConfig.RollbackDisabled.Value = cfg.RollbackDisabled
 	}
 	if cfg.RollbackGraceTime != nil {
-		odigosConfig.RollbackGraceTime = *cfg.RollbackGraceTime
+		odigosConfig.RollbackGraceTime = common.ConfigString(*cfg.RollbackGraceTime)
 	}
 	if cfg.RollbackStabilityWindow != nil {
-		odigosConfig.RollbackStabilityWindow = *cfg.RollbackStabilityWindow
+		odigosConfig.RollbackStabilityWindow = common.ConfigString(*cfg.RollbackStabilityWindow)
 	}
 	if cfg.Rollout != nil {
 		odigosConfig.Rollout = &common.RolloutConfiguration{
@@ -300,19 +300,19 @@ func convertOdigosConfigToK8s(cfg *model.OdigosConfigurationInput) (*common.Odig
 
 func convertOdigosConfigToGql(cfg *common.OdigosConfiguration) (*model.OdigosConfiguration, error) {
 	odigosConfig := model.OdigosConfiguration{
-		KarpenterEnabled:                 cfg.KarpenterEnabled,
-		AllowConcurrentAgents:            cfg.AllowConcurrentAgents,
-		ClusterName:                      &cfg.ClusterName,
-		ImagePrefix:                      &cfg.ImagePrefix,
-		CentralBackendURL:                &cfg.CentralBackendURL,
-		RollbackDisabled:                 cfg.RollbackDisabled,
-		RollbackGraceTime:                &cfg.RollbackGraceTime,
-		RollbackStabilityWindow:          &cfg.RollbackStabilityWindow,
-		CustomContainerRuntimeSocketPath: &cfg.CustomContainerRuntimeSocketPath,
+		KarpenterEnabled:                 cfg.KarpenterEnabled.Value,
+		AllowConcurrentAgents:            cfg.AllowConcurrentAgents.Value,
+		ClusterName:                      (*string)(&cfg.ClusterName),
+		ImagePrefix:                      (*string)(&cfg.ImagePrefix),
+		CentralBackendURL:                (*string)(&cfg.CentralBackendURL),
+		RollbackDisabled:                 cfg.RollbackDisabled.Value,
+		RollbackGraceTime:                (*string)(&cfg.RollbackGraceTime),
+		RollbackStabilityWindow:          (*string)(&cfg.RollbackStabilityWindow),
+		CustomContainerRuntimeSocketPath: (*string)(&cfg.CustomContainerRuntimeSocketPath),
 	}
 
 	if cfg.UiPaginationLimit > 0 {
-		odigosConfig.UIPaginationLimit = &cfg.UiPaginationLimit
+		odigosConfig.UIPaginationLimit = (*int)(&cfg.UiPaginationLimit)
 	}
 	if len(cfg.Profiles) > 0 {
 		odigosConfig.Profiles = make([]*string, len(cfg.Profiles))
