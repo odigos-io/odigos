@@ -57,7 +57,6 @@ func GetCurrentConfig(ctx context.Context, client *kube.Client, ns string) (*com
 		return nil, fmt.Errorf("failed to get odigos-configuration ConfigMap: %w", err)
 	}
 	var odigosConfiguration common.OdigosConfiguration
-	fmt.Println("RAW CONFIG:", configMap.Data[consts.OdigosConfigurationFileName])
 	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration); err != nil {
 		return nil, err
 	}
