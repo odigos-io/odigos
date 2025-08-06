@@ -26773,7 +26773,7 @@ func (ec *executionContext) unmarshalInputDestinationInput(ctx context.Context, 
 			it.Fields = data
 		case "disabled":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
-			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}

@@ -30,7 +30,7 @@ type DestinationSpec struct {
 	Data            map[string]string            `json:"data"`
 	SecretRef       *v1.LocalObjectReference     `json:"secretRef,omitempty"`
 	Signals         []common.ObservabilitySignal `json:"signals"`
-	Disabled        bool                         `json:"disabled"`
+	Disabled        *bool                        `json:"disabled,omitempty"`
 
 	// SourceSelector defines which sources can send data to this destination.
 	// If not specified, defaults to "all".

@@ -673,6 +673,11 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 	dataField, secretFields := services.TransformFieldsToDataAndSecrets(destTypeConfig, fieldsMap)
 	generateNamePrefix := "odigos.io.dest." + string(destType) + "-"
 
+	disabled := false
+	if destination.Disabled != nil {
+		disabled = *destination.Disabled
+	}
+
 	k8sDestination := v1alpha1.Destination{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: generateNamePrefix,
@@ -682,7 +687,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 			DestinationName: destName,
 			Data:            dataField,
 			Signals:         services.ExportedSignalsObjectToSlice(destination.ExportedSignals),
-			Disabled:        destination.Disabled,
+			Disabled:        &disabled,
 		},
 	}
 	if destination.CurrentStreamName != "" {
@@ -811,7 +816,9 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	dest.Spec.DestinationName = destName
 	dest.Spec.Data = dataFields
 	dest.Spec.Signals = services.ExportedSignalsObjectToSlice(destination.ExportedSignals)
-	dest.Spec.Disabled = destination.Disabled
+	if destination.Disabled != nil {
+		dest.Spec.Disabled = destination.Disabled
+	}
 
 	if destination.CurrentStreamName != "" {
 		// Init empty struct if nil

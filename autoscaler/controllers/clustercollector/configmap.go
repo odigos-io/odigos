@@ -136,7 +136,7 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	enabledDests := &odigosv1.DestinationList{Items: []odigosv1.Destination{}}
 	for _, dest := range dests.Items {
 		// skip disabled destinations
-		if dest.Spec.Disabled {
+		if dest.Spec.Disabled != nil && *dest.Spec.Disabled {
 			continue
 		}
 		enabledDests.Items = append(enabledDests.Items, dest)

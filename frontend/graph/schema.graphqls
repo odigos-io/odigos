@@ -477,7 +477,7 @@ input DestinationInput {
   currentStreamName: String!
   exportedSignals: ExportedSignalsInput!
   fields: [FieldInput!]!
-  disabled: Boolean!
+  disabled: Boolean
 }
 
 input FieldInput {
