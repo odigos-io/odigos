@@ -36,9 +36,9 @@ func (r *k8sSourceResolver) MarkedForInstrumentation(ctx context.Context, obj *m
 // RuntimeInfo is the resolver for the runtimeInfo field.
 func (r *k8sSourceResolver) RuntimeInfo(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceRuntimeInfo, error) {
 	l := loaders.For(ctx)
-	ic := l.GetInstrumentationConfig(ctx, *obj.ID)
-	if ic == nil {
-		return nil, nil
+	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
 	}
 
 	var runtimeInfoReason *string
@@ -85,6 +85,80 @@ func (r *k8sSourceResolver) RuntimeInfo(ctx context.Context, obj *model.K8sSourc
 	}
 
 	return runtimeInfo, nil
+}
+
+// AgentEnabled is the resolver for the agentEnabled field.
+func (r *k8sSourceResolver) AgentEnabled(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceAgentEnabled, error) {
+	l := loaders.For(ctx)
+	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var agentEnabledStatus *model.DesiredConditionStatus
+	for _, c := range ic.Status.Conditions {
+		if c.Type == v1alpha1.AgentEnabledStatusConditionType {
+			conditionStatus := agentEnabledStatusCondition(&c.Reason)
+			agentEnabledStatus = &model.DesiredConditionStatus{
+				Name:       c.Type,
+				Status:     conditionStatus,
+				ReasonEnum: &c.Reason,
+				Message:    c.Message,
+			}
+			break
+		}
+	}
+
+	containers := make([]*model.K8sSourceAgentEnabledContainer, len(ic.Spec.Containers))
+	for i, container := range ic.Spec.Containers {
+		reasonStr := string(container.AgentEnabledReason)
+		var envInjectionMethodStr *string
+		if container.EnvInjectionMethod != nil {
+			asStr := string(*container.EnvInjectionMethod)
+			envInjectionMethodStr = &asStr
+		}
+
+		var traces *model.K8sSourceAgentEnabledContainerTraces
+		if container.Traces != nil {
+			traces = &model.K8sSourceAgentEnabledContainerTraces{
+				Enabled: true,
+			}
+		}
+		var metrics *model.K8sSourceAgentEnabledContainerMetrics
+		if container.Metrics != nil {
+			metrics = &model.K8sSourceAgentEnabledContainerMetrics{
+				Enabled: true,
+			}
+		}
+		var logs *model.K8sSourceAgentEnabledContainerLogs
+		if container.Logs != nil {
+			logs = &model.K8sSourceAgentEnabledContainerLogs{
+				Enabled: true,
+			}
+		}
+
+		containers[i] = &model.K8sSourceAgentEnabledContainer{
+			ContainerName: container.ContainerName,
+			AgentEnabled:  true,
+			AgentEnabledStatus: &model.DesiredConditionStatus{
+				Name:       v1alpha1.AgentEnabledStatusConditionType,
+				Status:     agentEnabledStatusCondition(&reasonStr),
+				ReasonEnum: &reasonStr,
+			},
+			OtelDistroName:     emptyStrToNil(container.OtelDistroName),
+			EnvInjectionMethod: envInjectionMethodStr,
+			DistroParams:       distroParamsToModel(container.DistroParams),
+			Traces:             traces,
+			Metrics:            metrics,
+			Logs:               logs,
+		}
+	}
+
+	return &model.K8sSourceAgentEnabled{
+		AgentEnabled:  ic.Spec.AgentInjectionEnabled,
+		EnabledStatus: agentEnabledStatus,
+		Containers:    containers,
+	}, nil
 }
 
 // K8sSource returns K8sSourceResolver implementation.

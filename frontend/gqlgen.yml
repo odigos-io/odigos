@@ -72,3 +72,5 @@ models:
         resolver: true
       runtimeInfo:
         resolver: true
+      agentEnabled:
+        resolver: true

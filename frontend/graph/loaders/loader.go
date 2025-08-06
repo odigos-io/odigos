@@ -51,7 +51,7 @@ func (l *Loaders) GetWorkloadIds() []model.K8sWorkload {
 	return l.workloadIds
 }
 
-func (l *Loaders) GetInstrumentationConfig(ctx context.Context, workload model.K8sWorkload) *v1alpha1.InstrumentationConfig {
+func (l *Loaders) GetInstrumentationConfig(ctx context.Context, workload model.K8sWorkload) (*v1alpha1.InstrumentationConfig, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -59,11 +59,11 @@ func (l *Loaders) GetInstrumentationConfig(ctx context.Context, workload model.K
 	if len(l.instrumentationConfigs) == 0 {
 		instrumentationConfigs, err := l.fetchInstrumentationConfigs(ctx)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 		l.instrumentationConfigs = instrumentationConfigs
 	}
-	return l.instrumentationConfigs[workload]
+	return l.instrumentationConfigs[workload], nil
 }
 
 func (l *Loaders) GetSources(ctx context.Context, sourceId model.K8sWorkload) (*v1alpha1.WorkloadSources, error) {

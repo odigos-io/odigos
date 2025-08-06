@@ -781,6 +781,7 @@ type K8sActualNamespaceResolver interface {
 type K8sSourceResolver interface {
 	MarkedForInstrumentation(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceMakredForInstrumentation, error)
 	RuntimeInfo(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceRuntimeInfo, error)
+	AgentEnabled(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceAgentEnabled, error)
 }
 type MutationResolver interface {
 	UpdateAPIToken(ctx context.Context, token string) (bool, error)
@@ -14223,7 +14224,7 @@ func (ec *executionContext) _K8sSource_agentEnabled(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AgentEnabled, nil
+		return ec.resolvers.K8sSource().AgentEnabled(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14241,8 +14242,8 @@ func (ec *executionContext) fieldContext_K8sSource_agentEnabled(_ context.Contex
 	fc = &graphql.FieldContext{
 		Object:     "K8sSource",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "agentEnabled":
@@ -31408,7 +31409,38 @@ func (ec *executionContext) _K8sSource(ctx context.Context, sel ast.SelectionSet
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "agentEnabled":
-			out.Values[i] = ec._K8sSource_agentEnabled(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sSource_agentEnabled(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "rollout":
 			out.Values[i] = ec._K8sSource_rollout(ctx, field, obj)
 		case "containers":
