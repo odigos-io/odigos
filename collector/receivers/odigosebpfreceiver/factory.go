@@ -37,7 +37,7 @@ func createTracesReceiver(
 	cfg component.Config,
 	next consumer.Traces,
 ) (receiver.Traces, error) {
-	return &receiverImpl{config: cfg.(*Config)}, nil
+	return &receiverImpl{config: cfg.(*Config), next: next}, nil
 }
 
 func createMetricsReceiver(
