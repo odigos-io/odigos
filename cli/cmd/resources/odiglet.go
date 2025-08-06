@@ -350,6 +350,9 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					Labels: map[string]string{
 						"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
 					},
+					Annotations: map[string]string{
+						"kubectl.kubernetes.io/default-container": k8sconsts.OdigletContainerName,
+					},
 				},
 				Spec: corev1.PodSpec{
 					NodeSelector: nodeSelector,
@@ -507,7 +510,16 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("50m"),
+									"memory": resource.MustParse("150Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("20m"),
+									"memory": resource.MustParse("100Mi"),
+								},
+							},
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
 									Exec: &corev1.ExecAction{
@@ -515,7 +527,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									},
 								},
 								InitialDelaySeconds: 5,
-								FailureThreshold:    1,
+								FailureThreshold:    3,
 								PeriodSeconds:       10,
 							},
 							ReadinessProbe: &corev1.Probe{
@@ -525,7 +537,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 									},
 								},
 								InitialDelaySeconds: 5,
-								FailureThreshold:    1,
+								FailureThreshold:    3,
 								PeriodSeconds:       10,
 							},
 							VolumeMounts: []corev1.VolumeMount{

@@ -14,6 +14,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -24,6 +25,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	yaml "gopkg.in/yaml.v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -489,6 +491,48 @@ func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bo
 	ns := env.GetCurrentNamespace()
 	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, ns, token)
 	return err == nil, nil
+}
+
+// UpdateOdigosConfig is the resolver for the updateOdigosConfig field.
+func (r *mutationResolver) UpdateOdigosConfig(ctx context.Context, odigosConfig model.OdigosConfigurationInput) (bool, error) {
+	ns := env.GetCurrentNamespace()
+	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+	if err != nil {
+		return false, fmt.Errorf("failed to get odigos configuration: %v", err)
+	}
+
+	cfg, err := convertOdigosConfigToK8s(&odigosConfig)
+	if err != nil {
+		return false, fmt.Errorf("failed to convert odigos configuration: %v", err)
+	}
+
+	if cfg.Oidc != nil && cfg.Oidc.ClientSecret != "" {
+		// ensure the oidc secret exists and is updated
+		err = services.EnsureOidcSecret(ctx, cfg.Oidc.ClientSecret)
+		if err != nil {
+			return false, fmt.Errorf("failed to ensure oidc secret: %v", err)
+		}
+		// update the odigos configmap with the secret ref
+		cfg.Oidc.ClientSecret = fmt.Sprintf("secretRef:%s", consts.OidcSecretName)
+	}
+
+	yamlBytes, err := yaml.Marshal(cfg)
+	if err != nil {
+		return false, fmt.Errorf("failed to marshal odigos configuration: %v", err)
+	}
+
+	// Update the config map
+	if cm.Data == nil {
+		cm.Data = make(map[string]string)
+	}
+	cm.Data[consts.OdigosConfigurationFileName] = string(yamlBytes)
+
+	_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
+	if err != nil {
+		return false, fmt.Errorf("failed to update odigos configuration: %v", err)
+	}
+
+	return true, nil
 }
 
 // PersistK8sNamespaces is the resolver for the persistK8sNamespaces field.
@@ -1092,6 +1136,34 @@ func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, e
 	return &config, nil
 }
 
+// OdigosConfig is the resolver for the odigosConfig field.
+func (r *queryResolver) OdigosConfig(ctx context.Context) (*model.OdigosConfiguration, error) {
+	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get odigos configuration: %v", err)
+	}
+
+	cfg := common.OdigosConfiguration{}
+	err = yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal odigos configuration: %v", err)
+	}
+
+	odigosConfig, err := convertOdigosConfigToGql(&cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert odigos configuration: %v", err)
+	}
+	if odigosConfig.Oidc != nil {
+		oidcSecret, err := services.GetOidcSecret(ctx)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return nil, fmt.Errorf("failed to get oidc secret: %v", err)
+		}
+		odigosConfig.Oidc.ClientSecret = &oidcSecret
+	}
+
+	return odigosConfig, nil
+}
+
 // DestinationCategories is the resolver for the destinationCategories field.
 func (r *queryResolver) DestinationCategories(ctx context.Context) (*model.GetDestinationCategories, error) {
 	destTypes := services.GetDestinationCategories()
@@ -1201,6 +1273,40 @@ func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, ki
 // SourceConditions is the resolver for the sourceConditions field.
 func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceConditions, error) {
 	return services.GetOtherConditionsForSources(ctx, "", "", "")
+}
+
+// InstrumentationInstanceComponents is the resolver for the instrumentationInstanceComponents field.
+func (r *queryResolver) InstrumentationInstanceComponents(ctx context.Context, namespace string, kind string, name string) ([]*model.InstrumentationInstanceComponent, error) {
+	instances, err := services.GetInstrumentationInstances(ctx, namespace, name, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return empty components if no instrumentation instances found
+	if len(instances) == 0 {
+		return []*model.InstrumentationInstanceComponent{}, nil
+	}
+
+	components := make([]*model.InstrumentationInstanceComponent, 0)
+	for _, instance := range instances {
+		for _, component := range instance.Status.Components {
+			nonIdentifyingAttributes := make([]*model.NonIdentifyingAttribute, 0)
+
+			for _, attribute := range component.NonIdentifyingAttributes {
+				nonIdentifyingAttributes = append(nonIdentifyingAttributes, &model.NonIdentifyingAttribute{
+					Key:   attribute.Key,
+					Value: attribute.Value,
+				})
+			}
+
+			components = append(components, &model.InstrumentationInstanceComponent{
+				Name:                     component.Name,
+				NonIdentifyingAttributes: nonIdentifyingAttributes,
+			})
+		}
+	}
+
+	return components, nil
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.

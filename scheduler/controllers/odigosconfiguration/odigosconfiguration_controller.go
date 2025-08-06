@@ -51,7 +51,6 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
 	odigosConfiguration := common.OdigosConfiguration{}
 	err = yaml.Unmarshal([]byte(odigosConfigMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
 	if err != nil {
@@ -345,11 +344,23 @@ func (r *odigosConfigurationController) applyProfileManifests(ctx context.Contex
 		}
 	}
 
+	ActionsList := odigosv1alpha1.ActionList{}
+	err = r.Client.List(ctx, &ActionsList, listOptions)
+	if err != nil {
+		return err
+	}
+
+	for i := range ActionsList.Items {
+		err = r.Client.Delete(ctx, &ActionsList.Items[i])
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 func (r *odigosConfigurationController) applySingleProfileManifest(ctx context.Context, profileName common.ProfileName, yamlBytes []byte, profileDeploymentHash string) error {
-
 	obj := &unstructured.Unstructured{}
 	err := yaml.Unmarshal(yamlBytes, obj)
 	if err != nil {
@@ -415,6 +426,8 @@ func resolveMountMethod(odigosConfiguration *common.OdigosConfiguration) {
 	case common.K8sHostPathMountMethod:
 		return
 	case common.K8sVirtualDeviceMountMethod:
+		return
+	case common.K8sInitContainerMountMethod:
 		return
 	default:
 		// any illegal value will be defaulted to host-path
