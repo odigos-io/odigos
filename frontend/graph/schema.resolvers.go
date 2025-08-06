@@ -1277,6 +1277,40 @@ func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceCo
 	return services.GetOtherConditionsForSources(ctx, "", "", "")
 }
 
+// InstrumentationInstanceComponents is the resolver for the instrumentationInstanceComponents field.
+func (r *queryResolver) InstrumentationInstanceComponents(ctx context.Context, namespace string, kind string, name string) ([]*model.InstrumentationInstanceComponent, error) {
+	instances, err := services.GetInstrumentationInstances(ctx, namespace, name, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return empty components if no instrumentation instances found
+	if len(instances) == 0 {
+		return []*model.InstrumentationInstanceComponent{}, nil
+	}
+
+	components := make([]*model.InstrumentationInstanceComponent, 0)
+	for _, instance := range instances {
+		for _, component := range instance.Status.Components {
+			nonIdentifyingAttributes := make([]*model.NonIdentifyingAttribute, 0)
+
+			for _, attribute := range component.NonIdentifyingAttributes {
+				nonIdentifyingAttributes = append(nonIdentifyingAttributes, &model.NonIdentifyingAttribute{
+					Key:   attribute.Key,
+					Value: attribute.Value,
+				})
+			}
+
+			components = append(components, &model.InstrumentationInstanceComponent{
+				Name:                     component.Name,
+				NonIdentifyingAttributes: nonIdentifyingAttributes,
+			})
+		}
+	}
+
+	return components, nil
+}
+
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 

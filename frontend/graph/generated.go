@@ -295,6 +295,11 @@ type ComplexityRoot struct {
 		Message               func(childComplexity int) int
 	}
 
+	InstrumentationInstanceComponent struct {
+		Name                     func(childComplexity int) int
+		NonIdentifyingAttributes func(childComplexity int) int
+	}
+
 	InstrumentationLibraryGlobalId struct {
 		Language func(childComplexity int) int
 		Name     func(childComplexity int) int
@@ -425,6 +430,11 @@ type ComplexityRoot struct {
 		DesiredNodes   func(childComplexity int) int
 		Enabled        func(childComplexity int) int
 		UpdatedNodes   func(childComplexity int) int
+	}
+
+	NonIdentifyingAttribute struct {
+		Key   func(childComplexity int) int
+		Value func(childComplexity int) int
 	}
 
 	NumberCondition struct {
@@ -558,16 +568,17 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		ComputePlatform       func(childComplexity int) int
-		Config                func(childComplexity int) int
-		DescribeOdigos        func(childComplexity int) int
-		DescribeSource        func(childComplexity int, namespace string, kind string, name string) int
-		DestinationCategories func(childComplexity int) int
-		GetOverviewMetrics    func(childComplexity int) int
-		GetServiceMap         func(childComplexity int) int
-		OdigosConfig          func(childComplexity int) int
-		PotentialDestinations func(childComplexity int) int
-		SourceConditions      func(childComplexity int) int
+		ComputePlatform                   func(childComplexity int) int
+		Config                            func(childComplexity int) int
+		DescribeOdigos                    func(childComplexity int) int
+		DescribeSource                    func(childComplexity int, namespace string, kind string, name string) int
+		DestinationCategories             func(childComplexity int) int
+		GetOverviewMetrics                func(childComplexity int) int
+		GetServiceMap                     func(childComplexity int) int
+		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
+		OdigosConfig                      func(childComplexity int) int
+		PotentialDestinations             func(childComplexity int) int
+		SourceConditions                  func(childComplexity int) int
 	}
 
 	RenameAttributeAction struct {
@@ -738,6 +749,7 @@ type QueryResolver interface {
 	DescribeOdigos(ctx context.Context) (*model.OdigosAnalyze, error)
 	DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error)
 	SourceConditions(ctx context.Context) ([]*model.SourceConditions, error)
+	InstrumentationInstanceComponents(ctx context.Context, namespace string, kind string, name string) ([]*model.InstrumentationInstanceComponent, error)
 }
 
 type executableSchema struct {
@@ -1824,6 +1836,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationInstanceAnalyze.Message(childComplexity), true
 
+	case "InstrumentationInstanceComponent.name":
+		if e.complexity.InstrumentationInstanceComponent.Name == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationInstanceComponent.Name(childComplexity), true
+
+	case "InstrumentationInstanceComponent.nonIdentifyingAttributes":
+		if e.complexity.InstrumentationInstanceComponent.NonIdentifyingAttributes == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationInstanceComponent.NonIdentifyingAttributes(childComplexity), true
+
 	case "InstrumentationLibraryGlobalId.language":
 		if e.complexity.InstrumentationLibraryGlobalId.Language == nil {
 			break
@@ -2544,6 +2570,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NodeCollectorAnalyze.UpdatedNodes(childComplexity), true
 
+	case "NonIdentifyingAttribute.key":
+		if e.complexity.NonIdentifyingAttribute.Key == nil {
+			break
+		}
+
+		return e.complexity.NonIdentifyingAttribute.Key(childComplexity), true
+
+	case "NonIdentifyingAttribute.value":
+		if e.complexity.NonIdentifyingAttribute.Value == nil {
+			break
+		}
+
+		return e.complexity.NonIdentifyingAttribute.Value(childComplexity), true
+
 	case "NumberCondition.expectedValue":
 		if e.complexity.NumberCondition.ExpectedValue == nil {
 			break
@@ -3171,6 +3211,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetServiceMap(childComplexity), true
+
+	case "Query.instrumentationInstanceComponents":
+		if e.complexity.Query.InstrumentationInstanceComponents == nil {
+			break
+		}
+
+		args, err := ec.field_Query_instrumentationInstanceComponents_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.InstrumentationInstanceComponents(childComplexity, args["namespace"].(string), args["kind"].(string), args["name"].(string)), true
 
 	case "Query.odigosConfig":
 		if e.complexity.Query.OdigosConfig == nil {
@@ -4676,6 +4728,80 @@ func (ec *executionContext) field_Query_describeSource_argsKind(
 }
 
 func (ec *executionContext) field_Query_describeSource_argsName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["name"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+	if tmp, ok := rawArgs["name"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_instrumentationInstanceComponents_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_instrumentationInstanceComponents_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg0
+	arg1, err := ec.field_Query_instrumentationInstanceComponents_argsKind(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["kind"] = arg1
+	arg2, err := ec.field_Query_instrumentationInstanceComponents_argsName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Query_instrumentationInstanceComponents_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_instrumentationInstanceComponents_argsKind(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["kind"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+	if tmp, ok := rawArgs["kind"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_instrumentationInstanceComponents_argsName(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
@@ -11742,6 +11868,100 @@ func (ec *executionContext) fieldContext_InstrumentationInstanceAnalyze_identify
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationInstanceComponent_name(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceComponent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationInstanceComponent_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationInstanceComponent_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationInstanceComponent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationInstanceComponent_nonIdentifyingAttributes(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceComponent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationInstanceComponent_nonIdentifyingAttributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NonIdentifyingAttributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.NonIdentifyingAttribute)
+	fc.Result = res
+	return ec.marshalNNonIdentifyingAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNonIdentifyingAttributeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationInstanceComponent_nonIdentifyingAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationInstanceComponent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_NonIdentifyingAttribute_key(ctx, field)
+			case "value":
+				return ec.fieldContext_NonIdentifyingAttribute_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NonIdentifyingAttribute", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationLibraryGlobalId_name(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationLibraryGlobalID) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationLibraryGlobalId_name(ctx, field)
 	if err != nil {
@@ -16163,6 +16383,94 @@ func (ec *executionContext) fieldContext_NodeCollectorAnalyze_availableNodes(_ c
 				return ec.fieldContext_EntityProperty_explain(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EntityProperty", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NonIdentifyingAttribute_key(ctx context.Context, field graphql.CollectedField, obj *model.NonIdentifyingAttribute) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NonIdentifyingAttribute_key(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NonIdentifyingAttribute_key(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NonIdentifyingAttribute",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NonIdentifyingAttribute_value(ctx context.Context, field graphql.CollectedField, obj *model.NonIdentifyingAttribute) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NonIdentifyingAttribute_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NonIdentifyingAttribute_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NonIdentifyingAttribute",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -20599,6 +20907,67 @@ func (ec *executionContext) fieldContext_Query_sourceConditions(_ context.Contex
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SourceConditions", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_instrumentationInstanceComponents(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_instrumentationInstanceComponents(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().InstrumentationInstanceComponents(rctx, fc.Args["namespace"].(string), fc.Args["kind"].(string), fc.Args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InstrumentationInstanceComponent)
+	fc.Result = res
+	return ec.marshalNInstrumentationInstanceComponent2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationInstanceComponentᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_instrumentationInstanceComponents(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_InstrumentationInstanceComponent_name(ctx, field)
+			case "nonIdentifyingAttributes":
+				return ec.fieldContext_InstrumentationInstanceComponent_nonIdentifyingAttributes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InstrumentationInstanceComponent", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_instrumentationInstanceComponents_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -29320,6 +29689,50 @@ func (ec *executionContext) _InstrumentationInstanceAnalyze(ctx context.Context,
 	return out
 }
 
+var instrumentationInstanceComponentImplementors = []string{"InstrumentationInstanceComponent"}
+
+func (ec *executionContext) _InstrumentationInstanceComponent(ctx context.Context, sel ast.SelectionSet, obj *model.InstrumentationInstanceComponent) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, instrumentationInstanceComponentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InstrumentationInstanceComponent")
+		case "name":
+			out.Values[i] = ec._InstrumentationInstanceComponent_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nonIdentifyingAttributes":
+			out.Values[i] = ec._InstrumentationInstanceComponent_nonIdentifyingAttributes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var instrumentationLibraryGlobalIdImplementors = []string{"InstrumentationLibraryGlobalId"}
 
 func (ec *executionContext) _InstrumentationLibraryGlobalId(ctx context.Context, sel ast.SelectionSet, obj *model.InstrumentationLibraryGlobalID) graphql.Marshaler {
@@ -30196,6 +30609,50 @@ func (ec *executionContext) _NodeCollectorAnalyze(ctx context.Context, sel ast.S
 			out.Values[i] = ec._NodeCollectorAnalyze_updatedNodes(ctx, field, obj)
 		case "availableNodes":
 			out.Values[i] = ec._NodeCollectorAnalyze_availableNodes(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var nonIdentifyingAttributeImplementors = []string{"NonIdentifyingAttribute"}
+
+func (ec *executionContext) _NonIdentifyingAttribute(ctx context.Context, sel ast.SelectionSet, obj *model.NonIdentifyingAttribute) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nonIdentifyingAttributeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NonIdentifyingAttribute")
+		case "key":
+			out.Values[i] = ec._NonIdentifyingAttribute_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._NonIdentifyingAttribute_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -31268,6 +31725,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_sourceConditions(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "instrumentationInstanceComponents":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_instrumentationInstanceComponents(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -33510,6 +33989,60 @@ func (ec *executionContext) marshalNInstrumentationInstanceAnalyze2ᚖgithubᚗc
 	return ec._InstrumentationInstanceAnalyze(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNInstrumentationInstanceComponent2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationInstanceComponentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InstrumentationInstanceComponent) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInstrumentationInstanceComponent2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationInstanceComponent(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInstrumentationInstanceComponent2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationInstanceComponent(ctx context.Context, sel ast.SelectionSet, v *model.InstrumentationInstanceComponent) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InstrumentationInstanceComponent(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNInstrumentationLibraryGlobalId2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationLibraryGlobalID(ctx context.Context, sel ast.SelectionSet, v *model.InstrumentationLibraryGlobalID) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -33884,6 +34417,60 @@ func (ec *executionContext) marshalNNodeCollectorAnalyze2ᚖgithubᚗcomᚋodigo
 		return graphql.Null
 	}
 	return ec._NodeCollectorAnalyze(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNNonIdentifyingAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNonIdentifyingAttributeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.NonIdentifyingAttribute) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNNonIdentifyingAttribute2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNonIdentifyingAttribute(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNNonIdentifyingAttribute2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNonIdentifyingAttribute(ctx context.Context, sel ast.SelectionSet, v *model.NonIdentifyingAttribute) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._NonIdentifyingAttribute(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNNumberOperation2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNumberOperation(ctx context.Context, v any) (model.NumberOperation, error) {

@@ -400,6 +400,11 @@ type InstrumentationInstanceAnalyze struct {
 	IdentifyingAttributes []*EntityProperty `json:"identifyingAttributes"`
 }
 
+type InstrumentationInstanceComponent struct {
+	Name                     string                     `json:"name"`
+	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
+}
+
 type InstrumentationLibraryGlobalID struct {
 	Name     string               `json:"name"`
 	SpanKind *SpanKind            `json:"spanKind,omitempty"`
@@ -588,6 +593,11 @@ type NodeCollectorAnalyze struct {
 	CurrentNodes   *EntityProperty `json:"currentNodes,omitempty"`
 	UpdatedNodes   *EntityProperty `json:"updatedNodes,omitempty"`
 	AvailableNodes *EntityProperty `json:"availableNodes,omitempty"`
+}
+
+type NonIdentifyingAttribute struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type NumberCondition struct {

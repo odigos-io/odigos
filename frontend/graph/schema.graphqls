@@ -912,6 +912,16 @@ type ServiceMapToSource {
   dateTime: String!
 }
 
+type NonIdentifyingAttribute {
+  key: String!
+  value: String!
+}
+
+type InstrumentationInstanceComponent {
+  name: String!
+  nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -927,6 +937,11 @@ type Query {
     name: String!
   ): SourceAnalyze!
   sourceConditions: [SourceConditions!]!
+  instrumentationInstanceComponents(
+    namespace: String!
+    kind: String!
+    name: String!
+  ): [InstrumentationInstanceComponent!]!
 }
 
 type Mutation {

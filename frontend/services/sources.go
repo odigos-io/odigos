@@ -38,6 +38,11 @@ const (
 	WorkloadKindCronJob     model.K8sResourceKind = "CronJob"
 )
 
+type InstanceCounts struct {
+	TotalInstances   int
+	HealthyInstances int
+}
+
 func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
 	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, nsName, metav1.GetOptions{})
 	if err != nil {
@@ -501,18 +506,10 @@ func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	}
 }
 
-type InstanceCounts struct {
-	TotalInstances   int
-	HealthyInstances int
-}
-
-func getInstrumentationInstancesConditions(ctx context.Context, namespace string, name string, kind string) ([]*model.SourceConditions, error) {
-	result := make([]*model.SourceConditions, 0)
-	conditionsMap := make(map[string]*model.SourceConditions)
-	instanceCountsMap := make(map[string]*InstanceCounts)
+func GetInstrumentationInstances(ctx context.Context, namespace string, name string, kind string) ([]*v1alpha1.InstrumentationInstance, error) {
+	result := make([]*v1alpha1.InstrumentationInstance, 0)
 
 	listOptions := metav1.ListOptions{}
-
 	if namespace != "" && name != "" && kind != "" {
 		objectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
 		if len(objectName) > 63 {
@@ -528,8 +525,25 @@ func getInstrumentationInstancesConditions(ctx context.Context, namespace string
 		return nil, err
 	}
 
-	// Count instances and group by workload
 	for _, instance := range list.Items {
+		result = append(result, &instance)
+	}
+
+	return result, nil
+}
+
+func getInstrumentationInstancesConditions(ctx context.Context, namespace string, name string, kind string) ([]*model.SourceConditions, error) {
+	result := make([]*model.SourceConditions, 0)
+	conditionsMap := make(map[string]*model.SourceConditions)
+	instanceCountsMap := make(map[string]*InstanceCounts)
+
+	items, err := GetInstrumentationInstances(ctx, namespace, name, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	// Count instances and group by workload
+	for _, instance := range items {
 		objectName, exists := instance.Labels[consts.InstrumentedAppNameLabel]
 		if !exists {
 			continue
