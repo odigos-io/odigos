@@ -115,7 +115,7 @@ spec:
                 - /root/grpc_health_probe
                 - -addr=unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic
             initialDelaySeconds: 5
-            failureThreshold: 1
+            failureThreshold: 3
             periodSeconds: 10
           readinessProbe:
             exec:
@@ -123,7 +123,7 @@ spec:
                 - /root/grpc_health_probe
                 - -addr=unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic
             initialDelaySeconds: 5
-            failureThreshold: 1
+            failureThreshold: 3
             periodSeconds: 10
         - name: odiglet
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
