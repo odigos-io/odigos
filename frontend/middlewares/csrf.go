@@ -55,15 +55,7 @@ func CSRFMiddleware() gin.HandlerFunc {
 func CSRFTokenHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		csrfService := services.GetCSRFService()
-
-		// Check if there's an existing token in cookie
 		csrfCookie := csrfService.GetCSRFToken(c.Request)
-
-		// If no CSRF cookie is set, assume it's not a browser (Postman/curl/etc)
-		if csrfCookie == "" {
-			c.Next()
-			return
-		}
 
 		var token string
 		var err error
