@@ -55,7 +55,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Cross-Cloud Tests
-        if: ${{ matrix.provider != 'aks' && matrix.platform != 'arm' }}
+        if: ${{ !(matrix.provider == 'aks' && matrix.platform == 'arm') }}
         uses: ./.github/actions/cross-cloud-tests
         with:
           provider: ${{ matrix.provider }}
