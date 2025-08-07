@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"golang.org/x/sync/errgroup"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,10 +27,16 @@ type Loaders struct {
 	// for a namespace query, or a query for specific source, this will be the namespace name.
 	queryNamespace string
 
-	workloadIds            []model.K8sWorkloadID
-	instrumentationConfigs map[model.K8sWorkloadID]*v1alpha1.InstrumentationConfig
-	workloadSources        map[model.K8sWorkloadID]*v1alpha1.Source
-	nsSources              map[string]*v1alpha1.Source
+	workloadIds []model.K8sWorkloadID
+
+	instrumentationConfigMutex sync.Mutex
+	instrumentationConfigs     map[model.K8sWorkloadID]*v1alpha1.InstrumentationConfig
+
+	sourcesMutex    sync.Mutex
+	workloadSources map[model.K8sWorkloadID]*v1alpha1.Source
+	nsSources       map[string]*v1alpha1.Source
+
+	workloadManifestsMutex sync.Mutex
 	workloadManifests      map[model.K8sWorkloadID]*WorkloadManifest
 }
 
@@ -52,8 +59,8 @@ func (l *Loaders) GetWorkloadIds() []model.K8sWorkloadID {
 }
 
 func (l *Loaders) GetInstrumentationConfig(ctx context.Context, workload model.K8sWorkloadID) (*v1alpha1.InstrumentationConfig, error) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
+	l.instrumentationConfigMutex.Lock()
+	defer l.instrumentationConfigMutex.Unlock()
 
 	// if we did not fecth the instrumentation configs yet, do it now.
 	if len(l.instrumentationConfigs) == 0 {
@@ -67,8 +74,8 @@ func (l *Loaders) GetInstrumentationConfig(ctx context.Context, workload model.K
 }
 
 func (l *Loaders) GetSources(ctx context.Context, sourceId model.K8sWorkloadID) (*v1alpha1.WorkloadSources, error) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
+	l.sourcesMutex.Lock()
+	defer l.sourcesMutex.Unlock()
 
 	// if we did not fetch the sources yet, do it now.
 	if len(l.workloadSources) == 0 || len(l.nsSources) == 0 {
@@ -87,9 +94,22 @@ func (l *Loaders) GetSources(ctx context.Context, sourceId model.K8sWorkloadID) 
 	}, nil
 }
 
+func (l *Loaders) GetWorkloadManifest(ctx context.Context, sourceId model.K8sWorkloadID) (*WorkloadManifest, error) {
+	l.workloadManifestsMutex.Lock()
+	defer l.workloadManifestsMutex.Unlock()
+
+	if len(l.workloadManifests) == 0 {
+		workloadManifests, err := l.fetchWorkloadManifests(ctx)
+		if err != nil {
+			return nil, err
+		}
+		l.workloadManifests = workloadManifests
+	}
+	return l.workloadManifests[sourceId], nil
+}
+
 func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
+
 	l.filter = filter
 
 	if filter != nil {
@@ -99,6 +119,8 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 	}
 
 	if filter.MarkedForInstrumentation != nil && *filter.MarkedForInstrumentation {
+		l.instrumentationConfigMutex.Lock()
+		defer l.instrumentationConfigMutex.Unlock()
 		configById, err := l.fetchInstrumentationConfigs(ctx)
 		if err != nil {
 			return err
@@ -109,6 +131,11 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 			l.workloadIds = append(l.workloadIds, sourceId)
 		}
 	} else {
+		l.sourcesMutex.Lock()
+		defer l.sourcesMutex.Unlock()
+		l.workloadManifestsMutex.Lock()
+		defer l.workloadManifestsMutex.Unlock()
+
 		// fetch all sources (both those marked for instrumentation and those not)
 		// this is to allow the user to review and instrument potential sources.
 		workloadSources, namespaceSources, err := l.fetchSources(ctx)
@@ -191,67 +218,103 @@ func (l *Loaders) fetchSources(ctx context.Context) (workloadSources map[model.K
 
 func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests map[model.K8sWorkloadID]*WorkloadManifest, err error) {
 
+	g, ctx := errgroup.WithContext(ctx)
+	var (
+		deps      = make(map[model.K8sWorkloadID]*WorkloadManifest)
+		statefuls = make(map[model.K8sWorkloadID]*WorkloadManifest)
+		daemons   = make(map[model.K8sWorkloadID]*WorkloadManifest)
+		crons     = make(map[model.K8sWorkloadID]*WorkloadManifest)
+	)
+
+	g.Go(func() error {
+		deployments, err := kube.DefaultClient.AppsV1().Deployments(l.queryNamespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, deployment := range deployments.Items {
+			deps[model.K8sWorkloadID{
+				Namespace: deployment.Namespace,
+				Kind:      model.K8sResourceKindDeployment,
+				Name:      deployment.Name,
+			}] = &WorkloadManifest{
+				AvailableReplicas: deployment.Status.AvailableReplicas,
+				PodTemplateSpec:   &deployment.Spec.Template,
+			}
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		daemonsets, err := kube.DefaultClient.AppsV1().DaemonSets(l.queryNamespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, daemonset := range daemonsets.Items {
+			daemons[model.K8sWorkloadID{
+				Namespace: daemonset.Namespace,
+				Kind:      model.K8sResourceKindDaemonSet,
+				Name:      daemonset.Name,
+			}] = &WorkloadManifest{
+				AvailableReplicas: daemonset.Status.NumberReady,
+				PodTemplateSpec:   &daemonset.Spec.Template,
+			}
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		statefulsets, err := kube.DefaultClient.AppsV1().StatefulSets(l.queryNamespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, statefulset := range statefulsets.Items {
+			statefuls[model.K8sWorkloadID{
+				Namespace: statefulset.Namespace,
+				Kind:      model.K8sResourceKindStatefulSet,
+				Name:      statefulset.Name,
+			}] = &WorkloadManifest{
+				AvailableReplicas: statefulset.Status.ReadyReplicas,
+				PodTemplateSpec:   &statefulset.Spec.Template,
+			}
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		cronjobs, err := kube.DefaultClient.BatchV1().CronJobs(l.queryNamespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, cronjob := range cronjobs.Items {
+			crons[model.K8sWorkloadID{
+				Namespace: cronjob.Namespace,
+				Kind:      model.K8sResourceKindCronJob,
+				Name:      cronjob.Name,
+			}] = &WorkloadManifest{
+				AvailableReplicas: int32(len(cronjob.Status.Active)),
+				PodTemplateSpec:   &cronjob.Spec.JobTemplate.Spec.Template,
+			}
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
 	workloadManifests = make(map[model.K8sWorkloadID]*WorkloadManifest)
-
-	deployments, err := kube.DefaultClient.AppsV1().Deployments(l.queryNamespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
+	for id, manifest := range deps {
+		workloadManifests[id] = manifest
 	}
-	for _, deployment := range deployments.Items {
-		workloadManifests[model.K8sWorkloadID{
-			Namespace: deployment.Namespace,
-			Kind:      model.K8sResourceKindDeployment,
-			Name:      deployment.Name,
-		}] = &WorkloadManifest{
-			AvailableReplicas: deployment.Status.AvailableReplicas,
-			PodTemplateSpec:   &deployment.Spec.Template,
-		}
+	for id, manifest := range statefuls {
+		workloadManifests[id] = manifest
+	}
+	for id, manifest := range daemons {
+		workloadManifests[id] = manifest
+	}
+	for id, manifest := range crons {
+		workloadManifests[id] = manifest
 	}
 
-	daemonsets, err := kube.DefaultClient.AppsV1().DaemonSets(l.queryNamespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, daemonset := range daemonsets.Items {
-		workloadManifests[model.K8sWorkloadID{
-			Namespace: daemonset.Namespace,
-			Kind:      model.K8sResourceKindDaemonSet,
-			Name:      daemonset.Name,
-		}] = &WorkloadManifest{
-			AvailableReplicas: daemonset.Status.NumberReady,
-			PodTemplateSpec:   &daemonset.Spec.Template,
-		}
-	}
-
-	statefulsets, err := kube.DefaultClient.AppsV1().StatefulSets(l.queryNamespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, statefulset := range statefulsets.Items {
-		workloadManifests[model.K8sWorkloadID{
-			Namespace: statefulset.Namespace,
-			Kind:      model.K8sResourceKindStatefulSet,
-			Name:      statefulset.Name,
-		}] = &WorkloadManifest{
-			AvailableReplicas: statefulset.Status.ReadyReplicas,
-			PodTemplateSpec:   &statefulset.Spec.Template,
-		}
-	}
-
-	cronjobs, err := kube.DefaultClient.BatchV1().CronJobs(l.queryNamespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, cronjob := range cronjobs.Items {
-		workloadManifests[model.K8sWorkloadID{
-			Namespace: cronjob.Namespace,
-			Kind:      model.K8sResourceKindCronJob,
-			Name:      cronjob.Name,
-		}] = &WorkloadManifest{
-			AvailableReplicas: int32(len(cronjob.Status.Active)),
-			PodTemplateSpec:   &cronjob.Spec.JobTemplate.Spec.Template,
-		}
-	}
-
-	return
+	return workloadManifests, nil
 }
