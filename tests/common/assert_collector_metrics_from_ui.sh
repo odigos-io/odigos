@@ -75,6 +75,8 @@ if ! nc -z localhost $LOCAL_PORT 2>/dev/null; then
     exit 1
 fi
 
+
+
 grahphqlOverviewPayload='{
   "operationName": "GetOverviewMetrics",
   "variables": {},

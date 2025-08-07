@@ -75,7 +75,6 @@ metadata:
       name: odiglet
 spec:
   containers:
-    - name: deviceplugin
     - name: odiglet
       resources: {}
       securityContext:
@@ -83,6 +82,7 @@ spec:
           add:
             - SYS_PTRACE
         privileged: true
+    - name: deviceplugin
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
   nodeSelector:
