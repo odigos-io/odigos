@@ -1,4 +1,11 @@
 
+# each workload in k8s is uniquly identified by it's namespace, resource kind and resource name.
+type K8sWorkloadId {
+  namespace: String!
+  kind: K8sResourceKind!
+  name: String!
+}
+
 # filter for workloads.
 # workload querties can be expensive and resource intensive,
 # so we provide a filter to reduce the scope of the query to just what actually needed.
@@ -9,12 +16,6 @@ input WorkloadFilter {
   workloadKind: K8sResourceKind
   workloadName: String
   markedForInstrumentation: Boolean
-}
-
-type K8sWorkloadId {
-  namespace: String!
-  kind: K8sResourceKind!
-  name: String!
 }
 
 type DesiredConditionStatus {
@@ -34,7 +35,7 @@ type DesiredConditionStatus {
   message: String!
 }
 
-type K8sSourceMakredForInstrumentation {
+type K8sWorkloadMakredForInstrumentation {
 
   # markedForInstrumentation is the reconciled decision for this source.
   # a source can be marked or unmakred for instrumentation due to the presence
@@ -58,7 +59,7 @@ type EnvVar {
   value: String!
 }
 
-type K8sSourceRuntimeInfoContainer {
+type K8sWorkloadRuntimeInfoContainer {
   # the name of the container in the pod manifest.
   containerName: String!
 
@@ -96,7 +97,7 @@ type K8sSourceRuntimeInfoContainer {
   otherAgentName: String
 }
 
-type K8sSourceRuntimeInfo {
+type K8sWorkloadRuntimeInfo {
 
   # completed is true if the runtime info has been calculated for the source.
   completed: Boolean!
@@ -107,7 +108,7 @@ type K8sSourceRuntimeInfo {
   # containers is a list of containers that are part of the source.
   # it contains the runtime info for each container.
   # all containers are always included.
-  containers: [K8sSourceRuntimeInfoContainer!]
+  containers: [K8sWorkloadRuntimeInfoContainer!]
 }
 
 type DistroParam {
@@ -116,22 +117,22 @@ type DistroParam {
 }
 
 # currently empty, will be populated in the future.
-type K8sSourceAgentEnabledContainerTraces {
+type K8sWorkloadAgentEnabledContainerTraces {
   enabled: Boolean!
 }
 
 # currently empty, will be populated in the future.
-type K8sSourceAgentEnabledContainerMetrics {
+type K8sWorkloadAgentEnabledContainerMetrics {
   enabled: Boolean!
 }
 
 # currently empty, will be populated in the future.
-type K8sSourceAgentEnabledContainerLogs {
+type K8sWorkloadAgentEnabledContainerLogs {
   enabled: Boolean!
 }
 
 # describes the agent enabled info for a container.
-type K8sSourceAgentEnabledContainer {
+type K8sWorkloadAgentEnabledContainer {
   # the name of the container in the pod manifest.
   containerName: String!
 
@@ -155,13 +156,13 @@ type K8sSourceAgentEnabledContainer {
   distroParams: [DistroParam!]
 
   # if traces are enabled for this container, this field will be populated.
-  traces: K8sSourceAgentEnabledContainerTraces
+  traces: K8sWorkloadAgentEnabledContainerTraces
 
   # if metrics are enabled for this container, this field will be populated.
-  metrics: K8sSourceAgentEnabledContainerMetrics
+  metrics: K8sWorkloadAgentEnabledContainerMetrics
 
   # if logs are enabled for this container, this field will be populated.
-  logs: K8sSourceAgentEnabledContainerLogs
+  logs: K8sWorkloadAgentEnabledContainerLogs
 }
 
 # agentEnabled is the reconciled decision for odigos if an agent should be injected into the source pods.
@@ -169,7 +170,7 @@ type K8sSourceAgentEnabledContainer {
 # enabling the agent means that odigos is attempting to initiate instrumentation for the source.
 # pods for this workload are expected to have the agent injected, but it is not guaranteed.
 # only the actual state on each pod describe if the agent was indeed injected or not.
-type K8sSourceAgentEnabled {
+type K8sWorkloadAgentEnabled {
 
   # when enabled is true, odigos will attempt to inject the agent 
   # into relevant containers of future new pods from this source.
@@ -183,27 +184,27 @@ type K8sSourceAgentEnabled {
   # containers is a list of containers that are part of the source.
   # it contains the agentEnabled decision for each container.
   # all containers are always included, even if the agent is not enabled for them for any reason.
-  containers: [K8sSourceAgentEnabledContainer!]
+  containers: [K8sWorkloadAgentEnabledContainer!]
 }
 
-type K8sSourceRollout {
+type K8sWorkloadRollout {
     # the status of the rollout. that is being tracked by odigos.
     rolloutStatus: DesiredConditionStatus!
 }
 
 # show all info for a specific source container.
-type K8sSourceContainer {
+type K8sWorkloadContainer {
   containerName: String!
-  runtimeInfo: K8sSourceRuntimeInfoContainer
-  agentEnabled: K8sSourceAgentEnabledContainer
+  runtimeInfo: K8sWorkloadRuntimeInfoContainer
+  agentEnabled: K8sWorkloadAgentEnabledContainer
 }
 
-type K8sSourcePodContainerProcessAttribute {
+type K8sWorkloadPodContainerProcessAttribute {
     key: String!
     value: String!
 }
 
-type K8sSourcePodContainerProcess {
+type K8sWorkloadPodContainerProcess {
 
     # if the agent instrumenting this process is reporting healthy or not.
     # if the agent is still starting up, this will be empty.
@@ -214,10 +215,10 @@ type K8sSourcePodContainerProcess {
 
     # attributes are key value pairs that are reported as part of this process resource attributes in telemetry.
     # it contains just some of the attributes and may not be complete.
-    identifyingAttributes: [K8sSourcePodContainerProcessAttribute!]!
+    identifyingAttributes: [K8sWorkloadPodContainerProcessAttribute!]!
 }
 
-type K8sSourcePodContainer {
+type K8sWorkloadPodContainer {
     # the name of the container in the pod manifest.
     containerName: String!
 
@@ -237,10 +238,10 @@ type K8sSourcePodContainer {
     # it tracks the started, ready, and crash loop back off and present a unified status to show container health.
     healthStatus: DesiredConditionStatus!
 
-    processes: [K8sSourcePodContainerProcess!]!
+    processes: [K8sWorkloadPodContainerProcess!]!
 }
 
-type K8sSourcePod {
+type K8sWorkloadPod {
   # the name of the pod resource in k8s.
   podName: String!
 
@@ -266,33 +267,33 @@ type K8sSourcePod {
 
   # all containers that are part of the pod.
   # all containers are always included, even if the agent is not enabled for them for any reason.
-  containers: [K8sSourcePodContainer!]!
+  containers: [K8sWorkloadPodContainer!]!
 }
 
-type K8sSource {
+type K8sWorkload {
   id: K8sWorkloadId!
 
   # an aggregated status for all the conditions that are relevant for the source.
   # if there is any issue with the source, this value will track it.
   sourceHealthStatus: DesiredConditionStatus!
 
-  markedForInstrumentation: K8sSourceMakredForInstrumentation!
+  markedForInstrumentation: K8sWorkloadMakredForInstrumentation!
 
   # runtimeInfo is empty if source is not marked for instrumentation,
   # or if the source has not been processed by odigos yet.
   # once a source that is makred for instrumentation is processed, this field will be set.
-  runtimeInfo: K8sSourceRuntimeInfo
+  runtimeInfo: K8sWorkloadRuntimeInfo
 
-  agentEnabled: K8sSourceAgentEnabled
+  agentEnabled: K8sWorkloadAgentEnabled
 
-  rollout: K8sSourceRollout
+  rollout: K8sWorkloadRollout
 
   # show all info for a specific source container.
-  containers: [K8sSourceContainer!]
+  containers: [K8sWorkloadContainer!]
 
   # show all info for all pods that are part of the source.
   # pods are always included, even if the agent is not enabled for them for any reason.
-  pods: [K8sSourcePod!]
+  pods: [K8sWorkloadPod!]
 
   # tracks if all pods in this source are in the desired state, and an error message if not.
   podsDesiredState: DesiredConditionStatus!

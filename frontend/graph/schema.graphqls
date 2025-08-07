@@ -806,7 +806,7 @@ type Query {
   sourceConditions: [SourceConditions!]!
 
   # get all sources that match the filter
-  sources(filter: WorkloadFilter): [K8sSource!]!
+  workloads(filter: WorkloadFilter): [K8sWorkload!]!
 }
 
 type Mutation {

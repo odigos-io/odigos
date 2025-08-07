@@ -1204,18 +1204,17 @@ func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceCo
 	return services.GetOtherConditionsForSources(ctx, "", "", "")
 }
 
-// Sources is the resolver for the sources field.
-func (r *queryResolver) Sources(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sSource, error) {
-	// Extract value from context
+// Workloads is the resolver for the workloads field.
+func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error) {
 	l := loaders.For(ctx)
 	err := l.SetFilters(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 
-	sources := make([]*model.K8sSource, 0)
+	sources := make([]*model.K8sWorkload, 0)
 	for _, sourceId := range l.GetWorkloadIds() {
-		sources = append(sources, &model.K8sSource{
+		sources = append(sources, &model.K8sWorkload{
 			ID: &sourceId,
 		})
 	}

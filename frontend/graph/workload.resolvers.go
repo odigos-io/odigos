@@ -14,7 +14,7 @@ import (
 )
 
 // MarkedForInstrumentation is the resolver for the markedForInstrumentation field.
-func (r *k8sSourceResolver) MarkedForInstrumentation(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceMakredForInstrumentation, error) {
+func (r *k8sWorkloadResolver) MarkedForInstrumentation(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadMakredForInstrumentation, error) {
 	l := loaders.For(ctx)
 	sources, err := l.GetSources(ctx, *obj.ID)
 	if err != nil {
@@ -26,7 +26,7 @@ func (r *k8sSourceResolver) MarkedForInstrumentation(ctx context.Context, obj *m
 		return nil, err
 	}
 
-	return &model.K8sSourceMakredForInstrumentation{
+	return &model.K8sWorkloadMakredForInstrumentation{
 		MarkedForInstrumentation: enabled,
 		DecisionEnum:             string(reason.Reason),
 		Message:                  reason.Message,
@@ -34,7 +34,10 @@ func (r *k8sSourceResolver) MarkedForInstrumentation(ctx context.Context, obj *m
 }
 
 // RuntimeInfo is the resolver for the runtimeInfo field.
-func (r *k8sSourceResolver) RuntimeInfo(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceRuntimeInfo, error) {
+func (r *k8sWorkloadResolver) RuntimeInfo(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadRuntimeInfo, error) {
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
 	if err != nil || ic == nil {
@@ -50,12 +53,12 @@ func (r *k8sSourceResolver) RuntimeInfo(ctx context.Context, obj *model.K8sSourc
 		}
 	}
 
-	containers := make([]*model.K8sSourceRuntimeInfoContainer, 0, len(ic.Status.RuntimeDetailsByContainer))
-	for i := range ic.Status.RuntimeDetailsByContainer {
-		containerModel := runtimeDetailsContainersToModel(&ic.Status.RuntimeDetailsByContainer[i])
-		containers = append(containers, containerModel)
+	containers := make([]*model.K8sWorkloadRuntimeInfoContainer, len(ic.Status.RuntimeDetailsByContainer))
+	for i, container := range ic.Status.RuntimeDetailsByContainer {
+		containers[i] = runtimeDetailsContainersToModel(&container)
 	}
-	runtimeInfo := &model.K8sSourceRuntimeInfo{
+
+	runtimeInfo := &model.K8sWorkloadRuntimeInfo{
 		Completed: len(ic.Status.RuntimeDetailsByContainer) > 0,
 		CompletedStatus: &model.DesiredConditionStatus{
 			Name:       v1alpha1.RuntimeDetectionStatusConditionType,
@@ -70,7 +73,10 @@ func (r *k8sSourceResolver) RuntimeInfo(ctx context.Context, obj *model.K8sSourc
 }
 
 // AgentEnabled is the resolver for the agentEnabled field.
-func (r *k8sSourceResolver) AgentEnabled(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceAgentEnabled, error) {
+func (r *k8sWorkloadResolver) AgentEnabled(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadAgentEnabled, error) {
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
 	if err != nil || ic == nil {
@@ -91,13 +97,13 @@ func (r *k8sSourceResolver) AgentEnabled(ctx context.Context, obj *model.K8sSour
 		}
 	}
 
-	containers := make([]*model.K8sSourceAgentEnabledContainer, 0, len(ic.Spec.Containers))
+	containers := make([]*model.K8sWorkloadAgentEnabledContainer, 0, len(ic.Spec.Containers))
 	for _, container := range ic.Spec.Containers {
 		containerModel := agentEnabledContainersToModel(&container)
 		containers = append(containers, containerModel)
 	}
 
-	return &model.K8sSourceAgentEnabled{
+	return &model.K8sWorkloadAgentEnabled{
 		AgentEnabled:  ic.Spec.AgentInjectionEnabled,
 		EnabledStatus: agentEnabledStatus,
 		Containers:    containers,
@@ -105,7 +111,10 @@ func (r *k8sSourceResolver) AgentEnabled(ctx context.Context, obj *model.K8sSour
 }
 
 // Rollout is the resolver for the rollout field.
-func (r *k8sSourceResolver) Rollout(ctx context.Context, obj *model.K8sSource) (*model.K8sSourceRollout, error) {
+func (r *k8sWorkloadResolver) Rollout(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadRollout, error) {
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
 	if err != nil || ic == nil {
@@ -130,23 +139,26 @@ func (r *k8sSourceResolver) Rollout(ctx context.Context, obj *model.K8sSource) (
 		return nil, nil
 	}
 
-	return &model.K8sSourceRollout{
+	return &model.K8sWorkloadRollout{
 		RolloutStatus: rolloutStatus,
 	}, nil
 }
 
 // Containers is the resolver for the containers field.
-func (r *k8sSourceResolver) Containers(ctx context.Context, obj *model.K8sSource) ([]*model.K8sSourceContainer, error) {
+func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadContainer, error) {
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
 	if err != nil || ic == nil {
 		return nil, err
 	}
 
-	containerByName := make(map[string]*model.K8sSourceContainer)
+	containerByName := make(map[string]*model.K8sWorkloadContainer)
 	for _, container := range ic.Spec.Containers {
 		if _, ok := containerByName[container.ContainerName]; !ok {
-			containerByName[container.ContainerName] = &model.K8sSourceContainer{
+			containerByName[container.ContainerName] = &model.K8sWorkloadContainer{
 				ContainerName: container.ContainerName,
 			}
 		}
@@ -155,14 +167,14 @@ func (r *k8sSourceResolver) Containers(ctx context.Context, obj *model.K8sSource
 
 	for _, container := range ic.Status.RuntimeDetailsByContainer {
 		if _, ok := containerByName[container.ContainerName]; !ok {
-			containerByName[container.ContainerName] = &model.K8sSourceContainer{
+			containerByName[container.ContainerName] = &model.K8sWorkloadContainer{
 				ContainerName: container.ContainerName,
 			}
 		}
 		containerByName[container.ContainerName].RuntimeInfo = runtimeDetailsContainersToModel(&container)
 	}
 
-	containers := make([]*model.K8sSourceContainer, 0, len(containerByName))
+	containers := make([]*model.K8sWorkloadContainer, 0, len(containerByName))
 	for _, container := range containerByName {
 		containers = append(containers, container)
 	}
@@ -170,7 +182,7 @@ func (r *k8sSourceResolver) Containers(ctx context.Context, obj *model.K8sSource
 	return containers, nil
 }
 
-// K8sSource returns K8sSourceResolver implementation.
-func (r *Resolver) K8sSource() K8sSourceResolver { return &k8sSourceResolver{r} }
+// K8sWorkload returns K8sWorkloadResolver implementation.
+func (r *Resolver) K8sWorkload() K8sWorkloadResolver { return &k8sWorkloadResolver{r} }
 
-type k8sSourceResolver struct{ *Resolver }
+type k8sWorkloadResolver struct{ *Resolver }

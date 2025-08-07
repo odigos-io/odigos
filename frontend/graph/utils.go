@@ -106,7 +106,7 @@ func workloadRolloutStatusCondition(reason *string) model.DesiredStateProgress {
 	return model.DesiredStateProgressUnknown
 }
 
-func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByContainer) *model.K8sSourceRuntimeInfoContainer {
+func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByContainer) *model.K8sWorkloadRuntimeInfoContainer {
 	containerName := runtimeDetails.ContainerName
 
 	var runtimeVersion *string
@@ -122,7 +122,7 @@ func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByCo
 		libcTypeStr := string(*runtimeDetails.LibCType)
 		libcType = &libcTypeStr
 	}
-	return &model.K8sSourceRuntimeInfoContainer{
+	return &model.K8sWorkloadRuntimeInfoContainer{
 		ContainerName:           containerName,
 		Language:                model.ProgrammingLanguage(runtimeDetails.Language),
 		RuntimeVersion:          runtimeVersion,
@@ -135,7 +135,7 @@ func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByCo
 	}
 }
 
-func agentEnabledContainersToModel(containerAgentConfig *v1alpha1.ContainerAgentConfig) *model.K8sSourceAgentEnabledContainer {
+func agentEnabledContainersToModel(containerAgentConfig *v1alpha1.ContainerAgentConfig) *model.K8sWorkloadAgentEnabledContainer {
 	reasonStr := string(containerAgentConfig.AgentEnabledReason)
 	var envInjectionMethodStr *string
 	if containerAgentConfig.EnvInjectionMethod != nil {
@@ -143,26 +143,26 @@ func agentEnabledContainersToModel(containerAgentConfig *v1alpha1.ContainerAgent
 		envInjectionMethodStr = &asStr
 	}
 
-	var traces *model.K8sSourceAgentEnabledContainerTraces
+	var traces *model.K8sWorkloadAgentEnabledContainerTraces
 	if containerAgentConfig.Traces != nil {
-		traces = &model.K8sSourceAgentEnabledContainerTraces{
+		traces = &model.K8sWorkloadAgentEnabledContainerTraces{
 			Enabled: true,
 		}
 	}
-	var metrics *model.K8sSourceAgentEnabledContainerMetrics
+	var metrics *model.K8sWorkloadAgentEnabledContainerMetrics
 	if containerAgentConfig.Metrics != nil {
-		metrics = &model.K8sSourceAgentEnabledContainerMetrics{
+		metrics = &model.K8sWorkloadAgentEnabledContainerMetrics{
 			Enabled: true,
 		}
 	}
-	var logs *model.K8sSourceAgentEnabledContainerLogs
+	var logs *model.K8sWorkloadAgentEnabledContainerLogs
 	if containerAgentConfig.Logs != nil {
-		logs = &model.K8sSourceAgentEnabledContainerLogs{
+		logs = &model.K8sWorkloadAgentEnabledContainerLogs{
 			Enabled: true,
 		}
 	}
 
-	return &model.K8sSourceAgentEnabledContainer{
+	return &model.K8sWorkloadAgentEnabledContainer{
 		ContainerName: containerAgentConfig.ContainerName,
 		AgentEnabled:  true,
 		AgentEnabledStatus: &model.DesiredConditionStatus{

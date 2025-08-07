@@ -498,108 +498,114 @@ type K8sNamespaceID struct {
 	Name string `json:"name"`
 }
 
-type K8sSource struct {
-	ID                       *K8sWorkloadID                     `json:"id"`
-	SourceHealthStatus       *DesiredConditionStatus            `json:"sourceHealthStatus"`
-	MarkedForInstrumentation *K8sSourceMakredForInstrumentation `json:"markedForInstrumentation"`
-	RuntimeInfo              *K8sSourceRuntimeInfo              `json:"runtimeInfo,omitempty"`
-	AgentEnabled             *K8sSourceAgentEnabled             `json:"agentEnabled,omitempty"`
-	Rollout                  *K8sSourceRollout                  `json:"rollout,omitempty"`
-	Containers               []*K8sSourceContainer              `json:"containers,omitempty"`
-	Pods                     []*K8sSourcePod                    `json:"pods,omitempty"`
-	PodsDesiredState         *DesiredConditionStatus            `json:"podsDesiredState"`
-}
-
-type K8sSourceAgentEnabled struct {
-	AgentEnabled  bool                              `json:"agentEnabled"`
-	EnabledStatus *DesiredConditionStatus           `json:"enabledStatus"`
-	Containers    []*K8sSourceAgentEnabledContainer `json:"containers,omitempty"`
-}
-
-type K8sSourceAgentEnabledContainer struct {
-	ContainerName      string                                 `json:"containerName"`
-	AgentEnabled       bool                                   `json:"agentEnabled"`
-	AgentEnabledStatus *DesiredConditionStatus                `json:"agentEnabledStatus"`
-	OtelDistroName     *string                                `json:"otelDistroName,omitempty"`
-	EnvInjectionMethod *string                                `json:"envInjectionMethod,omitempty"`
-	DistroParams       []*DistroParam                         `json:"distroParams,omitempty"`
-	Traces             *K8sSourceAgentEnabledContainerTraces  `json:"traces,omitempty"`
-	Metrics            *K8sSourceAgentEnabledContainerMetrics `json:"metrics,omitempty"`
-	Logs               *K8sSourceAgentEnabledContainerLogs    `json:"logs,omitempty"`
-}
-
-type K8sSourceAgentEnabledContainerLogs struct {
-	Enabled bool `json:"enabled"`
-}
-
-type K8sSourceAgentEnabledContainerMetrics struct {
-	Enabled bool `json:"enabled"`
-}
-
-type K8sSourceAgentEnabledContainerTraces struct {
-	Enabled bool `json:"enabled"`
-}
-
-type K8sSourceContainer struct {
-	ContainerName string                          `json:"containerName"`
-	RuntimeInfo   *K8sSourceRuntimeInfoContainer  `json:"runtimeInfo,omitempty"`
-	AgentEnabled  *K8sSourceAgentEnabledContainer `json:"agentEnabled,omitempty"`
-}
-
 type K8sSourceID struct {
 	Namespace string          `json:"namespace"`
 	Kind      K8sResourceKind `json:"kind"`
 	Name      string          `json:"name"`
 }
 
-type K8sSourceMakredForInstrumentation struct {
+type K8sWorkload struct {
+	ID                       *K8sWorkloadID                       `json:"id"`
+	SourceHealthStatus       *DesiredConditionStatus              `json:"sourceHealthStatus"`
+	MarkedForInstrumentation *K8sWorkloadMakredForInstrumentation `json:"markedForInstrumentation"`
+	RuntimeInfo              *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
+	AgentEnabled             *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
+	Rollout                  *K8sWorkloadRollout                  `json:"rollout,omitempty"`
+	Containers               []*K8sWorkloadContainer              `json:"containers,omitempty"`
+	Pods                     []*K8sWorkloadPod                    `json:"pods,omitempty"`
+	PodsDesiredState         *DesiredConditionStatus              `json:"podsDesiredState"`
+}
+
+type K8sWorkloadAgentEnabled struct {
+	AgentEnabled  bool                                `json:"agentEnabled"`
+	EnabledStatus *DesiredConditionStatus             `json:"enabledStatus"`
+	Containers    []*K8sWorkloadAgentEnabledContainer `json:"containers,omitempty"`
+}
+
+type K8sWorkloadAgentEnabledContainer struct {
+	ContainerName      string                                   `json:"containerName"`
+	AgentEnabled       bool                                     `json:"agentEnabled"`
+	AgentEnabledStatus *DesiredConditionStatus                  `json:"agentEnabledStatus"`
+	OtelDistroName     *string                                  `json:"otelDistroName,omitempty"`
+	EnvInjectionMethod *string                                  `json:"envInjectionMethod,omitempty"`
+	DistroParams       []*DistroParam                           `json:"distroParams,omitempty"`
+	Traces             *K8sWorkloadAgentEnabledContainerTraces  `json:"traces,omitempty"`
+	Metrics            *K8sWorkloadAgentEnabledContainerMetrics `json:"metrics,omitempty"`
+	Logs               *K8sWorkloadAgentEnabledContainerLogs    `json:"logs,omitempty"`
+}
+
+type K8sWorkloadAgentEnabledContainerLogs struct {
+	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadAgentEnabledContainerMetrics struct {
+	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadAgentEnabledContainerTraces struct {
+	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadContainer struct {
+	ContainerName string                            `json:"containerName"`
+	RuntimeInfo   *K8sWorkloadRuntimeInfoContainer  `json:"runtimeInfo,omitempty"`
+	AgentEnabled  *K8sWorkloadAgentEnabledContainer `json:"agentEnabled,omitempty"`
+}
+
+type K8sWorkloadID struct {
+	Namespace string          `json:"namespace"`
+	Kind      K8sResourceKind `json:"kind"`
+	Name      string          `json:"name"`
+}
+
+type K8sWorkloadMakredForInstrumentation struct {
 	MarkedForInstrumentation bool   `json:"markedForInstrumentation"`
 	DecisionEnum             string `json:"decisionEnum"`
 	Message                  string `json:"message"`
 }
 
-type K8sSourcePod struct {
-	PodName                       string                   `json:"podName"`
-	NodeName                      string                   `json:"nodeName"`
-	StartTime                     string                   `json:"startTime"`
-	AgentInjected                 bool                     `json:"agentInjected"`
-	AgentInjectedStatus           *DesiredConditionStatus  `json:"agentInjectedStatus"`
-	RunningLatestWorkloadRevision *string                  `json:"runningLatestWorkloadRevision,omitempty"`
-	Containers                    []*K8sSourcePodContainer `json:"containers"`
+type K8sWorkloadPod struct {
+	PodName                       string                     `json:"podName"`
+	NodeName                      string                     `json:"nodeName"`
+	StartTime                     string                     `json:"startTime"`
+	AgentInjected                 bool                       `json:"agentInjected"`
+	AgentInjectedStatus           *DesiredConditionStatus    `json:"agentInjectedStatus"`
+	RunningLatestWorkloadRevision *string                    `json:"runningLatestWorkloadRevision,omitempty"`
+	Containers                    []*K8sWorkloadPodContainer `json:"containers"`
 }
 
-type K8sSourcePodContainer struct {
-	ContainerName             string                          `json:"containerName"`
-	InstrumentationDeviceName *string                         `json:"instrumentationDeviceName,omitempty"`
-	Started                   *bool                           `json:"started,omitempty"`
-	Ready                     *bool                           `json:"ready,omitempty"`
-	IsCrashLoop               *bool                           `json:"isCrashLoop,omitempty"`
-	HealthStatus              *DesiredConditionStatus         `json:"healthStatus"`
-	Processes                 []*K8sSourcePodContainerProcess `json:"processes"`
+type K8sWorkloadPodContainer struct {
+	ContainerName             string                            `json:"containerName"`
+	InstrumentationDeviceName *string                           `json:"instrumentationDeviceName,omitempty"`
+	Started                   *bool                             `json:"started,omitempty"`
+	Ready                     *bool                             `json:"ready,omitempty"`
+	IsCrashLoop               *bool                             `json:"isCrashLoop,omitempty"`
+	HealthStatus              *DesiredConditionStatus           `json:"healthStatus"`
+	Processes                 []*K8sWorkloadPodContainerProcess `json:"processes"`
 }
 
-type K8sSourcePodContainerProcess struct {
-	Healthy               *bool                                    `json:"healthy,omitempty"`
-	HealthStatus          *DesiredConditionStatus                  `json:"healthStatus"`
-	IdentifyingAttributes []*K8sSourcePodContainerProcessAttribute `json:"identifyingAttributes"`
+type K8sWorkloadPodContainerProcess struct {
+	Healthy               *bool                                      `json:"healthy,omitempty"`
+	HealthStatus          *DesiredConditionStatus                    `json:"healthStatus"`
+	IdentifyingAttributes []*K8sWorkloadPodContainerProcessAttribute `json:"identifyingAttributes"`
 }
 
-type K8sSourcePodContainerProcessAttribute struct {
+type K8sWorkloadPodContainerProcessAttribute struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
 
-type K8sSourceRollout struct {
+type K8sWorkloadRollout struct {
 	RolloutStatus *DesiredConditionStatus `json:"rolloutStatus"`
 }
 
-type K8sSourceRuntimeInfo struct {
-	Completed       bool                             `json:"completed"`
-	CompletedStatus *DesiredConditionStatus          `json:"completedStatus"`
-	Containers      []*K8sSourceRuntimeInfoContainer `json:"containers,omitempty"`
+type K8sWorkloadRuntimeInfo struct {
+	Completed       bool                               `json:"completed"`
+	CompletedStatus *DesiredConditionStatus            `json:"completedStatus"`
+	Containers      []*K8sWorkloadRuntimeInfoContainer `json:"containers,omitempty"`
 }
 
-type K8sSourceRuntimeInfoContainer struct {
+type K8sWorkloadRuntimeInfoContainer struct {
 	ContainerName           string              `json:"containerName"`
 	Language                ProgrammingLanguage `json:"language"`
 	RuntimeVersion          *string             `json:"runtimeVersion,omitempty"`
@@ -609,12 +615,6 @@ type K8sSourceRuntimeInfoContainer struct {
 	LibcType                *string             `json:"libcType,omitempty"`
 	SecureExecutionMode     *bool               `json:"secureExecutionMode,omitempty"`
 	OtherAgentName          *string             `json:"otherAgentName,omitempty"`
-}
-
-type K8sWorkloadID struct {
-	Namespace string          `json:"namespace"`
-	Kind      K8sResourceKind `json:"kind"`
-	Name      string          `json:"name"`
 }
 
 type LatencySamplerAction struct {
