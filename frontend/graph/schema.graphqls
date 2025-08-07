@@ -948,6 +948,7 @@ type Query {
 type Mutation {
   updateApiToken(token: String!): Boolean!
   updateOdigosConfig(odigosConfig: OdigosConfigurationInput!): Boolean!
+  uninstrumentCluster: Boolean!
   persistK8sNamespaces(namespaces: [PersistNamespaceItemInput!]!): Boolean!
   persistK8sSources(sources: [PersistNamespaceSourceInput!]!): Boolean!
   updateK8sActualSource(
