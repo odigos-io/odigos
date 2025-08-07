@@ -460,6 +460,7 @@ type OdigosConfiguration struct {
 <<<<<<< HEAD
 <<<<<<< HEAD
 	ClickhouseJsonTypeEnabledProperty ConfigBoolPointer        `json:"clickhouseJsonTypeEnabled,omitempty"`
+<<<<<<< HEAD
 	AllowedTestConnectionHosts        []string                 `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
 =======
 	ClickhouseJsonTypeEnabledProperty *bool                    `json:"clickhouseJsonTypeEnabled,omitempty"`
@@ -467,4 +468,7 @@ type OdigosConfiguration struct {
 =======
 	ClickhouseJsonTypeEnabledProperty ConfigBoolPointer        `json:"clickhouseJsonTypeEnabled,omitempty"`
 >>>>>>> 40279361 (fixed ConfigBoolPointer issue, added Unmarshal function, other error fixes)
+=======
+	AllowedTestConnectionHosts        ConfigStringList         `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
+>>>>>>> 63c22c69 (small changes)
 }
