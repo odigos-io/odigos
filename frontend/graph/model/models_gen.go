@@ -116,6 +116,54 @@ type CodeAttributesInput struct {
 	Stacktrace *bool `json:"stacktrace,omitempty"`
 }
 
+type CollectorGateway struct {
+	RequestMemoryMiB           *int `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *int `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *int `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *int `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *int `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *int `json:"goMemLimitMiB,omitempty"`
+	MinReplicas                *int `json:"minReplicas,omitempty"`
+	MaxReplicas                *int `json:"maxReplicas,omitempty"`
+}
+
+type CollectorGatewayInput struct {
+	RequestMemoryMiB           *int `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *int `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *int `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *int `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *int `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *int `json:"goMemLimitMiB,omitempty"`
+	MinReplicas                *int `json:"minReplicas,omitempty"`
+	MaxReplicas                *int `json:"maxReplicas,omitempty"`
+}
+
+type CollectorNode struct {
+	CollectorOwnMetricsPort    *int    `json:"collectorOwnMetricsPort,omitempty"`
+	RequestMemoryMiB           *int    `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *int    `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *int    `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *int    `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *int    `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int    `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *int    `json:"goMemLimitMiB,omitempty"`
+	K8sNodeLogsDirectory       *string `json:"k8sNodeLogsDirectory,omitempty"`
+}
+
+type CollectorNodeInput struct {
+	CollectorOwnMetricsPort    *int    `json:"collectorOwnMetricsPort,omitempty"`
+	RequestMemoryMiB           *int    `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *int    `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *int    `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *int    `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *int    `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int    `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *int    `json:"goMemLimitMiB,omitempty"`
+	K8sNodeLogsDirectory       *string `json:"k8sNodeLogsDirectory,omitempty"`
+}
+
 type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
 	APITokens            []*APIToken            `json:"apiTokens"`
@@ -215,6 +263,7 @@ type Destination struct {
 	ID              string                        `json:"id"`
 	Type            string                        `json:"type"`
 	Name            string                        `json:"name"`
+	Disabled        bool                          `json:"disabled"`
 	DataStreamNames []*string                     `json:"dataStreamNames"`
 	ExportedSignals *ExportedSignals              `json:"exportedSignals"`
 	Fields          string                        `json:"fields"`
@@ -246,6 +295,7 @@ type DestinationInput struct {
 	CurrentStreamName string                `json:"currentStreamName"`
 	ExportedSignals   *ExportedSignalsInput `json:"exportedSignals"`
 	Fields            []*FieldInput         `json:"fields"`
+	Disabled          *bool                 `json:"disabled,omitempty"`
 }
 
 type DestinationTypesCategoryItem struct {
@@ -315,9 +365,10 @@ type FieldInput struct {
 }
 
 type GetConfigResponse struct {
-	Installation InstallationStatus `json:"installation"`
-	Tier         Tier               `json:"tier"`
-	Readonly     bool               `json:"readonly"`
+	Readonly           bool               `json:"readonly"`
+	Tier               Tier               `json:"tier"`
+	InstallationMethod string             `json:"installationMethod"`
+	InstallationStatus InstallationStatus `json:"installationStatus"`
 }
 
 type GetDestinationCategories struct {
@@ -348,6 +399,11 @@ type InstrumentationInstanceAnalyze struct {
 	Healthy               *EntityProperty   `json:"healthy"`
 	Message               *EntityProperty   `json:"message,omitempty"`
 	IdentifyingAttributes []*EntityProperty `json:"identifyingAttributes"`
+}
+
+type InstrumentationInstanceComponent struct {
+	Name                     string                     `json:"name"`
+	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
 }
 
 type InstrumentationLibraryGlobalID struct {
@@ -540,6 +596,11 @@ type NodeCollectorAnalyze struct {
 	AvailableNodes *EntityProperty `json:"availableNodes,omitempty"`
 }
 
+type NonIdentifyingAttribute struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type NumberCondition struct {
 	Operation     NumberOperation `json:"operation"`
 	ExpectedValue float64         `json:"expectedValue"`
@@ -560,6 +621,66 @@ type OdigosAnalyze struct {
 	NodeCollector        *NodeCollectorAnalyze    `json:"nodeCollector"`
 	IsSettled            bool                     `json:"isSettled"`
 	HasErrors            bool                     `json:"hasErrors"`
+}
+
+type OdigosConfiguration struct {
+	KarpenterEnabled                 *bool                 `json:"karpenterEnabled,omitempty"`
+	AllowConcurrentAgents            *bool                 `json:"allowConcurrentAgents,omitempty"`
+	UIPaginationLimit                *int                  `json:"uiPaginationLimit,omitempty"`
+	CentralBackendURL                *string               `json:"centralBackendURL,omitempty"`
+	Oidc                             *OidcConfiguration    `json:"oidc,omitempty"`
+	ClusterName                      *string               `json:"clusterName,omitempty"`
+	ImagePrefix                      *string               `json:"imagePrefix,omitempty"`
+	IgnoredNamespaces                []*string             `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers                []*string             `json:"ignoredContainers,omitempty"`
+	Profiles                         []*string             `json:"profiles,omitempty"`
+	MountMethod                      *string               `json:"mountMethod,omitempty"`
+	AgentEnvVarsInjectionMethod      *string               `json:"agentEnvVarsInjectionMethod,omitempty"`
+	CustomContainerRuntimeSocketPath *string               `json:"customContainerRuntimeSocketPath,omitempty"`
+	OdigletHealthProbeBindPort       *int                  `json:"odigletHealthProbeBindPort,omitempty"`
+	RollbackDisabled                 *bool                 `json:"rollbackDisabled,omitempty"`
+	RollbackGraceTime                *string               `json:"rollbackGraceTime,omitempty"`
+	RollbackStabilityWindow          *string               `json:"rollbackStabilityWindow,omitempty"`
+	Rollout                          *RolloutConfiguration `json:"rollout,omitempty"`
+	CollectorNode                    *CollectorNode        `json:"collectorNode,omitempty"`
+	CollectorGateway                 *CollectorGateway     `json:"collectorGateway,omitempty"`
+	NodeSelector                     *string               `json:"nodeSelector,omitempty"`
+}
+
+type OdigosConfigurationInput struct {
+	KarpenterEnabled                 *bool                      `json:"karpenterEnabled,omitempty"`
+	AllowConcurrentAgents            *bool                      `json:"allowConcurrentAgents,omitempty"`
+	UIPaginationLimit                *int                       `json:"uiPaginationLimit,omitempty"`
+	CentralBackendURL                *string                    `json:"centralBackendURL,omitempty"`
+	Oidc                             *OidcConfigurationInput    `json:"oidc,omitempty"`
+	ClusterName                      *string                    `json:"clusterName,omitempty"`
+	ImagePrefix                      *string                    `json:"imagePrefix,omitempty"`
+	IgnoredNamespaces                []*string                  `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers                []*string                  `json:"ignoredContainers,omitempty"`
+	Profiles                         []*string                  `json:"profiles,omitempty"`
+	MountMethod                      *string                    `json:"mountMethod,omitempty"`
+	AgentEnvVarsInjectionMethod      *string                    `json:"agentEnvVarsInjectionMethod,omitempty"`
+	CustomContainerRuntimeSocketPath *string                    `json:"customContainerRuntimeSocketPath,omitempty"`
+	OdigletHealthProbeBindPort       *int                       `json:"odigletHealthProbeBindPort,omitempty"`
+	RollbackDisabled                 *bool                      `json:"rollbackDisabled,omitempty"`
+	RollbackGraceTime                *string                    `json:"rollbackGraceTime,omitempty"`
+	RollbackStabilityWindow          *string                    `json:"rollbackStabilityWindow,omitempty"`
+	Rollout                          *RolloutConfigurationInput `json:"rollout,omitempty"`
+	CollectorNode                    *CollectorNodeInput        `json:"collectorNode,omitempty"`
+	CollectorGateway                 *CollectorGatewayInput     `json:"collectorGateway,omitempty"`
+	NodeSelector                     *string                    `json:"nodeSelector,omitempty"`
+}
+
+type OidcConfiguration struct {
+	TenantURL    *string `json:"tenantUrl,omitempty"`
+	ClientID     *string `json:"clientId,omitempty"`
+	ClientSecret *string `json:"clientSecret,omitempty"`
+}
+
+type OidcConfigurationInput struct {
+	TenantURL    *string `json:"tenantUrl,omitempty"`
+	ClientID     *string `json:"clientId,omitempty"`
+	ClientSecret *string `json:"clientSecret,omitempty"`
 }
 
 type OtelAgentsAnalyze struct {
@@ -742,6 +863,14 @@ func (this RenameAttributeAction) GetSignals() []SignalType {
 		interfaceSlice = append(interfaceSlice, concrete)
 	}
 	return interfaceSlice
+}
+
+type RolloutConfiguration struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+}
+
+type RolloutConfigurationInput struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
 }
 
 type RuntimeInfoAnalyze struct {

@@ -112,6 +112,9 @@ func main() {
 				&odigosv1.InstrumentationRule{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.Action{}: {
+					Field: nsSelector,
+				},
 				&corev1.Secret{}: {
 					Field: nsSelector,
 				},

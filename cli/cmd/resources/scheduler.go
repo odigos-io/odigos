@@ -89,7 +89,7 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 			},
 			{ // apply profiles
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"processors", "instrumentationrules"},
+				Resources: []string{"processors", "instrumentationrules", "actions"},
 				Verbs:     []string{"get", "list", "watch", "patch", "delete", "create"},
 			},
 			{ // read odigos pro token

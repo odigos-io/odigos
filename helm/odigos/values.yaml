@@ -221,6 +221,7 @@ instrumentor:
   # which mount method to use for odigos agent directory
   # k8s-virtual-device: default method using a virtual device
   # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
+  # k8s-init-container: alternative which uses an init container to copy the agent files to the shared volume
   mountMethod: ''
   nodeSelector:
     kubernetes.io/os: linux
@@ -270,11 +271,11 @@ odiglet:
   deviceplugin:
     resources:
       requests:
-        cpu: 20m
-        memory: 100Mi
+        cpu: 40m
+        memory: 200Mi
       limits:
-        cpu: 50m
-        memory: 150Mi
+        cpu: 100m
+        memory: 300Mi
 
   ## Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.
   ## There is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.
@@ -378,4 +379,10 @@ rollout:
 # This reflects Odigos' recommended defaults for maintaining observability continuity without blocking routine maintenance.
 # PDBs are disabled by default and can be enabled in production environments where stability during disruptions is important.
 pdb:
+  enabled: false
+
+# Enable support for ClickHouse JSON column type when storing Odigos data.
+# When set to true, Odigos will use a new schema with JSON-typed columns (requires ClickHouse v25.3+).
+# If set to false, the default schema using Map-type columns will be used instead.
+clickhouseDestinationJsonType:
   enabled: false

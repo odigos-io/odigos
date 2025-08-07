@@ -13,6 +13,7 @@ import (
 var supportedKindToResource = map[string]string{
 	"Processor":           "processors",
 	"InstrumentationRule": "instrumentationrules",
+	"Action":              "actions",
 }
 
 // when applying the manifests, we need to mark the new resources so we know to cleanup
