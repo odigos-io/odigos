@@ -89,7 +89,7 @@ spec:
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
           args:
-            - --health-probe-bind-port={{ .Values.odiglet.readinessAndLivenessProbePort }}
+            - --health-probe-bind-port={{ .Values.odiglet.odiglet.livenessProbe.httpGet.port }}
           command:
             - /root/odiglet
           imagePullPolicy: IfNotPresent
@@ -99,16 +99,9 @@ spec:
               add:
                 - SYS_PTRACE
           livenessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
-            initialDelaySeconds: 15
-            periodSeconds: 20
+{{ toYaml .Values.odiglet.odiglet.livenessProbe | indent 12 }}
           readinessProbe:
-            httpGet:
-              path: /readyz
-              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
-            periodSeconds: 10
+{{ toYaml .Values.odiglet.odiglet.readinessProbe | indent 12 }}
           resources:
 {{ include "odigos.odiglet.resolvedResources" . | indent 12 }}
           env:
