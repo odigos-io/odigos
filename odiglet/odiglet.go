@@ -94,9 +94,10 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 		return nil, fmt.Errorf("failed to setup controller-runtime manager %w", err)
 	}
 
-	// Create eBPF metrics collector
+	// Create eBPF metrics collector with high-performance configuration
 	meter := provider.Meter("github.com/odigos.io/odigos/odiglet/ebpf")
-	ebpfMetricsCollector, err := ebpfmetrics.NewEBPFMetricsCollector(log.Logger, meter)
+	ebpfConfig := ebpfmetrics.HighPerformanceConfig()
+	ebpfMetricsCollector, err := ebpfmetrics.NewEBPFMetricsCollectorWithConfig(log.Logger, meter, ebpfConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create eBPF metrics collector: %w", err)
 	}

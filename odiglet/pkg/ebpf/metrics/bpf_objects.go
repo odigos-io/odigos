@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -379,173 +380,280 @@ func getObjInfo(fd int, info unsafe.Pointer, infoLen uint32) error {
 // Implementation of the parsing functions from collector.go
 
 func (c *EBPFMetricsCollector) parseMapInfo() ([]*EBPFMapInfo, error) {
-	var maps []*EBPFMapInfo
-	var id uint32 = 0
-
-	for {
-		nextID, err := getNextMapID(id)
-		if err != nil {
-			// End of maps or error
-			break
-		}
-
-		fd, err := getMapFD(nextID)
-		if err != nil {
-			c.logger.Error(err, "Failed to get map FD", "map_id", nextID)
-			id = nextID
-			continue
-		}
-		defer unix.Close(fd)
-
-		var info bpfMapInfo
-		err = getObjInfo(fd, unsafe.Pointer(&info), uint32(unsafe.Sizeof(info)))
-		if err != nil {
-			c.logger.Error(err, "Failed to get map info", "map_id", nextID)
-			id = nextID
-			continue
-		}
-
-		// Convert C string to Go string
-		nameBytes := (*[16]byte)(unsafe.Pointer(&info.Name[0]))
-		name := string(nameBytes[:clen(nameBytes[:])])
-
-		// Calculate memory usage estimate
-		memoryUsage := uint64(info.KeySize+info.ValueSize) * uint64(info.MaxEntries)
-
-		// Get map type name
-		mapTypeName := mapTypeNames[info.Type]
-		if mapTypeName == "" {
-			mapTypeName = fmt.Sprintf("unknown_%d", info.Type)
-		}
-
-		mapInfo := &EBPFMapInfo{
-			ID:          info.ID,
-			Type:        mapTypeName,
-			Name:        name,
-			KeySize:     info.KeySize,
-			ValueSize:   info.ValueSize,
-			MaxEntries:  info.MaxEntries,
-			MapFlags:    info.MapFlags,
-			MemoryUsage: memoryUsage,
-		}
-
-		// Check if map is pinned
-		mapInfo.PinnedPath = c.findPinnedPath(info.ID, "map")
-
-		maps = append(maps, mapInfo)
-		id = nextID
+	// Check memory limits first
+	if c.memoryPool.IsMemoryLimitExceeded() {
+		atomic.AddInt64(c.memoryLimitHit, 1)
+		return nil, fmt.Errorf("memory limit exceeded, skipping map collection")
 	}
 
-	return maps, nil
+	// Step 1: Efficiently enumerate all map IDs first
+	mapIDs, err := c.enumerateMapIDs()
+	if err != nil {
+		return nil, fmt.Errorf("failed to enumerate map IDs: %w", err)
+	}
+
+	// Step 2: Process in batches to reduce syscall overhead
+	var maps []*EBPFMapInfo
+	
+	err = c.batchProcessor.ProcessInBatches(mapIDs, func(mapID uint32) error {
+		// Get pre-allocated object from pool
+		mapInfo := c.memoryPool.GetMapInfo()
+		if mapInfo == nil {
+			// Pool exhausted, stop processing
+			atomic.AddInt64(c.memoryLimitHit, 1)
+			return fmt.Errorf("map pool exhausted")
+		}
+
+		if err := c.populateMapInfo(mapID, mapInfo); err != nil {
+			c.logger.V(1).Info("Failed to get map info", "map_id", mapID, "error", err)
+			return nil // Continue with next map
+		}
+
+		maps = append(maps, mapInfo)
+		return nil
+	})
+
+	return maps, err
+}
+
+// enumerateMapIDs efficiently gets all map IDs in one pass
+func (c *EBPFMetricsCollector) enumerateMapIDs() ([]uint32, error) {
+	var mapIDs []uint32
+	var id uint32 = 0
+	
+	for len(mapIDs) < MaxTrackedMaps { // Limit enumeration
+		nextID, err := getNextMapID(id)
+		if err != nil {
+			break // End of maps
+		}
+		mapIDs = append(mapIDs, nextID)
+		id = nextID
+	}
+	
+	return mapIDs, nil
+}
+
+// populateMapInfo efficiently populates a single map info object
+func (c *EBPFMetricsCollector) populateMapInfo(mapID uint32, mapInfo *EBPFMapInfo) error {
+	fd, err := getMapFD(mapID)
+	if err != nil {
+		return err
+	}
+	defer unix.Close(fd)
+
+	var info bpfMapInfo
+	err = getObjInfo(fd, unsafe.Pointer(&info), uint32(unsafe.Sizeof(info)))
+	if err != nil {
+		return err
+	}
+
+	// Convert C string to Go string efficiently
+	nameBytes := (*[16]byte)(unsafe.Pointer(&info.Name[0]))
+	name := string(nameBytes[:clen(nameBytes[:])])
+
+	// Calculate memory usage estimate
+	memoryUsage := uint64(info.KeySize+info.ValueSize) * uint64(info.MaxEntries)
+
+	// Get map type name
+	mapTypeName := mapTypeNames[info.Type]
+	if mapTypeName == "" {
+		mapTypeName = fmt.Sprintf("unknown_%d", info.Type)
+	}
+
+	// Populate the pre-allocated object
+	mapInfo.ID = info.ID
+	mapInfo.Type = mapTypeName
+	mapInfo.Name = name
+	mapInfo.KeySize = info.KeySize
+	mapInfo.ValueSize = info.ValueSize
+	mapInfo.MaxEntries = info.MaxEntries
+	mapInfo.MapFlags = info.MapFlags
+	mapInfo.MemoryUsage = memoryUsage
+	mapInfo.FrozenFlag = false // Default
+	mapInfo.PinnedPath = "" // Skip pinned path lookup for performance
+
+	return nil
 }
 
 func (c *EBPFMetricsCollector) parseProgInfo() ([]*EBPFProgInfo, error) {
+	// Check memory limits first
+	if c.memoryPool.IsMemoryLimitExceeded() {
+		atomic.AddInt64(c.memoryLimitHit, 1)
+		return nil, fmt.Errorf("memory limit exceeded, skipping program collection")
+	}
+
+	// Step 1: Efficiently enumerate all program IDs first
+	progIDs, err := c.enumerateProgIDs()
+	if err != nil {
+		return nil, fmt.Errorf("failed to enumerate program IDs: %w", err)
+	}
+
+	// Step 2: Process in batches to reduce syscall overhead
 	var progs []*EBPFProgInfo
-	var id uint32 = 0
-
-	for {
-		nextID, err := getNextProgID(id)
-		if err != nil {
-			// End of programs or error
-			break
+	
+	err = c.batchProcessor.ProcessInBatches(progIDs, func(progID uint32) error {
+		// Get pre-allocated object from pool
+		progInfo := c.memoryPool.GetProgInfo()
+		if progInfo == nil {
+			// Pool exhausted, stop processing
+			atomic.AddInt64(c.memoryLimitHit, 1)
+			return fmt.Errorf("program pool exhausted")
 		}
 
-		fd, err := getProgFD(nextID)
-		if err != nil {
-			c.logger.Error(err, "Failed to get program FD", "prog_id", nextID)
-			id = nextID
-			continue
-		}
-		defer unix.Close(fd)
-
-		var info bpfProgInfo
-		err = getObjInfo(fd, unsafe.Pointer(&info), uint32(unsafe.Sizeof(info)))
-		if err != nil {
-			c.logger.Error(err, "Failed to get program info", "prog_id", nextID)
-			id = nextID
-			continue
-		}
-
-		// Convert C string to Go string
-		nameBytes := (*[16]byte)(unsafe.Pointer(&info.Name[0]))
-		name := string(nameBytes[:clen(nameBytes[:])])
-
-		// Get program type name
-		progTypeName := progTypeNames[info.Type]
-		if progTypeName == "" {
-			progTypeName = fmt.Sprintf("unknown_%d", info.Type)
-		}
-
-		// Calculate load time
-		loadTime := time.Unix(0, int64(info.LoadTime))
-
-		progInfo := &EBPFProgInfo{
-			ID:              info.ID,
-			Type:            progTypeName,
-			Name:            name,
-			LoadTime:        loadTime,
-			CreatedByUID:    info.CreatedByUID,
-			InsnCnt:         info.XlatedProgLen / 8, // Assuming 8 bytes per instruction
-			JitedProgLen:    info.JitedProgLen,
-			XlatedProgLen:   info.XlatedProgLen,
-			MemoryUsage:     uint64(info.JitedProgLen + info.XlatedProgLen),
-			NrMapIDs:        info.NrMapIDs,
-			VerifiedInsnCnt: info.VerifiedInsnCnt,
-			RunTimeBs:       info.RunTimeNs,
-			RunCnt:          info.RunCnt,
+		if err := c.populateProgInfo(progID, progInfo); err != nil {
+			c.logger.V(1).Info("Failed to get program info", "prog_id", progID, "error", err)
+			return nil // Continue with next program
 		}
 
 		progs = append(progs, progInfo)
+		return nil
+	})
+
+	return progs, err
+}
+
+// enumerateProgIDs efficiently gets all program IDs in one pass
+func (c *EBPFMetricsCollector) enumerateProgIDs() ([]uint32, error) {
+	var progIDs []uint32
+	var id uint32 = 0
+	
+	for len(progIDs) < MaxTrackedProgs { // Limit enumeration
+		nextID, err := getNextProgID(id)
+		if err != nil {
+			break // End of programs
+		}
+		progIDs = append(progIDs, nextID)
 		id = nextID
 	}
+	
+	return progIDs, nil
+}
 
-	return progs, nil
+// populateProgInfo efficiently populates a single program info object
+func (c *EBPFMetricsCollector) populateProgInfo(progID uint32, progInfo *EBPFProgInfo) error {
+	fd, err := getProgFD(progID)
+	if err != nil {
+		return err
+	}
+	defer unix.Close(fd)
+
+	var info bpfProgInfo
+	err = getObjInfo(fd, unsafe.Pointer(&info), uint32(unsafe.Sizeof(info)))
+	if err != nil {
+		return err
+	}
+
+	// Convert C string to Go string efficiently
+	nameBytes := (*[16]byte)(unsafe.Pointer(&info.Name[0]))
+	name := string(nameBytes[:clen(nameBytes[:])])
+
+	// Get program type name
+	progTypeName := progTypeNames[info.Type]
+	if progTypeName == "" {
+		progTypeName = fmt.Sprintf("unknown_%d", info.Type)
+	}
+
+	// Calculate load time
+	loadTime := time.Unix(0, int64(info.LoadTime))
+
+	// Populate the pre-allocated object
+	progInfo.ID = info.ID
+	progInfo.Type = progTypeName
+	progInfo.Name = name
+	progInfo.LoadTime = loadTime
+	progInfo.CreatedByUID = info.CreatedByUID
+	progInfo.InsnCnt = info.XlatedProgLen / 8 // Assuming 8 bytes per instruction
+	progInfo.JitedProgLen = info.JitedProgLen
+	progInfo.XlatedProgLen = info.XlatedProgLen
+	progInfo.MemoryUsage = uint64(info.JitedProgLen + info.XlatedProgLen)
+	progInfo.NrMapIDs = info.NrMapIDs
+	progInfo.VerifiedInsnCnt = info.VerifiedInsnCnt
+	progInfo.RunTimeBs = info.RunTimeNs
+	progInfo.RunCnt = info.RunCnt
+
+	return nil
 }
 
 func (c *EBPFMetricsCollector) parseLinkInfo() ([]*EBPFLinkInfo, error) {
+	// Check memory limits first
+	if c.memoryPool.IsMemoryLimitExceeded() {
+		atomic.AddInt64(c.memoryLimitHit, 1)
+		return nil, fmt.Errorf("memory limit exceeded, skipping link collection")
+	}
+
+	// Step 1: Efficiently enumerate all link IDs first
+	linkIDs, err := c.enumerateLinkIDs()
+	if err != nil {
+		return nil, fmt.Errorf("failed to enumerate link IDs: %w", err)
+	}
+
+	// Step 2: Process in batches to reduce syscall overhead
 	var links []*EBPFLinkInfo
-	var id uint32 = 0
-
-	for {
-		nextID, err := getNextLinkID(id)
-		if err != nil {
-			// End of links or error
-			break
+	
+	err = c.batchProcessor.ProcessInBatches(linkIDs, func(linkID uint32) error {
+		// Get pre-allocated object from pool
+		linkInfo := c.memoryPool.GetLinkInfo()
+		if linkInfo == nil {
+			// Pool exhausted, stop processing
+			atomic.AddInt64(c.memoryLimitHit, 1)
+			return fmt.Errorf("link pool exhausted")
 		}
 
-		fd, err := getLinkFD(nextID)
-		if err != nil {
-			c.logger.Error(err, "Failed to get link FD", "link_id", nextID)
-			id = nextID
-			continue
-		}
-		defer unix.Close(fd)
-
-		var info bpfLinkInfo
-		err = getObjInfo(fd, unsafe.Pointer(&info), uint32(unsafe.Sizeof(info)))
-		if err != nil {
-			c.logger.Error(err, "Failed to get link info", "link_id", nextID)
-			id = nextID
-			continue
-		}
-
-		// Get link type name
-		linkTypeName := linkTypeNames[info.Type]
-		if linkTypeName == "" {
-			linkTypeName = fmt.Sprintf("unknown_%d", info.Type)
-		}
-
-		linkInfo := &EBPFLinkInfo{
-			ID:     info.ID,
-			Type:   linkTypeName,
-			ProgID: info.ProgID,
+		if err := c.populateLinkInfo(linkID, linkInfo); err != nil {
+			c.logger.V(1).Info("Failed to get link info", "link_id", linkID, "error", err)
+			return nil // Continue with next link
 		}
 
 		links = append(links, linkInfo)
+		return nil
+	})
+
+	return links, err
+}
+
+// enumerateLinkIDs efficiently gets all link IDs in one pass
+func (c *EBPFMetricsCollector) enumerateLinkIDs() ([]uint32, error) {
+	var linkIDs []uint32
+	var id uint32 = 0
+	
+	for len(linkIDs) < MaxTrackedLinks { // Limit enumeration
+		nextID, err := getNextLinkID(id)
+		if err != nil {
+			break // End of links
+		}
+		linkIDs = append(linkIDs, nextID)
 		id = nextID
 	}
+	
+	return linkIDs, nil
+}
 
-	return links, nil
+// populateLinkInfo efficiently populates a single link info object
+func (c *EBPFMetricsCollector) populateLinkInfo(linkID uint32, linkInfo *EBPFLinkInfo) error {
+	fd, err := getLinkFD(linkID)
+	if err != nil {
+		return err
+	}
+	defer unix.Close(fd)
+
+	var info bpfLinkInfo
+	err = getObjInfo(fd, unsafe.Pointer(&info), uint32(unsafe.Sizeof(info)))
+	if err != nil {
+		return err
+	}
+
+	// Get link type name
+	linkTypeName := linkTypeNames[info.Type]
+	if linkTypeName == "" {
+		linkTypeName = fmt.Sprintf("unknown_%d", info.Type)
+	}
+
+	// Populate the pre-allocated object
+	linkInfo.ID = info.ID
+	linkInfo.Type = linkTypeName
+	linkInfo.ProgID = info.ProgID
+
+	return nil
 }
 
 // Helper function to find pinned path for a BPF object
@@ -597,40 +705,23 @@ func clen(b []byte) int {
 // Additional system-level eBPF metrics collection
 
 func (c *EBPFMetricsCollector) getEBPFSystemMemoryUsage() (int64, error) {
-	// Try to get eBPF memory usage from /proc/meminfo
-	// Note: This may not be available on all kernel versions
+	// Use the object tracker to get aggregated memory usage efficiently
+	_, _, _, totalMapMemory, totalProgMemory, _, _ := 
+		c.objectTracker.GetAggregatedStats()
 	
-	// Alternative: Sum up memory usage from all tracked objects
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
-
-	var totalMemory int64
-
-	// Sum map memory usage
-	for _, mapInfo := range c.trackedMaps {
-		totalMemory += int64(mapInfo.MemoryUsage)
-	}
-
-	// Sum program memory usage
-	for _, progInfo := range c.trackedProgs {
-		totalMemory += int64(progInfo.MemoryUsage)
-	}
-
+	totalMemory := int64(totalMapMemory + totalProgMemory)
 	return totalMemory, nil
 }
 
 func (c *EBPFMetricsCollector) getEBPFResourceUsage() (float64, error) {
-	// Get eBPF resource usage percentage
-	// This could check against various limits like:
-	// - Number of programs loaded
-	// - Memory usage vs available memory
-	// - Number of maps vs system limits
-
-	totalObjects := len(c.trackedMaps) + len(c.trackedProgs) + len(c.trackedLinks)
+	// Get eBPF resource usage percentage using object tracker
+	mapCount, progCount, linkCount, _, _, _, _ := 
+		c.objectTracker.GetAggregatedStats()
 	
-	// Example: assume a reasonable limit of 1000 total objects
-	// In practice, this should be based on actual system limits
-	const maxReasonableObjects = 1000
+	totalObjects := mapCount + progCount + linkCount
+	
+	// Use configuration limits for more accurate resource usage calculation
+	const maxReasonableObjects = 1000 // Could be made configurable
 	
 	usage := float64(totalObjects) / float64(maxReasonableObjects) * 100.0
 	if usage > 100.0 {
