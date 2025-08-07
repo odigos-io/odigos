@@ -137,7 +137,7 @@ func NewSchedulerRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewSchedulerClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
+func NewSchedulerClusterRole(openshiftEnabled common.ConfigBool) *rbacv1.ClusterRole {
 	rules := []rbacv1.PolicyRule{
 		{ // Needed to track presence/status of configs to wake the data/gateway collectors
 			APIGroups: []string{"odigos.io"},
@@ -200,7 +200,9 @@ func NewSchedulerClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewSchedulerDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+func NewSchedulerDeployment(ns string, version string, imagePrefix common.ConfigString, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
+	// fills in for imagePrefix because it is not accepted by the function GetImageName, imagePrefix is common.ConfigString, not accepted
+	iPrefix := string(imagePrefix)
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -237,7 +239,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.SchedulerContainerName,
-							Image: containers.GetImageName(imagePrefix, imageName, version),
+							Image: containers.GetImageName(iPrefix, imageName, version),
 							Command: []string{
 								"/app",
 							},

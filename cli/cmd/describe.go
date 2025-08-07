@@ -9,6 +9,8 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/pkg/log"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 	"github.com/spf13/cobra"
 )
@@ -25,7 +27,6 @@ var describeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
-
 		odigosNs, err := resources.GetOdigosNamespace(client, ctx)
 		if err != nil {
 			if resources.IsErrNoOdigosNamespaceFound(err) {
@@ -99,6 +100,65 @@ var describeSourceCmd = &cobra.Command{
 	Use:   "source",
 	Short: "Show details of a specific odigos source",
 	Long:  `Print detailed description of a specific odigos source, which can be used to troubleshoot issues`,
+}
+
+var describeConfigCmd = &cobra.Command{
+	Use:   "config",
+	Short: "Show details of odigos-config configmap",
+	Long:  "Print detailed description of the odigos-config map giving info on whether certain features are on or off",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		ns, err := resources.GetOdigosNamespace(client, ctx)
+
+		if err != nil {
+			log.Print("unable to get the Odigos Namespace")
+			os.Exit(1)
+		}
+
+		config, err := resources.GetCurrentConfig(ctx, client, ns)
+
+		if err != nil {
+			log.Print("unable to read the current Odigos configuration")
+			os.Exit(1)
+		}
+
+		log.Print(`Manage Odigos configuration settings to customize system behavior.` + "\n" + "\n")
+
+		log.Print(`	Configurable properties` + "\n")
+
+		common.PrintMap(config)
+
+	},
+}
+
+var describeConfigFeatureCmd = &cobra.Command{
+	Use:   "feature <name>",
+	Short: "Show details of a specific feature in the odigos-config configmap",
+	Long:  "Print description of a specific feature in the odigos-config map giving info on whether it is are on or off",
+	Run: func(cmd *cobra.Command, args []string) {
+		name := args[0]
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		ns, err := resources.GetOdigosNamespace(client, ctx)
+
+		if err != nil {
+			log.Print("unable to get the Odigos Namespace")
+			os.Exit(1)
+		}
+
+		config, err := resources.GetCurrentConfig(ctx, client, ns)
+
+		if err != nil {
+			log.Print("unable to read the current Odigos configuration")
+			os.Exit(1)
+		}
+
+		common.SpecificFeature(config, name)
+
+	},
 }
 
 var describeSourceDeploymentCmd = &cobra.Command{
@@ -230,8 +290,13 @@ func init() {
 	describeCmd.AddCommand(describeSourceCmd)
 	describeSourceCmd.PersistentFlags().StringVarP(&describeNamespaceFlag, "namespace", "n", "default", "namespace of the source being described")
 
+	// config
+	describeCmd.AddCommand(describeConfigCmd)
+	describeConfigCmd.AddCommand(describeConfigFeatureCmd)
+
 	// source kinds
 	describeSourceCmd.AddCommand(describeSourceDeploymentCmd)
 	describeSourceCmd.AddCommand(describeSourceDaemonSetCmd)
 	describeSourceCmd.AddCommand(describeSourceStatefulSetCmd)
+
 }
