@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/metrics"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
+	ebpfmetrics "github.com/odigos-io/odigos/odiglet/pkg/ebpf/metrics"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
@@ -31,11 +32,12 @@ import (
 )
 
 type Odiglet struct {
-	clientset     *kubernetes.Clientset
-	mgr           controllerruntime.Manager
-	ebpfManager   commonInstrumentation.Manager
-	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	criClient     *criwrapper.CriClient
+	clientset         *kubernetes.Clientset
+	mgr               controllerruntime.Manager
+	ebpfManager       commonInstrumentation.Manager
+	configUpdates     chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	criClient         *criwrapper.CriClient
+	ebpfMetricsCollector *ebpfmetrics.EBPFMetricsCollector
 }
 
 const (
@@ -92,12 +94,20 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 		return nil, fmt.Errorf("failed to setup controller-runtime manager %w", err)
 	}
 
+	// Create eBPF metrics collector
+	meter := provider.Meter("github.com/odigos.io/odigos/odiglet/ebpf")
+	ebpfMetricsCollector, err := ebpfmetrics.NewEBPFMetricsCollector(log.Logger, meter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create eBPF metrics collector: %w", err)
+	}
+
 	return &Odiglet{
-		clientset:     clientset,
-		mgr:           mgr,
-		ebpfManager:   ebpfManager,
-		configUpdates: configUpdates,
-		criClient:     &criWrapper,
+		clientset:            clientset,
+		mgr:                  mgr,
+		ebpfManager:          ebpfManager,
+		configUpdates:        configUpdates,
+		criClient:            &criWrapper,
+		ebpfMetricsCollector: ebpfMetricsCollector,
 	}, nil
 }
 
@@ -131,6 +141,16 @@ func (o *Odiglet) Run(ctx context.Context) {
 		}
 		log.Logger.V(0).Info("eBPF manager exited")
 		return err
+	})
+
+	// Start eBPF metrics collector
+	g.Go(func() error {
+		err := o.ebpfMetricsCollector.Start(groupCtx)
+		if err != nil && err != context.Canceled {
+			log.Logger.Error(err, "Failed to run eBPF metrics collector")
+		}
+		log.Logger.V(0).Info("eBPF metrics collector exited")
+		return nil // Don't fail the whole application if metrics collection fails
 	})
 
 	// start OpAmp server
