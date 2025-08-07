@@ -135,6 +135,7 @@ var ConfigDisplay = map[string]string{
 	ServiceGraphDisabledProperty:       "Enable or disable the service graph feature [default: false].",
 	GoAutoOffsetsCronProperty:          "Cron schedule for automatic Go offsets updates (e.g. `0 0 * * *` for daily at midnight). Set to empty string to disable.",
 	ClickhouseJsonTypeEnabledProperty:  "Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]",
+	AllowedTestConnectionHostsProperty: "List of allowed domains for test connection endpoints (e.g., 'https://api.honeycomb.io', 'https://otel.example.com'). Use '*' to allow all domains. Empty list allows all domains for backward compatibility.",
 }
 
 var (
