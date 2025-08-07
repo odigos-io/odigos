@@ -81,6 +81,7 @@ spec:
           resources:
 {{ toYaml .Values.odiglet.initContainerResources | indent 12 }}
       containers:
+{{- if or (eq .Values.instrumentor.mountMethod "") (eq .Values.instrumentor.mountMethod "k8s-virtual-device") }}
         - name: deviceplugin
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           {{- if include "odigos.secretExists" . }}
@@ -114,6 +115,8 @@ spec:
               command:
                 - /root/grpc_health_probe
                 - -addr=unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic
+                - -connect-timeout=10s
+                - -rpc-timeout=10s
             initialDelaySeconds: 10
             failureThreshold: 3
             periodSeconds: 10
@@ -123,10 +126,13 @@ spec:
               command:
                 - /root/grpc_health_probe
                 - -addr=unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic
+                - -connect-timeout=10s
+                - -rpc-timeout=10s
             initialDelaySeconds: 10
             failureThreshold: 3
             periodSeconds: 10
             timeoutSeconds: 10
+{{- end }}
         - name: odiglet
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           {{- if include "odigos.secretExists" . }}
