@@ -970,13 +970,6 @@ type SourceContainer struct {
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
 }
 
-type SourceFilter struct {
-	Namespace                *string          `json:"namespace,omitempty"`
-	WorkloadKind             *K8sResourceKind `json:"workloadKind,omitempty"`
-	WorkloadName             *string          `json:"workloadName,omitempty"`
-	MarkedForInstrumentation *bool            `json:"markedForInstrumentation,omitempty"`
-}
-
 type SpanAttributeSamplerAction struct {
 	ID      string              `json:"id"`
 	Type    string              `json:"type"`
@@ -1021,6 +1014,13 @@ type TestConnectionResponse struct {
 	DestinationType *string `json:"destinationType,omitempty"`
 	Message         *string `json:"message,omitempty"`
 	Reason          *string `json:"reason,omitempty"`
+}
+
+type WorkloadFilter struct {
+	Namespace                *string          `json:"namespace,omitempty"`
+	WorkloadKind             *K8sResourceKind `json:"workloadKind,omitempty"`
+	WorkloadName             *string          `json:"workloadName,omitempty"`
+	MarkedForInstrumentation *bool            `json:"markedForInstrumentation,omitempty"`
 }
 
 type BooleanOperation string

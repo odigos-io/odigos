@@ -19,7 +19,7 @@ const loadersKey loadersKeyType = "dataloaders"
 type Loaders struct {
 	mu sync.Mutex
 
-	filter *model.SourceFilter
+	filter *model.WorkloadFilter
 
 	// the value we use for the namespace in the quires to api server.
 	// for all namespace, this will be empty string.
@@ -87,7 +87,7 @@ func (l *Loaders) GetSources(ctx context.Context, sourceId model.K8sWorkloadID) 
 	}, nil
 }
 
-func (l *Loaders) SetFilters(ctx context.Context, filter *model.SourceFilter) error {
+func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.filter = filter

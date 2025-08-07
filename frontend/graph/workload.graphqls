@@ -1,8 +1,10 @@
 
-# filter for sources.
+# filter for workloads.
+# workload querties can be expensive and resource intensive,
+# so we provide a filter to reduce the scope of the query to just what actually needed.
 # each empty value means no filter for that field.
 # for example, if namespace is not empty and other fields are, it will return all sources in the namespace.
-input SourceFilter {
+input WorkloadFilter {
   namespace: String
   workloadKind: K8sResourceKind
   workloadName: String

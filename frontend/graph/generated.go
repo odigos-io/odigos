@@ -642,7 +642,7 @@ type ComplexityRoot struct {
 		GetServiceMap         func(childComplexity int) int
 		PotentialDestinations func(childComplexity int) int
 		SourceConditions      func(childComplexity int) int
-		Sources               func(childComplexity int, filter *model.SourceFilter) int
+		Sources               func(childComplexity int, filter *model.WorkloadFilter) int
 	}
 
 	RenameAttributeAction struct {
@@ -814,7 +814,7 @@ type QueryResolver interface {
 	DescribeOdigos(ctx context.Context) (*model.OdigosAnalyze, error)
 	DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error)
 	SourceConditions(ctx context.Context) ([]*model.SourceConditions, error)
-	Sources(ctx context.Context, filter *model.SourceFilter) ([]*model.K8sSource, error)
+	Sources(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sSource, error)
 }
 
 type executableSchema struct {
@@ -3471,7 +3471,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Sources(childComplexity, args["filter"].(*model.SourceFilter)), true
+		return e.complexity.Query.Sources(childComplexity, args["filter"].(*model.WorkloadFilter)), true
 
 	case "RenameAttributeAction.details":
 		if e.complexity.RenameAttributeAction.Details == nil {
@@ -3994,7 +3994,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPersistNamespaceSourceInput,
 		ec.unmarshalInputPodWorkloadInput,
 		ec.unmarshalInputProbeInput,
-		ec.unmarshalInputSourceFilter,
+		ec.unmarshalInputWorkloadFilter,
 	)
 	first := true
 
@@ -4949,18 +4949,18 @@ func (ec *executionContext) field_Query_sources_args(ctx context.Context, rawArg
 func (ec *executionContext) field_Query_sources_argsFilter(
 	ctx context.Context,
 	rawArgs map[string]any,
-) (*model.SourceFilter, error) {
+) (*model.WorkloadFilter, error) {
 	if _, ok := rawArgs["filter"]; !ok {
-		var zeroVal *model.SourceFilter
+		var zeroVal *model.WorkloadFilter
 		return zeroVal, nil
 	}
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
 	if tmp, ok := rawArgs["filter"]; ok {
-		return ec.unmarshalOSourceFilter2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceFilter(ctx, tmp)
+		return ec.unmarshalOWorkloadFilter2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadFilter(ctx, tmp)
 	}
 
-	var zeroVal *model.SourceFilter
+	var zeroVal *model.WorkloadFilter
 	return zeroVal, nil
 }
 
@@ -22346,7 +22346,7 @@ func (ec *executionContext) _Query_sources(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Sources(rctx, fc.Args["filter"].(*model.SourceFilter))
+		return ec.resolvers.Query().Sources(rctx, fc.Args["filter"].(*model.WorkloadFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -28651,8 +28651,8 @@ func (ec *executionContext) unmarshalInputProbeInput(ctx context.Context, obj an
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSourceFilter(ctx context.Context, obj any) (model.SourceFilter, error) {
-	var it model.SourceFilter
+func (ec *executionContext) unmarshalInputWorkloadFilter(ctx context.Context, obj any) (model.WorkloadFilter, error) {
+	var it model.WorkloadFilter
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -38464,14 +38464,6 @@ func (ec *executionContext) marshalOSourceContainer2ᚕᚖgithubᚗcomᚋodigos�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOSourceFilter2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceFilter(ctx context.Context, v any) (*model.SourceFilter, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputSourceFilter(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalOSpanKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSpanKind(ctx context.Context, v any) (*model.SpanKind, error) {
 	if v == nil {
 		return nil, nil
@@ -38575,6 +38567,14 @@ func (ec *executionContext) marshalOStringCondition2ᚖgithubᚗcomᚋodigosᚑi
 		return graphql.Null
 	}
 	return ec._StringCondition(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOWorkloadFilter2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadFilter(ctx context.Context, v any) (*model.WorkloadFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputWorkloadFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

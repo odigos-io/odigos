@@ -1205,7 +1205,7 @@ func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceCo
 }
 
 // Sources is the resolver for the sources field.
-func (r *queryResolver) Sources(ctx context.Context, filter *model.SourceFilter) ([]*model.K8sSource, error) {
+func (r *queryResolver) Sources(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sSource, error) {
 	// Extract value from context
 	l := loaders.For(ctx)
 	err := l.SetFilters(ctx, filter)
