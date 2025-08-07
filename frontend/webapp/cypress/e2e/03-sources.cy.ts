@@ -87,7 +87,7 @@ describe('Sources CRUD', () => {
   });
 
   it(`Should update "serviceName" of 1 ${configCrdName} CRDs in the cluster`, () => {
-    getCrdIds({ namespace, crdName: configCrdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
+    getCrdIds({ namespace, crdName: configCrdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
       crdIds.slice(0, 1).forEach((crdId) => {
         getCrdById({ namespace, crdName: configCrdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
       });
