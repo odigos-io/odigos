@@ -35,6 +35,30 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 		return nil, errors.New("distribution getter must be provided")
 	}
 
+	// Initialize memory manager for dynamic GOMEMLIMIT
+	memoryManager, err := NewMemoryManager(logger)
+	if err != nil {
+		logger.Error(err, "Failed to create memory manager, continuing without dynamic GOMEMLIMIT")
+		memoryManager = nil
+	}
+
+	// Initialize eBPF memory tracker
+	var ebpfMemoryTracker *EBPFMemoryTracker
+	if memoryManager != nil {
+		ebpfMemoryTracker = NewEBPFMemoryTracker(logger, memoryManager)
+		
+		// Start the memory manager
+		if err := memoryManager.Start(); err != nil {
+			logger.Error(err, "Failed to start memory manager")
+			memoryManager = nil
+			ebpfMemoryTracker = nil
+		} else {
+			// Store globally for access by the main Odiglet
+			setGlobalMemoryManager(memoryManager)
+			setGlobalEBPFMemoryTracker(ebpfMemoryTracker)
+		}
+	}
+
 	appendEnvVarSlice := make([]string, 0, len(appendEnvVarNames))
 	for env := range appendEnvVarNames {
 		appendEnvVarSlice = append(appendEnvVarSlice, env)

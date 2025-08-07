@@ -36,6 +36,7 @@ type Odiglet struct {
 	ebpfManager   commonInstrumentation.Manager
 	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
 	criClient     *criwrapper.CriClient
+	memoryManager *ebpf.MemoryManager
 }
 
 const (
@@ -77,7 +78,13 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ebpf manager %w", err)
 	}
-	criWrapper := criwrapper.CriClient{Logger: log.Logger}
+	criWrapper, err := criwrapper.NewCriClient(env.Current.ContainerRuntimeSock)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get memory manager from eBPF manager if available
+	memoryManager := ebpf.GetGlobalMemoryManager()
 
 	kubeManagerOptions := kube.KubeManagerOptions{
 		Mgr:               mgr,
@@ -98,6 +105,7 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 		ebpfManager:   ebpfManager,
 		configUpdates: configUpdates,
 		criClient:     &criWrapper,
+		memoryManager: memoryManager,
 	}, nil
 }
 
@@ -110,6 +118,23 @@ func (o *Odiglet) Run(ctx context.Context) {
 	}
 
 	defer o.criClient.Close()
+
+	// Start memory manager if available
+	if o.memoryManager != nil {
+		g.Go(func() error {
+			err := o.memoryManager.Start()
+			if err != nil {
+				log.Logger.Error(err, "Failed to start memory manager")
+				return err
+			}
+
+			// Wait for context cancellation to stop memory manager
+			<-groupCtx.Done()
+			o.memoryManager.Stop()
+			log.Logger.V(0).Info("Memory manager exited")
+			return nil
+		})
+	}
 
 	// Start pprof server
 	g.Go(func() error {
