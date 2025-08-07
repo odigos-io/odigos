@@ -252,6 +252,22 @@ instrumentor:
   agentEnvVarsInjectionMethod: ''
 
 odiglet:
+  odiglet:
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        # Prior to Kubernetes v1.26, Odigos uses host networking.
+        # In some environments, different ports may already be in use on the host (e.g., due to other daemons or networking constraints).
+        # Use the following values to configure the readiness and liveness probe ports to avoid conflicts.
+        port: 55683
+      initialDelaySeconds: 15
+      periodSeconds: 20
+      timeoutSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: 55683
+      periodSeconds: 10
   nodeSelector:
     kubernetes.io/os: linux
   tolerations:
@@ -291,11 +307,6 @@ odiglet:
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
   # into the Odiglet to ensure it can access the container runtime unix socket.
   customContainerRuntimeSocketPath: ''
-
-  # Prior to Kubernetes v1.26, Odigos uses host networking.
-  # In some environments, different ports may already be in use on the host (e.g., due to other daemons or networking constraints).
-  # Use the following values to configure the readiness and liveness probe ports to avoid conflicts.
-  readinessAndLivenessProbePort: 55683
 
 centralProxy:
   enabled: false
