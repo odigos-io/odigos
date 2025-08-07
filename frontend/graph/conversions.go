@@ -369,6 +369,7 @@ func convertOdigosConfigToGql(cfg *common.OdigosConfiguration) (*model.OdigosCon
 			odigosConfig.NodeSelector = &nodeSelectorStr
 		}
 	}
+
 	if cfg.CollectorNode != nil {
 		odigosConfig.CollectorNode = &model.CollectorNode{
 			K8sNodeLogsDirectory: &cfg.CollectorNode.K8sNodeLogsDirectory,

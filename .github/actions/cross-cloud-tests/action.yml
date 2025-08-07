@@ -8,6 +8,9 @@ inputs:
   test_scenario:
     description: "Test scenario to run (e.g., multi-apps, helm-chart)"
     required: true
+  platform:
+    description: "The platform to use [arm/amd]"
+    required: true
 
 runs:
   using: "composite"
@@ -77,6 +80,7 @@ runs:
         export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
         export TF_VAR_run_id="${GITHUB_RUN_ID}"
         export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_platform="${{ inputs.platform }}"
         tofu -chdir="$TF_DIR" init
 
     - name: Tofu Plan
