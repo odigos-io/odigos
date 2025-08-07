@@ -55,7 +55,7 @@ describe('Sources CRUD', () => {
     getCrdIds({ namespace, crdName: configCrdName, expectedError: '', expectedLength: totalEntities });
   });
 
-  it(`Should update the name of ${totalEntities} sources via API, and notify locally`, () => {
+  it(`Should update the name of 1 sources via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.NAMESPACE_SOURCES.slice(0, 1).forEach((sourceName, idx) => {
         updateEntity(
@@ -80,7 +80,7 @@ describe('Sources CRUD', () => {
 
   it(`Should update "otelServiceName" of 1 ${sourceCrdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName: sourceCrdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
-      crdIds.forEach((crdId) => {
+      crdIds.slice(0, 1).forEach((crdId) => {
         getCrdById({ namespace, crdName: sourceCrdName, crdId, expectedError: '', expectedKey: 'otelServiceName', expectedValue: TEXTS.UPDATED_NAME });
       });
     });
@@ -88,7 +88,7 @@ describe('Sources CRUD', () => {
 
   it(`Should update "serviceName" of 1 ${configCrdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName: configCrdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
-      crdIds.forEach((crdId) => {
+      crdIds.slice(0, 1).forEach((crdId) => {
         getCrdById({ namespace, crdName: configCrdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
       });
     });
