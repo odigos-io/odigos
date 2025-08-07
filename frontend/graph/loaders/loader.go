@@ -26,11 +26,11 @@ type Loaders struct {
 	// for a namespace query, or a query for specific source, this will be the namespace name.
 	queryNamespace string
 
-	workloadIds            []model.K8sWorkload
-	instrumentationConfigs map[model.K8sWorkload]*v1alpha1.InstrumentationConfig
-	workloadSources        map[model.K8sWorkload]*v1alpha1.Source
+	workloadIds            []model.K8sWorkloadID
+	instrumentationConfigs map[model.K8sWorkloadID]*v1alpha1.InstrumentationConfig
+	workloadSources        map[model.K8sWorkloadID]*v1alpha1.Source
 	nsSources              map[string]*v1alpha1.Source
-	workloadManifests      map[model.K8sWorkload]*WorkloadManifest
+	workloadManifests      map[model.K8sWorkloadID]*WorkloadManifest
 }
 
 func WithLoaders(ctx context.Context, loaders *Loaders) context.Context {
@@ -45,13 +45,13 @@ func NewLoaders() *Loaders {
 	return &Loaders{}
 }
 
-func (l *Loaders) GetWorkloadIds() []model.K8sWorkload {
+func (l *Loaders) GetWorkloadIds() []model.K8sWorkloadID {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return l.workloadIds
 }
 
-func (l *Loaders) GetInstrumentationConfig(ctx context.Context, workload model.K8sWorkload) (*v1alpha1.InstrumentationConfig, error) {
+func (l *Loaders) GetInstrumentationConfig(ctx context.Context, workload model.K8sWorkloadID) (*v1alpha1.InstrumentationConfig, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -66,7 +66,7 @@ func (l *Loaders) GetInstrumentationConfig(ctx context.Context, workload model.K
 	return l.instrumentationConfigs[workload], nil
 }
 
-func (l *Loaders) GetSources(ctx context.Context, sourceId model.K8sWorkload) (*v1alpha1.WorkloadSources, error) {
+func (l *Loaders) GetSources(ctx context.Context, sourceId model.K8sWorkloadID) (*v1alpha1.WorkloadSources, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -104,7 +104,7 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.SourceFilter) er
 			return err
 		}
 		l.instrumentationConfigs = configById
-		l.workloadIds = make([]model.K8sWorkload, 0, len(configById))
+		l.workloadIds = make([]model.K8sWorkloadID, 0, len(configById))
 		for sourceId := range configById {
 			l.workloadIds = append(l.workloadIds, sourceId)
 		}
@@ -126,14 +126,14 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.SourceFilter) er
 
 		// calculate the source ids from the workload sources and manifests.
 		// we can have workloads without sources, and sources without workloads.
-		allWorkloads := make(map[model.K8sWorkload]struct{})
+		allWorkloads := make(map[model.K8sWorkloadID]struct{})
 		for workloadId := range workloadSources {
 			allWorkloads[workloadId] = struct{}{}
 		}
 		for workloadId := range workloadManifests {
 			allWorkloads[workloadId] = struct{}{}
 		}
-		l.workloadIds = make([]model.K8sWorkload, 0, len(allWorkloads))
+		l.workloadIds = make([]model.K8sWorkloadID, 0, len(allWorkloads))
 		for sourceId := range allWorkloads {
 			l.workloadIds = append(l.workloadIds, sourceId)
 		}
@@ -145,18 +145,18 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.SourceFilter) er
 // function to get just the instrumentation configs that match the filter.
 // e.g. load only sources which are marked for instrumentation after the instrumentor reconciles it.
 // this is cheaper and faster query than to load all the sources and resolve each one.
-func (l *Loaders) fetchInstrumentationConfigs(ctx context.Context) (map[model.K8sWorkload]*v1alpha1.InstrumentationConfig, error) {
+func (l *Loaders) fetchInstrumentationConfigs(ctx context.Context) (map[model.K8sWorkloadID]*v1alpha1.InstrumentationConfig, error) {
 	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(l.queryNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	configById := make(map[model.K8sWorkload]*v1alpha1.InstrumentationConfig, len(instrumentationConfigs.Items))
+	configById := make(map[model.K8sWorkloadID]*v1alpha1.InstrumentationConfig, len(instrumentationConfigs.Items))
 	for _, config := range instrumentationConfigs.Items {
 		pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(config.Name, config.Namespace)
 		if err != nil {
 			return nil, err
 		}
-		sourceId := model.K8sWorkload{
+		sourceId := model.K8sWorkloadID{
 			Namespace: config.Namespace,
 			Kind:      model.K8sResourceKind(pw.Kind),
 			Name:      pw.Name,
@@ -166,16 +166,16 @@ func (l *Loaders) fetchInstrumentationConfigs(ctx context.Context) (map[model.K8
 	return configById, nil
 }
 
-func (l *Loaders) fetchSources(ctx context.Context) (workloadSources map[model.K8sWorkload]*v1alpha1.Source, namespaceSources map[string]*v1alpha1.Source, err error) {
+func (l *Loaders) fetchSources(ctx context.Context) (workloadSources map[model.K8sWorkloadID]*v1alpha1.Source, namespaceSources map[string]*v1alpha1.Source, err error) {
 	sources, err := kube.DefaultClient.OdigosClient.Sources(l.queryNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
-	workloadSources = make(map[model.K8sWorkload]*v1alpha1.Source, len(sources.Items)) // assuming most source are workload so len is almost right
-	namespaceSources = make(map[string]*v1alpha1.Source)                               // expecting only few of these
+	workloadSources = make(map[model.K8sWorkloadID]*v1alpha1.Source, len(sources.Items)) // assuming most source are workload so len is almost right
+	namespaceSources = make(map[string]*v1alpha1.Source)                                 // expecting only few of these
 	for _, source := range sources.Items {
 		wd := source.Spec.Workload
-		sourceId := model.K8sWorkload{
+		sourceId := model.K8sWorkloadID{
 			Namespace: wd.Namespace,
 			Kind:      model.K8sResourceKind(wd.Kind),
 			Name:      wd.Name,
@@ -189,16 +189,16 @@ func (l *Loaders) fetchSources(ctx context.Context) (workloadSources map[model.K
 	return
 }
 
-func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests map[model.K8sWorkload]*WorkloadManifest, err error) {
+func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests map[model.K8sWorkloadID]*WorkloadManifest, err error) {
 
-	workloadManifests = make(map[model.K8sWorkload]*WorkloadManifest)
+	workloadManifests = make(map[model.K8sWorkloadID]*WorkloadManifest)
 
 	deployments, err := kube.DefaultClient.AppsV1().Deployments(l.queryNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 	for _, deployment := range deployments.Items {
-		workloadManifests[model.K8sWorkload{
+		workloadManifests[model.K8sWorkloadID{
 			Namespace: deployment.Namespace,
 			Kind:      model.K8sResourceKindDeployment,
 			Name:      deployment.Name,
@@ -213,7 +213,7 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 		return nil, err
 	}
 	for _, daemonset := range daemonsets.Items {
-		workloadManifests[model.K8sWorkload{
+		workloadManifests[model.K8sWorkloadID{
 			Namespace: daemonset.Namespace,
 			Kind:      model.K8sResourceKindDaemonSet,
 			Name:      daemonset.Name,
@@ -228,7 +228,7 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 		return nil, err
 	}
 	for _, statefulset := range statefulsets.Items {
-		workloadManifests[model.K8sWorkload{
+		workloadManifests[model.K8sWorkloadID{
 			Namespace: statefulset.Namespace,
 			Kind:      model.K8sResourceKindStatefulSet,
 			Name:      statefulset.Name,
@@ -243,7 +243,7 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 		return nil, err
 	}
 	for _, cronjob := range cronjobs.Items {
-		workloadManifests[model.K8sWorkload{
+		workloadManifests[model.K8sWorkloadID{
 			Namespace: cronjob.Namespace,
 			Kind:      model.K8sResourceKindCronJob,
 			Name:      cronjob.Name,

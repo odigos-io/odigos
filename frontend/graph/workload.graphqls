@@ -9,7 +9,7 @@ input SourceFilter {
   markedForInstrumentation: Boolean
 }
 
-type K8sWorkload {
+type K8sWorkloadId {
   namespace: String!
   kind: K8sResourceKind!
   name: String!
@@ -268,7 +268,7 @@ type K8sSourcePod {
 }
 
 type K8sSource {
-  id: K8sWorkload!
+  id: K8sWorkloadId!
 
   # an aggregated status for all the conditions that are relevant for the source.
   # if there is any issue with the source, this value will track it.

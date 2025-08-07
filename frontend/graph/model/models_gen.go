@@ -499,7 +499,7 @@ type K8sNamespaceID struct {
 }
 
 type K8sSource struct {
-	ID                       *K8sWorkload                       `json:"id"`
+	ID                       *K8sWorkloadID                     `json:"id"`
 	SourceHealthStatus       *DesiredConditionStatus            `json:"sourceHealthStatus"`
 	MarkedForInstrumentation *K8sSourceMakredForInstrumentation `json:"markedForInstrumentation"`
 	RuntimeInfo              *K8sSourceRuntimeInfo              `json:"runtimeInfo,omitempty"`
@@ -611,7 +611,7 @@ type K8sSourceRuntimeInfoContainer struct {
 	OtherAgentName          *string             `json:"otherAgentName,omitempty"`
 }
 
-type K8sWorkload struct {
+type K8sWorkloadID struct {
 	Namespace string          `json:"namespace"`
 	Kind      K8sResourceKind `json:"kind"`
 	Name      string          `json:"name"`
