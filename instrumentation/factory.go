@@ -3,6 +3,7 @@ package instrumentation
 import (
 	"context"
 
+	"github.com/cilium/ebpf"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -19,6 +20,8 @@ type Settings struct {
 	// InitialConfig is the initial configuration that should be applied to the instrumentation,
 	// it can be used to enable/disable specific instrumentation libraries, configure sampling, etc.
 	InitialConfig Config
+	// TracesMap is the optional eBPF map that will be used to send trace events from eBPF probes.
+	TracesMap *ebpf.Map
 }
 
 // Factory is used to create an Instrumentation

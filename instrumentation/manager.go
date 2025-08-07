@@ -100,6 +100,8 @@ type manager[processDetails ProcessDetails, configGroup ConfigGroup] struct {
 	configUpdates <-chan ConfigUpdate[configGroup]
 
 	metrics *managerMetrics
+
+	commonMapsManager *bpfFsMapsManager
 }
 
 func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options ManagerOptions[processDetails, configGroup]) (Manager, error) {
@@ -159,6 +161,7 @@ func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options 
 		detailsByWorkload: map[configGroup]map[int]*instrumentationDetails[processDetails, configGroup]{},
 		configUpdates:     options.ConfigUpdates,
 		metrics:           managerMetrics,
+		commonMapsManager: &bpfFsMapsManager{logger: logger.WithName("bpfFsMapsManager")},
 	}, nil
 }
 
@@ -257,6 +260,8 @@ func (m *manager[ProcessDetails, ConfigGroup]) Run(ctx context.Context) error {
 	})
 
 	err := g.Wait()
+
+	err = errors.Join(err, m.commonMapsManager.Cleanup())
 	return err
 }
 
@@ -327,6 +332,14 @@ func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context
 		//
 		m.logger.Info("failed to get initial settings for instrumentation", "language", otelDistro.Language, "distroName", otelDistro.Name, "error", err)
 		// return nil
+	}
+
+	if settings.TracesMap == nil {
+		tracesMap, err := m.commonMapsManager.TracesMap()
+		if err != nil {
+			return fmt.Errorf("failed to get traces map: %w", err)
+		}
+		settings.TracesMap = tracesMap
 	}
 
 	inst, initErr := factory.CreateInstrumentation(ctx, e.PID, settings)
