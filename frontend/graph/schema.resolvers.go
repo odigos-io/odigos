@@ -883,6 +883,20 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 		return nil, fmt.Errorf("destination type %s does not support test connection", destination.Type)
 	}
 
+	// Validate URLs for test connection based on AllowedTestConnectionHosts configuration
+	err = services.ValidateDestinationURLs(ctx, destination)
+	if err != nil {
+		errMsg := err.Error()
+		reason := string(testconnection.FailedToConnect)
+		return &model.TestConnectionResponse{
+			Succeeded:       false,
+			StatusCode:      403,
+			DestinationType: (*string)(&destType),
+			Message:         &errMsg,
+			Reason:          &reason,
+		}, nil
+	}
+
 	configurer, err := testconnection.ConvertDestinationToConfigurer(destination)
 	if err != nil {
 		return nil, err

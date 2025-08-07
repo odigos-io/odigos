@@ -42,6 +42,7 @@ Manage Odigos configuration settings to customize system behavior.
   	- "service-graph-disabled": Enable or disable the service graph feature [default: false].
 	- "go-auto-offsets-cron": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
 	- "clickhouse-json-type-enabled": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
+	- "allowed-test-connection-hosts": List of allowed domains for test connection endpoints (e.g., "https://api.honeycomb.io", "https://otel.example.com"). Use "*" to allow all domains. Empty list allows all domains for backward compatibility.
 	
 
 ### Options
