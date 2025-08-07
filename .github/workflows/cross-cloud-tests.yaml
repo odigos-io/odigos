@@ -51,6 +51,9 @@ jobs:
         platform: ${{ fromJSON(inputs.provider == 'all' && '["arm", "amd"]' || format('["{0}"]', inputs.provider)) }}
         test_scenario: ${{ fromJSON(inputs.test_scenario == 'all' && '["multi-apps", "helm-chart"]' || format('["{0}"]', inputs.test_scenario)) }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Cross-Cloud Tests
         if: ${{ matrix.provider != 'aks' && matrix.platform != 'arm' }}
         uses: ./.github/actions/cross-cloud-tests
