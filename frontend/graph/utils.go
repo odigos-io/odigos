@@ -105,3 +105,76 @@ func workloadRolloutStatusCondition(reason *string) model.DesiredStateProgress {
 	}
 	return model.DesiredStateProgressUnknown
 }
+
+func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByContainer) *model.K8sSourceRuntimeInfoContainer {
+	containerName := runtimeDetails.ContainerName
+
+	var runtimeVersion *string
+	if runtimeDetails.RuntimeVersion != "" {
+		runtimeVersion = &runtimeDetails.RuntimeVersion
+	}
+	var otherAgentName *string
+	if runtimeDetails.OtherAgent != nil {
+		otherAgentName = &runtimeDetails.OtherAgent.Name
+	}
+	var libcType *string
+	if runtimeDetails.LibCType != nil {
+		libcTypeStr := string(*runtimeDetails.LibCType)
+		libcType = &libcTypeStr
+	}
+	return &model.K8sSourceRuntimeInfoContainer{
+		ContainerName:           containerName,
+		Language:                model.ProgrammingLanguage(runtimeDetails.Language),
+		RuntimeVersion:          runtimeVersion,
+		ProcessEnvVars:          envVarsToModel(runtimeDetails.EnvVars),
+		ContainerRuntimeEnvVars: envVarsToModel(runtimeDetails.EnvFromContainerRuntime),
+		CriErrorMessage:         runtimeDetails.CriErrorMessage,
+		LibcType:                libcType,
+		SecureExecutionMode:     runtimeDetails.SecureExecutionMode,
+		OtherAgentName:          otherAgentName,
+	}
+}
+
+func agentEnabledContainersToModel(containerAgentConfig *v1alpha1.ContainerAgentConfig) *model.K8sSourceAgentEnabledContainer {
+	reasonStr := string(containerAgentConfig.AgentEnabledReason)
+	var envInjectionMethodStr *string
+	if containerAgentConfig.EnvInjectionMethod != nil {
+		asStr := string(*containerAgentConfig.EnvInjectionMethod)
+		envInjectionMethodStr = &asStr
+	}
+
+	var traces *model.K8sSourceAgentEnabledContainerTraces
+	if containerAgentConfig.Traces != nil {
+		traces = &model.K8sSourceAgentEnabledContainerTraces{
+			Enabled: true,
+		}
+	}
+	var metrics *model.K8sSourceAgentEnabledContainerMetrics
+	if containerAgentConfig.Metrics != nil {
+		metrics = &model.K8sSourceAgentEnabledContainerMetrics{
+			Enabled: true,
+		}
+	}
+	var logs *model.K8sSourceAgentEnabledContainerLogs
+	if containerAgentConfig.Logs != nil {
+		logs = &model.K8sSourceAgentEnabledContainerLogs{
+			Enabled: true,
+		}
+	}
+
+	return &model.K8sSourceAgentEnabledContainer{
+		ContainerName: containerAgentConfig.ContainerName,
+		AgentEnabled:  true,
+		AgentEnabledStatus: &model.DesiredConditionStatus{
+			Name:       v1alpha1.AgentEnabledStatusConditionType,
+			Status:     agentEnabledStatusCondition(&reasonStr),
+			ReasonEnum: &reasonStr,
+		},
+		OtelDistroName:     emptyStrToNil(containerAgentConfig.OtelDistroName),
+		EnvInjectionMethod: envInjectionMethodStr,
+		DistroParams:       distroParamsToModel(containerAgentConfig.DistroParams),
+		Traces:             traces,
+		Metrics:            metrics,
+		Logs:               logs,
+	}
+}

@@ -50,34 +50,11 @@ func (r *k8sSourceResolver) RuntimeInfo(ctx context.Context, obj *model.K8sSourc
 		}
 	}
 
-	containers := make([]*model.K8sSourceRuntimeInfoContainer, len(ic.Status.RuntimeDetailsByContainer))
-	for i, container := range ic.Status.RuntimeDetailsByContainer {
-		var runtimeVersion *string
-		if container.RuntimeVersion != "" {
-			runtimeVersion = &container.RuntimeVersion
-		}
-		var otherAgentName *string
-		if container.OtherAgent != nil {
-			otherAgentName = &container.OtherAgent.Name
-		}
-		var libcType *string
-		if container.LibCType != nil {
-			libcTypeStr := string(*container.LibCType)
-			libcType = &libcTypeStr
-		}
-		containers[i] = &model.K8sSourceRuntimeInfoContainer{
-			ContainerName:           container.ContainerName,
-			Language:                model.ProgrammingLanguage(container.Language),
-			RuntimeVersion:          runtimeVersion,
-			ProcessEnvVars:          envVarsToModel(container.EnvVars),
-			ContainerRuntimeEnvVars: envVarsToModel(container.EnvFromContainerRuntime),
-			CriErrorMessage:         container.CriErrorMessage,
-			LibcType:                libcType,
-			SecureExecutionMode:     container.SecureExecutionMode,
-			OtherAgentName:          otherAgentName,
-		}
+	containers := make([]*model.K8sSourceRuntimeInfoContainer, 0, len(ic.Status.RuntimeDetailsByContainer))
+	for i := range ic.Status.RuntimeDetailsByContainer {
+		containerModel := runtimeDetailsContainersToModel(&ic.Status.RuntimeDetailsByContainer[i])
+		containers = append(containers, containerModel)
 	}
-
 	runtimeInfo := &model.K8sSourceRuntimeInfo{
 		Completed: len(ic.Status.RuntimeDetailsByContainer) > 0,
 		CompletedStatus: &model.DesiredConditionStatus{
@@ -114,49 +91,10 @@ func (r *k8sSourceResolver) AgentEnabled(ctx context.Context, obj *model.K8sSour
 		}
 	}
 
-	containers := make([]*model.K8sSourceAgentEnabledContainer, len(ic.Spec.Containers))
-	for i, container := range ic.Spec.Containers {
-		reasonStr := string(container.AgentEnabledReason)
-		var envInjectionMethodStr *string
-		if container.EnvInjectionMethod != nil {
-			asStr := string(*container.EnvInjectionMethod)
-			envInjectionMethodStr = &asStr
-		}
-
-		var traces *model.K8sSourceAgentEnabledContainerTraces
-		if container.Traces != nil {
-			traces = &model.K8sSourceAgentEnabledContainerTraces{
-				Enabled: true,
-			}
-		}
-		var metrics *model.K8sSourceAgentEnabledContainerMetrics
-		if container.Metrics != nil {
-			metrics = &model.K8sSourceAgentEnabledContainerMetrics{
-				Enabled: true,
-			}
-		}
-		var logs *model.K8sSourceAgentEnabledContainerLogs
-		if container.Logs != nil {
-			logs = &model.K8sSourceAgentEnabledContainerLogs{
-				Enabled: true,
-			}
-		}
-
-		containers[i] = &model.K8sSourceAgentEnabledContainer{
-			ContainerName: container.ContainerName,
-			AgentEnabled:  true,
-			AgentEnabledStatus: &model.DesiredConditionStatus{
-				Name:       v1alpha1.AgentEnabledStatusConditionType,
-				Status:     agentEnabledStatusCondition(&reasonStr),
-				ReasonEnum: &reasonStr,
-			},
-			OtelDistroName:     emptyStrToNil(container.OtelDistroName),
-			EnvInjectionMethod: envInjectionMethodStr,
-			DistroParams:       distroParamsToModel(container.DistroParams),
-			Traces:             traces,
-			Metrics:            metrics,
-			Logs:               logs,
-		}
+	containers := make([]*model.K8sSourceAgentEnabledContainer, 0, len(ic.Spec.Containers))
+	for _, container := range ic.Spec.Containers {
+		containerModel := agentEnabledContainersToModel(&container)
+		containers = append(containers, containerModel)
 	}
 
 	return &model.K8sSourceAgentEnabled{
@@ -195,6 +133,41 @@ func (r *k8sSourceResolver) Rollout(ctx context.Context, obj *model.K8sSource) (
 	return &model.K8sSourceRollout{
 		RolloutStatus: rolloutStatus,
 	}, nil
+}
+
+// Containers is the resolver for the containers field.
+func (r *k8sSourceResolver) Containers(ctx context.Context, obj *model.K8sSource) ([]*model.K8sSourceContainer, error) {
+	l := loaders.For(ctx)
+	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil || ic == nil {
+		return nil, err
+	}
+
+	containerByName := make(map[string]*model.K8sSourceContainer)
+	for _, container := range ic.Spec.Containers {
+		if _, ok := containerByName[container.ContainerName]; !ok {
+			containerByName[container.ContainerName] = &model.K8sSourceContainer{
+				ContainerName: container.ContainerName,
+			}
+		}
+		containerByName[container.ContainerName].AgentEnabled = agentEnabledContainersToModel(&container)
+	}
+
+	for _, container := range ic.Status.RuntimeDetailsByContainer {
+		if _, ok := containerByName[container.ContainerName]; !ok {
+			containerByName[container.ContainerName] = &model.K8sSourceContainer{
+				ContainerName: container.ContainerName,
+			}
+		}
+		containerByName[container.ContainerName].RuntimeInfo = runtimeDetailsContainersToModel(&container)
+	}
+
+	containers := make([]*model.K8sSourceContainer, 0, len(containerByName))
+	for _, container := range containerByName {
+		containers = append(containers, container)
+	}
+
+	return containers, nil
 }
 
 // K8sSource returns K8sSourceResolver implementation.

@@ -76,3 +76,5 @@ models:
         resolver: true
       rollout:
         resolver: true
+      containers:
+        resolver: true
