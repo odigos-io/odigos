@@ -65,11 +65,11 @@ jobs:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Report Test Outcome
-        if: always()
+        if: always() && !(matrix.provider == 'aks' && matrix.platform == 'arm')
         uses: ./.github/actions/nightly/report
         with:
           status: ${{ job.status }}
           suite_name: cross-cloud-tests
-          suite_parameters: '{"provider": "${{ matrix.provider }}", "test_scenario": "${{ matrix.test_scenario }}"}'
+          suite_parameters: '{"provider": "${{ matrix.provider }}", "test_scenario": "${{ matrix.test_scenario }}"}, "platform": "${{ matrix.platform }}"}'
           slack_webhook_url: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
 
