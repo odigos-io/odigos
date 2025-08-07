@@ -82,14 +82,14 @@ describe('Sources CRUD', () => {
 
   it(`Should update "otelServiceName" of 1 ${sourceCrdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName: sourceCrdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
-      const crdId = crdIds.find((id) => id.indexOf(nameForUpdatedSource) !== -1);
+      const crdId = crdIds.find((id) => id.indexOf(nameForUpdatedSource) !== -1) || '';
       getCrdById({ namespace, crdName: sourceCrdName, crdId, expectedError: '', expectedKey: 'otelServiceName', expectedValue: TEXTS.UPDATED_NAME });
     });
   });
 
   it(`Should update "serviceName" of 1 ${configCrdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName: configCrdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
-      const crdId = crdIds.find((id) => id.indexOf(nameForUpdatedSource) !== -1);
+      const crdId = crdIds.find((id) => id.indexOf(nameForUpdatedSource) !== -1) || '';
       getCrdById({ namespace, crdName: configCrdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
     });
   });
