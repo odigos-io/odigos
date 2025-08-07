@@ -43,16 +43,19 @@ jobs:
       matrix:
         provider: [aks, eks]
         test_scenario: [source, helm-chart]
+        platform: [amd, arm]
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Run Cross-Cloud Tests
+        if: ${{ !(matrix.provider == 'aks' && matrix.platform == 'arm') }}
         uses: ./.github/actions/cross-cloud-tests
         with:
           provider: ${{ matrix.provider }}
           test_scenario: ${{ matrix.test_scenario }}
+          platform: ${{ matrix.platform }}
         env:
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_SHA: ${{ github.sha }}
@@ -62,10 +65,11 @@ jobs:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Report Test Outcome
-        if: always()
+        if: always() && !(matrix.provider == 'aks' && matrix.platform == 'arm')
         uses: ./.github/actions/nightly/report
         with:
           status: ${{ job.status }}
           suite_name: cross-cloud-tests
-          suite_parameters: '{"provider": "${{ matrix.provider }}", "test_scenario": "${{ matrix.test_scenario }}"}'
+          suite_parameters: '{"provider": "${{ matrix.provider }}", "test_scenario": "${{ matrix.test_scenario }}"}, "platform": "${{ matrix.platform }}"}'
           slack_webhook_url: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
+
