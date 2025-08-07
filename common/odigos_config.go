@@ -67,6 +67,10 @@ func (data ConfigString) ToString() {
 type ConfigStringList []string
 
 func (data ConfigStringList) ToString() {
+	if len(data) == 0 {
+		fmt.Println("not set")
+		return
+	}
 	fmt.Printf("\n")
 	for _, value := range data {
 		fmt.Printf("		-%s,\n", value)
@@ -221,6 +225,7 @@ func makeAMap(config *OdigosConfiguration) map[string]ConfigField {
 		consts.ServiceGraphDisabledProperty:       config.CollectorGateway,
 		consts.GoAutoOffsetsCronProperty:          config.GoAutoOffsetsCron,
 		consts.ClickhouseJsonTypeEnabledProperty:  config.ClickhouseJsonTypeEnabledProperty,
+		consts.AllowedTestConnectionHostsProperty: config.AllowedTestConnectionHosts,
 	}
 
 	return displayData
