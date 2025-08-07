@@ -50,7 +50,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Cross-Cloud Tests
-        if: ${{ matrix.provider != 'aks' && matrix.platform != 'arm' }}
+        if: ${{ !(matrix.provider == 'aks' && matrix.platform == 'arm') }}
         uses: ./.github/actions/cross-cloud-tests
         with:
           provider: ${{ matrix.provider }}
@@ -72,3 +72,4 @@ jobs:
           suite_name: cross-cloud-tests
           suite_parameters: '{"provider": "${{ matrix.provider }}", "test_scenario": "${{ matrix.test_scenario }}"}'
           slack_webhook_url: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
+
