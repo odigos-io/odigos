@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"golang.org/x/sync/errgroup"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,6 +39,9 @@ type Loaders struct {
 
 	workloadManifestsMutex sync.Mutex
 	workloadManifests      map[model.K8sWorkloadID]*WorkloadManifest
+
+	workloadPodsMutex sync.Mutex
+	workloadPods      map[model.K8sWorkloadID][]*corev1.Pod
 }
 
 func WithLoaders(ctx context.Context, loaders *Loaders) context.Context {
@@ -106,6 +110,21 @@ func (l *Loaders) GetWorkloadManifest(ctx context.Context, sourceId model.K8sWor
 		l.workloadManifests = workloadManifests
 	}
 	return l.workloadManifests[sourceId], nil
+}
+
+func (l *Loaders) GetWorkloadPods(ctx context.Context, sourceId model.K8sWorkloadID) ([]*corev1.Pod, error) {
+
+	l.workloadPodsMutex.Lock()
+	defer l.workloadPodsMutex.Unlock()
+
+	if len(l.workloadPods) == 0 {
+		workloadPods, err := l.fetchWorkloadPods(ctx)
+		if err != nil {
+			return nil, err
+		}
+		l.workloadPods = workloadPods
+	}
+	return l.workloadPods[sourceId], nil
 }
 
 func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) error {
@@ -317,4 +336,32 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 	}
 
 	return workloadManifests, nil
+}
+
+func (l *Loaders) fetchWorkloadPods(ctx context.Context) (workloadPods map[model.K8sWorkloadID][]*corev1.Pod, err error) {
+
+	l.workloadManifestsMutex.Lock()
+	defer l.workloadManifestsMutex.Unlock()
+	if len(l.workloadManifests) == 0 {
+		workloadManifests, err := l.fetchWorkloadManifests(ctx)
+		if err != nil {
+			return nil, err
+		}
+		l.workloadManifests = workloadManifests
+	}
+
+	_, err = kube.DefaultClient.CoreV1().Pods(l.queryNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	workloadPods = make(map[model.K8sWorkloadID][]*corev1.Pod)
+	// for _, pod := range pods.Items {
+	// 	workloadPods[model.K8sWorkloadID{
+	// 		Namespace: pod.Namespace,
+	// 		Kind:      model.K8sResourceKindPod,
+	// 		Name:      pod.Name,
+	// 	}] = &pod
+	// }
+	return workloadPods, nil
 }
