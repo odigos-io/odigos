@@ -25,6 +25,7 @@ var KratosProfile = profile.Profile{
 		"reduce-span-name-cardinality",
 		"disable-gin",
 		"semconvdynamo",
+		"semconvredis",
 	},
 	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
 		rollbackDisabled := true
