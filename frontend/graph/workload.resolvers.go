@@ -198,6 +198,97 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 	podModels := make([]*model.K8sWorkloadPod, 0, len(pods))
 	for _, pod := range pods {
 		agentInjected, agentInjectedStatus := getPodAgentInjectedStatus(pod, instrumentationConfig)
+		containerModels := make([]*model.K8sWorkloadPodContainer, 0, len(pod.Spec.Containers))
+
+		// set aggregated pod health status to success and override if any container is not healthy.
+		podHealthReasonStr := string(PodHealthReasonHealthy)
+		podHealthStatus := &model.DesiredConditionStatus{
+			Name:       podHealthStatus,
+			Status:     model.DesiredStateProgressSuccess,
+			ReasonEnum: &podHealthReasonStr,
+			Message:    "all containers are healthy",
+		}
+		for _, container := range pod.Spec.Containers {
+			containerStatus := getContainerStatus(pod, container.Name)
+			var started, ready *bool
+			var isCrashLoop bool = false // never set to nil
+			var runninsStartedTime, waitingReasonEnum, waitingMessage *string
+			var restartCount *int
+			if containerStatus != nil {
+				started = containerStatus.Started
+				ready = &containerStatus.Ready
+				restartCountInt := int(containerStatus.RestartCount)
+				restartCount = &restartCountInt
+				if containerStatus.State.Waiting != nil {
+					isCrashLoop = containerStatus.State.Waiting.Reason == "CrashLoopBackOff"
+					waitingReasonEnum = &containerStatus.State.Waiting.Reason
+					waitingMessage = &containerStatus.State.Waiting.Message
+				}
+				if containerStatus.State.Running != nil {
+					runningStartedTimeStr := containerStatus.State.Running.StartedAt.Format(time.RFC3339)
+					runninsStartedTime = &runningStartedTimeStr
+				}
+			}
+
+			// pod container is considered healthy if it is started, ready and not in crash loop back off.
+			healthStatus := &model.DesiredConditionStatus{
+				Name: podContainerHealthStatus,
+			}
+			if isCrashLoop {
+				reasonStr := string(PodContainerHealthReasonCrashLoopBackOff)
+
+				healthStatus.Status = model.DesiredStateProgressError
+				healthStatus.ReasonEnum = &reasonStr
+				healthStatus.Message = "pod in crash loop back off: " + *waitingReasonEnum
+
+				podHealthStatus.Status = model.DesiredStateProgressError
+				podHealthStatus.ReasonEnum = &reasonStr
+				podHealthStatus.Message = "container in pod is in crash loop back off"
+
+			} else if started == nil || !*started {
+				reasonStr := string(PodContainerHealthReasonNotStarted)
+
+				healthStatus.Status = model.DesiredStateProgressWaiting
+				healthStatus.ReasonEnum = &reasonStr
+				healthStatus.Message = "pod not started yet"
+
+				if podHealthStatus.Status != model.DesiredStateProgressError {
+					podHealthStatus.Status = model.DesiredStateProgressWaiting
+					podHealthStatus.ReasonEnum = &reasonStr
+					podHealthStatus.Message = "container in pod is not started yet"
+				}
+
+			} else if ready == nil || !*ready {
+				reasonStr := string(PodContainerHealthReasonNotReady)
+
+				healthStatus.Status = model.DesiredStateProgressWaiting
+				healthStatus.ReasonEnum = &reasonStr
+				healthStatus.Message = "pod not ready yet"
+
+				if podHealthStatus.Status != model.DesiredStateProgressError {
+					podHealthStatus.Status = model.DesiredStateProgressWaiting
+					podHealthStatus.ReasonEnum = &reasonStr
+					podHealthStatus.Message = "container in pod is not ready yet"
+				}
+			} else {
+				reasonStr := string(PodContainerHealthReasonHealthy)
+				healthStatus.Status = model.DesiredStateProgressSuccess
+				healthStatus.ReasonEnum = &reasonStr
+				healthStatus.Message = "pod is healthy"
+			}
+
+			containerModels = append(containerModels, &model.K8sWorkloadPodContainer{
+				ContainerName:      container.Name,
+				Started:            started,
+				Ready:              ready,
+				IsCrashLoop:        &isCrashLoop,
+				RestartCount:       restartCount,
+				RunningStartedTime: runninsStartedTime,
+				WaitingReasonEnum:  waitingReasonEnum,
+				WaitingMessage:     waitingMessage,
+				HealthStatus:       healthStatus,
+			})
+		}
 		podModels = append(podModels, &model.K8sWorkloadPod{
 			PodName:             pod.Name,
 			NodeName:            pod.Spec.NodeName,
@@ -205,7 +296,8 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 			AgentInjected:       agentInjected,
 			AgentInjectedStatus: agentInjectedStatus,
 			// TODO: RunningLatestWorkloadRevision
-			Containers: make([]*model.K8sWorkloadPodContainer, 0, len(pod.Spec.Containers)),
+			Containers:      containerModels,
+			PodHealthStatus: podHealthStatus,
 		})
 	}
 	return podModels, nil

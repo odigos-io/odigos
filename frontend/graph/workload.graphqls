@@ -234,6 +234,17 @@ type K8sWorkloadPodContainer {
     # if the container is in crash loop back off.
     isCrashLoop: Boolean
 
+    # the number of times the container has restarted.
+    restartCount: Int
+
+    # the time the container started running (on restarts, this will be the time of the first restart).
+    # if pod is not running, this will be null.
+    runningStartedTime: String
+
+    # if the container is in state waiting, this will be the reason and message from k8s for the status.
+    waitingReasonEnum: String
+    waitingMessage: String
+
     # the status of the health of the container itself, which is not directly related to the agent and instrumentation.
     # it tracks the started, ready, and crash loop back off and present a unified status to show container health.
     healthStatus: DesiredConditionStatus!
@@ -264,6 +275,9 @@ type K8sWorkloadPod {
   # during rollout, pods can be running more than one revision of the workload.
   # this value indicates if a specific pod is running the latest revision of the workload.
   runningLatestWorkloadRevision: String
+
+  # the general health of the pod containers, as one aggregated status for all containers.
+  podHealthStatus: DesiredConditionStatus!
 
   # all containers that are part of the pod.
   # all containers are always included, even if the agent is not enabled for them for any reason.

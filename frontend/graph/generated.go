@@ -436,6 +436,7 @@ type ComplexityRoot struct {
 		AgentInjectedStatus           func(childComplexity int) int
 		Containers                    func(childComplexity int) int
 		NodeName                      func(childComplexity int) int
+		PodHealthStatus               func(childComplexity int) int
 		PodName                       func(childComplexity int) int
 		RunningLatestWorkloadRevision func(childComplexity int) int
 		StartTime                     func(childComplexity int) int
@@ -448,7 +449,11 @@ type ComplexityRoot struct {
 		IsCrashLoop               func(childComplexity int) int
 		Processes                 func(childComplexity int) int
 		Ready                     func(childComplexity int) int
+		RestartCount              func(childComplexity int) int
+		RunningStartedTime        func(childComplexity int) int
 		Started                   func(childComplexity int) int
+		WaitingMessage            func(childComplexity int) int
+		WaitingReasonEnum         func(childComplexity int) int
 	}
 
 	K8sWorkloadPodContainerProcess struct {
@@ -2455,6 +2460,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadPod.NodeName(childComplexity), true
 
+	case "K8sWorkloadPod.podHealthStatus":
+		if e.complexity.K8sWorkloadPod.PodHealthStatus == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPod.PodHealthStatus(childComplexity), true
+
 	case "K8sWorkloadPod.podName":
 		if e.complexity.K8sWorkloadPod.PodName == nil {
 			break
@@ -2518,12 +2530,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadPodContainer.Ready(childComplexity), true
 
+	case "K8sWorkloadPodContainer.restartCount":
+		if e.complexity.K8sWorkloadPodContainer.RestartCount == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainer.RestartCount(childComplexity), true
+
+	case "K8sWorkloadPodContainer.runningStartedTime":
+		if e.complexity.K8sWorkloadPodContainer.RunningStartedTime == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainer.RunningStartedTime(childComplexity), true
+
 	case "K8sWorkloadPodContainer.started":
 		if e.complexity.K8sWorkloadPodContainer.Started == nil {
 			break
 		}
 
 		return e.complexity.K8sWorkloadPodContainer.Started(childComplexity), true
+
+	case "K8sWorkloadPodContainer.waitingMessage":
+		if e.complexity.K8sWorkloadPodContainer.WaitingMessage == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainer.WaitingMessage(childComplexity), true
+
+	case "K8sWorkloadPodContainer.waitingReasonEnum":
+		if e.complexity.K8sWorkloadPodContainer.WaitingReasonEnum == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainer.WaitingReasonEnum(childComplexity), true
 
 	case "K8sWorkloadPodContainerProcess.healthStatus":
 		if e.complexity.K8sWorkloadPodContainerProcess.HealthStatus == nil {
@@ -14404,6 +14444,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_pods(_ context.Context, fie
 				return ec.fieldContext_K8sWorkloadPod_agentInjectedStatus(ctx, field)
 			case "runningLatestWorkloadRevision":
 				return ec.fieldContext_K8sWorkloadPod_runningLatestWorkloadRevision(ctx, field)
+			case "podHealthStatus":
+				return ec.fieldContext_K8sWorkloadPod_podHealthStatus(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sWorkloadPod_containers(ctx, field)
 			}
@@ -15865,6 +15907,60 @@ func (ec *executionContext) fieldContext_K8sWorkloadPod_runningLatestWorkloadRev
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkloadPod_podHealthStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPod_podHealthStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PodHealthStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPod_podHealthStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkloadPod_containers(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPod) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkloadPod_containers(ctx, field)
 	if err != nil {
@@ -15914,6 +16010,14 @@ func (ec *executionContext) fieldContext_K8sWorkloadPod_containers(_ context.Con
 				return ec.fieldContext_K8sWorkloadPodContainer_ready(ctx, field)
 			case "isCrashLoop":
 				return ec.fieldContext_K8sWorkloadPodContainer_isCrashLoop(ctx, field)
+			case "restartCount":
+				return ec.fieldContext_K8sWorkloadPodContainer_restartCount(ctx, field)
+			case "runningStartedTime":
+				return ec.fieldContext_K8sWorkloadPodContainer_runningStartedTime(ctx, field)
+			case "waitingReasonEnum":
+				return ec.fieldContext_K8sWorkloadPodContainer_waitingReasonEnum(ctx, field)
+			case "waitingMessage":
+				return ec.fieldContext_K8sWorkloadPodContainer_waitingMessage(ctx, field)
 			case "healthStatus":
 				return ec.fieldContext_K8sWorkloadPodContainer_healthStatus(ctx, field)
 			case "processes":
@@ -16128,6 +16232,170 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_isCrashLoop(_ c
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodContainer_restartCount(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainer_restartCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RestartCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_restartCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodContainer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodContainer_runningStartedTime(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainer_runningStartedTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RunningStartedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_runningStartedTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodContainer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodContainer_waitingReasonEnum(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainer_waitingReasonEnum(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WaitingReasonEnum, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_waitingReasonEnum(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodContainer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodContainer_waitingMessage(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainer_waitingMessage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WaitingMessage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_waitingMessage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodContainer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -31974,6 +32242,11 @@ func (ec *executionContext) _K8sWorkloadPod(ctx context.Context, sel ast.Selecti
 			}
 		case "runningLatestWorkloadRevision":
 			out.Values[i] = ec._K8sWorkloadPod_runningLatestWorkloadRevision(ctx, field, obj)
+		case "podHealthStatus":
+			out.Values[i] = ec._K8sWorkloadPod_podHealthStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "containers":
 			out.Values[i] = ec._K8sWorkloadPod_containers(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -32026,6 +32299,14 @@ func (ec *executionContext) _K8sWorkloadPodContainer(ctx context.Context, sel as
 			out.Values[i] = ec._K8sWorkloadPodContainer_ready(ctx, field, obj)
 		case "isCrashLoop":
 			out.Values[i] = ec._K8sWorkloadPodContainer_isCrashLoop(ctx, field, obj)
+		case "restartCount":
+			out.Values[i] = ec._K8sWorkloadPodContainer_restartCount(ctx, field, obj)
+		case "runningStartedTime":
+			out.Values[i] = ec._K8sWorkloadPodContainer_runningStartedTime(ctx, field, obj)
+		case "waitingReasonEnum":
+			out.Values[i] = ec._K8sWorkloadPodContainer_waitingReasonEnum(ctx, field, obj)
+		case "waitingMessage":
+			out.Values[i] = ec._K8sWorkloadPodContainer_waitingMessage(ctx, field, obj)
 		case "healthStatus":
 			out.Values[i] = ec._K8sWorkloadPodContainer_healthStatus(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

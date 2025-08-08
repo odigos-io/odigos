@@ -571,6 +571,7 @@ type K8sWorkloadPod struct {
 	AgentInjected                 bool                       `json:"agentInjected"`
 	AgentInjectedStatus           *DesiredConditionStatus    `json:"agentInjectedStatus"`
 	RunningLatestWorkloadRevision *string                    `json:"runningLatestWorkloadRevision,omitempty"`
+	PodHealthStatus               *DesiredConditionStatus    `json:"podHealthStatus"`
 	Containers                    []*K8sWorkloadPodContainer `json:"containers"`
 }
 
@@ -580,6 +581,10 @@ type K8sWorkloadPodContainer struct {
 	Started                   *bool                             `json:"started,omitempty"`
 	Ready                     *bool                             `json:"ready,omitempty"`
 	IsCrashLoop               *bool                             `json:"isCrashLoop,omitempty"`
+	RestartCount              *int                              `json:"restartCount,omitempty"`
+	RunningStartedTime        *string                           `json:"runningStartedTime,omitempty"`
+	WaitingReasonEnum         *string                           `json:"waitingReasonEnum,omitempty"`
+	WaitingMessage            *string                           `json:"waitingMessage,omitempty"`
 	HealthStatus              *DesiredConditionStatus           `json:"healthStatus"`
 	Processes                 []*K8sWorkloadPodContainerProcess `json:"processes"`
 }
