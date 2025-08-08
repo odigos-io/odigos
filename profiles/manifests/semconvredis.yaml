@@ -17,9 +17,8 @@ spec:
       - key: db.system
         value: "redis"
         action: insert
-      - key: db.operation
-        action: insert
-        from_attribute: rpc.method
+      - key: db.system.name
+        action: delete
   signals:
     - TRACES
   collectorRoles:
