@@ -291,8 +291,8 @@ type K8sWorkload {
   # show all info for a specific source container.
   containers: [K8sWorkloadContainer!]
 
-  # show all info for all pods that are part of the source.
-  # pods are always included, even if the agent is not enabled for them for any reason.
+  # show all info for all pods that are part of the workload.
+  # all pods are always included, even if the agent is not enabled for them for any reason.
   pods: [K8sWorkloadPod!]
 
   # tracks if all pods in this source are in the desired state, and an error message if not.

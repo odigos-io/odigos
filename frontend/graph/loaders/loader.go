@@ -350,18 +350,25 @@ func (l *Loaders) fetchWorkloadPods(ctx context.Context) (workloadPods map[model
 		l.workloadManifests = workloadManifests
 	}
 
-	_, err = kube.DefaultClient.CoreV1().Pods(l.queryNamespace).List(ctx, metav1.ListOptions{})
+	pods, err := kube.DefaultClient.CoreV1().Pods(l.queryNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	workloadPods = make(map[model.K8sWorkloadID][]*corev1.Pod)
-	// for _, pod := range pods.Items {
-	// 	workloadPods[model.K8sWorkloadID{
-	// 		Namespace: pod.Namespace,
-	// 		Kind:      model.K8sResourceKindPod,
-	// 		Name:      pod.Name,
-	// 	}] = &pod
-	// }
+	for _, pod := range pods.Items {
+		pw, err := workload.PodWorkloadObject(ctx, &pod)
+		if err != nil || pw == nil {
+			// skip pods not relevant for odigos
+			continue
+		}
+
+		workloadId := model.K8sWorkloadID{
+			Namespace: pod.Namespace,
+			Kind:      model.K8sResourceKind(pw.Kind),
+			Name:      pw.Name,
+		}
+		workloadPods[workloadId] = append(workloadPods[workloadId], &pod)
+	}
 	return workloadPods, nil
 }

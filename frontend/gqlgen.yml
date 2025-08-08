@@ -78,3 +78,5 @@ models:
         resolver: true
       containers:
         resolver: true
+      pods:
+        resolver: true

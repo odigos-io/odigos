@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
@@ -180,6 +181,34 @@ func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWork
 	}
 
 	return containers, nil
+}
+
+// Pods is the resolver for the pods field.
+func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadPod, error) {
+	l := loaders.For(ctx)
+	pods, err := l.GetWorkloadPods(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	instrumentationConfig, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	podModels := make([]*model.K8sWorkloadPod, 0, len(pods))
+	for _, pod := range pods {
+		agentInjected, agentInjectedStatus := getPodAgentInjectedStatus(pod, instrumentationConfig)
+		podModels = append(podModels, &model.K8sWorkloadPod{
+			PodName:             pod.Name,
+			NodeName:            pod.Spec.NodeName,
+			StartTime:           pod.CreationTimestamp.Format(time.RFC3339),
+			AgentInjected:       agentInjected,
+			AgentInjectedStatus: agentInjectedStatus,
+			// TODO: RunningLatestWorkloadRevision
+			Containers: make([]*model.K8sWorkloadPodContainer, 0, len(pod.Spec.Containers)),
+		})
+	}
+	return podModels, nil
 }
 
 // K8sWorkload returns K8sWorkloadResolver implementation.
