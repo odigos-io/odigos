@@ -19,12 +19,12 @@ import (
 // function to get just the instrumentation configs that match the filter.
 // e.g. load only sources which are marked for instrumentation after the instrumentor reconciles it.
 // this is cheaper and faster query than to load all the sources and resolve each one.
-func (l *Loaders) fetchInstrumentationConfigs(ctx context.Context) (map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, error) {
+func fetchInstrumentationConfigs(ctx context.Context, filters *WorkloadFilter) (map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, error) {
 
 	// diffrentiate between a single source query and a namespace / cluster wide query.
-	if l.isFilterSingleWorkload {
-		instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(*l.filter.WorkloadName, k8sconsts.WorkloadKind(*l.filter.WorkloadKind))
-		instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(l.queryNamespace).Get(ctx, instrumentationConfigName, metav1.GetOptions{})
+	if filters.SingleWorkload != nil {
+		instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(filters.SingleWorkload.WorkloadName, filters.SingleWorkload.WorkloadKind)
+		instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(filters.NamespaceString).Get(ctx, instrumentationConfigName, metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				// workload cam be not found and it is not an error.
@@ -36,18 +36,18 @@ func (l *Loaders) fetchInstrumentationConfigs(ctx context.Context) (map[model.K8
 		return map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig{
 			{
 				Namespace: instrumentationConfigs.Namespace,
-				Kind:      model.K8sResourceKind(*l.filter.WorkloadKind),
-				Name:      *l.filter.WorkloadName,
+				Kind:      model.K8sResourceKind(filters.SingleWorkload.WorkloadKind),
+				Name:      filters.SingleWorkload.WorkloadName,
 			}: instrumentationConfigs,
 		}, nil
 	} else {
-		instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(l.queryNamespace).List(ctx, metav1.ListOptions{})
+		instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(filters.NamespaceString).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return nil, err
 		}
 		configById := make(map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, len(instrumentationConfigs.Items))
 		for _, config := range instrumentationConfigs.Items {
-			if _, ok := l.ignoredNamespacesMap[config.Namespace]; ok {
+			if _, ok := filters.IgnoredNamespaces[config.Namespace]; ok {
 				continue
 			}
 			pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(config.Name, config.Namespace)
@@ -65,16 +65,16 @@ func (l *Loaders) fetchInstrumentationConfigs(ctx context.Context) (map[model.K8
 	}
 }
 
-func (l *Loaders) fetchSourcesForWorkload(ctx context.Context, workloadName string, workloadNamespace string, workloadKind string) (*odigosv1.SourceList, error) {
+func fetchSourcesForWorkload(ctx context.Context, filters *WorkloadFilterSingleWorkload) (*odigosv1.SourceList, error) {
 	// for workload we need to fetch both the workload and namespace sources.
 	selectorWorkload := metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			k8sconsts.WorkloadNamespaceLabel: workloadNamespace,
-			k8sconsts.WorkloadKindLabel:      workloadKind,
-			k8sconsts.WorkloadNameLabel:      workloadName,
+			k8sconsts.WorkloadNamespaceLabel: filters.Namespace,
+			k8sconsts.WorkloadKindLabel:      string(filters.WorkloadKind),
+			k8sconsts.WorkloadNameLabel:      filters.WorkloadName,
 		},
 	}
-	workloadSources, err := kube.DefaultClient.OdigosClient.Sources(workloadNamespace).List(ctx, metav1.ListOptions{
+	workloadSources, err := kube.DefaultClient.OdigosClient.Sources(filters.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&selectorWorkload),
 	})
 	if err != nil {
@@ -83,12 +83,12 @@ func (l *Loaders) fetchSourcesForWorkload(ctx context.Context, workloadName stri
 
 	selectorNamespace := metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			k8sconsts.WorkloadNamespaceLabel: workloadNamespace,
+			k8sconsts.WorkloadNamespaceLabel: filters.Namespace,
 			k8sconsts.WorkloadKindLabel:      string(k8sconsts.WorkloadKindNamespace),
-			k8sconsts.WorkloadNameLabel:      workloadName,
+			k8sconsts.WorkloadNameLabel:      filters.Namespace,
 		},
 	}
-	namespaceSources, err := kube.DefaultClient.OdigosClient.Sources(workloadNamespace).List(ctx, metav1.ListOptions{
+	namespaceSources, err := kube.DefaultClient.OdigosClient.Sources(filters.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&selectorNamespace),
 	})
 	if err != nil {
@@ -103,28 +103,28 @@ func (l *Loaders) fetchSourcesForWorkload(ctx context.Context, workloadName stri
 	return sources, nil
 }
 
-func (l *Loaders) fetchSourcesForNamespace(ctx context.Context, ns string) (*odigosv1.SourceList, error) {
+func fetchSourcesForNamespace(ctx context.Context, filters *WorkloadFilterSingleNamespace) (*odigosv1.SourceList, error) {
 	// will return both "workload" sources and "namespace" sources as required
 	selector := metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			k8sconsts.WorkloadNamespaceLabel: ns,
+			k8sconsts.WorkloadNamespaceLabel: filters.Namespace,
 		},
 	}
 	// assumes that sources are in the same namespace they are instrumenting (which is true at time of writing)
-	return kube.DefaultClient.OdigosClient.Sources(ns).List(ctx, metav1.ListOptions{
+	return kube.DefaultClient.OdigosClient.Sources(filters.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&selector),
 	})
 }
 
-func (l *Loaders) fetchAllSources(ctx context.Context) (*odigosv1.SourceList, error) {
-	sources, err := kube.DefaultClient.OdigosClient.Sources(l.queryNamespace).List(ctx, metav1.ListOptions{})
+func fetchAllSources(ctx context.Context, ignoredNamespaces map[string]struct{}) (*odigosv1.SourceList, error) {
+	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	filteredSources := make([]odigosv1.Source, 0, len(sources.Items))
 	for _, source := range sources.Items {
-		if _, ok := l.ignoredNamespacesMap[source.Namespace]; ok {
+		if _, ok := ignoredNamespaces[source.Namespace]; ok {
 			continue
 		}
 		filteredSources = append(filteredSources, source)
@@ -133,15 +133,15 @@ func (l *Loaders) fetchAllSources(ctx context.Context) (*odigosv1.SourceList, er
 	return sources, nil
 }
 
-func (l *Loaders) fetchSources(ctx context.Context) (workloadSources map[model.K8sWorkloadID]*odigosv1.Source, namespaceSources map[string]*odigosv1.Source, err error) {
+func fetchSources(ctx context.Context, filters *WorkloadFilter) (workloadSources map[model.K8sWorkloadID]*odigosv1.Source, namespaceSources map[string]*odigosv1.Source, err error) {
 
 	var sources *odigosv1.SourceList
-	if l.isFilterSingleWorkload {
-		sources, err = l.fetchSourcesForWorkload(ctx, *l.filter.WorkloadName, *l.filter.Namespace, string(*l.filter.WorkloadKind))
-	} else if l.isFilterSingleNamespace {
-		sources, err = l.fetchSourcesForNamespace(ctx, *l.filter.Namespace)
+	if filters.SingleWorkload != nil {
+		sources, err = fetchSourcesForWorkload(ctx, filters.SingleWorkload)
+	} else if filters.SingleNamespace != nil {
+		sources, err = fetchSourcesForNamespace(ctx, filters.SingleNamespace)
 	} else {
-		sources, err = l.fetchAllSources(ctx)
+		sources, err = fetchAllSources(ctx, filters.IgnoredNamespaces)
 	}
 	if err != nil {
 		return nil, nil, err
@@ -165,14 +165,14 @@ func (l *Loaders) fetchSources(ctx context.Context) (workloadSources map[model.K
 	return
 }
 
-func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests map[model.K8sWorkloadID]*WorkloadManifest, err error) {
+func fetchWorkloadManifests(ctx context.Context, filters *WorkloadFilter) (workloadManifests map[model.K8sWorkloadID]*WorkloadManifest, err error) {
 
 	// if this is a query for one specific workload, then fetch only it.
-	if l.isFilterSingleWorkload {
+	if filters.SingleWorkload != nil {
 		workloadManifests = make(map[model.K8sWorkloadID]*WorkloadManifest)
-		switch *l.filter.WorkloadKind {
-		case model.K8sResourceKindDeployment:
-			deployment, err := kube.DefaultClient.AppsV1().Deployments(l.queryNamespace).Get(ctx, *l.filter.WorkloadName, metav1.GetOptions{})
+		switch filters.SingleWorkload.WorkloadKind {
+		case k8sconsts.WorkloadKindDeployment:
+			deployment, err := kube.DefaultClient.AppsV1().Deployments(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
 			if err != nil {
 				if apierrors.IsNotFound(err) {
 					// workload cam be not found and it is not an error.
@@ -192,8 +192,8 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 			}
 			return workloadManifests, nil
 
-		case model.K8sResourceKindDaemonSet:
-			daemonset, err := kube.DefaultClient.AppsV1().DaemonSets(l.queryNamespace).Get(ctx, *l.filter.WorkloadName, metav1.GetOptions{})
+		case k8sconsts.WorkloadKindDaemonSet:
+			daemonset, err := kube.DefaultClient.AppsV1().DaemonSets(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
 			if err != nil {
 				if apierrors.IsNotFound(err) {
 					// workload cam be not found and it is not an error.
@@ -213,8 +213,8 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 			}
 			return workloadManifests, nil
 
-		case model.K8sResourceKindStatefulSet:
-			statefulset, err := kube.DefaultClient.AppsV1().StatefulSets(l.queryNamespace).Get(ctx, *l.filter.WorkloadName, metav1.GetOptions{})
+		case k8sconsts.WorkloadKindStatefulSet:
+			statefulset, err := kube.DefaultClient.AppsV1().StatefulSets(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
 			if err != nil {
 				if apierrors.IsNotFound(err) {
 					// workload cam be not found and it is not an error.
@@ -234,8 +234,8 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 			}
 			return workloadManifests, nil
 
-		case model.K8sResourceKindCronJob:
-			cronjob, err := kube.DefaultClient.BatchV1().CronJobs(l.queryNamespace).Get(ctx, *l.filter.WorkloadName, metav1.GetOptions{})
+		case k8sconsts.WorkloadKindCronJob:
+			cronjob, err := kube.DefaultClient.BatchV1().CronJobs(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
 			if err != nil {
 				if apierrors.IsNotFound(err) {
 					// workload cam be not found and it is not an error.
@@ -256,7 +256,7 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 			return workloadManifests, nil
 
 		default:
-			return nil, fmt.Errorf("invalid workload kind: %s", *l.filter.WorkloadKind)
+			return nil, fmt.Errorf("invalid workload kind: %s", filters.SingleWorkload.WorkloadKind)
 		}
 	}
 
@@ -269,7 +269,7 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 	)
 
 	g.Go(func() error {
-		deployments, err := kube.DefaultClient.AppsV1().Deployments(l.queryNamespace).List(ctx, metav1.ListOptions{})
+		deployments, err := kube.DefaultClient.AppsV1().Deployments(filters.NamespaceString).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return err
 		}
@@ -288,7 +288,7 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 	})
 
 	g.Go(func() error {
-		daemonsets, err := kube.DefaultClient.AppsV1().DaemonSets(l.queryNamespace).List(ctx, metav1.ListOptions{})
+		daemonsets, err := kube.DefaultClient.AppsV1().DaemonSets(filters.NamespaceString).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return err
 		}
@@ -307,7 +307,7 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 	})
 
 	g.Go(func() error {
-		statefulsets, err := kube.DefaultClient.AppsV1().StatefulSets(l.queryNamespace).List(ctx, metav1.ListOptions{})
+		statefulsets, err := kube.DefaultClient.AppsV1().StatefulSets(filters.NamespaceString).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return err
 		}
@@ -326,7 +326,7 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 	})
 
 	g.Go(func() error {
-		cronjobs, err := kube.DefaultClient.BatchV1().CronJobs(l.queryNamespace).List(ctx, metav1.ListOptions{})
+		cronjobs, err := kube.DefaultClient.BatchV1().CronJobs(filters.NamespaceString).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return err
 		}
@@ -350,25 +350,25 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 
 	workloadManifests = make(map[model.K8sWorkloadID]*WorkloadManifest)
 	for id, manifest := range deps {
-		if _, ok := l.ignoredNamespacesMap[id.Namespace]; ok {
+		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range statefuls {
-		if _, ok := l.ignoredNamespacesMap[id.Namespace]; ok {
+		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range daemons {
-		if _, ok := l.ignoredNamespacesMap[id.Namespace]; ok {
+		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range crons {
-		if _, ok := l.ignoredNamespacesMap[id.Namespace]; ok {
+		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}
 		workloadManifests[id] = manifest
@@ -377,37 +377,18 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 	return workloadManifests, nil
 }
 
-func (l *Loaders) fetchWorkloadPods(ctx context.Context) (workloadPods map[model.K8sWorkloadID][]*corev1.Pod, err error) {
+func fetchWorkloadPods(ctx context.Context, filters *WorkloadFilter, singleWorkloadManifest *WorkloadManifest) (workloadPods map[model.K8sWorkloadID][]*corev1.Pod, err error) {
 
 	var labelSelector string
-	if l.isFilterSingleWorkload {
-
-		l.workloadManifestsMutex.Lock()
-		defer l.workloadManifestsMutex.Unlock()
-		if len(l.workloadManifests) == 0 {
-			workloadManifests, err := l.fetchWorkloadManifests(ctx)
-			if err != nil {
-				return nil, err
-			}
-			l.workloadManifests = workloadManifests
-		}
-
-		workloadId := model.K8sWorkloadID{
-			Namespace: *l.filter.Namespace,
-			Kind:      model.K8sResourceKind(*l.filter.WorkloadKind),
-			Name:      *l.filter.WorkloadName,
-		}
-
-		workloadManifest, ok := l.workloadManifests[workloadId]
-		if !ok || workloadManifest == nil || workloadManifest.Selector == nil {
+	if filters.SingleWorkload != nil {
+		if singleWorkloadManifest == nil || singleWorkloadManifest.Selector == nil {
 			// if workload is not found for this pod, skip the queries - no pods to fetch.
 			return map[model.K8sWorkloadID][]*corev1.Pod{}, nil
 		}
-
-		labelSelector = metav1.FormatLabelSelector(workloadManifest.Selector)
+		labelSelector = metav1.FormatLabelSelector(singleWorkloadManifest.Selector)
 	}
 
-	pods, err := kube.DefaultClient.CoreV1().Pods(l.queryNamespace).List(ctx, metav1.ListOptions{
+	pods, err := kube.DefaultClient.CoreV1().Pods(filters.NamespaceString).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -416,7 +397,7 @@ func (l *Loaders) fetchWorkloadPods(ctx context.Context) (workloadPods map[model
 
 	workloadPods = make(map[model.K8sWorkloadID][]*corev1.Pod)
 	for _, pod := range pods.Items {
-		if _, ok := l.ignoredNamespacesMap[pod.Namespace]; ok {
+		if _, ok := filters.IgnoredNamespaces[pod.Namespace]; ok {
 			continue
 		}
 		pw, err := workload.PodWorkloadObject(ctx, &pod)
@@ -435,12 +416,12 @@ func (l *Loaders) fetchWorkloadPods(ctx context.Context) (workloadPods map[model
 	return workloadPods, nil
 }
 
-func (l *Loaders) fetchInstrumentationInstances(ctx context.Context) (instrumentationInstances map[PodId]*odigosv1.InstrumentationInstance, err error) {
+func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter) (instrumentationInstances map[PodId]*odigosv1.InstrumentationInstance, err error) {
 
 	labelSelector := ""
-	if l.isFilterSingleWorkload {
+	if filters.SingleWorkload != nil {
 		// fetch only the instrumentation instances for the specific workload.
-		instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(*l.filter.WorkloadName, k8sconsts.WorkloadKind(*l.filter.WorkloadKind))
+		instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(filters.SingleWorkload.WorkloadName, k8sconsts.WorkloadKind(filters.SingleWorkload.WorkloadKind))
 		selector := metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				consts.InstrumentedAppNameLabel: instrumentationConfigName,
@@ -449,7 +430,7 @@ func (l *Loaders) fetchInstrumentationInstances(ctx context.Context) (instrument
 		labelSelector = metav1.FormatLabelSelector(&selector)
 	}
 
-	ii, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(l.queryNamespace).List(ctx, metav1.ListOptions{
+	ii, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(filters.NamespaceString).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -457,7 +438,7 @@ func (l *Loaders) fetchInstrumentationInstances(ctx context.Context) (instrument
 	}
 	instrumentationInstances = make(map[PodId]*odigosv1.InstrumentationInstance, len(ii.Items))
 	for _, ii := range ii.Items {
-		if _, ok := l.ignoredNamespacesMap[ii.Namespace]; ok {
+		if _, ok := filters.IgnoredNamespaces[ii.Namespace]; ok {
 			continue
 		}
 		ownerPodLabel, ok := ii.Labels[odigosv1.OwnerPodNameLabel]

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -27,16 +28,8 @@ type PodId struct {
 type Loaders struct {
 	mu sync.Mutex
 
-	filter                  *model.WorkloadFilter
-	isFilterSingleWorkload  bool
-	isFilterSingleNamespace bool
-	odigosConfiguration     *common.OdigosConfiguration
-	ignoredNamespacesMap    map[string]struct{}
-
-	// the value we use for the namespace in the quires to api server.
-	// for all namespace, this will be empty string.
-	// for a namespace query, or a query for specific source, this will be the namespace name.
-	queryNamespace string
+	workloadFilter      *WorkloadFilter
+	odigosConfiguration *common.OdigosConfiguration
 
 	workloadIds []model.K8sWorkloadID
 
@@ -86,7 +79,7 @@ func (l *Loaders) loadInstrumentationConfigs(ctx context.Context) error {
 	if l.instrumentationConfigsFetched {
 		return nil
 	}
-	instrumentationConfigs, err := l.fetchInstrumentationConfigs(ctx)
+	instrumentationConfigs, err := fetchInstrumentationConfigs(ctx, l.workloadFilter)
 	if err != nil {
 		return err
 	}
@@ -99,7 +92,7 @@ func (l *Loaders) loadSources(ctx context.Context) error {
 	if l.sourcesFetched {
 		return nil
 	}
-	workloadSources, namespaceSources, err := l.fetchSources(ctx)
+	workloadSources, namespaceSources, err := fetchSources(ctx, l.workloadFilter)
 	if err != nil {
 		return err
 	}
@@ -113,7 +106,7 @@ func (l *Loaders) loadWorkloadManifests(ctx context.Context) error {
 	if l.workloadManifestsFetched {
 		return nil
 	}
-	workloadManifests, err := l.fetchWorkloadManifests(ctx)
+	workloadManifests, err := fetchWorkloadManifests(ctx, l.workloadFilter)
 	if err != nil {
 		return err
 	}
@@ -129,7 +122,22 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 		return nil
 	}
 
-	workloadPods, err := l.fetchWorkloadPods(ctx)
+	// if this is a single workload query, we need to fetch the workload manifest
+	// to get the selector to fetch just this one pod.
+	var singleWorkloadManifest *WorkloadManifest
+	if l.workloadFilter.SingleWorkload != nil {
+		var err error
+		singleWorkloadManifest, err = l.GetWorkloadManifest(ctx, model.K8sWorkloadID{
+			Namespace: l.workloadFilter.SingleWorkload.Namespace,
+			Kind:      model.K8sResourceKind(l.workloadFilter.SingleWorkload.WorkloadKind),
+			Name:      l.workloadFilter.SingleWorkload.WorkloadName,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	workloadPods, err := fetchWorkloadPods(ctx, l.workloadFilter, singleWorkloadManifest)
 	if err != nil {
 		return err
 	}
@@ -161,7 +169,7 @@ func (l *Loaders) loadInstrumentationInstances(ctx context.Context) error {
 	if l.instrumentationInstancesFetched {
 		return nil
 	}
-	instrumentationInstances, err := l.fetchInstrumentationInstances(ctx)
+	instrumentationInstances, err := fetchInstrumentationInstances(ctx, l.workloadFilter)
 	if err != nil {
 		return err
 	}
@@ -185,27 +193,39 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 	for _, namespace := range l.odigosConfiguration.IgnoredNamespaces {
 		ignoredNamespacesMap[namespace] = struct{}{}
 	}
-	l.ignoredNamespacesMap = ignoredNamespacesMap
 
 	// check if it's a namespace query for ignored namespaces.
 	if filter != nil && filter.Namespace != nil {
-		if _, ok := l.ignoredNamespacesMap[*filter.Namespace]; ok {
+		if _, ok := ignoredNamespacesMap[*filter.Namespace]; ok {
 			return fmt.Errorf("namespace %s is configured to be ignored by odigos", *filter.Namespace)
 		}
 	}
 
-	l.filter = filter
+	if filter != nil && filter.WorkloadKind != nil && filter.WorkloadName != nil && filter.Namespace != nil &&
+		*filter.WorkloadKind != "" && *filter.WorkloadName != "" && *filter.Namespace != "" {
 
-	// it's a single workload filter if all the workload fields are set and not empty.
-	l.isFilterSingleWorkload = filter != nil && filter.WorkloadKind != nil && filter.WorkloadName != nil && filter.Namespace != nil &&
-		*filter.WorkloadKind != "" && *filter.WorkloadName != "" && *filter.Namespace != ""
-
-	// it's a single namespace filter if the namespace field is set and not empty.
-	l.isFilterSingleNamespace = filter != nil && filter.Namespace != nil && *filter.Namespace != ""
-
-	if filter != nil {
-		if filter.Namespace != nil {
-			l.queryNamespace = *filter.Namespace
+		l.workloadFilter = &WorkloadFilter{
+			SingleWorkload: &WorkloadFilterSingleWorkload{
+				WorkloadKind: k8sconsts.WorkloadKind(*filter.WorkloadKind),
+				WorkloadName: *filter.WorkloadName,
+				Namespace:    *filter.Namespace,
+			},
+			NamespaceString:   *filter.Namespace,
+			IgnoredNamespaces: ignoredNamespacesMap,
+		}
+	} else if filter != nil && filter.Namespace != nil && *filter.Namespace != "" {
+		l.workloadFilter = &WorkloadFilter{
+			SingleNamespace: &WorkloadFilterSingleNamespace{
+				Namespace: *filter.Namespace,
+			},
+			NamespaceString:   *filter.Namespace,
+			IgnoredNamespaces: ignoredNamespacesMap,
+		}
+	} else {
+		l.workloadFilter = &WorkloadFilter{
+			ClusterWide:       &WorkloadFilterClusterWide{},
+			NamespaceString:   "", // k8s interprets empty string as cluster wide.
+			IgnoredNamespaces: ignoredNamespacesMap,
 		}
 	}
 
