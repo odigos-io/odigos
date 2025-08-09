@@ -80,3 +80,7 @@ models:
         resolver: true
       pods:
         resolver: true
+      podsAgentInjectionStatus:
+        resolver: true
+      podsHealthStatus:
+        resolver: true

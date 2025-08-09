@@ -287,9 +287,11 @@ type K8sWorkloadPod {
 type K8sWorkload {
   id: K8sWorkloadId!
 
-  # an aggregated status for all the conditions that are relevant for the source.
-  # if there is any issue with the source, this value will track it.
-  sourceHealthStatus: DesiredConditionStatus!
+  # this field is an aggregated status for the odigos health of the workload.
+  # it examine all related odigos values to determine if the workload is in it's desired odigos state, 
+  # and will indicate any odigos related errors or progress related to this workload.
+  # the goal is to have one single property to exaimne and get an overall view for a workload.
+  workloadOdigosHealthStatus: DesiredConditionStatus!
 
   markedForInstrumentation: K8sWorkloadMakredForInstrumentation!
 
@@ -309,6 +311,11 @@ type K8sWorkload {
   # all pods are always included, even if the agent is not enabled for them for any reason.
   pods: [K8sWorkloadPod!]
 
-  # tracks if all pods in this source are in the desired state, and an error message if not.
-  podsDesiredState: DesiredConditionStatus!
+  # track the aggregated status of all the agent injection decisions for all pods of this workload.
+  # any pod which isn't matching it's agent injection desired status will be reflected in this value.
+  podsAgentInjectionStatus: DesiredConditionStatus!
+
+  # aggregated value for the health of all pods in the workload.
+  # this value is the general health of the workload, and issues here may not be related to odigos.
+  podsHealthStatus: DesiredConditionStatus!
 }

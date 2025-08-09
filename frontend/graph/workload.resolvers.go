@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -201,7 +202,7 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 		containerModels := make([]*model.K8sWorkloadPodContainer, 0, len(pod.Spec.Containers))
 
 		// set aggregated pod health status to success and override if any container is not healthy.
-		podHealthReasonStr := string(PodHealthReasonHealthy)
+		podHealthReasonStr := string(PodContainerHealthReasonHealthy)
 		podHealthStatus := &model.DesiredConditionStatus{
 			Name:       podHealthStatus,
 			Status:     model.DesiredStateProgressSuccess,
@@ -301,6 +302,84 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 		})
 	}
 	return podModels, nil
+}
+
+// PodsAgentInjectionStatus is the resolver for the podsAgentInjectionStatus field.
+func (r *k8sWorkloadResolver) PodsAgentInjectionStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error) {
+
+	l := loaders.For(ctx)
+	pods, err := l.GetWorkloadPods(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	instrumentationConfig, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(pods) == 0 {
+		reasonStr := string(PodsAgentInjectionReasonNoPodsAgentInjected)
+		return &model.DesiredConditionStatus{
+			Name:       podsAgentInjectionStatus,
+			Status:     model.DesiredStateProgressDisabled,
+			ReasonEnum: &reasonStr,
+			Message:    "no pods found for this workload",
+		}, nil
+	}
+
+	numSuccess := 0
+	numNotSuccess := 0
+	for _, pod := range pods {
+		_, agentInjectedStatus := getPodAgentInjectedStatus(pod, instrumentationConfig)
+		if agentInjectedStatus.Status == model.DesiredStateProgressSuccess {
+			numSuccess++
+		} else {
+			numNotSuccess++
+		}
+	}
+
+	// if instrumentationConfig is nil, we assume agent is not enabled.
+	agentEnabled := false
+	if instrumentationConfig != nil {
+		agentEnabled = instrumentationConfig.Spec.AgentInjectionEnabled
+	}
+
+	if numSuccess == 0 && numNotSuccess > 0 {
+		var reasonStr, message string
+		if agentEnabled {
+			reasonStr = string(PodsAgentInjectionReasonSomePodsAgentInjected)
+			message = fmt.Sprintf("%d/%d pods have agent injected when it should not", numNotSuccess, len(pods))
+		} else {
+			reasonStr = string(PodsAgentInjectionReasonSomePodsAgentNotInjected)
+			message = fmt.Sprintf("%d/%d pods do not have agent injected when it should", numNotSuccess, len(pods))
+		}
+		return &model.DesiredConditionStatus{
+			Name:       podsAgentInjectionStatus,
+			Status:     model.DesiredStateProgressWaiting,
+			ReasonEnum: &reasonStr,
+			Message:    message,
+		}, nil
+	} else {
+		var reasonStr, message string
+		if agentEnabled {
+			reasonStr = string(PodsAgentInjectionReasonAllPodsAgentInjected)
+			message = fmt.Sprintf("all %d pods have odigos agent injected as expected", numSuccess)
+		} else {
+			reasonStr = string(PodsAgentInjectionReasonAllPodsAgentNotInjected)
+			message = fmt.Sprintf("all %d pods do not have odigos agent injected as expected", numSuccess)
+		}
+		return &model.DesiredConditionStatus{
+			Name:       podsAgentInjectionStatus,
+			Status:     model.DesiredStateProgressSuccess,
+			ReasonEnum: &reasonStr,
+			Message:    message,
+		}, nil
+	}
+}
+
+// PodsHealthStatus is the resolver for the podsHealthStatus field.
+func (r *k8sWorkloadResolver) PodsHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error) {
+	panic(fmt.Errorf("not implemented: PodsHealthStatus - podsHealthStatus"))
 }
 
 // K8sWorkload returns K8sWorkloadResolver implementation.

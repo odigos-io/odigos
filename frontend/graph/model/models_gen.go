@@ -505,15 +505,16 @@ type K8sSourceID struct {
 }
 
 type K8sWorkload struct {
-	ID                       *K8sWorkloadID                       `json:"id"`
-	SourceHealthStatus       *DesiredConditionStatus              `json:"sourceHealthStatus"`
-	MarkedForInstrumentation *K8sWorkloadMakredForInstrumentation `json:"markedForInstrumentation"`
-	RuntimeInfo              *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
-	AgentEnabled             *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
-	Rollout                  *K8sWorkloadRollout                  `json:"rollout,omitempty"`
-	Containers               []*K8sWorkloadContainer              `json:"containers,omitempty"`
-	Pods                     []*K8sWorkloadPod                    `json:"pods,omitempty"`
-	PodsDesiredState         *DesiredConditionStatus              `json:"podsDesiredState"`
+	ID                         *K8sWorkloadID                       `json:"id"`
+	WorkloadOdigosHealthStatus *DesiredConditionStatus              `json:"workloadOdigosHealthStatus"`
+	MarkedForInstrumentation   *K8sWorkloadMakredForInstrumentation `json:"markedForInstrumentation"`
+	RuntimeInfo                *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
+	AgentEnabled               *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
+	Rollout                    *K8sWorkloadRollout                  `json:"rollout,omitempty"`
+	Containers                 []*K8sWorkloadContainer              `json:"containers,omitempty"`
+	Pods                       []*K8sWorkloadPod                    `json:"pods,omitempty"`
+	PodsAgentInjectionStatus   *DesiredConditionStatus              `json:"podsAgentInjectionStatus"`
+	PodsHealthStatus           *DesiredConditionStatus              `json:"podsHealthStatus"`
 }
 
 type K8sWorkloadAgentEnabled struct {

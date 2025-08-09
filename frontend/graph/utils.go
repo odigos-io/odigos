@@ -11,6 +11,7 @@ const (
 	agentInjectedStatus      = "AgentInjected"
 	podContainerHealthStatus = "PodCotainerHealth"
 	podHealthStatus          = "PodHealth"
+	podsAgentInjectionStatus = "PodsAgentInjection"
 )
 
 type AgentInjectedReason string
@@ -36,10 +37,14 @@ const (
 	PodContainerHealthReasonHealthy          PodContainerHealthReason = "Healthy"
 )
 
-type PodHealthReason string
+type PodsAgentInjectionReason string
 
 const (
-	PodHealthReasonHealthy PodHealthReason = "Healthy"
+	PodsAgentInjectionReasonNoPodsAgentInjected      PodsAgentInjectionReason = "NoPods"
+	PodsAgentInjectionReasonAllPodsAgentInjected     PodsAgentInjectionReason = "AllPodsAgentInjected"
+	PodsAgentInjectionReasonAllPodsAgentNotInjected  PodsAgentInjectionReason = "AllPodsAgentNotInjected"
+	PodsAgentInjectionReasonSomePodsAgentNotInjected PodsAgentInjectionReason = "SomePodsAgentNotInjected"
+	PodsAgentInjectionReasonSomePodsAgentInjected    PodsAgentInjectionReason = "SomePodsAgentInjected"
 )
 
 func emptyStrToNil(str string) *string {
