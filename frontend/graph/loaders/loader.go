@@ -18,6 +18,11 @@ type loadersKeyType string
 
 const loadersKey loadersKeyType = "dataloaders"
 
+type PodId struct {
+	Namespace string
+	PodName   string
+}
+
 type Loaders struct {
 	mu sync.Mutex
 
@@ -42,6 +47,9 @@ type Loaders struct {
 
 	workloadPodsMutex sync.Mutex
 	workloadPods      map[model.K8sWorkloadID][]*corev1.Pod
+
+	instrumentationInstancesMutex sync.Mutex
+	instrumentationInstances      map[PodId]*v1alpha1.InstrumentationInstance
 }
 
 func WithLoaders(ctx context.Context, loaders *Loaders) context.Context {
@@ -125,6 +133,22 @@ func (l *Loaders) GetWorkloadPods(ctx context.Context, sourceId model.K8sWorkloa
 		l.workloadPods = workloadPods
 	}
 	return l.workloadPods[sourceId], nil
+}
+
+func (l *Loaders) GetInstrumentationInstance(ctx context.Context, podId PodId) (*v1alpha1.InstrumentationInstance, error) {
+
+	l.instrumentationInstancesMutex.Lock()
+	defer l.instrumentationInstancesMutex.Unlock()
+
+	if len(l.instrumentationInstances) == 0 {
+		instrumentationInstances, err := l.fetchInstrumentationInstances(ctx)
+		if err != nil {
+			return nil, err
+		}
+		l.instrumentationInstances = instrumentationInstances
+	}
+
+	return l.instrumentationInstances[podId], nil
 }
 
 func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) error {
@@ -371,4 +395,25 @@ func (l *Loaders) fetchWorkloadPods(ctx context.Context) (workloadPods map[model
 		workloadPods[workloadId] = append(workloadPods[workloadId], &pod)
 	}
 	return workloadPods, nil
+}
+
+func (l *Loaders) fetchInstrumentationInstances(ctx context.Context) (instrumentationInstances map[PodId]*v1alpha1.InstrumentationInstance, err error) {
+	ii, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(l.queryNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	instrumentationInstances = make(map[PodId]*v1alpha1.InstrumentationInstance, len(ii.Items))
+	for _, ii := range ii.Items {
+		ownerPodLabel, ok := ii.Labels[v1alpha1.OwnerPodNameLabel]
+		if !ok {
+			// instrumentation instance must have this label
+			// if it's missing for any reason, we will just skip it as we cannot use this instance.
+			continue
+		}
+		instrumentationInstances[PodId{
+			Namespace: ii.Namespace,
+			PodName:   ownerPodLabel,
+		}] = &ii
+	}
+	return instrumentationInstances, nil
 }
