@@ -2,11 +2,18 @@ package loaders
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 type loadersKeyType string
@@ -24,6 +31,8 @@ type Loaders struct {
 	filter                  *model.WorkloadFilter
 	isFilterSingleWorkload  bool
 	isFilterSingleNamespace bool
+	odigosConfiguration     *common.OdigosConfiguration
+	ignoredNamespacesMap    map[string]struct{}
 
 	// the value we use for the namespace in the quires to api server.
 	// for all namespace, this will be empty string.
@@ -149,6 +158,28 @@ func (l *Loaders) GetInstrumentationInstance(ctx context.Context, podId PodId) (
 }
 
 func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) error {
+
+	// fetch odigos configuration for each request.
+	odigosns := env.GetCurrentNamespace()
+	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &l.odigosConfiguration); err != nil {
+		return err
+	}
+	ignoredNamespacesMap := make(map[string]struct{})
+	for _, namespace := range l.odigosConfiguration.IgnoredNamespaces {
+		ignoredNamespacesMap[namespace] = struct{}{}
+	}
+	l.ignoredNamespacesMap = ignoredNamespacesMap
+
+	// check if it's a namespace query for ignored namespaces.
+	if filter != nil && filter.Namespace != nil {
+		if _, ok := l.ignoredNamespacesMap[*filter.Namespace]; ok {
+			return fmt.Errorf("namespace %s is configured to be ignored by odigos", *filter.Namespace)
+		}
+	}
 
 	l.filter = filter
 

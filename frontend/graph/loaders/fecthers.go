@@ -47,6 +47,9 @@ func (l *Loaders) fetchInstrumentationConfigs(ctx context.Context) (map[model.K8
 		}
 		configById := make(map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, len(instrumentationConfigs.Items))
 		for _, config := range instrumentationConfigs.Items {
+			if _, ok := l.ignoredNamespacesMap[config.Namespace]; ok {
+				continue
+			}
 			pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(config.Name, config.Namespace)
 			if err != nil {
 				return nil, err
@@ -114,7 +117,20 @@ func (l *Loaders) fetchSourcesForNamespace(ctx context.Context, ns string) (*odi
 }
 
 func (l *Loaders) fetchAllSources(ctx context.Context) (*odigosv1.SourceList, error) {
-	return kube.DefaultClient.OdigosClient.Sources(l.queryNamespace).List(ctx, metav1.ListOptions{})
+	sources, err := kube.DefaultClient.OdigosClient.Sources(l.queryNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	filteredSources := make([]odigosv1.Source, 0, len(sources.Items))
+	for _, source := range sources.Items {
+		if _, ok := l.ignoredNamespacesMap[source.Namespace]; ok {
+			continue
+		}
+		filteredSources = append(filteredSources, source)
+	}
+	sources.Items = filteredSources
+	return sources, nil
 }
 
 func (l *Loaders) fetchSources(ctx context.Context) (workloadSources map[model.K8sWorkloadID]*odigosv1.Source, namespaceSources map[string]*odigosv1.Source, err error) {
@@ -334,15 +350,27 @@ func (l *Loaders) fetchWorkloadManifests(ctx context.Context) (workloadManifests
 
 	workloadManifests = make(map[model.K8sWorkloadID]*WorkloadManifest)
 	for id, manifest := range deps {
+		if _, ok := l.ignoredNamespacesMap[id.Namespace]; ok {
+			continue
+		}
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range statefuls {
+		if _, ok := l.ignoredNamespacesMap[id.Namespace]; ok {
+			continue
+		}
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range daemons {
+		if _, ok := l.ignoredNamespacesMap[id.Namespace]; ok {
+			continue
+		}
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range crons {
+		if _, ok := l.ignoredNamespacesMap[id.Namespace]; ok {
+			continue
+		}
 		workloadManifests[id] = manifest
 	}
 
@@ -388,6 +416,9 @@ func (l *Loaders) fetchWorkloadPods(ctx context.Context) (workloadPods map[model
 
 	workloadPods = make(map[model.K8sWorkloadID][]*corev1.Pod)
 	for _, pod := range pods.Items {
+		if _, ok := l.ignoredNamespacesMap[pod.Namespace]; ok {
+			continue
+		}
 		pw, err := workload.PodWorkloadObject(ctx, &pod)
 		if err != nil || pw == nil {
 			// skip pods not relevant for odigos
@@ -426,6 +457,9 @@ func (l *Loaders) fetchInstrumentationInstances(ctx context.Context) (instrument
 	}
 	instrumentationInstances = make(map[PodId]*odigosv1.InstrumentationInstance, len(ii.Items))
 	for _, ii := range ii.Items {
+		if _, ok := l.ignoredNamespacesMap[ii.Namespace]; ok {
+			continue
+		}
 		ownerPodLabel, ok := ii.Labels[odigosv1.OwnerPodNameLabel]
 		if !ok {
 			// instrumentation instance must have this label
