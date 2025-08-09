@@ -161,7 +161,9 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 		}
 	}
 
-	if filter.MarkedForInstrumentation != nil && *filter.MarkedForInstrumentation {
+	filterMarkedForInstrumentation := filter != nil && filter.MarkedForInstrumentation != nil && *filter.MarkedForInstrumentation
+
+	if filterMarkedForInstrumentation {
 		l.instrumentationConfigMutex.Lock()
 		defer l.instrumentationConfigMutex.Unlock()
 		configById, err := l.fetchInstrumentationConfigs(ctx)

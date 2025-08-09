@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/services/common"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 )
 
@@ -394,6 +396,32 @@ func (r *k8sWorkloadResolver) PodsAgentInjectionStatus(ctx context.Context, obj 
 // PodsHealthStatus is the resolver for the podsHealthStatus field.
 func (r *k8sWorkloadResolver) PodsHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error) {
 	panic(fmt.Errorf("not implemented: PodsHealthStatus - podsHealthStatus"))
+}
+
+// TelemetryMetrics is the resolver for the telemetryMetrics field.
+func (r *k8sWorkloadResolver) TelemetryMetrics(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadTelemetryMetrics, error) {
+	var totalDataSent *int
+	var throughput *int
+
+	// attempt to get the metrics for the workload, or keep them as nil if not available.
+	workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(common.SourceID{
+		Namespace: obj.ID.Namespace,
+		Kind:      k8sconsts.WorkloadKind(obj.ID.Kind),
+		Name:      obj.ID.Name,
+	})
+	if ok {
+		tds := int(workloadMetrics.TotalDataSent())
+		tp := int(workloadMetrics.TotalThroughput())
+		totalDataSent = &tds
+		throughput = &tp
+	}
+
+	return []*model.K8sWorkloadTelemetryMetrics{
+		{
+			TotalDataSentBytes: totalDataSent,
+			ThroughputBytes:    throughput,
+		},
+	}, nil
 }
 
 // K8sWorkload returns K8sWorkloadResolver implementation.

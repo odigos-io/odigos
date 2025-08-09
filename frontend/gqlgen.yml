@@ -84,3 +84,5 @@ models:
         resolver: true
       podsHealthStatus:
         resolver: true
+      telemetryMetrics:
+        resolver: true

@@ -515,6 +515,7 @@ type K8sWorkload struct {
 	Pods                       []*K8sWorkloadPod                    `json:"pods,omitempty"`
 	PodsAgentInjectionStatus   *DesiredConditionStatus              `json:"podsAgentInjectionStatus"`
 	PodsHealthStatus           *DesiredConditionStatus              `json:"podsHealthStatus"`
+	TelemetryMetrics           []*K8sWorkloadTelemetryMetrics       `json:"telemetryMetrics"`
 }
 
 type K8sWorkloadAgentEnabled struct {
@@ -627,6 +628,13 @@ type K8sWorkloadRuntimeInfoContainer struct {
 	LibcType                *string             `json:"libcType,omitempty"`
 	SecureExecutionMode     *bool               `json:"secureExecutionMode,omitempty"`
 	OtherAgentName          *string             `json:"otherAgentName,omitempty"`
+}
+
+type K8sWorkloadTelemetryMetrics struct {
+	TotalDataSentBytes       *int                    `json:"totalDataSentBytes,omitempty"`
+	ThroughputBytes          *int                    `json:"throughputBytes,omitempty"`
+	ExpectingTelemetry       *bool                   `json:"expectingTelemetry,omitempty"`
+	ExpectingTelemetryStatus *DesiredConditionStatus `json:"expectingTelemetryStatus"`
 }
 
 type LatencySamplerAction struct {

@@ -381,6 +381,7 @@ type ComplexityRoot struct {
 		PodsHealthStatus           func(childComplexity int) int
 		Rollout                    func(childComplexity int) int
 		RuntimeInfo                func(childComplexity int) int
+		TelemetryMetrics           func(childComplexity int) int
 		WorkloadOdigosHealthStatus func(childComplexity int) int
 	}
 
@@ -494,6 +495,13 @@ type ComplexityRoot struct {
 		ProcessEnvVars          func(childComplexity int) int
 		RuntimeVersion          func(childComplexity int) int
 		SecureExecutionMode     func(childComplexity int) int
+	}
+
+	K8sWorkloadTelemetryMetrics struct {
+		ExpectingTelemetry       func(childComplexity int) int
+		ExpectingTelemetryStatus func(childComplexity int) int
+		ThroughputBytes          func(childComplexity int) int
+		TotalDataSentBytes       func(childComplexity int) int
 	}
 
 	LatencySamplerAction struct {
@@ -799,6 +807,7 @@ type K8sWorkloadResolver interface {
 	Pods(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadPod, error)
 	PodsAgentInjectionStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error)
 	PodsHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error)
+	TelemetryMetrics(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadTelemetryMetrics, error)
 }
 type MutationResolver interface {
 	UpdateAPIToken(ctx context.Context, token string) (bool, error)
@@ -2273,6 +2282,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkload.RuntimeInfo(childComplexity), true
 
+	case "K8sWorkload.telemetryMetrics":
+		if e.complexity.K8sWorkload.TelemetryMetrics == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkload.TelemetryMetrics(childComplexity), true
+
 	case "K8sWorkload.workloadOdigosHealthStatus":
 		if e.complexity.K8sWorkload.WorkloadOdigosHealthStatus == nil {
 			break
@@ -2727,6 +2743,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadRuntimeInfoContainer.SecureExecutionMode(childComplexity), true
+
+	case "K8sWorkloadTelemetryMetrics.expectingTelemetry":
+		if e.complexity.K8sWorkloadTelemetryMetrics.ExpectingTelemetry == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadTelemetryMetrics.ExpectingTelemetry(childComplexity), true
+
+	case "K8sWorkloadTelemetryMetrics.expectingTelemetryStatus":
+		if e.complexity.K8sWorkloadTelemetryMetrics.ExpectingTelemetryStatus == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadTelemetryMetrics.ExpectingTelemetryStatus(childComplexity), true
+
+	case "K8sWorkloadTelemetryMetrics.throughputBytes":
+		if e.complexity.K8sWorkloadTelemetryMetrics.ThroughputBytes == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadTelemetryMetrics.ThroughputBytes(childComplexity), true
+
+	case "K8sWorkloadTelemetryMetrics.totalDataSentBytes":
+		if e.complexity.K8sWorkloadTelemetryMetrics.TotalDataSentBytes == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadTelemetryMetrics.TotalDataSentBytes(childComplexity), true
 
 	case "LatencySamplerAction.details":
 		if e.complexity.LatencySamplerAction.Details == nil {
@@ -14602,6 +14646,60 @@ func (ec *executionContext) fieldContext_K8sWorkload_podsHealthStatus(_ context.
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkload_telemetryMetrics(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkload_telemetryMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sWorkload().TelemetryMetrics(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.K8sWorkloadTelemetryMetrics)
+	fc.Result = res
+	return ec.marshalNK8sWorkloadTelemetryMetrics2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadTelemetryMetricsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkload_telemetryMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkload",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "totalDataSentBytes":
+				return ec.fieldContext_K8sWorkloadTelemetryMetrics_totalDataSentBytes(ctx, field)
+			case "throughputBytes":
+				return ec.fieldContext_K8sWorkloadTelemetryMetrics_throughputBytes(ctx, field)
+			case "expectingTelemetry":
+				return ec.fieldContext_K8sWorkloadTelemetryMetrics_expectingTelemetry(ctx, field)
+			case "expectingTelemetryStatus":
+				return ec.fieldContext_K8sWorkloadTelemetryMetrics_expectingTelemetryStatus(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadTelemetryMetrics", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkloadAgentEnabled_agentEnabled(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadAgentEnabled) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkloadAgentEnabled_agentEnabled(ctx, field)
 	if err != nil {
@@ -17583,6 +17681,183 @@ func (ec *executionContext) fieldContext_K8sWorkloadRuntimeInfoContainer_otherAg
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadTelemetryMetrics_totalDataSentBytes(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadTelemetryMetrics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadTelemetryMetrics_totalDataSentBytes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalDataSentBytes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetrics_totalDataSentBytes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadTelemetryMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadTelemetryMetrics_throughputBytes(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadTelemetryMetrics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadTelemetryMetrics_throughputBytes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputBytes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetrics_throughputBytes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadTelemetryMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadTelemetryMetrics_expectingTelemetry(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadTelemetryMetrics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadTelemetryMetrics_expectingTelemetry(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExpectingTelemetry, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetrics_expectingTelemetry(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadTelemetryMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadTelemetryMetrics_expectingTelemetryStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadTelemetryMetrics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadTelemetryMetrics_expectingTelemetryStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExpectingTelemetryStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetrics_expectingTelemetryStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadTelemetryMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
 	}
 	return fc, nil
@@ -22905,6 +23180,8 @@ func (ec *executionContext) fieldContext_Query_workloads(ctx context.Context, fi
 				return ec.fieldContext_K8sWorkload_podsAgentInjectionStatus(ctx, field)
 			case "podsHealthStatus":
 				return ec.fieldContext_K8sWorkload_podsHealthStatus(ctx, field)
+			case "telemetryMetrics":
+				return ec.fieldContext_K8sWorkload_telemetryMetrics(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkload", field.Name)
 		},
@@ -32130,6 +32407,42 @@ func (ec *executionContext) _K8sWorkload(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "telemetryMetrics":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkload_telemetryMetrics(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -32910,6 +33223,51 @@ func (ec *executionContext) _K8sWorkloadRuntimeInfoContainer(ctx context.Context
 			out.Values[i] = ec._K8sWorkloadRuntimeInfoContainer_secureExecutionMode(ctx, field, obj)
 		case "otherAgentName":
 			out.Values[i] = ec._K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var k8sWorkloadTelemetryMetricsImplementors = []string{"K8sWorkloadTelemetryMetrics"}
+
+func (ec *executionContext) _K8sWorkloadTelemetryMetrics(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadTelemetryMetrics) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, k8sWorkloadTelemetryMetricsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("K8sWorkloadTelemetryMetrics")
+		case "totalDataSentBytes":
+			out.Values[i] = ec._K8sWorkloadTelemetryMetrics_totalDataSentBytes(ctx, field, obj)
+		case "throughputBytes":
+			out.Values[i] = ec._K8sWorkloadTelemetryMetrics_throughputBytes(ctx, field, obj)
+		case "expectingTelemetry":
+			out.Values[i] = ec._K8sWorkloadTelemetryMetrics_expectingTelemetry(ctx, field, obj)
+		case "expectingTelemetryStatus":
+			out.Values[i] = ec._K8sWorkloadTelemetryMetrics_expectingTelemetryStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -37132,6 +37490,60 @@ func (ec *executionContext) marshalNK8sWorkloadRuntimeInfoContainer2ᚖgithubᚗ
 		return graphql.Null
 	}
 	return ec._K8sWorkloadRuntimeInfoContainer(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNK8sWorkloadTelemetryMetrics2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadTelemetryMetricsᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.K8sWorkloadTelemetryMetrics) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNK8sWorkloadTelemetryMetrics2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadTelemetryMetrics(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNK8sWorkloadTelemetryMetrics2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadTelemetryMetrics(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadTelemetryMetrics) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._K8sWorkloadTelemetryMetrics(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNNodeCollectorAnalyze2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNodeCollectorAnalyze(ctx context.Context, sel ast.SelectionSet, v *model.NodeCollectorAnalyze) graphql.Marshaler {

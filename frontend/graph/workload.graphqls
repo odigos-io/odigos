@@ -301,6 +301,45 @@ type K8sWorkloadPod {
   containers: [K8sWorkloadPodContainer!]!
 }
 
+type K8sWorkloadTelemetryMetrics {
+
+  # total bytes sent by this source, counted from when ui pod started running.
+  # when the value is null, no telemetry data was observed yet for this source.
+  # this value shows the amount from an arbitrary point in time, and thus the exact value is not important on it's own.
+  # when it's != 0, it means the source is observed to be generating telemetry.
+  # it might be 0 or null even when the source is generating telemetry, if:
+  # - the ui pod just started running.
+  # - the source is generating telemetry once in a while, and the ui pod did not record it yet.
+  # - bug or connectivity issue in the own-telemetry collection mechanism.
+  #
+  # use this value with caution, and take the above into account.
+  totalDataSentBytes: Int
+
+  # the current throughput of the source, counted over a timespan of 20 seconds 
+  # (or as configured in the node collector).
+  # when the value is null, no telemetry data was observed yet for this source.
+  # when this value is != 0, it means the source is observed to be generating telemetry.
+  # when it's 0 or null, it's likely that the source is not generating telemetry.
+  # this value might not be accurate when:
+  # - the ui pod just started running.
+  # - the source just started running, and did not participate in the telemetry collection yet (20 seconds cycle)
+  # - the source pods does not have traffic at the moment (thus no telemetry is generated)
+  # - bug or connectivity issue in the own-telemetry collection mechanism.
+  #
+  # use this value with caution, and take the above into account.
+  throughputBytes: Int
+
+  # indicate whether the source is expected to generate telemetry.
+  # this value is calculated based on the source's actual instrumentation process.
+  # it is not a guarantee that the source will generate telemetry, but it's a good indicator.
+  expectingTelemetry: Boolean
+
+  # the status of the expectingTelemetry decision.
+  # this status is not a condition on a resource, it's a calculated value based on the observed state of the source.
+  # it is used to track if the expectingTelemetry state is as desired, or if there are any issues.
+  expectingTelemetryStatus: DesiredConditionStatus!
+}
+
 type K8sWorkload {
   id: K8sWorkloadId!
 
@@ -335,4 +374,8 @@ type K8sWorkload {
   # aggregated value for the health of all pods in the workload.
   # this value is the general health of the workload, and issues here may not be related to odigos.
   podsHealthStatus: DesiredConditionStatus!
+
+  # the telemetry metrics for this source 
+  # e.g. how much data is generate from this source as counted in the node collector.
+  telemetryMetrics: [K8sWorkloadTelemetryMetrics!]!
 }
