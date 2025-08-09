@@ -301,6 +301,19 @@ type K8sWorkloadPod {
   containers: [K8sWorkloadPodContainer!]!
 }
 
+type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus {
+
+  # indicate whether the source is expected to generate telemetry.
+  # this value is calculated based on the source's actual instrumentation process.
+  # it is not a guarantee that the source will generate telemetry, but it's a good indicator.
+  expectingTelemetry: Boolean
+
+  # the status of the expectingTelemetry decision.
+  # this status is not a condition on a resource, it's a calculated value based on the observed state of the source.
+  # it is used to track if the expectingTelemetry state is as desired, or if there are any issues.
+  expectingTelemetryStatus: DesiredConditionStatus!
+}
+
 type K8sWorkloadTelemetryMetrics {
 
   # total bytes sent by this source, counted from when ui pod started running.
@@ -329,15 +342,10 @@ type K8sWorkloadTelemetryMetrics {
   # use this value with caution, and take the above into account.
   throughputBytes: Int
 
-  # indicate whether the source is expected to generate telemetry.
-  # this value is calculated based on the source's actual instrumentation process.
-  # it is not a guarantee that the source will generate telemetry, but it's a good indicator.
-  expectingTelemetry: Boolean
-
   # the status of the expectingTelemetry decision.
   # this status is not a condition on a resource, it's a calculated value based on the observed state of the source.
   # it is used to track if the expectingTelemetry state is as desired, or if there are any issues.
-  expectingTelemetryStatus: DesiredConditionStatus!
+  expectingTelemetry: K8sWorkloadTelemetryMetricsExpectingTelemetryStatus!
 }
 
 type K8sWorkload {

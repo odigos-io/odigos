@@ -631,8 +631,12 @@ type K8sWorkloadRuntimeInfoContainer struct {
 }
 
 type K8sWorkloadTelemetryMetrics struct {
-	TotalDataSentBytes       *int                    `json:"totalDataSentBytes,omitempty"`
-	ThroughputBytes          *int                    `json:"throughputBytes,omitempty"`
+	TotalDataSentBytes *int                                                 `json:"totalDataSentBytes,omitempty"`
+	ThroughputBytes    *int                                                 `json:"throughputBytes,omitempty"`
+	ExpectingTelemetry *K8sWorkloadTelemetryMetricsExpectingTelemetryStatus `json:"expectingTelemetry"`
+}
+
+type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
 	ExpectingTelemetry       *bool                   `json:"expectingTelemetry,omitempty"`
 	ExpectingTelemetryStatus *DesiredConditionStatus `json:"expectingTelemetryStatus"`
 }

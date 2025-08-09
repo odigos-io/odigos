@@ -31,7 +31,8 @@ type Loaders struct {
 	workloadFilter      *WorkloadFilter
 	odigosConfiguration *common.OdigosConfiguration
 
-	workloadIds []model.K8sWorkloadID
+	workloadIds    []model.K8sWorkloadID
+	workloadIdsMap map[k8sconsts.PodWorkload]struct{}
 
 	instrumentationConfigMutex    sync.Mutex
 	instrumentationConfigsFetched bool
@@ -137,7 +138,7 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 		}
 	}
 
-	workloadPods, err := fetchWorkloadPods(ctx, l.workloadFilter, singleWorkloadManifest)
+	workloadPods, err := fetchWorkloadPods(ctx, l.workloadFilter, singleWorkloadManifest, l.workloadIdsMap)
 	if err != nil {
 		return err
 	}
@@ -238,8 +239,14 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 			return err
 		}
 		l.workloadIds = make([]model.K8sWorkloadID, 0, len(l.instrumentationConfigs))
+		l.workloadIdsMap = make(map[k8sconsts.PodWorkload]struct{}, len(l.instrumentationConfigs))
 		for sourceId := range l.instrumentationConfigs {
 			l.workloadIds = append(l.workloadIds, sourceId)
+			l.workloadIdsMap[k8sconsts.PodWorkload{
+				Namespace: sourceId.Namespace,
+				Kind:      k8sconsts.WorkloadKind(sourceId.Kind),
+				Name:      sourceId.Name,
+			}] = struct{}{}
 		}
 	} else {
 		l.sourcesMutex.Lock()
@@ -266,6 +273,14 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 		l.workloadIds = make([]model.K8sWorkloadID, 0, len(allWorkloads))
 		for sourceId := range allWorkloads {
 			l.workloadIds = append(l.workloadIds, sourceId)
+		}
+		l.workloadIdsMap = make(map[k8sconsts.PodWorkload]struct{}, len(allWorkloads))
+		for workloadId := range allWorkloads {
+			l.workloadIdsMap[k8sconsts.PodWorkload{
+				Namespace: workloadId.Namespace,
+				Kind:      k8sconsts.WorkloadKind(workloadId.Kind),
+				Name:      workloadId.Name,
+			}] = struct{}{}
 		}
 	}
 

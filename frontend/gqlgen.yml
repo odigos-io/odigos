@@ -86,3 +86,8 @@ models:
         resolver: true
       telemetryMetrics:
         resolver: true
+
+  K8sWorkloadTelemetryMetrics:
+    fields:
+      expectingTelemetry:
+        resolver: true

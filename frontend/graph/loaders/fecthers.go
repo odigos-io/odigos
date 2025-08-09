@@ -377,7 +377,7 @@ func fetchWorkloadManifests(ctx context.Context, filters *WorkloadFilter) (workl
 	return workloadManifests, nil
 }
 
-func fetchWorkloadPods(ctx context.Context, filters *WorkloadFilter, singleWorkloadManifest *WorkloadManifest) (workloadPods map[model.K8sWorkloadID][]*corev1.Pod, err error) {
+func fetchWorkloadPods(ctx context.Context, filters *WorkloadFilter, singleWorkloadManifest *WorkloadManifest, workloadIdsMap map[k8sconsts.PodWorkload]struct{}) (workloadPods map[model.K8sWorkloadID][]*corev1.Pod, err error) {
 
 	var labelSelector string
 	if filters.SingleWorkload != nil {
@@ -403,6 +403,13 @@ func fetchWorkloadPods(ctx context.Context, filters *WorkloadFilter, singleWorkl
 		pw, err := workload.PodWorkloadObject(ctx, &pod)
 		if err != nil || pw == nil {
 			// skip pods not relevant for odigos
+			continue
+		}
+		if _, ok := workloadIdsMap[*pw]; !ok {
+			fmt.Printf("skipping pod %s/%s because it is not relevant for odigos\n", pod.Namespace, pod.Name)
+			// skip pods not relevant for odigos.
+			// for example, when we are fetching only instrumentated workloads,
+			// we can drop all the pods which does not participate.
 			continue
 		}
 

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	gql "github.com/99designs/gqlgen/graphql"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
@@ -418,7 +419,61 @@ func (r *k8sWorkloadResolver) TelemetryMetrics(ctx context.Context, obj *model.K
 	}, nil
 }
 
+// ExpectingTelemetry is the resolver for the expectingTelemetry field.
+func (r *k8sWorkloadTelemetryMetricsResolver) ExpectingTelemetry(ctx context.Context, obj *model.K8sWorkloadTelemetryMetrics) (*model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus, error) {
+	// Safely derive the parent workload ID from the GraphQL field context
+	var workloadId model.K8sWorkloadID
+	fc := gql.GetFieldContext(ctx)
+	// go up 3 levels in the context to get the workload id
+	// current field -> *model.K8sWorkloadTelemetryMetrics -> []*model.K8sWorkloadTelemetryMetrics -> *model.K8sWorkload
+	if fc == nil || fc.Parent == nil || fc.Parent.Parent == nil || fc.Parent.Parent.Parent == nil {
+		return nil, fmt.Errorf("missisng parent resolver context")
+	}
+	w, ok := fc.Parent.Parent.Parent.Result.(**model.K8sWorkload)
+	if !ok || w == nil || (*w).ID == nil {
+		return nil, fmt.Errorf("parent is not a workload")
+	}
+	workloadId = *(*w).ID
+
+	l := loaders.For(ctx)
+	pods, err := l.GetWorkloadPods(ctx, workloadId)
+	if err != nil {
+		return nil, err
+	}
+	ic, err := l.GetInstrumentationConfig(ctx, workloadId)
+	if err != nil {
+		return nil, err
+	}
+
+	// at the moment, a workload is expected to have telemetry
+	// if the workload has agent injection enabled and at least one pod has the agent injected.
+	agentInjectionEnabled := false
+	if ic != nil {
+		agentInjectionEnabled = ic.Spec.AgentInjectionEnabled
+	}
+
+	expectingTelemetry := false
+	if agentInjectionEnabled {
+		for _, pod := range pods {
+			if pod.ComputedPodValues.AgentInjected {
+				expectingTelemetry = true
+				break
+			}
+		}
+	}
+
+	return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
+		ExpectingTelemetry: &expectingTelemetry,
+	}, nil
+}
+
 // K8sWorkload returns K8sWorkloadResolver implementation.
 func (r *Resolver) K8sWorkload() K8sWorkloadResolver { return &k8sWorkloadResolver{r} }
 
+// K8sWorkloadTelemetryMetrics returns K8sWorkloadTelemetryMetricsResolver implementation.
+func (r *Resolver) K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsResolver {
+	return &k8sWorkloadTelemetryMetricsResolver{r}
+}
+
 type k8sWorkloadResolver struct{ *Resolver }
+type k8sWorkloadTelemetryMetricsResolver struct{ *Resolver }
