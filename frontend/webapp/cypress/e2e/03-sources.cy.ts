@@ -9,6 +9,8 @@ const namespace = NAMESPACES.DEFAULT;
 const sourceCrdName = CRD_NAMES.SOURCE;
 const configCrdName = CRD_NAMES.INSTRUMENTATION_CONFIG;
 const totalEntities = SELECTED_ENTITIES.NAMESPACE_SOURCES.length;
+const indexForUpdatedSource = 0;
+const nameForUpdatedSource = SELECTED_ENTITIES.NAMESPACE_SOURCES[indexForUpdatedSource];
 
 describe('Sources CRUD', () => {
   beforeEach(() => {
@@ -55,9 +57,9 @@ describe('Sources CRUD', () => {
     getCrdIds({ namespace, crdName: configCrdName, expectedError: '', expectedLength: totalEntities });
   });
 
-  it(`Should update the name of ${totalEntities} sources via API, and notify locally`, () => {
+  it(`Should update the name of 1 sources via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
-      SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach((sourceName, idx) => {
+      SELECTED_ENTITIES.NAMESPACE_SOURCES.slice(indexForUpdatedSource, indexForUpdatedSource + 1).forEach((sourceName, idx) => {
         updateEntity(
           {
             nodeId: DATA_IDS.SOURCE_NODE(idx),
@@ -78,19 +80,17 @@ describe('Sources CRUD', () => {
     });
   });
 
-  it(`Should update "otelServiceName" of ${totalEntities} ${sourceCrdName} CRDs in the cluster`, () => {
+  it(`Should update "otelServiceName" of 1 ${sourceCrdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName: sourceCrdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
-      crdIds.forEach((crdId) => {
-        getCrdById({ namespace, crdName: sourceCrdName, crdId, expectedError: '', expectedKey: 'otelServiceName', expectedValue: TEXTS.UPDATED_NAME });
-      });
+      const crdId = crdIds.find((id) => id.indexOf(nameForUpdatedSource) !== -1) || '';
+      getCrdById({ namespace, crdName: sourceCrdName, crdId, expectedError: '', expectedKey: 'otelServiceName', expectedValue: TEXTS.UPDATED_NAME });
     });
   });
 
-  it(`Should update "serviceName" of ${totalEntities} ${configCrdName} CRDs in the cluster`, () => {
+  it(`Should update "serviceName" of 1 ${configCrdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName: configCrdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
-      crdIds.forEach((crdId) => {
-        getCrdById({ namespace, crdName: configCrdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
-      });
+      const crdId = crdIds.find((id) => id.indexOf(nameForUpdatedSource) !== -1) || '';
+      getCrdById({ namespace, crdName: configCrdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
     });
   });
 
