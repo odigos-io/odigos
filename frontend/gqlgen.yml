@@ -82,8 +82,8 @@ models:
         resolver: true
       podsAgentInjectionStatus:
         resolver: true
-      podsHealthStatus:
-        resolver: true
+      # podsHealthStatus:
+      #   resolver: true
       telemetryMetrics:
         resolver: true
 

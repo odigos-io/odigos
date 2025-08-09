@@ -7,9 +7,10 @@ const (
 type ExpectingTelemetryReason string
 
 const (
-	ExpectingTelemetryReasonAgentNotEnabledForInjection AgentInjectedReason = "AgentNotEnabledForInjection"
-	ExpectingTelemetryReasonAgentNoRunningPod           AgentInjectedReason = "AgentNoRunningPod"
-	ExpectingTelemetryReasonAgentNotInjected            AgentInjectedReason = "AgentNotInjected"
-	ExpectingTelemetryReasonAgentInjectedButNoDataSent  AgentInjectedReason = "AgentInjectedButNoDataSent"
-	ExpectingTelemetryReasonAgentInjectedAndDataSent    AgentInjectedReason = "AgentInjectedAndDataSent"
+	ExpectingTelemetryReasonWorkloadNotMarkedForInstrumentation AgentInjectedReason = "WorkloadNotMarkedForInstrumentation"
+	ExpectingTelemetryReasonAgentNotEnabledForInjection         AgentInjectedReason = "AgentNotEnabledForInjection"
+	ExpectingTelemetryReasonAgentNoRunningPod                   AgentInjectedReason = "AgentNoRunningPod"
+	ExpectingTelemetryReasonAgentNotInjected                    AgentInjectedReason = "AgentNotInjected"
+	ExpectingTelemetryReasonAgentInjectedButNoDataSent          AgentInjectedReason = "AgentInjectedButNoDataSent"
+	ExpectingTelemetryReasonAgentInjectedAndDataSent            AgentInjectedReason = "AgentInjectedAndDataSent"
 )

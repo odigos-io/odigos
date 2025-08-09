@@ -389,11 +389,6 @@ func (r *k8sWorkloadResolver) PodsAgentInjectionStatus(ctx context.Context, obj 
 	}
 }
 
-// PodsHealthStatus is the resolver for the podsHealthStatus field.
-func (r *k8sWorkloadResolver) PodsHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error) {
-	panic(fmt.Errorf("not implemented: PodsHealthStatus - podsHealthStatus"))
-}
-
 // TelemetryMetrics is the resolver for the telemetryMetrics field.
 func (r *k8sWorkloadResolver) TelemetryMetrics(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadTelemetryMetrics, error) {
 	var totalDataSent *int
@@ -446,16 +441,24 @@ func (r *k8sWorkloadTelemetryMetricsResolver) ExpectingTelemetry(ctx context.Con
 		return nil, err
 	}
 
-	// at the moment, a workload is expected to have telemetry
-	// if the workload has agent injection enabled and at least one pod has the agent injected.
-	agentInjectionEnabled := false
-	if ic != nil {
-		agentInjectionEnabled = ic.Spec.AgentInjectionEnabled
-	}
-
 	expectingTelemetry := false
 
-	if !agentInjectionEnabled {
+	// at the moment, a workload is expected to have telemetry
+	// if the workload has agent injection enabled and at least one pod has the agent injected.
+	if ic == nil {
+		reasonStr := string(status.ExpectingTelemetryReasonWorkloadNotMarkedForInstrumentation)
+		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
+			IsExpectingTelemetry: &expectingTelemetry,
+			TelemetryObservedStatus: &model.DesiredConditionStatus{
+				Name:       status.ExpectingTelemetryStatus,
+				Status:     model.DesiredStateProgressDisabled,
+				ReasonEnum: &reasonStr,
+				Message:    "workload is not marked for instrumentation",
+			},
+		}, nil
+	}
+
+	if !ic.Spec.AgentInjectionEnabled {
 		reasonStr := string(status.ExpectingTelemetryReasonAgentNotEnabledForInjection)
 		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
 			IsExpectingTelemetry: &expectingTelemetry,
@@ -536,3 +539,15 @@ func (r *Resolver) K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsReso
 
 type k8sWorkloadResolver struct{ *Resolver }
 type k8sWorkloadTelemetryMetricsResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *k8sWorkloadResolver) PodsHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error) {
+	panic(fmt.Errorf("not implemented: PodsHealthStatus - podsHealthStatus"))
+}
+*/
