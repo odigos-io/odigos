@@ -637,8 +637,8 @@ type K8sWorkloadTelemetryMetrics struct {
 }
 
 type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
-	ExpectingTelemetry       *bool                   `json:"expectingTelemetry,omitempty"`
-	ExpectingTelemetryStatus *DesiredConditionStatus `json:"expectingTelemetryStatus"`
+	IsExpectingTelemetry    *bool                   `json:"isExpectingTelemetry,omitempty"`
+	TelemetryObservedStatus *DesiredConditionStatus `json:"telemetryObservedStatus"`
 }
 
 type LatencySamplerAction struct {

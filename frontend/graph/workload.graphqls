@@ -306,12 +306,11 @@ type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus {
   # indicate whether the source is expected to generate telemetry.
   # this value is calculated based on the source's actual instrumentation process.
   # it is not a guarantee that the source will generate telemetry, but it's a good indicator.
-  expectingTelemetry: Boolean
+  isExpectingTelemetry: Boolean
 
-  # the status of the expectingTelemetry decision.
-  # this status is not a condition on a resource, it's a calculated value based on the observed state of the source.
-  # it is used to track if the expectingTelemetry state is as desired, or if there are any issues.
-  expectingTelemetryStatus: DesiredConditionStatus!
+  # the status of the telemetry observed
+  # this status will indicate any issues, if telemetry is expected but not observed.
+  telemetryObservedStatus: DesiredConditionStatus!
 }
 
 type K8sWorkloadTelemetryMetrics {

@@ -505,8 +505,8 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
-		ExpectingTelemetry       func(childComplexity int) int
-		ExpectingTelemetryStatus func(childComplexity int) int
+		IsExpectingTelemetry    func(childComplexity int) int
+		TelemetryObservedStatus func(childComplexity int) int
 	}
 
 	LatencySamplerAction struct {
@@ -2773,19 +2773,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadTelemetryMetrics.TotalDataSentBytes(childComplexity), true
 
-	case "K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.expectingTelemetry":
-		if e.complexity.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.ExpectingTelemetry == nil {
+	case "K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.isExpectingTelemetry":
+		if e.complexity.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.IsExpectingTelemetry == nil {
 			break
 		}
 
-		return e.complexity.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.ExpectingTelemetry(childComplexity), true
+		return e.complexity.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.IsExpectingTelemetry(childComplexity), true
 
-	case "K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.expectingTelemetryStatus":
-		if e.complexity.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.ExpectingTelemetryStatus == nil {
+	case "K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.telemetryObservedStatus":
+		if e.complexity.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.TelemetryObservedStatus == nil {
 			break
 		}
 
-		return e.complexity.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.ExpectingTelemetryStatus(childComplexity), true
+		return e.complexity.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.TelemetryObservedStatus(childComplexity), true
 
 	case "LatencySamplerAction.details":
 		if e.complexity.LatencySamplerAction.Details == nil {
@@ -17820,10 +17820,10 @@ func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetrics_expectingTe
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "expectingTelemetry":
-				return ec.fieldContext_K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_expectingTelemetry(ctx, field)
-			case "expectingTelemetryStatus":
-				return ec.fieldContext_K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_expectingTelemetryStatus(ctx, field)
+			case "isExpectingTelemetry":
+				return ec.fieldContext_K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_isExpectingTelemetry(ctx, field)
+			case "telemetryObservedStatus":
+				return ec.fieldContext_K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_telemetryObservedStatus(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus", field.Name)
 		},
@@ -17831,8 +17831,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetrics_expectingTe
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_expectingTelemetry(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_expectingTelemetry(ctx, field)
+func (ec *executionContext) _K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_isExpectingTelemetry(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_isExpectingTelemetry(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17845,7 +17845,7 @@ func (ec *executionContext) _K8sWorkloadTelemetryMetricsExpectingTelemetryStatus
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ExpectingTelemetry, nil
+		return obj.IsExpectingTelemetry, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17859,7 +17859,7 @@ func (ec *executionContext) _K8sWorkloadTelemetryMetricsExpectingTelemetryStatus
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_expectingTelemetry(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_isExpectingTelemetry(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadTelemetryMetricsExpectingTelemetryStatus",
 		Field:      field,
@@ -17872,8 +17872,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetricsExpectingTel
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_expectingTelemetryStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_expectingTelemetryStatus(ctx, field)
+func (ec *executionContext) _K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_telemetryObservedStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_telemetryObservedStatus(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17886,7 +17886,7 @@ func (ec *executionContext) _K8sWorkloadTelemetryMetricsExpectingTelemetryStatus
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ExpectingTelemetryStatus, nil
+		return obj.TelemetryObservedStatus, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17903,7 +17903,7 @@ func (ec *executionContext) _K8sWorkloadTelemetryMetricsExpectingTelemetryStatus
 	return ec.marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_expectingTelemetryStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_telemetryObservedStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadTelemetryMetricsExpectingTelemetryStatus",
 		Field:      field,
@@ -33394,10 +33394,10 @@ func (ec *executionContext) _K8sWorkloadTelemetryMetricsExpectingTelemetryStatus
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("K8sWorkloadTelemetryMetricsExpectingTelemetryStatus")
-		case "expectingTelemetry":
-			out.Values[i] = ec._K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_expectingTelemetry(ctx, field, obj)
-		case "expectingTelemetryStatus":
-			out.Values[i] = ec._K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_expectingTelemetryStatus(ctx, field, obj)
+		case "isExpectingTelemetry":
+			out.Values[i] = ec._K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_isExpectingTelemetry(ctx, field, obj)
+		case "telemetryObservedStatus":
+			out.Values[i] = ec._K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_telemetryObservedStatus(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

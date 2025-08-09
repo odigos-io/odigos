@@ -9,11 +9,12 @@ import (
 	"fmt"
 	"time"
 
-	gql "github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/graph/status"
 	"github.com/odigos-io/odigos/frontend/services/common"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 )
@@ -423,7 +424,7 @@ func (r *k8sWorkloadResolver) TelemetryMetrics(ctx context.Context, obj *model.K
 func (r *k8sWorkloadTelemetryMetricsResolver) ExpectingTelemetry(ctx context.Context, obj *model.K8sWorkloadTelemetryMetrics) (*model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus, error) {
 	// Safely derive the parent workload ID from the GraphQL field context
 	var workloadId model.K8sWorkloadID
-	fc := gql.GetFieldContext(ctx)
+	fc := graphql.GetFieldContext(ctx)
 	// go up 3 levels in the context to get the workload id
 	// current field -> *model.K8sWorkloadTelemetryMetrics -> []*model.K8sWorkloadTelemetryMetrics -> *model.K8sWorkload
 	if fc == nil || fc.Parent == nil || fc.Parent.Parent == nil || fc.Parent.Parent.Parent == nil {
@@ -453,17 +454,75 @@ func (r *k8sWorkloadTelemetryMetricsResolver) ExpectingTelemetry(ctx context.Con
 	}
 
 	expectingTelemetry := false
-	if agentInjectionEnabled {
-		for _, pod := range pods {
-			if pod.ComputedPodValues.AgentInjected {
-				expectingTelemetry = true
-				break
-			}
+
+	if !agentInjectionEnabled {
+		reasonStr := string(status.ExpectingTelemetryReasonAgentNotEnabledForInjection)
+		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
+			IsExpectingTelemetry: &expectingTelemetry,
+			TelemetryObservedStatus: &model.DesiredConditionStatus{
+				Name:       status.ExpectingTelemetryStatus,
+				Status:     model.DesiredStateProgressDisabled,
+				ReasonEnum: &reasonStr,
+				Message:    "agent injection is not enabled for this workload",
+			},
+		}, nil
+	}
+
+	if len(pods) == 0 {
+		reasonStr := string(status.ExpectingTelemetryReasonAgentNoRunningPod)
+		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
+			IsExpectingTelemetry: &expectingTelemetry,
+			TelemetryObservedStatus: &model.DesiredConditionStatus{
+				Name:       status.ExpectingTelemetryStatus,
+				Status:     model.DesiredStateProgressDisabled,
+				ReasonEnum: &reasonStr,
+				Message:    "no running pods found for this workload",
+			},
+		}, nil
+	}
+
+	for _, pod := range pods {
+		if pod.ComputedPodValues.AgentInjected {
+			expectingTelemetry = true
+			break
 		}
 	}
 
+	if !expectingTelemetry {
+		reasonStr := string(status.ExpectingTelemetryReasonAgentNotInjected)
+		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
+			IsExpectingTelemetry: &expectingTelemetry,
+			TelemetryObservedStatus: &model.DesiredConditionStatus{
+				Name:       status.ExpectingTelemetryStatus,
+				Status:     model.DesiredStateProgressWaiting,
+				ReasonEnum: &reasonStr,
+				Message:    "agent is not injected into any of the pods in this workload",
+			},
+		}, nil
+	}
+
+	if obj.TotalDataSentBytes == nil || *obj.TotalDataSentBytes == 0 {
+		reasonStr := string(status.ExpectingTelemetryReasonAgentInjectedButNoDataSent)
+		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
+			IsExpectingTelemetry: &expectingTelemetry,
+			TelemetryObservedStatus: &model.DesiredConditionStatus{
+				Name:       status.ExpectingTelemetryStatus,
+				Status:     model.DesiredStateProgressWaiting,
+				ReasonEnum: &reasonStr,
+				Message:    "agent is injected into the pods in this workload, but no telemetry data was sent yet",
+			},
+		}, nil
+	}
+
+	reasonStr := string(status.ExpectingTelemetryReasonAgentInjectedAndDataSent)
 	return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
-		ExpectingTelemetry: &expectingTelemetry,
+		IsExpectingTelemetry: &expectingTelemetry,
+		TelemetryObservedStatus: &model.DesiredConditionStatus{
+			Name:       status.ExpectingTelemetryStatus,
+			Status:     model.DesiredStateProgressSuccess,
+			ReasonEnum: &reasonStr,
+			Message:    "agent is injected into the pods in this workload, and telemetry data was sent",
+		},
 	}, nil
 }
 
