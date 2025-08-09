@@ -486,7 +486,7 @@ spec:
   ports:
     - protocol: TCP
       port: 3000
----      
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -648,7 +648,7 @@ spec:
             - name: DJANGO_SETTINGS_MODULE
               value: "myapp.settings"
             - name: PYTHONPATH
-              value: "/app"              
+              value: "/app"
           livenessProbe:
             httpGet:
               path: /health/
@@ -696,7 +696,7 @@ spec:
             - containerPort: 8000
           env:
             - name: DJANGO_SETTINGS_MODULE
-              value: "myapp.settings"        
+              value: "myapp.settings"
           livenessProbe:
             httpGet:
               path: /health/
@@ -919,3 +919,39 @@ spec:
   ports:
     - protocol: TCP
       port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-gunicorn-server
+  namespace: default
+  labels:
+    app: python-gunicorn-server
+spec:
+  selector:
+    matchLabels:
+      app: python-gunicorn-server
+  template:
+    metadata:
+      labels:
+        app: python-gunicorn-server
+    spec:
+      containers:
+        - name: python-gunicorn-server
+          image: public.ecr.aws/odigos/python-gunicorn-server:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-gunicorn-server
+  namespace: default
+spec:
+  selector:
+    app: python-gunicorn-server
+  ports:
+    - protocol: TCP
+      port: 8000
+---
