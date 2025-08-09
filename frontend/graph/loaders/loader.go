@@ -11,7 +11,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -41,21 +40,26 @@ type Loaders struct {
 
 	workloadIds []model.K8sWorkloadID
 
-	instrumentationConfigMutex sync.Mutex
-	instrumentationConfigs     map[model.K8sWorkloadID]*v1alpha1.InstrumentationConfig
+	instrumentationConfigMutex    sync.Mutex
+	instrumentationConfigsFetched bool
+	instrumentationConfigs        map[model.K8sWorkloadID]*v1alpha1.InstrumentationConfig
 
 	sourcesMutex    sync.Mutex
+	sourcesFetched  bool
 	workloadSources map[model.K8sWorkloadID]*v1alpha1.Source
 	nsSources       map[string]*v1alpha1.Source
 
-	workloadManifestsMutex sync.Mutex
-	workloadManifests      map[model.K8sWorkloadID]*WorkloadManifest
+	workloadManifestsMutex   sync.Mutex
+	workloadManifestsFetched bool
+	workloadManifests        map[model.K8sWorkloadID]*WorkloadManifest
 
-	workloadPodsMutex sync.Mutex
-	workloadPods      map[model.K8sWorkloadID][]*corev1.Pod
+	workloadPodsMutex   sync.Mutex
+	workloadPodsFetched bool
+	workloadPods        map[model.K8sWorkloadID][]CachedPod
 
-	instrumentationInstancesMutex sync.Mutex
-	instrumentationInstances      map[PodId]*v1alpha1.InstrumentationInstance
+	instrumentationInstancesMutex   sync.Mutex
+	instrumentationInstancesFetched bool
+	instrumentationInstances        map[PodId]*v1alpha1.InstrumentationInstance
 }
 
 func WithLoaders(ctx context.Context, loaders *Loaders) context.Context {
@@ -81,7 +85,7 @@ func (l *Loaders) GetInstrumentationConfig(ctx context.Context, workload model.K
 	defer l.instrumentationConfigMutex.Unlock()
 
 	// if we did not fecth the instrumentation configs yet, do it now.
-	if len(l.instrumentationConfigs) == 0 {
+	if !l.instrumentationConfigsFetched {
 		instrumentationConfigs, err := l.fetchInstrumentationConfigs(ctx)
 		if err != nil {
 			return nil, err
@@ -96,13 +100,14 @@ func (l *Loaders) GetSources(ctx context.Context, sourceId model.K8sWorkloadID) 
 	defer l.sourcesMutex.Unlock()
 
 	// if we did not fetch the sources yet, do it now.
-	if len(l.workloadSources) == 0 || len(l.nsSources) == 0 {
+	if !l.sourcesFetched {
 		workloadSources, namespaceSources, err := l.fetchSources(ctx)
 		if err != nil {
 			return nil, err
 		}
 		l.workloadSources = workloadSources
 		l.nsSources = namespaceSources
+		l.sourcesFetched = true
 	}
 
 	// return both the workload and namespace sources for this one.
@@ -116,27 +121,49 @@ func (l *Loaders) GetWorkloadManifest(ctx context.Context, sourceId model.K8sWor
 	l.workloadManifestsMutex.Lock()
 	defer l.workloadManifestsMutex.Unlock()
 
-	if len(l.workloadManifests) == 0 {
+	if !l.workloadManifestsFetched {
 		workloadManifests, err := l.fetchWorkloadManifests(ctx)
 		if err != nil {
 			return nil, err
 		}
 		l.workloadManifests = workloadManifests
+		l.workloadManifestsFetched = true
 	}
 	return l.workloadManifests[sourceId], nil
 }
 
-func (l *Loaders) GetWorkloadPods(ctx context.Context, sourceId model.K8sWorkloadID) ([]*corev1.Pod, error) {
+func (l *Loaders) GetWorkloadPods(ctx context.Context, sourceId model.K8sWorkloadID) ([]CachedPod, error) {
 
 	l.workloadPodsMutex.Lock()
 	defer l.workloadPodsMutex.Unlock()
 
-	if len(l.workloadPods) == 0 {
+	if !l.workloadPodsFetched {
 		workloadPods, err := l.fetchWorkloadPods(ctx)
 		if err != nil {
 			return nil, err
 		}
-		l.workloadPods = workloadPods
+		cachePods := make(map[model.K8sWorkloadID][]CachedPod)
+		l.instrumentationConfigMutex.Lock()
+		defer l.instrumentationConfigMutex.Unlock()
+		if !l.instrumentationConfigsFetched {
+			instrumentationConfigs, err := l.fetchInstrumentationConfigs(ctx)
+			if err != nil {
+				return nil, err
+			}
+			l.instrumentationConfigs = instrumentationConfigs
+			l.instrumentationConfigsFetched = true
+		}
+		for sourceId, pods := range workloadPods {
+			cachePods[sourceId] = make([]CachedPod, 0, len(pods))
+			for _, pod := range pods {
+				cachePods[sourceId] = append(cachePods[sourceId], CachedPod{
+					Pod:               pod,
+					ComputedPodValues: NewComputedPodValues(pod, l.instrumentationConfigs[sourceId]),
+				})
+			}
+		}
+		l.workloadPods = cachePods
+		l.workloadPodsFetched = true
 	}
 	return l.workloadPods[sourceId], nil
 }
@@ -146,12 +173,13 @@ func (l *Loaders) GetInstrumentationInstance(ctx context.Context, podId PodId) (
 	l.instrumentationInstancesMutex.Lock()
 	defer l.instrumentationInstancesMutex.Unlock()
 
-	if len(l.instrumentationInstances) == 0 {
+	if !l.instrumentationInstancesFetched {
 		instrumentationInstances, err := l.fetchInstrumentationInstances(ctx)
 		if err != nil {
 			return nil, err
 		}
 		l.instrumentationInstances = instrumentationInstances
+		l.instrumentationInstancesFetched = true
 	}
 
 	return l.instrumentationInstances[podId], nil
@@ -206,6 +234,7 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 			return err
 		}
 		l.instrumentationConfigs = configById
+		l.instrumentationConfigsFetched = true
 		l.workloadIds = make([]model.K8sWorkloadID, 0, len(configById))
 		for sourceId := range configById {
 			l.workloadIds = append(l.workloadIds, sourceId)
@@ -224,12 +253,14 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 		}
 		l.workloadSources = workloadSources
 		l.nsSources = namespaceSources
+		l.sourcesFetched = true
 
 		workloadManifests, err := l.fetchWorkloadManifests(ctx)
 		if err != nil {
 			return err
 		}
 		l.workloadManifests = workloadManifests
+		l.workloadManifestsFetched = true
 
 		// calculate the source ids from the workload sources and manifests.
 		// we can have workloads without sources, and sources without workloads.

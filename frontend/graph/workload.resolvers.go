@@ -208,15 +208,10 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 	if err != nil {
 		return nil, err
 	}
-	instrumentationConfig, err := l.GetInstrumentationConfig(ctx, *obj.ID)
-	if err != nil {
-		return nil, err
-	}
 
 	podModels := make([]*model.K8sWorkloadPod, 0, len(pods))
-	for _, pod := range pods {
-		agentInjected, agentInjectedStatus := getPodAgentInjectedStatus(pod, instrumentationConfig)
-		containerModels := make([]*model.K8sWorkloadPodContainer, 0, len(pod.Spec.Containers))
+	for _, cachePod := range pods {
+		containerModels := make([]*model.K8sWorkloadPodContainer, 0, len(cachePod.Pod.Spec.Containers))
 
 		// set aggregated pod health status to success and override if any container is not healthy.
 		podHealthReasonStr := string(PodContainerHealthReasonHealthy)
@@ -226,8 +221,8 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 			ReasonEnum: &podHealthReasonStr,
 			Message:    "all containers are healthy",
 		}
-		for _, container := range pod.Spec.Containers {
-			containerStatus := getContainerStatus(pod, container.Name)
+		for _, container := range cachePod.Pod.Spec.Containers {
+			containerStatus := getContainerStatus(cachePod.Pod, container.Name)
 			var started, ready *bool
 			var isCrashLoop bool = false // never set to nil
 			var runninsStartedTime, waitingReasonEnum, waitingMessage *string
@@ -308,11 +303,11 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 			})
 		}
 		podModels = append(podModels, &model.K8sWorkloadPod{
-			PodName:             pod.Name,
-			NodeName:            pod.Spec.NodeName,
-			StartTime:           pod.CreationTimestamp.Format(time.RFC3339),
-			AgentInjected:       agentInjected,
-			AgentInjectedStatus: agentInjectedStatus,
+			PodName:             cachePod.Pod.Name,
+			NodeName:            cachePod.Pod.Spec.NodeName,
+			StartTime:           cachePod.Pod.CreationTimestamp.Format(time.RFC3339),
+			AgentInjected:       cachePod.ComputedPodValues.AgentInjected,
+			AgentInjectedStatus: cachePod.ComputedPodValues.AgentInjectedStatus,
 			// TODO: RunningLatestWorkloadRevision
 			Containers:      containerModels,
 			PodHealthStatus: podHealthStatus,
@@ -346,8 +341,7 @@ func (r *k8sWorkloadResolver) PodsAgentInjectionStatus(ctx context.Context, obj 
 	numSuccess := 0
 	numNotSuccess := 0
 	for _, pod := range pods {
-		_, agentInjectedStatus := getPodAgentInjectedStatus(pod, instrumentationConfig)
-		if agentInjectedStatus.Status == model.DesiredStateProgressSuccess {
+		if pod.ComputedPodValues.AgentInjectedStatus.Status == model.DesiredStateProgressSuccess {
 			numSuccess++
 		} else {
 			numNotSuccess++
