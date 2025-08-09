@@ -417,6 +417,12 @@ type ComplexityRoot struct {
 	K8sWorkloadContainer struct {
 		AgentEnabled  func(childComplexity int) int
 		ContainerName func(childComplexity int) int
+		Overrides     func(childComplexity int) int
+		RuntimeInfo   func(childComplexity int) int
+	}
+
+	K8sWorkloadContainerOverrides struct {
+		ContainerName func(childComplexity int) int
 		RuntimeInfo   func(childComplexity int) int
 	}
 
@@ -2393,12 +2399,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadContainer.ContainerName(childComplexity), true
 
+	case "K8sWorkloadContainer.overrides":
+		if e.complexity.K8sWorkloadContainer.Overrides == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainer.Overrides(childComplexity), true
+
 	case "K8sWorkloadContainer.runtimeInfo":
 		if e.complexity.K8sWorkloadContainer.RuntimeInfo == nil {
 			break
 		}
 
 		return e.complexity.K8sWorkloadContainer.RuntimeInfo(childComplexity), true
+
+	case "K8sWorkloadContainerOverrides.containerName":
+		if e.complexity.K8sWorkloadContainerOverrides.ContainerName == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerOverrides.ContainerName(childComplexity), true
+
+	case "K8sWorkloadContainerOverrides.runtimeInfo":
+		if e.complexity.K8sWorkloadContainerOverrides.RuntimeInfo == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerOverrides.RuntimeInfo(childComplexity), true
 
 	case "K8sWorkloadId.kind":
 		if e.complexity.K8sWorkloadId.Kind == nil {
@@ -14399,6 +14426,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_containers(_ context.Contex
 				return ec.fieldContext_K8sWorkloadContainer_runtimeInfo(ctx, field)
 			case "agentEnabled":
 				return ec.fieldContext_K8sWorkloadContainer_agentEnabled(ctx, field)
+			case "overrides":
+				return ec.fieldContext_K8sWorkloadContainer_overrides(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadContainer", field.Name)
 		},
@@ -15431,6 +15460,158 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainer_agentEnabled(_ con
 				return ec.fieldContext_K8sWorkloadAgentEnabledContainer_logs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadAgentEnabledContainer", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainer_overrides(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainer_overrides(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Overrides, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sWorkloadContainerOverrides)
+	fc.Result = res
+	return ec.marshalOK8sWorkloadContainerOverrides2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerOverrides(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainer_overrides(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "containerName":
+				return ec.fieldContext_K8sWorkloadContainerOverrides_containerName(ctx, field)
+			case "runtimeInfo":
+				return ec.fieldContext_K8sWorkloadContainerOverrides_runtimeInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadContainerOverrides", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerOverrides_containerName(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerOverrides) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerOverrides_containerName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContainerName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerOverrides_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerOverrides",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerOverrides_runtimeInfo(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerOverrides) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerOverrides_runtimeInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sWorkloadRuntimeInfoContainer)
+	fc.Result = res
+	return ec.marshalOK8sWorkloadRuntimeInfoContainer2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadRuntimeInfoContainer(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerOverrides_runtimeInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerOverrides",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "containerName":
+				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_containerName(ctx, field)
+			case "language":
+				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_language(ctx, field)
+			case "runtimeVersion":
+				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_runtimeVersion(ctx, field)
+			case "processEnvVars":
+				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_processEnvVars(ctx, field)
+			case "containerRuntimeEnvVars":
+				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_containerRuntimeEnvVars(ctx, field)
+			case "criErrorMessage":
+				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_criErrorMessage(ctx, field)
+			case "libcType":
+				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_libcType(ctx, field)
+			case "secureExecutionMode":
+				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_secureExecutionMode(ctx, field)
+			case "otherAgentName":
+				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRuntimeInfoContainer", field.Name)
 		},
 	}
 	return fc, nil
@@ -32216,6 +32397,49 @@ func (ec *executionContext) _K8sWorkloadContainer(ctx context.Context, sel ast.S
 			out.Values[i] = ec._K8sWorkloadContainer_runtimeInfo(ctx, field, obj)
 		case "agentEnabled":
 			out.Values[i] = ec._K8sWorkloadContainer_agentEnabled(ctx, field, obj)
+		case "overrides":
+			out.Values[i] = ec._K8sWorkloadContainer_overrides(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var k8sWorkloadContainerOverridesImplementors = []string{"K8sWorkloadContainerOverrides"}
+
+func (ec *executionContext) _K8sWorkloadContainerOverrides(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadContainerOverrides) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, k8sWorkloadContainerOverridesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("K8sWorkloadContainerOverrides")
+		case "containerName":
+			out.Values[i] = ec._K8sWorkloadContainerOverrides_containerName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "runtimeInfo":
+			out.Values[i] = ec._K8sWorkloadContainerOverrides_runtimeInfo(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -38558,6 +38782,13 @@ func (ec *executionContext) marshalOK8sWorkloadContainer2ᚕᚖgithubᚗcomᚋod
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOK8sWorkloadContainerOverrides2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerOverrides(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadContainerOverrides) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._K8sWorkloadContainerOverrides(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOK8sWorkloadPod2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadPodᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.K8sWorkloadPod) graphql.Marshaler {

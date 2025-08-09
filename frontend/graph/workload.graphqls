@@ -192,11 +192,28 @@ type K8sWorkloadRollout {
     rolloutStatus: DesiredConditionStatus!
 }
 
+type K8sWorkloadContainerOverrides {
+  containerName: String!
+
+  # RuntimeInfo to use for agent enabling.
+	# If not null, the automatic detection will not be used for this container,
+	# and the distro to use will be calculated based on this value instead.
+  # this value is expected to be null most of the times, and only used in rare cases.
+  runtimeInfo: K8sWorkloadRuntimeInfoContainer
+}
+
 # show all info for a specific source container.
 type K8sWorkloadContainer {
   containerName: String!
+
+  # status of the runtime info detection for this container.
   runtimeInfo: K8sWorkloadRuntimeInfoContainer
+
+  # status of the agent injection enabled decision for this container.
   agentEnabled: K8sWorkloadAgentEnabledContainer
+
+  # manunal overrides for this container info, to set specific values for it or bypass failed detection.
+  overrides: K8sWorkloadContainerOverrides
 }
 
 type K8sWorkloadPodContainerProcessAttribute {

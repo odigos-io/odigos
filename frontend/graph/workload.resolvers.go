@@ -176,6 +176,21 @@ func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWork
 		containerByName[container.ContainerName].RuntimeInfo = runtimeDetailsContainersToModel(&container)
 	}
 
+	for _, container := range ic.Spec.ContainersOverrides {
+		if _, ok := containerByName[container.ContainerName]; !ok {
+			containerByName[container.ContainerName] = &model.K8sWorkloadContainer{
+				ContainerName: container.ContainerName,
+			}
+		}
+		overrides := &model.K8sWorkloadContainerOverrides{
+			ContainerName: container.ContainerName,
+		}
+		if container.RuntimeInfo != nil {
+			overrides.RuntimeInfo = runtimeDetailsContainersToModel(container.RuntimeInfo)
+		}
+		containerByName[container.ContainerName].Overrides = overrides
+	}
+
 	containers := make([]*model.K8sWorkloadContainer, 0, len(containerByName))
 	for _, container := range containerByName {
 		containers = append(containers, container)
@@ -306,7 +321,6 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 
 // PodsAgentInjectionStatus is the resolver for the podsAgentInjectionStatus field.
 func (r *k8sWorkloadResolver) PodsAgentInjectionStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error) {
-
 	l := loaders.For(ctx)
 	pods, err := l.GetWorkloadPods(ctx, *obj.ID)
 	if err != nil {

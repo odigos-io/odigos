@@ -551,6 +551,12 @@ type K8sWorkloadContainer struct {
 	ContainerName string                            `json:"containerName"`
 	RuntimeInfo   *K8sWorkloadRuntimeInfoContainer  `json:"runtimeInfo,omitempty"`
 	AgentEnabled  *K8sWorkloadAgentEnabledContainer `json:"agentEnabled,omitempty"`
+	Overrides     *K8sWorkloadContainerOverrides    `json:"overrides,omitempty"`
+}
+
+type K8sWorkloadContainerOverrides struct {
+	ContainerName string                           `json:"containerName"`
+	RuntimeInfo   *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
 }
 
 type K8sWorkloadID struct {
