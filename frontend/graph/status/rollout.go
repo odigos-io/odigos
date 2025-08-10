@@ -25,7 +25,7 @@ func workloadRolloutStatusCondition(reason *string) model.DesiredStateProgress {
 	return model.DesiredStateProgressUnknown
 }
 
-func GetRolloutStatus(ic *v1alpha1.InstrumentationConfig) *model.DesiredConditionStatus {
+func CalculateRolloutStatus(ic *v1alpha1.InstrumentationConfig) *model.DesiredConditionStatus {
 	if ic == nil {
 		return nil
 	}

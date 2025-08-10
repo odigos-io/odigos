@@ -29,7 +29,7 @@ func calculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 		if !agentLabelExists {
 			reasonStr := string(status.AgentInjectedReasonWorkloadNotMarkedForInstrumentationAgentNotInjected)
 			return agentLabelExists, &model.DesiredConditionStatus{
-				Name:       status.AgentInjectedStatus,
+				Name:       status.PodAgentInjectionStatus,
 				Status:     model.DesiredStateProgressSuccess,
 				ReasonEnum: &reasonStr,
 				Message:    "workload is not marked for instrumentation and agent is not injected as expected",
@@ -37,7 +37,7 @@ func calculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 		} else {
 			reasonStr := string(status.AgentInjectedReasonWorkloadNotMarkedForInstrumentationAgentInjected)
 			return agentLabelExists, &model.DesiredConditionStatus{
-				Name:       status.AgentInjectedStatus,
+				Name:       status.PodAgentInjectionStatus,
 				Status:     model.DesiredStateProgressWaiting,
 				ReasonEnum: &reasonStr,
 				Message:    "workload is not marked for instrumentation and odigos agent is injected, this source is expected to rollout to replace with a new uninstrumented pod",
@@ -52,7 +52,7 @@ func calculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 		if !agentLabelExists {
 			reasonStr := string(status.AgentInjectedReasonWorkloadAgnetDisabledAndNotInjected)
 			return agentLabelExists, &model.DesiredConditionStatus{
-				Name:       status.AgentInjectedStatus,
+				Name:       status.PodAgentInjectionStatus,
 				Status:     model.DesiredStateProgressSuccess,
 				ReasonEnum: &reasonStr,
 				Message:    "agent is disabled for the source and agent is not injected as expected",
@@ -60,7 +60,7 @@ func calculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 		} else {
 			reasonStr := string(status.AgentInjectedReasonWorkloadAgentDisabledButInjected)
 			return agentLabelExists, &model.DesiredConditionStatus{
-				Name:       status.AgentInjectedStatus,
+				Name:       status.PodAgentInjectionStatus,
 				Status:     model.DesiredStateProgressWaiting,
 				ReasonEnum: &reasonStr,
 				Message:    "agent is disabled for the source, but agent is injected, this kubernetesworkload is expected to rollout and replace this pod with an uninstrumented pod",
@@ -73,7 +73,7 @@ func calculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 		if !sameHash {
 			reasonStr := string(status.AgentInjectedReasonWorkloadAgentEnabledAndInjectedWithDifferentHash)
 			return agentLabelExists, &model.DesiredConditionStatus{
-				Name:       status.AgentInjectedStatus,
+				Name:       status.PodAgentInjectionStatus,
 				Status:     model.DesiredStateProgressWaiting,
 				ReasonEnum: &reasonStr,
 				Message:    "source is enabled for agent injection but agent is injected with a different hash, this kubernetes workload is expected to rollout and replace this pod with an updated instrumented pod",
@@ -81,7 +81,7 @@ func calculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 		} else {
 			reasonStr := string(status.AgentInjectedReasonWorkloadAgentEnabledAndInjected)
 			return agentLabelExists, &model.DesiredConditionStatus{
-				Name:       status.AgentInjectedStatus,
+				Name:       status.PodAgentInjectionStatus,
 				Status:     model.DesiredStateProgressSuccess,
 				ReasonEnum: &reasonStr,
 				Message:    "source is enabled for agent injection and agent is injected as expected",
@@ -96,7 +96,7 @@ func calculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 	if instrumentationTime == nil {
 		reasonStr := string(status.AgentInjectedReasonWorkloadAgentEnabledNotFinishRollout)
 		return agentLabelExists, &model.DesiredConditionStatus{
-			Name:       status.AgentInjectedStatus,
+			Name:       status.PodAgentInjectionStatus,
 			Status:     model.DesiredStateProgressWaiting,
 			ReasonEnum: &reasonStr,
 			Message:    "source is enabled for agent injection but agent is not injected, this kubernetes workload is expected to rollout and replace this pod with an instrumented pod",
@@ -107,7 +107,7 @@ func calculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 	if podCreationTime.Time.Before(instrumentationTime.Time) {
 		reasonStr := string(status.AgentInjectedReasonWorkloadAgentEnabledAfterPodStarted)
 		return agentLabelExists, &model.DesiredConditionStatus{
-			Name:       status.AgentInjectedStatus,
+			Name:       status.PodAgentInjectionStatus,
 			Status:     model.DesiredStateProgressWaiting,
 			ReasonEnum: &reasonStr,
 			Message:    "agent not injected because pod started before agent was enabled, expecting a rollout to terminated and replaced it with a new instrumented pod",
@@ -116,7 +116,7 @@ func calculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 
 	reasonStr := string(status.AgentInjectedReasonWorkloadAgentEnabledAndNotInjected)
 	return agentLabelExists, &model.DesiredConditionStatus{
-		Name:       status.AgentInjectedStatus,
+		Name:       status.PodAgentInjectionStatus,
 		Status:     model.DesiredStateProgressNotice,
 		ReasonEnum: &reasonStr,
 		Message:    "source is enabled for agent injection but agent is not injected, rollout the workload to replace this pod with a new instrumented pod",

@@ -27,12 +27,15 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 	}
 
 	conditions := []*model.DesiredConditionStatus{}
-	conditions = append(conditions, status.GetRuntimeInspectionStatus(ic))
-	conditions = append(conditions, status.GetAgentInjectionEnabledStatus(ic))
-	conditions = append(conditions, status.GetRolloutStatus(ic))
+	conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
+	conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
+	conditions = append(conditions, status.CalculateRolloutStatus(ic))
 
 	allSuccess := true
 	for _, condition := range conditions {
+		if condition == nil {
+			continue
+		}
 		if condition.Status != model.DesiredStateProgressSuccess {
 			allSuccess = false
 			break
@@ -93,7 +96,7 @@ func (r *k8sWorkloadResolver) RuntimeInfo(ctx context.Context, obj *model.K8sWor
 
 	runtimeInfo := &model.K8sWorkloadRuntimeInfo{
 		Completed:       len(ic.Status.RuntimeDetailsByContainer) > 0,
-		CompletedStatus: status.GetRuntimeInspectionStatus(ic),
+		CompletedStatus: status.CalculateRuntimeInspectionStatus(ic),
 		Containers:      containers,
 	}
 
@@ -119,7 +122,7 @@ func (r *k8sWorkloadResolver) AgentEnabled(ctx context.Context, obj *model.K8sWo
 
 	return &model.K8sWorkloadAgentEnabled{
 		AgentEnabled:  ic.Spec.AgentInjectionEnabled,
-		EnabledStatus: status.GetAgentInjectionEnabledStatus(ic),
+		EnabledStatus: status.CalculateAgentInjectionEnabledStatus(ic),
 		Containers:    containers,
 	}, nil
 }
@@ -135,7 +138,7 @@ func (r *k8sWorkloadResolver) Rollout(ctx context.Context, obj *model.K8sWorkloa
 		return nil, err
 	}
 
-	rolloutStatus := status.GetRolloutStatus(ic)
+	rolloutStatus := status.CalculateRolloutStatus(ic)
 	if rolloutStatus == nil {
 		return nil, nil
 	}
@@ -328,7 +331,7 @@ func (r *k8sWorkloadResolver) PodsAgentInjectionStatus(ctx context.Context, obj 
 	if len(pods) == 0 {
 		reasonStr := string(PodsAgentInjectionReasonNoPodsAgentInjected)
 		return &model.DesiredConditionStatus{
-			Name:       podsAgentInjectionStatus,
+			Name:       status.AgentInjectedStatus,
 			Status:     model.DesiredStateProgressDisabled,
 			ReasonEnum: &reasonStr,
 			Message:    "no pods found for this workload",
@@ -361,7 +364,7 @@ func (r *k8sWorkloadResolver) PodsAgentInjectionStatus(ctx context.Context, obj 
 			message = fmt.Sprintf("%d/%d pods do not have agent injected when it should", numNotSuccess, len(pods))
 		}
 		return &model.DesiredConditionStatus{
-			Name:       podsAgentInjectionStatus,
+			Name:       status.AgentInjectedStatus,
 			Status:     model.DesiredStateProgressWaiting,
 			ReasonEnum: &reasonStr,
 			Message:    message,
@@ -376,7 +379,7 @@ func (r *k8sWorkloadResolver) PodsAgentInjectionStatus(ctx context.Context, obj 
 			message = fmt.Sprintf("all %d pods do not have odigos agent injected as expected", numSuccess)
 		}
 		return &model.DesiredConditionStatus{
-			Name:       podsAgentInjectionStatus,
+			Name:       status.AgentInjectedStatus,
 			Status:     model.DesiredStateProgressSuccess,
 			ReasonEnum: &reasonStr,
 			Message:    message,

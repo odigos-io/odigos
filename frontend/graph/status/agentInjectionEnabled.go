@@ -40,7 +40,7 @@ func agentEnabledStatusCondition(reason *string) model.DesiredStateProgress {
 	return model.DesiredStateProgressUnknown
 }
 
-func GetAgentInjectionEnabledStatusForContainer(containerAgentConfig *v1alpha1.ContainerAgentConfig) *model.DesiredConditionStatus {
+func CalculateAgentInjectionEnabledStatusForContainer(containerAgentConfig *v1alpha1.ContainerAgentConfig) *model.DesiredConditionStatus {
 	if containerAgentConfig == nil {
 		return nil
 	}
@@ -53,7 +53,7 @@ func GetAgentInjectionEnabledStatusForContainer(containerAgentConfig *v1alpha1.C
 	}
 }
 
-func GetAgentInjectionEnabledStatus(ic *v1alpha1.InstrumentationConfig) *model.DesiredConditionStatus {
+func CalculateAgentInjectionEnabledStatus(ic *v1alpha1.InstrumentationConfig) *model.DesiredConditionStatus {
 
 	if ic == nil {
 		return nil

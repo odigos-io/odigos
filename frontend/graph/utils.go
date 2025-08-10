@@ -8,10 +8,8 @@ import (
 )
 
 const (
-	agentInjectedStatus      = "AgentInjected"
 	podContainerHealthStatus = "PodCotainerHealth"
 	podHealthStatus          = "PodHealth"
-	podsAgentInjectionStatus = "PodsAgentInjection"
 )
 
 type PodContainerHealthReason string
@@ -120,7 +118,7 @@ func agentEnabledContainersToModel(containerAgentConfig *v1alpha1.ContainerAgent
 	return &model.K8sWorkloadAgentEnabledContainer{
 		ContainerName:      containerAgentConfig.ContainerName,
 		AgentEnabled:       true,
-		AgentEnabledStatus: status.GetAgentInjectionEnabledStatusForContainer(containerAgentConfig),
+		AgentEnabledStatus: status.CalculateAgentInjectionEnabledStatusForContainer(containerAgentConfig),
 		OtelDistroName:     emptyStrToNil(containerAgentConfig.OtelDistroName),
 		EnvInjectionMethod: envInjectionMethodStr,
 		DistroParams:       distroParamsToModel(containerAgentConfig.DistroParams),
