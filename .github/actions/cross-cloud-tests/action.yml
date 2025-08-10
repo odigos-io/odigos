@@ -112,7 +112,7 @@ runs:
       if: ${{ inputs.provider == 'aks' }}
       shell: bash
       run: |
-        CLUSTER_NAME="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        CLUSTER_NAME="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         az aks get-credentials \
           --resource-group "$CLUSTER_NAME" \
           --name "$CLUSTER_NAME"
@@ -122,7 +122,7 @@ runs:
       if: ${{ inputs.provider == 'eks' }}
       shell: bash
       run: |
-        CLUSTER_NAME="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        CLUSTER_NAME="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         aws eks update-kubeconfig --region "us-east-1" --name "$CLUSTER_NAME"
 
     # 10) Verify Cluster Access
