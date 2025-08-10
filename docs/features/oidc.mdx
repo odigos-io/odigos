@@ -1,12 +1,14 @@
 ---
-title: 'OIDC (OpenID Connect)'
-description: 'OIDC is a standard for authentication and authorization that allows you to authenticate users with an external identity provider.'
-sidebarTitle: 'OIDC (OpenID Connect)'
-icon: 'key'
+title: "OIDC (OpenID Connect)"
+description: "OIDC is a standard for authentication and authorization that allows you to authenticate users with an external identity provider."
+sidebarTitle: "OIDC (OpenID Connect)"
+icon: "key"
 ---
 
 <Note>
-  This feature is available in Odigos [`v1.0.201`](https://github.com/odigos-io/odigos/releases/tag/v1.0.201) and later.
+  This feature is available in Odigos
+  [`v1.0.201`](https://github.com/odigos-io/odigos/releases/tag/v1.0.201) and
+  later.
 </Note>
 
 ## Getting Started
@@ -21,10 +23,11 @@ To get started with OIDC, you need to configure the Odigos UI to use an external
     <Warning>
       Please note that the OIDC application should be configured to allow the Odigos UI to access the `Login redirect URLs`.
 
-      - If you are using the default Odigos UI, the redirect URL should be `http://localhost:3000/auth/callback`.
-      - If you are using a custom/remote UI, the redirect URL should be the URL of the Odigos UI, with the path `/auth/callback`.<br />
-      For example, if you are using a remote UI at `https://my-odigos-ui.com`, the redirect URL should be `https://my-odigos-ui.com/auth/callback`.
+      - If you are using the default Odigos UI, the redirect URL should be `http://localhost:3000/auth/oidc-callback`.
+      - If you are using a custom/remote UI, the redirect URL should be the URL of the Odigos UI, with the path `/auth/oidc-callback`.<br />
+      For example, if you are using a remote UI at `https://my-odigos-ui.com`, the redirect URL should be `https://my-odigos-ui.com/auth/oidc-callback`.
     </Warning>
+
   </Step>
   <Step title="Set OIDC variables">
     You should set the OIDC values in the `odigos-config` ConfigMap. The values can be obtained from the identity provider, after creating the OIDC application.
@@ -56,6 +59,7 @@ To get started with OIDC, you need to configure the Odigos UI to use an external
         ```
       </Tab>
     </Tabs>
+
   </Step>
   <Step title="Set UI remote URL (optional)">
     If you are hosting the Odigos UI on a custom/remote URL (e.g. `https://my-odigos-ui.com`), you should set the value in the `odigos-config` ConfigMap.
@@ -83,5 +87,6 @@ To get started with OIDC, you need to configure the Odigos UI to use an external
         ```
       </Tab>
     </Tabs>
+
   </Step>
 </Steps>

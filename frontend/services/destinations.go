@@ -228,10 +228,16 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 		})
 	}
 
+	disabled := false
+	if k8sDest.Spec.Disabled != nil {
+		disabled = *k8sDest.Spec.Disabled
+	}
+
 	return model.Destination{
 		ID:              k8sDest.Name,
-		Name:            destName,
 		Type:            string(destType),
+		Name:            destName,
+		Disabled:        disabled,
 		DataStreamNames: ExtractDataStreamsFromDestination(k8sDest),
 		ExportedSignals: &model.ExportedSignals{
 			Traces:  isSignalExported(k8sDest, common.TracesObservabilitySignal),

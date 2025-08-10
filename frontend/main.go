@@ -168,6 +168,12 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	// Enable CORS
 	r.Use(cors.Default())
 
+	// Add security headers middleware
+	r.Use(middlewares.SecurityHeadersMiddleware)
+
+	// Add CSRF protection middleware
+	r.Use(middlewares.CSRFMiddleware())
+
 	// Readiness and Liveness probes
 	r.GET("/readyz", func(c *gin.Context) {
 		if kube.DefaultClient == nil {
@@ -184,8 +190,11 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
 
+	// CSRF token endpoint
+	r.GET("/auth/csrf-token", middlewares.CSRFTokenHandler())
 	// OIDC/OAuth2 handlers
-	r.GET("/auth/callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c) })
+	r.GET("/auth/oidc-callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c) })
+
 	// GraphQL handlers
 	r.POST("/graphql", func(c *gin.Context) {
 		c.Request = c.Request.WithContext(loaders.WithLoaders(c.Request.Context(), loaders.NewLoaders()))
@@ -194,6 +203,7 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
 	// SSE handler
 	r.GET("/api/events", sse.HandleSSEConnections)
+
 	// Remote CLI handlers
 	r.POST("/token/update", services.UpdateToken)
 	r.GET("/describe/odigos", services.DescribeOdigos)

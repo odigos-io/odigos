@@ -60,6 +60,122 @@ enum InstrumentationRuleType {
   UnknownType
 }
 
+type OdigosConfiguration {
+  karpenterEnabled: Boolean
+  allowConcurrentAgents: Boolean
+  uiPaginationLimit: Int
+  centralBackendURL: String
+  oidc: OidcConfiguration
+  clusterName: String
+  imagePrefix: String
+  ignoredNamespaces: [String]
+  ignoredContainers: [String]
+  profiles: [String]
+  mountMethod: String
+  agentEnvVarsInjectionMethod: String
+  customContainerRuntimeSocketPath: String
+  odigletHealthProbeBindPort: Int
+  rollbackDisabled: Boolean
+  rollbackGraceTime: String
+  rollbackStabilityWindow: String
+  rollout: RolloutConfiguration
+  collectorNode: CollectorNode
+  collectorGateway: CollectorGateway
+  nodeSelector: String # JSON string representation of key-value pairs
+}
+
+type OidcConfiguration {
+  tenantUrl: String
+  clientId: String
+  clientSecret: String
+}
+
+type RolloutConfiguration {
+  automaticRolloutDisabled: Boolean
+}
+
+type CollectorNode {
+  collectorOwnMetricsPort: Int
+  requestMemoryMiB: Int
+  limitMemoryMiB: Int
+  requestCPUm: Int
+  limitCPUm: Int
+  memoryLimiterLimitMiB: Int
+  memoryLimiterSpikeLimitMiB: Int
+  goMemLimitMiB: Int
+  k8sNodeLogsDirectory: String
+}
+
+type CollectorGateway {
+  requestMemoryMiB: Int
+  limitMemoryMiB: Int
+  requestCPUm: Int
+  limitCPUm: Int
+  memoryLimiterLimitMiB: Int
+  memoryLimiterSpikeLimitMiB: Int
+  goMemLimitMiB: Int
+  minReplicas: Int
+  maxReplicas: Int
+}
+
+input OdigosConfigurationInput {
+  karpenterEnabled: Boolean
+  allowConcurrentAgents: Boolean
+  uiPaginationLimit: Int
+  centralBackendURL: String
+  oidc: OidcConfigurationInput
+  clusterName: String
+  imagePrefix: String
+  ignoredNamespaces: [String]
+  ignoredContainers: [String]
+  profiles: [String]
+  mountMethod: String
+  agentEnvVarsInjectionMethod: String
+  customContainerRuntimeSocketPath: String
+  odigletHealthProbeBindPort: Int
+  rollbackDisabled: Boolean
+  rollbackGraceTime: String
+  rollbackStabilityWindow: String
+  rollout: RolloutConfigurationInput
+  collectorNode: CollectorNodeInput
+  collectorGateway: CollectorGatewayInput
+  nodeSelector: String # JSON string representation of language mappings
+}
+
+input OidcConfigurationInput {
+  tenantUrl: String
+  clientId: String
+  clientSecret: String
+}
+
+input RolloutConfigurationInput {
+  automaticRolloutDisabled: Boolean
+}
+
+input CollectorNodeInput {
+  collectorOwnMetricsPort: Int
+  requestMemoryMiB: Int
+  limitMemoryMiB: Int
+  requestCPUm: Int
+  limitCPUm: Int
+  memoryLimiterLimitMiB: Int
+  memoryLimiterSpikeLimitMiB: Int
+  goMemLimitMiB: Int
+  k8sNodeLogsDirectory: String
+}
+
+input CollectorGatewayInput {
+  requestMemoryMiB: Int
+  limitMemoryMiB: Int
+  requestCPUm: Int
+  limitCPUm: Int
+  memoryLimiterLimitMiB: Int
+  memoryLimiterSpikeLimitMiB: Int
+  goMemLimitMiB: Int
+  minReplicas: Int
+  maxReplicas: Int
+}
+
 type SourceContainer {
   containerName: String!
   language: String!
@@ -340,6 +456,7 @@ type Destination {
   id: ID!
   type: String!
   name: String!
+  disabled: Boolean!
   dataStreamNames: [String]!
   exportedSignals: ExportedSignals!
   fields: String!
@@ -348,9 +465,10 @@ type Destination {
 }
 
 type GetConfigResponse {
-  installation: InstallationStatus!
-  tier: Tier!
   readonly: Boolean!
+  tier: Tier!
+  installationMethod: String!
+  installationStatus: InstallationStatus!
 }
 
 input DestinationInput {
@@ -359,6 +477,7 @@ input DestinationInput {
   currentStreamName: String!
   exportedSignals: ExportedSignalsInput!
   fields: [FieldInput!]!
+  disabled: Boolean
 }
 
 input FieldInput {
@@ -794,35 +913,68 @@ type ServiceMapToSource {
   dateTime: String!
 }
 
+type NonIdentifyingAttribute {
+  key: String!
+  value: String!
+}
+
+type InstrumentationInstanceComponent {
+  name: String!
+  nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
+  odigosConfig: OdigosConfiguration
   destinationCategories: GetDestinationCategories
   potentialDestinations: [DestinationDetails!]!
   getOverviewMetrics: OverviewMetricsResponse!
   getServiceMap: ServiceMap!
   describeOdigos: OdigosAnalyze!
-  describeSource(namespace: String!, kind: String!, name: String!): SourceAnalyze!
+  describeSource(
+    namespace: String!
+    kind: String!
+    name: String!
+  ): SourceAnalyze!
   sourceConditions: [SourceConditions!]!
 
   # get all sources that match the filter
   workloads(filter: WorkloadFilter): [K8sWorkload!]!
+  
+  instrumentationInstanceComponents(
+    namespace: String!
+    kind: String!
+    name: String!
+  ): [InstrumentationInstanceComponent!]!
 }
 
 type Mutation {
   updateApiToken(token: String!): Boolean!
+  updateOdigosConfig(odigosConfig: OdigosConfigurationInput!): Boolean!
+  uninstrumentCluster: Boolean!
   persistK8sNamespaces(namespaces: [PersistNamespaceItemInput!]!): Boolean!
   persistK8sSources(sources: [PersistNamespaceSourceInput!]!): Boolean!
-  updateK8sActualSource(sourceId: K8sSourceId!, patchSourceRequest: PatchSourceRequestInput!): Boolean!
+  updateK8sActualSource(
+    sourceId: K8sSourceId!
+    patchSourceRequest: PatchSourceRequestInput!
+  ): Boolean!
   createNewDestination(destination: DestinationInput!): Destination!
   updateDestination(id: ID!, destination: DestinationInput!): Destination!
   deleteDestination(id: ID!, currentStreamName: String!): Boolean!
-  testConnectionForDestination(destination: DestinationInput!): TestConnectionResponse!
+  testConnectionForDestination(
+    destination: DestinationInput!
+  ): TestConnectionResponse!
   createAction(action: ActionInput!): Action!
   updateAction(id: ID!, action: ActionInput!): Action!
   deleteAction(id: ID!, actionType: String!): Boolean!
-  createInstrumentationRule(instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
-  updateInstrumentationRule(ruleId: ID!, instrumentationRule: InstrumentationRuleInput!): InstrumentationRule!
+  createInstrumentationRule(
+    instrumentationRule: InstrumentationRuleInput!
+  ): InstrumentationRule!
+  updateInstrumentationRule(
+    ruleId: ID!
+    instrumentationRule: InstrumentationRuleInput!
+  ): InstrumentationRule!
   deleteInstrumentationRule(ruleId: ID!): Boolean!
   updateDataStream(id: ID!, dataStream: DataStreamInput!): DataStream!
   deleteDataStream(id: ID!): Boolean!

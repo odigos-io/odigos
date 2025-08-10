@@ -9,6 +9,13 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 )
 
+func SecurityHeadersMiddleware(c *gin.Context) {
+	c.Writer.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com")
+	c.Writer.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+	c.Writer.Header().Set("X-Frame-Options", "DENY")
+	c.Next()
+}
+
 func OidcMiddleware(ctx context.Context) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		oauth2Config, err := services.GetOidcOauthConfig(ctx)

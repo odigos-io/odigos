@@ -14,16 +14,58 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"golang.org/x/oauth2"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
+
+func EnsureOidcSecret(ctx context.Context, secretValue string) error {
+	odigosNs := env.GetCurrentNamespace()
+
+	// get existing secret, do not throw on not found
+	secret, err := kube.DefaultClient.CoreV1().Secrets(odigosNs).Get(ctx, consts.OidcSecretName, metav1.GetOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	if secret == nil || apierrors.IsNotFound(err) {
+		// if the secret doesn't exist, create it
+		secret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: consts.OidcSecretName},
+			Data:       map[string][]byte{consts.OidcClientSecretProperty: []byte(secretValue)},
+		}
+		_, err = kube.DefaultClient.CoreV1().Secrets(odigosNs).Create(ctx, secret, metav1.CreateOptions{})
+		if err != nil {
+			return err
+		}
+	} else {
+		// if the secret exists, update it
+		secret.Data[consts.OidcClientSecretProperty] = []byte(secretValue)
+		_, err = kube.DefaultClient.CoreV1().Secrets(odigosNs).Update(ctx, secret, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func GetOidcSecret(ctx context.Context) (string, error) {
+	odigosNs := env.GetCurrentNamespace()
+	secret, err := kube.DefaultClient.CoreV1().Secrets(odigosNs).Get(ctx, consts.OidcSecretName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return string(secret.Data[consts.OidcClientSecretProperty]), nil
+}
 
 // gets the OIDC configuration values from the odigos-config ConfigMap
 func getOidcValuesFromConfig(ctx context.Context) (string, string, string, string, bool) {
 	var odigosConfiguration common.OdigosConfiguration
 	odigosns := env.GetCurrentNamespace()
 
-	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
 	if err != nil {
 		log.Fatalf("Error getting CM: %v\n", err)
 	}
@@ -40,16 +82,15 @@ func getOidcValuesFromConfig(ctx context.Context) (string, string, string, strin
 	if uiRemoteUrl == "" {
 		uiRemoteUrl = "http://localhost:3000"
 	}
-	if !strings.HasSuffix(uiRemoteUrl, "/auth/callback") {
-		uiRemoteUrl = fmt.Sprintf("%s/auth/callback", uiRemoteUrl)
+	if !strings.HasSuffix(uiRemoteUrl, "/auth/oidc-callback") {
+		uiRemoteUrl = fmt.Sprintf("%s/auth/oidc-callback", uiRemoteUrl)
 	}
 
 	// OIDC values
-	secret, err := kube.DefaultClient.CoreV1().Secrets(odigosns).Get(ctx, consts.OidcSecretName, metav1.GetOptions{})
+	oidcClientSecret, err := GetOidcSecret(ctx)
 	if err != nil {
 		return "", "", "", "", false
 	}
-	oidcClientSecret := string(secret.Data[consts.OidcClientSecretProperty])
 	oidcClientId := odigosConfiguration.Oidc.ClientId
 	oidcTenantUrl := odigosConfiguration.Oidc.TenantUrl
 	if !strings.HasPrefix(oidcTenantUrl, "https://") {
