@@ -11,6 +11,36 @@ export const visitPage = (path: string, callback?: () => void) => {
   });
 };
 
+interface FindCrdOptions {
+  namespace: string;
+  crdName: string;
+  targetKey: string;
+  targetValue: string;
+}
+
+// this is not a test, it's a helper function to find a CRD to use in a test
+export const findCrdId = ({ namespace, crdName, targetKey, targetValue }: FindCrdOptions, callback: (crdId: string) => void) => {
+  const [parentKey, childKey] = targetKey.split('.');
+
+  cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then(({ stdout }) => {
+    const crdIds = stdout.split('\n').filter((str) => !!str);
+
+    crdIds.forEach((crdId) => {
+      cy.exec(`kubectl get ${crdName} ${crdId} -n ${namespace} -o json`).then(({ stdout }) => {
+        const parsed = JSON.parse(stdout);
+        const { spec } = parsed?.items?.[0] || parsed || {};
+
+        expect(spec).to.not.be.empty;
+
+        const value = childKey ? spec[parentKey][childKey] : spec[parentKey];
+        if (value === targetValue) callback(crdId);
+      });
+    });
+
+    callback('');
+  });
+};
+
 interface GetCrdIdsOptions {
   namespace: string;
   crdName: string;

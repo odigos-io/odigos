@@ -1,5 +1,5 @@
 import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { awaitToast, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage } from '../functions';
+import { awaitToast, findCrdId, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -57,7 +57,8 @@ describe('Sources CRUD', () => {
     getCrdIds({ namespace, crdName: configCrdName, expectedError: '', expectedLength: totalEntities });
   });
 
-  it(`Should update the name of 1 sources via API, and notify locally`, () => {
+  // Note: we update only 1 source, because Cypress keeps flaking when updating all of them.
+  it(`Should update the name of ${1} sources via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.NAMESPACE_SOURCES.slice(indexForUpdatedSource, indexForUpdatedSource + 1).forEach((sourceName, idx) => {
         updateEntity(
@@ -80,14 +81,15 @@ describe('Sources CRUD', () => {
     });
   });
 
-  it(`Should update "otelServiceName" of 1 ${sourceCrdName} CRDs in the cluster`, () => {
-    getCrdIds({ namespace, crdName: sourceCrdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
-      const crdId = crdIds.find((id) => id.indexOf(nameForUpdatedSource) !== -1) || '';
+  // Note: we update only 1 source, because Cypress keeps flaking when updating all of them.
+  it(`Should update "otelServiceName" of ${1} ${sourceCrdName} CRDs in the cluster`, () => {
+    findCrdId({ namespace, crdName: sourceCrdName, targetKey: 'workload.name', targetValue: nameForUpdatedSource }, (crdId) => {
       getCrdById({ namespace, crdName: sourceCrdName, crdId, expectedError: '', expectedKey: 'otelServiceName', expectedValue: TEXTS.UPDATED_NAME });
     });
   });
 
-  it(`Should update "serviceName" of 1 ${configCrdName} CRDs in the cluster`, () => {
+  // Note: we update only 1 source, because Cypress keeps flaking when updating all of them.
+  it(`Should update "serviceName" of ${1} ${configCrdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName: configCrdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
       const crdId = crdIds.find((id) => id.indexOf(nameForUpdatedSource) !== -1) || '';
       getCrdById({ namespace, crdName: configCrdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
