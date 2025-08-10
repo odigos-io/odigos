@@ -73,7 +73,7 @@ describe('Sources CRUD', () => {
             cy.wait('@gql').then(() => {
               awaitToast({ message: TEXTS.NOTIF_UPDATED });
               // Wait for the cluster to inherit the changes...
-              cy.wait(500).then(() => expect(true).to.be.true);
+              cy.wait(1000).then(() => expect(true).to.be.true);
             });
           },
         );
