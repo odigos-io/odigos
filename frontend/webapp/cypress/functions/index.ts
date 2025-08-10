@@ -1,5 +1,5 @@
 export * from './cy-alias';
-import { DATA_IDS } from '../constants';
+import { CRD_NAMES, DATA_IDS } from '../constants';
 
 export const visitPage = (path: string, callback?: () => void) => {
   cy.visit(path);
@@ -29,15 +29,12 @@ export const findCrdId = ({ namespace, crdName, targetKey, targetValue }: FindCr
       cy.exec(`kubectl get ${crdName} ${crdId} -n ${namespace} -o json`).then(({ stdout }) => {
         const parsed = JSON.parse(stdout);
         const { spec } = parsed?.items?.[0] || parsed || {};
-
         expect(spec).to.not.be.empty;
 
         const value = childKey ? spec[parentKey][childKey] : spec[parentKey];
         if (value === targetValue) callback(crdId);
       });
     });
-
-    callback('');
   });
 };
 
@@ -75,6 +72,10 @@ interface GetCrdByIdOptions {
 }
 
 export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedKey, expectedValue }: GetCrdByIdOptions, callback?: () => void) => {
+  if (!crdId) {
+    throw new Error('No CRD ID provided to getCrdById');
+  }
+
   cy.exec(`kubectl get ${crdName} ${crdId} -n ${namespace} -o json`).then(({ stderr, stdout }) => {
     expect(stderr).to.eq(expectedError);
 
