@@ -189,6 +189,8 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 	resourceCpuRequestQuantity := resource.MustParse(fmt.Sprintf("%dm", datacollection.Spec.ResourcesSettings.CpuRequestMillicores))
 	resourceCpuLimitQuantity := resource.MustParse(fmt.Sprintf("%dm", datacollection.Spec.ResourcesSettings.CpuLimitMillicores))
 
+	bidirectionalPropagation := corev1.MountPropagationBidirectional
+
 	additionalVolumes := []corev1.Volume{}
 	additionalContainerVolumeMounts := []corev1.VolumeMount{}
 	if datacollection.Spec.K8sNodeLogsDirectory != "" {
@@ -255,6 +257,14 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 								},
 							},
 						},
+						{
+							Name: "bpf-maps",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: k8sconsts.BpfFsMountPath,
+								},
+							},
+						},
 					}, additionalVolumes...),
 					Containers: []corev1.Container{
 						{
@@ -281,6 +291,11 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 									Name:      "hostfs",
 									MountPath: "/hostfs",
 									ReadOnly:  true,
+								},
+								{
+									Name:             "bpf-maps",
+									MountPath:        k8sconsts.BpfFsMountPath,
+									MountPropagation: &bidirectionalPropagation,
 								},
 							}, additionalContainerVolumeMounts...),
 							Env: []corev1.EnvVar{
