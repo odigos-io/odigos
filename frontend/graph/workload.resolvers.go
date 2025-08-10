@@ -19,6 +19,45 @@ import (
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 )
 
+// WorkloadOdigosHealthStatus is the resolver for the workloadOdigosHealthStatus field.
+func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error) {
+	l := loaders.For(ctx)
+	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	conditions := []*model.DesiredConditionStatus{}
+	conditions = append(conditions, status.GetRuntimeInspectionStatus(ic))
+	conditions = append(conditions, status.GetAgentInjectionEnabledStatus(ic))
+
+	allSuccess := true
+	for _, condition := range conditions {
+		if condition.Status != model.DesiredStateProgressSuccess {
+			allSuccess = false
+			break
+		}
+	}
+
+	if allSuccess {
+		reasonStr := string(status.WorkloadOdigosHealthStatusReasonSuccess)
+		return &model.DesiredConditionStatus{
+			Name:       status.WorkloadOdigosHealthStatus,
+			Status:     model.DesiredStateProgressSuccess,
+			ReasonEnum: &reasonStr,
+			Message:    "all odigos conditions are successful",
+		}, nil
+	}
+
+	reasonStr := string(status.WorkloadOdigosHealthStatusReasonError)
+	return &model.DesiredConditionStatus{
+		Name:       status.WorkloadOdigosHealthStatus,
+		Status:     model.DesiredStateProgressError,
+		ReasonEnum: &reasonStr,
+		Message:    "some odigos conditions are not successful",
+	}, nil
+}
+
 // MarkedForInstrumentation is the resolver for the markedForInstrumentation field.
 func (r *k8sWorkloadResolver) MarkedForInstrumentation(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadMakredForInstrumentation, error) {
 	l := loaders.For(ctx)
@@ -41,22 +80,10 @@ func (r *k8sWorkloadResolver) MarkedForInstrumentation(ctx context.Context, obj 
 
 // RuntimeInfo is the resolver for the runtimeInfo field.
 func (r *k8sWorkloadResolver) RuntimeInfo(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadRuntimeInfo, error) {
-	if obj == nil || obj.ID == nil {
-		return nil, nil
-	}
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
 	if err != nil || ic == nil {
 		return nil, err
-	}
-
-	var runtimeInfoReason *string
-	var runtimeInfoMessage string = "runtime detection status not yet available"
-	for _, c := range ic.Status.Conditions {
-		if c.Type == v1alpha1.RuntimeDetectionStatusConditionType {
-			runtimeInfoReason = &c.Reason
-			runtimeInfoMessage = c.Message
-		}
 	}
 
 	containers := make([]*model.K8sWorkloadRuntimeInfoContainer, len(ic.Status.RuntimeDetailsByContainer))
@@ -65,14 +92,9 @@ func (r *k8sWorkloadResolver) RuntimeInfo(ctx context.Context, obj *model.K8sWor
 	}
 
 	runtimeInfo := &model.K8sWorkloadRuntimeInfo{
-		Completed: len(ic.Status.RuntimeDetailsByContainer) > 0,
-		CompletedStatus: &model.DesiredConditionStatus{
-			Name:       v1alpha1.RuntimeDetectionStatusConditionType,
-			Status:     runtimeDetectionStatusCondition(runtimeInfoReason),
-			ReasonEnum: runtimeInfoReason,
-			Message:    runtimeInfoMessage,
-		},
-		Containers: containers,
+		Completed:       len(ic.Status.RuntimeDetailsByContainer) > 0,
+		CompletedStatus: status.GetRuntimeInspectionStatus(ic),
+		Containers:      containers,
 	}
 
 	return runtimeInfo, nil
@@ -89,20 +111,6 @@ func (r *k8sWorkloadResolver) AgentEnabled(ctx context.Context, obj *model.K8sWo
 		return nil, err
 	}
 
-	var agentEnabledStatus *model.DesiredConditionStatus
-	for _, c := range ic.Status.Conditions {
-		if c.Type == v1alpha1.AgentEnabledStatusConditionType {
-			conditionStatus := agentEnabledStatusCondition(&c.Reason)
-			agentEnabledStatus = &model.DesiredConditionStatus{
-				Name:       c.Type,
-				Status:     conditionStatus,
-				ReasonEnum: &c.Reason,
-				Message:    c.Message,
-			}
-			break
-		}
-	}
-
 	containers := make([]*model.K8sWorkloadAgentEnabledContainer, 0, len(ic.Spec.Containers))
 	for _, container := range ic.Spec.Containers {
 		containerModel := agentEnabledContainersToModel(&container)
@@ -111,7 +119,7 @@ func (r *k8sWorkloadResolver) AgentEnabled(ctx context.Context, obj *model.K8sWo
 
 	return &model.K8sWorkloadAgentEnabled{
 		AgentEnabled:  ic.Spec.AgentInjectionEnabled,
-		EnabledStatus: agentEnabledStatus,
+		EnabledStatus: status.GetAgentInjectionEnabledStatus(ic),
 		Containers:    containers,
 	}, nil
 }
@@ -539,15 +547,3 @@ func (r *Resolver) K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsReso
 
 type k8sWorkloadResolver struct{ *Resolver }
 type k8sWorkloadTelemetryMetricsResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-/*
-	func (r *k8sWorkloadResolver) PodsHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error) {
-	panic(fmt.Errorf("not implemented: PodsHealthStatus - podsHealthStatus"))
-}
-*/

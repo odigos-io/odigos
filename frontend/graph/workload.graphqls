@@ -356,6 +356,9 @@ type K8sWorkload {
   # the goal is to have one single property to exaimne and get an overall view for a workload.
   workloadOdigosHealthStatus: DesiredConditionStatus!
 
+  # markedForInstrumentation is the reconciled decision for this source.
+  # a source can be marked or unmakred for instrumentation due to the presence
+  # of Source CRs, there can be workload sources and namespace sources.
   markedForInstrumentation: K8sWorkloadMakredForInstrumentation!
 
   # runtimeInfo is empty if source is not marked for instrumentation,

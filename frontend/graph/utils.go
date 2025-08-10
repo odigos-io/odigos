@@ -3,6 +3,7 @@ package graph
 import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/graph/status"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -61,58 +62,6 @@ func envVarsToModel(envVars []v1alpha1.EnvVar) []*model.EnvVar {
 	return modelEnvVars
 }
 
-func runtimeDetectionStatusCondition(reason *string) model.DesiredStateProgress {
-	if reason == nil {
-		return model.DesiredStateProgressUnknown
-	}
-	switch v1alpha1.RuntimeDetectionReason(*reason) {
-	case v1alpha1.RuntimeDetectionReasonDetectedSuccessfully:
-		return model.DesiredStateProgressSuccess
-	case v1alpha1.RuntimeDetectionReasonWaitingForDetection:
-		return model.DesiredStateProgressWaiting
-	case v1alpha1.RuntimeDetectionReasonNoRunningPods:
-		return model.DesiredStateProgressPending
-	case v1alpha1.RuntimeDetectionReasonError:
-		return model.DesiredStateProgressError
-	}
-	return model.DesiredStateProgressUnknown
-}
-
-func agentEnabledStatusCondition(reason *string) model.DesiredStateProgress {
-	if reason == nil {
-		return model.DesiredStateProgressUnknown
-	}
-	switch v1alpha1.AgentEnabledReason(*reason) {
-	case v1alpha1.AgentEnabledReasonEnabledSuccessfully:
-		return model.DesiredStateProgressSuccess
-	case v1alpha1.AgentEnabledReasonWaitingForRuntimeInspection:
-		return model.DesiredStateProgressWaiting
-	case v1alpha1.AgentEnabledReasonWaitingForNodeCollector:
-		return model.DesiredStateProgressWaiting
-	case v1alpha1.AgentEnabledReasonIgnoredContainer:
-		return model.DesiredStateProgressDisabled
-	case v1alpha1.AgentEnabledReasonNoCollectedSignals:
-		return model.DesiredStateProgressNotice
-	case v1alpha1.AgentEnabledReasonUnsupportedProgrammingLanguage:
-		return model.DesiredStateProgressDisabled
-	case v1alpha1.AgentEnabledReasonNoAvailableAgent:
-		return model.DesiredStateProgressDisabled
-	case v1alpha1.AgentEnabledReasonInjectionConflict:
-		return model.DesiredStateProgressDisabled
-	case v1alpha1.AgentEnabledReasonUnsupportedRuntimeVersion:
-		return model.DesiredStateProgressDisabled
-	case v1alpha1.AgentEnabledReasonMissingDistroParameter:
-		return model.DesiredStateProgressError
-	case v1alpha1.AgentEnabledReasonOtherAgentDetected:
-		return model.DesiredStateProgressNotice
-	case v1alpha1.AgentEnabledReasonRuntimeDetailsUnavailable:
-		return model.DesiredStateProgressPending
-	case v1alpha1.AgentEnabledReasonCrashLoopBackOff:
-		return model.DesiredStateProgressError
-	}
-	return model.DesiredStateProgressUnknown
-}
-
 func workloadRolloutStatusCondition(reason *string) model.DesiredStateProgress {
 	if reason == nil {
 		return model.DesiredStateProgressUnknown
@@ -163,7 +112,6 @@ func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByCo
 }
 
 func agentEnabledContainersToModel(containerAgentConfig *v1alpha1.ContainerAgentConfig) *model.K8sWorkloadAgentEnabledContainer {
-	reasonStr := string(containerAgentConfig.AgentEnabledReason)
 	var envInjectionMethodStr *string
 	if containerAgentConfig.EnvInjectionMethod != nil {
 		asStr := string(*containerAgentConfig.EnvInjectionMethod)
@@ -190,13 +138,9 @@ func agentEnabledContainersToModel(containerAgentConfig *v1alpha1.ContainerAgent
 	}
 
 	return &model.K8sWorkloadAgentEnabledContainer{
-		ContainerName: containerAgentConfig.ContainerName,
-		AgentEnabled:  true,
-		AgentEnabledStatus: &model.DesiredConditionStatus{
-			Name:       v1alpha1.AgentEnabledStatusConditionType,
-			Status:     agentEnabledStatusCondition(&reasonStr),
-			ReasonEnum: &reasonStr,
-		},
+		ContainerName:      containerAgentConfig.ContainerName,
+		AgentEnabled:       true,
+		AgentEnabledStatus: status.GetAgentInjectionEnabledStatusForContainer(containerAgentConfig),
 		OtelDistroName:     emptyStrToNil(containerAgentConfig.OtelDistroName),
 		EnvInjectionMethod: envInjectionMethodStr,
 		DistroParams:       distroParamsToModel(containerAgentConfig.DistroParams),

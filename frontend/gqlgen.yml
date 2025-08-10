@@ -68,6 +68,8 @@ models:
         resolver: true
   K8sWorkload:
     fields:
+      workloadOdigosHealthStatus:
+        resolver: true
       markedForInstrumentation:
         resolver: true
       runtimeInfo:
