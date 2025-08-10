@@ -62,26 +62,6 @@ func envVarsToModel(envVars []v1alpha1.EnvVar) []*model.EnvVar {
 	return modelEnvVars
 }
 
-func workloadRolloutStatusCondition(reason *string) model.DesiredStateProgress {
-	if reason == nil {
-		return model.DesiredStateProgressUnknown
-	}
-	switch v1alpha1.WorkloadRolloutReason(*reason) {
-
-	case v1alpha1.WorkloadRolloutReasonTriggeredSuccessfully:
-		return model.DesiredStateProgressSuccess
-	case v1alpha1.WorkloadRolloutReasonFailedToPatch:
-		return model.DesiredStateProgressError
-	case v1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing:
-		return model.DesiredStateProgressWaiting
-	case v1alpha1.WorkloadRolloutReasonDisabled:
-		return model.DesiredStateProgressDisabled
-	case v1alpha1.WorkloadRolloutReasonWaitingForRestart:
-		return model.DesiredStateProgressPending
-	}
-	return model.DesiredStateProgressUnknown
-}
-
 func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByContainer) *model.K8sWorkloadRuntimeInfoContainer {
 	containerName := runtimeDetails.ContainerName
 

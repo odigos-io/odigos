@@ -56,13 +56,7 @@ func GetAgentInjectionEnabledStatusForContainer(containerAgentConfig *v1alpha1.C
 func GetAgentInjectionEnabledStatus(ic *v1alpha1.InstrumentationConfig) *model.DesiredConditionStatus {
 
 	if ic == nil {
-		reasonStr := string(v1alpha1.RuntimeDetectionReasonNotMakredForInstrumentation)
-		return &model.DesiredConditionStatus{
-			Name:       v1alpha1.RuntimeDetectionStatusConditionType,
-			Status:     model.DesiredStateProgressDisabled,
-			ReasonEnum: &reasonStr,
-			Message:    "workload is not marked for instrumentation, agent is not enabled for this workload",
-		}
+		return nil
 	}
 
 	for _, c := range ic.Status.Conditions {

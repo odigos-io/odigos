@@ -75,8 +75,6 @@ const (
 type RuntimeDetectionReason string
 
 const (
-	// when a workload is not marked for instrumentation, there is no runtime detection and it is ok
-	RuntimeDetectionReasonNotMakredForInstrumentation RuntimeDetectionReason = "NotMakredForInstrumentation"
 	// when the runtime detection process is successful and runtime details are available for instrumentation.
 	RuntimeDetectionReasonDetectedSuccessfully RuntimeDetectionReason = "DetectedSuccessfully"
 	// when the runtime detection process is still ongoing and the runtime details are not yet available.

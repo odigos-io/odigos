@@ -11,7 +11,6 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/graph/status"
@@ -30,6 +29,7 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 	conditions := []*model.DesiredConditionStatus{}
 	conditions = append(conditions, status.GetRuntimeInspectionStatus(ic))
 	conditions = append(conditions, status.GetAgentInjectionEnabledStatus(ic))
+	conditions = append(conditions, status.GetRolloutStatus(ic))
 
 	allSuccess := true
 	for _, condition := range conditions {
@@ -135,20 +135,7 @@ func (r *k8sWorkloadResolver) Rollout(ctx context.Context, obj *model.K8sWorkloa
 		return nil, err
 	}
 
-	var rolloutStatus *model.DesiredConditionStatus
-	for _, c := range ic.Status.Conditions {
-		if c.Type == v1alpha1.WorkloadRolloutStatusConditionType {
-			conditionStatus := workloadRolloutStatusCondition(&c.Reason)
-			rolloutStatus = &model.DesiredConditionStatus{
-				Name:       c.Type,
-				Status:     conditionStatus,
-				ReasonEnum: &c.Reason,
-				Message:    c.Message,
-			}
-			break
-		}
-	}
-
+	rolloutStatus := status.GetRolloutStatus(ic)
 	if rolloutStatus == nil {
 		return nil, nil
 	}
