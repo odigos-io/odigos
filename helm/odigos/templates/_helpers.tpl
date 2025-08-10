@@ -92,7 +92,7 @@ true
 */ -}}
   {{- printf "%d%sB" $val $unit -}}
 {{- else }}
-   {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q" $raw) -}} 
+   {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q" $raw) -}}
 {{- end }}
 {{- end }}
 
@@ -113,5 +113,22 @@ true
   {{- dict "cpu" "750m" "memory" "750Mi" | toYaml }}
 {{- else }}
   {{- "" }}
+{{- end }}
+{{- end }}
+
+{{/* Comma-join pull secret names for CLI args */}}
+{{- define "odigos.joinPullSecrets" -}}
+{{- if .Values.imagePullSecrets -}}
+{{- join "," .Values.imagePullSecrets -}}
+{{- end -}}
+{{- end }}
+
+{{/* Render imagePullSecrets in K8s shape from a list of strings */}}
+{{- define "odigos.renderPullSecrets" -}}
+{{- if .Values.imagePullSecrets }}
+imagePullSecrets:
+{{- range .Values.imagePullSecrets }}
+  - name: {{ . | quote }}
+{{- end }}
 {{- end }}
 {{- end }}

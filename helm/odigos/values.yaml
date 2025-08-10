@@ -124,14 +124,14 @@ collectorNode:
   # LimitMemoryMiB is the memory limit for the node collector daemonset.
   # it will be embedded in the daemonset as a resource limit of the form "memory: <value>Mi"
   # default value is 500Mi
-  limitMemoryMiB: 500 
+  limitMemoryMiB: 500
 
   # the CPU request for the node collector daemonset.
   # it will be embedded in the daemonset as a resource request
   # of the form "cpu: <value>m".
   # default value is 250m
   # requestCPUm: 250
-  
+
   # the CPU limit for the node collector daemonset.
   # it will be embedded in the daemonset as a resource limit
   # of the form "cpu: <value>m".
