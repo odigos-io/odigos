@@ -20,7 +20,7 @@ import (
 
 const numOfPages = 2048
 
-const tracesMapPath = "/sys/fs/bpf/odigos/traces_map"
+const tracesMapPath = "/sys/fs/bpf/odiglet/traces"
 
 type ebpfReceiver struct {
 	config *Config
@@ -125,6 +125,8 @@ func (r *ebpfReceiver) readLoop(ctx context.Context) error {
 }
 
 // convertResourceSpansToPdata converts a single ResourceSpans to pdata Traces
+// This is here to support the old version of the agent that doesn't support the new format.
+// TODO: remove this once we are sure that all the agents are updated to the new format.
 func convertResourceSpansToPdata(resourceSpans *tracepb.ResourceSpans) ptrace.Traces {
 	// Wrap single ResourceSpans in TracesData
 	tracesData := &tracepb.TracesData{

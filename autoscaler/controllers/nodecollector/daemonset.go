@@ -193,9 +193,29 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 
 	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
 	collectMetrics := slices.Contains(clusterCollectorSignals, odigoscommon.MetricsObservabilitySignal)
+	collectTraces := slices.Contains(clusterCollectorSignals, odigoscommon.TracesObservabilitySignal)
 
 	volumes := []corev1.Volume{}
 	containerVolumeMounts := []corev1.VolumeMount{}
+
+	if collectTraces {
+		// Adding the bpf-maps volume is required for the odigosebpf receiver to work
+		// Later once we'll support all the signals, we'll need to add the volumes for the other signals
+		bidirectionalPropagation := corev1.MountPropagationBidirectional
+		volumes = append(volumes, corev1.Volume{
+			Name: "bpf-maps",
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: k8sconsts.BpfFsMountPath,
+				},
+			},
+		})
+		containerVolumeMounts = append(containerVolumeMounts, corev1.VolumeMount{
+			Name:             "bpf-maps",
+			MountPath:        k8sconsts.BpfFsMountPath,
+			MountPropagation: &bidirectionalPropagation,
+		})
+	}
 
 	if collectLogs {
 		// only add the log volumes if we are actually collecting logs
