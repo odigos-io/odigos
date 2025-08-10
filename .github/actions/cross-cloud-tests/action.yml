@@ -6,7 +6,7 @@ inputs:
     description: "Cloud provider to test against (e.g., eks or aks)"
     required: true
   test_scenario:
-    description: "Test scenario to run (e.g., multi-apps, helm-chart)"
+    description: "Test scenario to run (e.g., source, helm-chart)"
     required: true
   platform:
     description: "The platform to use [arm/amd]"
@@ -137,7 +137,7 @@ runs:
 
     # 12) Optional: Install FE dependencies if needed
     - name: Install FE
-      if: ${{ inputs.test_scenario == 'multi-apps' || inputs.test_scenario == 'helm-chart' }}
+      if: ${{ inputs.test_scenario == 'source' || inputs.test_scenario == 'helm-chart' }}
       shell: bash
       run: |
         cd frontend/webapp

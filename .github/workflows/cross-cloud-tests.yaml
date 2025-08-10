@@ -12,13 +12,13 @@ on:
           - aks
           - eks
       test_scenario:
-        description: 'The test suite to run (e.g. helm-chart, multi-apps)'
+        description: 'The test suite to run (e.g. helm-chart, source)'
         required: true
         type: choice
         options:
           - all
           - helm-chart
-          - multi-apps
+          - source
       platform:
         description: 'CPU arch for EKS instances'
         required: true
@@ -49,7 +49,7 @@ jobs:
       matrix:
         provider: ${{ fromJSON(inputs.provider == 'all' && '["eks", "aks"]' || format('["{0}"]', inputs.provider)) }}
         platform: ${{ fromJSON(inputs.provider == 'all' && '["arm", "amd"]' || format('["{0}"]', inputs.provider)) }}
-        test_scenario: ${{ fromJSON(inputs.test_scenario == 'all' && '["multi-apps", "helm-chart"]' || format('["{0}"]', inputs.test_scenario)) }}
+        test_scenario: ${{ fromJSON(inputs.test_scenario == 'all' && '["source", "helm-chart"]' || format('["{0}"]', inputs.test_scenario)) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
