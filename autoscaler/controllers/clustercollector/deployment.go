@@ -119,6 +119,14 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 		gatewayReplicas = int32(*gateway.Spec.ResourcesSettings.MinReplicas)
 	}
 
+	extraEnvVars := []corev1.EnvVar{}
+	if gateway.Spec.HttpsProxyAddress != nil {
+		extraEnvVars = append(extraEnvVars, corev1.EnvVar{
+			Name:  "HTTPS_PROXY",
+			Value: *gateway.Spec.HttpsProxyAddress,
+		})
+	}
+
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
@@ -159,7 +167,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 							},
 							EnvFrom: getSecretsFromDests(dests),
 							// Add the ODIGOS_VERSION environment variable from the ConfigMap
-							Env: []corev1.EnvVar{
+							Env: append([]corev1.EnvVar{
 								{
 									Name: consts.OdigosVersionEnvVarName,
 									ValueFrom: &corev1.EnvVarSource{
@@ -196,7 +204,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 										},
 									},
 								},
-							},
+							}, extraEnvVars...),
 							SecurityContext: &corev1.SecurityContext{
 								AllowPrivilegeEscalation: boolPtr(false),
 							},

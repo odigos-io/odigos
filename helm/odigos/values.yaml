@@ -110,6 +110,10 @@ collectorGateway:
   # It is disabled by default and can be enabled by setting the enabled flag to true.
   clusterMetricsEnabled: false
 
+  # for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
+  # when unset or empty, no proxy will be used.
+  # httpsProxyAddress: ""
+
 
 collectorNode:
   # The port to use for exposing the collector's own metrics as a prometheus endpoint.
