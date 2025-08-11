@@ -148,7 +148,6 @@ resource "null_resource" "cleanup_lb" {
   provisioner "local-exec" {
     when    = destroy
     command = <<EOT
-      set -euo pipefail
       # Try to connect to the cluster (ok if it's already gone)
       aws eks update-kubeconfig --name ${self.triggers.cluster_name} --region ${self.triggers.region} || true
 
