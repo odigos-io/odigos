@@ -6,7 +6,7 @@ inputs:
     description: "Cloud provider to test against (e.g., eks or aks)"
     required: true
   test_scenario:
-    description: "Test scenario to run (e.g., multi-apps, helm-chart)"
+    description: "Test scenario to run (e.g., source, helm-chart)"
     required: true
   platform:
     description: "The platform to use [arm/amd]"
@@ -18,6 +18,13 @@ runs:
     # 1) Check out code
     - name: Checkout Code
       uses: actions/checkout@v4
+
+    - name: Skip - ARM on AKS not yet supported
+      if: ${{ inputs.platform == 'arm' && inputs.provider == 'aks' }}
+      shell: bash
+      run: |
+        echo "ARM platform on AKS is not supported; skipping workflow."
+        exit 78
 
     # 2) Validate Cloud Provider Input & Directory
     - name: Validate Cloud Provider Input & Directory
@@ -77,9 +84,9 @@ runs:
       shell: bash
       run: |
         export TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
-        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         export TF_VAR_run_id="${GITHUB_RUN_ID}"
-        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         export TF_VAR_platform="${{ inputs.platform }}"
         tofu -chdir="$TF_DIR" init
 
@@ -87,7 +94,7 @@ runs:
       shell: bash
       run: |
         export TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
-        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         export TF_VAR_run_id="${GITHUB_RUN_ID}"
         tofu -chdir="$TF_DIR" plan
 
@@ -95,9 +102,9 @@ runs:
       shell: bash
       run: |
         export TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
-        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         export TF_VAR_run_id="${GITHUB_RUN_ID}"
-        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         tofu -chdir="$TF_DIR" apply -auto-approve
 
     # 8) Configure Kubeconfig for AKS
@@ -105,7 +112,7 @@ runs:
       if: ${{ inputs.provider == 'aks' }}
       shell: bash
       run: |
-        CLUSTER_NAME="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        CLUSTER_NAME="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         az aks get-credentials \
           --resource-group "$CLUSTER_NAME" \
           --name "$CLUSTER_NAME"
@@ -115,7 +122,7 @@ runs:
       if: ${{ inputs.provider == 'eks' }}
       shell: bash
       run: |
-        CLUSTER_NAME="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        CLUSTER_NAME="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         aws eks update-kubeconfig --region "us-east-1" --name "$CLUSTER_NAME"
 
     # 10) Verify Cluster Access
@@ -130,7 +137,7 @@ runs:
 
     # 12) Optional: Install FE dependencies if needed
     - name: Install FE
-      if: ${{ inputs.test_scenario == 'multi-apps' || inputs.test_scenario == 'helm-chart' }}
+      if: ${{ inputs.test_scenario == 'source' || inputs.test_scenario == 'helm-chart' }}
       shell: bash
       run: |
         cd frontend/webapp
@@ -166,9 +173,9 @@ runs:
       shell: bash
       run: |
         export TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
-        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         export TF_VAR_run_id="${GITHUB_RUN_ID}"
-        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         tofu -chdir="$TF_DIR" destroy -auto-approve
       continue-on-error: true
 
