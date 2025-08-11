@@ -37,6 +37,14 @@ func (data ConfigBoolPointer) ToString() {
 // allowConcurrentAgents:
 // Value: null
 func (cbp *ConfigBoolPointer) UnmarshalJSON(data []byte) error {
+	// Try simple bool first
+	var b bool
+	if err := json.Unmarshal(data, &b); err == nil {
+		cbp.Value = &b
+		return nil
+	}
+
+	// Try object with value
 	type wrapper struct {
 		Value *bool `json:"value"`
 	}
