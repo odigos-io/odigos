@@ -1,5 +1,5 @@
 export * from './cy-alias';
-import { DATA_IDS } from '../constants';
+import { CRD_NAMES, DATA_IDS } from '../constants';
 
 export const visitPage = (path: string, callback?: () => void) => {
   cy.visit(path);
@@ -8,6 +8,33 @@ export const visitPage = (path: string, callback?: () => void) => {
   // On rare occasions, the page might still be blank, and cypress would attempt to interact with it, triggering false errors...
   cy.wait(1000).then(() => {
     if (!!callback) callback();
+  });
+};
+
+interface FindCrdOptions {
+  namespace: string;
+  crdName: string;
+  targetKey: string;
+  targetValue: string;
+}
+
+// this is not a test, it's a helper function to find a CRD to use in a test
+export const findCrdId = ({ namespace, crdName, targetKey, targetValue }: FindCrdOptions, callback: (crdId: string) => void) => {
+  const [parentKey, childKey] = targetKey.split('.');
+
+  cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then(({ stdout }) => {
+    const crdIds = stdout.split('\n').filter((str) => !!str);
+
+    crdIds.forEach((crdId) => {
+      cy.exec(`kubectl get ${crdName} ${crdId} -n ${namespace} -o json`).then(({ stdout }) => {
+        const parsed = JSON.parse(stdout);
+        const { spec } = parsed?.items?.[0] || parsed || {};
+        expect(spec).to.not.be.empty;
+
+        const value = childKey ? spec[parentKey][childKey] : spec[parentKey];
+        if (value === targetValue) callback(crdId);
+      });
+    });
   });
 };
 
@@ -45,6 +72,10 @@ interface GetCrdByIdOptions {
 }
 
 export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedKey, expectedValue }: GetCrdByIdOptions, callback?: () => void) => {
+  if (!crdId) {
+    throw new Error('No CRD ID provided to getCrdById');
+  }
+
   cy.exec(`kubectl get ${crdName} ${crdId} -n ${namespace} -o json`).then(({ stderr, stdout }) => {
     expect(stderr).to.eq(expectedError);
 
@@ -84,32 +115,9 @@ export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: Upd
   cy.get(fieldKey).click().focused().clear().type(fieldValue);
   cy.get(fieldKey).should('have.value', fieldValue);
 
-  // The awaits below are an attempt to fix the following flake:
-  //
-  // CypressError: Timed out retrying after 4050ms: `cy.click()` failed because this element:
-  // `<div data-id="Source-2" class="sc-jFQJiD jLKqqL nowheel nodrag">...</div>`
-  // is being covered by another element:
-  // `<div class="sc-dUwGTt WdrMZ" style="opacity: 0;"></div>`
-  //
-  // This flake is caused by the fact that the "cancel warning modal" is shown when the user clicks on the "save" or "close" button.
-  // This failed to reproduce by user interaction, this could be an issue only for Cypress.
-
-  cy.wait(500).then(() => {
-    cy.get(DATA_IDS.DRAWER_SAVE).click();
-
-    cy.wait(500).then(() => {
-      cy.get(DATA_IDS.DRAWER_CLOSE).click();
-
-      cy.wait(500).then(() => {
-        // press enter to close the warn modal (if any)
-        cy.get('body').trigger('keydown', { keyCode: 13 });
-        cy.wait(500);
-        cy.get('body').trigger('keyup', { keyCode: 13 });
-
-        if (!!callback) callback();
-      });
-    });
-  });
+  cy.get(DATA_IDS.DRAWER_SAVE).click();
+  cy.get(DATA_IDS.DRAWER_CLOSE).click();
+  if (!!callback) callback();
 };
 
 interface DeleteEntityOptions {
