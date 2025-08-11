@@ -71,6 +71,9 @@ data:
       {{- end }}
       serviceGraphDisabled: {{ .Values.collectorGateway.serviceGraphDisabled }}
       clusterMetricsEnabled: {{ .Values.collectorGateway.clusterMetricsEnabled }}
+      {{- with .Values.collectorGateway.httpsProxyAddress }}
+      httpsProxyAddress: {{ . }}
+      {{- end }}
     {{- end }}
     {{- if .Values.collectorNode }}
     collectorNode:

@@ -111,6 +111,9 @@ type CollectorGatewayConfiguration struct {
 	// It is disabled by default and can be enabled by setting the enabled flag to true.
 	// This feature is only available when metrics destination is configured.
 	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
+
+	// for destinations that uses https for exporting data, this value can be used to set the value for the https proxy.
+	HttpsProxyAddress *string `json:"httpsProxyAddress,omitempty"`
 }
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`

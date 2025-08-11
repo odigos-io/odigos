@@ -118,10 +118,7 @@ spec:
             secretName: instrumentor-webhooks-cert
             defaultMode: 420
       terminationGracePeriodSeconds: 10
-{{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 6 }}
-{{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.instrumentor }}
   {{- if .nodeSelector }}
       nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}

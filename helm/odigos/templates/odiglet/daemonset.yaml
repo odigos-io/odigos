@@ -249,10 +249,7 @@ spec:
         - name: odigos-go-offsets
           configMap:
             name: odigos-go-offsets
-{{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 6 }}
-{{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.odiglet }}
   {{- if .nodeSelector }}
       nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}

@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings, serviceGraphDisabled *bool, clusterMetricsEnabled *bool) *odigosv1.CollectorsGroup {
+func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings, serviceGraphDisabled *bool, clusterMetricsEnabled *bool, httpsProxyAddress *string) *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -27,6 +27,7 @@ func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.Coll
 			ResourcesSettings:       *resourcesSettings,
 			ServiceGraphDisabled:    serviceGraphDisabled,
 			ClusterMetricsEnabled:   clusterMetricsEnabled,
+			HttpsProxyAddress:       httpsProxyAddress,
 		},
 	}
 }
@@ -60,7 +61,7 @@ func sync(ctx context.Context, c client.Client) error {
 	// and started.
 	// in the future we might want to support a deployment of instrumentations only and allow user
 	// to setup their own collectors, then we would avoid adding the cluster collector by default.
-	err = utils.ApplyCollectorGroup(ctx, c, newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled, clusterMetricsEnabled))
+	err = utils.ApplyCollectorGroup(ctx, c, newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress))
 	if err != nil {
 		return err
 	}

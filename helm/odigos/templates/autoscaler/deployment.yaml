@@ -39,6 +39,9 @@ spec:
           - --health-probe-bind-address=:8081
           - --metrics-bind-address=0.0.0.0:8080
           - --leader-elect
+          {{- with .Values.imagePullSecrets }}
+          - --image-pull-secrets={{ include "odigos.joinPullSecrets" $ }}
+          {{- end }}
         command:
           - /app
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "autoscaler" "Tag" $imageTag) }}
@@ -89,10 +92,7 @@ spec:
             secretName: autoscaler-webhooks-cert
             defaultMode: 420
       terminationGracePeriodSeconds: 10
-{{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 6 }}
-{{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.autoscaler }}
   {{- if .nodeSelector }}
       nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}
