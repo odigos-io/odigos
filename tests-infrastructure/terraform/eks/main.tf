@@ -136,3 +136,38 @@ resource "aws_security_group_rule" "allow_4318_internal" {
   security_group_id = module.eks.node_security_group_id
   description       = "Allow 4318 for e2e-tests-tempo"
 }
+
+# EKS LB cleanup (runs BEFORE EKS is destroyed)
+resource "null_resource" "cleanup_lb" {
+  triggers = {
+    cluster_name = var.cluster_name
+    region       = var.region         # put region into triggers so we can use self.triggers.region
+  }
+
+  # Run this at destroy-time; only reference self.triggers.*
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<EOT
+      set -euo pipefail
+      # Try to connect to the cluster (ok if it's already gone)
+      aws eks update-kubeconfig --name ${self.triggers.cluster_name} --region ${self.triggers.region} || true
+
+      # Ask Kubernetes to remove any Services of type LoadBalancer (so k8s cleans up AWS LBs/ENIs)
+      # If kubectl is unavailable or cluster is gone, this will just no-op.
+      if command -v kubectl >/dev/null 2>&1; then
+        kubectl get svc -A -o json \
+          | jq -r '.items[] | select(.spec.type=="LoadBalancer") | [.metadata.namespace, .metadata.name] | @tsv' \
+          | while IFS=$'\t' read -r ns name; do
+              echo "Deleting LB Service: $ns/$name"
+              kubectl delete svc "$name" -n "$ns" --wait=true --ignore-not-found=true || true
+            done
+      fi
+
+      # Give AWS a moment to detach ENIs from deleted LBs
+      sleep 60
+    EOT
+  }
+
+  # Ensure this runs BEFORE the EKS module is destroyed (destroy order is reverse of create)
+  depends_on = [module.eks]
+}
