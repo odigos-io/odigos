@@ -318,6 +318,10 @@ odiglet:
   # into the Odiglet to ensure it can access the container runtime unix socket.
   customContainerRuntimeSocketPath: ''
 
+  # run the odiglet container as privileged.
+  privileged: true
+  allowHostPathMounts: true
+
 centralProxy:
   enabled: false
   # Central backend URL where this proxy will forward data
