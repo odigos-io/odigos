@@ -1,11 +1,15 @@
-output "instance_public_ip" {
-  value = aws_instance.monitoring.public_ip
+output "monitoring_instance_private_ip" {
+  description = "Private IP of the Prometheus receiver EC2 (use in remote_write URL)"
+  value       = aws_instance.monitoring.private_ip
 }
 
-output "grafana_url" {
-  value = "http://${aws_instance.monitoring.public_ip}:3000"
+output "monitoring_ec2_sg_id" {
+  description = "Security Group ID attached to the receiver EC2"
+  value       = aws_security_group.monitoring_ec2_sg.id
 }
 
-output "attached_sg_id" {
-  value = data.terraform_remote_state.eks.outputs.eks_node_sg_id
+# (Nice to have) direct remote_write URL for your agent values
+output "prometheus_remote_write_url" {
+  description = "Agent remote_write target"
+  value       = "http://${aws_instance.monitoring.private_ip}:9090/api/v1/write"
 }
