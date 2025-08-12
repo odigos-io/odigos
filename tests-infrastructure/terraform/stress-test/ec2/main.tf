@@ -2,6 +2,11 @@ provider "aws" {
   region = "us-east-1"
 }
 
+terraform {
+  # Pin to OpenTofu/Terraform-style CLI version 1.9.x or newer
+  required_version = ">= 1.9.0, < 2.0.0"
+}
+
 # Read VPC/subnets + SG IDs from the EKS stack (apply EKS first)
 data "terraform_remote_state" "eks" {
   backend = "local"
@@ -84,17 +89,6 @@ resource "aws_security_group_rule" "allow_clickhouse_tcp_from_vpc" {
   protocol          = "tcp"
   cidr_blocks       = ["10.0.0.0/16"]
   description       = "VPC to EC2 ClickHouse native"
-}
-
-# VPC -> OTLP HTTP (optional)
-resource "aws_security_group_rule" "allow_otlp_from_vpc" {
-  type              = "ingress"
-  security_group_id = data.terraform_remote_state.eks.outputs.eks_node_sg_id
-  from_port         = 4318
-  to_port           = 4318
-  protocol          = "tcp"
-  cidr_blocks       = ["10.0.0.0/16"]
-  description       = "VPC to EC2 OTLP HTTP"
 }
 
 # ----- EC2 instance (attach the EKS node SG) -----

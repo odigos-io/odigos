@@ -6,7 +6,6 @@ output "grafana_url" {
   value = "http://${aws_instance.monitoring.public_ip}:3000"
 }
 
-# For clarity: which SG did we attach?
 output "attached_sg_id" {
   value = data.terraform_remote_state.eks.outputs.eks_node_sg_id
 }

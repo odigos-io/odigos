@@ -13,7 +13,3 @@ output "private_subnet_ids" {
 output "eks_node_sg_id" {
   value = module.eks.node_security_group_id
 }
-
-output "eks_cluster_sg_id" {
-  value = module.eks.cluster_security_group_id
-}
