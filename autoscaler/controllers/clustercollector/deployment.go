@@ -127,7 +127,10 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 		extraEnvVars = append(extraEnvVars, corev1.EnvVar{
 			Name:  "HTTPS_PROXY",
 			Value: *gateway.Spec.HttpsProxyAddress,
-		}, corev1.EnvVar{ // prevent the own telemetry metrics from using the https proxy if set.
+		}, corev1.EnvVar{
+			// prevent the own telemetry metrics from using the https proxy if set.
+			// gRPC uses the HTTPS_PROXY even for non tls connections
+			// since it's always uses HTTP CONNECT, so we need to blacklist the ui service.
 			Name:  "NO_PROXY",
 			Value: fmt.Sprintf("%s.%s:%d", k8sconsts.UIServiceName, odigosNs, odigosconsts.OTLPPort),
 		})
