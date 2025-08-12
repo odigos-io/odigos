@@ -13,6 +13,8 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/consts"
+	odigosconsts "github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -121,9 +123,13 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 
 	extraEnvVars := []corev1.EnvVar{}
 	if gateway.Spec.HttpsProxyAddress != nil {
+		odigosNs := env.GetCurrentNamespace()
 		extraEnvVars = append(extraEnvVars, corev1.EnvVar{
 			Name:  "HTTPS_PROXY",
 			Value: *gateway.Spec.HttpsProxyAddress,
+		}, corev1.EnvVar{ // prevent the own telemetry metrics from using the https proxy if set.
+			Name:  "NO_PROXY",
+			Value: fmt.Sprintf("%s.%s:%d", k8sconsts.UIServiceName, odigosNs, odigosconsts.OTLPPort),
 		})
 	}
 
