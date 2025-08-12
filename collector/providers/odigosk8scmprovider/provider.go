@@ -70,7 +70,8 @@ func (p *provider) Retrieve(ctx context.Context, uri string, wf confmap.WatcherF
 			return nil, fmt.Errorf("failed to get in-cluster config: %w", err)
 		}
 
-		// Disable proxy for k8s client to avoid using HTTPS_PROXY
+		// the `HTTPS_PROXY` we allow to set is used for exporting to https destinations.
+		// we don't want to use it for accessing k8s api.
 		config.Proxy = func(req *http.Request) (*url.URL, error) {
 			return nil, nil
 		}
