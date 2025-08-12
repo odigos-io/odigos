@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strings"
 
 	"go.opentelemetry.io/collector/confmap"
@@ -67,6 +69,13 @@ func (p *provider) Retrieve(ctx context.Context, uri string, wf confmap.WatcherF
 		if err != nil {
 			return nil, fmt.Errorf("failed to get in-cluster config: %w", err)
 		}
+
+		// the `HTTPS_PROXY` we allow to set is used for exporting to https destinations.
+		// we don't want to use it for accessing k8s api.
+		config.Proxy = func(req *http.Request) (*url.URL, error) {
+			return nil, nil
+		}
+
 		p.clientset, err = kubernetes.NewForConfig(config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create k8s client: %w", err)
