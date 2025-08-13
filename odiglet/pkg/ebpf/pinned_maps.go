@@ -1,4 +1,4 @@
-package instrumentation
+package ebpf
 
 import (
 	"os"
@@ -15,7 +15,6 @@ const bpfFsPath = "/sys/fs/bpf"
 type bpfFsMapsManager struct {
 	logger            logr.Logger
 	mountedFs         bool
-	odigletDirCreated bool
 	tracesMap         *ebpf.Map
 }
 
@@ -33,12 +32,12 @@ func (b *bpfFsMapsManager) TracesMap() (*ebpf.Map, error) {
 		b.mountedFs = true
 	}
 
-	if !b.odigletDirCreated {
-		err := os.Mkdir(filepath.Join(bpfFsPath, "odiglet"), 0o755)
+	odigletPath := filepath.Join(bpfFsPath, "odiglet")
+	if _, err := os.Stat(odigletPath); os.IsNotExist(err) {
+		err := os.Mkdir(odigletPath, 0o755)
 		if err != nil {
 			return nil, err
 		}
-		b.odigletDirCreated = true
 	}
 
 	spec := &ebpf.MapSpec{
@@ -82,14 +81,3 @@ func isBPFFSMounted() bool {
 	return stat.Type == unix.BPF_FS_MAGIC
 }
 
-// Cleanup removes the BPF file-system if it was mounted, or the odiglet directory if it was created.
-func (b *bpfFsMapsManager) Cleanup() error {
-	if b.odigletDirCreated {
-		if err := os.Remove(filepath.Join(bpfFsPath, "odiglet")); err != nil {
-			return err
-		}
-		b.odigletDirCreated = false
-	}
-
-	return nil
-}

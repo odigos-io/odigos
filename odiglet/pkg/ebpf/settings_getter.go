@@ -18,7 +18,8 @@ import (
 )
 
 type k8sSettingsGetter struct {
-	client client.Client
+	client            client.Client
+	commonMapsManager *bpfFsMapsManager
 }
 
 var _ instrumentation.SettingsGetter[K8sProcessDetails] = &k8sSettingsGetter{}
@@ -34,10 +35,23 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sProcessDetails
 		OtelServiceName = kd.pw.Name
 	}
 
+	tracesMap, err := ksg.commonMapsManager.TracesMap()
+	if err != nil {
+		return instrumentation.Settings{}, fmt.Errorf("failed to get traces map: %w", err)
+	}
+
 	return instrumentation.Settings{
 		ServiceName:        OtelServiceName,
 		ResourceAttributes: getResourceAttributes(kd.pw, kd.pod.Name, kd.procEvent),
 		InitialConfig:      sdkConfig,
+
+		// passing the traces map to allow the instrumentations that support this to use it
+		// and save resources by not creating their own maps.
+		// This can improved by not passing this always for instrumentations that do not use it.
+		TracesMap: instrumentation.ReaderMap{
+			Map:            tracesMap,
+			ExternalReader: true,
+		},
 	}, nil
 }
 

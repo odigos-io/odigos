@@ -3,6 +3,7 @@ module github.com/odigos-io/odigos/instrumentation
 go 1.24.0
 
 require (
+	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836
 	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/distros v0.0.0
 	github.com/odigos-io/runtime-detector v0.0.19
@@ -12,7 +13,6 @@ require (
 )
 
 require (
-	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/odigos-io/odigos/common v0.0.0 // indirect

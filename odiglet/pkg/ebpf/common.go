@@ -43,7 +43,7 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	managerOpts := instrumentation.ManagerOptions[K8sProcessDetails, K8sConfigGroup]{
 		Logger:          logger,
 		Factories:       opts.Factories,
-		Handler:         newHandler(client, opts.DistributionGetter),
+		Handler:         newHandler(logger, client, opts.DistributionGetter),
 		DetectorOptions: detector.DefaultK8sDetectorOptions(logger, appendEnvVarSlice),
 		ConfigUpdates:   configUpdates,
 		MeterProvider:   opts.MeterProvider,
@@ -84,7 +84,7 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	return manager, nil
 }
 
-func newHandler(client client.Client, distributionGetter *distros.Getter) *instrumentation.Handler[K8sProcessDetails, K8sConfigGroup] {
+func newHandler(logger logr.Logger, client client.Client, distributionGetter *distros.Getter) *instrumentation.Handler[K8sProcessDetails, K8sConfigGroup] {
 	reporter := &k8sReporter{
 		client: client,
 	}
@@ -94,6 +94,7 @@ func newHandler(client client.Client, distributionGetter *distros.Getter) *instr
 	configGroupResolver := &k8sConfigGroupResolver{}
 	settingsGetter := &k8sSettingsGetter{
 		client: client,
+		commonMapsManager: &bpfFsMapsManager{logger: logger.WithName("bpfFsMapsManager")},
 	}
 	distributionMatcher := &podDeviceDistributionMatcher{
 		distributionGetter: distributionGetter,

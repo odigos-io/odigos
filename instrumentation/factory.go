@@ -20,8 +20,20 @@ type Settings struct {
 	// InitialConfig is the initial configuration that should be applied to the instrumentation,
 	// it can be used to enable/disable specific instrumentation libraries, configure sampling, etc.
 	InitialConfig Config
-	// TracesMap is the optional eBPF map that will be used to send trace events from eBPF probes.
-	TracesMap *ebpf.Map
+	// TracesMap is the optional common eBPF map that will be used to send events from eBPF probes.
+	TracesMap ReaderMap
+}
+
+type ReaderMap struct {
+	// Map is the optional eBPF map that will be used to send events from eBPF probes.
+	// It should be either a perf event array or a ring buffer.
+	// This map can be common to multiple instrumentations across different processes to save resources.
+	Map *ebpf.Map
+
+	// ExternalReader indicates if the consumer from this map is external -
+	// meaning the instrumentation does not read from this map directly,
+	// but rather it is done by an external reader (e.g., a telemetry collector).
+	ExternalReader bool
 }
 
 // Factory is used to create an Instrumentation
