@@ -79,7 +79,7 @@ func syncDataCollection(sources *odigosv1.InstrumentationConfigList, signals []c
 		return err
 	}
 
-	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, signals, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
 
 	return nil
 }
