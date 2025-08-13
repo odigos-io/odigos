@@ -1,22 +1,245 @@
 server:
   enabled: true
-  extraArgs:
-    enable-feature: agent
+  defaultFlagsOverride:
+    - --config.file=/etc/config/prometheus.yml
+    - --agent
+    - --web.enable-lifecycle
+    - --storage.agent.path=/prometheus/data
   persistentVolume:
     enabled: false
-  retention: null   # prevents Helm from setting --storage.tsdb.retention.time
+  retention: null
   statefulSet:
-    enabled: false  # avoids PV logic entirely
+    enabled: false
   remoteWrite:
-    - url: "http://10.0.3.185:9090/api/v1/write"
+    - url: "http://10.0.3.228:9090/api/v1/write"
+      write_relabel_configs:
+        # Add cluster label to all metrics
+        - target_label: cluster
+          replacement: "stress-tests-eks"
   global:
     external_labels:
       cluster: "stress-tests-eks"
+      region: "us-west-2"  # Add your region
+    scrape_interval: 15s
+    evaluation_interval: 15s
+
 alertmanager:
   enabled: false
+
 kubeStateMetrics:
-  enabled: false
+  enabled: true
+  # Ensure kube-state-metrics has proper labels
+  metricLabelsAllowlist:
+    - pods=[*]
+    - deployments=[*]
+    - nodes=[*]
+    - services=[*]
+    - namespaces=[*]
+
 pushgateway:
   enabled: false
+
 nodeExporter:
   enabled: true
+  # Enable host network for better node metrics
+  hostNetwork: true
+  hostPID: true
+  # Add node labels
+  extraArgs:
+    - --path.rootfs=/host/root
+    - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+)($|/)
+    - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|sysfs|tracefs)$
+
+serverFiles:
+  prometheus.yml:
+    rule_files: []
+
+    scrape_configs:
+      # Scrape Prometheus itself
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+        metric_relabel_configs:
+          - target_label: cluster
+            replacement: "stress-tests-eks"
+
+      # Kubernetes API Server
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+          - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: default;kubernetes;https
+        metric_relabel_configs:
+          - target_label: cluster
+            replacement: "stress-tests-eks"
+
+      # Kubernetes nodes (kubelet)
+      - job_name: 'kubernetes-nodes'
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics
+        metric_relabel_configs:
+          - target_label: cluster
+            replacement: "stress-tests-eks"
+          - target_label: job
+            replacement: kube-state-metrics
+
+      # Kubernetes node cadvisor metrics
+      - job_name: 'kubernetes-cadvisor'
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+        metric_relabel_configs:
+          # Keep your cluster label
+          - target_label: cluster
+            replacement: "stress-tests-eks"
+          # Add a fake image label if it doesn't exist
+          - target_label: image
+            replacement: "placeholder"
+          - target_label: job
+            replacement: kube-state-metrics
+
+      # Kubernetes service endpoints (for services with /metrics)
+      - job_name: 'kubernetes-service-endpoints'
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_service_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            action: replace
+            target_label: kubernetes_name
+        metric_relabel_configs:
+          - target_label: cluster
+            replacement: "stress-tests-eks"
+
+      # Kubernetes pods (for pods with /metrics endpoint)
+      - job_name: 'odigos-system-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          # Only running pods
+          - source_labels: [__meta_kubernetes_pod_phase]
+            action: keep
+            regex: Running
+
+          # Keep only pods in odigos-system namespace
+          - source_labels: [__meta_kubernetes_namespace]
+            action: keep
+            regex: odigos-system
+
+          # Keep only pods with container port 8080 or 8888
+          - source_labels: [__meta_kubernetes_pod_container_port_number]
+            action: keep
+            regex: "8080|8888"
+
+          # Replace __address__ with podIP:port
+          - source_labels: [__address__, __meta_kubernetes_pod_container_port_number]
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+
+          # Force /metrics path
+          - target_label: __metrics_path__
+            replacement: /metrics
+
+          # Map all pod labels
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+
+          # Add namespace, pod name, node name
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: kubernetes_pod_name
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: kubernetes_node_name
+
+        metric_relabel_configs:
+          - target_label: cluster
+            replacement: "stress-tests-eks"
+
+      # Node Exporter
+      - job_name: 'node-exporter'
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_endpoints_name]
+            regex: '.*node-exporter.*'
+            action: keep
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            regex: 'metrics'
+            action: keep
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            action: replace
+            target_label: instance
+        metric_relabel_configs:
+          - target_label: cluster
+            replacement: "stress-tests-eks"
+
+      # Kube State Metrics
+      - job_name: 'kube-state-metrics'
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: '.*kube-state-metrics.*'
+          - action: labelmap
+            regex: __meta_kubernetes_service_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            action: replace
+            target_label: kubernetes_name
+        metric_relabel_configs:
+          - target_label: cluster
+            replacement: "stress-tests-eks"
