@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
-	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/perf"
+	"github.com/fsnotify/fsnotify"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
@@ -18,14 +22,16 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-const numOfPages = 2048
-
-const tracesMapPath = "/sys/fs/bpf/odiglet/traces"
+const (
+	numOfPages      = 2048
+	PollingInterval = 10 * time.Second
+)
 
 type ebpfReceiver struct {
-	config *Config
-	cancel context.CancelFunc
-	logger *zap.Logger
+	config  *Config
+	cancel  context.CancelFunc
+	logger  *zap.Logger
+	mapPath string
 
 	// Consumers
 	nextTraces  consumer.Traces
@@ -37,7 +43,7 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 
-	r.logger.Info("odigos-ebpf: trace receiver active, listening on ringbuffer")
+	r.logger.Info("odigos-ebpf: receiver active, listening on ringbuffer", zap.String("mapPath", r.mapPath))
 
 	go func() {
 		if err := r.readLoop(ctx); err != nil {
@@ -54,9 +60,113 @@ func (r *ebpfReceiver) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (r *ebpfReceiver) readLoop(ctx context.Context) error {
-	m, err := ebpf.LoadPinnedMap(tracesMapPath, nil)
+// tryToLoadPinnedMap attempts to load the pinned map from bpffs.
+func (r *ebpfReceiver) tryToLoadPinnedMap() (*ebpf.Map, error) {
+	m, err := ebpf.LoadPinnedMap(r.mapPath, nil)
 	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// isNoSuchFileErr detects "no such file" errors even if wrapped.
+func isNoSuchFileErr(err error) bool {
+	return errors.Is(err, fs.ErrNotExist) ||
+		strings.Contains(err.Error(), "no such file or directory")
+}
+
+// waitForPinnedMap waits until the pinned map exists.
+// If fsnotify is available on the directory, it waits on events.
+// If fsnotify setup fails (or later errors), it falls back to 10s polling forever.
+func (r *ebpfReceiver) waitForPinnedMap(ctx context.Context) (*ebpf.Map, error) {
+	// Quick path.
+	if m, err := r.tryToLoadPinnedMap(); err == nil {
+		return m, nil
+	} else if !isNoSuchFileErr(err) {
+		// Real error, not just "doesn't exist yet".
+		return nil, err
+	}
+
+	r.logger.Info("pinned map not found; waiting for creation", zap.String("path", r.mapPath))
+
+	// We watch the root bpffs mount (/sys/fs/bpf) instead of the exact pinned map path
+	// because fsnotify cannot watch a file that does not yet exist. The pinned map file
+	// (/sys/fs/bpf/odiglet/traces) will be created dynamically by the odiglet.
+	// By watching the root directory, we can receive a fsnotify.Create event when the
+	// target file is eventually pinned anywhere under it, and then check if the path
+	// matches our target map before attempting to load it.
+	dir := "/sys/fs/bpf"
+
+	// Try to set up fsnotify.
+	watcher, wErr := fsnotify.NewWatcher()
+	if wErr == nil {
+		if addErr := watcher.Add(dir); addErr != nil {
+			r.logger.Warn("fsnotify watcher failed; falling back to 10s polling", zap.String("dir", dir), zap.Error(addErr))
+			_ = watcher.Close()
+			watcher = nil
+		}
+	} else {
+		r.logger.Warn("fsnotify not available; falling back to 10s polling", zap.Error(wErr))
+	}
+
+	// If watcher works, wait on events; otherwise, poll every 10s.
+	if watcher != nil {
+		defer watcher.Close()
+		for {
+			// Try before blocking, in case we missed the event race.
+			if m, err := r.tryToLoadPinnedMap(); err == nil {
+				return m, nil
+			}
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case ev := <-watcher.Events:
+				// React when the map file is created, otherwise waiting for the next event.
+				if ev.Name == filepath.Dir(r.mapPath) && (ev.Op&(fsnotify.Create)) != 0 {
+					if _, err := os.Stat(r.mapPath); err == nil {
+						if m, err := r.tryToLoadPinnedMap(); err == nil {
+							r.logger.Info("pinned map found and loaded", zap.String("path", r.mapPath))
+							return m, nil
+						}
+					}
+				}
+			case werr := <-watcher.Errors:
+				if werr != nil {
+					r.logger.Warn("fsnotify error; switching to 10s polling", zap.Error(werr))
+					// break to polling loop below
+					watcher.Close()
+					watcher = nil
+					break
+				}
+			}
+			if watcher == nil {
+				break
+			}
+		}
+	}
+
+	// Polling fallback: 10s interval, indefinitely.
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(PollingInterval):
+			if m, err := r.tryToLoadPinnedMap(); err == nil {
+				r.logger.Info("pinned map found and loaded", zap.String("path", r.mapPath))
+				return m, nil
+			}
+		}
+	}
+}
+
+func (r *ebpfReceiver) readLoop(ctx context.Context) error {
+	// Wait (via fsnotify or polling) until the map is available.
+	m, err := r.waitForPinnedMap(ctx)
+	if err != nil {
+		// Context canceled or non-ENOENT error while waiting.
+		if ctx.Err() != nil {
+			return nil
+		}
 		r.logger.Error("failed to load pinned map", zap.Error(err))
 		return err
 	}
@@ -69,12 +179,15 @@ func (r *ebpfReceiver) readLoop(ctx context.Context) error {
 	}
 	defer reader.Close()
 
+	// We're using ReadInto to reuse the same memory allocation for the record.
+	var record perf.Record
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		default:
-			record, err := reader.Read()
+			err := reader.ReadInto(&record)
 			if err != nil {
 				if errors.Is(err, perf.ErrClosed) {
 					return nil
@@ -95,16 +208,13 @@ func (r *ebpfReceiver) readLoop(ctx context.Context) error {
 
 			// The first 8 bytes of the record contain the length of the span encoded as a uint64
 			acceptedLength := binary.NativeEndian.Uint64(record.RawSample[:8])
-
 			if len(record.RawSample) < (8 + int(acceptedLength)) {
 				continue
 			}
 
 			protoUnmarshaler := ptrace.ProtoUnmarshaler{}
-
 			td, err := protoUnmarshaler.UnmarshalTraces(record.RawSample[8 : 8+acceptedLength])
 			if err != nil {
-				r.logger.Error("err unmarshling traces", zap.Error(err))
 				// if we fail to unmarshal to Traces, it can happen because the agent running old version. we are trying the default fallback
 				var span tracepb.ResourceSpans
 				err = proto.Unmarshal(record.RawSample[8:8+acceptedLength], &span)
@@ -136,7 +246,6 @@ func convertResourceSpansToPdata(resourceSpans *tracepb.ResourceSpans) ptrace.Tr
 	// Marshal to bytes
 	data, err := proto.Marshal(tracesData)
 	if err != nil {
-		fmt.Println("Marshal tracesData")
 		return ptrace.NewTraces()
 	}
 
@@ -144,7 +253,6 @@ func convertResourceSpansToPdata(resourceSpans *tracepb.ResourceSpans) ptrace.Tr
 	unmarshaler := &ptrace.ProtoUnmarshaler{}
 	traces, err := unmarshaler.UnmarshalTraces(data)
 	if err != nil {
-		fmt.Println("unmashling traces", err)
 		return ptrace.NewTraces()
 	}
 

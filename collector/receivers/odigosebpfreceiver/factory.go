@@ -35,5 +35,6 @@ func createTracesReceiver(
 	cfg component.Config,
 	next consumer.Traces,
 ) (receiver.Traces, error) {
-	return &ebpfReceiver{config: cfg.(*Config), nextTraces: next, logger: set.Logger}, nil
+	tracesEbpfMapPath := "/sys/fs/bpf/odiglet/traces"
+	return &ebpfReceiver{config: cfg.(*Config), nextTraces: next, logger: set.Logger, mapPath: tracesEbpfMapPath}, nil
 }
