@@ -401,10 +401,6 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 	return desiredDs, nil
 }
 
-func boolPtr(b bool) *bool {
-	return &b
-}
-
 func patchDaemonSet(existing *appsv1.DaemonSet, desired *appsv1.DaemonSet, ctx context.Context, c client.Client) (*appsv1.DaemonSet, error) {
 	updated := existing.DeepCopy()
 	if updated.Annotations == nil {
