@@ -29,7 +29,7 @@ type ActionConfig interface {
 func convertActionToProcessor(ctx context.Context, k8sclient client.Client, action *odigosv1.Action) (*odigosv1.Processor, error) {
 	var config any
 	if action.Spec.AddClusterInfo != nil {
-		config = addClusterInfoConfig(action.Spec.AddClusterInfo.ClusterAttributes)
+		config = addClusterInfoConfig(action.Spec.AddClusterInfo.ClusterAttributes, action.Spec.AddClusterInfo.OverwriteExistingValues)
 		return convertToDefaultProcessor(action, action.Spec.AddClusterInfo, config)
 	}
 

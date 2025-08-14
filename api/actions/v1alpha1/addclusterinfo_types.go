@@ -34,7 +34,8 @@ type OtelAttributeWithValue struct {
 const ActionNameAddClusterInfo = "AddClusterInfo"
 
 type AddClusterInfoConfig struct {
-	ClusterAttributes []OtelAttributeWithValue `json:"clusterAttributes"`
+	ClusterAttributes       []OtelAttributeWithValue `json:"clusterAttributes"`
+	OverwriteExistingValues bool                     `json:"overwriteExistingValues,omitempty"`
 }
 
 func (AddClusterInfoConfig) ProcessorType() string {
@@ -53,6 +54,8 @@ type AddClusterInfoSpec struct {
 	Signals    []common.ObservabilitySignal `json:"signals"`
 
 	ClusterAttributes []OtelAttributeWithValue `json:"clusterAttributes"`
+
+	OverwriteExistingValues bool `json:"overwriteExistingValues,omitempty"`
 }
 
 // AddClusterInfoStatus defines the observed state of AddClusterInfo action

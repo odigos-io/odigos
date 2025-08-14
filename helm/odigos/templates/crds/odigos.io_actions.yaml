@@ -63,6 +63,8 @@ spec:
                       - attributeStringValue
                       type: object
                     type: array
+                  overwriteExistingValues:
+                    type: boolean
                 required:
                 - clusterAttributes
                 type: object

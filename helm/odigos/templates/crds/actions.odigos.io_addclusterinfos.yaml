@@ -67,6 +67,8 @@ spec:
                 type: boolean
               notes:
                 type: string
+              overwriteExistingValues:
+                type: boolean
               signals:
                 items:
                   enum:
