@@ -118,7 +118,7 @@ jobs:
           config: tests/common/apply/kind-config.yaml
 
       - name: Download Odigos Images
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: odigos-images
         timeout-minutes: 5
@@ -129,7 +129,7 @@ jobs:
           kind load image-archive cli-image.tar
 
       - name: Download CLI binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: odigos-cli
         timeout-minutes: 1
