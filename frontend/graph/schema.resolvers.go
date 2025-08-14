@@ -1206,15 +1206,14 @@ func (r *queryResolver) DestinationCategories(ctx context.Context) (*model.GetDe
 
 // PotentialDestinations is the resolver for the potentialDestinations field.
 func (r *queryResolver) PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error) {
+	result := make([]*model.DestinationDetails, 0)
+
 	potentialDestinations := services.PotentialDestinations(ctx)
 	if potentialDestinations == nil {
-		return nil, fmt.Errorf("failed to fetch potential destinations")
+		return result, nil
 	}
 
-	// Convert []destination_recognition.DestinationDetails to []*DestinationDetails
-	var result []*model.DestinationDetails
 	for _, dest := range potentialDestinations {
-
 		fieldsString, err := json.Marshal(dest.Fields)
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling fields: %v", err)

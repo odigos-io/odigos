@@ -33,11 +33,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/configmaps"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -92,6 +95,8 @@ func main() {
 
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 
+	schedulerDeploymentNameSelector := fields.OneTermEqualSelector("metadata.name", k8sconsts.SchedulerDeploymentName)
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -103,6 +108,12 @@ func main() {
 				&corev1.ConfigMap{}: {
 					Field: nsSelector,
 				},
+				&corev1.Secret{}: {
+					Field: nsSelector,
+				},
+				&appsv1.Deployment{}: {
+					Field: fields.AndSelectors(nsSelector, schedulerDeploymentNameSelector),
+				},
 				&odigosv1.CollectorsGroup{}: {
 					Field: nsSelector,
 				},
@@ -113,9 +124,6 @@ func main() {
 					Field: nsSelector,
 				},
 				&odigosv1.Action{}: {
-					Field: nsSelector,
-				},
-				&corev1.Secret{}: {
 					Field: nsSelector,
 				},
 			},
