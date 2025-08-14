@@ -15,6 +15,6 @@ type odigosConfigurationController struct {
 }
 
 func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
-	err := sync(ctx, r.Client)
+	err := sync(ctx, r.Client, r.Scheme)
 	return utils.K8SNoEffectiveConfigErrorHandler(err)
 }
