@@ -95,6 +95,16 @@ resource "aws_security_group" "eks_api_sg" {
   }
 }
 
+# Allow traffic from monitoring EC2 SG to EKS cluster SG on port 8080
+resource "aws_security_group_rule" "allow_k6_to_nlb" {
+  type                     = "ingress"
+  from_port                = 8080
+  to_port                  = 8080
+  protocol                 = "tcp"
+  security_group_id        = "sg-0d4bb22339f543a48" # EKS cluster SG ID
+  source_security_group_id = var.monitoring_sg_id  # EC2's SG
+  description              = "Allow k6 EC2 to reach pods via NLB"
+}
 
 # Allow Kubernetes API to communicate with private services
 resource "aws_security_group_rule" "allow_api_private" {

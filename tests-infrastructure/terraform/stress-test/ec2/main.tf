@@ -1,5 +1,5 @@
 ########################################
-# EC2 Prometheus Receiver + Grafana + ClickHouse (ephemeral)
+# EC2 Prometheus Receiver + Grafana + ClickHouse + K6
 ########################################
 
 terraform {
@@ -153,259 +153,235 @@ resource "aws_instance" "monitoring" {
     delete_on_termination = true
   }
 
-  user_data = <<-BASH
-      #!/bin/bash
-      set -euxo pipefail
-      exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
+  # ---------------- User data ----------------
+    user_data = <<-BASH
+    #!/bin/bash
+    set -euxo pipefail
+    exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
-      # Install necessary utilities
-      yum install -y xfsprogs curl tar yum-utils
+    yum install -y xfsprogs curl tar yum-utils
 
-      ## Disk Setup
-      # Wait for EBS nvme devices to appear
-      for dev in /dev/nvme1n1 /dev/nvme2n1 /dev/nvme3n1; do
-        for i in {1..120}; do
-          [ -b "$dev" ] && break || sleep 2
-        done
+    # ---------------- Disk Setup ----------------
+    for dev in /dev/nvme1n1 /dev/nvme2n1 /dev/nvme3n1; do
+      for i in {1..120}; do
+        [ -b "$dev" ] && break || sleep 2
       done
+    done
 
-      # Format, mount, and configure Prometheus data volume
-      mkfs -t xfs /dev/nvme1n1
-      mkdir -p /mnt/prometheus-data
-      echo "/dev/nvme1n1 /mnt/prometheus-data xfs defaults,nofail 0 2" >> /etc/fstab
-      mount /mnt/prometheus-data
+    mkfs -t xfs /dev/nvme1n1
+    mkdir -p /mnt/prometheus-data
+    echo "/dev/nvme1n1 /mnt/prometheus-data xfs defaults,nofail 0 2" >> /etc/fstab
+    mount /mnt/prometheus-data
 
-      # Format, mount, and configure Grafana data volume
-      mkfs -t xfs /dev/nvme2n1
-      mkdir -p /mnt/grafana-data
-      echo "/dev/nvme2n1 /mnt/grafana-data xfs defaults,nofail 0 2" >> /etc/fstab
-      mount /mnt/grafana-data
+    mkfs -t xfs /dev/nvme2n1
+    mkdir -p /mnt/grafana-data
+    echo "/dev/nvme2n1 /mnt/grafana-data xfs defaults,nofail 0 2" >> /etc/fstab
+    mount /mnt/grafana-data
 
-      # Format, mount, and configure ClickHouse data volume
-      mkfs -t xfs /dev/nvme3n1
-      mkdir -p /mnt/clickhouse-data
-      echo "/dev/nvme3n1 /mnt/clickhouse-data xfs defaults,nofail 0 2" >> /etc/fstab
-      mount /mnt/clickhouse-data
+    mkfs -t xfs /dev/nvme3n1
+    mkdir -p /mnt/clickhouse-data
+    echo "/dev/nvme3n1 /mnt/clickhouse-data xfs defaults,nofail 0 2" >> /etc/fstab
+    mount /mnt/clickhouse-data
 
-      # ---------- Install and configure Prometheus ----------
-      cd /tmp
-      curl -sSLo prometheus.tar.gz https://github.com/prometheus/prometheus/releases/download/v2.52.0/prometheus-2.52.0.linux-amd64.tar.gz
-      tar -xzf prometheus.tar.gz
-      install -m 0755 prometheus-2.52.0.linux-amd64/prometheus /usr/local/bin/prometheus
+    # ---------------- Prometheus ----------------
+    cd /tmp
+    curl -sSLo prometheus.tar.gz https://github.com/prometheus/prometheus/releases/download/v2.52.0/prometheus-2.52.0.linux-amd64.tar.gz
+    tar -xzf prometheus.tar.gz
+    install -m 0755 prometheus-2.52.0.linux-amd64/prometheus /usr/local/bin/prometheus
 
-      # Create user and set permissions
-      id prometheus >/dev/null 2>&1 || useradd --no-create-home --shell /sbin/nologin prometheus
-      mkdir -p /etc/prometheus /var/lib/prometheus
-      chown -R prometheus:prometheus /etc/prometheus /var/lib/prometheus /mnt/prometheus-data
+    id prometheus >/dev/null 2>&1 || useradd --no-create-home --shell /sbin/nologin prometheus
+    mkdir -p /etc/prometheus /var/lib/prometheus
+    chown -R prometheus:prometheus /etc/prometheus /var/lib/prometheus /mnt/prometheus-data
 
-      # Create Prometheus configuration file
-      cat >/etc/prometheus/prometheus.yml <<'EOF'
-      global:
+    cat >/etc/prometheus/prometheus.yml <<'EOF'
+    global:
       scrape_interval: 30s
-      scrape_configs: [] # receiver-only
-      EOF
+    scrape_configs: [] # receiver-only
+    EOF
 
-      # Create systemd service file for Prometheus
-      cat >/etc/systemd/system/prometheus.service <<'EOF'
-      [Unit]
-      Description=Prometheus (remote-write receiver)
-      After=network-online.target
+    cat >/etc/systemd/system/prometheus.service <<'EOF'
+    [Unit]
+    Description=Prometheus (remote-write receiver)
+    After=network-online.target
 
-      [Service]
-      User=prometheus
-      ExecStart=/usr/local/bin/prometheus \
-        --config.file=/etc/prometheus/prometheus.yml \
-        --web.enable-remote-write-receiver \
-        --storage.tsdb.path=/mnt/prometheus-data \
-        --storage.tsdb.retention.time=7d
-      Restart=always
-      RestartSec=5
+    [Service]
+    User=prometheus
+    ExecStart=/usr/local/bin/prometheus \
+      --config.file=/etc/prometheus/prometheus.yml \
+      --web.enable-remote-write-receiver \
+      --storage.tsdb.path=/mnt/prometheus-data \
+      --storage.tsdb.retention.time=7d
+    Restart=always
+    RestartSec=5
 
-      [Install]
-      WantedBy=multi-user.target
-      EOF
-      systemctl daemon-reload
-      systemctl enable --now prometheus
+    [Install]
+    WantedBy=multi-user.target
+    EOF
 
-      # ---------- Install and configure Grafana ----------
-      cat >/etc/yum.repos.d/grafana.repo <<'EOF'
-      [grafana]
-      name=Grafana OSS
-      baseurl=https://packages.grafana.com/oss/rpm
-      repo_gpgcheck=1
-      enabled=1
-      gpgcheck=1
-      gpgkey=https://packages.grafana.com/gpg.key
-      EOF
-      yum install -y grafana
+    systemctl daemon-reload
+    systemctl enable --now prometheus
 
-      # Configure Grafana to use the new data path and local binding
-      cat >/etc/grafana/grafana.ini <<'EOF'
-      [paths]
-      data = /mnt/grafana-data
-      [server]
-      http_addr = 127.0.0.1
-      http_port = 3000
-      EOF
-      chown grafana:grafana /etc/grafana/grafana.ini
+    # ---------------- Grafana ----------------
+    cat >/etc/yum.repos.d/grafana.repo <<'EOF'
+    [grafana]
+    name=Grafana OSS
+    baseurl=https://packages.grafana.com/oss/rpm
+    repo_gpgcheck=1
+    enabled=1
+    gpgcheck=1
+    gpgkey=https://packages.grafana.com/gpg.key
+    EOF
+    yum install -y grafana
 
-      # Configure Grafana Prometheus datasource
-      mkdir -p /etc/grafana/provisioning/datasources
-      cat >/etc/grafana/provisioning/datasources/prometheus.yaml <<'EOF'
-      apiVersion: 1
-      datasources:
-        - name: Prometheus
-          type: prometheus
-          access: proxy
-          url: http://127.0.0.1:9090
-          isDefault: true
-          jsonData:
-            httpMethod: POST
-      EOF
-      chown -R grafana:grafana /etc/grafana/provisioning /mnt/grafana-data
+    cat >/etc/grafana/grafana.ini <<'EOF'
+    [paths]
+    data = /mnt/grafana-data
+    [server]
+    http_addr = 127.0.0.1
+    http_port = 3000
+    EOF
+    chown grafana:grafana /etc/grafana/grafana.ini
 
-      systemctl enable --now grafana-server
+    mkdir -p /etc/grafana/provisioning/datasources
+    cat >/etc/grafana/provisioning/datasources/prometheus.yaml <<'EOF'
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://127.0.0.1:9090
+        isDefault: true
+        jsonData:
+          httpMethod: POST
+    EOF
+    chown -R grafana:grafana /etc/grafana/provisioning /mnt/grafana-data
 
-      # ---------- Install and configure ClickHouse ----------
-      rpm --import https://packages.clickhouse.com/rpm/stable/repodata/repomd.xml.key
-yum-config-manager --add-repo https://packages.clickhouse.com/rpm/clickhouse.repo
-yum install -y clickhouse-server clickhouse-client
+    systemctl enable --now grafana-server
 
-mkdir -p /mnt/clickhouse-data/{data,tmp,user_files,format_schemas,metadata,metadata_dropped,preprocessed_configs,flags,access}
-chown -R clickhouse:clickhouse /mnt/clickhouse-data
-chmod -R 750 /mnt/clickhouse-data
-chmod 755 /mnt/clickhouse-data/format_schemas
+    # ---------------- ClickHouse ----------------
+    rpm --import https://packages.clickhouse.com/rpm/stable/repodata/repomd.xml.key
+    yum-config-manager --add-repo https://packages.clickhouse.com/rpm/clickhouse.repo
+    yum install -y clickhouse-server clickhouse-client
 
-# Create clean paths config
-mkdir -p /etc/clickhouse-server/config.d
-cat >/etc/clickhouse-server/config.d/01-paths.xml <<'EOF'
-<clickhouse>
-  <path>/mnt/clickhouse-data/</path>
-  <tmp_path>/mnt/clickhouse-data/tmp/</tmp_path>
-  <user_files_path>/mnt/clickhouse-data/user_files/</user_files_path>
-  <format_schema_path>/mnt/clickhouse-data/format_schemas/</format_schema_path>
-</clickhouse>
-EOF
+    mkdir -p /mnt/clickhouse-data/{data,tmp,user_files,format_schemas,metadata,metadata_dropped,preprocessed_configs,flags,access}
+    chown -R clickhouse:clickhouse /mnt/clickhouse-data
+    chmod -R 750 /mnt/clickhouse-data
+    chmod 755 /mnt/clickhouse-data/format_schemas
 
-cat >/etc/clickhouse-server/config.d/02-network.xml <<'EOF'
-<clickhouse>
-  <listen_host>0.0.0.0</listen_host>
-  <tcp_port>9000</tcp_port>
-  <http_port>8123</http_port>
-  <interserver_http_port>9012</interserver_http_port>
-</clickhouse>
-EOF
+    mkdir -p /etc/clickhouse-server/config.d
+    cat >/etc/clickhouse-server/config.d/01-paths.xml <<'EOF'
+    <clickhouse>
+      <path>/mnt/clickhouse-data/</path>
+      <tmp_path>/mnt/clickhouse-data/tmp/</tmp_path>
+      <user_files_path>/mnt/clickhouse-data/user_files/</user_files_path>
+      <format_schema_path>/mnt/clickhouse-data/format_schemas/</format_schema_path>
+    </clickhouse>
+    EOF
 
-# Use the correct method to set the password in a dedicated file
-mkdir -p /etc/clickhouse-server/users.d
-cat >/etc/clickhouse-server/users.d/default-password.xml <<'EOF'
-<clickhouse>
-  <users>
-    <default>
-      <password>123456</password>
-    </default>
-  </users>
-</clickhouse>
-EOF
+    cat >/etc/clickhouse-server/config.d/02-network.xml <<'EOF'
+    <clickhouse>
+      <listen_host>0.0.0.0</listen_host>
+      <tcp_port>9000</tcp_port>
+      <http_port>8123</http_port>
+      <interserver_http_port>9012</interserver_http_port>
+    </clickhouse>
+    EOF
 
-# Set permissions for the new password file
-chown clickhouse:clickhouse /etc/clickhouse-server/users.d/default-password.xml
-chmod 640 /etc/clickhouse-server/users.d/default-password.xml
+    mkdir -p /etc/clickhouse-server/users.d
+    cat >/etc/clickhouse-server/users.d/default-password.xml <<'EOF'
+    <clickhouse>
+      <users>
+        <default>
+          <password>123456</password>
+        </default>
+      </users>
+    </clickhouse>
+    EOF
 
-# Ensure permissions on the config.d directory and its contents
-chown root:root /etc/clickhouse-server/config.d/*.xml
-chmod 644 /etc/clickhouse-server/config.d/*.xml
-chmod 755 /etc/clickhouse-server/config.d
-chown clickhouse:clickhouse /etc/clickhouse-server/config.d
+    chown clickhouse:clickhouse /etc/clickhouse-server/users.d/default-password.xml
+    chmod 640 /etc/clickhouse-server/users.d/default-password.xml
 
-# Reload systemd and start ClickHouse
-systemctl daemon-reload
-systemctl enable clickhouse-server
-systemctl start clickhouse-server 
+    chown root:root /etc/clickhouse-server/config.d/*.xml
+    chmod 644 /etc/clickhouse-server/config.d/*.xml
+    chmod 755 /etc/clickhouse-server/config.d
+    chown clickhouse:clickhouse /etc/clickhouse-server/config.d
 
+    systemctl daemon-reload
+    systemctl enable clickhouse-server
+    systemctl start clickhouse-server
 
-  # ---------- Install k6 ----------
-curl -s https://dl.k6.io/key.gpg | gpg --dearmor > /etc/pki/rpm-gpg/k6.gpg
-cat >/etc/yum.repos.d/k6.repo <<'EOF'
-[k6]
-name=k6
-baseurl=https://dl.k6.io/rpm/x86_64
-enabled=1
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/k6.gpg
-EOF
-yum install -y k6
+    # ---------------- K6  ----------------
+    cd /usr/local/bin
+    curl -sSL https://github.com/grafana/k6/releases/download/v0.51.0/k6-v0.51.0-linux-amd64.tar.gz | tar xz
+    mv k6-v0.51.0-linux-amd64/k6 /usr/bin/k6
+    chmod +x /usr/bin/k6
+    rm -rf k6-v0.51.0-linux-amd64
 
-mkdir -p /opt/k6/tests
-cat >/opt/k6/tests/loadtest.js <<'EOF'
-import http from 'k6/http';
+    mkdir -p /opt/k6/tests
+    cat >/opt/k6/tests/loadtest.js <<'JS'
+    import http from 'k6/http';
 
-export const options = {
-  scenarios: {
-    ramping_rps: {
-      executor: 'ramping-arrival-rate',
-      startRate: 10,
-      timeUnit: '1s',
-      preAllocatedVUs: 100,
-      maxVUs: 200,
-      stages: [
-        { target: 30, duration: '30s' },
-        { target: 90, duration: '1m' },
-        { target: 0, duration: '30s' },
-      ],
-    },
-  },
-};
+    export const options = {
+      scenarios: {
+        ramping_rps: {
+          executor: 'ramping-arrival-rate',
+          startRate: 10,
+          timeUnit: '1s',
+          preAllocatedVUs: 100,
+          maxVUs: 200,
+          stages: [
+            { target: 30, duration: '30s' },
+            { target: 90, duration: '1m' },
+            { target: 0, duration: '30s' },
+          ],
+        },
+      },
+    };
 
-const frontendURL = __ENV.FRONTEND_URL || 'http://localhost:8080';
-const minProductID = 1;
-const maxProductID = 20;
-const watchProductID = 12;
-let currentProductID = minProductID;
+    const frontendURL = http://ae5f01a90ea3b448c87310f92f68cbce-568516596.us-east-1.elb.amazonaws.com:8080;
+    let currentProductID = 1;
+    const maxProductID = 20;
 
-function getNextProductID() {
-  currentProductID++;
-  if (currentProductID === watchProductID) currentProductID++;
-  if (currentProductID > maxProductID) currentProductID = minProductID;
-  return currentProductID;
-}
+    function getNextProductID() {
+      currentProductID++;
+      if (currentProductID > maxProductID) currentProductID = 1;
+      return currentProductID;
+    }
 
-export default function () {
-  const pid = getNextProductID();
+    export default function () {
+      const pid = getNextProductID();
 
-  const buyRes = http.post(\`\${frontendURL}/buy?id=\${pid}\`);
-  if (buyRes.status !== 200) {
-    console.error(\`Buy failed for product \${pid} - Status: \${buyRes.status}\`);
-  }
+      const buyRes = http.post(frontendURL + '/buy?id=' + pid);
+      if (buyRes.status !== 200) {
+        console.error('Buy failed for product ' + pid + ' - Status: ' + buyRes.status);
+      }
 
-  const getRes = http.get(\`\${frontendURL}/products\`);
-  if (getRes.status !== 200) {
-    console.error(\`Get products failed - Status: \${getRes.status}\`);
-  }
-}
+      const getRes = http.get(frontendURL + '/products');
+      if (getRes.status !== 200) {
+        console.error('Get products failed - Status: ' + getRes.status);
+      }
+    }
+    JS
 
-cat >/etc/systemd/system/k6-loadtest.service <<'EOF'
-[Unit]
-Description=K6 Load Test Runner
-After=network-online.target
+    cat >/etc/systemd/system/k6-loadtest.service <<EOF
+    [Unit]
+    Description=K6 Load Test Runner
+    After=network-online.target
 
-[Service]
-Environment=FRONTEND_URL=http://your-eks-service:8080
-ExecStart=/usr/bin/k6 run /opt/k6/tests/loadtest.js
-Restart=on-failure
-WorkingDirectory=/opt/k6/tests
+    [Service]
+    Environment=FRONTEND_URL=${var.k6_frontend_url}
+    ExecStart=/usr/bin/k6 run /opt/k6/tests/loadtest.js
+    Restart=on-failure
+    WorkingDirectory=/opt/k6/tests
 
-[Install]
-WantedBy=multi-user.target
-EOF
+    [Install]
+    WantedBy=multi-user.target
+    EOF
 
-systemctl daemon-reload
-# Uncomment if you want it to run automatically
-# systemctl enable --now k6-loadtest
-
-EOF
-
+    systemctl daemon-reload
+    systemctl enable k6-loadtest
   BASH
+
 
   tags = { Name = "k6-runner" }
 }
