@@ -13,29 +13,29 @@ func agentEnabledStatusCondition(reason *string) model.DesiredStateProgress {
 	case v1alpha1.AgentEnabledReasonEnabledSuccessfully:
 		return model.DesiredStateProgressSuccess
 	case v1alpha1.AgentEnabledReasonWaitingForRuntimeInspection:
-		return model.DesiredStateProgressWaiting
+		return model.DesiredStateProgressIrrelevant // disregard this state if we are blocked on another one
 	case v1alpha1.AgentEnabledReasonWaitingForNodeCollector:
 		return model.DesiredStateProgressWaiting
 	case v1alpha1.AgentEnabledReasonIgnoredContainer:
-		return model.DesiredStateProgressDisabled
+		return model.DesiredStateProgressDisabled // ignored per user configuration
 	case v1alpha1.AgentEnabledReasonNoCollectedSignals:
-		return model.DesiredStateProgressNotice
+		return model.DesiredStateProgressNotice // the setting make it so no signals are collected
 	case v1alpha1.AgentEnabledReasonUnsupportedProgrammingLanguage:
-		return model.DesiredStateProgressDisabled
+		return model.DesiredStateProgressUnsupported
 	case v1alpha1.AgentEnabledReasonNoAvailableAgent:
-		return model.DesiredStateProgressDisabled
+		return model.DesiredStateProgressUnsupported
 	case v1alpha1.AgentEnabledReasonInjectionConflict:
-		return model.DesiredStateProgressDisabled
+		return model.DesiredStateProgressUnsupported // cannot inject agent under currnet conditions
 	case v1alpha1.AgentEnabledReasonUnsupportedRuntimeVersion:
-		return model.DesiredStateProgressDisabled
+		return model.DesiredStateProgressUnsupported
 	case v1alpha1.AgentEnabledReasonMissingDistroParameter:
-		return model.DesiredStateProgressError
+		return model.DesiredStateProgressUnsupported
 	case v1alpha1.AgentEnabledReasonOtherAgentDetected:
-		return model.DesiredStateProgressNotice
+		return model.DesiredStateProgressNotice // other agent detected, need use action
 	case v1alpha1.AgentEnabledReasonRuntimeDetailsUnavailable:
-		return model.DesiredStateProgressPending
+		return model.DesiredStateProgressIrrelevant // we should refactor this out and merge with AgentEnabledReasonWaitingForRuntimeInspection in future PR
 	case v1alpha1.AgentEnabledReasonCrashLoopBackOff:
-		return model.DesiredStateProgressError
+		return model.DesiredStateProgressNotice // crash loop back off detected, rollback applied and source is uninstrumented
 	}
 	return model.DesiredStateProgressUnknown
 }

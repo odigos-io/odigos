@@ -1,37 +1,69 @@
 
+# The enum tracks for a certain state if odigos is in the desired outcome or not.
+# There are few aspects to the relevant states:
+# - Is in desried state (yes / no)
+# - Permanence (transient / permanent)
+# - User action items (yes / no)
+# - state severity - when multiple conditions should be aggregated, what should be the combined state based on severity order.
 enum DesiredStateProgress {
-
-    # actual state matches the desired state.
-    Success
-
-    # actual state is different than the desired state,
-    # and it is not expected to recover.
-    # the state should be investigated by a user, and may be fixed by a user or by reporting an issue to odigos team.
-    Failure
-
-    # actual state is different from the desired state,
-    # but the system is in progress, and it is expected to reconcile shortly.
-    Waiting
-
-    # actual state is different than the desired state,
-    # and the transition depends on some long lasting process that is waiting to complete.
-    # for example: wait for cronjob to trigger for runtime detection.
-    Pending
-
-    # actual state is different than the desired state,
-    # but due to normal behavior of the system.
-    # it indicates that something is not supported, or odigos is configured to slip it.
-    # the user has no action items to take, other than being informed.
-    Disabled
-
-    # the actual state matches the desired state,
-    # but the user should be notified and has action items to take.
-    Notice
 
     # when odigos failed to determine the current or desired state due to some internal error.
     # the actual status is not known and can be anything.
     Error
 
-    # when the current or desired state are not relevant or available, and this is ok.
+    # Is in desried state - no
+    # Permanence - permanent
+    # User action items - yes (investigate, disable, etc.)
+    # severity - always show if exists
+    # example - exception in agent code
+    Failure
+
+    # Is in desried state - no
+    # Permanence - permanent
+    # User action iteam - yes (rollout / investigate)
+    # severity - show first, unless there is a failure
+    # example - manual rollout to workload required to apply instrumentation
+    Notice
+
+    # Is in desried state - no
+    # Permanence - transient (long term)
+    # User action items - no
+    # severity - show to user that something is in progress and might take a while to resolve.
+    # example - waiting for cronjob to trigger for runtime detection
+    Pending
+
+    # Is in desried state - no
+    # Permanence - transient (short term)
+    # User action items - no
+    # severity - show to user that something is in progress but expected to resolve shortly.
+    # example - waiting for collectors pipeline to be deployed and ready
+    Waiting
+
+    # Is in desried state - no
+    # Permanence - permanent
+    # User action iteams - no (only inform)
+    # severity - show after transient states to indicate that the desired state cannot be reached.
+    # example - workload language unknown or no agent available for a detected language or it's runtime version.
+    Unsupported
+
+    # Is in desried state - yes
+    # Permanence - permanent
+    # User action iteams - no (only inform)
+    # severity - indicates that the desired state is disabled by user settings, and ok
+    # example - user manually disabled instrumentation for this workload.
+    Disabled
+
+    # Is in desried state - yes
+    # Permanence - permanent
+    # User action items - no
+    # severity - show only if all states are not indicates something other than success.
+    # example - detection is ok, agent injection enabled in workload, all pods are injected with agent, all agent report healthy, telemetry is generated from workload.
+    Success
+
+    # it means that the condition is not relevant at this context yet (as it is not yet applicable)
+    # ignored for serverity calculations
+    # example - agent enabled is not relevant until runtime inspection is complete
+    Irrelevant
+
     Unknown
 }

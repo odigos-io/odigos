@@ -16,11 +16,11 @@ func workloadRolloutStatusCondition(reason *string) model.DesiredStateProgress {
 	case v1alpha1.WorkloadRolloutReasonFailedToPatch:
 		return model.DesiredStateProgressError
 	case v1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing:
-		return model.DesiredStateProgressWaiting
+		return model.DesiredStateProgressWaiting // short period until the rollout is complete
 	case v1alpha1.WorkloadRolloutReasonDisabled:
-		return model.DesiredStateProgressDisabled
+		return model.DesiredStateProgressUnknown // rollout is disabled in config, or agent was not enabled etc. need to refine those cases in the future.
 	case v1alpha1.WorkloadRolloutReasonWaitingForRestart:
-		return model.DesiredStateProgressPending
+		return model.DesiredStateProgressIrrelevant // rollout state is irrelevant in this case (no rollout for cronjob for example)
 	}
 	return model.DesiredStateProgressUnknown
 }

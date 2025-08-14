@@ -1306,30 +1306,34 @@ func (e ConditionStatus) MarshalGQL(w io.Writer) {
 type DesiredStateProgress string
 
 const (
-	DesiredStateProgressSuccess  DesiredStateProgress = "Success"
-	DesiredStateProgressFailure  DesiredStateProgress = "Failure"
-	DesiredStateProgressWaiting  DesiredStateProgress = "Waiting"
-	DesiredStateProgressPending  DesiredStateProgress = "Pending"
-	DesiredStateProgressDisabled DesiredStateProgress = "Disabled"
-	DesiredStateProgressNotice   DesiredStateProgress = "Notice"
-	DesiredStateProgressError    DesiredStateProgress = "Error"
-	DesiredStateProgressUnknown  DesiredStateProgress = "Unknown"
+	DesiredStateProgressError       DesiredStateProgress = "Error"
+	DesiredStateProgressFailure     DesiredStateProgress = "Failure"
+	DesiredStateProgressNotice      DesiredStateProgress = "Notice"
+	DesiredStateProgressPending     DesiredStateProgress = "Pending"
+	DesiredStateProgressWaiting     DesiredStateProgress = "Waiting"
+	DesiredStateProgressUnsupported DesiredStateProgress = "Unsupported"
+	DesiredStateProgressDisabled    DesiredStateProgress = "Disabled"
+	DesiredStateProgressSuccess     DesiredStateProgress = "Success"
+	DesiredStateProgressIrrelevant  DesiredStateProgress = "Irrelevant"
+	DesiredStateProgressUnknown     DesiredStateProgress = "Unknown"
 )
 
 var AllDesiredStateProgress = []DesiredStateProgress{
-	DesiredStateProgressSuccess,
-	DesiredStateProgressFailure,
-	DesiredStateProgressWaiting,
-	DesiredStateProgressPending,
-	DesiredStateProgressDisabled,
-	DesiredStateProgressNotice,
 	DesiredStateProgressError,
+	DesiredStateProgressFailure,
+	DesiredStateProgressNotice,
+	DesiredStateProgressPending,
+	DesiredStateProgressWaiting,
+	DesiredStateProgressUnsupported,
+	DesiredStateProgressDisabled,
+	DesiredStateProgressSuccess,
+	DesiredStateProgressIrrelevant,
 	DesiredStateProgressUnknown,
 }
 
 func (e DesiredStateProgress) IsValid() bool {
 	switch e {
-	case DesiredStateProgressSuccess, DesiredStateProgressFailure, DesiredStateProgressWaiting, DesiredStateProgressPending, DesiredStateProgressDisabled, DesiredStateProgressNotice, DesiredStateProgressError, DesiredStateProgressUnknown:
+	case DesiredStateProgressError, DesiredStateProgressFailure, DesiredStateProgressNotice, DesiredStateProgressPending, DesiredStateProgressWaiting, DesiredStateProgressUnsupported, DesiredStateProgressDisabled, DesiredStateProgressSuccess, DesiredStateProgressIrrelevant, DesiredStateProgressUnknown:
 		return true
 	}
 	return false

@@ -27,22 +27,40 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 	}
 
 	conditions := []*model.DesiredConditionStatus{}
-	conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
-	conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
-	conditions = append(conditions, status.CalculateRolloutStatus(ic))
+	if ic != nil {
+		conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
+		conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
+		conditions = append(conditions, status.CalculateRolloutStatus(ic))
+	} else {
+		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
+		conditions = append(conditions, &model.DesiredConditionStatus{
+			Name:       status.WorkloadOdigosHealthStatus,
+			Status:     model.DesiredStateProgressDisabled,
+			ReasonEnum: &reasonStr,
+			Message:    "workload is not marked for instrumentation",
+		})
+	}
 
-	allSuccess := true
+	mostSevereState := &model.DesiredConditionStatus{
+		Name:       status.WorkloadOdigosHealthStatus,
+		Status:     model.DesiredStateProgressUnknown,
+		ReasonEnum: nil,
+		Message:    "",
+	}
+	mostSevereSeverity := desiredStateProgressSeverity(mostSevereState.Status)
 	for _, condition := range conditions {
 		if condition == nil {
 			continue
 		}
-		if condition.Status != model.DesiredStateProgressSuccess {
-			allSuccess = false
-			break
+		severity := desiredStateProgressSeverity(condition.Status)
+		if severity < mostSevereSeverity {
+			mostSevereSeverity = severity
+			mostSevereState = condition
 		}
 	}
 
-	if allSuccess {
+	// exception, if all is well, we return a special condition to denote it
+	if mostSevereState.Status == model.DesiredStateProgressSuccess {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonSuccess)
 		return &model.DesiredConditionStatus{
 			Name:       status.WorkloadOdigosHealthStatus,
@@ -52,13 +70,17 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 		}, nil
 	}
 
-	reasonStr := string(status.WorkloadOdigosHealthStatusReasonError)
-	return &model.DesiredConditionStatus{
-		Name:       status.WorkloadOdigosHealthStatus,
-		Status:     model.DesiredStateProgressError,
-		ReasonEnum: &reasonStr,
-		Message:    "some odigos conditions are not successful",
-	}, nil
+	return mostSevereState, nil
+
+	// if allSuccess {
+	// 	reasonStr := string(status.WorkloadOdigosHealthStatusReasonSuccess)
+	// 	return &model.DesiredConditionStatus{
+	// Name:       status.WorkloadOdigosHealthStatus,
+	// 		Status:     model.DesiredStateProgressSuccess,
+	// 		ReasonEnum: &reasonStr,
+	// 		Message:    "all odigos conditions are successful",
+	// 	}, nil
+	// }
 }
 
 // MarkedForInstrumentation is the resolver for the markedForInstrumentation field.
