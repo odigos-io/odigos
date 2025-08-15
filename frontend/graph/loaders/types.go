@@ -33,11 +33,6 @@ type WorkloadFilter struct {
 	IgnoredNamespaces map[string]struct{}
 }
 
-type CachedPod struct {
-	Pod               *corev1.Pod
-	ComputedPodValues *ComputedPodValues
-}
-
 type WorkloadManifest struct {
 	AvailableReplicas int32
 	Selector          *metav1.LabelSelector

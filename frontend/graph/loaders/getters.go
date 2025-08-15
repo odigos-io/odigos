@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/frontend/graph/computed"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 )
 
@@ -42,7 +43,7 @@ func (l *Loaders) GetWorkloadManifest(ctx context.Context, sourceId model.K8sWor
 	return l.workloadManifests[sourceId], nil
 }
 
-func (l *Loaders) GetWorkloadPods(ctx context.Context, sourceId model.K8sWorkloadID) ([]CachedPod, error) {
+func (l *Loaders) GetWorkloadPods(ctx context.Context, sourceId model.K8sWorkloadID) ([]computed.CachedPod, error) {
 
 	l.workloadPodsMutex.Lock()
 	defer l.workloadPodsMutex.Unlock()

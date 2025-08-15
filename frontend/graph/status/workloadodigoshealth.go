@@ -7,7 +7,7 @@ const (
 type WorkloadOdigosHealthStatusReason string
 
 const (
-	WorkloadOdigosHealthStatusReasonSuccess  WorkloadOdigosHealthStatusReason = "Success"
-	WorkloadOdigosHealthStatusReasonDisabled WorkloadOdigosHealthStatusReason = "DisabledForInstrumentation"
-	WorkloadOdigosHealthStatusReasonError    WorkloadOdigosHealthStatusReason = "Error"
+	WorkloadOdigosHealthStatusReasonSuccess                     WorkloadOdigosHealthStatusReason = "Success"
+	WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry WorkloadOdigosHealthStatusReason = "SuccessAndEmittingTelemetry"
+	WorkloadOdigosHealthStatusReasonDisabled                    WorkloadOdigosHealthStatusReason = "DisabledForInstrumentation"
 )

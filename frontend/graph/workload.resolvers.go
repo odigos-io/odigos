@@ -25,6 +25,10 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 	if err != nil {
 		return nil, err
 	}
+	pods, err := l.GetWorkloadPods(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
 
 	conditions := []*model.DesiredConditionStatus{}
 	if ic != nil {
@@ -40,6 +44,10 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 			Message:    "workload is not marked for instrumentation",
 		})
 	}
+
+	// always report if agent is injected or not, even if the workload is not marked for instrumentation.
+	// this is to detect if uninstrumented pods have agent injected when it should not.
+	conditions = append(conditions, status.CalculateAgentInjectedStatus(ic, pods))
 
 	mostSevereState := &model.DesiredConditionStatus{
 		Name:       status.WorkloadOdigosHealthStatus,
@@ -61,26 +69,44 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 	// exception, if all is well, we return a special condition to denote it
 	if mostSevereState.Status == model.DesiredStateProgressSuccess {
-		reasonStr := string(status.WorkloadOdigosHealthStatusReasonSuccess)
+
+		workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(common.SourceID{
+			Namespace: obj.ID.Namespace,
+			Kind:      k8sconsts.WorkloadKind(obj.ID.Kind),
+			Name:      obj.ID.Name,
+		})
+		var totalDataSent *int
+		if ok {
+			tds := int(workloadMetrics.TotalDataSent())
+			totalDataSent = &tds
+		}
+
+		// consider the telemetry metrics status if relevant.
+		telemetryMetrics := status.CalculateExpectingTelemetryStatus(ic, pods, totalDataSent)
+		expectingTelemetry := telemetryMetrics != nil && telemetryMetrics.IsExpectingTelemetry != nil && *telemetryMetrics.IsExpectingTelemetry
+
+		var reasonStr, message string
+		if expectingTelemetry {
+			if telemetryMetrics.TelemetryObservedStatus.Status == model.DesiredStateProgressSuccess {
+				reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry)
+				message = "source is instrumented, healthy and telemetry has been observed"
+			} else {
+				reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccess)
+				message = "source is instrumented and healthy, no telemetry recorded yet"
+			}
+		} else {
+			reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccess)
+			message = "source is healthy, no telemetry is expected"
+		}
 		return &model.DesiredConditionStatus{
 			Name:       status.WorkloadOdigosHealthStatus,
 			Status:     model.DesiredStateProgressSuccess,
 			ReasonEnum: &reasonStr,
-			Message:    "all odigos conditions are successful",
+			Message:    message,
 		}, nil
 	}
 
 	return mostSevereState, nil
-
-	// if allSuccess {
-	// 	reasonStr := string(status.WorkloadOdigosHealthStatusReasonSuccess)
-	// 	return &model.DesiredConditionStatus{
-	// Name:       status.WorkloadOdigosHealthStatus,
-	// 		Status:     model.DesiredStateProgressSuccess,
-	// 		ReasonEnum: &reasonStr,
-	// 		Message:    "all odigos conditions are successful",
-	// 	}, nil
-	// }
 }
 
 // MarkedForInstrumentation is the resolver for the markedForInstrumentation field.
@@ -350,63 +376,8 @@ func (r *k8sWorkloadResolver) PodsAgentInjectionStatus(ctx context.Context, obj 
 		return nil, err
 	}
 
-	if len(pods) == 0 {
-		reasonStr := string(PodsAgentInjectionReasonNoPodsAgentInjected)
-		return &model.DesiredConditionStatus{
-			Name:       status.AgentInjectedStatus,
-			Status:     model.DesiredStateProgressDisabled,
-			ReasonEnum: &reasonStr,
-			Message:    "no pods found for this workload",
-		}, nil
-	}
-
-	numSuccess := 0
-	numNotSuccess := 0
-	for _, pod := range pods {
-		if pod.ComputedPodValues.AgentInjectedStatus.Status == model.DesiredStateProgressSuccess {
-			numSuccess++
-		} else {
-			numNotSuccess++
-		}
-	}
-
-	// if instrumentationConfig is nil, we assume agent is not enabled.
-	agentEnabled := false
-	if instrumentationConfig != nil {
-		agentEnabled = instrumentationConfig.Spec.AgentInjectionEnabled
-	}
-
-	if numSuccess == 0 && numNotSuccess > 0 {
-		var reasonStr, message string
-		if agentEnabled {
-			reasonStr = string(PodsAgentInjectionReasonSomePodsAgentInjected)
-			message = fmt.Sprintf("%d/%d pods have agent injected when it should not", numNotSuccess, len(pods))
-		} else {
-			reasonStr = string(PodsAgentInjectionReasonSomePodsAgentNotInjected)
-			message = fmt.Sprintf("%d/%d pods do not have agent injected when it should", numNotSuccess, len(pods))
-		}
-		return &model.DesiredConditionStatus{
-			Name:       status.AgentInjectedStatus,
-			Status:     model.DesiredStateProgressWaiting,
-			ReasonEnum: &reasonStr,
-			Message:    message,
-		}, nil
-	} else {
-		var reasonStr, message string
-		if agentEnabled {
-			reasonStr = string(PodsAgentInjectionReasonAllPodsAgentInjected)
-			message = fmt.Sprintf("all %d pods have odigos agent injected as expected", numSuccess)
-		} else {
-			reasonStr = string(PodsAgentInjectionReasonAllPodsAgentNotInjected)
-			message = fmt.Sprintf("all %d pods do not have odigos agent injected as expected", numSuccess)
-		}
-		return &model.DesiredConditionStatus{
-			Name:       status.AgentInjectedStatus,
-			Status:     model.DesiredStateProgressSuccess,
-			ReasonEnum: &reasonStr,
-			Message:    message,
-		}, nil
-	}
+	agentInjectionStatus := status.CalculateAgentInjectedStatus(instrumentationConfig, pods)
+	return agentInjectionStatus, nil
 }
 
 // TelemetryMetrics is the resolver for the telemetryMetrics field.
@@ -461,92 +432,7 @@ func (r *k8sWorkloadTelemetryMetricsResolver) ExpectingTelemetry(ctx context.Con
 		return nil, err
 	}
 
-	expectingTelemetry := false
-
-	// at the moment, a workload is expected to have telemetry
-	// if the workload has agent injection enabled and at least one pod has the agent injected.
-	if ic == nil {
-		reasonStr := string(status.ExpectingTelemetryReasonWorkloadNotMarkedForInstrumentation)
-		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
-			IsExpectingTelemetry: &expectingTelemetry,
-			TelemetryObservedStatus: &model.DesiredConditionStatus{
-				Name:       status.ExpectingTelemetryStatus,
-				Status:     model.DesiredStateProgressDisabled,
-				ReasonEnum: &reasonStr,
-				Message:    "workload is not marked for instrumentation",
-			},
-		}, nil
-	}
-
-	if !ic.Spec.AgentInjectionEnabled {
-		reasonStr := string(status.ExpectingTelemetryReasonAgentNotEnabledForInjection)
-		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
-			IsExpectingTelemetry: &expectingTelemetry,
-			TelemetryObservedStatus: &model.DesiredConditionStatus{
-				Name:       status.ExpectingTelemetryStatus,
-				Status:     model.DesiredStateProgressDisabled,
-				ReasonEnum: &reasonStr,
-				Message:    "agent injection is not enabled for this workload",
-			},
-		}, nil
-	}
-
-	if len(pods) == 0 {
-		reasonStr := string(status.ExpectingTelemetryReasonAgentNoRunningPod)
-		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
-			IsExpectingTelemetry: &expectingTelemetry,
-			TelemetryObservedStatus: &model.DesiredConditionStatus{
-				Name:       status.ExpectingTelemetryStatus,
-				Status:     model.DesiredStateProgressDisabled,
-				ReasonEnum: &reasonStr,
-				Message:    "no running pods found for this workload",
-			},
-		}, nil
-	}
-
-	for _, pod := range pods {
-		if pod.ComputedPodValues.AgentInjected {
-			expectingTelemetry = true
-			break
-		}
-	}
-
-	if !expectingTelemetry {
-		reasonStr := string(status.ExpectingTelemetryReasonAgentNotInjected)
-		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
-			IsExpectingTelemetry: &expectingTelemetry,
-			TelemetryObservedStatus: &model.DesiredConditionStatus{
-				Name:       status.ExpectingTelemetryStatus,
-				Status:     model.DesiredStateProgressWaiting,
-				ReasonEnum: &reasonStr,
-				Message:    "agent is not injected into any of the pods in this workload",
-			},
-		}, nil
-	}
-
-	if obj.TotalDataSentBytes == nil || *obj.TotalDataSentBytes == 0 {
-		reasonStr := string(status.ExpectingTelemetryReasonAgentInjectedButNoDataSent)
-		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
-			IsExpectingTelemetry: &expectingTelemetry,
-			TelemetryObservedStatus: &model.DesiredConditionStatus{
-				Name:       status.ExpectingTelemetryStatus,
-				Status:     model.DesiredStateProgressWaiting,
-				ReasonEnum: &reasonStr,
-				Message:    "agent is injected into the pods in this workload, but no telemetry data was sent yet",
-			},
-		}, nil
-	}
-
-	reasonStr := string(status.ExpectingTelemetryReasonAgentInjectedAndDataSent)
-	return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
-		IsExpectingTelemetry: &expectingTelemetry,
-		TelemetryObservedStatus: &model.DesiredConditionStatus{
-			Name:       status.ExpectingTelemetryStatus,
-			Status:     model.DesiredStateProgressSuccess,
-			ReasonEnum: &reasonStr,
-			Message:    "agent is injected into the pods in this workload, and telemetry data was sent",
-		},
-	}, nil
+	return status.CalculateExpectingTelemetryStatus(ic, pods, obj.TotalDataSentBytes), nil
 }
 
 // K8sWorkload returns K8sWorkloadResolver implementation.

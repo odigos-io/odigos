@@ -9,7 +9,9 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/frontend/graph/computed"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/graph/status"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,7 +51,7 @@ type Loaders struct {
 
 	workloadPodsMutex   sync.Mutex
 	workloadPodsFetched bool
-	workloadPods        map[model.K8sWorkloadID][]CachedPod
+	workloadPods        map[model.K8sWorkloadID][]computed.CachedPod
 
 	instrumentationInstancesMutex   sync.Mutex
 	instrumentationInstancesFetched bool
@@ -143,18 +145,25 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 		return err
 	}
 
-	cachePods := make(map[model.K8sWorkloadID][]CachedPod)
+	cachePods := make(map[model.K8sWorkloadID][]computed.CachedPod)
 	l.instrumentationConfigMutex.Lock()
 	defer l.instrumentationConfigMutex.Unlock()
 	if err := l.loadInstrumentationConfigs(ctx); err != nil {
 		return err
 	}
 	for sourceId, pods := range workloadPods {
-		cachePods[sourceId] = make([]CachedPod, 0, len(pods))
+		cachePods[sourceId] = make([]computed.CachedPod, 0, len(pods))
 		for _, pod := range pods {
-			cachePods[sourceId] = append(cachePods[sourceId], CachedPod{
+			ic := l.instrumentationConfigs[sourceId]
+			agentInjected, agentInjectedStatus := status.CalculatePodAgentInjectedStatus(pod, ic)
+			computedPodValues := &computed.ComputedPodValues{
+				AgentInjected:       agentInjected,
+				AgentInjectedStatus: agentInjectedStatus,
+			}
+
+			cachePods[sourceId] = append(cachePods[sourceId], computed.CachedPod{
 				Pod:               pod,
-				ComputedPodValues: NewComputedPodValues(pod, l.instrumentationConfigs[sourceId]),
+				ComputedPodValues: computedPodValues,
 			})
 		}
 	}

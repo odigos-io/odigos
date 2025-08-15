@@ -21,16 +21,6 @@ const (
 	PodContainerHealthReasonHealthy          PodContainerHealthReason = "Healthy"
 )
 
-type PodsAgentInjectionReason string
-
-const (
-	PodsAgentInjectionReasonNoPodsAgentInjected      PodsAgentInjectionReason = "NoPods"
-	PodsAgentInjectionReasonAllPodsAgentInjected     PodsAgentInjectionReason = "AllPodsAgentInjected"
-	PodsAgentInjectionReasonAllPodsAgentNotInjected  PodsAgentInjectionReason = "AllPodsAgentNotInjected"
-	PodsAgentInjectionReasonSomePodsAgentNotInjected PodsAgentInjectionReason = "SomePodsAgentNotInjected"
-	PodsAgentInjectionReasonSomePodsAgentInjected    PodsAgentInjectionReason = "SomePodsAgentInjected"
-)
-
 func emptyStrToNil(str string) *string {
 	if str == "" {
 		return nil
