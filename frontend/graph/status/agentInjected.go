@@ -159,7 +159,7 @@ func CalculateAgentInjectedStatus(ic *v1alpha1.InstrumentationConfig, pods []com
 	numSuccess := 0
 	numNotSuccess := 0
 	for _, pod := range pods {
-		if pod.ComputedPodValues.AgentInjectedStatus.Status == model.DesiredStateProgressSuccess {
+		if pod.AgentInjectedStatus.Status == model.DesiredStateProgressSuccess {
 			numSuccess++
 		} else {
 			numNotSuccess++

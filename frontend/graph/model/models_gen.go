@@ -641,17 +641,18 @@ type K8sWorkloadPod struct {
 }
 
 type K8sWorkloadPodContainer struct {
-	ContainerName             string                            `json:"containerName"`
-	InstrumentationDeviceName *string                           `json:"instrumentationDeviceName,omitempty"`
-	Started                   *bool                             `json:"started,omitempty"`
-	Ready                     *bool                             `json:"ready,omitempty"`
-	IsCrashLoop               *bool                             `json:"isCrashLoop,omitempty"`
-	RestartCount              *int                              `json:"restartCount,omitempty"`
-	RunningStartedTime        *string                           `json:"runningStartedTime,omitempty"`
-	WaitingReasonEnum         *string                           `json:"waitingReasonEnum,omitempty"`
-	WaitingMessage            *string                           `json:"waitingMessage,omitempty"`
-	HealthStatus              *DesiredConditionStatus           `json:"healthStatus"`
-	Processes                 []*K8sWorkloadPodContainerProcess `json:"processes"`
+	ContainerName                   string                            `json:"containerName"`
+	OdigosInstrumentationDeviceName *string                           `json:"odigosInstrumentationDeviceName,omitempty"`
+	OtelDistroName                  *string                           `json:"otelDistroName,omitempty"`
+	Started                         *bool                             `json:"started,omitempty"`
+	Ready                           *bool                             `json:"ready,omitempty"`
+	IsCrashLoop                     *bool                             `json:"isCrashLoop,omitempty"`
+	RestartCount                    *int                              `json:"restartCount,omitempty"`
+	RunningStartedTime              *string                           `json:"runningStartedTime,omitempty"`
+	WaitingReasonEnum               *string                           `json:"waitingReasonEnum,omitempty"`
+	WaitingMessage                  *string                           `json:"waitingMessage,omitempty"`
+	HealthStatus                    *DesiredConditionStatus           `json:"healthStatus"`
+	Processes                       []*K8sWorkloadPodContainerProcess `json:"processes"`
 }
 
 type K8sWorkloadPodContainerProcess struct {

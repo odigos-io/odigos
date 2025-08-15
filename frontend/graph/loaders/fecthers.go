@@ -423,7 +423,7 @@ func fetchWorkloadPods(ctx context.Context, filters *WorkloadFilter, singleWorkl
 	return workloadPods, nil
 }
 
-func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter) (byContainer map[ContainerId][]*odigosv1.InstrumentationInstance, byWorkload map[model.K8sWorkloadID][]*odigosv1.InstrumentationInstance, err error) {
+func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter) (byContainer map[ContainerId][]*odigosv1.InstrumentationInstance, err error) {
 
 	labelSelector := ""
 	if filters.SingleWorkload != nil {
@@ -441,11 +441,10 @@ func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter)
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	byContainer = make(map[ContainerId][]*odigosv1.InstrumentationInstance, len(ii.Items))
-	byWorkload = make(map[model.K8sWorkloadID][]*odigosv1.InstrumentationInstance, len(ii.Items))
 	for _, ii := range ii.Items {
 		if _, ok := filters.IgnoredNamespaces[ii.Namespace]; ok {
 			continue
@@ -457,15 +456,6 @@ func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter)
 			continue
 		}
 
-		runtimeObjectName, found := ii.Labels[consts.InstrumentedAppNameLabel]
-		if !found {
-			continue
-		}
-		pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName, ii.Namespace)
-		if err != nil {
-			continue
-		}
-
 		// add to the byContainer map
 		containerId := ContainerId{
 			Namespace:     ii.Namespace,
@@ -473,14 +463,6 @@ func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter)
 			ContainerName: ii.Spec.ContainerName,
 		}
 		byContainer[containerId] = append(byContainer[containerId], &ii)
-
-		// add to the byWorkload map
-		workloadId := model.K8sWorkloadID{
-			Namespace: pw.Namespace,
-			Kind:      model.K8sResourceKind(pw.Kind),
-			Name:      pw.Name,
-		}
-		byWorkload[workloadId] = append(byWorkload[workloadId], &ii)
 	}
-	return byContainer, byWorkload, nil
+	return byContainer, nil
 }

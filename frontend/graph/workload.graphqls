@@ -240,7 +240,10 @@ type K8sWorkloadPodContainer {
     containerName: String!
 
     # if this container is using an instrumentation device, this will be set to the device name.
-    instrumentationDeviceName: String
+    odigosInstrumentationDeviceName: String
+
+    # if this container has agent injected, this will be set to the otel distro name.
+    otelDistroName: String
 
     # if the container is marked as started in k8s.
     started: Boolean

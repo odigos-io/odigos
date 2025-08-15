@@ -485,17 +485,18 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadPodContainer struct {
-		ContainerName             func(childComplexity int) int
-		HealthStatus              func(childComplexity int) int
-		InstrumentationDeviceName func(childComplexity int) int
-		IsCrashLoop               func(childComplexity int) int
-		Processes                 func(childComplexity int) int
-		Ready                     func(childComplexity int) int
-		RestartCount              func(childComplexity int) int
-		RunningStartedTime        func(childComplexity int) int
-		Started                   func(childComplexity int) int
-		WaitingMessage            func(childComplexity int) int
-		WaitingReasonEnum         func(childComplexity int) int
+		ContainerName                   func(childComplexity int) int
+		HealthStatus                    func(childComplexity int) int
+		IsCrashLoop                     func(childComplexity int) int
+		OdigosInstrumentationDeviceName func(childComplexity int) int
+		OtelDistroName                  func(childComplexity int) int
+		Processes                       func(childComplexity int) int
+		Ready                           func(childComplexity int) int
+		RestartCount                    func(childComplexity int) int
+		RunningStartedTime              func(childComplexity int) int
+		Started                         func(childComplexity int) int
+		WaitingMessage                  func(childComplexity int) int
+		WaitingReasonEnum               func(childComplexity int) int
 	}
 
 	K8sWorkloadPodContainerProcess struct {
@@ -2809,19 +2810,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadPodContainer.HealthStatus(childComplexity), true
 
-	case "K8sWorkloadPodContainer.instrumentationDeviceName":
-		if e.complexity.K8sWorkloadPodContainer.InstrumentationDeviceName == nil {
-			break
-		}
-
-		return e.complexity.K8sWorkloadPodContainer.InstrumentationDeviceName(childComplexity), true
-
 	case "K8sWorkloadPodContainer.isCrashLoop":
 		if e.complexity.K8sWorkloadPodContainer.IsCrashLoop == nil {
 			break
 		}
 
 		return e.complexity.K8sWorkloadPodContainer.IsCrashLoop(childComplexity), true
+
+	case "K8sWorkloadPodContainer.odigosInstrumentationDeviceName":
+		if e.complexity.K8sWorkloadPodContainer.OdigosInstrumentationDeviceName == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainer.OdigosInstrumentationDeviceName(childComplexity), true
+
+	case "K8sWorkloadPodContainer.otelDistroName":
+		if e.complexity.K8sWorkloadPodContainer.OtelDistroName == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainer.OtelDistroName(childComplexity), true
 
 	case "K8sWorkloadPodContainer.processes":
 		if e.complexity.K8sWorkloadPodContainer.Processes == nil {
@@ -17914,8 +17922,10 @@ func (ec *executionContext) fieldContext_K8sWorkloadPod_containers(_ context.Con
 			switch field.Name {
 			case "containerName":
 				return ec.fieldContext_K8sWorkloadPodContainer_containerName(ctx, field)
-			case "instrumentationDeviceName":
-				return ec.fieldContext_K8sWorkloadPodContainer_instrumentationDeviceName(ctx, field)
+			case "odigosInstrumentationDeviceName":
+				return ec.fieldContext_K8sWorkloadPodContainer_odigosInstrumentationDeviceName(ctx, field)
+			case "otelDistroName":
+				return ec.fieldContext_K8sWorkloadPodContainer_otelDistroName(ctx, field)
 			case "started":
 				return ec.fieldContext_K8sWorkloadPodContainer_started(ctx, field)
 			case "ready":
@@ -17985,8 +17995,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_containerName(_
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sWorkloadPodContainer_instrumentationDeviceName(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainer) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadPodContainer_instrumentationDeviceName(ctx, field)
+func (ec *executionContext) _K8sWorkloadPodContainer_odigosInstrumentationDeviceName(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainer_odigosInstrumentationDeviceName(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17999,7 +18009,7 @@ func (ec *executionContext) _K8sWorkloadPodContainer_instrumentationDeviceName(c
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.InstrumentationDeviceName, nil
+		return obj.OdigosInstrumentationDeviceName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18013,7 +18023,48 @@ func (ec *executionContext) _K8sWorkloadPodContainer_instrumentationDeviceName(c
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_instrumentationDeviceName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_odigosInstrumentationDeviceName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodContainer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodContainer_otelDistroName(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainer_otelDistroName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OtelDistroName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_otelDistroName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadPodContainer",
 		Field:      field,
@@ -36600,8 +36651,10 @@ func (ec *executionContext) _K8sWorkloadPodContainer(ctx context.Context, sel as
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "instrumentationDeviceName":
-			out.Values[i] = ec._K8sWorkloadPodContainer_instrumentationDeviceName(ctx, field, obj)
+		case "odigosInstrumentationDeviceName":
+			out.Values[i] = ec._K8sWorkloadPodContainer_odigosInstrumentationDeviceName(ctx, field, obj)
+		case "otelDistroName":
+			out.Values[i] = ec._K8sWorkloadPodContainer_otelDistroName(ctx, field, obj)
 		case "started":
 			out.Values[i] = ec._K8sWorkloadPodContainer_started(ctx, field, obj)
 		case "ready":

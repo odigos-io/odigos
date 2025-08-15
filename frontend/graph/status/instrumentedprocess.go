@@ -1,8 +1,6 @@
 package status
 
 import (
-	"fmt"
-
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 )
@@ -65,75 +63,5 @@ func CalculateProcessHealthStatus(instrumentationInstance *v1alpha1.Instrumentat
 		Status:     state,
 		ReasonEnum: &reasonStr,
 		Message:    instrumentationInstance.Status.Message,
-	}
-}
-
-func CalculateProcessesHealthStatus(instrumentationInstances []*v1alpha1.InstrumentationInstance, distroSupportsInstrumentationInstances bool) *model.DesiredConditionStatus {
-
-	if !distroSupportsInstrumentationInstances {
-		reasonStr := string(ProcessesHealthStatusReasonUnsupported)
-		return &model.DesiredConditionStatus{
-			Name:       ProcessesHealthStatusName,
-			Status:     model.DesiredStateProgressIrrelevant,
-			ReasonEnum: &reasonStr,
-		}
-	}
-
-	if len(instrumentationInstances) == 0 {
-		reasonStr := string(ProcessesHealthStatusReasonNoProcesses)
-		return &model.DesiredConditionStatus{
-			Name:       ProcessesHealthStatusName,
-			Status:     model.DesiredStateProgressUnknown,
-			ReasonEnum: &reasonStr,
-		}
-	}
-
-	successCount := 0
-	failureCount := 0
-	startingCount := 0
-
-	for _, ii := range instrumentationInstances {
-		healthStatus := CalculateProcessHealthStatus(ii)
-		if healthStatus == nil {
-			startingCount++
-		} else if healthStatus.Status == model.DesiredStateProgressSuccess {
-			successCount++
-		} else if healthStatus.Status == model.DesiredStateProgressFailure {
-			failureCount++
-		}
-	}
-
-	if failureCount > 0 {
-		reasonStr := string(ProcessesHealthStatusReasonSomeUnhealthy)
-		return &model.DesiredConditionStatus{
-			Name:       ProcessesHealthStatusName,
-			Status:     model.DesiredStateProgressFailure,
-			ReasonEnum: &reasonStr,
-			Message:    fmt.Sprintf("%d/%d processes with unhealthy agent", failureCount, len(instrumentationInstances)),
-		}
-	}
-
-	if startingCount > 0 {
-		reasonStr := string(ProcessesHealthStatusReasonStarting)
-		return &model.DesiredConditionStatus{
-			Name:       ProcessesHealthStatusName,
-			Status:     model.DesiredStateProgressPending,
-			ReasonEnum: &reasonStr,
-			Message:    fmt.Sprintf("%d/%d processes with agent in starting state", startingCount, len(instrumentationInstances)),
-		}
-	}
-
-	reasonStr := string(ProcessesHealthStatusReasonAllHealthy)
-	var message string
-	if successCount == 1 {
-		message = "1 process with healthy agent"
-	} else {
-		message = fmt.Sprintf("%d processes with healthy agent", successCount)
-	}
-	return &model.DesiredConditionStatus{
-		Name:       ProcessesHealthStatusName,
-		Status:     model.DesiredStateProgressSuccess,
-		ReasonEnum: &reasonStr,
-		Message:    message,
 	}
 }

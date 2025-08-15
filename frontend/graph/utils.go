@@ -1,10 +1,13 @@
 package graph
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/graph/status"
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -118,22 +121,6 @@ func agentEnabledContainersToModel(containerAgentConfig *v1alpha1.ContainerAgent
 	}
 }
 
-func getContainerStatus(pod *corev1.Pod, containerName string) *corev1.ContainerStatus {
-	for i := range pod.Status.ContainerStatuses {
-		containerStatus := &pod.Status.ContainerStatuses[i]
-		if containerStatus.Name == containerName {
-			return containerStatus
-		}
-	}
-	for i := range pod.Status.InitContainerStatuses {
-		containerStatus := &pod.Status.InitContainerStatuses[i]
-		if containerStatus.Name == containerName {
-			return containerStatus
-		}
-	}
-	return nil
-}
-
 // givin a desired state progress enum, return a value to determine the order of severity.
 // the lower the number, the more sever the state is
 func desiredStateProgressSeverity(desiredStateProgress model.DesiredStateProgress) int {
@@ -161,4 +148,108 @@ func desiredStateProgressSeverity(desiredStateProgress model.DesiredStateProgres
 	}
 	// should not happen, only as a fallback or if forgotten in the future.
 	return 1000
+}
+
+func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.K8sWorkloadID) (*model.DesiredConditionStatus, error) {
+	l := loaders.For(ctx)
+	pods, err := l.GetWorkloadPods(ctx, *workloadId)
+	if err != nil {
+		return nil, err
+	}
+
+	expectingInstances := false
+	containersWithMissingInstances := false
+	numUnhealthyProcesses := 0
+	numStartingProcesses := 0
+	numHealthyProcesses := 0
+	for _, pod := range pods {
+		for _, container := range pod.Containers {
+			if !container.ExpectingInstrumentationInstances {
+				continue
+			}
+			if container.IsReady {
+				// only take into account containers that are ready
+				// starting containers might not have the agent ready yet
+				continue
+			}
+			expectingInstances = true
+			containerId := loaders.ContainerId{
+				Namespace:     pod.PodNamespace,
+				PodName:       pod.PodName,
+				ContainerName: container.ContainerName,
+			}
+			podIIs, err := l.GetInstrumentationInstancesForContainer(ctx, containerId)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(podIIs) == 0 {
+				// expecting instrumentation instances, but none are found.
+				containersWithMissingInstances = true
+				continue
+			}
+
+			for _, instrumentationInstance := range podIIs {
+				if instrumentationInstance.Status.Healthy == nil {
+					numStartingProcesses++
+				} else if *instrumentationInstance.Status.Healthy {
+					numHealthyProcesses++
+				} else {
+					numUnhealthyProcesses++
+				}
+			}
+		}
+	}
+
+	if !expectingInstances {
+		reasonStr := string(status.ProcessesHealthStatusReasonUnsupported)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressIrrelevant,
+			ReasonEnum: &reasonStr,
+			Message:    "agent health status not supported in this language and distribution",
+		}, nil
+	}
+
+	if numUnhealthyProcesses > 0 {
+		reasonStr := string(status.ProcessesHealthStatusReasonSomeUnhealthy)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressFailure,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("Found %d processes with unhealthy agent", numUnhealthyProcesses),
+		}, nil
+	}
+
+	if containersWithMissingInstances {
+		reasonStr := string(status.ProcessesHealthStatusReasonNoProcesses)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressWaiting, // instance expected to show up soon
+			ReasonEnum: &reasonStr,
+			Message:    "agent not yet started in all instrumented containers",
+		}, nil
+	}
+
+	if numStartingProcesses > 0 {
+		reasonStr := string(status.ProcessesHealthStatusReasonStarting)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressWaiting,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("Found %d processes with starting agent", numStartingProcesses),
+		}, nil
+	}
+
+	if numHealthyProcesses > 0 {
+		reasonStr := string(status.ProcessesHealthStatusReasonAllHealthy)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressSuccess,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("All %d process agents are healthy", numHealthyProcesses),
+		}, nil
+	}
+
+	return nil, nil
 }

@@ -3,7 +3,9 @@ package loaders
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -14,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/status"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -57,7 +60,6 @@ type Loaders struct {
 	instrumentationInstancesMutex       sync.Mutex
 	instrumentationInstancesFetched     bool
 	instrumentationInstancesByContainer map[ContainerId][]*v1alpha1.InstrumentationInstance
-	instrumentationInstancesByWorkload  map[model.K8sWorkloadID][]*v1alpha1.InstrumentationInstance
 }
 
 func WithLoaders(ctx context.Context, loaders *Loaders) context.Context {
@@ -158,15 +160,59 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 		for _, pod := range pods {
 			ic := l.instrumentationConfigs[sourceId]
 			agentInjected, agentInjectedStatus := status.CalculatePodAgentInjectedStatus(pod, ic)
-			computedPodValues := &computed.ComputedPodValues{
+			containers := make([]computed.ComputedPodContainer, 0, len(pod.Spec.Containers))
+			for _, container := range pod.Spec.Containers {
+				otelDistroName := getEnvValueFromManifest(container.Env, k8sconsts.OdigosEnvVarDistroName)
+				isExpectingInstrumentationInstances := isDistroExpectingInstrumentationInstances(otelDistroName)
+				odigosInstrumentationDeviceName := getOdigosInstrumentationDeviceName(container.Resources.Requests)
+
+				containerStatus := getContainerStatus(pod, container.Name)
+				var ready, started *bool
+				var isCrashLoop bool
+				var restartCount *int
+				var runningStartedTime, waitingReasonEnum, waitingMessage *string
+				if containerStatus != nil {
+					restartCountInt := int(containerStatus.RestartCount)
+					restartCount = &restartCountInt
+					ready = &containerStatus.Ready
+					started = containerStatus.Started
+					if containerStatus.State.Waiting != nil {
+						isCrashLoop = containerStatus.State.Waiting.Reason == "CrashLoopBackOff"
+						waitingReasonEnum = &containerStatus.State.Waiting.Reason
+						waitingMessage = &containerStatus.State.Waiting.Message
+					}
+					if containerStatus.State.Running != nil {
+						runningStartedTimeStr := containerStatus.State.Running.StartedAt.Format(time.RFC3339)
+						runningStartedTime = &runningStartedTimeStr
+					}
+				}
+
+				containers = append(containers, computed.ComputedPodContainer{
+					ContainerName:                     container.Name,
+					OtelDistroName:                    otelDistroName,
+					ExpectingInstrumentationInstances: isExpectingInstrumentationInstances,
+					OdigosInstrumentationDeviceName:   odigosInstrumentationDeviceName,
+					Ready:                             ready,
+					IsReady:                           ready != nil && *ready,
+					Started:                           started,
+					IsCrashLoop:                       isCrashLoop,
+					RestartCount:                      restartCount,
+					RunningStartedTime:                runningStartedTime,
+					WaitingReasonEnum:                 waitingReasonEnum,
+					WaitingMessage:                    waitingMessage,
+				})
+			}
+			cachedPod := computed.CachedPod{
+				PodNamespace:        pod.Namespace,
+				PodName:             pod.Name,
+				PodNodeName:         pod.Spec.NodeName,
+				PodStartTime:        pod.CreationTimestamp.Format(time.RFC3339),
 				AgentInjected:       agentInjected,
 				AgentInjectedStatus: agentInjectedStatus,
+				Containers:          containers,
 			}
 
-			cachePods[sourceId] = append(cachePods[sourceId], computed.CachedPod{
-				Pod:               pod,
-				ComputedPodValues: computedPodValues,
-			})
+			cachePods[sourceId] = append(cachePods[sourceId], cachedPod)
 		}
 	}
 
@@ -181,12 +227,11 @@ func (l *Loaders) loadInstrumentationInstances(ctx context.Context) error {
 	if l.instrumentationInstancesFetched {
 		return nil
 	}
-	byContainer, byWorkload, err := fetchInstrumentationInstances(ctx, l.workloadFilter)
+	byContainer, err := fetchInstrumentationInstances(ctx, l.workloadFilter)
 	if err != nil {
 		return err
 	}
 	l.instrumentationInstancesByContainer = byContainer
-	l.instrumentationInstancesByWorkload = byWorkload
 	l.instrumentationInstancesFetched = true
 	return nil
 }
@@ -296,5 +341,66 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 		}
 	}
 
+	return nil
+}
+
+func getEnvValueFromManifest(envVarManifest []corev1.EnvVar, envVarName string) *string {
+	if envVarManifest == nil {
+		return nil
+	}
+	for _, envVar := range envVarManifest {
+		if envVar.Name == envVarName {
+			return &envVar.Value
+		}
+	}
+	return nil
+}
+
+func getOdigosInstrumentationDeviceName(resources corev1.ResourceList) *string {
+	for resourceName := range resources {
+		resourceNameStr := string(resourceName)
+		if strings.HasPrefix(resourceNameStr, common.OdigosResourceNamespace) {
+			return &resourceNameStr
+		}
+	}
+	return nil
+}
+
+// it would be better to set this on the distro manifest itself,
+// but ui is not aware of the enterprise distros, so doing it manually for now.
+func isDistroExpectingInstrumentationInstances(otelDistroName *string) bool {
+	if otelDistroName == nil {
+		return false
+	}
+
+	switch *otelDistroName {
+	case "golang-community",
+		"nodejs-community",
+		"python-community",
+		"golang-enterprise",
+		"java-ebpf-instrumentations",
+		"java-enterprise",
+		"mysql-enterprise",
+		"nodejs-enterprise",
+		"python-enterprise":
+		return true
+	default:
+		return false
+	}
+}
+
+func getContainerStatus(pod *corev1.Pod, containerName string) *corev1.ContainerStatus {
+	for i := range pod.Status.ContainerStatuses {
+		containerStatus := &pod.Status.ContainerStatuses[i]
+		if containerStatus.Name == containerName {
+			return containerStatus
+		}
+	}
+	for i := range pod.Status.InitContainerStatuses {
+		containerStatus := &pod.Status.InitContainerStatuses[i]
+		if containerStatus.Name == containerName {
+			return containerStatus
+		}
+	}
 	return nil
 }

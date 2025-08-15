@@ -66,7 +66,7 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 	}
 
 	for _, pod := range pods {
-		if pod.ComputedPodValues.AgentInjected {
+		if pod.AgentInjected {
 			expectingTelemetry = true
 			break
 		}
