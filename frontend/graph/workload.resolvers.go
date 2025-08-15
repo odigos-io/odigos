@@ -29,6 +29,10 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 	if err != nil {
 		return nil, err
 	}
+	instrumentationInstances, err := l.GetInstrumentationInstancesForWorkload(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
 
 	conditions := []*model.DesiredConditionStatus{}
 	if ic != nil {
@@ -48,6 +52,7 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 	// always report if agent is injected or not, even if the workload is not marked for instrumentation.
 	// this is to detect if uninstrumented pods have agent injected when it should not.
 	conditions = append(conditions, status.CalculateAgentInjectedStatus(ic, pods))
+	conditions = append(conditions, status.CalculateProcessesHealthStatus(instrumentationInstances, true))
 
 	mostSevereState := &model.DesiredConditionStatus{
 		Name:       status.WorkloadOdigosHealthStatus,
@@ -380,6 +385,16 @@ func (r *k8sWorkloadResolver) PodsAgentInjectionStatus(ctx context.Context, obj 
 	return agentInjectionStatus, nil
 }
 
+// ProcessesHealthStatus is the resolver for the processesHealthStatus field.
+func (r *k8sWorkloadResolver) ProcessesHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error) {
+	l := loaders.For(ctx)
+	instrumentationInstances, err := l.GetInstrumentationInstancesForWorkload(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	return status.CalculateProcessesHealthStatus(instrumentationInstances, true), nil
+}
+
 // TelemetryMetrics is the resolver for the telemetryMetrics field.
 func (r *k8sWorkloadResolver) TelemetryMetrics(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadTelemetryMetrics, error) {
 	var totalDataSent *int
@@ -410,6 +425,8 @@ func (r *k8sWorkloadResolver) TelemetryMetrics(ctx context.Context, obj *model.K
 func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *model.K8sWorkloadPodContainer) ([]*model.K8sWorkloadPodContainerProcess, error) {
 	l := loaders.For(ctx)
 
+	containerName := obj.ContainerName
+
 	// extract pod info from the parent resolver context
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil || fc.Parent == nil || fc.Parent.Parent == nil || fc.Parent.Parent.Parent == nil {
@@ -432,9 +449,10 @@ func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *mo
 	}
 	workloadId := *(*c).ID
 
-	instrumentationInstances, err := l.GetInstrumentationInstances(ctx, loaders.PodId{
-		Namespace: workloadId.Namespace,
-		PodName:   podName,
+	instrumentationInstances, err := l.GetInstrumentationInstancesForContainer(ctx, loaders.ContainerId{
+		Namespace:     workloadId.Namespace,
+		PodName:       podName,
+		ContainerName: containerName,
 	})
 	if err != nil {
 		return nil, err

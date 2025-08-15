@@ -22,9 +22,10 @@ type loadersKeyType string
 
 const loadersKey loadersKeyType = "dataloaders"
 
-type PodId struct {
-	Namespace string
-	PodName   string
+type ContainerId struct {
+	Namespace     string
+	PodName       string
+	ContainerName string
 }
 
 type Loaders struct {
@@ -53,9 +54,10 @@ type Loaders struct {
 	workloadPodsFetched bool
 	workloadPods        map[model.K8sWorkloadID][]computed.CachedPod
 
-	instrumentationInstancesMutex   sync.Mutex
-	instrumentationInstancesFetched bool
-	instrumentationInstances        map[PodId][]*v1alpha1.InstrumentationInstance
+	instrumentationInstancesMutex       sync.Mutex
+	instrumentationInstancesFetched     bool
+	instrumentationInstancesByContainer map[ContainerId][]*v1alpha1.InstrumentationInstance
+	instrumentationInstancesByWorkload  map[model.K8sWorkloadID][]*v1alpha1.InstrumentationInstance
 }
 
 func WithLoaders(ctx context.Context, loaders *Loaders) context.Context {
@@ -179,11 +181,12 @@ func (l *Loaders) loadInstrumentationInstances(ctx context.Context) error {
 	if l.instrumentationInstancesFetched {
 		return nil
 	}
-	instrumentationInstances, err := fetchInstrumentationInstances(ctx, l.workloadFilter)
+	byContainer, byWorkload, err := fetchInstrumentationInstances(ctx, l.workloadFilter)
 	if err != nil {
 		return err
 	}
-	l.instrumentationInstances = instrumentationInstances
+	l.instrumentationInstancesByContainer = byContainer
+	l.instrumentationInstancesByWorkload = byWorkload
 	l.instrumentationInstancesFetched = true
 	return nil
 }

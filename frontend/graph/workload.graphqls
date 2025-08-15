@@ -385,6 +385,10 @@ type K8sWorkload {
   # this value is the general health of the workload, and issues here may not be related to odigos.
   podsHealthStatus: DesiredConditionStatus!
 
+  # aggregated value for the health of all processes in the workload.
+  # it indicates if no processes are found, unhealthy agent, and other issues.
+  processesHealthStatus: DesiredConditionStatus!
+
   # the telemetry metrics for this source 
   # e.g. how much data is generate from this source as counted in the node collector.
   telemetryMetrics: [K8sWorkloadTelemetryMetrics!]!

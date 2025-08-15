@@ -175,11 +175,11 @@ func CalculateAgentInjectedStatus(ic *v1alpha1.InstrumentationConfig, pods []com
 	if numNotSuccess > 0 {
 		var reasonStr, message string
 		if agentEnabled {
+			reasonStr = string(AgentInjectionReasonSomePodsAgentNotInjected)
+			message = fmt.Sprintf("%d/%d pods should have agent injected, but do not", numNotSuccess, len(pods))
+		} else {
 			reasonStr = string(AgentInjectionReasonSomePodsAgentInjected)
 			message = fmt.Sprintf("%d/%d pods have agent injected when it should not", numNotSuccess, len(pods))
-		} else {
-			reasonStr = string(AgentInjectionReasonSomePodsAgentNotInjected)
-			message = fmt.Sprintf("%d/%d pods do not have agent injected when it should", numNotSuccess, len(pods))
 		}
 		return &model.DesiredConditionStatus{
 			Name:       AgentInjectedStatus,

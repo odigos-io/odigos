@@ -423,7 +423,7 @@ func fetchWorkloadPods(ctx context.Context, filters *WorkloadFilter, singleWorkl
 	return workloadPods, nil
 }
 
-func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter) (instrumentationInstances map[PodId][]*odigosv1.InstrumentationInstance, err error) {
+func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter) (byContainer map[ContainerId][]*odigosv1.InstrumentationInstance, byWorkload map[model.K8sWorkloadID][]*odigosv1.InstrumentationInstance, err error) {
 
 	labelSelector := ""
 	if filters.SingleWorkload != nil {
@@ -441,9 +441,11 @@ func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter)
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	instrumentationInstances = make(map[PodId][]*odigosv1.InstrumentationInstance, len(ii.Items))
+
+	byContainer = make(map[ContainerId][]*odigosv1.InstrumentationInstance, len(ii.Items))
+	byWorkload = make(map[model.K8sWorkloadID][]*odigosv1.InstrumentationInstance, len(ii.Items))
 	for _, ii := range ii.Items {
 		if _, ok := filters.IgnoredNamespaces[ii.Namespace]; ok {
 			continue
@@ -454,11 +456,31 @@ func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter)
 			// if it's missing for any reason, we will just skip it as we cannot use this instance.
 			continue
 		}
-		podId := PodId{
-			Namespace: ii.Namespace,
-			PodName:   ownerPodLabel,
+
+		runtimeObjectName, found := ii.Labels[consts.InstrumentedAppNameLabel]
+		if !found {
+			continue
 		}
-		instrumentationInstances[podId] = append(instrumentationInstances[podId], &ii)
+		pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName, ii.Namespace)
+		if err != nil {
+			continue
+		}
+
+		// add to the byContainer map
+		containerId := ContainerId{
+			Namespace:     ii.Namespace,
+			PodName:       ownerPodLabel,
+			ContainerName: ii.Spec.ContainerName,
+		}
+		byContainer[containerId] = append(byContainer[containerId], &ii)
+
+		// add to the byWorkload map
+		workloadId := model.K8sWorkloadID{
+			Namespace: pw.Namespace,
+			Kind:      model.K8sResourceKind(pw.Kind),
+			Name:      pw.Name,
+		}
+		byWorkload[workloadId] = append(byWorkload[workloadId], &ii)
 	}
-	return instrumentationInstances, nil
+	return byContainer, byWorkload, nil
 }
