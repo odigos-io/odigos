@@ -257,7 +257,7 @@ type ComplexityRoot struct {
 	}
 
 	DistroParam struct {
-		Key   func(childComplexity int) int
+		Name  func(childComplexity int) int
 		Value func(childComplexity int) int
 	}
 
@@ -506,8 +506,8 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadPodContainerProcessAttribute struct {
-		AttributeName func(childComplexity int) int
-		Value         func(childComplexity int) int
+		Name  func(childComplexity int) int
+		Value func(childComplexity int) int
 	}
 
 	K8sWorkloadRollout struct {
@@ -1872,12 +1872,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DestinationsCategory.Name(childComplexity), true
 
-	case "DistroParam.key":
-		if e.complexity.DistroParam.Key == nil {
+	case "DistroParam.name":
+		if e.complexity.DistroParam.Name == nil {
 			break
 		}
 
-		return e.complexity.DistroParam.Key(childComplexity), true
+		return e.complexity.DistroParam.Name(childComplexity), true
 
 	case "DistroParam.value":
 		if e.complexity.DistroParam.Value == nil {
@@ -2901,12 +2901,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadPodContainerProcess.IdentifyingAttributes(childComplexity), true
 
-	case "K8sWorkloadPodContainerProcessAttribute.attributeName":
-		if e.complexity.K8sWorkloadPodContainerProcessAttribute.AttributeName == nil {
+	case "K8sWorkloadPodContainerProcessAttribute.name":
+		if e.complexity.K8sWorkloadPodContainerProcessAttribute.Name == nil {
 			break
 		}
 
-		return e.complexity.K8sWorkloadPodContainerProcessAttribute.AttributeName(childComplexity), true
+		return e.complexity.K8sWorkloadPodContainerProcessAttribute.Name(childComplexity), true
 
 	case "K8sWorkloadPodContainerProcessAttribute.value":
 		if e.complexity.K8sWorkloadPodContainerProcessAttribute.Value == nil {
@@ -11802,8 +11802,8 @@ func (ec *executionContext) fieldContext_DestinationsCategory_items(_ context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _DistroParam_key(ctx context.Context, field graphql.CollectedField, obj *model.DistroParam) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DistroParam_key(ctx, field)
+func (ec *executionContext) _DistroParam_name(ctx context.Context, field graphql.CollectedField, obj *model.DistroParam) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DistroParam_name(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -11816,7 +11816,7 @@ func (ec *executionContext) _DistroParam_key(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Key, nil
+		return obj.Name, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11833,7 +11833,7 @@ func (ec *executionContext) _DistroParam_key(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DistroParam_key(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DistroParam_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DistroParam",
 		Field:      field,
@@ -16696,8 +16696,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadAgentEnabledContainer_distro
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "key":
-				return ec.fieldContext_DistroParam_key(ctx, field)
+			case "name":
+				return ec.fieldContext_DistroParam_name(ctx, field)
 			case "value":
 				return ec.fieldContext_DistroParam_value(ctx, field)
 			}
@@ -17445,14 +17445,11 @@ func (ec *executionContext) _K8sWorkloadMarkedForInstrumentation_markedForInstru
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(*bool)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_K8sWorkloadMarkedForInstrumentation_markedForInstrumentation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -18604,8 +18601,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcess_identify
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "attributeName":
-				return ec.fieldContext_K8sWorkloadPodContainerProcessAttribute_attributeName(ctx, field)
+			case "name":
+				return ec.fieldContext_K8sWorkloadPodContainerProcessAttribute_name(ctx, field)
 			case "value":
 				return ec.fieldContext_K8sWorkloadPodContainerProcessAttribute_value(ctx, field)
 			}
@@ -18615,8 +18612,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcess_identify
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sWorkloadPodContainerProcessAttribute_attributeName(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainerProcessAttribute) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadPodContainerProcessAttribute_attributeName(ctx, field)
+func (ec *executionContext) _K8sWorkloadPodContainerProcessAttribute_name(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainerProcessAttribute) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainerProcessAttribute_name(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -18629,7 +18626,7 @@ func (ec *executionContext) _K8sWorkloadPodContainerProcessAttribute_attributeNa
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AttributeName, nil
+		return obj.Name, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18646,7 +18643,7 @@ func (ec *executionContext) _K8sWorkloadPodContainerProcessAttribute_attributeNa
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcessAttribute_attributeName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcessAttribute_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadPodContainerProcessAttribute",
 		Field:      field,
@@ -34704,8 +34701,8 @@ func (ec *executionContext) _DistroParam(ctx context.Context, sel ast.SelectionS
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DistroParam")
-		case "key":
-			out.Values[i] = ec._DistroParam_key(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._DistroParam_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -36528,9 +36525,6 @@ func (ec *executionContext) _K8sWorkloadMarkedForInstrumentation(ctx context.Con
 			out.Values[i] = graphql.MarshalString("K8sWorkloadMarkedForInstrumentation")
 		case "markedForInstrumentation":
 			out.Values[i] = ec._K8sWorkloadMarkedForInstrumentation_markedForInstrumentation(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "decisionEnum":
 			out.Values[i] = ec._K8sWorkloadMarkedForInstrumentation_decisionEnum(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -36790,8 +36784,8 @@ func (ec *executionContext) _K8sWorkloadPodContainerProcessAttribute(ctx context
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("K8sWorkloadPodContainerProcessAttribute")
-		case "attributeName":
-			out.Values[i] = ec._K8sWorkloadPodContainerProcessAttribute_attributeName(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._K8sWorkloadPodContainerProcessAttribute_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

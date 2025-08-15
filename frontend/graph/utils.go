@@ -35,7 +35,7 @@ func distroParamsToModel(distroParams map[string]string) []*model.DistroParam {
 	modelDistroParams := make([]*model.DistroParam, 0, len(distroParams))
 	for name, value := range distroParams {
 		modelDistroParams = append(modelDistroParams, &model.DistroParam{
-			Key:   name,
+			Name:  name,
 			Value: value,
 		})
 	}

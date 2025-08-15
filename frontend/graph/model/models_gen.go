@@ -321,7 +321,7 @@ type DestinationsCategory struct {
 }
 
 type DistroParam struct {
-	Key   string `json:"key"`
+	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
@@ -624,7 +624,7 @@ type K8sWorkloadID struct {
 }
 
 type K8sWorkloadMarkedForInstrumentation struct {
-	MarkedForInstrumentation bool   `json:"markedForInstrumentation"`
+	MarkedForInstrumentation *bool  `json:"markedForInstrumentation,omitempty"`
 	DecisionEnum             string `json:"decisionEnum"`
 	Message                  string `json:"message"`
 }
@@ -662,8 +662,8 @@ type K8sWorkloadPodContainerProcess struct {
 }
 
 type K8sWorkloadPodContainerProcessAttribute struct {
-	AttributeName string `json:"attributeName"`
-	Value         string `json:"value"`
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type K8sWorkloadRollout struct {

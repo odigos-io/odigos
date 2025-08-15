@@ -10,6 +10,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/graph/status"
@@ -126,8 +127,17 @@ func (r *k8sWorkloadResolver) MarkedForInstrumentation(ctx context.Context, obj 
 		return nil, err
 	}
 
+	var markedForInstrumentation *bool
+	if enabled {
+		markedForInstrumentation = &enabled
+	} else {
+		if reason.Reason == string(odigosv1.MarkedForInstrumentationReasonWorkloadSourceDisabled) {
+			markedForInstrumentation = &enabled
+		}
+	}
+
 	return &model.K8sWorkloadMarkedForInstrumentation{
-		MarkedForInstrumentation: enabled,
+		MarkedForInstrumentation: markedForInstrumentation,
 		DecisionEnum:             string(reason.Reason),
 		Message:                  reason.Message,
 	}, nil
@@ -440,8 +450,8 @@ func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *mo
 		identifyingAttributes := make([]*model.K8sWorkloadPodContainerProcessAttribute, 0, len(instrumentationInstance.Status.IdentifyingAttributes))
 		for _, attribute := range instrumentationInstance.Status.IdentifyingAttributes {
 			identifyingAttributes = append(identifyingAttributes, &model.K8sWorkloadPodContainerProcessAttribute{
-				AttributeName: attribute.Key,
-				Value:         attribute.Value,
+				Name:  attribute.Key,
+				Value: attribute.Value,
 			})
 		}
 		processes = append(processes, &model.K8sWorkloadPodContainerProcess{
