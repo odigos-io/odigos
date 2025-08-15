@@ -38,7 +38,7 @@ type DesiredConditionStatus {
   # reasonEnum is a String, out of close set of enum values per condition type.
   # use PascalCase for the enum values.
   # the exact values per condition type are undocumented and should be considered internal.
-  # since it's an enum value, it is sutabile for automatic processing and be used in scripts.
+  # since it's an enum value, it is suitable for automatic processing and be used in scripts.
   reasonEnum: String
 
   # message is a human readable, high cardinality, free form text,
@@ -208,8 +208,8 @@ type K8sWorkloadAgentEnabled {
 
 # describes the odigos instrumentation related rollout status for a workload.
 type K8sWorkloadRollout {
-    # the status of the rollout. that is being tracked by odigos.
-    rolloutStatus: DesiredConditionStatus!
+  # the status of the rollout. that is being tracked by odigos.
+  rolloutStatus: DesiredConditionStatus!
 }
 
 # the override values being used for a single workload container.
@@ -305,6 +305,7 @@ type K8sWorkloadPod {
   # the name of the node that the pod is running on.
   nodeName: String!
 
+  # ISO 8601 timestamp when the pod was started
   startTime: String!
 
   # if the agent is injected into the pod.
