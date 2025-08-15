@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -28,75 +29,23 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage Odigos configuration",
-	Long: fmt.Sprintf(`Manage Odigos configuration settings to customize system behavior.
+	Long:  "Displays information about features in odigos map, and options the user has to turn certain features on or off, or add things, etc.",
+	Run: func(cmd *cobra.Command, args []string) {
 
-	Configurable properties:
-	- "%s": Enables or disables telemetry (true/false).
-	- "%s": Enables or disables OpenShift support (true/false).
-	- "%s": Enables or disables Pod Security Policies (true/false).
-	- "%s": Skips webhook issuer creation (true/false).
-	- "%s": Allows concurrent agents (true/false).
-	- "%s": Sets the image prefix.
-	- "%s": Sets the UI mode (default/readonly).
-	- "%s": Controls the number of items to fetch per paginated-batch in the UI.
-	- "%s": Sets the public URL of a remotely, self-hosted UI.
-	- "%s": Sets the URL of the Odigos Central Backend.
-	- "%s": Sets the name of this cluster, for Odigos Central.
-	- "%s": List of namespaces to be ignored.
-	- "%s": List of containers to be ignored.
-	- "%s": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
-	- "%s": Path to the custom container runtime socket (e.g /var/lib/rancher/rke2/agent/containerd/containerd.sock).
-	- "%s": Directory where Kubernetes logs are symlinked in a node (e.g /mnt/var/log).
-	- "%s": JSON string defining per-language env vars to customize instrumentation, e.g., `+"`"+`{"languages":{"java":{"enabled":true,"env":{"OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED":"true"}}}}`+"`"+`
-	- "%s": Method for injecting agent environment variables into the instrumented processes. Options include loader, pod-manifest and loader-fallback-to-pod-manifest.
-	- "%s": Apply a space-separated list of Kubernetes NodeSelectors to all Odigos components (ex: "kubernetes.io/os=linux mylabel=foo").
-	- "%s": Enables or disables Karpenter support (true/false).
-	- "%s": Disable auto rollback feature for failing instrumentations.
-	- "%s": Grace time before uninstrumenting an application [default: 5m].
-	- "%s": Time windows where the auto rollback can happen [default: 1h].
-	- "%s": Disable auto rollout feature for workloads when instrumenting or uninstrumenting.
-	- "%s": Sets the URL of the OIDC tenant.
-	- "%s": Sets the client ID of the OIDC application.
-	- "%s": Sets the client secret of the OIDC application.
-	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
-  	- "%s": Enable or disable the service graph feature [default: false].
-	- "%s": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
-	- "%s": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
-	- "%s": List of allowed domains for test connection endpoints (e.g., "https://api.honeycomb.io", "https://otel.example.com"). Use "*" to allow all domains. Empty list allows all domains for backward compatibility.
-	`,
-		consts.TelemetryEnabledProperty,
-		consts.OpenshiftEnabledProperty,
-		consts.PspProperty,
-		consts.SkipWebhookIssuerCreationProperty,
-		consts.AllowConcurrentAgentsProperty,
-		consts.ImagePrefixProperty,
-		consts.UiModeProperty,
-		consts.UiPaginationLimitProperty,
-		consts.UiRemoteUrlProperty,
-		consts.CentralBackendURLProperty,
-		consts.ClusterNameProperty,
-		consts.IgnoredNamespacesProperty,
-		consts.IgnoredContainersProperty,
-		consts.MountMethodProperty,
-		consts.CustomContainerRuntimeSocketPath,
-		consts.K8sNodeLogsDirectory,
-		consts.UserInstrumentationEnvsProperty,
-		consts.AgentEnvVarsInjectionMethod,
-		consts.NodeSelectorProperty,
-		consts.KarpenterEnabledProperty,
-		consts.RollbackDisabledProperty,
-		consts.RollbackGraceTimeProperty,
-		consts.RollbackStabilityWindow,
-		consts.AutomaticRolloutDisabledProperty,
-		consts.OidcTenantUrlProperty,
-		consts.OidcClientIdProperty,
-		consts.OidcClientSecretProperty,
-		consts.OdigletHealthProbeBindPortProperty,
-		consts.ServiceGraphDisabledProperty,
-		consts.GoAutoOffsetsCronProperty,
-		consts.ClickhouseJsonTypeEnabledProperty,
-		consts.AllowedTestConnectionHostsProperty,
-	),
+		log.Print(`Manage Odigos configuration settings to customize system behavior.` + "\n")
+		log.Print(`Configurable properties:` + "\n")
+
+		var order []string
+		for k := range consts.ConfigDisplay {
+			order = append(order, k)
+		}
+
+		sort.Strings(order)
+
+		for _, key := range order {
+			fmt.Printf("- %s: %s\n", key, consts.ConfigDisplay[key])
+		}
+	},
 }
 
 // `odigos config set <property> <value>`
@@ -274,42 +223,52 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 	switch property {
 	case consts.TelemetryEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.TelemetryEnabled = boolValue
+		val := common.ConfigBool(boolValue)
+		config.TelemetryEnabled = val
 
 	case consts.OpenshiftEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.OpenshiftEnabled = boolValue
+		val := common.ConfigBool(boolValue)
+		config.OpenshiftEnabled = val
 
 	case consts.PspProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.Psp = boolValue
+		val := common.ConfigBool(boolValue)
+		config.Psp = val
 
 	case consts.SkipWebhookIssuerCreationProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.SkipWebhookIssuerCreation = boolValue
+		val := common.ConfigBool(boolValue)
+		config.SkipWebhookIssuerCreation = val
 
 	case consts.AllowConcurrentAgentsProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.AllowConcurrentAgents = &boolValue
+		val := common.ConfigBoolPointer{Value: &boolValue}
+		config.AllowConcurrentAgents = val
 
 	case consts.ImagePrefixProperty:
-		config.ImagePrefix = value[0]
+		val := common.ConfigString(value[0])
+		config.ImagePrefix = val
 
 	case consts.UiModeProperty:
 		config.UiMode = common.UiMode(value[0])
 
 	case consts.UiPaginationLimitProperty:
 		intValue, _ := strconv.Atoi(value[0])
-		config.UiPaginationLimit = intValue
+		val := common.ConfigInt(intValue)
+		config.UiPaginationLimit = val
 
 	case consts.UiRemoteUrlProperty:
-		config.UiRemoteUrl = value[0]
+		val := common.ConfigString(value[0])
+		config.UiRemoteUrl = val
 
 	case consts.CentralBackendURLProperty:
-		config.CentralBackendURL = value[0]
+		val := common.ConfigString(value[0])
+		config.CentralBackendURL = val
 
 	case consts.ClusterNameProperty:
-		config.ClusterName = value[0]
+		val := common.ConfigString(value[0])
+		config.ClusterName = val
 
 	case consts.IgnoredNamespacesProperty:
 		config.IgnoredNamespaces = value
@@ -322,7 +281,8 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 		config.MountMethod = &mountMethod
 
 	case consts.CustomContainerRuntimeSocketPath:
-		config.CustomContainerRuntimeSocketPath = value[0]
+		val := common.ConfigString(value[0])
+		config.CustomContainerRuntimeSocketPath = val
 
 	case consts.K8sNodeLogsDirectory:
 		if config.CollectorNode == nil {
@@ -349,17 +309,21 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 
 	case consts.KarpenterEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.KarpenterEnabled = &boolValue
+		val := common.ConfigBoolPointer{Value: &boolValue}
+		config.KarpenterEnabled = val
 
 	case consts.RollbackDisabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.RollbackDisabled = &boolValue
+		val := common.ConfigBoolPointer{Value: &boolValue}
+		config.RollbackDisabled = val
 
 	case consts.RollbackGraceTimeProperty:
-		config.RollbackGraceTime = value[0]
+		val := common.ConfigString(value[0])
+		config.RollbackGraceTime = val
 
 	case consts.RollbackStabilityWindow:
-		config.RollbackStabilityWindow = value[0]
+		val := common.ConfigString(value[0])
+		config.RollbackStabilityWindow = val
 
 	case consts.AutomaticRolloutDisabledProperty:
 		if config.Rollout == nil {
@@ -421,7 +385,8 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 
 	case consts.OdigletHealthProbeBindPortProperty:
 		intValue, _ := strconv.Atoi(value[0])
-		config.OdigletHealthProbeBindPort = intValue
+		val := common.ConfigInt(intValue)
+		config.OdigletHealthProbeBindPort = val
 	case consts.GoAutoOffsetsCronProperty:
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -433,11 +398,13 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 				return fmt.Errorf("invalid cron schedule: %v", err)
 			}
 		}
-		config.GoAutoOffsetsCron = cronValue
+		val := common.ConfigString(cronValue)
+		config.GoAutoOffsetsCron = val
 
 	case consts.ClickhouseJsonTypeEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
-		config.ClickhouseJsonTypeEnabledProperty = &boolValue
+		val := common.ConfigBoolPointer{Value: &boolValue}
+		config.ClickhouseJsonTypeEnabledProperty = val
 
 	case consts.AllowedTestConnectionHostsProperty:
 		config.AllowedTestConnectionHosts = value
