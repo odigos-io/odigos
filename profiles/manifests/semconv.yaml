@@ -2,7 +2,6 @@ apiVersion: odigos.io/v1alpha1
 kind: Processor
 metadata:
   name: semconv
-  namespace: odigos-system
 spec:
   type: attributes
   processorName: semconv-attributes
