@@ -42,6 +42,7 @@ type ResolverRoot interface {
 	ComputePlatform() ComputePlatformResolver
 	K8sActualNamespace() K8sActualNamespaceResolver
 	K8sWorkload() K8sWorkloadResolver
+	K8sWorkloadPodContainer() K8sWorkloadPodContainerResolver
 	K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
@@ -503,8 +504,8 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadPodContainerProcessAttribute struct {
-		Key   func(childComplexity int) int
-		Value func(childComplexity int) int
+		AttributeName func(childComplexity int) int
+		Value         func(childComplexity int) int
 	}
 
 	K8sWorkloadRollout struct {
@@ -888,6 +889,9 @@ type K8sWorkloadResolver interface {
 	PodsAgentInjectionStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error)
 
 	TelemetryMetrics(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadTelemetryMetrics, error)
+}
+type K8sWorkloadPodContainerResolver interface {
+	Processes(ctx context.Context, obj *model.K8sWorkloadPodContainer) ([]*model.K8sWorkloadPodContainerProcess, error)
 }
 type K8sWorkloadTelemetryMetricsResolver interface {
 	ExpectingTelemetry(ctx context.Context, obj *model.K8sWorkloadTelemetryMetrics) (*model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus, error)
@@ -2880,12 +2884,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadPodContainerProcess.IdentifyingAttributes(childComplexity), true
 
-	case "K8sWorkloadPodContainerProcessAttribute.key":
-		if e.complexity.K8sWorkloadPodContainerProcessAttribute.Key == nil {
+	case "K8sWorkloadPodContainerProcessAttribute.attributeName":
+		if e.complexity.K8sWorkloadPodContainerProcessAttribute.AttributeName == nil {
 			break
 		}
 
-		return e.complexity.K8sWorkloadPodContainerProcessAttribute.Key(childComplexity), true
+		return e.complexity.K8sWorkloadPodContainerProcessAttribute.AttributeName(childComplexity), true
 
 	case "K8sWorkloadPodContainerProcessAttribute.value":
 		if e.complexity.K8sWorkloadPodContainerProcessAttribute.Value == nil {
@@ -18314,7 +18318,7 @@ func (ec *executionContext) _K8sWorkloadPodContainer_processes(ctx context.Conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Processes, nil
+		return ec.resolvers.K8sWorkloadPodContainer().Processes(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18335,8 +18339,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_processes(_ con
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadPodContainer",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "healthy":
@@ -18486,8 +18490,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcess_identify
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "key":
-				return ec.fieldContext_K8sWorkloadPodContainerProcessAttribute_key(ctx, field)
+			case "attributeName":
+				return ec.fieldContext_K8sWorkloadPodContainerProcessAttribute_attributeName(ctx, field)
 			case "value":
 				return ec.fieldContext_K8sWorkloadPodContainerProcessAttribute_value(ctx, field)
 			}
@@ -18497,8 +18501,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcess_identify
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sWorkloadPodContainerProcessAttribute_key(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainerProcessAttribute) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadPodContainerProcessAttribute_key(ctx, field)
+func (ec *executionContext) _K8sWorkloadPodContainerProcessAttribute_attributeName(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainerProcessAttribute) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainerProcessAttribute_attributeName(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -18511,7 +18515,7 @@ func (ec *executionContext) _K8sWorkloadPodContainerProcessAttribute_key(ctx con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Key, nil
+		return obj.AttributeName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18528,7 +18532,7 @@ func (ec *executionContext) _K8sWorkloadPodContainerProcessAttribute_key(ctx con
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcessAttribute_key(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcessAttribute_attributeName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadPodContainerProcessAttribute",
 		Field:      field,
@@ -36493,7 +36497,7 @@ func (ec *executionContext) _K8sWorkloadPodContainer(ctx context.Context, sel as
 		case "containerName":
 			out.Values[i] = ec._K8sWorkloadPodContainer_containerName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "instrumentationDeviceName":
 			out.Values[i] = ec._K8sWorkloadPodContainer_instrumentationDeviceName(ctx, field, obj)
@@ -36514,13 +36518,44 @@ func (ec *executionContext) _K8sWorkloadPodContainer(ctx context.Context, sel as
 		case "healthStatus":
 			out.Values[i] = ec._K8sWorkloadPodContainer_healthStatus(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "processes":
-			out.Values[i] = ec._K8sWorkloadPodContainer_processes(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkloadPodContainer_processes(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -36601,8 +36636,8 @@ func (ec *executionContext) _K8sWorkloadPodContainerProcessAttribute(ctx context
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("K8sWorkloadPodContainerProcessAttribute")
-		case "key":
-			out.Values[i] = ec._K8sWorkloadPodContainerProcessAttribute_key(ctx, field, obj)
+		case "attributeName":
+			out.Values[i] = ec._K8sWorkloadPodContainerProcessAttribute_attributeName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

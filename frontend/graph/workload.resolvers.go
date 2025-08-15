@@ -406,6 +406,59 @@ func (r *k8sWorkloadResolver) TelemetryMetrics(ctx context.Context, obj *model.K
 	}, nil
 }
 
+// Processes is the resolver for the processes field.
+func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *model.K8sWorkloadPodContainer) ([]*model.K8sWorkloadPodContainerProcess, error) {
+	l := loaders.For(ctx)
+
+	// extract pod info from the parent resolver context
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil || fc.Parent == nil || fc.Parent.Parent == nil || fc.Parent.Parent.Parent == nil {
+		return nil, fmt.Errorf("missisng parent resolver context")
+	}
+	workloadPodCtx := fc.Parent.Parent.Parent
+	p, ok := workloadPodCtx.Result.(**model.K8sWorkloadPod)
+	if !ok || p == nil || (*p).PodName == "" {
+		return nil, fmt.Errorf("parent is not a pod")
+	}
+	podName := (*p).PodName
+
+	if workloadPodCtx.Parent == nil || workloadPodCtx.Parent.Parent == nil {
+		return nil, fmt.Errorf("missing parent resolver context")
+	}
+	workloadCtx := workloadPodCtx.Parent.Parent
+	c, ok := workloadCtx.Result.(**model.K8sWorkload)
+	if !ok || c == nil || (*c).ID == nil {
+		return nil, fmt.Errorf("parent is not a workload")
+	}
+	workloadId := *(*c).ID
+
+	instrumentationInstances, err := l.GetInstrumentationInstances(ctx, loaders.PodId{
+		Namespace: workloadId.Namespace,
+		PodName:   podName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	processes := make([]*model.K8sWorkloadPodContainerProcess, 0, len(instrumentationInstances))
+	for _, instrumentationInstance := range instrumentationInstances {
+		processHealthStatus := status.CalculateProcessHealthStatus(instrumentationInstance)
+		identifyingAttributes := make([]*model.K8sWorkloadPodContainerProcessAttribute, 0, len(instrumentationInstance.Status.IdentifyingAttributes))
+		for _, attribute := range instrumentationInstance.Status.IdentifyingAttributes {
+			identifyingAttributes = append(identifyingAttributes, &model.K8sWorkloadPodContainerProcessAttribute{
+				AttributeName: attribute.Key,
+				Value:         attribute.Value,
+			})
+		}
+		processes = append(processes, &model.K8sWorkloadPodContainerProcess{
+			Healthy:               instrumentationInstance.Status.Healthy,
+			HealthStatus:          processHealthStatus,
+			IdentifyingAttributes: identifyingAttributes,
+		})
+	}
+	return processes, nil
+}
+
 // ExpectingTelemetry is the resolver for the expectingTelemetry field.
 func (r *k8sWorkloadTelemetryMetricsResolver) ExpectingTelemetry(ctx context.Context, obj *model.K8sWorkloadTelemetryMetrics) (*model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus, error) {
 	// Safely derive the parent workload ID from the GraphQL field context
@@ -438,10 +491,16 @@ func (r *k8sWorkloadTelemetryMetricsResolver) ExpectingTelemetry(ctx context.Con
 // K8sWorkload returns K8sWorkloadResolver implementation.
 func (r *Resolver) K8sWorkload() K8sWorkloadResolver { return &k8sWorkloadResolver{r} }
 
+// K8sWorkloadPodContainer returns K8sWorkloadPodContainerResolver implementation.
+func (r *Resolver) K8sWorkloadPodContainer() K8sWorkloadPodContainerResolver {
+	return &k8sWorkloadPodContainerResolver{r}
+}
+
 // K8sWorkloadTelemetryMetrics returns K8sWorkloadTelemetryMetricsResolver implementation.
 func (r *Resolver) K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsResolver {
 	return &k8sWorkloadTelemetryMetricsResolver{r}
 }
 
 type k8sWorkloadResolver struct{ *Resolver }
+type k8sWorkloadPodContainerResolver struct{ *Resolver }
 type k8sWorkloadTelemetryMetricsResolver struct{ *Resolver }

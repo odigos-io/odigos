@@ -660,8 +660,8 @@ type K8sWorkloadPodContainerProcess struct {
 }
 
 type K8sWorkloadPodContainerProcessAttribute struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	AttributeName string `json:"attributeName"`
+	Value         string `json:"value"`
 }
 
 type K8sWorkloadRollout struct {

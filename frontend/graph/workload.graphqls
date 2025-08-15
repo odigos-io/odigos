@@ -217,7 +217,7 @@ type K8sWorkloadContainer {
 }
 
 type K8sWorkloadPodContainerProcessAttribute {
-    key: String!
+    attributeName: String!
     value: String!
 }
 

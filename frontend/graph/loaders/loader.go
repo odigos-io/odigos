@@ -55,7 +55,7 @@ type Loaders struct {
 
 	instrumentationInstancesMutex   sync.Mutex
 	instrumentationInstancesFetched bool
-	instrumentationInstances        map[PodId]*v1alpha1.InstrumentationInstance
+	instrumentationInstances        map[PodId][]*v1alpha1.InstrumentationInstance
 }
 
 func WithLoaders(ctx context.Context, loaders *Loaders) context.Context {

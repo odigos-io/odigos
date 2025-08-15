@@ -423,7 +423,7 @@ func fetchWorkloadPods(ctx context.Context, filters *WorkloadFilter, singleWorkl
 	return workloadPods, nil
 }
 
-func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter) (instrumentationInstances map[PodId]*odigosv1.InstrumentationInstance, err error) {
+func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter) (instrumentationInstances map[PodId][]*odigosv1.InstrumentationInstance, err error) {
 
 	labelSelector := ""
 	if filters.SingleWorkload != nil {
@@ -443,7 +443,7 @@ func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter)
 	if err != nil {
 		return nil, err
 	}
-	instrumentationInstances = make(map[PodId]*odigosv1.InstrumentationInstance, len(ii.Items))
+	instrumentationInstances = make(map[PodId][]*odigosv1.InstrumentationInstance, len(ii.Items))
 	for _, ii := range ii.Items {
 		if _, ok := filters.IgnoredNamespaces[ii.Namespace]; ok {
 			continue
@@ -454,10 +454,11 @@ func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter)
 			// if it's missing for any reason, we will just skip it as we cannot use this instance.
 			continue
 		}
-		instrumentationInstances[PodId{
+		podId := PodId{
 			Namespace: ii.Namespace,
 			PodName:   ownerPodLabel,
-		}] = &ii
+		}
+		instrumentationInstances[podId] = append(instrumentationInstances[podId], &ii)
 	}
 	return instrumentationInstances, nil
 }

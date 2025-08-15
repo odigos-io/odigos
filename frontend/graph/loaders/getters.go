@@ -55,7 +55,7 @@ func (l *Loaders) GetWorkloadPods(ctx context.Context, sourceId model.K8sWorkloa
 	return l.workloadPods[sourceId], nil
 }
 
-func (l *Loaders) GetInstrumentationInstance(ctx context.Context, podId PodId) (*v1alpha1.InstrumentationInstance, error) {
+func (l *Loaders) GetInstrumentationInstances(ctx context.Context, podId PodId) ([]*v1alpha1.InstrumentationInstance, error) {
 
 	l.instrumentationInstancesMutex.Lock()
 	defer l.instrumentationInstancesMutex.Unlock()

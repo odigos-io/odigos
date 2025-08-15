@@ -66,6 +66,7 @@ models:
     fields:
       sources:
         resolver: true
+
   K8sWorkload:
     fields:
       workloadOdigosHealthStatus:
@@ -92,4 +93,9 @@ models:
   K8sWorkloadTelemetryMetrics:
     fields:
       expectingTelemetry:
+        resolver: true
+
+  K8sWorkloadPodContainer:
+    fields:
+      processes:
         resolver: true
