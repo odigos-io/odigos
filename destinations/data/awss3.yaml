@@ -63,15 +63,23 @@ spec:
           - us-west-1
           - us-west-2
     - name: S3_PARTITION
-      displayName: Time granularity of S3 Bucket
+      displayName: Time granularity of S3 Bucket (Deprecated, use Partition Format)
       componentType: dropdown
       componentProps:
         values:
           - minute
           - hour
-        required: true
-        tooltip: Wether a new subdirectory should be created every minute or every hour
+        required: false
+        tooltip: Deprecated field for time granularity. Use S3_PARTITION_FORMAT for custom formats.
       initialValue: minute
+    - name: S3_PARTITION_FORMAT
+      displayName: S3 Partition Format
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: Custom partition format using strftime syntax (e.g., '%Y/%m/%d/%H/%M' for minute-level, '%Y/%m/%d/%H' for hour-level). If not specified, S3_PARTITION will be used.
+        placeholder: "%Y/%m/%d/%H/%M"
     - name: S3_MARSHALER
       displayName: Marshaller (Data Format)
       componentType: dropdown
