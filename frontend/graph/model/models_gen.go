@@ -1173,8 +1173,8 @@ type TestConnectionResponse struct {
 
 type WorkloadFilter struct {
 	Namespace                *string          `json:"namespace,omitempty"`
-	WorkloadKind             *K8sResourceKind `json:"workloadKind,omitempty"`
-	WorkloadName             *string          `json:"workloadName,omitempty"`
+	Kind                     *K8sResourceKind `json:"kind,omitempty"`
+	Name                     *string          `json:"name,omitempty"`
 	MarkedForInstrumentation *bool            `json:"markedForInstrumentation,omitempty"`
 }
 

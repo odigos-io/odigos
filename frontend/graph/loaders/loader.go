@@ -259,13 +259,13 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 		}
 	}
 
-	if filter != nil && filter.WorkloadKind != nil && filter.WorkloadName != nil && filter.Namespace != nil &&
-		*filter.WorkloadKind != "" && *filter.WorkloadName != "" && *filter.Namespace != "" {
+	if filter != nil && filter.Kind != nil && filter.Name != nil && filter.Namespace != nil &&
+		*filter.Kind != "" && *filter.Name != "" && *filter.Namespace != "" {
 
 		l.workloadFilter = &WorkloadFilter{
 			SingleWorkload: &WorkloadFilterSingleWorkload{
-				WorkloadKind: k8sconsts.WorkloadKind(*filter.WorkloadKind),
-				WorkloadName: *filter.WorkloadName,
+				WorkloadKind: k8sconsts.WorkloadKind(*filter.Kind),
+				WorkloadName: *filter.Name,
 				Namespace:    *filter.Namespace,
 			},
 			NamespaceString:   *filter.Namespace,

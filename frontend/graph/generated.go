@@ -32947,7 +32947,7 @@ func (ec *executionContext) unmarshalInputWorkloadFilter(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"namespace", "workloadKind", "workloadName", "markedForInstrumentation"}
+	fieldsInOrder := [...]string{"namespace", "kind", "name", "markedForInstrumentation"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -32961,20 +32961,20 @@ func (ec *executionContext) unmarshalInputWorkloadFilter(ctx context.Context, ob
 				return it, err
 			}
 			it.Namespace = data
-		case "workloadKind":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadKind"))
+		case "kind":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
 			data, err := ec.unmarshalOK8sResourceKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.WorkloadKind = data
-		case "workloadName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadName"))
+			it.Kind = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.WorkloadName = data
+			it.Name = data
 		case "markedForInstrumentation":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("markedForInstrumentation"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)

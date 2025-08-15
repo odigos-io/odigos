@@ -13,8 +13,8 @@ type K8sWorkloadId {
 # for example, if namespace is not empty and other fields are, it will return all workloads in the namespace.
 input WorkloadFilter {
   namespace: String
-  workloadKind: K8sResourceKind
-  workloadName: String
+  kind: K8sResourceKind
+  name: String
   markedForInstrumentation: Boolean
 }
 
