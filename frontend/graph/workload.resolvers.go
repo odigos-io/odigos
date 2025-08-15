@@ -114,7 +114,7 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 }
 
 // MarkedForInstrumentation is the resolver for the markedForInstrumentation field.
-func (r *k8sWorkloadResolver) MarkedForInstrumentation(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadMakredForInstrumentation, error) {
+func (r *k8sWorkloadResolver) MarkedForInstrumentation(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadMarkedForInstrumentation, error) {
 	l := loaders.For(ctx)
 	sources, err := l.GetSources(ctx, *obj.ID)
 	if err != nil {
@@ -126,7 +126,7 @@ func (r *k8sWorkloadResolver) MarkedForInstrumentation(ctx context.Context, obj 
 		return nil, err
 	}
 
-	return &model.K8sWorkloadMakredForInstrumentation{
+	return &model.K8sWorkloadMarkedForInstrumentation{
 		MarkedForInstrumentation: enabled,
 		DecisionEnum:             string(reason.Reason),
 		Message:                  reason.Message,

@@ -1,5 +1,5 @@
 
-# each workload in k8s is uniquly identified by it's namespace, resource kind and resource name.
+# each workload in k8s is uniquely identified by its namespace, resource kind and resource name.
 type K8sWorkloadId {
   namespace: String!
   kind: K8sResourceKind!
@@ -7,10 +7,10 @@ type K8sWorkloadId {
 }
 
 # filter for workloads.
-# workload querties can be expensive and resource intensive,
-# so we provide a filter to reduce the scope of the query to just what actually needed.
+# workload queries can be expensive and resource intensive,
+# so we provide a filter to reduce the scope of the query to just what is actually needed.
 # each empty value means no filter for that field.
-# for example, if namespace is not empty and other fields are, it will return all sources in the namespace.
+# for example, if namespace is not empty and other fields are, it will return all workloads in the namespace.
 input WorkloadFilter {
   namespace: String
   workloadKind: K8sResourceKind
@@ -35,11 +35,11 @@ type DesiredConditionStatus {
   message: String!
 }
 
-type K8sWorkloadMakredForInstrumentation {
+type K8sWorkloadMarkedForInstrumentation {
 
   # markedForInstrumentation is the reconciled decision for this source.
-  # a source can be marked or unmakred for instrumentation due to the presence
-  # of Source CR, there can be workload sources and namespace sources.
+  # a source can be marked or unmarked for instrumentation due to the presence
+  # of Source CRs, there can be workload sources and namespace sources.
   markedForInstrumentation: Boolean!
 
   # decisionEnum is a String, out of close set of enum values, 
@@ -67,7 +67,7 @@ type K8sWorkloadRuntimeInfoContainer {
   language: ProgrammingLanguage!
 
   # the runtime version of the container, or empty if not found.
-  # odigos has a heuristic approch and is not guaranteed to always find the runtime version.
+  # odigos has a heuristic approach and is not guaranteed to always find the runtime version.
   runtimeVersion: String
 
   # the environment variables that are relevant for odigos injection,
@@ -76,7 +76,7 @@ type K8sWorkloadRuntimeInfoContainer {
 
   # relevant odigos environment variables that are set by container runtime (for example, set as ENV layer in Dockerfile)
   # if a relevant env is set in the container runtime, it is set here.
-  # there are some rare cases where value can be set in this list but not comming from container runtime.
+  # there are some rare cases where value can be set in this list but not coming from container runtime.
   containerRuntimeEnvVars: [EnvVar!]
 
   # if there was any cri error, the containerRuntimeEnvVars will be empty, 
@@ -149,7 +149,7 @@ type K8sWorkloadAgentEnabledContainer {
   # it can have 3 values:
   # - "loader": inject the LD_PRELOAD env var to the pod manifest which will trigger the odigos loader.
   # - "pod-manifest": inject the runtime specific agent loading env vars (e.g PYTHONPATH, NODE_OPTIONS) to the pod manifest as specified in the distro manifest.
-  # - "loader-fallback-to-pod-manifest" - it means we tried LD_PRELOAD and it failed, so we falled-back to using the pod manifest.
+  # - "loader-fallback-to-pod-manifest" - it means we tried LD_PRELOAD and it failed, so we fell back to using the pod manifest.
   envInjectionMethod: String
 
   # the distro params that are used for this container.
@@ -212,7 +212,7 @@ type K8sWorkloadContainer {
   # status of the agent injection enabled decision for this container.
   agentEnabled: K8sWorkloadAgentEnabledContainer
 
-  # manunal overrides for this container info, to set specific values for it or bypass failed detection.
+  # manual overrides for this container info, to set specific values for it or bypass failed detection.
   overrides: K8sWorkloadContainerOverrides
 }
 
@@ -354,19 +354,19 @@ type K8sWorkload {
   id: K8sWorkloadId!
 
   # this field is an aggregated status for the odigos health of the workload.
-  # it examine all related odigos values to determine if the workload is in it's desired odigos state, 
+  # it examines all related odigos values to determine if the workload is in its desired odigos state, 
   # and will indicate any odigos related errors or progress related to this workload.
-  # the goal is to have one single property to exaimne and get an overall view for a workload.
+  # the goal is to have one single property to examine and get an overall view for a workload.
   workloadOdigosHealthStatus: DesiredConditionStatus!
 
   # markedForInstrumentation is the reconciled decision for this source.
-  # a source can be marked or unmakred for instrumentation due to the presence
+  # a source can be marked or unmarked for instrumentation due to the presence
   # of Source CRs, there can be workload sources and namespace sources.
-  markedForInstrumentation: K8sWorkloadMakredForInstrumentation!
+  markedForInstrumentation: K8sWorkloadMarkedForInstrumentation!
 
   # runtimeInfo is empty if source is not marked for instrumentation,
   # or if the source has not been processed by odigos yet.
-  # once a source that is makred for instrumentation is processed, this field will be set.
+  # once a source that is marked for instrumentation is processed, this field will be set.
   runtimeInfo: K8sWorkloadRuntimeInfo
 
   agentEnabled: K8sWorkloadAgentEnabled
@@ -393,6 +393,6 @@ type K8sWorkload {
   processesHealthStatus: DesiredConditionStatus!
 
   # the telemetry metrics for this source 
-  # e.g. how much data is generate from this source as counted in the node collector.
+  # e.g. how much data is generated from this source as counted in the node collector.
   telemetryMetrics: [K8sWorkloadTelemetryMetrics!]!
 }

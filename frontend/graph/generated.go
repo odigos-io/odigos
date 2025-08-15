@@ -467,7 +467,7 @@ type ComplexityRoot struct {
 		Namespace func(childComplexity int) int
 	}
 
-	K8sWorkloadMakredForInstrumentation struct {
+	K8sWorkloadMarkedForInstrumentation struct {
 		DecisionEnum             func(childComplexity int) int
 		MarkedForInstrumentation func(childComplexity int) int
 		Message                  func(childComplexity int) int
@@ -882,7 +882,7 @@ type K8sActualNamespaceResolver interface {
 }
 type K8sWorkloadResolver interface {
 	WorkloadOdigosHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error)
-	MarkedForInstrumentation(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadMakredForInstrumentation, error)
+	MarkedForInstrumentation(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadMarkedForInstrumentation, error)
 	RuntimeInfo(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadRuntimeInfo, error)
 	AgentEnabled(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadAgentEnabled, error)
 	Rollout(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadRollout, error)
@@ -2719,26 +2719,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadId.Namespace(childComplexity), true
 
-	case "K8sWorkloadMakredForInstrumentation.decisionEnum":
-		if e.complexity.K8sWorkloadMakredForInstrumentation.DecisionEnum == nil {
+	case "K8sWorkloadMarkedForInstrumentation.decisionEnum":
+		if e.complexity.K8sWorkloadMarkedForInstrumentation.DecisionEnum == nil {
 			break
 		}
 
-		return e.complexity.K8sWorkloadMakredForInstrumentation.DecisionEnum(childComplexity), true
+		return e.complexity.K8sWorkloadMarkedForInstrumentation.DecisionEnum(childComplexity), true
 
-	case "K8sWorkloadMakredForInstrumentation.markedForInstrumentation":
-		if e.complexity.K8sWorkloadMakredForInstrumentation.MarkedForInstrumentation == nil {
+	case "K8sWorkloadMarkedForInstrumentation.markedForInstrumentation":
+		if e.complexity.K8sWorkloadMarkedForInstrumentation.MarkedForInstrumentation == nil {
 			break
 		}
 
-		return e.complexity.K8sWorkloadMakredForInstrumentation.MarkedForInstrumentation(childComplexity), true
+		return e.complexity.K8sWorkloadMarkedForInstrumentation.MarkedForInstrumentation(childComplexity), true
 
-	case "K8sWorkloadMakredForInstrumentation.message":
-		if e.complexity.K8sWorkloadMakredForInstrumentation.Message == nil {
+	case "K8sWorkloadMarkedForInstrumentation.message":
+		if e.complexity.K8sWorkloadMarkedForInstrumentation.Message == nil {
 			break
 		}
 
-		return e.complexity.K8sWorkloadMakredForInstrumentation.Message(childComplexity), true
+		return e.complexity.K8sWorkloadMarkedForInstrumentation.Message(childComplexity), true
 
 	case "K8sWorkloadPod.agentInjected":
 		if e.complexity.K8sWorkloadPod.AgentInjected == nil {
@@ -15784,9 +15784,9 @@ func (ec *executionContext) _K8sWorkload_markedForInstrumentation(ctx context.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.K8sWorkloadMakredForInstrumentation)
+	res := resTmp.(*model.K8sWorkloadMarkedForInstrumentation)
 	fc.Result = res
-	return ec.marshalNK8sWorkloadMakredForInstrumentation2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadMakredForInstrumentation(ctx, field.Selections, res)
+	return ec.marshalNK8sWorkloadMarkedForInstrumentation2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadMarkedForInstrumentation(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_K8sWorkload_markedForInstrumentation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15798,13 +15798,13 @@ func (ec *executionContext) fieldContext_K8sWorkload_markedForInstrumentation(_ 
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "markedForInstrumentation":
-				return ec.fieldContext_K8sWorkloadMakredForInstrumentation_markedForInstrumentation(ctx, field)
+				return ec.fieldContext_K8sWorkloadMarkedForInstrumentation_markedForInstrumentation(ctx, field)
 			case "decisionEnum":
-				return ec.fieldContext_K8sWorkloadMakredForInstrumentation_decisionEnum(ctx, field)
+				return ec.fieldContext_K8sWorkloadMarkedForInstrumentation_decisionEnum(ctx, field)
 			case "message":
-				return ec.fieldContext_K8sWorkloadMakredForInstrumentation_message(ctx, field)
+				return ec.fieldContext_K8sWorkloadMarkedForInstrumentation_message(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadMakredForInstrumentation", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadMarkedForInstrumentation", field.Name)
 		},
 	}
 	return fc, nil
@@ -17424,8 +17424,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadId_name(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sWorkloadMakredForInstrumentation_markedForInstrumentation(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadMakredForInstrumentation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadMakredForInstrumentation_markedForInstrumentation(ctx, field)
+func (ec *executionContext) _K8sWorkloadMarkedForInstrumentation_markedForInstrumentation(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadMarkedForInstrumentation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadMarkedForInstrumentation_markedForInstrumentation(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17455,9 +17455,9 @@ func (ec *executionContext) _K8sWorkloadMakredForInstrumentation_markedForInstru
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sWorkloadMakredForInstrumentation_markedForInstrumentation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sWorkloadMarkedForInstrumentation_markedForInstrumentation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "K8sWorkloadMakredForInstrumentation",
+		Object:     "K8sWorkloadMarkedForInstrumentation",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -17468,8 +17468,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadMakredForInstrumentation_mar
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sWorkloadMakredForInstrumentation_decisionEnum(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadMakredForInstrumentation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadMakredForInstrumentation_decisionEnum(ctx, field)
+func (ec *executionContext) _K8sWorkloadMarkedForInstrumentation_decisionEnum(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadMarkedForInstrumentation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadMarkedForInstrumentation_decisionEnum(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17499,9 +17499,9 @@ func (ec *executionContext) _K8sWorkloadMakredForInstrumentation_decisionEnum(ct
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sWorkloadMakredForInstrumentation_decisionEnum(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sWorkloadMarkedForInstrumentation_decisionEnum(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "K8sWorkloadMakredForInstrumentation",
+		Object:     "K8sWorkloadMarkedForInstrumentation",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -17512,8 +17512,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadMakredForInstrumentation_dec
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sWorkloadMakredForInstrumentation_message(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadMakredForInstrumentation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadMakredForInstrumentation_message(ctx, field)
+func (ec *executionContext) _K8sWorkloadMarkedForInstrumentation_message(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadMarkedForInstrumentation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadMarkedForInstrumentation_message(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -17543,9 +17543,9 @@ func (ec *executionContext) _K8sWorkloadMakredForInstrumentation_message(ctx con
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sWorkloadMakredForInstrumentation_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sWorkloadMarkedForInstrumentation_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "K8sWorkloadMakredForInstrumentation",
+		Object:     "K8sWorkloadMarkedForInstrumentation",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -36515,29 +36515,29 @@ func (ec *executionContext) _K8sWorkloadId(ctx context.Context, sel ast.Selectio
 	return out
 }
 
-var k8sWorkloadMakredForInstrumentationImplementors = []string{"K8sWorkloadMakredForInstrumentation"}
+var k8sWorkloadMarkedForInstrumentationImplementors = []string{"K8sWorkloadMarkedForInstrumentation"}
 
-func (ec *executionContext) _K8sWorkloadMakredForInstrumentation(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadMakredForInstrumentation) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, k8sWorkloadMakredForInstrumentationImplementors)
+func (ec *executionContext) _K8sWorkloadMarkedForInstrumentation(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadMarkedForInstrumentation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, k8sWorkloadMarkedForInstrumentationImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("K8sWorkloadMakredForInstrumentation")
+			out.Values[i] = graphql.MarshalString("K8sWorkloadMarkedForInstrumentation")
 		case "markedForInstrumentation":
-			out.Values[i] = ec._K8sWorkloadMakredForInstrumentation_markedForInstrumentation(ctx, field, obj)
+			out.Values[i] = ec._K8sWorkloadMarkedForInstrumentation_markedForInstrumentation(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "decisionEnum":
-			out.Values[i] = ec._K8sWorkloadMakredForInstrumentation_decisionEnum(ctx, field, obj)
+			out.Values[i] = ec._K8sWorkloadMarkedForInstrumentation_decisionEnum(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "message":
-			out.Values[i] = ec._K8sWorkloadMakredForInstrumentation_message(ctx, field, obj)
+			out.Values[i] = ec._K8sWorkloadMarkedForInstrumentation_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -41394,18 +41394,18 @@ func (ec *executionContext) marshalNK8sWorkloadId2ᚖgithubᚗcomᚋodigosᚑio�
 	return ec._K8sWorkloadId(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNK8sWorkloadMakredForInstrumentation2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadMakredForInstrumentation(ctx context.Context, sel ast.SelectionSet, v model.K8sWorkloadMakredForInstrumentation) graphql.Marshaler {
-	return ec._K8sWorkloadMakredForInstrumentation(ctx, sel, &v)
+func (ec *executionContext) marshalNK8sWorkloadMarkedForInstrumentation2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadMarkedForInstrumentation(ctx context.Context, sel ast.SelectionSet, v model.K8sWorkloadMarkedForInstrumentation) graphql.Marshaler {
+	return ec._K8sWorkloadMarkedForInstrumentation(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNK8sWorkloadMakredForInstrumentation2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadMakredForInstrumentation(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadMakredForInstrumentation) graphql.Marshaler {
+func (ec *executionContext) marshalNK8sWorkloadMarkedForInstrumentation2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadMarkedForInstrumentation(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadMarkedForInstrumentation) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._K8sWorkloadMakredForInstrumentation(ctx, sel, v)
+	return ec._K8sWorkloadMarkedForInstrumentation(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNK8sWorkloadPod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadPod(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadPod) graphql.Marshaler {

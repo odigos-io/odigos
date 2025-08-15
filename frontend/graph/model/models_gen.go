@@ -563,7 +563,7 @@ type K8sSourceID struct {
 type K8sWorkload struct {
 	ID                         *K8sWorkloadID                       `json:"id"`
 	WorkloadOdigosHealthStatus *DesiredConditionStatus              `json:"workloadOdigosHealthStatus"`
-	MarkedForInstrumentation   *K8sWorkloadMakredForInstrumentation `json:"markedForInstrumentation"`
+	MarkedForInstrumentation   *K8sWorkloadMarkedForInstrumentation `json:"markedForInstrumentation"`
 	RuntimeInfo                *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
 	AgentEnabled               *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
 	Rollout                    *K8sWorkloadRollout                  `json:"rollout,omitempty"`
@@ -623,7 +623,7 @@ type K8sWorkloadID struct {
 	Name      string          `json:"name"`
 }
 
-type K8sWorkloadMakredForInstrumentation struct {
+type K8sWorkloadMarkedForInstrumentation struct {
 	MarkedForInstrumentation bool   `json:"markedForInstrumentation"`
 	DecisionEnum             string `json:"decisionEnum"`
 	Message                  string `json:"message"`
