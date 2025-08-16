@@ -14,6 +14,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/99designs/gqlgen/graphql/executor"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -91,38 +92,38 @@ func startWatchers(ctx context.Context) error {
 }
 
 func startDatabase() error {
-    // Resolve data directory: allow override via env, else use OS-specific config dir
-    dataDir := os.Getenv("ODIGOS_UI_DATA_DIR")
-    if dataDir == "" {
-        // Default to user config dir: ~/.config/odigos or platform equivalent
-        if cfgDir, err := os.UserConfigDir(); err == nil && cfgDir != "" {
-            dataDir = cfgDir + "/odigos"
-        } else {
-            // Fallback to home directory
-            if home, err := os.UserHomeDir(); err == nil && home != "" {
-                dataDir = home + "/.odigos"
-            } else {
-                dataDir = "." // ultimate fallback to current dir
-            }
-        }
-    }
+	// Resolve data directory: allow override via env, else use OS-specific config dir
+	dataDir := os.Getenv("ODIGOS_UI_DATA_DIR")
+	if dataDir == "" {
+		// Default to user config dir: ~/.config/odigos or platform equivalent
+		if cfgDir, err := os.UserConfigDir(); err == nil && cfgDir != "" {
+			dataDir = cfgDir + "/odigos"
+		} else {
+			// Fallback to home directory
+			if home, err := os.UserHomeDir(); err == nil && home != "" {
+				dataDir = home + "/.odigos"
+			} else {
+				dataDir = "." // ultimate fallback to current dir
+			}
+		}
+	}
 
-    // Ensure directory exists
-    if mkErr := os.MkdirAll(dataDir, 0o755); mkErr != nil {
-        log.Println("failed to create data directory:", mkErr)
-    }
+	// Ensure directory exists
+	if mkErr := os.MkdirAll(dataDir, 0o755); mkErr != nil {
+		log.Println("failed to create data directory:", mkErr)
+	}
 
-    databasePath := dataDir + "/data.db"
-    database, err := db.NewSQLiteDB(databasePath)
+	databasePath := dataDir + "/data.db"
+	database, err := db.NewSQLiteDB(databasePath)
 
 	if err != nil {
 		// TODO: Move to fatal once db required
 		// return err
 		log.Println(err, "Failed to connect to DB")
-    } else {
-        defer database.Close()
-        db.InitializeDatabaseSchema(database.GetDB())
-    }
+	} else {
+		defer database.Close()
+		db.InitializeDatabaseSchema(database.GetDB())
+	}
 
 	return nil
 }
@@ -195,10 +196,18 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	// OIDC/OAuth2 handlers
 	r.GET("/auth/oidc-callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c) })
 
+	gqlExecutableSchema := graph.NewExecutableSchema(graph.Config{
+		Resolvers: &graph.Resolver{
+			MetricsConsumer: odigosMetrics,
+			Logger:          logger,
+		},
+	})
+	gqlExecutor := executor.New(gqlExecutableSchema)
+
 	// GraphQL handlers
 	r.POST("/graphql", func(c *gin.Context) {
 		c.Request = c.Request.WithContext(loaders.WithLoaders(c.Request.Context(), loaders.NewLoaders()))
-		graph.GetGQLHandler(c.Request.Context(), logger, odigosMetrics).ServeHTTP(c.Writer, c.Request)
+		graph.GetGQLHandler(c.Request.Context(), gqlExecutableSchema).ServeHTTP(c.Writer, c.Request)
 	})
 	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
 	// SSE handler
@@ -208,6 +217,16 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	r.POST("/token/update", services.UpdateToken)
 	r.GET("/describe/odigos", services.DescribeOdigos)
 	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", services.DescribeSource)
+	r.GET("/workload", func(c *gin.Context) {
+		services.DescribeWorkload(c, gqlExecutor)
+	})
+	r.GET("/workload/:namespace", func(c *gin.Context) {
+		services.DescribeWorkload(c, gqlExecutor)
+	})
+	r.GET("/workload/:namespace/:kind/:name", func(c *gin.Context) {
+		services.DescribeWorkload(c, gqlExecutor)
+	})
+
 	r.POST("/source/namespace/:namespace/kind/:kind/name/:name", services.CreateSourceWithAPI)
 	r.DELETE("/source/namespace/:namespace/kind/:kind/name/:name", services.DeleteSourceWithAPI)
 
