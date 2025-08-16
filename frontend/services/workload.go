@@ -99,6 +99,282 @@ const generalQuery = `
 	}
 `
 
+const verboseQuery = `
+	query GetWorkloads($filter: WorkloadFilter) {
+		workloads(filter: $filter) {
+			id {
+				namespace
+				kind
+				name
+			}
+			workloadOdigosHealthStatus {
+				name
+				status
+				reasonEnum
+				message
+			}
+			conditions {
+				runtimeDetection {
+					name
+					status
+					reasonEnum
+					message
+				}
+				agentInjectionEnabled {
+					name
+					status
+					reasonEnum
+					message
+				}
+				rollout {
+					name
+					status
+					reasonEnum
+					message
+				}
+				agentInjected {
+					name
+					status
+					reasonEnum
+					message
+				}
+				processesAgentHealth {
+					name
+					status
+					reasonEnum
+					message
+				}
+				expectingTelemetry {
+					name
+					status
+					reasonEnum
+					message
+				}
+			}
+			markedForInstrumentation {
+				markedForInstrumentation
+				decisionEnum
+				message
+			}
+			runtimeInfo {
+				completed
+				completedStatus {
+					name
+					status
+					reasonEnum
+					message
+				}
+				detectedLanguages
+				containers {
+					containerName
+					language
+					runtimeVersion
+					processEnvVars {
+						name
+						value
+					}
+					containerRuntimeEnvVars {
+						name
+						value
+					}
+					criErrorMessage
+					libcType
+					secureExecutionMode
+					otherAgentName
+				}
+			}
+			agentEnabled {
+				agentEnabled
+				enabledStatus {
+					name
+					status
+					reasonEnum
+					message
+				}
+				containers {
+					containerName
+					agentEnabled
+					agentEnabledStatus {
+						name
+						status
+						reasonEnum
+						message
+					}
+					otelDistroName
+					envInjectionMethod
+					distroParams {
+						name
+						value
+					}
+					traces {
+						enabled
+					}
+					metrics {
+						enabled
+					}
+					logs {
+						enabled
+					}
+				}
+			}
+			rollout {
+				rolloutStatus {
+					name
+					status
+					reasonEnum
+					message
+				}
+			}
+			containers {
+				containerName
+				runtimeInfo {
+					containerName
+					language
+					runtimeVersion
+					processEnvVars {
+						name
+						value
+					}
+					containerRuntimeEnvVars {
+						name
+						value
+					}
+					criErrorMessage
+					libcType
+					secureExecutionMode
+					otherAgentName
+				}
+				agentEnabled {
+					containerName
+					agentEnabled
+					agentEnabledStatus {
+						name
+						status
+						reasonEnum
+						message
+					}
+					otelDistroName
+					envInjectionMethod
+					distroParams {
+						name
+						value
+					}
+					traces {
+						enabled
+					}
+					metrics {
+						enabled
+					}
+					logs {
+						enabled
+					}
+				}
+				overrides {
+					containerName
+					runtimeInfo {
+						containerName
+						language
+						runtimeVersion
+						processEnvVars {
+							name
+							value
+						}
+						containerRuntimeEnvVars {
+							name
+							value
+						}
+						criErrorMessage
+						libcType
+						secureExecutionMode
+						otherAgentName
+					}
+				}
+			}
+			pods {
+				podName
+				nodeName
+				startTime
+				agentInjected
+				agentInjectedStatus {
+					name
+					status
+					reasonEnum
+					message
+				}
+				runningLatestWorkloadRevision
+				podHealthStatus {
+					name
+					status
+					reasonEnum
+					message
+				}
+				containers {
+					containerName
+					odigosInstrumentationDeviceName
+					otelDistroName
+					started
+					ready
+					isCrashLoop
+					restartCount
+					runningStartedTime
+					waitingReasonEnum
+					waitingMessage
+					healthStatus {
+						name
+						status
+						reasonEnum
+						message
+					}
+					processes {
+						healthy
+						healthStatus {
+							name
+							status
+							reasonEnum
+							message
+						}
+						identifyingAttributes {
+							name
+							value
+						}
+					}
+				}
+			}
+			podsAgentInjectionStatus {
+				name
+				status
+				reasonEnum
+				message
+			}
+			# podsHealthStatus {
+			# 	name
+			# 	status
+			# 	reasonEnum
+			# 	message
+			# }
+			processesHealthStatus {
+				name
+				status
+				reasonEnum
+				message
+			}
+			telemetryMetrics {
+				totalDataSentBytes
+				throughputBytes
+				expectingTelemetry {
+					isExpectingTelemetry
+					telemetryObservedStatus {
+						name
+						status
+						reasonEnum
+						message
+					}
+				}
+			}
+		}
+	}
+`
+
 const overviewQuery = `
 	query GetWorkloads($filter: WorkloadFilter) {
 		workloads(filter: $filter) {
@@ -143,8 +419,10 @@ func getQueryForVerbosity(verbosity string) string {
 		return overviewQuery
 	case "healthSummary":
 		return healthSummaryQuery
+	case "verbose":
+		return verboseQuery
 	}
-	return generalQuery // default to overview
+	return generalQuery // default to general
 }
 
 func getParamOrQuery(c *gin.Context, param string) string {
@@ -177,6 +455,7 @@ func senatizeKind(kind string) (string, error) {
 }
 
 func getFilterAndVerbosityFromContext(c *gin.Context) (map[string]interface{}, string, error) {
+
 	namespace := getParamOrQuery(c, "namespace")
 	kind, err := senatizeKind(getParamOrQuery(c, "kind"))
 	if err != nil {
@@ -248,11 +527,15 @@ func DescribeWorkloadWithFilters(c *gin.Context, gqlExecutor *executor.Executor,
 	c.JSON(200, workloads)
 }
 
-func DescribeWorkload(c *gin.Context, gqlExecutor *executor.Executor) {
+func DescribeWorkload(c *gin.Context, gqlExecutor *executor.Executor, overrideVerbosity *string) {
 	filter, verbosity, err := getFilterAndVerbosityFromContext(c)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
+	}
+
+	if overrideVerbosity != nil {
+		verbosity = *overrideVerbosity
 	}
 
 	DescribeWorkloadWithFilters(c, gqlExecutor, filter, verbosity)

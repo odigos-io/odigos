@@ -218,23 +218,21 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	r.GET("/describe/odigos", services.DescribeOdigos)
 	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", services.DescribeSource)
 	r.GET("/workload", func(c *gin.Context) {
-		services.DescribeWorkload(c, gqlExecutor)
+		services.DescribeWorkload(c, gqlExecutor, nil)
 	})
 	r.GET("/workload/overview", func(c *gin.Context) {
-		filters := map[string]interface{}{
-			"markedForInstrumentation": true,
-		}
-		services.DescribeWorkloadWithFilters(c, gqlExecutor, filters, "overview")
+		verbosity := "overview"
+		services.DescribeWorkload(c, gqlExecutor, &verbosity)
 	})
 	r.GET("/workload/health-summary", func(c *gin.Context) {
-		filters := map[string]interface{}{}
-		services.DescribeWorkloadWithFilters(c, gqlExecutor, filters, "healthSummary")
+		verbosity := "healthSummary"
+		services.DescribeWorkload(c, gqlExecutor, &verbosity)
 	})
 	r.GET("/workload/:namespace", func(c *gin.Context) {
-		services.DescribeWorkload(c, gqlExecutor)
+		services.DescribeWorkload(c, gqlExecutor, nil)
 	})
 	r.GET("/workload/:namespace/:kind/:name", func(c *gin.Context) {
-		services.DescribeWorkload(c, gqlExecutor)
+		services.DescribeWorkload(c, gqlExecutor, nil)
 	})
 
 	r.POST("/source/namespace/:namespace/kind/:kind/name/:name", services.CreateSourceWithAPI)
