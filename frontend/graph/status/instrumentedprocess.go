@@ -24,11 +24,13 @@ const (
 type ProcessesHealthStatusReason string
 
 const (
-	ProcessesHealthStatusReasonAllHealthy    ProcessesHealthStatusReason = "AllHealthy"
-	ProcessesHealthStatusReasonSomeUnhealthy ProcessesHealthStatusReason = "SomeUnhealthy"
-	ProcessesHealthStatusReasonStarting      ProcessesHealthStatusReason = "Starting"    // some processes are in starting state
-	ProcessesHealthStatusReasonUnsupported   ProcessesHealthStatusReason = "Unsupported" // when the distro does not record health status
-	ProcessesHealthStatusReasonNoProcesses   ProcessesHealthStatusReason = "NoProcesses" // no instrumented processes when expected
+	ProcessesHealthStatusReasonAllHealthy         ProcessesHealthStatusReason = "AllHealthy"
+	ProcessesHealthStatusReasonSomeUnhealthy      ProcessesHealthStatusReason = "SomeUnhealthy"
+	ProcessesHealthStatusReasonStarting           ProcessesHealthStatusReason = "Starting"           // some processes are in starting state
+	ProcessesHealthStatusReasonUnsupported        ProcessesHealthStatusReason = "Unsupported"        // when the distro does not record health status
+	ProcessesHealthStatusReasonNoProcesses        ProcessesHealthStatusReason = "NoProcesses"        // no instrumented processes when expected
+	ProcessesHealthStatusReasonContainersNotReady ProcessesHealthStatusReason = "ContainersNotReady" // found instrumented containers but they are not reporting ready
+	ProcessesHealthStatusReasonNoAgentInjected    ProcessesHealthStatusReason = "NoAgentInjected"    // no agent injected in any container, thus no processes to report health for
 )
 
 func CalculateProcessHealthStatus(instrumentationInstance *v1alpha1.InstrumentationInstance) *model.DesiredConditionStatus {

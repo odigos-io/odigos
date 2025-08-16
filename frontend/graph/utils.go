@@ -157,26 +157,33 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 		return nil, err
 	}
 
-	expectingInstances := false
+	foundAgentOnAnyContainer := false
+	foundReadyInstrumentedContainer := false
+	foundExpectedInstrumentationInstances := false
 	containersWithMissingInstances := false
 	numUnhealthyProcesses := 0
 	numStartingProcesses := 0
 	numHealthyProcesses := 0
 	for _, pod := range pods {
 		for _, container := range pod.Containers {
-			if !container.ExpectingInstrumentationInstances {
-				continue
-			}
 			if container.OtelDistroName == nil {
 				// do not expect instances from containers that are not instrumented
 				continue
 			}
+			foundAgentOnAnyContainer = true
+
+			if !container.ExpectingInstrumentationInstances {
+				continue
+			}
+			foundExpectedInstrumentationInstances = true
+
 			if !container.IsReady {
 				// only take into account containers that are ready
 				// starting containers might not have the agent ready yet
 				continue
 			}
-			expectingInstances = true
+			foundReadyInstrumentedContainer = true
+
 			containerId := loaders.ContainerId{
 				Namespace:     pod.PodNamespace,
 				PodName:       pod.PodName,
@@ -205,16 +212,7 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 		}
 	}
 
-	if !expectingInstances {
-		reasonStr := string(status.ProcessesHealthStatusReasonUnsupported)
-		return &model.DesiredConditionStatus{
-			Name:       status.ProcessesHealthStatusName,
-			Status:     model.DesiredStateProgressIrrelevant,
-			ReasonEnum: &reasonStr,
-			Message:    "agent health status not supported in this language and distribution",
-		}, nil
-	}
-
+	// check for any unhealthy first, regardless of any other conditions
 	if numUnhealthyProcesses > 0 {
 		reasonStr := string(status.ProcessesHealthStatusReasonSomeUnhealthy)
 		return &model.DesiredConditionStatus{
@@ -222,6 +220,36 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 			Status:     model.DesiredStateProgressFailure,
 			ReasonEnum: &reasonStr,
 			Message:    fmt.Sprintf("Found %d processes with unhealthy agent", numUnhealthyProcesses),
+		}, nil
+	}
+
+	if !foundAgentOnAnyContainer {
+		reasonStr := string(status.ProcessesHealthStatusReasonNoAgentInjected)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressIrrelevant,
+			ReasonEnum: &reasonStr,
+			Message:    "none of the running pods is instrumented with odigos agent",
+		}, nil
+	}
+
+	if !foundExpectedInstrumentationInstances {
+		reasonStr := string(status.ProcessesHealthStatusReasonUnsupported)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressIrrelevant,
+			ReasonEnum: &reasonStr,
+			Message:    "agents used in this workload does not support health status reporting",
+		}, nil
+	}
+
+	if !foundReadyInstrumentedContainer {
+		reasonStr := string(status.ProcessesHealthStatusReasonContainersNotReady)
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressWaiting, // for container to start and become ready
+			ReasonEnum: &reasonStr,
+			Message:    "agent not yet started in any instrumented containers",
 		}, nil
 	}
 
