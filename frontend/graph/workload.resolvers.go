@@ -11,10 +11,11 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/graph/status"
-	"github.com/odigos-io/odigos/frontend/services/common"
+	frontendcommon "github.com/odigos-io/odigos/frontend/services/common"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 )
 
@@ -75,7 +76,7 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 	// exception, if all is well, we return a special condition to denote it
 	if mostSevereState.Status == model.DesiredStateProgressSuccess {
 
-		workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(common.SourceID{
+		workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(frontendcommon.SourceID{
 			Namespace: obj.ID.Namespace,
 			Kind:      k8sconsts.WorkloadKind(obj.ID.Kind),
 			Name:      obj.ID.Name,
@@ -112,6 +113,38 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 	}
 
 	return mostSevereState, nil
+}
+
+// Conditions is the resolver for the conditions field.
+func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadConditions, error) {
+	l := loaders.For(ctx)
+	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	pods, err := l.GetWorkloadPods(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	runtimeDetection := status.CalculateRuntimeInspectionStatus(ic)
+	agentInjectionEnabled := status.CalculateAgentInjectionEnabledStatus(ic)
+	rollout := status.CalculateRolloutStatus(ic)
+	agentInjected := status.CalculateAgentInjectedStatus(ic, pods)
+	processesAgentHealth, err := aggregateProcessesHealthForWorkload(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	telemetryMetrics := status.CalculateExpectingTelemetryStatus(ic, pods, nil)
+
+	return &model.K8sWorkloadConditions{
+		RuntimeDetection:      runtimeDetection,
+		AgentInjectionEnabled: agentInjectionEnabled,
+		Rollout:               rollout,
+		AgentInjected:         agentInjected,
+		ProcessesAgentHealth:  processesAgentHealth,
+		ExpectingTelemetry:    telemetryMetrics.TelemetryObservedStatus,
+	}, nil
 }
 
 // MarkedForInstrumentation is the resolver for the markedForInstrumentation field.
@@ -151,15 +184,30 @@ func (r *k8sWorkloadResolver) RuntimeInfo(ctx context.Context, obj *model.K8sWor
 		return nil, err
 	}
 
+	completed := len(ic.Status.RuntimeDetailsByContainer) > 0
+
+	uniqueLanguages := make(map[common.ProgrammingLanguage]struct{})
 	containers := make([]*model.K8sWorkloadRuntimeInfoContainer, len(ic.Status.RuntimeDetailsByContainer))
 	for i, container := range ic.Status.RuntimeDetailsByContainer {
 		containers[i] = runtimeDetailsContainersToModel(&container)
+		_, ignored := l.GetIgnoredContainers()[container.ContainerName]
+		if container.Language != common.UnknownProgrammingLanguage && !ignored {
+			uniqueLanguages[container.Language] = struct{}{}
+		}
+	}
+	var detectedLanguages []model.ProgrammingLanguage
+	if completed {
+		detectedLanguages = make([]model.ProgrammingLanguage, 0, len(uniqueLanguages))
+		for language := range uniqueLanguages {
+			detectedLanguages = append(detectedLanguages, model.ProgrammingLanguage(language))
+		}
 	}
 
 	runtimeInfo := &model.K8sWorkloadRuntimeInfo{
-		Completed:       len(ic.Status.RuntimeDetailsByContainer) > 0,
-		CompletedStatus: status.CalculateRuntimeInspectionStatus(ic),
-		Containers:      containers,
+		Completed:         completed,
+		CompletedStatus:   status.CalculateRuntimeInspectionStatus(ic),
+		DetectedLanguages: detectedLanguages,
+		Containers:        containers,
 	}
 
 	return runtimeInfo, nil
@@ -387,7 +435,7 @@ func (r *k8sWorkloadResolver) TelemetryMetrics(ctx context.Context, obj *model.K
 	var throughput *int
 
 	// attempt to get the metrics for the workload, or keep them as nil if not available.
-	workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(common.SourceID{
+	workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(frontendcommon.SourceID{
 		Namespace: obj.ID.Namespace,
 		Kind:      k8sconsts.WorkloadKind(obj.ID.Kind),
 		Name:      obj.ID.Name,

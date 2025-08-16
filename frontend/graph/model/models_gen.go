@@ -563,6 +563,7 @@ type K8sSourceID struct {
 type K8sWorkload struct {
 	ID                         *K8sWorkloadID                       `json:"id"`
 	WorkloadOdigosHealthStatus *DesiredConditionStatus              `json:"workloadOdigosHealthStatus"`
+	Conditions                 *K8sWorkloadConditions               `json:"conditions"`
 	MarkedForInstrumentation   *K8sWorkloadMarkedForInstrumentation `json:"markedForInstrumentation"`
 	RuntimeInfo                *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
 	AgentEnabled               *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
@@ -603,6 +604,15 @@ type K8sWorkloadAgentEnabledContainerMetrics struct {
 
 type K8sWorkloadAgentEnabledContainerTraces struct {
 	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadConditions struct {
+	RuntimeDetection      *DesiredConditionStatus `json:"runtimeDetection,omitempty"`
+	AgentInjectionEnabled *DesiredConditionStatus `json:"agentInjectionEnabled,omitempty"`
+	Rollout               *DesiredConditionStatus `json:"rollout,omitempty"`
+	AgentInjected         *DesiredConditionStatus `json:"agentInjected,omitempty"`
+	ProcessesAgentHealth  *DesiredConditionStatus `json:"processesAgentHealth,omitempty"`
+	ExpectingTelemetry    *DesiredConditionStatus `json:"expectingTelemetry,omitempty"`
 }
 
 type K8sWorkloadContainer struct {
@@ -671,9 +681,10 @@ type K8sWorkloadRollout struct {
 }
 
 type K8sWorkloadRuntimeInfo struct {
-	Completed       bool                               `json:"completed"`
-	CompletedStatus *DesiredConditionStatus            `json:"completedStatus"`
-	Containers      []*K8sWorkloadRuntimeInfoContainer `json:"containers,omitempty"`
+	Completed         bool                               `json:"completed"`
+	CompletedStatus   *DesiredConditionStatus            `json:"completedStatus"`
+	DetectedLanguages []ProgrammingLanguage              `json:"detectedLanguages,omitempty"`
+	Containers        []*K8sWorkloadRuntimeInfoContainer `json:"containers,omitempty"`
 }
 
 type K8sWorkloadRuntimeInfoContainer struct {

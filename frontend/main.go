@@ -220,6 +220,16 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	r.GET("/workload", func(c *gin.Context) {
 		services.DescribeWorkload(c, gqlExecutor)
 	})
+	r.GET("/workload/overview", func(c *gin.Context) {
+		filters := map[string]interface{}{
+			"markedForInstrumentation": true,
+		}
+		services.DescribeWorkloadWithFilters(c, gqlExecutor, filters, "overview")
+	})
+	r.GET("/workload/health-summary", func(c *gin.Context) {
+		filters := map[string]interface{}{}
+		services.DescribeWorkloadWithFilters(c, gqlExecutor, filters, "healthSummary")
+	})
 	r.GET("/workload/:namespace", func(c *gin.Context) {
 		services.DescribeWorkload(c, gqlExecutor)
 	})

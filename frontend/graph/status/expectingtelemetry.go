@@ -17,6 +17,7 @@ const (
 	ExpectingTelemetryReasonAgentNotEnabledForInjection         ExpectingTelemetryReason = "AgentNotEnabledForInjection"
 	ExpectingTelemetryReasonAgentNoRunningPod                   ExpectingTelemetryReason = "AgentNoRunningPod"
 	ExpectingTelemetryReasonAgentNotInjected                    ExpectingTelemetryReason = "AgentNotInjected"
+	ExpectingTelemetryReasonInstrumentedContainersNotReady      ExpectingTelemetryReason = "InstrumentedContainersNotReady"
 	ExpectingTelemetryReasonAgentInjectedButNoDataSent          ExpectingTelemetryReason = "AgentInjectedButNoDataSent"
 	ExpectingTelemetryReasonAgentInjectedAndDataSent            ExpectingTelemetryReason = "AgentInjectedAndDataSent"
 )
@@ -65,14 +66,27 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 		}
 	}
 
+	// expecting telemetry if any pod with agent injected
+	// has at least one instrumentedcontainer that is ready.
+	foundInstrumentedContainer := false
 	for _, pod := range pods {
-		if pod.AgentInjected {
+		if !pod.AgentInjected {
+			continue
+		}
+		for _, container := range pod.Containers {
+			if container.OtelDistroName == nil || *container.OtelDistroName == "" {
+				continue
+			}
+			foundInstrumentedContainer = true
+			if !container.IsReady {
+				continue
+			}
 			expectingTelemetry = true
 			break
 		}
 	}
 
-	if !expectingTelemetry {
+	if !foundInstrumentedContainer {
 		reasonStr := string(ExpectingTelemetryReasonAgentNotInjected)
 		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
 			IsExpectingTelemetry: &expectingTelemetry,
@@ -80,7 +94,20 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 				Name:       ExpectingTelemetryStatus,
 				Status:     model.DesiredStateProgressIrrelevant,
 				ReasonEnum: &reasonStr,
-				Message:    "agent is not injected into any of the pods in this workload",
+				Message:    "no instrumented container in running state yet",
+			},
+		}
+	}
+
+	if !expectingTelemetry {
+		reasonStr := string(ExpectingTelemetryReasonInstrumentedContainersNotReady)
+		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
+			IsExpectingTelemetry: &expectingTelemetry,
+			TelemetryObservedStatus: &model.DesiredConditionStatus{
+				Name:       ExpectingTelemetryStatus,
+				Status:     model.DesiredStateProgressWaiting,
+				ReasonEnum: &reasonStr,
+				Message:    "instrumented containers are not in ready state",
 			},
 		}
 	}

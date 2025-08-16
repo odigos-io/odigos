@@ -406,6 +406,7 @@ type ComplexityRoot struct {
 
 	K8sWorkload struct {
 		AgentEnabled               func(childComplexity int) int
+		Conditions                 func(childComplexity int) int
 		Containers                 func(childComplexity int) int
 		ID                         func(childComplexity int) int
 		MarkedForInstrumentation   func(childComplexity int) int
@@ -447,6 +448,15 @@ type ComplexityRoot struct {
 
 	K8sWorkloadAgentEnabledContainerTraces struct {
 		Enabled func(childComplexity int) int
+	}
+
+	K8sWorkloadConditions struct {
+		AgentInjected         func(childComplexity int) int
+		AgentInjectionEnabled func(childComplexity int) int
+		ExpectingTelemetry    func(childComplexity int) int
+		ProcessesAgentHealth  func(childComplexity int) int
+		Rollout               func(childComplexity int) int
+		RuntimeDetection      func(childComplexity int) int
 	}
 
 	K8sWorkloadContainer struct {
@@ -515,9 +525,10 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadRuntimeInfo struct {
-		Completed       func(childComplexity int) int
-		CompletedStatus func(childComplexity int) int
-		Containers      func(childComplexity int) int
+		Completed         func(childComplexity int) int
+		CompletedStatus   func(childComplexity int) int
+		Containers        func(childComplexity int) int
+		DetectedLanguages func(childComplexity int) int
 	}
 
 	K8sWorkloadRuntimeInfoContainer struct {
@@ -882,6 +893,7 @@ type K8sActualNamespaceResolver interface {
 }
 type K8sWorkloadResolver interface {
 	WorkloadOdigosHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error)
+	Conditions(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadConditions, error)
 	MarkedForInstrumentation(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadMarkedForInstrumentation, error)
 	RuntimeInfo(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadRuntimeInfo, error)
 	AgentEnabled(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadAgentEnabled, error)
@@ -2474,6 +2486,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkload.AgentEnabled(childComplexity), true
 
+	case "K8sWorkload.conditions":
+		if e.complexity.K8sWorkload.Conditions == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkload.Conditions(childComplexity), true
+
 	case "K8sWorkload.containers":
 		if e.complexity.K8sWorkload.Containers == nil {
 			break
@@ -2655,6 +2674,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadAgentEnabledContainerTraces.Enabled(childComplexity), true
+
+	case "K8sWorkloadConditions.agentInjected":
+		if e.complexity.K8sWorkloadConditions.AgentInjected == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadConditions.AgentInjected(childComplexity), true
+
+	case "K8sWorkloadConditions.agentInjectionEnabled":
+		if e.complexity.K8sWorkloadConditions.AgentInjectionEnabled == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadConditions.AgentInjectionEnabled(childComplexity), true
+
+	case "K8sWorkloadConditions.expectingTelemetry":
+		if e.complexity.K8sWorkloadConditions.ExpectingTelemetry == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadConditions.ExpectingTelemetry(childComplexity), true
+
+	case "K8sWorkloadConditions.processesAgentHealth":
+		if e.complexity.K8sWorkloadConditions.ProcessesAgentHealth == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadConditions.ProcessesAgentHealth(childComplexity), true
+
+	case "K8sWorkloadConditions.rollout":
+		if e.complexity.K8sWorkloadConditions.Rollout == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadConditions.Rollout(childComplexity), true
+
+	case "K8sWorkloadConditions.runtimeDetection":
+		if e.complexity.K8sWorkloadConditions.RuntimeDetection == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadConditions.RuntimeDetection(childComplexity), true
 
 	case "K8sWorkloadContainer.agentEnabled":
 		if e.complexity.K8sWorkloadContainer.AgentEnabled == nil {
@@ -2942,6 +3003,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadRuntimeInfo.Containers(childComplexity), true
+
+	case "K8sWorkloadRuntimeInfo.detectedLanguages":
+		if e.complexity.K8sWorkloadRuntimeInfo.DetectedLanguages == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadRuntimeInfo.DetectedLanguages(childComplexity), true
 
 	case "K8sWorkloadRuntimeInfoContainer.containerName":
 		if e.complexity.K8sWorkloadRuntimeInfoContainer.ContainerName == nil {
@@ -15758,6 +15826,64 @@ func (ec *executionContext) fieldContext_K8sWorkload_workloadOdigosHealthStatus(
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkload_conditions(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkload_conditions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sWorkload().Conditions(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sWorkloadConditions)
+	fc.Result = res
+	return ec.marshalNK8sWorkloadConditions2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadConditions(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkload_conditions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkload",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "runtimeDetection":
+				return ec.fieldContext_K8sWorkloadConditions_runtimeDetection(ctx, field)
+			case "agentInjectionEnabled":
+				return ec.fieldContext_K8sWorkloadConditions_agentInjectionEnabled(ctx, field)
+			case "rollout":
+				return ec.fieldContext_K8sWorkloadConditions_rollout(ctx, field)
+			case "agentInjected":
+				return ec.fieldContext_K8sWorkloadConditions_agentInjected(ctx, field)
+			case "processesAgentHealth":
+				return ec.fieldContext_K8sWorkloadConditions_processesAgentHealth(ctx, field)
+			case "expectingTelemetry":
+				return ec.fieldContext_K8sWorkloadConditions_expectingTelemetry(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadConditions", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkload_markedForInstrumentation(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkload) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkload_markedForInstrumentation(ctx, field)
 	if err != nil {
@@ -15850,6 +15976,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_runtimeInfo(_ context.Conte
 				return ec.fieldContext_K8sWorkloadRuntimeInfo_completed(ctx, field)
 			case "completedStatus":
 				return ec.fieldContext_K8sWorkloadRuntimeInfo_completedStatus(ctx, field)
+			case "detectedLanguages":
+				return ec.fieldContext_K8sWorkloadRuntimeInfo_detectedLanguages(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sWorkloadRuntimeInfo_containers(ctx, field)
 			}
@@ -16969,6 +17097,312 @@ func (ec *executionContext) fieldContext_K8sWorkloadAgentEnabledContainerTraces_
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadConditions_runtimeDetection(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadConditions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadConditions_runtimeDetection(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeDetection, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadConditions_runtimeDetection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadConditions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadConditions_agentInjectionEnabled(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadConditions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadConditions_agentInjectionEnabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentInjectionEnabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadConditions_agentInjectionEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadConditions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadConditions_rollout(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadConditions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadConditions_rollout(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rollout, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadConditions_rollout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadConditions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadConditions_agentInjected(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadConditions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadConditions_agentInjected(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentInjected, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadConditions_agentInjected(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadConditions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadConditions_processesAgentHealth(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadConditions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadConditions_processesAgentHealth(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProcessesAgentHealth, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadConditions_processesAgentHealth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadConditions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadConditions_expectingTelemetry(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadConditions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadConditions_expectingTelemetry(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExpectingTelemetry, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadConditions_expectingTelemetry(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadConditions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
 	}
 	return fc, nil
@@ -18847,6 +19281,47 @@ func (ec *executionContext) fieldContext_K8sWorkloadRuntimeInfo_completedStatus(
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadRuntimeInfo_detectedLanguages(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRuntimeInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadRuntimeInfo_detectedLanguages(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DetectedLanguages, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]model.ProgrammingLanguage)
+	fc.Result = res
+	return ec.marshalOProgrammingLanguage2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguageᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadRuntimeInfo_detectedLanguages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadRuntimeInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ProgrammingLanguage does not have child fields")
 		},
 	}
 	return fc, nil
@@ -26145,6 +26620,8 @@ func (ec *executionContext) fieldContext_Query_workloads(ctx context.Context, fi
 				return ec.fieldContext_K8sWorkload_id(ctx, field)
 			case "workloadOdigosHealthStatus":
 				return ec.fieldContext_K8sWorkload_workloadOdigosHealthStatus(ctx, field)
+			case "conditions":
+				return ec.fieldContext_K8sWorkload_conditions(ctx, field)
 			case "markedForInstrumentation":
 				return ec.fieldContext_K8sWorkload_markedForInstrumentation(ctx, field)
 			case "runtimeInfo":
@@ -35816,6 +36293,42 @@ func (ec *executionContext) _K8sWorkload(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "conditions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkload_conditions(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "markedForInstrumentation":
 			field := field
 
@@ -36377,6 +36890,52 @@ func (ec *executionContext) _K8sWorkloadAgentEnabledContainerTraces(ctx context.
 	return out
 }
 
+var k8sWorkloadConditionsImplementors = []string{"K8sWorkloadConditions"}
+
+func (ec *executionContext) _K8sWorkloadConditions(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadConditions) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, k8sWorkloadConditionsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("K8sWorkloadConditions")
+		case "runtimeDetection":
+			out.Values[i] = ec._K8sWorkloadConditions_runtimeDetection(ctx, field, obj)
+		case "agentInjectionEnabled":
+			out.Values[i] = ec._K8sWorkloadConditions_agentInjectionEnabled(ctx, field, obj)
+		case "rollout":
+			out.Values[i] = ec._K8sWorkloadConditions_rollout(ctx, field, obj)
+		case "agentInjected":
+			out.Values[i] = ec._K8sWorkloadConditions_agentInjected(ctx, field, obj)
+		case "processesAgentHealth":
+			out.Values[i] = ec._K8sWorkloadConditions_processesAgentHealth(ctx, field, obj)
+		case "expectingTelemetry":
+			out.Values[i] = ec._K8sWorkloadConditions_expectingTelemetry(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var k8sWorkloadContainerImplementors = []string{"K8sWorkloadContainer"}
 
 func (ec *executionContext) _K8sWorkloadContainer(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadContainer) graphql.Marshaler {
@@ -36877,6 +37436,8 @@ func (ec *executionContext) _K8sWorkloadRuntimeInfo(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "detectedLanguages":
+			out.Values[i] = ec._K8sWorkloadRuntimeInfo_detectedLanguages(ctx, field, obj)
 		case "containers":
 			out.Values[i] = ec._K8sWorkloadRuntimeInfo_containers(ctx, field, obj)
 		default:
@@ -41368,6 +41929,20 @@ func (ec *executionContext) marshalNK8sWorkloadAgentEnabledContainer2ᚖgithub�
 	return ec._K8sWorkloadAgentEnabledContainer(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNK8sWorkloadConditions2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadConditions(ctx context.Context, sel ast.SelectionSet, v model.K8sWorkloadConditions) graphql.Marshaler {
+	return ec._K8sWorkloadConditions(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNK8sWorkloadConditions2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadConditions(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadConditions) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._K8sWorkloadConditions(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNK8sWorkloadContainer2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainer(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadContainer) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -42999,6 +43574,13 @@ func (ec *executionContext) unmarshalODbQueryPayloadCollectionInput2ᚖgithubᚗ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx context.Context, sel ast.SelectionSet, v *model.DesiredConditionStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DesiredConditionStatus(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalODistroParam2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDistroParamᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.DistroParam) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -43709,6 +44291,71 @@ func (ec *executionContext) unmarshalOProbeInput2ᚖgithubᚗcomᚋodigosᚑio�
 	}
 	res, err := ec.unmarshalInputProbeInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOProgrammingLanguage2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguageᚄ(ctx context.Context, v any) ([]model.ProgrammingLanguage, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]model.ProgrammingLanguage, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNProgrammingLanguage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguage(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOProgrammingLanguage2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguageᚄ(ctx context.Context, sel ast.SelectionSet, v []model.ProgrammingLanguage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNProgrammingLanguage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguage(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOProgrammingLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguage(ctx context.Context, v any) (*model.ProgrammingLanguage, error) {

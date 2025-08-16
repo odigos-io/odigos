@@ -71,6 +71,8 @@ models:
     fields:
       workloadOdigosHealthStatus:
         resolver: true
+      conditions:
+        resolver: true
       markedForInstrumentation:
         resolver: true
       runtimeInfo:

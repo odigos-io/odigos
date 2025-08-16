@@ -8,6 +8,17 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 )
 
+func (l *Loaders) GetIgnoredContainers() map[string]struct{} {
+	if l.odigosConfiguration == nil {
+		return map[string]struct{}{}
+	}
+	ignoredContainers := make(map[string]struct{})
+	for _, container := range l.odigosConfiguration.IgnoredContainers {
+		ignoredContainers[container] = struct{}{}
+	}
+	return ignoredContainers
+}
+
 func (l *Loaders) GetInstrumentationConfig(ctx context.Context, workload model.K8sWorkloadID) (*v1alpha1.InstrumentationConfig, error) {
 	l.instrumentationConfigMutex.Lock()
 	defer l.instrumentationConfigMutex.Unlock()

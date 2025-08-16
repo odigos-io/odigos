@@ -12,7 +12,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 )
 
-const overviewQuery = `
+const generalQuery = `
 	query GetWorkloads($filter: WorkloadFilter) {
 		workloads(filter: $filter) {
 			id {
@@ -25,6 +25,38 @@ const overviewQuery = `
 				status
 				reasonEnum
 				message
+			}
+			conditions {
+				runtimeDetection {
+					status
+					reasonEnum
+					message
+				}
+				agentInjectionEnabled {
+					status
+					reasonEnum
+					message
+				}
+				rollout {
+					status
+					reasonEnum
+					message
+				}
+				agentInjected {
+					status
+					reasonEnum
+					message
+				}
+				processesAgentHealth {
+					status
+					reasonEnum
+					message
+				}
+				expectingTelemetry {
+					status
+					reasonEnum
+					message
+				}
 			}
 			markedForInstrumentation {
 				markedForInstrumentation
@@ -67,7 +99,7 @@ const overviewQuery = `
 	}
 `
 
-const markedForInstrumentationQuery = `
+const overviewQuery = `
 	query GetWorkloads($filter: WorkloadFilter) {
 		workloads(filter: $filter) {
 			id {
@@ -75,8 +107,29 @@ const markedForInstrumentationQuery = `
 				kind
 				name
 			}
-			markedForInstrumentation {
-				markedForInstrumentation
+			telemetryMetrics {
+				throughputBytes
+			}
+			runtimeInfo {
+				detectedLanguages
+			}
+		}
+	}
+`
+
+const healthSummaryQuery = `
+	query GetWorkloads($filter: WorkloadFilter) {
+		workloads(filter: $filter) {
+			id {
+				namespace
+				kind
+				name
+			}
+			workloadOdigosHealthStatus {
+				name
+				status
+				reasonEnum
+				message
 			}
 		}
 	}
@@ -84,12 +137,14 @@ const markedForInstrumentationQuery = `
 
 func getQueryForVerbosity(verbosity string) string {
 	switch verbosity {
+	case "general":
+		return generalQuery
 	case "overview":
 		return overviewQuery
-	case "markedForInstrumentation":
-		return markedForInstrumentationQuery
+	case "healthSummary":
+		return healthSummaryQuery
 	}
-	return overviewQuery // default to overview
+	return generalQuery // default to overview
 }
 
 func getParamOrQuery(c *gin.Context, param string) string {
@@ -121,41 +176,34 @@ func senatizeKind(kind string) (string, error) {
 	}
 }
 
-func DescribeWorkload(c *gin.Context, gqlExecutor *executor.Executor) {
-	ctx := c.Request.Context()
-
-	// get relevant filters from query params
+func getFilterAndVerbosityFromContext(c *gin.Context) (map[string]interface{}, string, error) {
 	namespace := getParamOrQuery(c, "namespace")
 	kind, err := senatizeKind(getParamOrQuery(c, "kind"))
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
+		return nil, "", err
 	}
 	name := getParamOrQuery(c, "name")
-	markedForInstrumentation := getParamOrQuery(c, "markedForInstrumentation")
+	markedForInstrumentation := getParamOrQuery(c, "markedForInstrumentation") == "true"
 	verbosity := c.Query("verbosity")
 
-	// Create workload filter based on query parameters
-	filterMap := map[string]interface{}{} // how gql expects it
-	if namespace != "" || kind != "" || name != "" || markedForInstrumentation != "" {
-
-		if namespace != "" {
-			filterMap["namespace"] = namespace
-		}
-		if kind != "" {
-			filterMap["kind"] = kind
-		}
-		if name != "" {
-			filterMap["name"] = name
-		}
-		if markedForInstrumentation == "true" {
-			filterMap["markedForInstrumentation"] = true
-		} else if markedForInstrumentation == "false" {
-			filterMap["markedForInstrumentation"] = false
-		}
+	filterMap := map[string]interface{}{}
+	if namespace != "" {
+		filterMap["namespace"] = namespace
+	}
+	if name != "" && kind != "" {
+		filterMap["name"] = name
+		filterMap["kind"] = kind
+	}
+	if markedForInstrumentation {
+		filterMap["markedForInstrumentation"] = true
 	}
 
-	// Create a new context with loaders
+	return filterMap, verbosity, nil
+}
+
+func DescribeWorkloadWithFilters(c *gin.Context, gqlExecutor *executor.Executor, filter map[string]interface{}, verbosity string) {
+	ctx := c.Request.Context()
+	// add things to the ctx
 	ctx = loaders.WithLoaders(ctx, loaders.NewLoaders())
 	ctx = graphql.StartOperationTrace(ctx)
 
@@ -163,7 +211,7 @@ func DescribeWorkload(c *gin.Context, gqlExecutor *executor.Executor) {
 	operationContext, errs := gqlExecutor.CreateOperationContext(ctx, &graphql.RawParams{
 		Query: query,
 		Variables: map[string]interface{}{
-			"filter": filterMap,
+			"filter": filter,
 		},
 	})
 	if len(errs) > 0 {
@@ -186,7 +234,7 @@ func DescribeWorkload(c *gin.Context, gqlExecutor *executor.Executor) {
 
 	// Extract workloads from the response data
 	var workloadsData map[string]interface{}
-	err = json.Unmarshal(res.Data, &workloadsData)
+	err := json.Unmarshal(res.Data, &workloadsData)
 	if err != nil {
 		c.JSON(500, gin.H{"error": fmt.Sprintf("Failed to unmarshal response data: %v", err)})
 		return
@@ -198,4 +246,14 @@ func DescribeWorkload(c *gin.Context, gqlExecutor *executor.Executor) {
 	}
 
 	c.JSON(200, workloads)
+}
+
+func DescribeWorkload(c *gin.Context, gqlExecutor *executor.Executor) {
+	filter, verbosity, err := getFilterAndVerbosityFromContext(c)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	DescribeWorkloadWithFilters(c, gqlExecutor, filter, verbosity)
 }

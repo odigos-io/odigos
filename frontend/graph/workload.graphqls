@@ -123,6 +123,13 @@ type K8sWorkloadRuntimeInfo {
   # the status of the runtime info detection process.
   completedStatus: DesiredConditionStatus!
 
+  # will contain a list of the unique languages detected in this container,
+  # or empty if no languages were detected.
+  # ignored containers and unknown languages are not included in the list,
+  # so it is sutabile for a general overview of the languages in the workload for disaply.
+  # if detection is not completed, this will be null.
+  detectedLanguages: [ProgrammingLanguage!]
+
   # containers is a list of containers that are part of the source.
   # it contains the runtime info for each container.
   # all containers are always included.
@@ -379,6 +386,15 @@ type K8sWorkloadTelemetryMetrics {
   expectingTelemetry: K8sWorkloadTelemetryMetricsExpectingTelemetryStatus!
 }
 
+type K8sWorkloadConditions {
+  runtimeDetection: DesiredConditionStatus
+  agentInjectionEnabled: DesiredConditionStatus
+  rollout: DesiredConditionStatus
+  agentInjected: DesiredConditionStatus
+  processesAgentHealth: DesiredConditionStatus
+  expectingTelemetry: DesiredConditionStatus
+}
+
 # describes a single workload in odigos.
 type K8sWorkload {
   id: K8sWorkloadId!
@@ -388,6 +404,8 @@ type K8sWorkload {
   # and will indicate any odigos related errors or progress related to this workload.
   # the goal is to have one single property to examine and get an overall view for a workload.
   workloadOdigosHealthStatus: DesiredConditionStatus!
+
+  conditions: K8sWorkloadConditions!
 
   # markedForInstrumentation is the reconciled decision for this source.
   # a source can be marked or unmarked for instrumentation due to the presence
