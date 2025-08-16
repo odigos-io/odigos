@@ -95,6 +95,13 @@ const generalQuery = `
 					}
 				}
 			}
+			telemetryMetrics {
+				totalDataSentBytes
+				throughputBytes
+				expectingTelemetry {
+					isExpectingTelemetry
+				}
+			}
 		}
 	}
 `
