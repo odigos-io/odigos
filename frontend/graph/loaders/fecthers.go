@@ -3,7 +3,9 @@ package loaders
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
@@ -11,20 +13,55 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"golang.org/x/sync/errgroup"
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// formatOperationMessage creates a clean operation message that handles empty values gracefully
+func formatOperationMessage(operation string, namespace string, additionalInfo ...string) string {
+	if namespace == "" {
+		namespace = "all namespaces"
+	}
+
+	if len(additionalInfo) > 0 && additionalInfo[0] != "" {
+		return fmt.Sprintf("%s in namespace %s with %s", operation, namespace, additionalInfo[0])
+	}
+	return fmt.Sprintf("%s in namespace %s", operation, namespace)
+}
+
+// timedAPICall wraps a Kubernetes API call with timing and logging
+func timedAPICall[T any](logger logr.Logger, operation string, apiCall func() (T, error)) (T, error) {
+	start := time.Now()
+	result, err := apiCall()
+	duration := time.Since(start)
+
+	if err != nil {
+		logger.Error(err, "API call failed", "operation", operation, "duration", duration)
+	} else {
+		logger.Info("API call completed", "operation", operation, "duration", duration)
+	}
+
+	return result, err
+}
+
 // function to get just the instrumentation configs that match the filter.
 // e.g. load only sources which are marked for instrumentation after the instrumentor reconciles it.
 // this is cheaper and faster query than to load all the sources and resolve each one.
-func fetchInstrumentationConfigs(ctx context.Context, filters *WorkloadFilter) (map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, error) {
+func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, error) {
 
 	// diffrentiate between a single source query and a namespace / cluster wide query.
 	if filters.SingleWorkload != nil {
 		instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(filters.SingleWorkload.WorkloadName, filters.SingleWorkload.WorkloadKind)
-		instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(filters.NamespaceString).Get(ctx, instrumentationConfigName, metav1.GetOptions{})
+		instrumentationConfigs, err := timedAPICall(
+			logger,
+			fmt.Sprintf("Get InstrumentationConfig %s/%s", filters.NamespaceString, instrumentationConfigName),
+			func() (*odigosv1.InstrumentationConfig, error) {
+				return kube.DefaultClient.OdigosClient.InstrumentationConfigs(filters.NamespaceString).Get(ctx, instrumentationConfigName, metav1.GetOptions{})
+			},
+		)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				// workload cam be not found and it is not an error.
@@ -41,7 +78,13 @@ func fetchInstrumentationConfigs(ctx context.Context, filters *WorkloadFilter) (
 			}: instrumentationConfigs,
 		}, nil
 	} else {
-		instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+		instrumentationConfigs, err := timedAPICall(
+			logger,
+			formatOperationMessage("List InstrumentationConfigs", filters.NamespaceString),
+			func() (*odigosv1.InstrumentationConfigList, error) {
+				return kube.DefaultClient.OdigosClient.InstrumentationConfigs(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+			},
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -65,7 +108,7 @@ func fetchInstrumentationConfigs(ctx context.Context, filters *WorkloadFilter) (
 	}
 }
 
-func fetchSourcesForWorkload(ctx context.Context, filters *WorkloadFilterSingleWorkload) (*odigosv1.SourceList, error) {
+func fetchSourcesForWorkload(ctx context.Context, logger logr.Logger, filters *WorkloadFilterSingleWorkload) (*odigosv1.SourceList, error) {
 	// for workload we need to fetch both the workload and namespace sources.
 	selectorWorkload := metav1.LabelSelector{
 		MatchLabels: map[string]string{
@@ -74,9 +117,15 @@ func fetchSourcesForWorkload(ctx context.Context, filters *WorkloadFilterSingleW
 			k8sconsts.WorkloadNameLabel:      filters.WorkloadName,
 		},
 	}
-	workloadSources, err := kube.DefaultClient.OdigosClient.Sources(filters.Namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(&selectorWorkload),
-	})
+	workloadSources, err := timedAPICall(
+		logger,
+		fmt.Sprintf("List Sources for workload %s/%s/%s", filters.Namespace, filters.WorkloadKind, filters.WorkloadName),
+		func() (*odigosv1.SourceList, error) {
+			return kube.DefaultClient.OdigosClient.Sources(filters.Namespace).List(ctx, metav1.ListOptions{
+				LabelSelector: metav1.FormatLabelSelector(&selectorWorkload),
+			})
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -88,9 +137,15 @@ func fetchSourcesForWorkload(ctx context.Context, filters *WorkloadFilterSingleW
 			k8sconsts.WorkloadNameLabel:      filters.Namespace,
 		},
 	}
-	namespaceSources, err := kube.DefaultClient.OdigosClient.Sources(filters.Namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(&selectorNamespace),
-	})
+	namespaceSources, err := timedAPICall(
+		logger,
+		formatOperationMessage("List Sources for namespace", filters.Namespace),
+		func() (*odigosv1.SourceList, error) {
+			return kube.DefaultClient.OdigosClient.Sources(filters.Namespace).List(ctx, metav1.ListOptions{
+				LabelSelector: metav1.FormatLabelSelector(&selectorNamespace),
+			})
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +158,7 @@ func fetchSourcesForWorkload(ctx context.Context, filters *WorkloadFilterSingleW
 	return sources, nil
 }
 
-func fetchSourcesForNamespace(ctx context.Context, filters *WorkloadFilterSingleNamespace) (*odigosv1.SourceList, error) {
+func fetchSourcesForNamespace(ctx context.Context, logger logr.Logger, filters *WorkloadFilterSingleNamespace) (*odigosv1.SourceList, error) {
 	// will return both "workload" sources and "namespace" sources as required
 	selector := metav1.LabelSelector{
 		MatchLabels: map[string]string{
@@ -111,13 +166,25 @@ func fetchSourcesForNamespace(ctx context.Context, filters *WorkloadFilterSingle
 		},
 	}
 	// assumes that sources are in the same namespace they are instrumenting (which is true at time of writing)
-	return kube.DefaultClient.OdigosClient.Sources(filters.Namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(&selector),
-	})
+	return timedAPICall(
+		logger,
+		formatOperationMessage("List Sources for namespace", filters.Namespace),
+		func() (*odigosv1.SourceList, error) {
+			return kube.DefaultClient.OdigosClient.Sources(filters.Namespace).List(ctx, metav1.ListOptions{
+				LabelSelector: metav1.FormatLabelSelector(&selector),
+			})
+		},
+	)
 }
 
-func fetchAllSources(ctx context.Context, ignoredNamespaces map[string]struct{}) (*odigosv1.SourceList, error) {
-	sources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+func fetchAllSources(ctx context.Context, logger logr.Logger, ignoredNamespaces map[string]struct{}) (*odigosv1.SourceList, error) {
+	sources, err := timedAPICall(
+		logger,
+		"List all Sources across all namespaces",
+		func() (*odigosv1.SourceList, error) {
+			return kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -133,15 +200,15 @@ func fetchAllSources(ctx context.Context, ignoredNamespaces map[string]struct{})
 	return sources, nil
 }
 
-func fetchSources(ctx context.Context, filters *WorkloadFilter) (workloadSources map[model.K8sWorkloadID]*odigosv1.Source, namespaceSources map[string]*odigosv1.Source, err error) {
+func fetchSources(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (workloadSources map[model.K8sWorkloadID]*odigosv1.Source, namespaceSources map[string]*odigosv1.Source, err error) {
 
 	var sources *odigosv1.SourceList
 	if filters.SingleWorkload != nil {
-		sources, err = fetchSourcesForWorkload(ctx, filters.SingleWorkload)
+		sources, err = fetchSourcesForWorkload(ctx, logger, filters.SingleWorkload)
 	} else if filters.SingleNamespace != nil {
-		sources, err = fetchSourcesForNamespace(ctx, filters.SingleNamespace)
+		sources, err = fetchSourcesForNamespace(ctx, logger, filters.SingleNamespace)
 	} else {
-		sources, err = fetchAllSources(ctx, filters.IgnoredNamespaces)
+		sources, err = fetchAllSources(ctx, logger, filters.IgnoredNamespaces)
 	}
 	if err != nil {
 		return nil, nil, err
@@ -165,14 +232,20 @@ func fetchSources(ctx context.Context, filters *WorkloadFilter) (workloadSources
 	return
 }
 
-func fetchWorkloadManifests(ctx context.Context, filters *WorkloadFilter) (workloadManifests map[model.K8sWorkloadID]*WorkloadManifest, err error) {
+func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (workloadManifests map[model.K8sWorkloadID]*WorkloadManifest, err error) {
 
 	// if this is a query for one specific workload, then fetch only it.
 	if filters.SingleWorkload != nil {
 		workloadManifests = make(map[model.K8sWorkloadID]*WorkloadManifest)
 		switch filters.SingleWorkload.WorkloadKind {
 		case k8sconsts.WorkloadKindDeployment:
-			deployment, err := kube.DefaultClient.AppsV1().Deployments(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
+			deployment, err := timedAPICall(
+				logger,
+				fmt.Sprintf("Get Deployment %s/%s", filters.NamespaceString, filters.SingleWorkload.WorkloadName),
+				func() (*appsv1.Deployment, error) {
+					return kube.DefaultClient.AppsV1().Deployments(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
+				},
+			)
 			if err != nil {
 				if apierrors.IsNotFound(err) {
 					// workload cam be not found and it is not an error.
@@ -193,7 +266,13 @@ func fetchWorkloadManifests(ctx context.Context, filters *WorkloadFilter) (workl
 			return workloadManifests, nil
 
 		case k8sconsts.WorkloadKindDaemonSet:
-			daemonset, err := kube.DefaultClient.AppsV1().DaemonSets(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
+			daemonset, err := timedAPICall(
+				logger,
+				fmt.Sprintf("Get DaemonSet %s/%s", filters.NamespaceString, filters.SingleWorkload.WorkloadName),
+				func() (*appsv1.DaemonSet, error) {
+					return kube.DefaultClient.AppsV1().DaemonSets(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
+				},
+			)
 			if err != nil {
 				if apierrors.IsNotFound(err) {
 					// workload cam be not found and it is not an error.
@@ -214,7 +293,13 @@ func fetchWorkloadManifests(ctx context.Context, filters *WorkloadFilter) (workl
 			return workloadManifests, nil
 
 		case k8sconsts.WorkloadKindStatefulSet:
-			statefulset, err := kube.DefaultClient.AppsV1().StatefulSets(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
+			statefulset, err := timedAPICall(
+				logger,
+				fmt.Sprintf("Get StatefulSet %s/%s", filters.NamespaceString, filters.SingleWorkload.WorkloadName),
+				func() (*appsv1.StatefulSet, error) {
+					return kube.DefaultClient.AppsV1().StatefulSets(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
+				},
+			)
 			if err != nil {
 				if apierrors.IsNotFound(err) {
 					// workload cam be not found and it is not an error.
@@ -235,7 +320,13 @@ func fetchWorkloadManifests(ctx context.Context, filters *WorkloadFilter) (workl
 			return workloadManifests, nil
 
 		case k8sconsts.WorkloadKindCronJob:
-			cronjob, err := kube.DefaultClient.BatchV1().CronJobs(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
+			cronjob, err := timedAPICall(
+				logger,
+				fmt.Sprintf("Get CronJob %s/%s", filters.NamespaceString, filters.SingleWorkload.WorkloadName),
+				func() (*batchv1.CronJob, error) {
+					return kube.DefaultClient.BatchV1().CronJobs(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
+				},
+			)
 			if err != nil {
 				if apierrors.IsNotFound(err) {
 					// workload cam be not found and it is not an error.
@@ -269,7 +360,13 @@ func fetchWorkloadManifests(ctx context.Context, filters *WorkloadFilter) (workl
 	)
 
 	g.Go(func() error {
-		deployments, err := kube.DefaultClient.AppsV1().Deployments(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+		deployments, err := timedAPICall(
+			logger,
+			formatOperationMessage("List Deployments", filters.NamespaceString),
+			func() (*appsv1.DeploymentList, error) {
+				return kube.DefaultClient.AppsV1().Deployments(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+			},
+		)
 		if err != nil {
 			return err
 		}
@@ -288,7 +385,13 @@ func fetchWorkloadManifests(ctx context.Context, filters *WorkloadFilter) (workl
 	})
 
 	g.Go(func() error {
-		daemonsets, err := kube.DefaultClient.AppsV1().DaemonSets(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+		daemonsets, err := timedAPICall(
+			logger,
+			formatOperationMessage("List DaemonSets", filters.NamespaceString),
+			func() (*appsv1.DaemonSetList, error) {
+				return kube.DefaultClient.AppsV1().DaemonSets(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+			},
+		)
 		if err != nil {
 			return err
 		}
@@ -307,7 +410,13 @@ func fetchWorkloadManifests(ctx context.Context, filters *WorkloadFilter) (workl
 	})
 
 	g.Go(func() error {
-		statefulsets, err := kube.DefaultClient.AppsV1().StatefulSets(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+		statefulsets, err := timedAPICall(
+			logger,
+			formatOperationMessage("List StatefulSets", filters.NamespaceString),
+			func() (*appsv1.StatefulSetList, error) {
+				return kube.DefaultClient.AppsV1().StatefulSets(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+			},
+		)
 		if err != nil {
 			return err
 		}
@@ -326,7 +435,13 @@ func fetchWorkloadManifests(ctx context.Context, filters *WorkloadFilter) (workl
 	})
 
 	g.Go(func() error {
-		cronjobs, err := kube.DefaultClient.BatchV1().CronJobs(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+		cronjobs, err := timedAPICall(
+			logger,
+			formatOperationMessage("List CronJobs", filters.NamespaceString),
+			func() (*batchv1.CronJobList, error) {
+				return kube.DefaultClient.BatchV1().CronJobs(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+			},
+		)
 		if err != nil {
 			return err
 		}
@@ -377,7 +492,7 @@ func fetchWorkloadManifests(ctx context.Context, filters *WorkloadFilter) (workl
 	return workloadManifests, nil
 }
 
-func fetchWorkloadPods(ctx context.Context, filters *WorkloadFilter, singleWorkloadManifest *WorkloadManifest, workloadIdsMap map[k8sconsts.PodWorkload]struct{}) (workloadPods map[model.K8sWorkloadID][]*corev1.Pod, err error) {
+func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, singleWorkloadManifest *WorkloadManifest, workloadIdsMap map[k8sconsts.PodWorkload]struct{}) (workloadPods map[model.K8sWorkloadID][]*corev1.Pod, err error) {
 
 	var labelSelector string
 	if filters.SingleWorkload != nil {
@@ -388,9 +503,15 @@ func fetchWorkloadPods(ctx context.Context, filters *WorkloadFilter, singleWorkl
 		labelSelector = metav1.FormatLabelSelector(singleWorkloadManifest.Selector)
 	}
 
-	pods, err := kube.DefaultClient.CoreV1().Pods(filters.NamespaceString).List(ctx, metav1.ListOptions{
-		LabelSelector: labelSelector,
-	})
+	pods, err := timedAPICall(
+		logger,
+		formatOperationMessage("List Pods", filters.NamespaceString, labelSelector),
+		func() (*corev1.PodList, error) {
+			return kube.DefaultClient.CoreV1().Pods(filters.NamespaceString).List(ctx, metav1.ListOptions{
+				LabelSelector: labelSelector,
+			})
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -423,7 +544,7 @@ func fetchWorkloadPods(ctx context.Context, filters *WorkloadFilter, singleWorkl
 	return workloadPods, nil
 }
 
-func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter) (byContainer map[ContainerId][]*odigosv1.InstrumentationInstance, err error) {
+func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (byContainer map[ContainerId][]*odigosv1.InstrumentationInstance, err error) {
 
 	labelSelector := ""
 	if filters.SingleWorkload != nil {
@@ -437,9 +558,15 @@ func fetchInstrumentationInstances(ctx context.Context, filters *WorkloadFilter)
 		labelSelector = metav1.FormatLabelSelector(&selector)
 	}
 
-	ii, err := kube.DefaultClient.OdigosClient.InstrumentationInstances(filters.NamespaceString).List(ctx, metav1.ListOptions{
-		LabelSelector: labelSelector,
-	})
+	ii, err := timedAPICall(
+		logger,
+		formatOperationMessage("List InstrumentationInstances", filters.NamespaceString, labelSelector),
+		func() (*odigosv1.InstrumentationInstanceList, error) {
+			return kube.DefaultClient.OdigosClient.InstrumentationInstances(filters.NamespaceString).List(ctx, metav1.ListOptions{
+				LabelSelector: labelSelector,
+			})
+		},
+	)
 	if err != nil {
 		return nil, err
 	}

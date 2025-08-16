@@ -206,7 +206,7 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 
 	// GraphQL handlers
 	r.POST("/graphql", func(c *gin.Context) {
-		c.Request = c.Request.WithContext(loaders.WithLoaders(c.Request.Context(), loaders.NewLoaders()))
+		c.Request = c.Request.WithContext(loaders.WithLoaders(c.Request.Context(), loaders.NewLoaders(logger)))
 		graph.GetGQLHandler(c.Request.Context(), gqlExecutableSchema).ServeHTTP(c.Writer, c.Request)
 	})
 	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
@@ -218,25 +218,25 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	r.GET("/describe/odigos", services.DescribeOdigos)
 	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", services.DescribeSource)
 	r.GET("/workload", func(c *gin.Context) {
-		services.DescribeWorkload(c, gqlExecutor, nil)
+		services.DescribeWorkload(c, logger, gqlExecutor, nil)
 	})
 	r.GET("/workload/overview", func(c *gin.Context) {
 		verbosity := "overview"
-		services.DescribeWorkload(c, gqlExecutor, &verbosity)
+		services.DescribeWorkload(c, logger, gqlExecutor, &verbosity)
 	})
 	r.GET("/workload/health-summary", func(c *gin.Context) {
 		verbosity := "healthSummary"
-		services.DescribeWorkload(c, gqlExecutor, &verbosity)
+		services.DescribeWorkload(c, logger, gqlExecutor, &verbosity)
 	})
 	r.GET("/workload/:namespace", func(c *gin.Context) {
-		services.DescribeWorkload(c, gqlExecutor, nil)
+		services.DescribeWorkload(c, logger, gqlExecutor, nil)
 	})
 	r.GET("/workload/:namespace/:kind/:name", func(c *gin.Context) {
-		services.DescribeWorkload(c, gqlExecutor, nil)
+		services.DescribeWorkload(c, logger, gqlExecutor, nil)
 	})
 	r.GET("/workload/:namespace/:kind/:name/pods", func(c *gin.Context) {
 		verbosity := "pods"
-		services.DescribeWorkload(c, gqlExecutor, &verbosity)
+		services.DescribeWorkload(c, logger, gqlExecutor, &verbosity)
 	})
 
 	r.POST("/source/namespace/:namespace/kind/:kind/name/:name", services.CreateSourceWithAPI)

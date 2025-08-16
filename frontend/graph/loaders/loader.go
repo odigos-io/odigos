@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -32,6 +33,8 @@ type ContainerId struct {
 }
 
 type Loaders struct {
+	logger logr.Logger
+
 	mu sync.Mutex
 
 	workloadFilter      *WorkloadFilter
@@ -70,8 +73,10 @@ func For(ctx context.Context) *Loaders {
 	return ctx.Value(loadersKey).(*Loaders)
 }
 
-func NewLoaders() *Loaders {
-	return &Loaders{}
+func NewLoaders(logger logr.Logger) *Loaders {
+	return &Loaders{
+		logger: logger,
+	}
 }
 
 func (l *Loaders) GetWorkloadIds() []model.K8sWorkloadID {
@@ -86,7 +91,7 @@ func (l *Loaders) loadInstrumentationConfigs(ctx context.Context) error {
 	if l.instrumentationConfigsFetched {
 		return nil
 	}
-	instrumentationConfigs, err := fetchInstrumentationConfigs(ctx, l.workloadFilter)
+	instrumentationConfigs, err := fetchInstrumentationConfigs(ctx, l.logger, l.workloadFilter)
 	if err != nil {
 		return err
 	}
@@ -99,7 +104,7 @@ func (l *Loaders) loadSources(ctx context.Context) error {
 	if l.sourcesFetched {
 		return nil
 	}
-	workloadSources, namespaceSources, err := fetchSources(ctx, l.workloadFilter)
+	workloadSources, namespaceSources, err := fetchSources(ctx, l.logger, l.workloadFilter)
 	if err != nil {
 		return err
 	}
@@ -113,7 +118,7 @@ func (l *Loaders) loadWorkloadManifests(ctx context.Context) error {
 	if l.workloadManifestsFetched {
 		return nil
 	}
-	workloadManifests, err := fetchWorkloadManifests(ctx, l.workloadFilter)
+	workloadManifests, err := fetchWorkloadManifests(ctx, l.logger, l.workloadFilter)
 	if err != nil {
 		return err
 	}
@@ -144,7 +149,7 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 		}
 	}
 
-	workloadPods, err := fetchWorkloadPods(ctx, l.workloadFilter, singleWorkloadManifest, l.workloadIdsMap)
+	workloadPods, err := fetchWorkloadPods(ctx, l.logger, l.workloadFilter, singleWorkloadManifest, l.workloadIdsMap)
 	if err != nil {
 		return err
 	}
@@ -227,7 +232,7 @@ func (l *Loaders) loadInstrumentationInstances(ctx context.Context) error {
 	if l.instrumentationInstancesFetched {
 		return nil
 	}
-	byContainer, err := fetchInstrumentationInstances(ctx, l.workloadFilter)
+	byContainer, err := fetchInstrumentationInstances(ctx, l.logger, l.workloadFilter)
 	if err != nil {
 		return err
 	}

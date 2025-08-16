@@ -8,6 +8,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/executor"
 	"github.com/gin-gonic/gin"
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 )
@@ -563,10 +564,10 @@ func getFilterAndVerbosityFromContext(c *gin.Context) (map[string]interface{}, s
 	return filterMap, verbosity, nil
 }
 
-func DescribeWorkloadWithFilters(c *gin.Context, gqlExecutor *executor.Executor, filter map[string]interface{}, verbosity string) {
+func DescribeWorkloadWithFilters(c *gin.Context, logger logr.Logger, gqlExecutor *executor.Executor, filter map[string]interface{}, verbosity string) {
 	ctx := c.Request.Context()
 	// add things to the ctx
-	ctx = loaders.WithLoaders(ctx, loaders.NewLoaders())
+	ctx = loaders.WithLoaders(ctx, loaders.NewLoaders(logger))
 	ctx = graphql.StartOperationTrace(ctx)
 
 	query := getQueryForVerbosity(verbosity)
@@ -610,7 +611,7 @@ func DescribeWorkloadWithFilters(c *gin.Context, gqlExecutor *executor.Executor,
 	c.JSON(200, workloads)
 }
 
-func DescribeWorkload(c *gin.Context, gqlExecutor *executor.Executor, overrideVerbosity *string) {
+func DescribeWorkload(c *gin.Context, logger logr.Logger, gqlExecutor *executor.Executor, overrideVerbosity *string) {
 	filter, verbosity, err := getFilterAndVerbosityFromContext(c)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
@@ -621,5 +622,5 @@ func DescribeWorkload(c *gin.Context, gqlExecutor *executor.Executor, overrideVe
 		verbosity = *overrideVerbosity
 	}
 
-	DescribeWorkloadWithFilters(c, gqlExecutor, filter, verbosity)
+	DescribeWorkloadWithFilters(c, logger, gqlExecutor, filter, verbosity)
 }
