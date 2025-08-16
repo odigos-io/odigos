@@ -167,7 +167,11 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 			if !container.ExpectingInstrumentationInstances {
 				continue
 			}
-			if container.IsReady {
+			if container.OtelDistroName == nil {
+				// do not expect instances from containers that are not instrumented
+				continue
+			}
+			if !container.IsReady {
 				// only take into account containers that are ready
 				// starting containers might not have the agent ready yet
 				continue
@@ -247,7 +251,7 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 			Name:       status.ProcessesHealthStatusName,
 			Status:     model.DesiredStateProgressSuccess,
 			ReasonEnum: &reasonStr,
-			Message:    fmt.Sprintf("All %d process agents are healthy", numHealthyProcesses),
+			Message:    fmt.Sprintf("All %d agents in instrumented processes are healthy", numHealthyProcesses),
 		}, nil
 	}
 

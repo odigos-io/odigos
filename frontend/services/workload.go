@@ -411,6 +411,80 @@ const healthSummaryQuery = `
 	}
 `
 
+const podsQuery = `
+	query GetWorkloads($filter: WorkloadFilter) {
+		workloads(filter: $filter) {
+			id {
+				namespace
+				kind
+				name
+			}
+			pods {
+				podName
+				nodeName
+				startTime
+				agentInjected
+				agentInjectedStatus {
+					name
+					status
+					reasonEnum
+					message
+				}
+				runningLatestWorkloadRevision
+				podHealthStatus {
+					name
+					status
+					reasonEnum
+					message
+				}
+				containers {
+					containerName
+					odigosInstrumentationDeviceName
+					otelDistroName
+					started
+					ready
+					isCrashLoop
+					restartCount
+					runningStartedTime
+					waitingReasonEnum
+					waitingMessage
+					healthStatus {
+						name
+						status
+						reasonEnum
+						message
+					}
+					processes {
+						healthy
+						healthStatus {
+							name
+							status
+							reasonEnum
+							message
+						}
+						identifyingAttributes {
+							name
+							value
+						}
+					}
+				}
+			}
+			podsAgentInjectionStatus {
+				name
+				status
+				reasonEnum
+				message
+			}
+			processesHealthStatus {
+				name
+				status
+				reasonEnum
+				message
+			}
+		}
+	}
+`
+
 func getQueryForVerbosity(verbosity string) string {
 	switch verbosity {
 	case "general":
@@ -421,6 +495,8 @@ func getQueryForVerbosity(verbosity string) string {
 		return healthSummaryQuery
 	case "verbose":
 		return verboseQuery
+	case "pods":
+		return podsQuery
 	}
 	return generalQuery // default to general
 }

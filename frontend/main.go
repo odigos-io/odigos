@@ -234,6 +234,10 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	r.GET("/workload/:namespace/:kind/:name", func(c *gin.Context) {
 		services.DescribeWorkload(c, gqlExecutor, nil)
 	})
+	r.GET("/workload/:namespace/:kind/:name/pods", func(c *gin.Context) {
+		verbosity := "pods"
+		services.DescribeWorkload(c, gqlExecutor, &verbosity)
+	})
 
 	r.POST("/source/namespace/:namespace/kind/:kind/name/:name", services.CreateSourceWithAPI)
 	r.DELETE("/source/namespace/:namespace/kind/:kind/name/:name", services.DeleteSourceWithAPI)
