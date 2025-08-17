@@ -8,11 +8,9 @@ import (
 
 var (
 	Type      = component.MustNewType("odigosebpfreceiver")
-	ScopeName = "github.com/odigos-io/odigos/collector/receiver/odigosebpfreceiver"
+	ScopeName = "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver"
 )
 
 const (
-	TracesStability  = component.StabilityLevelBeta
-	MetricsStability = component.StabilityLevelBeta
-	LogsStability    = component.StabilityLevelBeta
+	TracesStability = component.StabilityLevelBeta
 )

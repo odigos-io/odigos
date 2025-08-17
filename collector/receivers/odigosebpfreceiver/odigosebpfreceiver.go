@@ -59,12 +59,12 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 		}
 
 		// Step 2: start N concurrent readers using this map
-		const numReaders = 1 // 🔁 can bump this up later
+		const numReaders = 1
 
 		var readersWg sync.WaitGroup
-		readersWg.Add(numReaders)
 
-		for i := 0; i < numReaders; i++ {
+		for i := range numReaders {
+			readersWg.Add(1)
 			go func(id int) {
 				defer readersWg.Done()
 				if err := r.readLoop(ctx, m); err != nil {
@@ -203,18 +203,15 @@ func (r *ebpfReceiver) waitForPinnedMap(ctx context.Context) (*ebpf.Map, error) 
 	}
 }
 func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
-	// Open the perf reader on the map
 	reader, err := perf.NewReader(m, numOfPages*os.Getpagesize())
 	if err != nil {
 		r.logger.Error("failed to open perf reader", zap.Error(err))
 		return err
 	}
-	defer reader.Close() // ensure proper cleanup on return
+	defer reader.Close()
 
-	// record buffer to be reused
 	var record perf.Record
 
-	// 🆕 Goroutine: unblocks reader.ReadInto when context is cancelled
 	go func() {
 		<-ctx.Done()
 		// This will unblock the blocking call to reader.ReadInto()
@@ -226,26 +223,22 @@ func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
 		err := reader.ReadInto(&record)
 		if err != nil {
 			if errors.Is(err, perf.ErrClosed) {
-				// Reader closed due to shutdown signal — exit gracefully
+				// Closed due to shutdown signal — exit gracefully
 				return nil
 			}
-			// Log unexpected read errors and continue
 			r.logger.Error("error reading from perf reader", zap.Error(err))
 			continue
 		}
 
-		// If kernel reports lost samples, log it
 		if record.LostSamples != 0 {
 			r.logger.Error("lost samples", zap.Int("lost", int(record.LostSamples)))
 			continue
 		}
 
-		// Sanity check: must contain at least 8 bytes for the length header
 		if len(record.RawSample) < 8 {
 			continue
 		}
 
-		// Decode the first 8 bytes to get the length of the protobuf message
 		acceptedLength := binary.NativeEndian.Uint64(record.RawSample[:8])
 		if len(record.RawSample) < (8 + int(acceptedLength)) {
 			continue // incomplete record
@@ -265,7 +258,6 @@ func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
 			td = convertResourceSpansToPdata(&span)
 		}
 
-		// Forward parsed traces to next consumer
 		err = r.nextTraces.ConsumeTraces(ctx, td)
 		if err != nil {
 			r.logger.Error("err consuming traces", zap.Error(err))
