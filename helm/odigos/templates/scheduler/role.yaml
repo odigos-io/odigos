@@ -58,6 +58,7 @@ rules:
     resources:
       - instrumentationrules
       - processors
+      - actions
     verbs:
       - get
       - list
@@ -95,3 +96,13 @@ rules:
       - 'odiglet'
     verbs:
       - 'patch'
+  - apiGroups:
+      - 'apps'
+    resources:
+      - 'deployments'
+    resourceNames:
+      - 'odigos-scheduler'
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'

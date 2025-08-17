@@ -105,6 +105,10 @@ type CollectorsGroupSpec struct {
 	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
 	// It is disabled by default and can be enabled by setting the enabled flag to true.
 	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
+
+	// for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
+	// when unset or empty, no proxy will be used.
+	HttpsProxyAddress *string `json:"httpsProxyAddress,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

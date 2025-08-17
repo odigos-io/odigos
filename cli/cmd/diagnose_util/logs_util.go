@@ -76,7 +76,7 @@ func fetchingContainerLogs(ctx context.Context, client *kube.Client, odigosNames
 	}
 	defer logFile.Close()
 
-	req := client.CoreV1().Pods(odigosNamespace).GetLogs(pod.Name, &v1.PodLogOptions{Previous: previous})
+	req := client.CoreV1().Pods(odigosNamespace).GetLogs(pod.Name, &v1.PodLogOptions{Previous: previous, Container: container.Name})
 	logStream, err := req.Stream(ctx)
 	if err != nil {
 		klog.V(1).ErrorS(err, "Failed to create log stream", "logFilePath", logFilePath)

@@ -15,5 +15,17 @@ variable "node_count" {
 
 variable "node_spec" {
   description = "The node spec for the cluster"
-  default     = "m6a.large"
+  type        = string
+  default     = null
 }
+
+variable "platform" {
+  description = "Target CPU architecture for worker nodes"
+  type        = string
+  default     = "amd" # allowed: amd | arm
+  validation {
+    condition     = contains(["amd", "arm"], var.platform)
+    error_message = "platform must be either \"amd\" or \"arm\"."
+  }
+}
+

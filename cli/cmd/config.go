@@ -61,6 +61,8 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
   	- "%s": Enable or disable the service graph feature [default: false].
 	- "%s": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
+	- "%s": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
+	- "%s": List of allowed domains for test connection endpoints (e.g., "https://api.honeycomb.io", "https://otel.example.com"). Use "*" to allow all domains. Empty list allows all domains for backward compatibility.
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -92,6 +94,8 @@ var configCmd = &cobra.Command{
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.ServiceGraphDisabledProperty,
 		consts.GoAutoOffsetsCronProperty,
+		consts.ClickhouseJsonTypeEnabledProperty,
+		consts.AllowedTestConnectionHostsProperty,
 	),
 }
 
@@ -165,7 +169,8 @@ var setConfigCmd = &cobra.Command{
 func validatePropertyValue(property string, value []string) error {
 	switch property {
 	case consts.IgnoredNamespacesProperty,
-		consts.IgnoredContainersProperty:
+		consts.IgnoredContainersProperty,
+		consts.AllowedTestConnectionHostsProperty:
 		if len(value) < 1 {
 			return fmt.Errorf("%s expects at least one value", property)
 		}
@@ -196,7 +201,8 @@ func validatePropertyValue(property string, value []string) error {
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.GoAutoOffsetsCronProperty,
-		consts.ServiceGraphDisabledProperty:
+		consts.ServiceGraphDisabledProperty,
+		consts.ClickhouseJsonTypeEnabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -238,8 +244,8 @@ func validatePropertyValue(property string, value []string) error {
 
 		case consts.MountMethodProperty:
 			mountMethod := common.MountMethod(value[0])
-			if mountMethod != common.K8sHostPathMountMethod && mountMethod != common.K8sVirtualDeviceMountMethod {
-				return fmt.Errorf("invalid mount method: %s (valid values: %s, %s)", value[0], common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod)
+			if mountMethod != common.K8sHostPathMountMethod && mountMethod != common.K8sVirtualDeviceMountMethod && mountMethod != common.K8sInitContainerMountMethod {
+				return fmt.Errorf("invalid mount method: %s (valid values: %s, %s, %s)", value[0], common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod, common.K8sInitContainerMountMethod)
 			}
 
 		case consts.AgentEnvVarsInjectionMethod:
@@ -428,6 +434,13 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 			}
 		}
 		config.GoAutoOffsetsCron = cronValue
+
+	case consts.ClickhouseJsonTypeEnabledProperty:
+		boolValue, _ := strconv.ParseBool(value[0])
+		config.ClickhouseJsonTypeEnabledProperty = &boolValue
+
+	case consts.AllowedTestConnectionHostsProperty:
+		config.AllowedTestConnectionHosts = value
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)

@@ -23,6 +23,7 @@ const getFormDataFromDestination = (dest: Destination, selectedStreamName: strin
   const payload: DestinationFormData = {
     type: dest.destinationType.type,
     name: dest.destinationType.displayName,
+    disabled: dest.disabled,
     currentStreamName: selectedStreamName,
     exportedSignals: dest.exportedSignals,
     fields: fieldsArray,

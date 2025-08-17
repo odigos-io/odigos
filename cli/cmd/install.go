@@ -302,23 +302,25 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcema
 	var imageReferences resourcemanager.ImageReferences
 	if openshift {
 		imageReferences = resourcemanager.ImageReferences{
-			AutoscalerImage:   k8sconsts.AutoScalerImageUBI9,
-			CollectorImage:    k8sconsts.OdigosClusterCollectorImageUBI9,
-			InstrumentorImage: k8sconsts.InstrumentorImageUBI9,
-			OdigletImage:      k8sconsts.OdigletImageUBI9,
-			KeyvalProxyImage:  k8sconsts.KeyvalProxyImage,
-			SchedulerImage:    k8sconsts.SchedulerImageUBI9,
-			UIImage:           k8sconsts.UIImageUBI9,
+			AutoscalerImage:    k8sconsts.AutoScalerImageUBI9,
+			CollectorImage:     k8sconsts.OdigosClusterCollectorImageUBI9,
+			InitContainerImage: k8sconsts.OdigosInitContainerImageUBI9,
+			InstrumentorImage:  k8sconsts.InstrumentorImageUBI9,
+			OdigletImage:       k8sconsts.OdigletImageUBI9,
+			KeyvalProxyImage:   k8sconsts.KeyvalProxyImage,
+			SchedulerImage:     k8sconsts.SchedulerImageUBI9,
+			UIImage:            k8sconsts.UIImageUBI9,
 		}
 	} else {
 		imageReferences = resourcemanager.ImageReferences{
-			AutoscalerImage:   k8sconsts.AutoScalerImageName,
-			CollectorImage:    k8sconsts.OdigosClusterCollectorImage,
-			InstrumentorImage: k8sconsts.InstrumentorImage,
-			OdigletImage:      k8sconsts.OdigletImageName,
-			KeyvalProxyImage:  k8sconsts.KeyvalProxyImage,
-			SchedulerImage:    k8sconsts.SchedulerImage,
-			UIImage:           k8sconsts.UIImage,
+			AutoscalerImage:    k8sconsts.AutoScalerImageName,
+			CollectorImage:     k8sconsts.OdigosClusterCollectorImage,
+			InitContainerImage: k8sconsts.OdigosInitContainerImageName,
+			InstrumentorImage:  k8sconsts.InstrumentorImage,
+			OdigletImage:       k8sconsts.OdigletImageName,
+			KeyvalProxyImage:   k8sconsts.KeyvalProxyImage,
+			SchedulerImage:     k8sconsts.SchedulerImage,
+			UIImage:            k8sconsts.UIImage,
 		}
 	}
 
@@ -375,6 +377,7 @@ func CreateOdigosConfiguration(odigosTier common.OdigosTier, nodeSelector map[st
 		ImagePrefix:               imagePrefix,
 		Profiles:                  selectedProfiles,
 		UiMode:                    common.UiMode(uiMode),
+		UiPaginationLimit:         100,
 		ClusterName:               clusterName,
 		CentralBackendURL:         centralBackendURL,
 		UserInstrumentationEnvs:   parsedUserJson,
