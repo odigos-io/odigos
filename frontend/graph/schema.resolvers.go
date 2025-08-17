@@ -535,6 +535,15 @@ func (r *mutationResolver) UpdateOdigosConfig(ctx context.Context, odigosConfig 
 	return true, nil
 }
 
+// UninstrumentCluster is the resolver for the uninstrumentCluster field.
+func (r *mutationResolver) UninstrumentCluster(ctx context.Context) (bool, error) {
+	err := services.UninstrumentCluster(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to uninstrument cluster: %v", err)
+	}
+	return true, nil
+}
+
 // PersistK8sNamespaces is the resolver for the persistK8sNamespaces field.
 func (r *mutationResolver) PersistK8sNamespaces(ctx context.Context, namespaces []*model.PersistNamespaceItemInput) (bool, error) {
 	persistObjects := []*model.PersistNamespaceSourceInput{}
@@ -883,6 +892,20 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 		return nil, fmt.Errorf("destination type %s does not support test connection", destination.Type)
 	}
 
+	// Validate URLs for test connection based on AllowedTestConnectionHosts configuration
+	err = services.ValidateDestinationURLs(ctx, destination)
+	if err != nil {
+		errMsg := err.Error()
+		reason := string(testconnection.FailedToConnect)
+		return &model.TestConnectionResponse{
+			Succeeded:       false,
+			StatusCode:      403,
+			DestinationType: (*string)(&destType),
+			Message:         &errMsg,
+			Reason:          &reason,
+		}, nil
+	}
+
 	configurer, err := testconnection.ConvertDestinationToConfigurer(destination)
 	if err != nil {
 		return nil, err
@@ -1182,15 +1205,14 @@ func (r *queryResolver) DestinationCategories(ctx context.Context) (*model.GetDe
 
 // PotentialDestinations is the resolver for the potentialDestinations field.
 func (r *queryResolver) PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error) {
+	result := make([]*model.DestinationDetails, 0)
+
 	potentialDestinations := services.PotentialDestinations(ctx)
 	if potentialDestinations == nil {
-		return nil, fmt.Errorf("failed to fetch potential destinations")
+		return result, nil
 	}
 
-	// Convert []destination_recognition.DestinationDetails to []*DestinationDetails
-	var result []*model.DestinationDetails
 	for _, dest := range potentialDestinations {
-
 		fieldsString, err := json.Marshal(dest.Fields)
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling fields: %v", err)

@@ -71,6 +71,9 @@ data:
       {{- end }}
       serviceGraphDisabled: {{ .Values.collectorGateway.serviceGraphDisabled }}
       clusterMetricsEnabled: {{ .Values.collectorGateway.clusterMetricsEnabled }}
+      {{- with .Values.collectorGateway.httpsProxyAddress }}
+      httpsProxyAddress: {{ . }}
+      {{- end }}
     {{- end }}
     {{- if .Values.collectorNode }}
     collectorNode:
@@ -142,6 +145,9 @@ data:
       {{- else }}
         {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path', 'k8s-virtual-device' and 'k8s-init-container'." }}
       {{- end }}
+    {{- end }}
+    {{- if .Values.instrumentor.checkDeviceHealthBeforeInjection }}
+    checkDeviceHealthBeforeInjection: {{ .Values.instrumentor.checkDeviceHealthBeforeInjection }}
     {{- end }}
     {{- $envMethod := .Values.instrumentor.agentEnvVarsInjectionMethod }}
     {{- if and $envMethod (not (has $envMethod (list "loader" "pod-manifest" "loader-fallback-to-pod-manifest"))) }}

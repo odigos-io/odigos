@@ -792,3 +792,37 @@ func GetOtherConditionsForSources(ctx context.Context, namespace string, name st
 
 	return result, nil
 }
+
+func UninstrumentCluster(ctx context.Context) error {
+	list, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	namespaceSources := make([]v1alpha1.Source, 0)
+	workloadSources := make([]v1alpha1.Source, 0)
+
+	for _, source := range list.Items {
+		if source.Spec.Workload.Kind == k8sconsts.WorkloadKind(WorkloadKindNamespace) {
+			namespaceSources = append(namespaceSources, source)
+		} else {
+			workloadSources = append(workloadSources, source)
+		}
+	}
+
+	for _, source := range namespaceSources {
+		err = kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, source := range workloadSources {
+		err = kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
