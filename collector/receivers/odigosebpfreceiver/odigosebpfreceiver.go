@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -96,7 +95,8 @@ func (r *ebpfReceiver) Shutdown(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
-		r.logger.Warn("odigos-ebpf: receiver shutdown timed out", zap.String("mapPath", r.mapPath))
+		r.logger.Warn("odigos-ebpf: receiver shutdown did not finish before context was canceled",
+			zap.String("mapPath", r.mapPath))
 		return ctx.Err()
 	case <-done:
 		r.logger.Info("odigos-ebpf: receiver shutdown complete", zap.String("mapPath", r.mapPath))
@@ -113,12 +113,6 @@ func (r *ebpfReceiver) tryToLoadPinnedMap() (*ebpf.Map, error) {
 	return m, nil
 }
 
-// isNoSuchFileErr detects "no such file" errors even if wrapped.
-func isNoSuchFileErr(err error) bool {
-	return errors.Is(err, fs.ErrNotExist) ||
-		strings.Contains(err.Error(), "no such file or directory")
-}
-
 // waitForPinnedMap waits until the pinned map exists.
 // If fsnotify is available on the directory, it waits on events.
 // If fsnotify setup fails (or later errors), it falls back to 10s polling forever.
@@ -126,7 +120,7 @@ func (r *ebpfReceiver) waitForPinnedMap(ctx context.Context) (*ebpf.Map, error) 
 	// Quick path.
 	if m, err := r.tryToLoadPinnedMap(); err == nil {
 		return m, nil
-	} else if !isNoSuchFileErr(err) {
+	} else if !errors.Is(err, fs.ErrNotExist) {
 		// Real error, not just "doesn't exist yet".
 		return nil, err
 	}
