@@ -2,7 +2,6 @@ package odigosebpfreceiver
 
 import (
 	"context"
-	"time"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
@@ -22,10 +21,7 @@ func NewFactory() receiver.Factory {
 func createDefaultConfig() component.Config {
 	// Return default config object – no extra parameters yet
 	return &Config{
-		Settings:               receiver.Settings{},
-		MaxReadBatchSize:       1024,
-		PollInterval:           time.Millisecond * 5,
-		MaxGoroutinesPerBuffer: 1,
+		Settings: receiver.Settings{},
 	}
 }
 

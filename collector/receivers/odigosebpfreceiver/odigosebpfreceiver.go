@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cilium/ebpf"
@@ -37,19 +38,47 @@ type ebpfReceiver struct {
 	nextTraces  consumer.Traces
 	nextMetrics consumer.Metrics
 	nextLogs    consumer.Logs
+
+	// WaitGroup to wait for all goroutines to finish
+	wg sync.WaitGroup
 }
 
 func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 
-	r.logger.Info("odigos-ebpf: receiver active, listening on ringbuffer", zap.String("mapPath", r.mapPath))
-
+	r.wg.Add(1)
 	go func() {
-		if err := r.readLoop(ctx); err != nil {
-			r.logger.Error("read loop failed", zap.String("component", TypeStr), zap.Error(err))
+		defer r.wg.Done()
+
+		// Step 1: wait for the map once
+		m, err := r.waitForPinnedMap(ctx)
+		if err != nil {
+			r.logger.Warn("odigos-ebpf: failed to wait for pinned map", zap.Error(err))
+			return
 		}
+
+		// Step 2: start N concurrent readers using this map
+		const numReaders = 1 // 🔁 can bump this up later
+
+		var readersWg sync.WaitGroup
+		readersWg.Add(numReaders)
+
+		for i := 0; i < numReaders; i++ {
+			go func(id int) {
+				defer readersWg.Done()
+				if err := r.readLoop(ctx, m); err != nil {
+					r.logger.Error("read loop failed", zap.Int("reader_id", id), zap.Error(err))
+				}
+			}(i)
+		}
+
+		// Step 3: wait for all readers to finish before closing the map
+		readersWg.Wait()
+		m.Close()
+		r.logger.Info("odigos-ebpf: all readers finished, map closed", zap.String("mapPath", r.mapPath))
 	}()
+
 	return nil
 }
 
@@ -57,7 +86,22 @@ func (r *ebpfReceiver) Shutdown(ctx context.Context) error {
 	if r.cancel != nil {
 		r.cancel()
 	}
-	return nil
+	done := make(chan struct{})
+
+	// WaitGroup wait in a goroutine to support context cancellation
+	go func() {
+		r.wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-ctx.Done():
+		r.logger.Warn("odigos-ebpf: receiver shutdown timed out", zap.String("mapPath", r.mapPath))
+		return ctx.Err()
+	case <-done:
+		r.logger.Info("odigos-ebpf: receiver shutdown complete", zap.String("mapPath", r.mapPath))
+		return nil // all goroutines exited gracefully
+	}
 }
 
 // tryToLoadPinnedMap attempts to load the pinned map from bpffs.
@@ -158,78 +202,74 @@ func (r *ebpfReceiver) waitForPinnedMap(ctx context.Context) (*ebpf.Map, error) 
 		}
 	}
 }
-
-func (r *ebpfReceiver) readLoop(ctx context.Context) error {
-	// Wait (via fsnotify or polling) until the map is available.
-	m, err := r.waitForPinnedMap(ctx)
-	if err != nil {
-		// Context canceled or non-ENOENT error while waiting.
-		if ctx.Err() != nil {
-			return nil
-		}
-		r.logger.Error("failed to load pinned map", zap.Error(err))
-		return err
-	}
-	defer m.Close()
-
+func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
+	// Open the perf reader on the map
 	reader, err := perf.NewReader(m, numOfPages*os.Getpagesize())
 	if err != nil {
 		r.logger.Error("failed to open perf reader", zap.Error(err))
 		return err
 	}
-	defer reader.Close()
+	defer reader.Close() // ensure proper cleanup on return
 
-	// We're using ReadInto to reuse the same memory allocation for the record.
+	// record buffer to be reused
 	var record perf.Record
 
+	// 🆕 Goroutine: unblocks reader.ReadInto when context is cancelled
+	go func() {
+		<-ctx.Done()
+		// This will unblock the blocking call to reader.ReadInto()
+		reader.Close()
+	}()
+
 	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
-			err := reader.ReadInto(&record)
+		// This blocks until data is available or reader is closed
+		err := reader.ReadInto(&record)
+		if err != nil {
+			if errors.Is(err, perf.ErrClosed) {
+				// Reader closed due to shutdown signal — exit gracefully
+				return nil
+			}
+			// Log unexpected read errors and continue
+			r.logger.Error("error reading from perf reader", zap.Error(err))
+			continue
+		}
+
+		// If kernel reports lost samples, log it
+		if record.LostSamples != 0 {
+			r.logger.Error("lost samples", zap.Int("lost", int(record.LostSamples)))
+			continue
+		}
+
+		// Sanity check: must contain at least 8 bytes for the length header
+		if len(record.RawSample) < 8 {
+			continue
+		}
+
+		// Decode the first 8 bytes to get the length of the protobuf message
+		acceptedLength := binary.NativeEndian.Uint64(record.RawSample[:8])
+		if len(record.RawSample) < (8 + int(acceptedLength)) {
+			continue // incomplete record
+		}
+
+		// Attempt to unmarshal into OpenTelemetry Traces format
+		protoUnmarshaler := ptrace.ProtoUnmarshaler{}
+		td, err := protoUnmarshaler.UnmarshalTraces(record.RawSample[8 : 8+acceptedLength])
+		if err != nil {
+			// Fallback: try unmarshalling legacy trace format
+			var span tracepb.ResourceSpans
+			err = proto.Unmarshal(record.RawSample[8:8+acceptedLength], &span)
 			if err != nil {
-				if errors.Is(err, perf.ErrClosed) {
-					return nil
-				}
-				r.logger.Error("error reading from perf reader", zap.Error(err))
+				r.logger.Error("error unmarshalling span", zap.Error(err))
 				continue
 			}
+			td = convertResourceSpansToPdata(&span)
+		}
 
-			if record.LostSamples != 0 {
-				// later we can consider to expose this as a metric
-				r.logger.Error("lost samples", zap.Int("lost", int(record.LostSamples)))
-				continue
-			}
-
-			if len(record.RawSample) < 8 {
-				continue
-			}
-
-			// The first 8 bytes of the record contain the length of the span encoded as a uint64
-			acceptedLength := binary.NativeEndian.Uint64(record.RawSample[:8])
-			if len(record.RawSample) < (8 + int(acceptedLength)) {
-				continue
-			}
-
-			protoUnmarshaler := ptrace.ProtoUnmarshaler{}
-			td, err := protoUnmarshaler.UnmarshalTraces(record.RawSample[8 : 8+acceptedLength])
-			if err != nil {
-				// if we fail to unmarshal to Traces, it can happen because the agent running old version. we are trying the default fallback
-				var span tracepb.ResourceSpans
-				err = proto.Unmarshal(record.RawSample[8:8+acceptedLength], &span)
-				if err != nil {
-					r.logger.Error("error unmarshalling span", zap.Error(err))
-					continue
-				}
-				td = convertResourceSpansToPdata(&span)
-			}
-
-			err = r.nextTraces.ConsumeTraces(ctx, td)
-			if err != nil {
-				r.logger.Error("err consuming traces", zap.Error(err))
-				continue
-			}
+		// Forward parsed traces to next consumer
+		err = r.nextTraces.ConsumeTraces(ctx, td)
+		if err != nil {
+			r.logger.Error("err consuming traces", zap.Error(err))
+			continue
 		}
 	}
 }
