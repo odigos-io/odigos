@@ -44,6 +44,27 @@ func CalculateAgentInjectionEnabledStatusForContainer(containerAgentConfig *v1al
 	if containerAgentConfig == nil {
 		return nil
 	}
+
+	if containerAgentConfig.AgentEnabledReason == "" {
+		if containerAgentConfig.AgentEnabled {
+			reasonStr := string(v1alpha1.AgentEnabledReasonEnabledSuccessfully)
+			return &model.DesiredConditionStatus{
+				Name:       v1alpha1.AgentEnabledStatusConditionType,
+				Status:     model.DesiredStateProgressSuccess,
+				ReasonEnum: &reasonStr,
+				Message:    "agent injection enabled",
+			}
+		} else {
+			reasonStr := ""
+			return &model.DesiredConditionStatus{
+				Name:       v1alpha1.AgentEnabledStatusConditionType,
+				Status:     model.DesiredStateProgressError,
+				ReasonEnum: &reasonStr,
+				Message:    "missing reason why agent is not enabled",
+			}
+		}
+	}
+
 	reasonStr := string(containerAgentConfig.AgentEnabledReason)
 	return &model.DesiredConditionStatus{
 		Name:       v1alpha1.AgentEnabledStatusConditionType,
