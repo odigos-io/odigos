@@ -44,7 +44,7 @@ func (l *Loaders) GetSources(ctx context.Context, sourceId model.K8sWorkloadID) 
 	}, nil
 }
 
-func (l *Loaders) GetWorkloadManifest(ctx context.Context, sourceId model.K8sWorkloadID) (*WorkloadManifest, error) {
+func (l *Loaders) GetWorkloadManifest(ctx context.Context, sourceId model.K8sWorkloadID) (*computed.CachedWorkloadManifest, error) {
 	l.workloadManifestsMutex.Lock()
 	defer l.workloadManifestsMutex.Unlock()
 

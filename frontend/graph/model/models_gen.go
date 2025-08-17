@@ -562,6 +562,7 @@ type K8sSourceID struct {
 
 type K8sWorkload struct {
 	ID                         *K8sWorkloadID                       `json:"id"`
+	ServiceName                *string                              `json:"serviceName,omitempty"`
 	WorkloadOdigosHealthStatus *DesiredConditionStatus              `json:"workloadOdigosHealthStatus"`
 	Conditions                 *K8sWorkloadConditions               `json:"conditions"`
 	MarkedForInstrumentation   *K8sWorkloadMarkedForInstrumentation `json:"markedForInstrumentation"`
@@ -572,6 +573,7 @@ type K8sWorkload struct {
 	Pods                       []*K8sWorkloadPod                    `json:"pods,omitempty"`
 	PodsAgentInjectionStatus   *DesiredConditionStatus              `json:"podsAgentInjectionStatus"`
 	PodsHealthStatus           *DesiredConditionStatus              `json:"podsHealthStatus"`
+	WorkloadHealthStatus       *DesiredConditionStatus              `json:"workloadHealthStatus"`
 	ProcessesHealthStatus      *DesiredConditionStatus              `json:"processesHealthStatus"`
 	TelemetryMetrics           []*K8sWorkloadTelemetryMetrics       `json:"telemetryMetrics"`
 }

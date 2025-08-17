@@ -71,6 +71,8 @@ models:
     fields:
       workloadOdigosHealthStatus:
         resolver: true
+      serviceName:
+        resolver: true
       conditions:
         resolver: true
       markedForInstrumentation:
@@ -87,8 +89,10 @@ models:
         resolver: true
       podsAgentInjectionStatus:
         resolver: true
-      # podsHealthStatus:
-      #   resolver: true
+      podsHealthStatus:
+        resolver: true
+      workloadHealthStatus:
+        resolver: true
       processesHealthStatus:
         resolver: true
       telemetryMetrics:

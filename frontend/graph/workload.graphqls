@@ -399,6 +399,13 @@ type K8sWorkloadConditions {
 type K8sWorkload {
   id: K8sWorkloadId!
 
+  # this is the values of the "service.name" resource attribute that is reported on the telemetry.
+  # it is usually set to the workload name, but can also be overridden by the user.
+  # this is the reconciled value that is going to be used by the agents.
+  # service name is nil if the workload is not marked for instrumentation.
+  # note: this value should be deprecated in the future in favor of per container service name.
+  serviceName: String
+
   # this field is an aggregated status for the odigos health of the workload.
   # it examines all related odigos values to determine if the workload is in its desired odigos state, 
   # and will indicate any odigos related errors or progress related to this workload.
@@ -432,9 +439,13 @@ type K8sWorkload {
   # any pod which isn't matching it's agent injection desired status will be reflected in this value.
   podsAgentInjectionStatus: DesiredConditionStatus!
 
-  # aggregated value for the health of all pods in the workload.
+  # aggregated value for the health of all pods in the workload, as calculated by odigos.
   # this value is the general health of the workload, and issues here may not be related to odigos.
   podsHealthStatus: DesiredConditionStatus!
+
+  # aggregated value for the health of the workload, as reported on it's status field in kubernetes.
+  # this value is not related to odigos, it can progress or error due to normal deployments in the cluster, not necessarily those related to odigos.
+  workloadHealthStatus: DesiredConditionStatus
 
   # aggregated value for the health of all processes in the workload.
   # it indicates if no processes are found, unhealthy agent, and other issues.

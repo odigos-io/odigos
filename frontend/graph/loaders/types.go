@@ -2,8 +2,6 @@ package loaders
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type WorkloadFilterSingleWorkload struct {
@@ -31,10 +29,4 @@ type WorkloadFilter struct {
 	// namespaces to ignore when fetching instrumentation configs.
 	// if the namespace name is in this map, it will be ignored when fetching k8s resources.
 	IgnoredNamespaces map[string]struct{}
-}
-
-type WorkloadManifest struct {
-	AvailableReplicas int32
-	Selector          *metav1.LabelSelector
-	PodTemplateSpec   *corev1.PodTemplateSpec
 }

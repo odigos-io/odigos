@@ -9,7 +9,9 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/frontend/graph/computed"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/graph/status"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"golang.org/x/sync/errgroup"
@@ -232,11 +234,11 @@ func fetchSources(ctx context.Context, logger logr.Logger, filters *WorkloadFilt
 	return
 }
 
-func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (workloadManifests map[model.K8sWorkloadID]*WorkloadManifest, err error) {
+func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (workloadManifests map[model.K8sWorkloadID]*computed.CachedWorkloadManifest, err error) {
 
 	// if this is a query for one specific workload, then fetch only it.
 	if filters.SingleWorkload != nil {
-		workloadManifests = make(map[model.K8sWorkloadID]*WorkloadManifest)
+		workloadManifests = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
 		switch filters.SingleWorkload.WorkloadKind {
 		case k8sconsts.WorkloadKindDeployment:
 			deployment, err := timedAPICall(
@@ -254,14 +256,16 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 				}
 				return nil, err
 			}
+			workloadHealthStatus := status.CalculateDeploymentHealthStatus(deployment.Status)
 			workloadManifests[model.K8sWorkloadID{
 				Namespace: deployment.Namespace,
 				Kind:      model.K8sResourceKindDeployment,
 				Name:      deployment.Name,
-			}] = &WorkloadManifest{
-				AvailableReplicas: deployment.Status.AvailableReplicas,
-				Selector:          deployment.Spec.Selector,
-				PodTemplateSpec:   &deployment.Spec.Template,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas:    deployment.Status.AvailableReplicas,
+				Selector:             deployment.Spec.Selector,
+				PodTemplateSpec:      &deployment.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
 
@@ -281,14 +285,16 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 				}
 				return nil, err
 			}
+			workloadHealthStatus := status.CalculateDaemonSetHealthStatus(daemonset.Status)
 			workloadManifests[model.K8sWorkloadID{
 				Namespace: daemonset.Namespace,
 				Kind:      model.K8sResourceKindDaemonSet,
 				Name:      daemonset.Name,
-			}] = &WorkloadManifest{
-				AvailableReplicas: daemonset.Status.NumberReady,
-				Selector:          daemonset.Spec.Selector,
-				PodTemplateSpec:   &daemonset.Spec.Template,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas:    daemonset.Status.NumberReady,
+				Selector:             daemonset.Spec.Selector,
+				PodTemplateSpec:      &daemonset.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
 
@@ -308,14 +314,16 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 				}
 				return nil, err
 			}
+			workloadHealthStatus := status.CalculateStatefulSetHealthStatus(statefulset.Status)
 			workloadManifests[model.K8sWorkloadID{
 				Namespace: statefulset.Namespace,
 				Kind:      model.K8sResourceKindStatefulSet,
 				Name:      statefulset.Name,
-			}] = &WorkloadManifest{
-				AvailableReplicas: statefulset.Status.ReadyReplicas,
-				Selector:          statefulset.Spec.Selector,
-				PodTemplateSpec:   &statefulset.Spec.Template,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas:    statefulset.Status.ReadyReplicas,
+				Selector:             statefulset.Spec.Selector,
+				PodTemplateSpec:      &statefulset.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
 
@@ -335,14 +343,16 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 				}
 				return nil, err
 			}
+			workloadHealthStatus := status.CalculateCronJobHealthStatus(cronjob.Status)
 			workloadManifests[model.K8sWorkloadID{
 				Namespace: cronjob.Namespace,
 				Kind:      model.K8sResourceKindCronJob,
 				Name:      cronjob.Name,
-			}] = &WorkloadManifest{
-				AvailableReplicas: int32(len(cronjob.Status.Active)),
-				Selector:          cronjob.Spec.JobTemplate.Spec.Selector,
-				PodTemplateSpec:   &cronjob.Spec.JobTemplate.Spec.Template,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas:    int32(len(cronjob.Status.Active)),
+				Selector:             cronjob.Spec.JobTemplate.Spec.Selector,
+				PodTemplateSpec:      &cronjob.Spec.JobTemplate.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
 
@@ -353,10 +363,10 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 
 	g, ctx := errgroup.WithContext(ctx)
 	var (
-		deps      = make(map[model.K8sWorkloadID]*WorkloadManifest)
-		statefuls = make(map[model.K8sWorkloadID]*WorkloadManifest)
-		daemons   = make(map[model.K8sWorkloadID]*WorkloadManifest)
-		crons     = make(map[model.K8sWorkloadID]*WorkloadManifest)
+		deps      = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+		statefuls = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+		daemons   = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+		crons     = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
 	)
 
 	g.Go(func() error {
@@ -371,14 +381,16 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			return err
 		}
 		for _, deployment := range deployments.Items {
+			workloadHealthStatus := status.CalculateDeploymentHealthStatus(deployment.Status)
 			deps[model.K8sWorkloadID{
 				Namespace: deployment.Namespace,
 				Kind:      model.K8sResourceKindDeployment,
 				Name:      deployment.Name,
-			}] = &WorkloadManifest{
-				AvailableReplicas: deployment.Status.AvailableReplicas,
-				Selector:          deployment.Spec.Selector,
-				PodTemplateSpec:   &deployment.Spec.Template,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas:    deployment.Status.AvailableReplicas,
+				Selector:             deployment.Spec.Selector,
+				PodTemplateSpec:      &deployment.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
 			}
 		}
 		return nil
@@ -396,14 +408,16 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			return err
 		}
 		for _, daemonset := range daemonsets.Items {
+			workloadHealthStatus := status.CalculateDaemonSetHealthStatus(daemonset.Status)
 			daemons[model.K8sWorkloadID{
 				Namespace: daemonset.Namespace,
 				Kind:      model.K8sResourceKindDaemonSet,
 				Name:      daemonset.Name,
-			}] = &WorkloadManifest{
-				AvailableReplicas: daemonset.Status.NumberReady,
-				Selector:          daemonset.Spec.Selector,
-				PodTemplateSpec:   &daemonset.Spec.Template,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas:    daemonset.Status.NumberReady,
+				Selector:             daemonset.Spec.Selector,
+				PodTemplateSpec:      &daemonset.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
 			}
 		}
 		return nil
@@ -421,14 +435,16 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			return err
 		}
 		for _, statefulset := range statefulsets.Items {
+			workloadHealthStatus := status.CalculateStatefulSetHealthStatus(statefulset.Status)
 			statefuls[model.K8sWorkloadID{
 				Namespace: statefulset.Namespace,
 				Kind:      model.K8sResourceKindStatefulSet,
 				Name:      statefulset.Name,
-			}] = &WorkloadManifest{
-				AvailableReplicas: statefulset.Status.ReadyReplicas,
-				Selector:          statefulset.Spec.Selector,
-				PodTemplateSpec:   &statefulset.Spec.Template,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas:    statefulset.Status.ReadyReplicas,
+				Selector:             statefulset.Spec.Selector,
+				PodTemplateSpec:      &statefulset.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
 			}
 		}
 		return nil
@@ -446,14 +462,16 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			return err
 		}
 		for _, cronjob := range cronjobs.Items {
+			workloadHealthStatus := status.CalculateCronJobHealthStatus(cronjob.Status)
 			crons[model.K8sWorkloadID{
 				Namespace: cronjob.Namespace,
 				Kind:      model.K8sResourceKindCronJob,
 				Name:      cronjob.Name,
-			}] = &WorkloadManifest{
-				AvailableReplicas: int32(len(cronjob.Status.Active)),
-				Selector:          cronjob.Spec.JobTemplate.Spec.Selector,
-				PodTemplateSpec:   &cronjob.Spec.JobTemplate.Spec.Template,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas:    int32(len(cronjob.Status.Active)),
+				Selector:             cronjob.Spec.JobTemplate.Spec.Selector,
+				PodTemplateSpec:      &cronjob.Spec.JobTemplate.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
 			}
 		}
 		return nil
@@ -463,7 +481,7 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 		return nil, err
 	}
 
-	workloadManifests = make(map[model.K8sWorkloadID]*WorkloadManifest)
+	workloadManifests = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
 	for id, manifest := range deps {
 		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
@@ -492,7 +510,7 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 	return workloadManifests, nil
 }
 
-func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, singleWorkloadManifest *WorkloadManifest, workloadIdsMap map[k8sconsts.PodWorkload]struct{}) (workloadPods map[model.K8sWorkloadID][]*corev1.Pod, err error) {
+func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, singleWorkloadManifest *computed.CachedWorkloadManifest, workloadIdsMap map[k8sconsts.PodWorkload]struct{}) (workloadPods map[model.K8sWorkloadID][]*corev1.Pod, err error) {
 
 	var labelSelector string
 	if filters.SingleWorkload != nil {

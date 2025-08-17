@@ -10,20 +10,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/status"
 )
 
-const (
-	podContainerHealthStatus = "PodCotainerHealth"
-	podHealthStatus          = "PodHealth"
-)
-
-type PodContainerHealthReason string
-
-const (
-	PodContainerHealthReasonCrashLoopBackOff PodContainerHealthReason = "CrashLoopBackOff"
-	PodContainerHealthReasonNotStarted       PodContainerHealthReason = "NotStarted"
-	PodContainerHealthReasonNotReady         PodContainerHealthReason = "NotReady"
-	PodContainerHealthReasonHealthy          PodContainerHealthReason = "Healthy"
-)
-
 func emptyStrToNil(str string) *string {
 	if str == "" {
 		return nil
@@ -284,4 +270,17 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 	}
 
 	return nil, nil
+}
+
+func aggregateConditionsBySeverity(conditions []*model.DesiredConditionStatus) *model.DesiredConditionStatus {
+	var mostSevereCondition *model.DesiredConditionStatus
+	for _, condition := range conditions {
+		if condition == nil {
+			continue
+		}
+		if mostSevereCondition == nil || desiredStateProgressSeverity(condition.Status) < desiredStateProgressSeverity(mostSevereCondition.Status) {
+			mostSevereCondition = condition
+		}
+	}
+	return mostSevereCondition
 }

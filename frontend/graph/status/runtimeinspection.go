@@ -17,7 +17,7 @@ func runtimeDetectionStatusCondition(reason *string) model.DesiredStateProgress 
 	case v1alpha1.RuntimeDetectionReasonNoRunningPods:
 		return model.DesiredStateProgressPending
 	case v1alpha1.RuntimeDetectionReasonError:
-		return model.DesiredStateProgressError
+		return model.DesiredStateProgressFailure
 	}
 	return model.DesiredStateProgressUnknown
 }

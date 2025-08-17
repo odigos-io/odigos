@@ -21,6 +21,7 @@ const generalQuery = `
 				kind
 				name
 			}
+			serviceName
 			workloadOdigosHealthStatus {
 				name
 				status
@@ -115,6 +116,7 @@ const verboseQuery = `
 				kind
 				name
 			}
+			serviceName
 			workloadOdigosHealthStatus {
 				name
 				status
@@ -354,12 +356,18 @@ const verboseQuery = `
 				reasonEnum
 				message
 			}
-			# podsHealthStatus {
-			# 	name
-			# 	status
-			# 	reasonEnum
-			# 	message
-			# }
+			podsHealthStatus {
+				name
+				status
+				reasonEnum
+				message
+			}
+			workloadHealthStatus {
+				name
+				status
+				reasonEnum
+				message
+			}
 			processesHealthStatus {
 				name
 				status
@@ -391,6 +399,7 @@ const overviewQuery = `
 				kind
 				name
 			}
+			serviceName
 			telemetryMetrics {
 				throughputBytes
 			}
@@ -411,6 +420,16 @@ const healthSummaryQuery = `
 			}
 			workloadOdigosHealthStatus {
 				name
+				status
+				reasonEnum
+				message
+			}
+			podsHealthStatus {
+				status
+				reasonEnum
+				message
+			}
+			workloadHealthStatus {
 				status
 				reasonEnum
 				message
@@ -478,6 +497,18 @@ const podsQuery = `
 				}
 			}
 			podsAgentInjectionStatus {
+				name
+				status
+				reasonEnum
+				message
+			}
+			podsHealthStatus {
+				name
+				status
+				reasonEnum
+				message
+			}
+			workloadHealthStatus {
 				name
 				status
 				reasonEnum

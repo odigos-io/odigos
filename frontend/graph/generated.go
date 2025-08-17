@@ -416,7 +416,9 @@ type ComplexityRoot struct {
 		ProcessesHealthStatus      func(childComplexity int) int
 		Rollout                    func(childComplexity int) int
 		RuntimeInfo                func(childComplexity int) int
+		ServiceName                func(childComplexity int) int
 		TelemetryMetrics           func(childComplexity int) int
+		WorkloadHealthStatus       func(childComplexity int) int
 		WorkloadOdigosHealthStatus func(childComplexity int) int
 	}
 
@@ -892,6 +894,7 @@ type K8sActualNamespaceResolver interface {
 	Sources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error)
 }
 type K8sWorkloadResolver interface {
+	ServiceName(ctx context.Context, obj *model.K8sWorkload) (*string, error)
 	WorkloadOdigosHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error)
 	Conditions(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadConditions, error)
 	MarkedForInstrumentation(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadMarkedForInstrumentation, error)
@@ -901,7 +904,8 @@ type K8sWorkloadResolver interface {
 	Containers(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadContainer, error)
 	Pods(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadPod, error)
 	PodsAgentInjectionStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error)
-
+	PodsHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error)
+	WorkloadHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error)
 	ProcessesHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error)
 	TelemetryMetrics(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadTelemetryMetrics, error)
 }
@@ -2556,12 +2560,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkload.RuntimeInfo(childComplexity), true
 
+	case "K8sWorkload.serviceName":
+		if e.complexity.K8sWorkload.ServiceName == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkload.ServiceName(childComplexity), true
+
 	case "K8sWorkload.telemetryMetrics":
 		if e.complexity.K8sWorkload.TelemetryMetrics == nil {
 			break
 		}
 
 		return e.complexity.K8sWorkload.TelemetryMetrics(childComplexity), true
+
+	case "K8sWorkload.workloadHealthStatus":
+		if e.complexity.K8sWorkload.WorkloadHealthStatus == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkload.WorkloadHealthStatus(childComplexity), true
 
 	case "K8sWorkload.workloadOdigosHealthStatus":
 		if e.complexity.K8sWorkload.WorkloadOdigosHealthStatus == nil {
@@ -15772,6 +15790,47 @@ func (ec *executionContext) fieldContext_K8sWorkload_id(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkload_serviceName(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkload_serviceName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sWorkload().ServiceName(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkload_serviceName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkload",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkload_workloadOdigosHealthStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkload) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkload_workloadOdigosHealthStatus(ctx, field)
 	if err != nil {
@@ -16259,7 +16318,7 @@ func (ec *executionContext) _K8sWorkload_podsHealthStatus(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PodsHealthStatus, nil
+		return ec.resolvers.K8sWorkload().PodsHealthStatus(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -16280,8 +16339,62 @@ func (ec *executionContext) fieldContext_K8sWorkload_podsHealthStatus(_ context.
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkload",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkload_workloadHealthStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkload_workloadHealthStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sWorkload().WorkloadHealthStatus(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkload_workloadHealthStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkload",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "name":
@@ -26618,6 +26731,8 @@ func (ec *executionContext) fieldContext_Query_workloads(ctx context.Context, fi
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_K8sWorkload_id(ctx, field)
+			case "serviceName":
+				return ec.fieldContext_K8sWorkload_serviceName(ctx, field)
 			case "workloadOdigosHealthStatus":
 				return ec.fieldContext_K8sWorkload_workloadOdigosHealthStatus(ctx, field)
 			case "conditions":
@@ -26638,6 +26753,8 @@ func (ec *executionContext) fieldContext_Query_workloads(ctx context.Context, fi
 				return ec.fieldContext_K8sWorkload_podsAgentInjectionStatus(ctx, field)
 			case "podsHealthStatus":
 				return ec.fieldContext_K8sWorkload_podsHealthStatus(ctx, field)
+			case "workloadHealthStatus":
+				return ec.fieldContext_K8sWorkload_workloadHealthStatus(ctx, field)
 			case "processesHealthStatus":
 				return ec.fieldContext_K8sWorkload_processesHealthStatus(ctx, field)
 			case "telemetryMetrics":
@@ -36257,6 +36374,39 @@ func (ec *executionContext) _K8sWorkload(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "serviceName":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkload_serviceName(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "workloadOdigosHealthStatus":
 			field := field
 
@@ -36567,10 +36717,77 @@ func (ec *executionContext) _K8sWorkload(ctx context.Context, sel ast.SelectionS
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "podsHealthStatus":
-			out.Values[i] = ec._K8sWorkload_podsHealthStatus(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkload_podsHealthStatus(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "workloadHealthStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkload_workloadHealthStatus(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "processesHealthStatus":
 			field := field
 

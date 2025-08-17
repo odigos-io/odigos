@@ -54,7 +54,7 @@ type Loaders struct {
 
 	workloadManifestsMutex   sync.Mutex
 	workloadManifestsFetched bool
-	workloadManifests        map[model.K8sWorkloadID]*WorkloadManifest
+	workloadManifests        map[model.K8sWorkloadID]*computed.CachedWorkloadManifest
 
 	workloadPodsMutex   sync.Mutex
 	workloadPodsFetched bool
@@ -136,7 +136,7 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 
 	// if this is a single workload query, we need to fetch the workload manifest
 	// to get the selector to fetch just this one pod.
-	var singleWorkloadManifest *WorkloadManifest
+	var singleWorkloadManifest *computed.CachedWorkloadManifest
 	if l.workloadFilter.SingleWorkload != nil {
 		var err error
 		singleWorkloadManifest, err = l.GetWorkloadManifest(ctx, model.K8sWorkloadID{

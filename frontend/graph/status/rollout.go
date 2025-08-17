@@ -14,7 +14,7 @@ func workloadRolloutStatusCondition(reason *string) model.DesiredStateProgress {
 	case v1alpha1.WorkloadRolloutReasonTriggeredSuccessfully:
 		return model.DesiredStateProgressSuccess
 	case v1alpha1.WorkloadRolloutReasonFailedToPatch:
-		return model.DesiredStateProgressError
+		return model.DesiredStateProgressFailure
 	case v1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing:
 		return model.DesiredStateProgressWaiting // short period until the rollout is complete
 	case v1alpha1.WorkloadRolloutReasonDisabled:
