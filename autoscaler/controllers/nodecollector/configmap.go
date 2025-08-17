@@ -268,7 +268,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	tracesEnabled := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
 	if tracesEnabled {
 		exporters["loadbalancing"] = config.GenericMap{
-			"protocol": config.GenericMap{"compression": "none", "otlp": config.GenericMap{"tls": config.GenericMap{"insecure": true}}},
+			"protocol": config.GenericMap{"otlp": config.GenericMap{"compression": "none", "tls": config.GenericMap{"insecure": true}}},
 			"resolver": config.GenericMap{"k8s": config.GenericMap{"service": fmt.Sprintf("odigos-gateway.%s", env.GetCurrentNamespace())}},
 		}
 		tracesPipelineExporter = []string{"loadbalancing"}
