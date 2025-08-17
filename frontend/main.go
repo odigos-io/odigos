@@ -92,29 +92,8 @@ func startWatchers(ctx context.Context) error {
 }
 
 func startDatabase() error {
-	// Resolve data directory: allow override via env, else use OS-specific config dir
-	dataDir := os.Getenv("ODIGOS_UI_DATA_DIR")
-	if dataDir == "" {
-		// Default to user config dir: ~/.config/odigos or platform equivalent
-		if cfgDir, err := os.UserConfigDir(); err == nil && cfgDir != "" {
-			dataDir = cfgDir + "/odigos"
-		} else {
-			// Fallback to home directory
-			if home, err := os.UserHomeDir(); err == nil && home != "" {
-				dataDir = home + "/.odigos"
-			} else {
-				dataDir = "." // ultimate fallback to current dir
-			}
-		}
-	}
 
-	// Ensure directory exists
-	if mkErr := os.MkdirAll(dataDir, 0o755); mkErr != nil {
-		log.Println("failed to create data directory:", mkErr)
-	}
-
-	databasePath := dataDir + "/data.db"
-	database, err := db.NewSQLiteDB(databasePath)
+	database, err := db.NewSQLiteDB("/data/data.db")
 
 	if err != nil {
 		// TODO: Move to fatal once db required
