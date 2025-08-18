@@ -55,8 +55,9 @@ spec:
 
               # cleanup any existing installation of odigos the might be left over from previous runs while developing
               ./odigos uninstall --yes
-              # Run the Odigos CLI installation
-              ./odigos install --namespace odigos-test
+              # install odigos from latest release.
+              # use github container registry to pull images fast and free in CI
+              ./odigos install --namespace odigos-test --image-prefix ghcr.io/odigos-io
         - assert:
             timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
@@ -128,8 +129,10 @@ spec:
     - name: Upgrade to HEAD version with the current compiled cli
       try:
         - script:
-            content: ../../../cli/odigos upgrade --version e2e-test --skip-version-check # since the tag e2e-test is not a valid semantic version, we need to bypass it with --skip-version-check
-            timeout: 3m
+            content: |
+              ../../../cli/odigos upgrade --version e2e-test --skip-version-check # since the tag e2e-test is not a valid semantic version, we need to bypass it with --skip-version-check
+              # unset the image prefix, since the e2e-test tag uploaded to the kind cluster is on this imgae prefix
+              ../../../cli/odigos config set image-prefix registry.odigos.io
         - assert:
             file: ../../common/assert/odigos-upgraded.yaml
             timeout: 3m
