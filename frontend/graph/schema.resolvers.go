@@ -15,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -1304,6 +1305,22 @@ func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, ki
 // SourceConditions is the resolver for the sourceConditions field.
 func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceConditions, error) {
 	return services.GetOtherConditionsForSources(ctx, "", "", "")
+}
+
+// Workloads is the resolver for the workloads field.
+func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error) {
+	l := loaders.For(ctx)
+	err := l.SetFilters(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	sources := make([]*model.K8sWorkload, 0)
+	for _, sourceId := range l.GetWorkloadIds() {
+		sources = append(sources, &model.K8sWorkload{
+			ID: &sourceId,
+		})
+	}
+	return sources, nil
 }
 
 // InstrumentationInstanceComponents is the resolver for the instrumentationInstanceComponents field.
