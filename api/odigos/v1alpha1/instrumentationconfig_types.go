@@ -71,7 +71,7 @@ const (
 	MarkedForInstrumentationReasonError MarkedForInstrumentationReason = "RetirableError"
 )
 
-// +kubebuilder:validation:Enum=DetectedSuccessfully;WaitingForDetection;NoRunningPods;Error
+// +kubebuilder:validation:Enum=NotMakredForInstrumentation;DetectedSuccessfully;WaitingForDetection;NoRunningPods;Error
 type RuntimeDetectionReason string
 
 const (

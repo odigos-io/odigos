@@ -938,6 +938,10 @@ type Query {
     name: String!
   ): SourceAnalyze!
   sourceConditions: [SourceConditions!]!
+
+  # get all sources that match the filter
+  workloads(filter: WorkloadFilter): [K8sWorkload!]!
+  
   instrumentationInstanceComponents(
     namespace: String!
     kind: String!

@@ -66,3 +66,44 @@ models:
     fields:
       sources:
         resolver: true
+
+  K8sWorkload:
+    fields:
+      workloadOdigosHealthStatus:
+        resolver: true
+      serviceName:
+        resolver: true
+      conditions:
+        resolver: true
+      markedForInstrumentation:
+        resolver: true
+      runtimeInfo:
+        resolver: true
+      agentEnabled:
+        resolver: true
+      rollout:
+        resolver: true
+      containers:
+        resolver: true
+      pods:
+        resolver: true
+      podsAgentInjectionStatus:
+        resolver: true
+      podsHealthStatus:
+        resolver: true
+      workloadHealthStatus:
+        resolver: true
+      processesHealthStatus:
+        resolver: true
+      telemetryMetrics:
+        resolver: true
+
+  K8sWorkloadTelemetryMetrics:
+    fields:
+      expectingTelemetry:
+        resolver: true
+
+  K8sWorkloadPodContainer:
+    fields:
+      processes:
+        resolver: true
