@@ -2,7 +2,6 @@ apiVersion: odigos.io/v1alpha1
 kind: Action
 metadata:
   name: label-attributes
-  namespace: odigos-system
 spec:
   actionName: label-attributes
   signals:
