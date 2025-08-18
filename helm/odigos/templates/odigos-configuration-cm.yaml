@@ -104,6 +104,9 @@ data:
       {{- with .Values.collectorNode.k8sNodeLogsDirectory }}
       k8sNodeLogsDirectory: {{ . }}
       {{- end }}
+      {{- with .Values.collectorNode.enableDataCompression }}
+      enableDataCompression: {{ . }}
+      {{- end }}
     {{- end }}
     {{- if include "utils.shouldRenderUserInstrumentationEnvs" . | eq "true" }}
     userInstrumentationEnvs:
@@ -145,6 +148,9 @@ data:
       {{- else }}
         {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path', 'k8s-virtual-device' and 'k8s-init-container'." }}
       {{- end }}
+    {{- end }}
+    {{- if .Values.instrumentor.checkDeviceHealthBeforeInjection }}
+    checkDeviceHealthBeforeInjection: {{ .Values.instrumentor.checkDeviceHealthBeforeInjection }}
     {{- end }}
     {{- $envMethod := .Values.instrumentor.agentEnvVarsInjectionMethod }}
     {{- if and $envMethod (not (has $envMethod (list "loader" "pod-manifest" "loader-fallback-to-pod-manifest"))) }}

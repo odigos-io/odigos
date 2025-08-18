@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { IS_LOCAL } from '@/utils';
 
 export interface CSRFTokenResponse {
   csrf_token: string;
@@ -8,7 +9,6 @@ export interface UseCSRF {
   token: string | null;
   isLoading: boolean;
   error: string | null;
-  fetchCSRFToken: () => Promise<void>;
 }
 
 /**
@@ -110,6 +110,10 @@ export const useCSRF = (): UseCSRF => {
   }, []);
 
   useEffect(() => {
+    if (IS_LOCAL) {
+      return;
+    }
+
     // Fetch token on mount
     if (!token) {
       fetchCSRFToken();
@@ -125,6 +129,5 @@ export const useCSRF = (): UseCSRF => {
     token,
     isLoading,
     error,
-    fetchCSRFToken,
   };
 };

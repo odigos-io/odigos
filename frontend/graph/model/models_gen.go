@@ -259,6 +259,13 @@ func (this DeleteAttributeAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type DesiredConditionStatus struct {
+	Name       string               `json:"name"`
+	Status     DesiredStateProgress `json:"status"`
+	ReasonEnum *string              `json:"reasonEnum,omitempty"`
+	Message    string               `json:"message"`
+}
+
 type Destination struct {
 	ID              string                        `json:"id"`
 	Type            string                        `json:"type"`
@@ -313,11 +320,21 @@ type DestinationsCategory struct {
 	Items       []*DestinationTypesCategoryItem `json:"items"`
 }
 
+type DistroParam struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
 type EntityProperty struct {
 	Name    string  `json:"name"`
 	Value   string  `json:"value"`
 	Status  *string `json:"status,omitempty"`
 	Explain *string `json:"explain,omitempty"`
+}
+
+type EnvVar struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type ErrorSamplerAction struct {
@@ -541,6 +558,158 @@ type K8sSourceID struct {
 	Namespace string          `json:"namespace"`
 	Kind      K8sResourceKind `json:"kind"`
 	Name      string          `json:"name"`
+}
+
+type K8sWorkload struct {
+	ID                         *K8sWorkloadID                       `json:"id"`
+	ServiceName                *string                              `json:"serviceName,omitempty"`
+	WorkloadOdigosHealthStatus *DesiredConditionStatus              `json:"workloadOdigosHealthStatus"`
+	Conditions                 *K8sWorkloadConditions               `json:"conditions"`
+	MarkedForInstrumentation   *K8sWorkloadMarkedForInstrumentation `json:"markedForInstrumentation"`
+	RuntimeInfo                *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
+	AgentEnabled               *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
+	Rollout                    *K8sWorkloadRollout                  `json:"rollout,omitempty"`
+	Containers                 []*K8sWorkloadContainer              `json:"containers,omitempty"`
+	Pods                       []*K8sWorkloadPod                    `json:"pods,omitempty"`
+	PodsAgentInjectionStatus   *DesiredConditionStatus              `json:"podsAgentInjectionStatus"`
+	PodsHealthStatus           *DesiredConditionStatus              `json:"podsHealthStatus"`
+	WorkloadHealthStatus       *DesiredConditionStatus              `json:"workloadHealthStatus"`
+	ProcessesHealthStatus      *DesiredConditionStatus              `json:"processesHealthStatus"`
+	TelemetryMetrics           []*K8sWorkloadTelemetryMetrics       `json:"telemetryMetrics"`
+}
+
+type K8sWorkloadAgentEnabled struct {
+	AgentEnabled  bool                                `json:"agentEnabled"`
+	EnabledStatus *DesiredConditionStatus             `json:"enabledStatus"`
+	Containers    []*K8sWorkloadAgentEnabledContainer `json:"containers,omitempty"`
+}
+
+type K8sWorkloadAgentEnabledContainer struct {
+	ContainerName      string                                   `json:"containerName"`
+	AgentEnabled       bool                                     `json:"agentEnabled"`
+	AgentEnabledStatus *DesiredConditionStatus                  `json:"agentEnabledStatus"`
+	OtelDistroName     *string                                  `json:"otelDistroName,omitempty"`
+	EnvInjectionMethod *string                                  `json:"envInjectionMethod,omitempty"`
+	DistroParams       []*DistroParam                           `json:"distroParams,omitempty"`
+	Traces             *K8sWorkloadAgentEnabledContainerTraces  `json:"traces,omitempty"`
+	Metrics            *K8sWorkloadAgentEnabledContainerMetrics `json:"metrics,omitempty"`
+	Logs               *K8sWorkloadAgentEnabledContainerLogs    `json:"logs,omitempty"`
+}
+
+type K8sWorkloadAgentEnabledContainerLogs struct {
+	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadAgentEnabledContainerMetrics struct {
+	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadAgentEnabledContainerTraces struct {
+	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadConditions struct {
+	RuntimeDetection      *DesiredConditionStatus `json:"runtimeDetection,omitempty"`
+	AgentInjectionEnabled *DesiredConditionStatus `json:"agentInjectionEnabled,omitempty"`
+	Rollout               *DesiredConditionStatus `json:"rollout,omitempty"`
+	AgentInjected         *DesiredConditionStatus `json:"agentInjected,omitempty"`
+	ProcessesAgentHealth  *DesiredConditionStatus `json:"processesAgentHealth,omitempty"`
+	ExpectingTelemetry    *DesiredConditionStatus `json:"expectingTelemetry,omitempty"`
+}
+
+type K8sWorkloadContainer struct {
+	ContainerName string                            `json:"containerName"`
+	RuntimeInfo   *K8sWorkloadRuntimeInfoContainer  `json:"runtimeInfo,omitempty"`
+	AgentEnabled  *K8sWorkloadAgentEnabledContainer `json:"agentEnabled,omitempty"`
+	Overrides     *K8sWorkloadContainerOverrides    `json:"overrides,omitempty"`
+}
+
+type K8sWorkloadContainerOverrides struct {
+	ContainerName string                           `json:"containerName"`
+	RuntimeInfo   *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
+}
+
+type K8sWorkloadID struct {
+	Namespace string          `json:"namespace"`
+	Kind      K8sResourceKind `json:"kind"`
+	Name      string          `json:"name"`
+}
+
+type K8sWorkloadMarkedForInstrumentation struct {
+	MarkedForInstrumentation *bool  `json:"markedForInstrumentation,omitempty"`
+	DecisionEnum             string `json:"decisionEnum"`
+	Message                  string `json:"message"`
+}
+
+type K8sWorkloadPod struct {
+	PodName                       string                     `json:"podName"`
+	NodeName                      string                     `json:"nodeName"`
+	StartTime                     string                     `json:"startTime"`
+	AgentInjected                 bool                       `json:"agentInjected"`
+	AgentInjectedStatus           *DesiredConditionStatus    `json:"agentInjectedStatus"`
+	RunningLatestWorkloadRevision *string                    `json:"runningLatestWorkloadRevision,omitempty"`
+	PodHealthStatus               *DesiredConditionStatus    `json:"podHealthStatus"`
+	Containers                    []*K8sWorkloadPodContainer `json:"containers"`
+}
+
+type K8sWorkloadPodContainer struct {
+	ContainerName                   string                            `json:"containerName"`
+	OdigosInstrumentationDeviceName *string                           `json:"odigosInstrumentationDeviceName,omitempty"`
+	OtelDistroName                  *string                           `json:"otelDistroName,omitempty"`
+	Started                         *bool                             `json:"started,omitempty"`
+	Ready                           *bool                             `json:"ready,omitempty"`
+	IsCrashLoop                     *bool                             `json:"isCrashLoop,omitempty"`
+	RestartCount                    *int                              `json:"restartCount,omitempty"`
+	RunningStartedTime              *string                           `json:"runningStartedTime,omitempty"`
+	WaitingReasonEnum               *string                           `json:"waitingReasonEnum,omitempty"`
+	WaitingMessage                  *string                           `json:"waitingMessage,omitempty"`
+	HealthStatus                    *DesiredConditionStatus           `json:"healthStatus"`
+	Processes                       []*K8sWorkloadPodContainerProcess `json:"processes"`
+}
+
+type K8sWorkloadPodContainerProcess struct {
+	Healthy               *bool                                      `json:"healthy,omitempty"`
+	HealthStatus          *DesiredConditionStatus                    `json:"healthStatus"`
+	IdentifyingAttributes []*K8sWorkloadPodContainerProcessAttribute `json:"identifyingAttributes"`
+}
+
+type K8sWorkloadPodContainerProcessAttribute struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type K8sWorkloadRollout struct {
+	RolloutStatus *DesiredConditionStatus `json:"rolloutStatus"`
+}
+
+type K8sWorkloadRuntimeInfo struct {
+	Completed         bool                               `json:"completed"`
+	CompletedStatus   *DesiredConditionStatus            `json:"completedStatus"`
+	DetectedLanguages []ProgrammingLanguage              `json:"detectedLanguages,omitempty"`
+	Containers        []*K8sWorkloadRuntimeInfoContainer `json:"containers,omitempty"`
+}
+
+type K8sWorkloadRuntimeInfoContainer struct {
+	ContainerName           string              `json:"containerName"`
+	Language                ProgrammingLanguage `json:"language"`
+	RuntimeVersion          *string             `json:"runtimeVersion,omitempty"`
+	ProcessEnvVars          []*EnvVar           `json:"processEnvVars"`
+	ContainerRuntimeEnvVars []*EnvVar           `json:"containerRuntimeEnvVars,omitempty"`
+	CriErrorMessage         *string             `json:"criErrorMessage,omitempty"`
+	LibcType                *string             `json:"libcType,omitempty"`
+	SecureExecutionMode     *bool               `json:"secureExecutionMode,omitempty"`
+	OtherAgentName          *string             `json:"otherAgentName,omitempty"`
+}
+
+type K8sWorkloadTelemetryMetrics struct {
+	TotalDataSentBytes *int                                                 `json:"totalDataSentBytes,omitempty"`
+	ThroughputBytes    *int                                                 `json:"throughputBytes,omitempty"`
+	ExpectingTelemetry *K8sWorkloadTelemetryMetricsExpectingTelemetryStatus `json:"expectingTelemetry"`
+}
+
+type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
+	IsExpectingTelemetry    *bool                   `json:"isExpectingTelemetry,omitempty"`
+	TelemetryObservedStatus *DesiredConditionStatus `json:"telemetryObservedStatus"`
 }
 
 type LatencySamplerAction struct {
@@ -1015,6 +1184,13 @@ type TestConnectionResponse struct {
 	Reason          *string `json:"reason,omitempty"`
 }
 
+type WorkloadFilter struct {
+	Namespace                *string          `json:"namespace,omitempty"`
+	Kind                     *K8sResourceKind `json:"kind,omitempty"`
+	Name                     *string          `json:"name,omitempty"`
+	MarkedForInstrumentation *bool            `json:"markedForInstrumentation,omitempty"`
+}
+
 type BooleanOperation string
 
 const (
@@ -1139,6 +1315,63 @@ func (e *ConditionStatus) UnmarshalGQL(v any) error {
 }
 
 func (e ConditionStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type DesiredStateProgress string
+
+const (
+	DesiredStateProgressError       DesiredStateProgress = "Error"
+	DesiredStateProgressFailure     DesiredStateProgress = "Failure"
+	DesiredStateProgressNotice      DesiredStateProgress = "Notice"
+	DesiredStateProgressPending     DesiredStateProgress = "Pending"
+	DesiredStateProgressWaiting     DesiredStateProgress = "Waiting"
+	DesiredStateProgressUnsupported DesiredStateProgress = "Unsupported"
+	DesiredStateProgressDisabled    DesiredStateProgress = "Disabled"
+	DesiredStateProgressSuccess     DesiredStateProgress = "Success"
+	DesiredStateProgressIrrelevant  DesiredStateProgress = "Irrelevant"
+	DesiredStateProgressUnknown     DesiredStateProgress = "Unknown"
+)
+
+var AllDesiredStateProgress = []DesiredStateProgress{
+	DesiredStateProgressError,
+	DesiredStateProgressFailure,
+	DesiredStateProgressNotice,
+	DesiredStateProgressPending,
+	DesiredStateProgressWaiting,
+	DesiredStateProgressUnsupported,
+	DesiredStateProgressDisabled,
+	DesiredStateProgressSuccess,
+	DesiredStateProgressIrrelevant,
+	DesiredStateProgressUnknown,
+}
+
+func (e DesiredStateProgress) IsValid() bool {
+	switch e {
+	case DesiredStateProgressError, DesiredStateProgressFailure, DesiredStateProgressNotice, DesiredStateProgressPending, DesiredStateProgressWaiting, DesiredStateProgressUnsupported, DesiredStateProgressDisabled, DesiredStateProgressSuccess, DesiredStateProgressIrrelevant, DesiredStateProgressUnknown:
+		return true
+	}
+	return false
+}
+
+func (e DesiredStateProgress) String() string {
+	return string(e)
+}
+
+func (e *DesiredStateProgress) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DesiredStateProgress(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DesiredStateProgress", str)
+	}
+	return nil
+}
+
+func (e DesiredStateProgress) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

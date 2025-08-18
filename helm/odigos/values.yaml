@@ -161,6 +161,10 @@ collectorNode:
   # to some other directory (for example, '/mnt/var/log')
   k8sNodeLogsDirectory: ''
 
+  # EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+  # It is disabled by default and can be enabled by setting the enabled flag to true.
+  enableDataCompression: false
+
 autoscaler:
   nodeSelector:
     kubernetes.io/os: linux
@@ -233,6 +237,12 @@ instrumentor:
   # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
   # k8s-init-container: alternative which uses an init container to copy the agent files to the shared volume
   mountMethod: ''
+  # checkDeviceHealthBeforeInjection is relevant only when mountMethod is k8s-virtual-device.
+  # before injecting odigos agent into a new pod, it will check that all odiglet "deviceplugin"
+  # containers are not in crash loop backoff.
+  # this is to avoid adding a device (as resource request on a container)
+  # where an odiglet might not be able to provide the device on the node and fail k8s scheduling for instrumented pods on all nodes.
+  checkDeviceHealthBeforeInjection: false
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
