@@ -39,7 +39,10 @@ export const useActionCRUD = (): UseActionCrud => {
     } else if (data?.computePlatform?.actions) {
       const { actions: items } = data.computePlatform;
 
-      addEntities(EntityTypes.Action, mapFetchedActions(items));
+      const x = mapFetchedActions(items);
+      console.log(x);
+
+      addEntities(EntityTypes.Action, x);
       setEntitiesLoading(EntityTypes.Action, false);
     }
   };
