@@ -481,9 +481,25 @@ build-cli-image:
 	DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S') \
 	ko build --bare --tags $(TAG) --local .
 
+# install getekeeper to prevent:
+# 1. privileged containers
+# 2. hostPath volumes (except for some specific paths which are allowed on most clusters)
+# 3. hostNamespace (hostNetwork, hostPID, hostIPC)
 install-gatekeeper:
 	helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	helm repo update
 	helm install gatekeeper gatekeeper/gatekeeper --namespace gatekeeper-system --create-namespace
-	kubectl apply -f tests/gatekeeper/
+	@max_retries=5; \
+	backoff=2; \
+	attempt=1; \
+	until kubectl apply -f tests/gatekeeper/; do \
+		if [ $$attempt -ge $$max_retries ]; then \
+			echo "kubectl apply failed after $$attempt attempts."; \
+			exit 1; \
+		fi; \
+		echo "kubectl apply failed. Retrying in $$backoff seconds..."; \
+		sleep $$backoff; \
+		backoff=$$((backoff * 2)); \
+		attempt=$$((attempt + 1)); \
+	done
 

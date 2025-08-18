@@ -143,6 +143,10 @@ spec:
           {{- end }}
             - name: GOMEMLIMIT
               value: {{ include "odigos.odiglet.gomemlimitFromLimit" . }}
+          {{- if not .Values.odiglet.hostPid }}
+            - name: ODIGOS_PROC_DIR
+              value: /hostproc
+          {{- end}}
           envFrom:
             - configMapRef:
                 name: odigos-own-telemetry-otel-config
@@ -151,27 +155,37 @@ spec:
           {{- if .Values.odiglet.allowHostPathMounts }}
             - name: run-dir
               mountPath: /run
-          {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
+             {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
             - name: custom-container-runtime-socket
               mountPath: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
-          {{- end }}
-          {{- if .Values.openshift.enabled }}
+             {{- end }}
+             {{- if .Values.openshift.enabled }}
             - name: host
               mountPath: /host
               readOnly: true
             - name: selinux
               mountPath: /host/etc/selinux
               mountPropagation: Bidirectional
-          {{- end }}
+             {{- end }}
             - name: odigos
               mountPath: /var/odigos
               readOnly: true
           {{- end }} # end of optional hostPath mounts
+          {{- if not .Values.odiglet.hostPid }}
+            - name: hostproc
+              mountPath: /hostproc
+          {{- end }}
              # needed to load eBPF tracepoints - used by runtime-detector
             - name: kernel-debug
               mountPath: /sys/kernel/debug
             - name: odigos-go-offsets
               mountPath: /offsets
+# if hostMounts are not enabled we must use mountMethod of "k8s-init-container"
+{{- if and (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) (not .Values.odiglet.allowHostPathMounts) }}
+{{ fail "if HostPath mounts are not allowed mount method must be k8s-init-container" }}
+{{- end }}
+# to use device plugins we need to have the "k8s-virtual-device" mount method or non specified (default)
+# and to have hostMounts enabled
 {{- if and (or (eq .Values.instrumentor.mountMethod "") (eq .Values.instrumentor.mountMethod "k8s-virtual-device")) ( .Values.odiglet.allowHostPathMounts) }}
         - name: deviceplugin
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
@@ -228,7 +242,9 @@ spec:
       {{- if semverCompare "<1.26.0" $version }}
       hostNetwork: true
       {{- end}}
+      {{- if .Values.odiglet.hostPid }}
       hostPID: true
+      {{- end }}
       dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical
       serviceAccountName: odiglet
@@ -237,27 +253,33 @@ spec:
         - name: run-dir
           hostPath:
             path: /run
-      {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
+         {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
         - name: custom-container-runtime-socket
           hostPath:
             path: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
-      {{- end }}
-      {{- if .Values.openshift.enabled }}
+         {{- end }}
+         {{- if .Values.openshift.enabled }}
         - name: host
           hostPath:
             path: /
         - name: selinux
           hostPath:
             path: /etc/selinux
-      {{- end }}
+         {{- end }}
         - name: device-plugins-dir
           hostPath:
             path: /var/lib/kubelet/device-plugins
         - name: odigos
           hostPath:
             path: /var/odigos
-      {{- end }} # end of hostPath mounts
+      {{- end }} # end of hostPath mounts that are not mandatory
         # needed to load eBPF tracepoints - used by runtime-detector
+      {{- if not .Values.odiglet.hostPid }}
+        - name: hostproc
+          hostPath:
+            path: /proc
+            type: Directory
+      {{- end }}
         - name: kernel-debug
           hostPath:
             path: /sys/kernel/debug

@@ -331,6 +331,7 @@ odiglet:
   # run the odiglet container as privileged.
   privileged: true
   allowHostPathMounts: true
+  hostPid: true
 
 centralProxy:
   enabled: false
