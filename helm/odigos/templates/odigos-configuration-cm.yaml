@@ -104,6 +104,9 @@ data:
       {{- with .Values.collectorNode.k8sNodeLogsDirectory }}
       k8sNodeLogsDirectory: {{ . }}
       {{- end }}
+      {{- with .Values.collectorNode.enableDataCompression }}
+      enableDataCompression: {{ . }}
+      {{- end }}
     {{- end }}
     {{- if include "utils.shouldRenderUserInstrumentationEnvs" . | eq "true" }}
     userInstrumentationEnvs:

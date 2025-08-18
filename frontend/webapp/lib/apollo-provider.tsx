@@ -1,7 +1,7 @@
 'use client';
 
 import { type FC, type PropsWithChildren } from 'react';
-import { API } from '@/utils';
+import { API, IS_LOCAL } from '@/utils';
 import { useCSRF } from '@/hooks';
 import { onError } from '@apollo/client/link/error';
 import { ApolloLink, HttpLink } from '@apollo/client';
@@ -9,10 +9,10 @@ import { setContext } from '@apollo/client/link/context';
 import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 import { ApolloNextAppProvider, InMemoryCache, ApolloClient, SSRMultipartLink } from '@apollo/client-integration-nextjs';
 
-const makeClient = (csrfToken: string) => {
+const makeClient = (csrfToken: string | null) => {
   const httpLink = new HttpLink({
     uri: API.GRAPHQL,
-    credentials: 'include', // Include cookies for CSRF token
+    credentials: IS_LOCAL ? 'same-origin' : 'include', // Include cookies for CSRF token
   });
 
   const errorLink = onError(({ graphQLErrors, networkError }) => {
@@ -21,17 +21,22 @@ const makeClient = (csrfToken: string) => {
   });
 
   // Add CSRF token to headers for mutations
-  const authLink = setContext((_, { headers }) => {
-    // TODO: block mutations for readonly operations and remove from all hooks
-    // const operationType = (operation.query.definitions[0] as OperationDefinitionNode)?.operation;
-
-    return {
-      headers: {
-        ...headers,
-        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-      },
+  const authLink = setContext((_, ctx) => {
+    const headers = {
+      ...ctx.headers,
     };
+    if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken;
+    }
+
+    return { headers };
   });
+
+  // TODO: block mutations for readonly operations and remove from all hooks
+  // const readonlyLink = setContext((operation) => {
+  //   const operationType = (operation.query.definitions[0] as OperationDefinitionNode)?.operation;
+  //   return {};
+  // });
 
   return new ApolloClient({
     devtools: {
@@ -61,7 +66,7 @@ const makeClient = (csrfToken: string) => {
 const ApolloProvider: FC<PropsWithChildren> = ({ children }) => {
   const { token } = useCSRF();
 
-  if (!token) {
+  if (!token && !IS_LOCAL) {
     return (
       <CenterThis style={{ height: '100%' }}>
         <FadeLoader scale={2} />
