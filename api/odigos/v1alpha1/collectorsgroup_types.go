@@ -102,6 +102,10 @@ type CollectorsGroupSpec struct {
 	// It is enabled by default and can be disabled by setting the enabled flag to false.
 	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
 
+	// EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	EnableDataCompression *bool `json:"enableDataCompression,omitempty"`
+
 	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
 	// It is disabled by default and can be enabled by setting the enabled flag to true.
 	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
