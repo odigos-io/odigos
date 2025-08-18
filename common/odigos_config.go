@@ -57,6 +57,10 @@ type CollectorNodeConfiguration struct {
 	// This field is used to specify this target directory in these cases.
 	// A common target directory is '/mnt/var/log'.
 	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
+
+	// EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	EnableDataCompression *bool `json:"enableDataCompression,omitempty"`
 }
 
 type CollectorGatewayConfiguration struct {

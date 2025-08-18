@@ -117,6 +117,11 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration) *odig
 		k8sNodeLogsDirectory = odigosConfiguration.CollectorNode.K8sNodeLogsDirectory
 	}
 
+	enableDataCompression := false
+	if odigosConfiguration.CollectorNode != nil && odigosConfiguration.CollectorNode.EnableDataCompression != nil {
+		enableDataCompression = *odigosConfiguration.CollectorNode.EnableDataCompression
+	}
+
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -130,6 +135,7 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration) *odig
 			Role:                    odigosv1.CollectorsGroupRoleNodeCollector,
 			CollectorOwnMetricsPort: ownMetricsPort,
 			K8sNodeLogsDirectory:    k8sNodeLogsDirectory,
+			EnableDataCompression:   &enableDataCompression,
 			ResourcesSettings:       getResourceSettings(odigosConfiguration),
 		},
 	}

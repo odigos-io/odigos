@@ -161,6 +161,10 @@ collectorNode:
   # to some other directory (for example, '/mnt/var/log')
   k8sNodeLogsDirectory: ''
 
+  # EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+  # It is disabled by default and can be enabled by setting the enabled flag to true.
+  enableDataCompression: false
+
 autoscaler:
   nodeSelector:
     kubernetes.io/os: linux

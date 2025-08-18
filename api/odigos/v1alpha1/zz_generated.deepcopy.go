@@ -344,6 +344,11 @@ func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.EnableDataCompression != nil {
+		in, out := &in.EnableDataCompression, &out.EnableDataCompression
+		*out = new(bool)
+		**out = **in
+	}
 	if in.ClusterMetricsEnabled != nil {
 		in, out := &in.ClusterMetricsEnabled, &out.ClusterMetricsEnabled
 		*out = new(bool)

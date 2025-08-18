@@ -63,6 +63,7 @@ var configCmd = &cobra.Command{
 	- "%s": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
 	- "%s": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
 	- "%s": List of allowed domains for test connection endpoints (e.g., "https://api.honeycomb.io", "https://otel.example.com"). Use "*" to allow all domains. Empty list allows all domains for backward compatibility.
+	- "%s": Enable or disable data compression before sending data to the Gateway collector. [default: false]
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -96,6 +97,7 @@ var configCmd = &cobra.Command{
 		consts.GoAutoOffsetsCronProperty,
 		consts.ClickhouseJsonTypeEnabledProperty,
 		consts.AllowedTestConnectionHostsProperty,
+		consts.EnableDataCompressionProperty,
 	),
 }
 
@@ -202,7 +204,8 @@ func validatePropertyValue(property string, value []string) error {
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.GoAutoOffsetsCronProperty,
 		consts.ServiceGraphDisabledProperty,
-		consts.ClickhouseJsonTypeEnabledProperty:
+		consts.ClickhouseJsonTypeEnabledProperty,
+		consts.EnableDataCompressionProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -217,7 +220,8 @@ func validatePropertyValue(property string, value []string) error {
 			consts.KarpenterEnabledProperty,
 			consts.RollbackDisabledProperty,
 			consts.AutomaticRolloutDisabledProperty,
-			consts.ServiceGraphDisabledProperty:
+			consts.ServiceGraphDisabledProperty,
+			consts.EnableDataCompressionProperty:
 			_, err := strconv.ParseBool(value[0])
 			if err != nil {
 				return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
@@ -374,6 +378,13 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 		}
 		boolValue, _ := strconv.ParseBool(value[0])
 		config.CollectorGateway.ServiceGraphDisabled = &boolValue
+
+	case consts.EnableDataCompressionProperty:
+		if config.CollectorNode == nil {
+			config.CollectorNode = &common.CollectorNodeConfiguration{}
+		}
+		boolValue, _ := strconv.ParseBool(value[0])
+		config.CollectorNode.EnableDataCompression = &boolValue
 
 	case consts.OidcTenantUrlProperty:
 		if config.Oidc == nil {
