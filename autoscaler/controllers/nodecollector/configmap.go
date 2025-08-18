@@ -267,8 +267,16 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	// by sending all traces from a node collector to the same gateway instance.
 	tracesEnabled := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
 	if tracesEnabled {
+
+		compression := "none"
+		internalDataCompressionDisabled := nodeCG.Spec.EnableDataCompression
+
+		if internalDataCompressionDisabled != nil && *internalDataCompressionDisabled == true {
+			compression = "gzip"
+		}
+
 		exporters["loadbalancing"] = config.GenericMap{
-			"protocol": config.GenericMap{"otlp": config.GenericMap{"compression": "none", "tls": config.GenericMap{"insecure": true}}},
+			"protocol": config.GenericMap{"otlp": config.GenericMap{"compression": compression, "tls": config.GenericMap{"insecure": true}}},
 			"resolver": config.GenericMap{"k8s": config.GenericMap{"service": fmt.Sprintf("odigos-gateway.%s", env.GetCurrentNamespace())}},
 		}
 		tracesPipelineExporter = []string{"loadbalancing"}
