@@ -65,6 +65,12 @@ jobs:
             project_id: '6792b077b086a666569d9935'
           - service: operator
             project_id: '67c5cadf8d089ef3612cf861'
+          - service: enterprise-central-ui
+            project_id: '680145cc4879c004a8ca09bd'
+          - service: enterprise-central-proxy
+            project_id: '67fe8c75ec87140cc813476e'
+          - service: enterprise-central-backend
+            project_id: '68014c0c5766eb3b77a8f993'
     runs-on: ubuntu-latest
     steps:
       - name: Download Preflight Binary
