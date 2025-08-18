@@ -8,8 +8,10 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/scheduler/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -115,6 +117,11 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration) *odig
 		k8sNodeLogsDirectory = odigosConfiguration.CollectorNode.K8sNodeLogsDirectory
 	}
 
+	enableDataCompression := false
+	if odigosConfiguration.CollectorNode != nil && odigosConfiguration.CollectorNode.EnableDataCompression != nil {
+		enableDataCompression = *odigosConfiguration.CollectorNode.EnableDataCompression
+	}
+
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -128,12 +135,13 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration) *odig
 			Role:                    odigosv1.CollectorsGroupRoleNodeCollector,
 			CollectorOwnMetricsPort: ownMetricsPort,
 			K8sNodeLogsDirectory:    k8sNodeLogsDirectory,
+			EnableDataCompression:   &enableDataCompression,
 			ResourcesSettings:       getResourceSettings(odigosConfiguration),
 		},
 	}
 }
 
-func sync(ctx context.Context, c client.Client) error {
+func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 
 	namespace := env.GetCurrentNamespace()
 
@@ -146,22 +154,28 @@ func sync(ctx context.Context, c client.Client) error {
 
 	if numberOfInstrumentedApps == 0 {
 		// TODO: should we delete the collector group if cluster collector is not ready?
-		return utils.DeleteCollectorGroup(ctx, c, namespace, k8sconsts.OdigosNodeCollectorCollectorGroupName)
+		return k8sutils.DeleteCollectorGroup(ctx, c, namespace, k8sconsts.OdigosNodeCollectorCollectorGroupName)
 	}
 
-	clusterCollectorGroup, err := utils.GetCollectorGroup(ctx, c, namespace, k8sconsts.OdigosClusterCollectorCollectorGroupName)
+	clusterCollectorGroup, err := k8sutils.GetCollectorGroup(ctx, c, namespace, k8sconsts.OdigosClusterCollectorCollectorGroupName)
 	if err != nil {
 		return client.IgnoreNotFound(err)
 	}
 
-	odigosConfiguration, err := utils.GetCurrentOdigosConfiguration(ctx, c)
+	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	nodeCollectorGroup := newNodeCollectorGroup(odigosConfiguration)
+	err = utils.SetOwnerControllerToSchedulerDeployment(ctx, c, nodeCollectorGroup, scheme)
 	if err != nil {
 		return err
 	}
 
 	clusterCollectorReady := clusterCollectorGroup.Status.Ready
 	if clusterCollectorReady {
-		return utils.ApplyCollectorGroup(ctx, c, newNodeCollectorGroup(odigosConfiguration))
+		return k8sutils.ApplyCollectorGroup(ctx, c, nodeCollectorGroup)
 	}
 
 	return nil

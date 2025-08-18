@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
+	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
@@ -331,7 +332,7 @@ func rolloutCondition(rolloutErr error) metav1.Condition {
 // podHasCrashLoop returns true if any (init)-container in the pod is in CrashLoopBackOff.
 func podHasCrashLoop(p *corev1.Pod) bool {
 	for _, cs := range append(p.Status.InitContainerStatuses, p.Status.ContainerStatuses...) {
-		if cs.State.Waiting != nil && cs.State.Waiting.Reason == "CrashLoopBackOff" {
+		if containerutils.IsContainerInCrashLoopBackOff(&cs) {
 			return true
 		}
 	}
@@ -371,7 +372,14 @@ func crashLoopBackOffDuration(ctx context.Context, c client.Client, obj client.O
 	if selector == nil {
 		return 0, fmt.Errorf("crashLoopBackOffDuration: workload has nil selector")
 	}
-	sel, err := metav1.LabelSelectorAsSelector(selector)
+
+	// Create a deep copy of the selector to avoid mutating the original
+	selectorCopy := selector.DeepCopy()
+	selectorCopy.MatchExpressions = append(selectorCopy.MatchExpressions, metav1.LabelSelectorRequirement{
+		Key:      k8sconsts.OdigosAgentsMetaHashLabel,
+		Operator: metav1.LabelSelectorOpExists,
+	})
+	sel, err := metav1.LabelSelectorAsSelector(selectorCopy)
 	if err != nil {
 		return 0, fmt.Errorf("crashLoopBackOffDuration: invalid selector: %w", err)
 	}

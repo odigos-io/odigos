@@ -8,10 +8,11 @@ import (
 )
 
 const (
-	s3BucketKey    = "S3_BUCKET"
-	s3RegionKey    = "S3_REGION"
-	s3PartitionKey = "S3_PARTITION"
-	s3Marshaller   = "S3_MARSHALER"
+	s3BucketKey          = "S3_BUCKET"
+	s3RegionKey          = "S3_REGION"
+	s3PartitionKey       = "S3_PARTITION"
+	s3PartitionFormatKey = "S3_PARTITION_FORMAT"
+	s3Marshaller         = "S3_MARSHALER"
 )
 
 var (
@@ -40,12 +41,28 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		return nil, ErrS3RegionNotSpecified
 	}
 
-	partition, ok := dest.GetConfig()[s3PartitionKey]
-	if !ok {
-		partition = "minute"
-	}
-	if partition != "minute" && partition != "hour" {
-		return nil, errors.New("invalid partition specified, gateway will not be configured for AWS S3")
+	// Handle partition format - support both old s3_partition and new s3_partition_format
+	var partitionFormat string
+
+	// Check for new s3_partition_format first
+	if format, ok := dest.GetConfig()[s3PartitionFormatKey]; ok {
+		partitionFormat = format
+	} else {
+		// Fall back to old s3_partition for backward compatibility
+		partition, ok := dest.GetConfig()[s3PartitionKey]
+		if !ok {
+			partition = "minute"
+		}
+
+		// Convert old partition values to new format
+		switch partition {
+		case "minute":
+			partitionFormat = "year=%Y/month=%m/day=%d/hour=%H/minute=%M"
+		case "hour":
+			partitionFormat = "year=%Y/month=%m/day=%d/hour=%H"
+		default:
+			return nil, errors.New("invalid partition specified, gateway will not be configured for AWS S3")
+		}
 	}
 
 	marshaler, ok := dest.GetConfig()[s3Marshaller]
@@ -59,9 +76,9 @@ func (s *AWSS3) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	exporterName := "awss3/" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"s3uploader": GenericMap{
-			"region":       region,
-			"s3_bucket":    bucket,
-			"s3_partition": partition,
+			"region":              region,
+			"s3_bucket":           bucket,
+			"s3_partition_format": partitionFormat,
 		},
 		"marshaler": marshaler,
 	}
