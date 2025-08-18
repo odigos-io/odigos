@@ -2,7 +2,6 @@ apiVersion: odigos.io/v1alpha1
 kind: Processor
 metadata:
   name: reduce-span-name-cardinality
-  namespace: odigos-system
 spec:
   type: transform
   processorName: "Reduce Span Name Cardinality"
