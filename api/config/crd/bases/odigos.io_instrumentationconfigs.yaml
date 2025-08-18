@@ -378,7 +378,7 @@ spec:
                       type: object
                     instrumentationLibraryConfigs:
                       description: configurations for the instrumentation libraries
-                        the the SDK should use
+                        that the SDK should use
                       items:
                         properties:
                           codeAttributes:
