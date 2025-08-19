@@ -33,6 +33,10 @@ var procDir = func() string {
 	return dir
 }()
 
+func HostProcDir() string {
+	return procDir
+}
+
 // LangsVersionEnvs is a map of environment variables used for detecting the versions of different languages
 var LangsVersionEnvs = map[string]struct{}{
 	NodeVersionConst:   {},

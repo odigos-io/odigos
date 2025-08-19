@@ -14,7 +14,7 @@ require (
 	github.com/odigos-io/odigos/opampserver v0.0.0
 	github.com/odigos-io/odigos/procdiscovery v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
-	github.com/odigos-io/runtime-detector v0.0.16
+	github.com/odigos-io/runtime-detector v0.0.17-0.20250818130637-0bd5dbb8a7a7
 	go.opentelemetry.io/auto v0.21.0
 	go.opentelemetry.io/otel v1.37.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.37.0
