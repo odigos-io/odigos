@@ -33,9 +33,10 @@ var LangsVersionEnvs = map[string]struct{}{
 }
 
 const (
-	NewRelicAgentName  = "New Relic Agent"
-	DynatraceAgentName = "Dynatrace Agent"
-	DataDogAgentName   = "Datadog Agent"
+	NewRelicAgentName       = "New Relic Agent"
+	DynatraceAgentName      = "Dynatrace Agent"
+	DataDogAgentName        = "Datadog Agent"
+	OpenTelemetryAgentName  = "OpenTelemetry Agent"
 )
 
 const (
@@ -44,16 +45,19 @@ const (
 	DynatraceDynamizerExeSubString   = "oneagentdynamizer"
 	DynatraceFullStackEnvValuePrefix = "/dynatrace/"
 	DataDogAgentEnv                  = "DD_TRACE_AGENT_URL"
+	OpenTelemetryAgentEnv            = "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"
 )
 
 var OtherAgentEnvs = map[string]string{
 	NewRelicAgentEnv:      NewRelicAgentName,
 	DynatraceDynamizerEnv: DynatraceAgentName,
 	DataDogAgentEnv:       DataDogAgentName,
+	OpenTelemetryAgentEnv: OpenTelemetryAgentName,
 }
 
 var OtherAgentCmdSubString = map[string]string{
-	"newrelic.jar": NewRelicAgentName,
+	"newrelic.jar":                NewRelicAgentName,
+	"opentelemetry-javaagent.jar": OpenTelemetryAgentName,
 }
 
 type Details struct {
