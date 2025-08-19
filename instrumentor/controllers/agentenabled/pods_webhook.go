@@ -2,6 +2,7 @@ package agentenabled
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -25,38 +26,95 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 type PodsWebhook struct {
 	client.Client
 	DistrosGetter *distros.Getter
+	// decoder is used to decode the admission request's raw object into a structured corev1.Pod.
+	Decoder admission.Decoder
 }
 
-var _ webhook.CustomDefaulter = &PodsWebhook{}
+var _ admission.Handler = &PodsWebhook{}
 
-func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
+func (p *PodsWebhook) InjectDecoder(d admission.Decoder) error {
+	p.Decoder = d
+	return nil
+}
+
+var (
+	ErrNotOdigablePod               = errors.New("pod does not belong to an odigos workload")
+	ErrInjectionDisabled            = errors.New("agent injection is disabled in instrumentation config")
+	ErrIgnorePod                    = errors.New("pod is not eligible for mutation")
+	ErrOdigletDeviceNotHealthy      = errors.New("odiglet device plugin is unhealthy")
+	ErrMissingServiceName           = errors.New("instrumentation config is missing service name")
+	ErrMissingInstrumentationConfig = errors.New("instrumentation config is missing")
+	ErrMissingOdigosConfiguration   = errors.New("odigos configuration is missing")
+	ErrUnknownDistroName            = errors.New("distro not found")
+	ErrEnvVarInjection              = errors.New("failed to inject environment variables")
+	ErrMountMethodNotSet            = errors.New("mount method is not set in ODIGOS config")
+)
+
+// Handle implements the admission.Handler interface to safely mutate Pod objects at creation time.
+//
+// This webhook applies ODIGOS instrumentation logic by:
+// - Decoding the incoming Pod from the admission request
+// - Cloning the Pod to ensure safe mutation
+// - Injecting volumes, env vars, and labels based on ODIGOS configuration
+// - Returning a patch that atomically applies changes to the original Pod
+//
+// If injection fails for any reason, the webhook returns an Allowed response with no changes,
+// ensuring user workloads are never blocked by instrumentation logic.
+func (p *PodsWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
 	logger := log.FromContext(ctx)
-	pod, ok := obj.(*corev1.Pod)
 
-	if !ok {
-		logger.Error(errors.New("expected a Pod but got a %T"), "failed to inject odigos agent")
-		return nil
+	var pod corev1.Pod
+	if err := p.Decoder.Decode(req, &pod); err != nil {
+		logger.Error(err, "unable to decode Pod from admission request")
+		return admission.Allowed("proceeding without mutation")
 	}
+
+	// Clone Pod for safe mutation
+	mutated := pod.DeepCopy()
+
+	err := p.injectOdigos(ctx, mutated, req)
+	switch {
+	case errors.Is(err, ErrIgnorePod), errors.Is(err, ErrNotOdigablePod), errors.Is(err, ErrInjectionDisabled):
+		// These are expected, allow without mutation
+		return admission.Allowed("odigos injection skipped: not applicable")
+
+	case err != nil:
+		// Real failure, still allow pod to be created but log clearly
+		logger.Error(err, "unexpected failure during odigos injection")
+		return admission.Allowed("odigos injection failed internally")
+
+	default:
+		// Return patch
+		mutatedRaw, err := json.Marshal(mutated)
+		if err != nil {
+			logger.Error(err, "failed to marshal mutated Pod")
+			return admission.Allowed("proceeding without mutation")
+		}
+
+		return admission.PatchResponseFromRaw(req.Object.Raw, mutatedRaw)
+	}
+}
+
+func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req admission.Request) error {
+	logger := log.FromContext(ctx)
 
 	odigosNamespace := env.GetCurrentNamespace()
 
-	pw, err := p.podWorkload(ctx, pod)
+	pw, err := p.podWorkload(ctx, pod, req)
 	if err != nil {
 		// TODO: if the webhook is enabled for all pods, this is not necessarily an error
 		logger.Error(err, "failed to get pod workload details. Skipping Injection of ODIGOS agent")
-		return nil
+		return ErrIgnorePod
 	} else if pw == nil {
-		return nil
+		return ErrNotOdigablePod
 	}
 
 	var ic odigosv1.InstrumentationConfig
@@ -65,26 +123,23 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// instrumentationConfig does not exist, this pod does not belong to any odigos workloads
-			return nil
+			return ErrNotOdigablePod
 		}
-		logger.Error(err, "failed to get instrumentationConfig. Skipping Injection of ODIGOS agent")
-		return nil
+		return fmt.Errorf("%w: %v", ErrMissingInstrumentationConfig, err)
 	}
 
 	if !ic.Spec.AgentInjectionEnabled {
 		// instrumentation config exists, but no agent should be injected by webhook
-		return nil
+		return ErrInjectionDisabled
 	}
 
 	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfiguration(ctx, p.Client)
 	if err != nil {
-		logger.Error(err, "failed to get ODIGOS config. Skipping Injection of ODIGOS agent")
-		return nil
+		return fmt.Errorf("%w: %v", ErrMissingOdigosConfiguration, err)
 	}
 	if odigosConfiguration.MountMethod == nil {
 		// we are reading the effective config which should already have the mount method resolved or defaulted
-		logger.Error(errors.New("mount method is not set in ODIGOS config"), "Skipping Injection of ODIGOS agent")
-		return nil
+		return ErrMountMethodNotSet
 	}
 	mountMethod := *odigosConfiguration.MountMethod
 
@@ -92,16 +147,14 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	if mountIsVirtualDevice && odigosConfiguration.CheckDeviceHealthBeforeInjection != nil && *odigosConfiguration.CheckDeviceHealthBeforeInjection {
 		err := podswebhook.CheckDevicePluginContainersHealth(ctx, p.Client, odigosNamespace)
 		if err != nil {
-			logger.Error(err, "odiglet device plugin containers are not healthy. Skipping Injection of ODIGOS agent")
-			return nil
+			return fmt.Errorf("%w: %v", ErrOdigletDeviceNotHealthy, err)
 		}
 	}
 
 	// this is temporary and should be refactored so the service name and other resource attributes are written to agent config
 	serviceName := ic.Spec.ServiceName
 	if serviceName == "" {
-		logger.Error(errors.New("failed to get service name for pod"), "Skipping Injection of ODIGOS agent")
-		return nil
+		return ErrMissingServiceName
 	}
 
 	karpenterDisabled := odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled
@@ -133,8 +186,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 
 		containerVolumeMounted, containerDirsToCopy, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, odigosConfiguration)
 		if err != nil {
-			logger.Error(err, "failed to inject ODIGOS agent to container")
-			continue
+			return err
 		}
 
 		volumeMounted = volumeMounted || containerVolumeMounted
@@ -158,8 +210,7 @@ func (p *PodsWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	// Inject ODIGOS environment variables and instrumentation device into all containers
 	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw, &odigosConfiguration)
 	if injectErr != nil {
-		logger.Error(injectErr, "failed to inject ODIGOS instrumentation. Skipping Injection of ODIGOS agent")
-		return nil
+		return fmt.Errorf("%w: %v", ErrEnvVarInjection, injectErr)
 	}
 
 	if odigosConfiguration.UserInstrumentationEnvs != nil {
@@ -180,15 +231,7 @@ func mergeMaps(a, b map[string]struct{}) map[string]struct{} {
 	return a
 }
 
-func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
-	// In certain scenarios, the raw request can be utilized to retrieve missing details, like the namespace.
-	// For example, prior to Kubernetes version 1.24 (see https://github.com/kubernetes/kubernetes/pull/94637),
-	// namespaced objects could be sent to admission webhooks with empty namespaces during their creation.
-	admissionRequest, err := admission.RequestFromContext(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get admission request: %w", err)
-	}
-
+func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod, req admission.Request) (*k8sconsts.PodWorkload, error) {
 	pw, err := workload.PodWorkloadObject(ctx, pod)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract pod workload details from pod: %w", err)
@@ -199,9 +242,9 @@ func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod) (*k8scon
 	}
 
 	if pw.Namespace == "" {
-		if admissionRequest.Namespace != "" {
+		if req.Namespace != "" {
 			// If the namespace is available in the admission request, set it in the podWorkload.Namespace.
-			pw.Namespace = admissionRequest.Namespace
+			pw.Namespace = req.Namespace
 		} else {
 			// It is a case that not supposed to happen, but if it does, return an error.
 			return nil, fmt.Errorf("namespace is empty for pod %s/%s, Skipping Injection of ODIGOS environment variables", pod.Namespace, pod.Name)
@@ -250,7 +293,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	distroName := containerConfig.OtelDistroName
 	distroMetadata := p.DistrosGetter.GetDistroByName(distroName)
 	if distroMetadata == nil {
-		return false, nil, fmt.Errorf("distribution %s not found", distroName)
+		return false, nil, ErrUnknownDistroName
 	}
 
 	// check for existing env vars so we don't introduce them again
