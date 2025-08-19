@@ -84,7 +84,11 @@ spec:
                 key: odigos-onprem-token
           {{- end }}
           - name: ODIGOS_INIT_CONTAINER_IMAGE
+            {{- if include "odigos.secretExists" . }}
+            value: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-agents" "Tag" $imageTag) }}
+            {{- else }}
             value: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $imageTag) }}
+            {{- end }}
         volumeMounts:
           - name: instrumentor-webhooks-cert
             mountPath: /tmp/k8s-webhook-server/serving-certs
