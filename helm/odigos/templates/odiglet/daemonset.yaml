@@ -104,6 +104,7 @@ spec:
                 - BPF
                 - PERFMON
                 - SYS_PTRACE
+                - DAC_READ_SEARCH
               drop:
                 - ALL
             {{- end }}
