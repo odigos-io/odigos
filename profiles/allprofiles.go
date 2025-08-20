@@ -7,7 +7,6 @@ import (
 	"github.com/odigos-io/odigos/profiles/instrumentation"
 	"github.com/odigos-io/odigos/profiles/pipeline"
 	"github.com/odigos-io/odigos/profiles/profile"
-	"github.com/odigos-io/odigos/profiles/sizing"
 )
 
 var AllProfiles = []profile.Profile{
@@ -38,10 +37,6 @@ var AllProfiles = []profile.Profile{
 	instrumentation.DisableGinProfile,
 
 	pipeline.SmallBatchesProfile,
-
-	sizing.SizeSProfile,
-	sizing.SizeMProfile,
-	sizing.SizeLProfile,
 }
 
 var ProfilesByName = map[common.ProfileName]profile.Profile{}

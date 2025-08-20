@@ -10,9 +10,9 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/sizing"
 	"github.com/odigos-io/odigos/profiles"
 	"github.com/odigos-io/odigos/profiles/manifests"
-	"github.com/odigos-io/odigos/profiles/sizing"
 
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -89,9 +89,9 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	modifyConfigWithEffectiveProfiles(effectiveProfiles, &odigosConfiguration)
 	odigosConfiguration.Profiles = effectiveProfiles
 
-	// if none of the profiles set sizing for collectors, use size_s as default, so the values are never nil
-	// if the values were already set (by user or profile) this is a no-op
-	sizing.SizeSProfile.ModifyConfigFunc(&odigosConfiguration)
+	// if none of the sizing configuration is set, use size_m as default, so the values are never nil
+	// if the values were already set (by user or config) this is a no-op
+	sizing.ModifySizingConfig(&odigosConfiguration)
 
 	// TODO: revisit doing this here, might be nicer to maintain in a more generic way
 	// and have it on the config object itself.
