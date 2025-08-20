@@ -15,7 +15,8 @@ import (
 )
 
 type AddClusterInfoDetails struct {
-	ClusterAttributes []v1alpha1.OtelAttributeWithValue `json:"clusterAttributes"`
+	ClusterAttributes       []v1alpha1.OtelAttributeWithValue `json:"clusterAttributes"`
+	OverwriteExistingValues bool                              `json:"overwriteExistingValues"`
 }
 
 func CreateAddClusterInfo(ctx context.Context, action model.ActionInput) (model.Action, error) {
@@ -38,16 +39,19 @@ func CreateAddClusterInfo(ctx context.Context, action model.ActionInput) (model.
 		}
 	}
 
+	overwriteExistingValues := details.OverwriteExistingValues
+
 	addClusterInfoAction := &v1alpha1.AddClusterInfo{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "aci-",
 		},
 		Spec: v1alpha1.AddClusterInfoSpec{
-			ActionName:        services.DerefString(action.Name),
-			Notes:             services.DerefString(action.Notes),
-			Disabled:          action.Disable,
-			Signals:           signals,
-			ClusterAttributes: clusterAttributes,
+			ActionName:              services.DerefString(action.Name),
+			Notes:                   services.DerefString(action.Notes),
+			Disabled:                action.Disable,
+			Signals:                 signals,
+			ClusterAttributes:       clusterAttributes,
+			OverwriteExistingValues: overwriteExistingValues,
 		},
 	}
 
@@ -110,12 +114,15 @@ func UpdateAddClusterInfo(ctx context.Context, id string, action model.ActionInp
 		}
 	}
 
+	overwriteExistingValues := details.OverwriteExistingValues
+
 	// Update the existing action with new values
 	existingAction.Spec.ActionName = services.DerefString(action.Name)
 	existingAction.Spec.Notes = services.DerefString(action.Notes)
 	existingAction.Spec.Disabled = action.Disable
 	existingAction.Spec.Signals = signals
 	existingAction.Spec.ClusterAttributes = clusterAttributes
+	existingAction.Spec.OverwriteExistingValues = overwriteExistingValues
 
 	// Update the action in Kubernetes
 	updatedAction, err := kube.DefaultClient.ActionsClient.AddClusterInfos(ns).Update(ctx, existingAction, metav1.UpdateOptions{})

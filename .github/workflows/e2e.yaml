@@ -5,6 +5,8 @@ on:
   pull_request:
     branches:
       - main
+      - 'releases/**'
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -87,6 +89,7 @@ jobs:
           - "webhooks"
           - "env-injection"
           - "data-streams"
+          - "mount-method"
         include:
           - kube-version: "1.20.15"
             kind-image: "kindest/node:v1.20.15@sha256:a32bf55309294120616886b5338f95dd98a2f7231519c7dedcec32ba29699394"

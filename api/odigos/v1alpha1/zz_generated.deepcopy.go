@@ -344,9 +344,19 @@ func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.EnableDataCompression != nil {
+		in, out := &in.EnableDataCompression, &out.EnableDataCompression
+		*out = new(bool)
+		**out = **in
+	}
 	if in.ClusterMetricsEnabled != nil {
 		in, out := &in.ClusterMetricsEnabled, &out.ClusterMetricsEnabled
 		*out = new(bool)
+		**out = **in
+	}
+	if in.HttpsProxyAddress != nil {
+		in, out := &in.HttpsProxyAddress, &out.HttpsProxyAddress
+		*out = new(string)
 		**out = **in
 	}
 }
@@ -528,6 +538,11 @@ func (in *DestinationSpec) DeepCopyInto(out *DestinationSpec) {
 		in, out := &in.Signals, &out.Signals
 		*out = make([]common.ObservabilitySignal, len(*in))
 		copy(*out, *in)
+	}
+	if in.Disabled != nil {
+		in, out := &in.Disabled, &out.Disabled
+		*out = new(bool)
+		**out = **in
 	}
 	if in.SourceSelector != nil {
 		in, out := &in.SourceSelector, &out.SourceSelector

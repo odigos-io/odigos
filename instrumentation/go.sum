@@ -1,5 +1,5 @@
-github.com/cilium/ebpf v0.19.0 h1:Ro/rE64RmFBeA9FGjcTc+KmCeY6jXmryu6FfnzPRIao=
-github.com/cilium/ebpf v0.19.0/go.mod h1:fLCgMo3l8tZmAdM3B2XqdFzXBpwkcSTroaVqN08OWVY=
+github.com/cilium/ebpf v0.19.1-0.20250818092626-ae226118949d h1:53XY3TeudeY1tPentx/Uf0FLMzq1op9dwdPJ5QaTCFc=
+github.com/cilium/ebpf v0.19.1-0.20250818092626-ae226118949d/go.mod h1:GMSzJItnG6k1OEtplNHr66oI/BlTcGTS/oE7lO4kOGU=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
@@ -25,8 +25,8 @@ github.com/mdlayher/netlink v1.7.2 h1:/UtM3ofJap7Vl4QWCPDGXY8d3GIY2UGSDbK+QWmY8/
 github.com/mdlayher/netlink v1.7.2/go.mod h1:xraEF7uJbxLhc5fpHL4cPe221LI2bdttWlU+ZGLfQSw=
 github.com/mdlayher/socket v0.4.1 h1:eM9y2/jlbs1M615oshPQOHZzj6R6wMT7bX5NPiQvn2U=
 github.com/mdlayher/socket v0.4.1/go.mod h1:cAqeGjoufqdxWkD7DkpyS+wcefOtmu5OQ8KuoJGIReA=
-github.com/odigos-io/runtime-detector v0.0.9 h1:hU2wtc8F3Ka8bANkn+YF3/DG4sz+gq5J42Ij/tQ6mfU=
-github.com/odigos-io/runtime-detector v0.0.9/go.mod h1:K1EaeI2hpR/SmDUNredYgQocqw6wdJeaBLFlMqUVKwA=
+github.com/odigos-io/runtime-detector v0.0.17 h1:X5goqDkv7hOV9Cn5FEri5SOqSv3o6QRrBGrUwp5BMi4=
+github.com/odigos-io/runtime-detector v0.0.17/go.mod h1:PU48BPpW9+gHxuCBdoKFenVquqI8ScnUW8z/237TbwA=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rogpeppe/go-internal v1.13.1 h1:KvO1DLK/DRN07sQ1LQKScxyZJuNnedQ5/wKSR38lUII=

@@ -71,6 +71,9 @@ data:
       {{- end }}
       serviceGraphDisabled: {{ .Values.collectorGateway.serviceGraphDisabled }}
       clusterMetricsEnabled: {{ .Values.collectorGateway.clusterMetricsEnabled }}
+      {{- with .Values.collectorGateway.httpsProxyAddress }}
+      httpsProxyAddress: {{ . }}
+      {{- end }}
     {{- end }}
     {{- if .Values.collectorNode }}
     collectorNode:
@@ -100,6 +103,9 @@ data:
       {{- end }}
       {{- with .Values.collectorNode.k8sNodeLogsDirectory }}
       k8sNodeLogsDirectory: {{ . }}
+      {{- end }}
+      {{- with .Values.collectorNode.enableDataCompression }}
+      enableDataCompression: {{ . }}
       {{- end }}
     {{- end }}
     {{- if include "utils.shouldRenderUserInstrumentationEnvs" . | eq "true" }}
@@ -137,11 +143,14 @@ data:
       {{- toYaml .Values.ignoredContainers | nindent 6 }}
     {{- end }}
     {{- if .Values.instrumentor.mountMethod }}
-      {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device") }}
+      {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device" "k8s-init-container") }}
     mountMethod: {{ .Values.instrumentor.mountMethod }}
       {{- else }}
-        {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path' and 'k8s-virtual-device'." }}
+        {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path', 'k8s-virtual-device' and 'k8s-init-container'." }}
       {{- end }}
+    {{- end }}
+    {{- if .Values.instrumentor.checkDeviceHealthBeforeInjection }}
+    checkDeviceHealthBeforeInjection: {{ .Values.instrumentor.checkDeviceHealthBeforeInjection }}
     {{- end }}
     {{- $envMethod := .Values.instrumentor.agentEnvVarsInjectionMethod }}
     {{- if and $envMethod (not (has $envMethod (list "loader" "pod-manifest" "loader-fallback-to-pod-manifest"))) }}
@@ -170,4 +179,7 @@ data:
       {{- if .Values.rollout.automaticRolloutDisabled }}
       automaticRolloutDisabled: {{ .Values.rollout.automaticRolloutDisabled }}
       {{- end }}
+    {{- end }}
+    {{- if .Values.clickhouseDestinationJsonType.enabled }}
+    clickhouseDestinationJsonType: {{ .Values.clickhouseDestinationJsonType.enabled }}
     {{- end }}

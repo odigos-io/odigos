@@ -52,6 +52,16 @@ spec:
                   This can be used to resolve conflicting ports when a collector is using the host network.
                 format: int32
                 type: integer
+              enableDataCompression:
+                description: |-
+                  EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+                  It is disabled by default and can be enabled by setting the enabled flag to true.
+                type: boolean
+              httpsProxyAddress:
+                description: |-
+                  for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
+                  when unset or empty, no proxy will be used.
+                type: string
               k8sNodeLogsDirectory:
                 description: |-
                   Additional directory to mount in the node collector pod for logs.

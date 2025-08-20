@@ -68,7 +68,7 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 				},
 				Processors: config.GenericMap{
 					"memory_limiter": config.GenericMap{
-						"check_interval": "1s",
+						"check_interval": "500ms",
 					},
 					"resource/odigos-version": config.GenericMap{
 						"attributes": []config.GenericMap{

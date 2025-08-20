@@ -15,6 +15,7 @@ var GreatwallProfile = profile.Profile{
 		"legacy-dotnet-instrumentation",
 		"mount-method-k8s-virtual-device",
 		"pod-manifest-env-var-injection",
+		"label-attributes",
 	},
 	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
 		// temporary set in profile until we add auto discovery for /var/log symlink target
@@ -23,6 +24,10 @@ var GreatwallProfile = profile.Profile{
 		}
 		if config.CollectorNode.K8sNodeLogsDirectory == "" {
 			config.CollectorNode.K8sNodeLogsDirectory = "/mnt/var/log"
+		}
+		if config.CheckDeviceHealthBeforeInjection == nil {
+			checkDeviceHealthBeforeInjection := true
+			config.CheckDeviceHealthBeforeInjection = &checkDeviceHealthBeforeInjection
 		}
 	},
 }

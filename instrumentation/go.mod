@@ -5,14 +5,14 @@ go 1.24.0
 require (
 	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/distros v0.0.0
-	github.com/odigos-io/runtime-detector v0.0.9
+	github.com/odigos-io/runtime-detector v0.0.17
 	go.opentelemetry.io/otel v1.37.0
 	go.opentelemetry.io/otel/metric v1.37.0
 	golang.org/x/sync v0.16.0
 )
 
 require (
-	github.com/cilium/ebpf v0.19.0 // indirect
+	github.com/cilium/ebpf v0.19.1-0.20250818092626-ae226118949d // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/odigos-io/odigos/common v0.0.0 // indirect
