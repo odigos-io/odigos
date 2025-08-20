@@ -20,15 +20,15 @@ spec:
       componentProps:
         type: text
         required: true
-        placeholder: 'http://host:port'
-        tooltip: 'The ClickHouse endpoint is the URL where the ClickHouse server is listening for incoming connections.'
+        placeholder: "http://host:port"
+        tooltip: "The ClickHouse endpoint is the URL where the ClickHouse server is listening for incoming connections."
     - name: CLICKHOUSE_USERNAME
       displayName: Username
       componentType: input
       componentProps:
         type: text
         required: false
-        tooltip: 'If Clickhouse Authentication is used, provide the username'
+        tooltip: "If Clickhouse Authentication is used, provide the username"
     - name: CLICKHOUSE_PASSWORD
       displayName: Password
       componentType: input
@@ -36,13 +36,13 @@ spec:
       componentProps:
         type: password
         required: false
-        tooltip: 'If Clickhouse Authentication is used, provide the password'
+        tooltip: "If Clickhouse Authentication is used, provide the password"
     - name: CLICKHOUSE_CREATE_SCHEME
       displayName: Create Schema
       componentType: checkbox
       componentProps:
         required: true
-        tooltip: 'Should the destination create the schema for you? Set to `false` if you manage your own schema, or `true` to have Odigos create the schema for you'
+        tooltip: "Should the destination create the schema for you? Set to `false` if you manage your own schema, or `true` to have Odigos create the schema for you"
       initialValue: true
     - name: CLICKHOUSE_DATABASE_NAME
       displayName: Database Name
@@ -50,32 +50,41 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: 'The name of the Clickhouse Database where the telemetry data will be stored. The Database will not be created when not exists, so make sure you have created it before'
+        tooltip: "The name of the Clickhouse Database where the telemetry data will be stored. The Database will not be created when not exists, so make sure you have created it before"
       initialValue: otel
+
     - name: CLICKHOUSE_TRACES_TABLE
       displayName: Traces Table
       componentType: input
       componentProps:
         type: text
         required: true
-        tooltip: 'Name of the ClickHouse Table to use for storing trace spans. This name should be used in span queries'
+        tooltip: "Name of the ClickHouse Table to use for storing trace spans. This name should be used in span queries"
       initialValue: otel_traces
+      renderCondition: ["SIGNALS", "INCLUDES", "traces"]
+      hideFromReadData: ["SIGNALS", "EXCLUDES", "traces"]
+
     - name: CLICKHOUSE_LOGS_TABLE
       displayName: Logs Table
       componentType: input
       componentProps:
         type: text
         required: true
-        tooltip: 'Name of the ClickHouse Table to use for storing logs'
+        tooltip: "Name of the ClickHouse Table to use for storing logs"
       initialValue: otel_logs
+      renderCondition: ["SIGNALS", "INCLUDES", "logs"]
+      hideFromReadData: ["SIGNALS", "EXCLUDES", "logs"]
+
     - name: CLICKHOUSE_METRICS_TABLE_EXP_HISTOGRAM
       displayName: Metrics Table - Exp. Histogram
       componentType: input
       componentProps:
         type: text
         required: true
-        tooltip: 'Name of the table for storing exponential histogram metrics'
+        tooltip: "Name of the table for storing exponential histogram metrics"
       initialValue: otel_metrics_exponential_histogram
+      renderCondition: ["SIGNALS", "INCLUDES", "metrics"]
+      hideFromReadData: ["SIGNALS", "EXCLUDES", "metrics"]
 
     - name: CLICKHOUSE_METRICS_TABLE_GAUGE
       displayName: Metrics Table - Gauge
@@ -83,8 +92,10 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: 'Name of the table for storing gauge metrics'
+        tooltip: "Name of the table for storing gauge metrics"
       initialValue: otel_metrics_gauge
+      renderCondition: ["SIGNALS", "INCLUDES", "metrics"]
+      hideFromReadData: ["SIGNALS", "EXCLUDES", "metrics"]
 
     - name: CLICKHOUSE_METRICS_TABLE_HISTOGRAM
       displayName: Metrics Table - Histogram
@@ -92,8 +103,10 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: 'Name of the table for storing histogram metrics'
+        tooltip: "Name of the table for storing histogram metrics"
       initialValue: otel_metrics_histogram
+      renderCondition: ["SIGNALS", "INCLUDES", "metrics"]
+      hideFromReadData: ["SIGNALS", "EXCLUDES", "metrics"]
 
     - name: CLICKHOUSE_METRICS_TABLE_SUM
       displayName: Metrics Table - Sum
@@ -101,8 +114,10 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: 'Name of the table for storing sum metrics'
+        tooltip: "Name of the table for storing sum metrics"
       initialValue: otel_metrics_sum
+      renderCondition: ["SIGNALS", "INCLUDES", "metrics"]
+      hideFromReadData: ["SIGNALS", "EXCLUDES", "metrics"]
 
     - name: CLICKHOUSE_METRICS_TABLE_SUMMARY
       displayName: Metrics Table - Summary
@@ -110,6 +125,7 @@ spec:
       componentProps:
         type: text
         required: true
-        tooltip: 'Name of the table for storing summary metrics'
+        tooltip: "Name of the table for storing summary metrics"
       initialValue: otel_metrics_summary
-
+      renderCondition: ["SIGNALS", "INCLUDES", "metrics"]
+      hideFromReadData: ["SIGNALS", "EXCLUDES", "metrics"]
