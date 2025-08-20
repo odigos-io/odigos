@@ -4,7 +4,7 @@ import React, { CSSProperties, useCallback, useMemo, type PropsWithChildren } fr
 import { usePathname, useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { EntityTypes } from '@odigos/ui-kit/types';
-import { ServiceMapIcon } from '@odigos/ui-kit/icons';
+import { ServiceMapIcon, TraceViewIcon } from '@odigos/ui-kit/icons';
 import { DATA_FLOW_HEIGHT, MENU_BAR_HEIGHT, ROUTES } from '@/utils';
 import { useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
 import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
@@ -33,6 +33,8 @@ const ContentUnderActions = styled(FlexRow)`
 
 const serviceMapId = 'service-map';
 const serviceMapDisplayName = 'Service Map';
+const traceViewId = 'trace-view';
+const traceViewDisplayName = 'Trace View';
 
 const getEntityType = (pathname: string) => {
   return pathname.includes(ROUTES.SOURCES)
@@ -59,6 +61,8 @@ const getSelectedId = (pathname: string) => {
     ? NavIconIds.InstrumentationRules
     : pathname.includes(ROUTES.SERVICE_MAP)
     ? serviceMapId
+    : pathname.includes(ROUTES.TRACE_VIEW)
+    ? traceViewId
     : undefined;
 };
 
@@ -69,6 +73,7 @@ const routesMap = {
   [NavIconIds.Actions]: ROUTES.ACTIONS,
   [NavIconIds.InstrumentationRules]: ROUTES.INSTRUMENTATION_RULES,
   [serviceMapId]: ROUTES.SERVICE_MAP,
+  [traceViewId]: ROUTES.TRACE_VIEW,
 };
 
 function OverviewLayout({ children }: PropsWithChildren) {
@@ -114,6 +119,13 @@ function OverviewLayout({ children }: PropsWithChildren) {
                   selected: selectedId === serviceMapId,
                   onClick: () => onClickId(serviceMapId),
                   tooltip: serviceMapDisplayName,
+                },
+                {
+                  id: traceViewId,
+                  icon: TraceViewIcon,
+                  selected: selectedId === traceViewId,
+                  onClick: () => onClickId(traceViewId),
+                  tooltip: traceViewDisplayName,
                 },
               ]}
             />
