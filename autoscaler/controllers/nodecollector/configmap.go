@@ -294,6 +294,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 					},
 				},
 			},
+			"odigosebpf": config.GenericMap{},
 			"prometheus/self-metrics": config.GenericMap{
 				"config": config.GenericMap{
 					"scrape_configs": []config.GenericMap{
@@ -455,7 +456,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	collectTraces := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
-			Receivers:  []string{"otlp"},
+			Receivers:  []string{"otlp", "odigosebpf"},
 			Processors: append(getAgentPipelineCommonProcessors(), tracesProcessors...),
 			Exporters:  tracesPipelineExporter,
 		}
