@@ -23,6 +23,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
+	"github.com/odigos-io/odigos/frontend/services/traces"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -1290,6 +1291,22 @@ func (r *queryResolver) GetServiceMap(ctx context.Context) (*model.ServiceMap, e
 	}
 
 	return &model.ServiceMap{Services: services}, nil
+}
+
+// GetTraces is the resolver for the getTraces field.
+func (r *queryResolver) GetTraces(ctx context.Context, serviceName string) ([]*model.Trace, error) {
+	getResult, err := traces.GetTraces(ctx, "http://jaeger.tracing:16686", traces.JaegerGetTracesOptions{
+		ServiceName:  serviceName,
+		StartTimeMin: "2025-08-18T00:00:00Z",
+		StartTimeMax: "2025-08-20T00:00:00Z",
+		SearchDepth:  100,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	traces := traces.ConvertTraces(getResult)
+	return traces, nil
 }
 
 // DescribeOdigos is the resolver for the describeOdigos field.

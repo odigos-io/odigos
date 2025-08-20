@@ -923,14 +923,59 @@ type InstrumentationInstanceComponent {
   nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
 }
 
+type TraceTag {
+  key: String!
+  type: String!
+  value: String!
+}
+
+type TraceReference {
+  refType: String!
+  traceID: String!
+  spanID: String!
+}
+
+type TraceLog {
+  timestamp: Int!
+  fields: [TraceTag!]!
+}
+
+type TraceSpan {
+  traceID: String!
+  spanID: String!
+  operationName: String!
+  references: [TraceReference!]!
+  startTime: Int!
+  duration: Int!
+  tags: [TraceTag!]!
+  logs: [TraceLog!]!
+  processID: String!
+  warnings: String!
+}
+
+type TraceProcess {
+  serviceName: String!
+  tags: [TraceTag!]!
+}
+
+type Trace {
+  traceID: String!
+  spans: [TraceSpan!]!
+  processes: [TraceProcess!]!
+  warnings: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
   odigosConfig: OdigosConfiguration
   destinationCategories: GetDestinationCategories
   potentialDestinations: [DestinationDetails!]!
+
   getOverviewMetrics: OverviewMetricsResponse!
   getServiceMap: ServiceMap!
+  getTraces(serviceName: String!): [Trace!]!
+
   describeOdigos: OdigosAnalyze!
   describeSource(
     namespace: String!
@@ -941,7 +986,7 @@ type Query {
 
   # get all sources that match the filter
   workloads(filter: WorkloadFilter): [K8sWorkload!]!
-  
+
   instrumentationInstanceComponents(
     namespace: String!
     kind: String!
