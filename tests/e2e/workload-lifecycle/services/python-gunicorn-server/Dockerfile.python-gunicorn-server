@@ -1,0 +1,24 @@
+# Use an official Python runtime as a base image
+FROM python:3.8.20-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy application code and dependencies
+COPY main.py main.py
+COPY script.py script.py
+COPY requirements.txt .
+
+# Install dependencies
+RUN python -m venv /app/venv \
+    && . /app/venv/bin/activate \
+    && pip install --no-cache-dir -r requirements.txt
+
+RUN apt-get update && apt-get install -y strace
+
+ENV ENV_IN_DOCKER=ENV_IN_DOCKER_FILE
+
+
+COPY script.sh script.sh
+# Command to run the New Relic agent with Gunicorn and Uvicorn workers
+CMD ["./script.sh"]
