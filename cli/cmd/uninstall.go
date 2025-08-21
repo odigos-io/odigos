@@ -38,7 +38,7 @@ var uninstallCmd = &cobra.Command{
 	Short: `Revert all the changes made by the ` + "`odigos install`" + ` command.
 This command will uninstall Odigos from your cluster. It will delete all Odigos objects
 and rollback any metadata changes made to your objects.
- 
+
 Note: Namespaces created during Odigos CLI installation will be deleted during uninstallation. This applies only to CLI installs, not Helm.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
@@ -90,6 +90,9 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 
 			// delete all sources, and wait for the pods to rollout without instrumentation
 			// this is done before the instrumentor is removed, to ensure that the instrumentation is removed
+
+			rollbackOdigosPodAndNamespaceChanges(ctx, client)
+
 			err = removeAllSources(ctx, client)
 			if err != nil {
 				fmt.Printf("\033[31mERROR\033[0m Failed to remove all sources: %s\n", err)
@@ -205,6 +208,12 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 	createKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
 		client, ns, k8sconsts.OdigosSystemLabelKey, cleanupNodeOdigosLabels)
 
+	createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
+		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallCRDs)
+
+}
+
+func rollbackOdigosPodAndNamespaceChanges(ctx context.Context, client *kube.Client) {
 	l := log.Print("Rolling back odigos changes to pods")
 	err := rollbackPodChanges(ctx, client)
 	if err != nil {
@@ -220,10 +229,6 @@ func UninstallClusterResources(ctx context.Context, client *kube.Client, ns stri
 	} else {
 		l.Success()
 	}
-
-	createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
-		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallCRDs)
-
 }
 
 func namespaceHasOdigosLabel(ctx context.Context, client *kube.Client, ns string) (bool, error) {

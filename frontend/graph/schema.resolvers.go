@@ -1363,6 +1363,8 @@ func (r *queryResolver) InstrumentationInstanceComponents(ctx context.Context, n
 	}
 
 	components := make([]*model.InstrumentationInstanceComponent, 0)
+	seenNames := make(map[string]bool)
+
 	for _, instance := range instances {
 		for _, component := range instance.Status.Components {
 			nonIdentifyingAttributes := make([]*model.NonIdentifyingAttribute, 0)
@@ -1374,10 +1376,13 @@ func (r *queryResolver) InstrumentationInstanceComponents(ctx context.Context, n
 				})
 			}
 
-			components = append(components, &model.InstrumentationInstanceComponent{
-				Name:                     component.Name,
-				NonIdentifyingAttributes: nonIdentifyingAttributes,
-			})
+			if _, ok := seenNames[component.Name]; !ok {
+				seenNames[component.Name] = true
+				components = append(components, &model.InstrumentationInstanceComponent{
+					Name:                     component.Name,
+					NonIdentifyingAttributes: nonIdentifyingAttributes,
+				})
+			}
 		}
 	}
 

@@ -367,6 +367,15 @@ func (r *odigosConfigurationController) applySingleProfileManifest(ctx context.C
 		return err
 	}
 
+	odigosNs := env.GetCurrentNamespace()
+
+	// profiles are read without namespace, and we need to add it ourselves.
+	// the namespace is usually odigos-system, but user can set it to anything,
+	// which is why we need to address it here.
+	// the namespace is set on the object itself, but not in the yamlbytes for the apply,
+	// which is ok and works (the applied object takes the namespace from the object)
+	obj.SetNamespace(odigosNs)
+
 	labels := obj.GetLabels()
 	if labels == nil {
 		labels = make(map[string]string)
@@ -393,7 +402,7 @@ func (r *odigosConfigurationController) applySingleProfileManifest(ctx context.C
 		Resource: resource,
 	}
 
-	resourceClient := r.DynamicClient.Resource(gvr).Namespace(env.GetCurrentNamespace())
+	resourceClient := r.DynamicClient.Resource(gvr).Namespace(odigosNs)
 	_, err = resourceClient.Apply(ctx, obj.GetName(), obj, metav1.ApplyOptions{
 		FieldManager: "scheduler-odigosconfiguration",
 		Force:        true,
