@@ -1295,12 +1295,22 @@ func (r *queryResolver) GetServiceMap(ctx context.Context) (*model.ServiceMap, e
 
 // GetTraces is the resolver for the getTraces field.
 func (r *queryResolver) GetTraces(ctx context.Context, serviceName string) ([]*model.Trace, error) {
-	getResult, err := traces.GetTraces(ctx, "http://jaeger.tracing:16686", traces.JaegerGetTracesOptions{
+	// odigosNamespace := env.GetCurrentNamespace()
+	// domain := fmt.Sprintf("http://ingester.%s.svc.cluster.local:16686", odigosNamespace)
+	domain := "http://jaeger.tracing:16686"
+	// domain := "http://localhost:16686"
+
+	startTime := time.Now().Add(-24 * time.Hour)
+	endTime := time.Now()
+
+	options := traces.JaegerGetTracesOptions{
 		ServiceName:  serviceName,
-		StartTimeMin: "2025-08-18T00:00:00Z",
-		StartTimeMax: "2025-08-20T00:00:00Z",
+		StartTimeMin: startTime.Format(time.RFC3339),
+		StartTimeMax: endTime.Format(time.RFC3339),
 		SearchDepth:  100,
-	})
+	}
+
+	getResult, err := traces.GetTraces(ctx, domain, options)
 	if err != nil {
 		return nil, err
 	}
