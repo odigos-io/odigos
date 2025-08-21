@@ -6,9 +6,9 @@
     - Memory-limiter trio (limit/spike/go) is auto-derived from limit unless all three are set explicitly
   */}}
 
-  {{/* ------------------------------------------------------------------ */
-  /* 0) Validate and resolve sizingConfig                                 */
-  /* ------------------------------------------------------------------ */}}
+  {{/* ------------------------------------------------------------------
+       0) Validate and resolve sizingConfig
+  ------------------------------------------------------------------ */}}
 
   {{- define "collector.validateSizing" -}}
   {{- $s := .Values.sizingConfig | default "size_m" -}}
@@ -23,14 +23,24 @@
   {{- end -}}
 
 
-  {{/* ------------------------------------------------------------------ */
-  /* 1) Sizing tables (CPU/Memory/Replicas)                                */
-  /*     Keys are simple numbers (MiB for mem, m for CPU)                  */
-  /* ------------------------------------------------------------------ */}}
+  {{/* ------------------------------------------------------------------
+       1) Sizing tables (CPU/Memory/Replicas)
+       Keys are simple numbers (MiB for mem, m for CPU)
+  ------------------------------------------------------------------ */}}
+
+  {{/*
+    collector.sizingDefaults
+    -------------------------
+    Returns a YAML block of default sizing values (CPU/Memory/Replicas) for
+    collectorGateway and collectorNode based on .Values.sizingConfig.
+    - sizingConfig may be: size_s, size_m, size_l (default = size_m)
+    - Numbers are emitted as integers (not strings) so fromYaml works properly
+    - | trim is used on sizingConfig to avoid newline/space mismatch
+  */}}
 
   {{- define "collector.sizingDefaults" -}}
-  {{- $s := include "collector.sizing.resolve" . -}}
-  {{- if eq $s "size_s" -}}
+  {{- $s := (include "collector.sizing.resolve" . | trim) -}}
+  {{- if eq $s "size_s" }}
   gatewayMinReplicas: 1
   gatewayMaxReplicas: 5
   gatewayMemoryRequest: 300
@@ -41,7 +51,7 @@
   nodeMemoryLimit: 300
   nodeCPURequest: 150
   nodeCPULimit: 300
-  {{- else if eq $s "size_l" -}}
+  {{- else if eq $s "size_l" }}
   gatewayMinReplicas: 3
   gatewayMaxReplicas: 12
   gatewayMemoryRequest: 750
@@ -52,7 +62,7 @@
   nodeMemoryLimit: 750
   nodeCPURequest: 500
   nodeCPULimit: 750
-  {{- else -}} {{/* size_m */}}
+  {{- else }} {{/* default size_m */}}
   gatewayMinReplicas: 2
   gatewayMaxReplicas: 8
   gatewayMemoryRequest: 500
@@ -63,8 +73,11 @@
   nodeMemoryLimit: 500
   nodeCPURequest: 250
   nodeCPULimit: 500
-  {{- end -}}
-  {{- end -}}
+  {{- end }}
+  {{- end }}
+
+
+  {{ include "collector.sizingDefaults" . }}
 
   {{/* Derive limiter trio from a given memory LIMIT (MiB) */}}
   {{- define "collector._limiterFromLimit" -}}
@@ -102,9 +115,9 @@
   {{- end -}}
 
 
-  {{/* ------------------------------------------------------------------ */
-  /* 2) Gateway: effective CPU/Memory with mirroring rules                 */
-  /* ------------------------------------------------------------------ */}}
+  {{/* ------------------------------------------------------------------
+       2) Gateway: effective CPU/Memory with mirroring rules
+  ------------------------------------------------------------------ */}}
 
   {{- define "collector.gateway.memoryRequest" -}}
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
@@ -152,8 +165,8 @@
 
   {{- define "collector.gateway.minReplicas" -}}
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
-  {{- $min := .Values.collectorGateway.minReplicas | default $d.gatewayMinReplicas -}}
-  {{- $max := .Values.collectorGateway.maxReplicas | default $d.gatewayMaxReplicas -}}
+  {{- $min := (get .Values.collectorGateway "minReplicas" | default $d.gatewayMinReplicas) | int -}}
+  {{- $max := (get .Values.collectorGateway "maxReplicas" | default $d.gatewayMaxReplicas) | int -}}
   {{- if ge $min $max -}}
     {{- fail (printf "collectorGateway.minReplicas (%d) must be < collectorGateway.maxReplicas (%d)" $min $max) -}}
   {{- end -}}
@@ -162,20 +175,21 @@
 
   {{- define "collector.gateway.maxReplicas" -}}
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
-  {{- .Values.collectorGateway.maxReplicas | default $d.gatewayMaxReplicas -}}
+  {{- (get .Values.collectorGateway "maxReplicas" | default $d.gatewayMaxReplicas) | int -}}
   {{- end -}}
 
 
-  {{/* ------------------------------------------------------------------ */
-  /* 3) Node: effective CPU/Memory with mirroring rules                    */
-  /* ------------------------------------------------------------------ */}}
+
+  {{/* ------------------------------------------------------------------
+       3) Node: effective CPU/Memory with mirroring rules
+  ------------------------------------------------------------------ */}}
 
   {{- define "collector.node.memoryRequest" -}}
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
-  {{- if hasKey .Values.collectorNode "requestMemoryMiB" -}}
-  {{- .Values.collectorNode.requestMemoryMiB -}}
-  {{- else if hasKey .Values.collectorNode "limitMemoryMiB" -}}
-  {{- .Values.collectorNode.limitMemoryMiB -}}
+  {{- if hasKey .Values.collectorNode "memoryRequest" -}}
+  {{- .Values.collectorNode.memoryRequest -}}
+  {{- else if hasKey .Values.collectorNode "memoryLimit" -}}
+  {{- .Values.collectorNode.memoryLimit -}}
   {{- else -}}
   {{- $d.nodeMemoryRequest -}}
   {{- end -}}
@@ -183,10 +197,10 @@
 
   {{- define "collector.node.memoryLimit" -}}
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
-  {{- if hasKey .Values.collectorNode "limitMemoryMiB" -}}
-  {{- .Values.collectorNode.limitMemoryMiB -}}
-  {{- else if hasKey .Values.collectorNode "requestMemoryMiB" -}}
-  {{- .Values.collectorNode.requestMemoryMiB -}}
+  {{- if hasKey .Values.collectorNode "memoryLimit" -}}
+  {{- .Values.collectorNode.memoryLimit -}}
+  {{- else if hasKey .Values.collectorNode "memoryRequest" -}}
+  {{- .Values.collectorNode.memoryRequest -}}
   {{- else -}}
   {{- $d.nodeMemoryLimit -}}
   {{- end -}}
@@ -194,8 +208,8 @@
 
   {{- define "collector.node.cpuRequest" -}}
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
-  {{- if hasKey .Values.collectorNode "requestCPUm" -}}
-  {{- .Values.collectorNode.requestCPUm -}}
+  {{- if hasKey .Values.collectorNode "cpuRequest" -}}
+  {{- .Values.collectorNode.cpuRequest -}}
   {{- else if hasKey .Values.collectorNode "limitCPUm" -}}
   {{- .Values.collectorNode.limitCPUm -}}
   {{- else -}}
@@ -207,62 +221,52 @@
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
   {{- if hasKey .Values.collectorNode "limitCPUm" -}}
   {{- .Values.collectorNode.limitCPUm -}}
-  {{- else if hasKey .Values.collectorNode "requestCPUm" -}}
-  {{- .Values.collectorNode.requestCPUm -}}
+  {{- else if hasKey .Values.collectorNode "cpuRequest" -}}
+  {{- .Values.collectorNode.cpuRequest -}}
   {{- else -}}
   {{- $d.nodeCPULimit -}}
   {{- end -}}
   {{- end -}}
 
 
-  {{/* ------------------------------------------------------------------ */
-  /* 4) Memory-limiter trios (gateway/node)                                */
-  /*     Rule: if any of the trio is set → require all three               */
-  /*     Else: derive all three from effective memory LIMIT                 */
-  /* ------------------------------------------------------------------ */}}
+  {{/* ------------------------------------------------------------------
+       4) Memory-limiter trios (gateway/node)
+       Rule: if any of the trio is set → require all three
+       Else: derive all three from effective memory LIMIT
+  ------------------------------------------------------------------ */}}
 
-  {{- define "collector.gateway.memoryLimiter" -}}
-  {{- $v := .Values.collectorGateway | default dict -}}
-  {{- $hasLimit := hasKey $v "memoryLimiterLimitMiB" -}}
-  {{- $hasSpike := hasKey $v "memoryLimiterSpikeLimitMiB" -}}
-  {{- $hasGo    := hasKey $v "goMemLimitMiB" -}}
-  {{- if or $hasLimit $hasSpike $hasGo -}}
-    {{- if not (and $hasLimit $hasSpike $hasGo) -}}
-      {{- fail "collectorGateway: if any of memoryLimiterLimitMiB/memoryLimiterSpikeLimitMiB/goMemLimitMiB is set, all three must be set" -}}
+  {{/* Generic memoryLimiter helper */}}
+  {{- define "collector._memoryLimiter" -}}
+    {{- $vals := .vals | default dict -}}
+    {{- $limitTpl := .limitTpl -}}
+    {{- $who := .who -}}
+    {{- $ctx := .ctx -}}
+
+    {{- $hasLimit := hasKey $vals "memoryLimiterLimitMiB" -}}
+    {{- $hasSpike := hasKey $vals "memoryLimiterSpikeLimitMiB" -}}
+    {{- $hasGo    := hasKey $vals "goMemLimitMiB" -}}
+
+    {{- if or $hasLimit $hasSpike $hasGo -}}
+      {{- if not (and $hasLimit $hasSpike $hasGo) -}}
+        {{- fail (printf "%s: if any of memoryLimiterLimitMiB/memoryLimiterSpikeLimitMiB/goMemLimitMiB is set, all three must be set" $who) -}}
+      {{- end -}}
+      {{- toYaml (dict "limitMiB" $vals.memoryLimiterLimitMiB "spikeMiB" $vals.memoryLimiterSpikeLimitMiB "goMiB" $vals.goMemLimitMiB) -}}
+    {{- else -}}
+      {{- $memLimit := include $limitTpl $ctx | int -}}
+      {{- $hard := sub $memLimit 50 -}}
+      {{- $spike := div (mul $hard 20) 100 -}}
+      {{- $go := div (mul $hard 80) 100 -}}
+      {{- toYaml (dict "limitMiB" $hard "spikeMiB" $spike "goMiB" $go) -}}
     {{- end -}}
-  limitMiB: {{ $v.memoryLimiterLimitMiB }}
-  spikeMiB: {{ $v.memoryLimiterSpikeLimitMiB }}
-  goMiB: {{ $v.goMemLimitMiB }}
-  {{- else -}}
-    {{- $memLimit := include "collector.gateway.memoryLimit" . | int -}}
-    {{- $hard := sub $memLimit 50 -}}
-    {{- $spike := div (mul $hard 20) 100 -}}
-    {{- $go := div (mul $hard 80) 100 -}}
-  limitMiB: {{ $hard }}
-  spikeMiB: {{ $spike }}
-  goMiB: {{ $go }}
-  {{- end -}}
   {{- end -}}
 
-  {{- define "collector.node.memoryLimiter" -}}
-  {{- $v := .Values.collectorNode | default dict -}}
-  {{- $hasLimit := hasKey $v "memoryLimiterLimitMiB" -}}
-  {{- $hasSpike := hasKey $v "memoryLimiterSpikeLimitMiB" -}}
-  {{- $hasGo    := hasKey $v "goMemLimitMiB" -}}
-  {{- if or $hasLimit $hasSpike $hasGo -}}
-    {{- if not (and $hasLimit $hasSpike $hasGo) -}}
-      {{- fail "collectorNode: if any of memoryLimiterLimitMiB/memoryLimiterSpikeLimitMiB/goMemLimitMiB is set, all three must be set" -}}
+
+    {{/* Gateway entrypoint */}}
+    {{- define "collector.gateway.memoryLimiter" -}}
+      {{- include "collector._memoryLimiter" (dict "vals" .Values.collectorGateway "limitTpl" "collector.gateway.memoryLimit" "who" "collectorGateway" "ctx" .) -}}
     {{- end -}}
-  limitMiB: {{ $v.memoryLimiterLimitMiB }}
-  spikeMiB: {{ $v.memoryLimiterSpikeLimitMiB }}
-  goMiB: {{ $v.goMemLimitMiB }}
-  {{- else -}}
-    {{- $memLimit := include "collector.node.memoryLimit" . | int -}}
-    {{- $hard := sub $memLimit 50 -}}
-    {{- $spike := div (mul $hard 20) 100 -}}
-    {{- $go := div (mul $hard 80) 100 -}}
-  limitMiB: {{ $hard }}
-  spikeMiB: {{ $spike }}
-  goMiB: {{ $go }}
-  {{- end -}}
-  {{- end -}}
+
+    {{/* Node entrypoint */}}
+    {{- define "collector.node.memoryLimiter" -}}
+      {{- include "collector._memoryLimiter" (dict "vals" .Values.collectorNode "limitTpl" "collector.node.memoryLimit" "who" "collectorNode" "ctx" .) -}}
+    {{- end -}}

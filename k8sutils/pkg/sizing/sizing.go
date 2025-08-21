@@ -1,6 +1,8 @@
 package sizing
 
-import "github.com/odigos-io/odigos/common"
+import (
+	"github.com/odigos-io/odigos/common"
+)
 
 type SizingConfig struct {
 	CollectorGatewayConfig common.CollectorGatewayConfiguration
@@ -18,77 +20,95 @@ const (
 var configs = map[Sizing]SizingConfig{
 	SizeSmall: {
 		CollectorGatewayConfig: common.CollectorGatewayConfiguration{
-			MinReplicas:      1,
-			MaxReplicas:      5,
-			RequestCPUm:      150,
-			LimitCPUm:        300,
-			RequestMemoryMiB: 300,
-			LimitMemoryMiB:   300},
+			MinReplicas:                1,
+			MaxReplicas:                5,
+			RequestCPUm:                150,
+			LimitCPUm:                  300,
+			RequestMemoryMiB:           300,
+			LimitMemoryMiB:             300,
+			MemoryLimiterLimitMiB:      250, // LimitCPUm - 50
+			MemoryLimiterSpikeLimitMiB: 50,  // 20% of MemoryLimiterLimitMiB
+			GoMemLimitMib:              200, // 80% of MemoryLimiterLimitMiB
+		},
 		CollectorNodeConfig: common.CollectorNodeConfiguration{
-			RequestMemoryMiB: 150,
-			LimitMemoryMiB:   300,
-			RequestCPUm:      150,
-			LimitCPUm:        300,
+			RequestMemoryMiB:           150,
+			LimitMemoryMiB:             300,
+			RequestCPUm:                150,
+			LimitCPUm:                  300,
+			MemoryLimiterLimitMiB:      250, // LimitMemoryMiB - 50
+			MemoryLimiterSpikeLimitMiB: 50,  // 20% of MemoryLimiterSpikeLimitMiB
+			GoMemLimitMib:              200, // 80% of MemoryLimiterSpikeLimitMiB
 		},
 	},
 	SizeMedium: {
 		CollectorGatewayConfig: common.CollectorGatewayConfiguration{
-			MinReplicas:      2,
-			MaxReplicas:      8,
-			RequestCPUm:      500,
-			LimitCPUm:        1000,
-			RequestMemoryMiB: 500,
-			LimitMemoryMiB:   600,
+			MinReplicas:                2,
+			MaxReplicas:                8,
+			RequestCPUm:                500,
+			LimitCPUm:                  1000,
+			RequestMemoryMiB:           500,
+			LimitMemoryMiB:             600,
+			MemoryLimiterLimitMiB:      550, // LimitCPUm - 50
+			MemoryLimiterSpikeLimitMiB: 110, // 20% of MemoryLimiterLimitMiB
+			GoMemLimitMib:              440, // 80% of MemoryLimiterLimitMiB
 		},
 		CollectorNodeConfig: common.CollectorNodeConfiguration{
-			RequestMemoryMiB: 250,
-			LimitMemoryMiB:   500,
-			RequestCPUm:      250,
-			LimitCPUm:        500,
+			RequestMemoryMiB:           250,
+			LimitMemoryMiB:             500,
+			RequestCPUm:                250,
+			LimitCPUm:                  500,
+			MemoryLimiterLimitMiB:      450, // LimitMemoryMiB - 50
+			MemoryLimiterSpikeLimitMiB: 90,  // 20% of MemoryLimiterLimitMiB
+			GoMemLimitMib:              360, // 80% of MemoryLimiterLimitMiB
 		},
 	},
 	SizeLarge: {
 		CollectorGatewayConfig: common.CollectorGatewayConfiguration{
-			MinReplicas:      3,
-			MaxReplicas:      12,
-			RequestCPUm:      750,
-			LimitCPUm:        1250,
-			RequestMemoryMiB: 750,
-			LimitMemoryMiB:   850,
+			MinReplicas:                3,
+			MaxReplicas:                12,
+			RequestCPUm:                750,
+			LimitCPUm:                  1250,
+			RequestMemoryMiB:           750,
+			LimitMemoryMiB:             850,
+			MemoryLimiterLimitMiB:      800, // LimitCPUm - 50
+			MemoryLimiterSpikeLimitMiB: 160, // 20% of MemoryLimiterLimitMiB
+			GoMemLimitMib:              640, // 80% of MemoryLimiterLimitMiB
 		},
 		CollectorNodeConfig: common.CollectorNodeConfiguration{
-			RequestMemoryMiB: 500,
-			LimitMemoryMiB:   750,
-			RequestCPUm:      500,
-			LimitCPUm:        750,
+			RequestMemoryMiB:           500,
+			LimitMemoryMiB:             750,
+			RequestCPUm:                500,
+			LimitCPUm:                  750,
+			MemoryLimiterLimitMiB:      700, // LimitMemoryMiB - 50
+			MemoryLimiterSpikeLimitMiB: 140, // 20% of MemoryLimiterLimitMiB
+			GoMemLimitMib:              560, // 80% of MemoryLimiterLimitMiB
 		},
 	},
 }
 
-func ModifySizingConfig(c *common.OdigosConfiguration) {
+func ModifySizingConfig(c *common.OdigosConfiguration, helmInstallation bool) {
+	// If helm installation, we don't want to modify the sizing config.
+	if helmInstallation {
+		return
+	}
+
+	// if odigos installed using cli
+	//  we want to set the sizing based on the sizing config [default: size_m].
 	if c.SizingConfig == "" {
-		// default to size_m if no sizing config is set
 		c.SizingConfig = string(SizeMedium)
 	}
 
-	sizingConfig := configs[Sizing(c.SizingConfig)]
+	// Start from base sizing config
+	base := configs[Sizing(c.SizingConfig)]
+	gw := base.CollectorGatewayConfig
+	node := base.CollectorNodeConfig
 
-	// do not modify the configuration if any of the values if they are already set
-	if c.CollectorGateway != nil {
-		return
-	}
-	// the following is not very elegant.
-	// we only care if the sizing parameters are set, if the port is set, we apply it nevertheless
-	if c.CollectorNode != nil &&
-		(c.CollectorNode.RequestMemoryMiB != 0 ||
-			c.CollectorNode.LimitMemoryMiB != 0 ||
-			c.CollectorNode.RequestCPUm != 0 ||
-			c.CollectorNode.LimitCPUm != 0) {
-		return
-	}
+	// Overlay ONLY non-zero fields users can set directly to odigos-configuration
+	gw = copyNonZeroGateway(gw, c.CollectorGateway)
+	node = copyNonZeroNode(node, c.CollectorNode)
 
-	c.CollectorGateway = &sizingConfig.CollectorGatewayConfig
-	c.CollectorNode = &sizingConfig.CollectorNodeConfig
+	c.CollectorGateway = &gw
+	c.CollectorNode = &node
 }
 
 var validSizings = map[Sizing]struct{}{
@@ -100,4 +120,82 @@ var validSizings = map[Sizing]struct{}{
 func IsValidSizing(s string) bool {
 	_, ok := validSizings[Sizing(s)]
 	return ok
+}
+
+// copyNonZeroGateway overlays only non-zero numeric fields from src onto dst.
+func copyNonZeroGateway(dst common.CollectorGatewayConfiguration, src *common.CollectorGatewayConfiguration) common.CollectorGatewayConfiguration {
+	if src == nil {
+		return dst
+	}
+
+	// Replicas
+	if src.MinReplicas != 0 {
+		dst.MinReplicas = src.MinReplicas
+	}
+	if src.MaxReplicas != 0 {
+		dst.MaxReplicas = src.MaxReplicas
+	}
+
+	// Memory (MiB)
+	if src.RequestMemoryMiB != 0 {
+		dst.RequestMemoryMiB = src.RequestMemoryMiB
+	}
+	if src.LimitMemoryMiB != 0 {
+		dst.LimitMemoryMiB = src.LimitMemoryMiB
+	}
+
+	// CPU (m)
+	if src.RequestCPUm != 0 {
+		dst.RequestCPUm = src.RequestCPUm
+	}
+	if src.LimitCPUm != 0 {
+		dst.LimitCPUm = src.LimitCPUm
+	}
+
+	if src.MemoryLimiterLimitMiB != 0 {
+		dst.MemoryLimiterLimitMiB = src.MemoryLimiterLimitMiB
+	}
+	if src.MemoryLimiterSpikeLimitMiB != 0 {
+		dst.MemoryLimiterSpikeLimitMiB = src.MemoryLimiterSpikeLimitMiB
+	}
+	if src.GoMemLimitMib != 0 {
+		dst.GoMemLimitMib = src.GoMemLimitMib
+	}
+	return dst
+}
+
+// copyNonZeroNode overlays only non-zero numeric fields from src onto dst.
+func copyNonZeroNode(dst common.CollectorNodeConfiguration, src *common.CollectorNodeConfiguration) common.CollectorNodeConfiguration {
+	if src == nil {
+		return dst
+	}
+
+	// Memory (MiB)
+	if src.RequestMemoryMiB != 0 {
+		dst.RequestMemoryMiB = src.RequestMemoryMiB
+	}
+	if src.LimitMemoryMiB != 0 {
+		dst.LimitMemoryMiB = src.LimitMemoryMiB
+	}
+
+	// CPU (m)
+	if src.RequestCPUm != 0 {
+		dst.RequestCPUm = src.RequestCPUm
+	}
+	if src.LimitCPUm != 0 {
+		dst.LimitCPUm = src.LimitCPUm
+	}
+
+	// Optional: memory-limiter trio (only if your struct has these fields)
+	if src.MemoryLimiterLimitMiB != 0 {
+		dst.MemoryLimiterLimitMiB = src.MemoryLimiterLimitMiB
+	}
+	if src.MemoryLimiterSpikeLimitMiB != 0 {
+		dst.MemoryLimiterSpikeLimitMiB = src.MemoryLimiterSpikeLimitMiB
+	}
+	if src.GoMemLimitMib != 0 {
+		dst.GoMemLimitMib = src.GoMemLimitMib
+	}
+
+	return dst
 }
