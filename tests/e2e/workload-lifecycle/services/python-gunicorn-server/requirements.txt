@@ -1,0 +1,9 @@
+# Core application dependencies
+gunicorn==22.0.0
+uvicorn==0.20.0
+
+importlib_metadata==1.7.0
+
+starlette==0.13.8
+# Async support
+asyncio
