@@ -31,22 +31,6 @@ type JaegerAttributeValue struct {
 	BoolValue   *bool   `json:"boolValue,omitempty"`
 }
 
-// JaegerAttributeArrayValue represents an array of attribute values
-type JaegerAttributeArrayValue struct {
-	Values []JaegerAttributeValue `json:"values"`
-}
-
-// JaegerAttributeKvlistValue represents a key-value list
-type JaegerAttributeKvlistValue struct {
-	Values []JaegerAttributeKvPair `json:"values"`
-}
-
-// JaegerAttributeKvPair represents a key-value pair
-type JaegerAttributeKvPair struct {
-	Key   string               `json:"key"`
-	Value JaegerAttributeValue `json:"value"`
-}
-
 // JaegerAttribute represents a key-value attribute
 type JaegerAttribute struct {
 	Key   string               `json:"key"`
@@ -123,14 +107,14 @@ type JaegerResourceSpan struct {
 	SchemaURL  *string           `json:"schemaUrl,omitempty"`
 }
 
-// JaegerGetTracesResult contains the resource spans
-type JaegerGetTracesResult struct {
+// JaegerGetTracesResponse contains the resource spans
+type JaegerGetTracesResponse struct {
 	ResourceSpans []JaegerResourceSpan `json:"resourceSpans"`
 }
 
-// JaegerGetTracesResponse represents the response from the traces API
-type JaegerGetTracesResponse struct {
-	Result JaegerGetTracesResult `json:"result"`
+// JaegerGetTracesResult represents the response from the traces API
+type JaegerGetTracesResult struct {
+	Result JaegerGetTracesResponse `json:"result"`
 }
 
 // buildQueryString creates URL query parameters from options
@@ -157,7 +141,7 @@ func buildQueryString(options JaegerGetTracesOptions) string {
 }
 
 // GetTraces fetches traces from the Jaeger API
-func GetTraces(ctx context.Context, jaegerURL string, options JaegerGetTracesOptions) (*JaegerGetTracesResponse, error) {
+func GetTraces(ctx context.Context, jaegerURL string, options JaegerGetTracesOptions) ([]JaegerResourceSpan, error) {
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
@@ -177,30 +161,25 @@ func GetTraces(ctx context.Context, jaegerURL string, options JaegerGetTracesOpt
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("request failed with status %d", resp.StatusCode)
 	}
-	var tracesResponse JaegerGetTracesResponse
+	var tracesResponse JaegerGetTracesResult
 	if err := json.NewDecoder(resp.Body).Decode(&tracesResponse); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	return &tracesResponse, nil
+	return tracesResponse.Result.ResourceSpans, nil
 }
 
 // convertTraces converts OpenTelemetry format to Jaeger format
-func ConvertTraces(tracesResponse *JaegerGetTracesResponse) []*model.Trace {
-	if tracesResponse == nil {
-		return []*model.Trace{}
-	}
-
+func ConvertTraces(resourceSpans []JaegerResourceSpan) []*model.Trace {
 	// Group spans by traceID
 	traceMap := make(map[string]*model.Trace)
-	processCounter := 0
 
-	for _, resourceSpan := range tracesResponse.Result.ResourceSpans {
+	for _, resourceSpan := range resourceSpans {
 		// Create process from resource
-		processID := fmt.Sprintf("p%d", processCounter)
-		processCounter++
-
 		process := convertResourceToProcess(resourceSpan.Resource)
+
+		// Use serviceName as processID instead of generic counter
+		processID := process.ServiceName
 
 		for _, scopeSpan := range resourceSpan.ScopeSpans {
 			// Add scope information to process tags if available
@@ -214,8 +193,8 @@ func ConvertTraces(tracesResponse *JaegerGetTracesResponse) []*model.Trace {
 				process.Tags = append(process.Tags, scopeTags...)
 			}
 
-			for _, span := range scopeSpan.Spans {
-				traceID := span.TraceID
+			for _, jaegerSpan := range scopeSpan.Spans {
+				traceID := jaegerSpan.TraceID
 
 				// Initialize trace if not exists
 				if _, exists := traceMap[traceID]; !exists {
@@ -240,8 +219,8 @@ func ConvertTraces(tracesResponse *JaegerGetTracesResponse) []*model.Trace {
 				}
 
 				// Convert span
-				jaegerSpan := convertSpanToJaeger(span, processID, scopeSpan.Scope)
-				traceMap[traceID].Spans = append(traceMap[traceID].Spans, jaegerSpan)
+				span := convertSpanFromJaeger(jaegerSpan, processID, scopeSpan.Scope)
+				traceMap[traceID].Spans = append(traceMap[traceID].Spans, span)
 			}
 		}
 	}
@@ -275,8 +254,8 @@ func convertResourceToProcess(resource JaegerResource) *model.TraceProcess {
 	return process
 }
 
-// convertSpanToJaeger converts an OpenTelemetry Span to a Jaeger Span
-func convertSpanToJaeger(span JaegerSpan, processID string, scope JaegerInstrumentationScope) *model.TraceSpan {
+// convertSpanFromJaeger converts an OpenTelemetry Span to a Jaeger Span
+func convertSpanFromJaeger(span JaegerSpan, processID string, scope JaegerInstrumentationScope) *model.TraceSpan {
 	jaegerSpan := &model.TraceSpan{
 		TraceID:       span.TraceID,
 		SpanID:        span.SpanID,
