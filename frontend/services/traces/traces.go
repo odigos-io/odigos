@@ -14,24 +14,21 @@ import (
 
 // JaegerGetTracesOptions represents the options for fetching traces
 type JaegerGetTracesOptions struct {
-	ServiceName   string `json:"serviceName"`
-	OperationName string `json:"operationName,omitempty"`
-	SearchDepth   int    `json:"searchDepth"`
-	StartTimeMin  string `json:"startTimeMin"` // RFC-3339ns format (YYYY-MM-DDTHH:MM:SSZ)
-	StartTimeMax  string `json:"startTimeMax"` // RFC-3339ns format (YYYY-MM-DDTHH:MM:SSZ)
-	DurationMin   *int   `json:"durationMin,omitempty"`
-	DurationMax   *int   `json:"durationMax,omitempty"`
+	ServiceName   string  `json:"serviceName"`
+	SearchDepth   int     `json:"searchDepth"`
+	StartTimeMin  string  `json:"startTimeMin"` // RFC-3339ns format (YYYY-MM-DDTHH:MM:SSZ)
+	StartTimeMax  string  `json:"startTimeMax"` // RFC-3339ns format (YYYY-MM-DDTHH:MM:SSZ)
+	OperationName *string `json:"operationName,omitempty"`
+	DurationMin   *int    `json:"durationMin,omitempty"`
+	DurationMax   *int    `json:"durationMax,omitempty"`
 }
 
 // JaegerAttributeValue represents the different types of attribute values
 type JaegerAttributeValue struct {
-	StringValue *string                     `json:"stringValue,omitempty"`
-	IntValue    interface{}                 `json:"intValue,omitempty"` // Can be string or number
-	DoubleValue *float64                    `json:"doubleValue,omitempty"`
-	BoolValue   *bool                       `json:"boolValue,omitempty"`
-	ArrayValue  *JaegerAttributeArrayValue  `json:"arrayValue,omitempty"`
-	KvlistValue *JaegerAttributeKvlistValue `json:"kvlistValue,omitempty"`
-	BytesValue  *string                     `json:"bytesValue,omitempty"`
+	StringValue *string `json:"stringValue,omitempty"`
+	IntValue    *string `json:"intValue,omitempty"` // Can be string or number
+	DoubleValue *int    `json:"doubleValue,omitempty"`
+	BoolValue   *bool   `json:"boolValue,omitempty"`
 }
 
 // JaegerAttributeArrayValue represents an array of attribute values
@@ -126,40 +123,34 @@ type JaegerResourceSpan struct {
 	SchemaURL  *string           `json:"schemaUrl,omitempty"`
 }
 
-// JaegerGetTracesResponse represents the response from the traces API
-type JaegerGetTracesResponse struct {
-	Result JaegerGetTracesResult `json:"result"`
-}
-
 // JaegerGetTracesResult contains the resource spans
 type JaegerGetTracesResult struct {
 	ResourceSpans []JaegerResourceSpan `json:"resourceSpans"`
 }
 
+// JaegerGetTracesResponse represents the response from the traces API
+type JaegerGetTracesResponse struct {
+	Result JaegerGetTracesResult `json:"result"`
+}
+
 // buildQueryString creates URL query parameters from options
 func buildQueryString(options JaegerGetTracesOptions) string {
-	params := url.Values{}
+	params := url.Values{
+		"query.service_name":   {options.ServiceName},
+		"query.start_time_min": {options.StartTimeMin},
+		"query.start_time_max": {options.StartTimeMax},
+		"query.search_depth":   {strconv.Itoa(options.SearchDepth)},
+	}
 
-	if options.ServiceName != "" {
-		params.Set("query.service_name", options.ServiceName)
-	}
-	if options.OperationName != "" {
-		params.Set("query.operation_name", options.OperationName)
-	}
-	if options.StartTimeMin != "" {
-		params.Set("query.start_time_min", options.StartTimeMin)
-	}
-	if options.StartTimeMax != "" {
-		params.Set("query.start_time_max", options.StartTimeMax)
+	// Only add duration parameters if they are not nil
+	if options.OperationName != nil {
+		params.Set("query.operation_name", *options.OperationName)
 	}
 	if options.DurationMin != nil {
 		params.Set("query.duration_min", strconv.Itoa(*options.DurationMin))
 	}
 	if options.DurationMax != nil {
 		params.Set("query.duration_max", strconv.Itoa(*options.DurationMax))
-	}
-	if options.SearchDepth != 0 {
-		params.Set("query.search_depth", strconv.Itoa(options.SearchDepth))
 	}
 
 	return params.Encode()
@@ -371,48 +362,22 @@ func convertSpanToJaeger(span JaegerSpan, processID string, scope JaegerInstrume
 func convertAttributeToTag(attr JaegerAttribute) *model.TraceTag {
 	tag := &model.TraceTag{Key: attr.Key}
 
-	if attr.Value.StringValue != nil {
+	switch {
+	case attr.Value.StringValue != nil:
 		tag.Type = "string"
 		tag.Value = *attr.Value.StringValue
-	} else if attr.Value.IntValue != nil {
-		tag.Type = "int64"
-		// Handle both string and numeric int values
-		switch v := attr.Value.IntValue.(type) {
-		case string:
-			if intVal, err := strconv.ParseInt(v, 10, 64); err == nil {
-				tag.Value = fmt.Sprintf("%d", intVal)
-			} else {
-				tag.Type = "string"
-				tag.Value = v
-			}
-		case int, int32, int64:
-			tag.Value = fmt.Sprintf("%v", v)
-		case float64:
-			tag.Value = fmt.Sprintf("%d", int64(v))
-		default:
-			tag.Type = "string"
-			tag.Value = fmt.Sprintf("%v", v)
-		}
-	} else if attr.Value.DoubleValue != nil {
+	case attr.Value.IntValue != nil:
+		tag.Type = "int"
+		tag.Value = *attr.Value.IntValue
+	case attr.Value.DoubleValue != nil:
 		tag.Type = "float64"
-		tag.Value = fmt.Sprintf("%f", *attr.Value.DoubleValue)
-	} else if attr.Value.BoolValue != nil {
+		tag.Value = fmt.Sprintf("%d", *attr.Value.DoubleValue)
+	case attr.Value.BoolValue != nil:
 		tag.Type = "bool"
 		tag.Value = fmt.Sprintf("%t", *attr.Value.BoolValue)
-	} else if attr.Value.BytesValue != nil {
+	default:
 		tag.Type = "string"
-		tag.Value = *attr.Value.BytesValue
-	} else if attr.Value.ArrayValue != nil {
-		// Convert array to JSON string
-		tag.Type = "string"
-		tag.Value = convertArrayValueToString(*attr.Value.ArrayValue)
-	} else if attr.Value.KvlistValue != nil {
-		// Convert kvlist to JSON string
-		tag.Type = "string"
-		tag.Value = convertKvlistValueToString(*attr.Value.KvlistValue)
-	} else {
-		tag.Type = "string"
-		tag.Value = ""
+		tag.Value = fmt.Sprintf("%v", *attr.Value.BoolValue)
 	}
 
 	return tag
@@ -425,40 +390,4 @@ func convertNanosToMicros(nanosStr string) int64 {
 		return 0
 	}
 	return nanos / 1000 // Convert nanoseconds to microseconds
-}
-
-// convertArrayValueToString converts JaegerAttributeArrayValue to JSON string
-func convertArrayValueToString(arrayValue JaegerAttributeArrayValue) string {
-	values := make([]interface{}, len(arrayValue.Values))
-	for i, val := range arrayValue.Values {
-		values[i] = extractAttributeValue(val)
-	}
-	jsonBytes, _ := json.Marshal(values)
-	return string(jsonBytes)
-}
-
-// convertKvlistValueToString converts JaegerAttributeKvlistValue to JSON string
-func convertKvlistValueToString(kvlistValue JaegerAttributeKvlistValue) string {
-	obj := make(map[string]interface{})
-	for _, kv := range kvlistValue.Values {
-		obj[kv.Key] = extractAttributeValue(kv.Value)
-	}
-	jsonBytes, _ := json.Marshal(obj)
-	return string(jsonBytes)
-}
-
-// extractAttributeValue extracts the actual value from JaegerAttributeValue
-func extractAttributeValue(attr JaegerAttributeValue) interface{} {
-	if attr.StringValue != nil {
-		return *attr.StringValue
-	} else if attr.IntValue != nil {
-		return attr.IntValue
-	} else if attr.DoubleValue != nil {
-		return *attr.DoubleValue
-	} else if attr.BoolValue != nil {
-		return *attr.BoolValue
-	} else if attr.BytesValue != nil {
-		return *attr.BytesValue
-	}
-	return nil
 }
