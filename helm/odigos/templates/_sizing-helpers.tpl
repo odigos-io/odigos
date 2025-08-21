@@ -90,30 +90,6 @@
   goMiB: {{ $go }}
   {{- end -}}
 
-  {{/* Optional: a full defaults block that also includes limiter trio for gateway+node */}}
-  {{- define "collector.sizingDefaults.full" -}}
-  {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
-  {{- $gwLimiter := include "collector._limiterFromLimit" (dict "limit" $d.gatewayMemoryLimit) | fromYaml -}}
-  {{- $nodeLimiter := include "collector._limiterFromLimit" (dict "limit" $d.nodeMemoryLimit) | fromYaml -}}
-  gatewayMinReplicas: {{ $d.gatewayMinReplicas }}
-  gatewayMaxReplicas: {{ $d.gatewayMaxReplicas }}
-  gatewayMemoryRequest: {{ $d.gatewayMemoryRequest }}
-  gatewayMemoryLimit: {{ $d.gatewayMemoryLimit }}
-  gatewayCPURequest: {{ $d.gatewayCPURequest }}
-  gatewayCPULimit: {{ $d.gatewayCPULimit }}
-  gatewayMemoryLimiterLimitMiB: {{ $gwLimiter.limitMiB }}
-  gatewayMemoryLimiterSpikeLimitMiB: {{ $gwLimiter.spikeMiB }}
-  gatewayGoMemLimitMiB: {{ $gwLimiter.goMiB }}
-
-  nodeMemoryRequest: {{ $d.nodeMemoryRequest }}
-  nodeMemoryLimit: {{ $d.nodeMemoryLimit }}
-  nodeCPURequest: {{ $d.nodeCPURequest }}
-  nodeCPULimit: {{ $d.nodeCPULimit }}
-  nodeMemoryLimiterLimitMiB: {{ $nodeLimiter.limitMiB }}
-  nodeMemoryLimiterSpikeLimitMiB: {{ $nodeLimiter.spikeMiB }}
-  nodeGoMemLimitMiB: {{ $nodeLimiter.goMiB }}
-  {{- end -}}
-
 
   {{/* ------------------------------------------------------------------
        2) Gateway: effective CPU/Memory with mirroring rules
