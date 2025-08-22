@@ -43,7 +43,7 @@ spec:
           args:
             - init
           volumeMounts:
-          {{- if .Values.odiglet.allowHostPathMounts}}
+          {{- if not .Values.odiglet.noHostPathMounts}}
             - name: odigos
               mountPath: /var/odigos
           {{- if .Values.openshift.enabled }}
@@ -56,7 +56,7 @@ spec:
           {{- end }}
           {{- end }}
           securityContext:
-          {{- if .Values.odiglet.privileged}}
+          {{- if not .Values.odiglet.unPrivileged}}
             privileged: true
           {{- end }}
           env:
@@ -95,7 +95,7 @@ spec:
             - /root/odiglet
           imagePullPolicy: IfNotPresent
           securityContext:
-            {{- if .Values.odiglet.privileged }}
+            {{- if not .Values.odiglet.unPrivileged }}
             privileged: true
             {{- else }}
             privileged: false
@@ -144,7 +144,7 @@ spec:
           {{- end }}
             - name: GOMEMLIMIT
               value: {{ include "odigos.odiglet.gomemlimitFromLimit" . }}
-          {{- if not .Values.odiglet.hostPid }}
+          {{- if .Values.odiglet.noHostPid }}
             - name: ODIGOS_PROC_DIR
               value: /hostproc
           {{- end}}
@@ -153,7 +153,7 @@ spec:
                 name: odigos-own-telemetry-otel-config
                 optional: true
           volumeMounts:
-          {{- if .Values.odiglet.allowHostPathMounts }}
+          {{- if not .Values.odiglet.noHostPathMounts }}
             - name: run-dir
               mountPath: /run
              {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
@@ -172,7 +172,7 @@ spec:
               mountPath: /var/odigos
               readOnly: true
           {{- end }} # end of optional hostPath mounts
-          {{- if not .Values.odiglet.hostPid }}
+          {{- if .Values.odiglet.noHostPid }}
             - name: hostproc
               mountPath: /hostproc
           {{- end }}
@@ -181,13 +181,13 @@ spec:
               mountPath: /sys/kernel/debug
             - name: odigos-go-offsets
               mountPath: /offsets
-# if hostMounts are not enabled we must use mountMethod of "k8s-init-container"
-{{- if and (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) (not .Values.odiglet.allowHostPathMounts) }}
+# if hostMounts are not allowed we must use mountMethod of "k8s-init-container"
+{{- if and (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) (.Values.odiglet.noHostPathMounts) }}
 {{ fail "if HostPath mounts are not allowed mount method must be k8s-init-container" }}
 {{- end }}
 # to use device plugins we need to have the "k8s-virtual-device" mount method or non specified (default)
-# and to have hostMounts enabled
-{{- if and (or (eq .Values.instrumentor.mountMethod "") (eq .Values.instrumentor.mountMethod "k8s-virtual-device")) ( .Values.odiglet.allowHostPathMounts) }}
+# and to have hostMounts allowed
+{{- if and (or (eq .Values.instrumentor.mountMethod "") (eq .Values.instrumentor.mountMethod "k8s-virtual-device")) (not .Values.odiglet.noHostPathMounts) }}
         - name: deviceplugin
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           {{- if include "odigos.secretExists" . }}
@@ -243,14 +243,14 @@ spec:
       {{- if semverCompare "<1.26.0" $version }}
       hostNetwork: true
       {{- end}}
-      {{- if .Values.odiglet.hostPid }}
+      {{- if not .Values.odiglet.noHostPid }}
       hostPID: true
       {{- end }}
       dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical
       serviceAccountName: odiglet
       volumes:
-      {{- if .Values.odiglet.allowHostPathMounts }}
+      {{- if not .Values.odiglet.noHostPathMounts }}
         - name: run-dir
           hostPath:
             path: /run
@@ -275,7 +275,7 @@ spec:
             path: /var/odigos
       {{- end }} # end of hostPath mounts that are not mandatory
         # needed to load eBPF tracepoints - used by runtime-detector
-      {{- if not .Values.odiglet.hostPid }}
+      {{- if .Values.odiglet.noHostPid }}
         - name: hostproc
           hostPath:
             path: /proc

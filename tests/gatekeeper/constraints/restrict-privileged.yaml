@@ -2,8 +2,6 @@ apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
 metadata:
   annotations:
-    azure-policy-definition-id-1: /providers/Microsoft.Management/managementGroups/fb6ea403-7cf1-4905-810a-fe5547e98204/providers/Microsoft.Authorization/policyDefinitions/Deny-AKSContainerNP
-    azure-policy-definition-id-2: /providers/Microsoft.Authorization/policyDefinitions/95edb821-ddaf-4404-9732-666045e056b4
     constraint-template: https://store.policy.core.windows.net/kubernetes/container-no-privilege/v2/template.yaml
     constraint-template-installed-by: azure-policy-addon
   labels:

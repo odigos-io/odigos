@@ -2,8 +2,6 @@ apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
 metadata:
   annotations:
-    azure-policy-definition-id-1: /providers/Microsoft.Management/managementGroups/fb6ea403-7cf1-4905-810a-fe5547e98204/providers/Microsoft.Authorization/policyDefinitions/Deny-AKSNoShHostProcHIPC
-    azure-policy-definition-id-2: /providers/Microsoft.Authorization/policyDefinitions/47a1ee2f-2a2a-4576-bf2a-e0e36709c2b8
     constraint-template: https://store.policy.core.windows.net/kubernetes/block-host-namespace/v2/template.yaml
     constraint-template-installed-by: azure-policy-addon
   labels:

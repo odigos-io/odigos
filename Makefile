@@ -482,7 +482,7 @@ build-cli-image:
 	DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S') \
 	ko build --bare --tags $(TAG) --local .
 
-# install getekeeper to prevent:
+# install gatekeeper to prevent:
 # 1. privileged containers
 # 2. hostPath volumes (except for some specific paths which are allowed on most clusters)
 # 3. hostNamespace (hostNetwork, hostPID, hostIPC)
@@ -493,7 +493,7 @@ install-gatekeeper:
 	@max_retries=5; \
 	backoff=2; \
 	attempt=1; \
-	until kubectl apply -f tests/gatekeeper/; do \
+	until kubectl apply -f tests/gatekeeper/constraints/; do \
 		if [ $$attempt -ge $$max_retries ]; then \
 			echo "kubectl apply failed after $$attempt attempts."; \
 			exit 1; \
