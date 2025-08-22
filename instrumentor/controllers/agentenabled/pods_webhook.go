@@ -144,7 +144,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 	mountMethod := *odigosConfiguration.MountMethod
 
 	mountIsVirtualDevice := (mountMethod == common.K8sVirtualDeviceMountMethod)
-	if mountIsVirtualDevice && odigosConfiguration.CheckDeviceHealthBeforeInjection != nil && *odigosConfiguration.CheckDeviceHealthBeforeInjection {
+	if mountIsVirtualDevice && odigosConfiguration.CheckDeviceHealthBeforeInjection.Value != nil && *odigosConfiguration.CheckDeviceHealthBeforeInjection.Value {
 		err := podswebhook.CheckDevicePluginContainersHealth(ctx, p.Client, odigosNamespace)
 		if err != nil {
 			return fmt.Errorf("%w: %v", ErrOdigletDeviceNotHealthy, err)

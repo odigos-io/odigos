@@ -1,7 +1,6 @@
 package common
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -26,34 +25,9 @@ type ConfigBoolPointer struct {
 func (data ConfigBoolPointer) ToString() {
 	if data.Value == nil {
 		fmt.Printf("not set\n")
-		return
+	} else {
+		fmt.Printf("%v\n", *data.Value)
 	}
-	fmt.Printf("%v\n", *data.Value)
-}
-
-// looks weird but basically all variables that use this ConfigBoolPointer
-// all of them are stored as objects in the yaml file
-// like this
-// allowConcurrentAgents:
-// Value: null
-func (cbp *ConfigBoolPointer) UnmarshalJSON(data []byte) error {
-	// Try simple bool first
-	var b bool
-	if err := json.Unmarshal(data, &b); err == nil {
-		cbp.Value = &b
-		return nil
-	}
-
-	// Try object with value
-	type wrapper struct {
-		Value *bool `json:"value"`
-	}
-	var w wrapper
-	if err := json.Unmarshal(data, &w); err != nil {
-		return err
-	}
-	cbp.Value = w.Value
-	return nil
 }
 
 type ConfigInt int
@@ -75,10 +49,6 @@ func (data ConfigString) ToString() {
 type ConfigStringList []string
 
 func (data ConfigStringList) ToString() {
-	if len(data) == 0 {
-		fmt.Println("not set")
-		return
-	}
 	fmt.Printf("\n")
 	for _, value := range data {
 		fmt.Printf("		-%s,\n", value)
@@ -92,17 +62,18 @@ func (data *CollectorNodeConfiguration) ToString() {
 	if data == nil {
 		fmt.Println("not set")
 		return
+	} else {
+		var placeholder ConfigString = ConfigString(data.K8sNodeLogsDirectory)
+		placeholder.ToString()
 	}
-	var placeholder ConfigString = ConfigString(data.K8sNodeLogsDirectory)
-	placeholder.ToString()
 }
 
 func (data *MountMethod) ToString() {
 	if data == nil {
 		fmt.Printf("not set\n")
-		return
+	} else {
+		fmt.Printf("%v\n", *data)
 	}
-	fmt.Printf("%v\n", *data)
 }
 
 func (data UiMode) ToString() {
@@ -112,9 +83,9 @@ func (data UiMode) ToString() {
 func (data *EnvInjectionMethod) ToString() {
 	if data == nil {
 		fmt.Printf("not set\n")
-		return
+	} else {
+		fmt.Printf("%v\n", *data)
 	}
-	fmt.Printf("%v\n", *data)
 }
 
 type ConfigNodeSelector map[string]string
@@ -122,47 +93,43 @@ type ConfigNodeSelector map[string]string
 func (data ConfigNodeSelector) ToString() {
 	if len(data) == 0 {
 		fmt.Printf("not set\n")
-		return
-	}
-	fmt.Printf("\n")
-	for key, value := range data {
-		fmt.Printf("		- key: %+v, value: %+v\n", key, value)
+	} else {
+		fmt.Printf("\n")
+		for key, value := range data {
+			fmt.Printf("		- key: %+v, value: %+v\n", key, value)
+		}
 	}
 }
 
 func (data *UserInstrumentationEnvs) ToString() {
 	if data == nil {
 		fmt.Printf("not set\n")
-		return
 	} else if len(data.Languages) == 0 {
 		fmt.Printf("not set\n")
-		return
-	}
-	fmt.Printf("\n")
-	for key, value := range data.Languages {
-		fmt.Printf("		- language: %+v, mode: %+v\n", key, value)
+	} else {
+		fmt.Printf("\n")
+		for key, value := range data.Languages {
+			fmt.Printf("		- language: %+v, mode: %+v\n", key, value)
+		}
 	}
 }
 
 func (data *RolloutConfiguration) ToString() {
 	if data == nil {
 		fmt.Printf("not set\n")
-		return
+	} else {
+		placeholder := ConfigBoolPointer{Value: data.AutomaticRolloutDisabled}
+		placeholder.ToString()
 	}
-	placeholder := ConfigBoolPointer{Value: data.AutomaticRolloutDisabled}
-	placeholder.ToString()
 }
 
 func (data *CollectorGatewayConfiguration) ToString() {
 	if data == nil {
 		fmt.Printf("not set\n")
-		return
-	} else if data.ServiceGraphDisabled == nil {
-		fmt.Printf("not set\n")
-		return
+	} else {
+		placeholder := ConfigBoolPointer{Value: data.ServiceGraphDisabled}
+		placeholder.ToString()
 	}
-	placeholder := ConfigBoolPointer{Value: data.ServiceGraphDisabled}
-	placeholder.ToString()
 }
 
 // i will keep the redefining here in order to differentiate between the three values
@@ -172,10 +139,10 @@ type ConfigOidcTenant OidcConfiguration
 func (data *ConfigOidcTenant) ToString() {
 	if data == nil {
 		fmt.Printf("not set\n")
-		return
+	} else {
+		var placeholder ConfigString = ConfigString(data.TenantUrl)
+		placeholder.ToString()
 	}
-	var placeholder ConfigString = ConfigString(data.TenantUrl)
-	placeholder.ToString()
 }
 
 type ConfigOidcClientId OidcConfiguration
@@ -183,10 +150,10 @@ type ConfigOidcClientId OidcConfiguration
 func (data *ConfigOidcClientId) ToString() {
 	if data == nil {
 		fmt.Printf("not set\n")
-		return
+	} else {
+		var placeholder ConfigString = ConfigString(data.ClientId)
+		placeholder.ToString()
 	}
-	var placeholder ConfigString = ConfigString(data.ClientId)
-	placeholder.ToString()
 }
 
 type ConfigOidcClientSecret OidcConfiguration
@@ -194,10 +161,10 @@ type ConfigOidcClientSecret OidcConfiguration
 func (data *ConfigOidcClientSecret) ToString() {
 	if data == nil {
 		fmt.Printf("not set\n")
-		return
+	} else {
+		var placeholder ConfigString = ConfigString(data.ClientSecret)
+		placeholder.ToString()
 	}
-	var placeholder ConfigString = ConfigString(data.ClientSecret)
-	placeholder.ToString()
 }
 
 func makeAMap(config *OdigosConfiguration) map[string]ConfigField {
@@ -233,7 +200,6 @@ func makeAMap(config *OdigosConfiguration) map[string]ConfigField {
 		consts.ServiceGraphDisabledProperty:       config.CollectorGateway,
 		consts.GoAutoOffsetsCronProperty:          config.GoAutoOffsetsCron,
 		consts.ClickhouseJsonTypeEnabledProperty:  config.ClickhouseJsonTypeEnabledProperty,
-		consts.AllowedTestConnectionHostsProperty: config.AllowedTestConnectionHosts,
 	}
 
 	return displayData
@@ -450,42 +416,15 @@ type OdigosConfiguration struct {
 	AgentEnvVarsInjectionMethod       *EnvInjectionMethod      `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
 	UserInstrumentationEnvs           *UserInstrumentationEnvs `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
 	NodeSelector                      ConfigNodeSelector       `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
-<<<<<<< HEAD
-<<<<<<< HEAD
 	KarpenterEnabled                  ConfigBoolPointer        `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
 	Rollout                           *RolloutConfiguration    `json:"rollout,omitempty" yaml:"rollout"`
 	RollbackDisabled                  ConfigBoolPointer        `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
-=======
-	KarpenterEnabled                  *bool                    `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
-	Rollout                           *RolloutConfiguration    `json:"rollout,omitempty" yaml:"rollout"`
-	RollbackDisabled                  *bool                    `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
->>>>>>> 90cc9086 (fixed cli erros)
-=======
-	KarpenterEnabled                  ConfigBoolPointer        `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
-	Rollout                           *RolloutConfiguration    `json:"rollout,omitempty" yaml:"rollout"`
-	RollbackDisabled                  ConfigBoolPointer        `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
->>>>>>> 40279361 (fixed ConfigBoolPointer issue, added Unmarshal function, other error fixes)
 	RollbackGraceTime                 ConfigString             `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
 	RollbackStabilityWindow           ConfigString             `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
 	Oidc                              *OidcConfiguration       `json:"oidc,omitempty" yaml:"oidc"`
 	OdigletHealthProbeBindPort        ConfigInt                `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
 	GoAutoOffsetsCron                 ConfigString             `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
-<<<<<<< HEAD
-<<<<<<< HEAD
 	ClickhouseJsonTypeEnabledProperty ConfigBoolPointer        `json:"clickhouseJsonTypeEnabled,omitempty"`
-<<<<<<< HEAD
-	AllowedTestConnectionHosts        []string                 `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
-=======
-	ClickhouseJsonTypeEnabledProperty *bool                    `json:"clickhouseJsonTypeEnabled,omitempty"`
->>>>>>> 90cc9086 (fixed cli erros)
-=======
-	ClickhouseJsonTypeEnabledProperty ConfigBoolPointer        `json:"clickhouseJsonTypeEnabled,omitempty"`
->>>>>>> 40279361 (fixed ConfigBoolPointer issue, added Unmarshal function, other error fixes)
-=======
 	AllowedTestConnectionHosts        ConfigStringList         `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
-<<<<<<< HEAD
->>>>>>> 63c22c69 (small changes)
-=======
 	CheckDeviceHealthBeforeInjection  ConfigBoolPointer        `json:"checkDeviceHealthBeforeInjection,omitempty"`
->>>>>>> 091ef2df (new feature additions)
 }
