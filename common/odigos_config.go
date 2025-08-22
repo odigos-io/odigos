@@ -483,5 +483,9 @@ type OdigosConfiguration struct {
 >>>>>>> 40279361 (fixed ConfigBoolPointer issue, added Unmarshal function, other error fixes)
 =======
 	AllowedTestConnectionHosts        ConfigStringList         `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
+<<<<<<< HEAD
 >>>>>>> 63c22c69 (small changes)
+=======
+	CheckDeviceHealthBeforeInjection  ConfigBoolPointer        `json:"checkDeviceHealthBeforeInjection,omitempty"`
+>>>>>>> 091ef2df (new feature additions)
 }
