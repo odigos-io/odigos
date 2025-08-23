@@ -29,6 +29,8 @@ spec:
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
+      # if host mounts are not allowed we don't need the init container
+      {{- if not .Values.odiglet.noHostPathMounts }}
       initContainers:
         - name: init
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
@@ -81,6 +83,7 @@ spec:
                   resource: limits.cpu
           resources:
 {{ toYaml .Values.odiglet.initContainerResources | indent 12 }}
+      {{- end }} # end of optional init container
       containers:
         - name: odiglet
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
