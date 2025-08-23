@@ -112,8 +112,7 @@ collectorGateway:
 
   # for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
   # when unset or empty, no proxy will be used.
-  # httpsProxyAddress: ""
-
+  # httpsProxyAddress: ''
 
 collectorNode:
   # The port to use for exposing the collector's own metrics as a prometheus endpoint.
@@ -328,6 +327,24 @@ odiglet:
   # into the Odiglet to ensure it can access the container runtime unix socket.
   customContainerRuntimeSocketPath: ''
 
+  # run the odiglet container without privileged containers.
+  # when set to true, odiglet will use the set of capabilities required for eBPF operations.
+  # by default, odiglet runs as a privileged container.
+  unPrivileged: false
+
+  # noHostPathMounts can be set to true to avoid using hostPath mounts in the odiglet daemonset.
+  # When set to true, instrumentor.mountMethod must be set to "k8s-init-container", since that is the only mount method
+  # that does not rely on host mounts to pass the required agents files to instrumented pods.
+  # by default, odiglet will rely on hostPath mounts in /var/odigos
+  noHostPathMounts: false
+
+  # noHostPid can be set to true to avoid using hostPID in the odiglet daemonset.
+  # when set to true, odiglet will mount /proc from the host to be able scan running processes and instrument them.
+  # when noHostPid and noHostPathMounts are set to true the /proc host mount must be allowed.
+  # setting this to true (i.e avoiding hostPid) may limit some eBPF capabilities, depending on the instrumented workloads.
+  # by default, odiglet will use hostPID to be able to scan running processes and instrument them.
+  noHostPid: false
+
 centralProxy:
   enabled: false
   # Central backend URL where this proxy will forward data
@@ -365,13 +382,11 @@ profiles: []
 # Note: Odigos will only be able to instrument workloads on the same nodes.
 nodeSelector: {}
 
-
 # Karpenter settings, before changing to true please modify the karpenter-node-template.yaml file
 # to add the odigos-agent startupTaints configuration.
 # https://docs.odigos.io/setup/odigos-with-karpenter
 karpenter:
   enabled: false
-
 
 # Refer to the official Kubernetes documentation for structure and field details:
 # https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
@@ -383,7 +398,6 @@ karpenter:
 #     topologyKey: "topology.kubernetes.io/zone"
 #     whenUnsatisfiable: "ScheduleAnyway"
 topologySpreadConstraints: []
-
 
 # Auto rollback settings
 # The auto‐rollback feature provides a stability window to test instrumented apps.

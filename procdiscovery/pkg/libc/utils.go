@@ -3,7 +3,6 @@ package libc
 import (
 	"debug/elf"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -38,7 +37,7 @@ func ModifyEnvVarsForMusl(lang common.ProgrammingLanguage, envs map[string]strin
 
 // InspectType inspects the given process for libc type
 func InspectType(pd *process.Details) (*common.LibCType, error) {
-	f, err := elf.Open(fmt.Sprintf("/proc/%d/exe", pd.ProcessID))
+	f, err := elf.Open(process.ProcFilePath(pd.ProcessID, "exe"))
 	if err != nil {
 		return nil, err
 	}
