@@ -1,5 +1,5 @@
 image:
-  tag: ""
+  tag: ''
 imagePullSecrets: []
 
 # By default, images are pulled from odigos registry at `registry.odigos.io`
@@ -19,7 +19,7 @@ ignoredNamespaces:
 ignoredContainers:
 
 # Name of the cluster, will be used to identify this cluster in the centralized backend
-clusterName: ""
+clusterName: ''
 
 userInstrumentationEnvs:
   # Configuration for OpenTelemetry (OTEL) agents instrumentation.
@@ -112,7 +112,7 @@ collectorGateway:
 
   # for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
   # when unset or empty, no proxy will be used.
-  # httpsProxyAddress: ""
+  # httpsProxyAddress: ''
 
 collectorNode:
   # The port to use for exposing the collector's own metrics as a prometheus endpoint.
@@ -158,7 +158,7 @@ collectorNode:
 
   # this configuration is used for logs collection where '/var/log' in a k8s node is a symlink
   # to some other directory (for example, '/mnt/var/log')
-  k8sNodeLogsDirectory: ""
+  k8sNodeLogsDirectory: ''
 
   # EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
   # It is disabled by default and can be enabled by setting the enabled flag to true.
@@ -206,7 +206,7 @@ ui:
   #  - This flag controls whether the UI should be in read-only mode.
   #  - Setting this to "readonly" will disable the ability to create, update, or delete objects in the UI.
   #  - If not set, the UI will be in default mode.
-  uiMode: "default"
+  uiMode: 'default'
   # uiPaginationLimit:
   #  - This flag controls the number of items to fetch per paginated-batch in the UI.
   #  - If not set, the UI will fetch 100 items per paginated-batch.
@@ -215,27 +215,27 @@ ui:
   #  - This flag sets the URL of the remote UI (e.g. https://my-odigos-ui.com).
   #  - If not set, the UI will default to the local UI.
   #  - This is useful when you are hosting the Odigos UI on a custom/remote URL, and require OIDC authentication.
-  uiRemoteUrl: ""
+  uiRemoteUrl: ''
   # oidcTenantUrl:
   #  - This flag sets the URL of the OIDC tenant (e.g. https://my-oidc-tenant.com).
   #  - If not set, the UI will not process OIDC authentication.
-  oidcTenantUrl: ""
+  oidcTenantUrl: ''
   # oidcClientId:
   #  - This flag sets the client ID of the OIDC application.
   #  - If not set, the UI will not process OIDC authentication.
-  oidcClientId: ""
+  oidcClientId: ''
   # oidcClientSecret:
   #  - This flag sets the client secret of the OIDC application.
   #  - If not set, the UI will not process OIDC authentication.
-  oidcClientSecret: ""
-  centralBackendURL: ""
+  oidcClientSecret: ''
+  centralBackendURL: ''
 
 instrumentor:
   # which mount method to use for odigos agent directory
   # k8s-virtual-device: default method using a virtual device
   # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
   # k8s-init-container: alternative which uses an init container to copy the agent files to the shared volume
-  mountMethod: ""
+  mountMethod: ''
   # checkDeviceHealthBeforeInjection is relevant only when mountMethod is k8s-virtual-device.
   # before injecting odigos agent into a new pod, it will check that all odiglet "deviceplugin"
   # containers are not in crash loop backoff.
@@ -268,7 +268,7 @@ instrumentor:
   # loader: only try using the odigos loader which requires setting the LD_PRELOAD env var in the container manifest.
   # pod-manifest: add the environment variables to the container manifest.
   # loader-fallback-to-pod-manifest: try using the odigos loader first, and if it fails, fallback to adding the environment variables to the container manifest.
-  agentEnvVarsInjectionMethod: ""
+  agentEnvVarsInjectionMethod: ''
 
 odiglet:
   odiglet:
@@ -325,7 +325,7 @@ odiglet:
   # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
   # into the Odiglet to ensure it can access the container runtime unix socket.
-  customContainerRuntimeSocketPath: ""
+  customContainerRuntimeSocketPath: ''
 
   # run the odiglet container without privileged containers.
   # when set to true, odiglet will use the set of capabilities required for eBPF operations.
@@ -348,7 +348,7 @@ odiglet:
 centralProxy:
   enabled: false
   # Central backend URL where this proxy will forward data
-  centralBackendURL: ""
+  centralBackendURL: ''
   resources:
     requests:
       cpu: 100m
