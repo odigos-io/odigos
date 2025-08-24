@@ -12,6 +12,11 @@ permissions:
   packages: write
   id-token: 'write'
 
+env:
+  DOCKERHUB_REPO: "keyval"
+  GCR_REPO: "us-central1-docker.pkg.dev/odigos-cloud/components"
+  GHCR_REPO: "ghcr.io/odigos-io"
+  
 jobs:
   promote-rc-to-stable:
     runs-on: ubuntu-latest
@@ -21,9 +26,9 @@ jobs:
         run: |
           # =~ is a bash operator that checks if a string matches a regular expression pattern
           # Here we check if the tag matches the format vX.Y.Z-rcN where X,Y,Z,N are numbers
-          if [[ "${{ github.event.inputs.tag }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$ ]]; then
+          if [[ "${{ github.event.inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$ ]]; then
             echo "Tag is a release candidate"
-            echo "RC_TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+            echo "RC_TAG=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           else
             echo "Tag is not a release candidate"
             exit 1
