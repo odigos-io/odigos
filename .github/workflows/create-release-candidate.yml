@@ -29,6 +29,18 @@ jobs:
           # Extract version components
           IFS='.' read -r major minor patch <<< "${LATEST_STABLE#v}"
 
+          # --- BEGIN TEMP BOOTSTRAP (delete after first 1.1.0 RC succeeds) ---
+          if [[ "$major" -eq 1 && "$minor" -eq 0 ]]; then
+            if ! git tag -l "v1.1.*" | grep -q .; then
+              echo "Temp bootstrap: Forcing first new series to v1.1.0"
+              RELEASE_BASE="v1.1.0"
+              NEXT_STABLE="v1.1.0"
+              echo "release_base=$RELEASE_BASE" >> $GITHUB_OUTPUT
+              echo "next_stable=$NEXT_STABLE" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+          # --- END TEMP BOOTSTRAP ---
 
           # Increment minor version for new release series
           target_minor=$((minor + 1))
