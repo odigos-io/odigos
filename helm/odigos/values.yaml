@@ -382,7 +382,8 @@ pdb:
 
 # Setting for allowing Odigos to run concurrently with other agents
 allowConcurrentAgents:
-  enabled: true
+  enabled: false
+
 # Enable support for ClickHouse JSON column type when storing Odigos data.
 # When set to true, Odigos will use a new schema with JSON-typed columns (requires ClickHouse v25.3+).
 # If set to false, the default schema using Map-type columns will be used instead.
