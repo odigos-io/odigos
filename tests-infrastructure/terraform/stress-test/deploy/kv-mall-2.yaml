@@ -1,0 +1,412 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kv-mall-2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics
+  namespace: kv-mall-2
+  labels:
+    app: analytics
+spec:
+  selector:
+    matchLabels:
+      app: analytics
+  template:
+    metadata:
+      labels:
+        app: analytics
+    spec:
+      containers:
+      - name: analytics
+        image: registry.odigos.io/kv-mall-analytics:v0.6
+        env:
+        - name: KAFKA_ADDRESS
+          value: kafka-service.kv-mall-infra:9092
+        - name: MEMCACHED_ADDR
+          value: memcached.kv-mall-infra:11211
+        - name: CASSANDRA_ADDR
+          value: cassandra.kv-mall-infra:9042
+        - name: POSTGRESQL_ADDR
+          value: postgresql://postgres:postgres@postgres.kv-mall-infra:5432/postgres?sslmode=disable
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 100
+        ports:
+          - name: http
+            containerPort: 8081
+            protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coupon
+  namespace: kv-mall-2
+  labels:
+    app: coupon
+spec:
+  selector:
+    matchLabels:
+      app: coupon
+  template:
+    metadata:
+      labels:
+        app: coupon
+    spec:
+      containers:
+        - name: coupon
+          image: registry.odigos.io/kv-mall-coupon:v0.4
+          env:
+            - name: MEMBERSHIP_SERVICE_URL
+              value: 'membership:8080'
+            - name: KAFKA_ADDRESS
+              value: 'kafka-service.kv-mall-infra:9092'
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: coupon
+  namespace: kv-mall-2
+spec:
+  selector:
+    app: coupon
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mail
+  namespace: kv-mall-2
+  labels:
+    app: mail
+spec:
+  selector:
+    matchLabels:
+      app: mail
+  template:
+    metadata:
+      labels:
+        app: mail
+    spec:
+      containers:
+        - name: mail
+          image: registry.odigos.io/kv-mall-mail:v0.3
+          env:
+            - name: KAFKA_ADDRESS
+              value: 'kafka-service.kv-mall-infra:9092'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: kv-mall-2
+  labels:
+    app: frontend
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          # !! need to bump tag to include currency change from ILS to EUR
+          image: registry.odigos.io/kv-mall-frontend:v0.5
+          env:
+            - name: INVENTORY_SERVICE_HOST
+              value: inventory:8080
+            - name: PRICING_SERVICE_HOST
+              value: pricing:8080
+            - name: COUPON_SERVICE_HOST
+              value: coupon:8080
+            - name: ADS_SERVICE_HOST
+              value: ads:8080
+            - name: CURRENCY_SERVICE_HOST
+              value: currency:8080
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: frontend
+  namespace: kv-mall-2
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: kv-mall-2
+  labels:
+    app: inventory
+spec:
+  selector:
+    matchLabels:
+      app: inventory
+  template:
+    metadata:
+      labels:
+        app: inventory
+    spec:
+      containers:
+      - name: inventory
+        image: registry.odigos.io/kv-mall-inventory:v0.4
+        ports:
+        - containerPort: 8080
+        env:
+          - name: ADS_SERVICE_HOST
+            value: ads:8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: inventory
+  namespace: kv-mall-2
+spec:
+  selector:
+    app: inventory
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: membership
+  namespace: kv-mall-2
+  labels:
+    app: membership
+spec:
+  selector:
+    matchLabels:
+      app: membership
+  template:
+    metadata:
+      labels:
+        app: membership
+    spec:
+      containers:
+        - name: membership
+          image: registry.odigos.io/kv-mall-membership:v0.4
+          env:
+            - name: KAFKA_ADDRESS
+              value: kafka-service.kv-mall-infra:9092
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: membership
+  namespace: kv-mall-2
+spec:
+  selector:
+    app: membership
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pricing
+  namespace: kv-mall-2
+  labels:
+    app: pricing
+spec:
+  selector:
+    matchLabels:
+      app: pricing
+  template:
+    metadata:
+      labels:
+        app: pricing
+    spec:
+      containers:
+        - name: pricing
+          image: registry.odigos.io/kv-mall-pricing:v0.3
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: pricing
+  namespace: kv-mall-2
+spec:
+  selector:
+    app: pricing
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: warehouse
+  namespace: kv-mall-2
+  labels:
+    app: warehouse
+spec:
+  selector:
+    matchLabels:
+      app: warehouse
+  template:
+    metadata:
+      labels:
+        app: warehouse
+    spec:
+      containers:
+        - name: warehouse
+          image: registry.odigos.io/kv-mall-warehouse:v0.3
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: warehouse
+  namespace: kv-mall-2
+spec:
+  selector:
+    app: warehouse
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ads
+  namespace: kv-mall-2
+  labels:
+    app: ads
+spec:
+  selector:
+    matchLabels:
+      app: ads
+  template:
+    metadata:
+      labels:
+        app: ads
+    spec:
+      containers:
+      - name: ads
+        image: registry.odigos.io/kv-mall-ads:v0.4
+        ports:
+          - containerPort: 8080
+        securityContext:
+          runAsUser: 1000
+        env:
+          - name: DB_HOST
+            value: "mysql.kv-mall-infra"
+          - name: DB_USER
+            value: "adsuser"
+          - name: DB_PASS
+            value: "adspass"
+          - name: DB_NAME
+            value: "adsdb"          
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: ads
+  namespace: kv-mall-2
+spec:
+  selector:
+    app: ads
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currency
+  namespace: kv-mall-2
+  labels:
+    app: currency
+spec:
+  selector:
+    matchLabels:
+      app: currency
+  template:
+    metadata:
+      labels:
+        app: currency
+    spec:
+      containers:
+        - name: currency
+          image: registry.odigos.io/kv-mall-currency:v0.2
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9000
+        - name: nginx
+          image: nginx:1.27.5
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: currency-nginx-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: currency-nginx-config
+  namespace: kv-mall-2
+data:
+  nginx.conf: |
+    server {
+        listen 8080;
+        server_name localhost;
+
+        location / {
+            include fastcgi_params;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_param SCRIPT_FILENAME /app/index.php;
+        }
+    }
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: currency
+  namespace: kv-mall-2
+spec:
+  selector:
+    app: currency
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---

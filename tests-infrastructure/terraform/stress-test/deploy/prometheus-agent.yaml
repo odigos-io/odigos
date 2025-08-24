@@ -1,0 +1,373 @@
+# Prometheus Agent
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: PrometheusAgent
+metadata:
+  name: cluster-agent
+  namespace: monitoring
+spec:
+  serviceAccountName: prometheus-agent
+  serviceMonitorSelector: {}
+  podMonitorSelector: {}
+  serviceMonitorNamespaceSelector: {}
+  podMonitorNamespaceSelector: {}
+  probeSelector: {}
+  remoteWrite:
+  - url: "http://10.0.1.40:9090/api/v1/write"
+    writeRelabelConfigs:
+      # Add cluster label
+      - targetLabel: cluster
+        replacement: "stress-tests-eks"
+
+      # # Handle exported_* labels from kube-state-metrics
+      # - sourceLabels: [exported_namespace]
+      #   targetLabel: namespace
+      #   action: replace
+      # - sourceLabels: [exported_pod]
+      #   targetLabel: pod
+      #   action: replace  
+      # - sourceLabels: [exported_container]
+      #   targetLabel: container
+      #   action: replace
+      # - regex: "exported_.*"
+      #   action: labeldrop
+
+      # # Normalize job names for consistency
+      # - sourceLabels: [job]
+      #   regex: "kubelet"
+      #   targetLabel: job
+      #   replacement: "kubernetes-metrics"
+
+      # - sourceLabels: [job] 
+      #   regex: "kube-state-metrics"
+      #   targetLabel: job
+      #   replacement: "kubernetes-metrics"
+
+      # - sourceLabels: [job]
+      #   regex: "monitoring/node-exporter-pods"
+      #   targetLabel: job
+      #   replacement: "node-exporter"
+
+---
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-agent
+  namespace: monitoring
+
+---
+# ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-agent-scrape
+rules:
+  - apiGroups: [""]
+    resources: [nodes, nodes/proxy, services, endpoints, pods, namespaces]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: [nodes/metrics, nodes/stats, nodes/log, nodes/spec]
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs:
+      - /metrics
+      - /metrics/cadvisor
+      - /metrics/resource
+    verbs: ["get"]
+  - apiGroups: ["extensions", "networking.k8s.io"]
+    resources: [ingresses]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: [servicemonitors, podmonitors, prometheusrules, probes]
+    verbs: ["get", "list", "watch"]
+
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-agent-scrape
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-agent-scrape
+subjects:
+  - kind: ServiceAccount
+    name: prometheus-agent
+    namespace: monitoring
+---
+apiVersion: v1
+kind: List
+items:
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-grafana
+    namespace: monitoring
+  spec:
+    endpoints:
+    - honorLabels: true
+      path: /metrics
+      port: http-web
+      scheme: http
+      scrapeTimeout: 30s
+    jobLabel: prometheus
+    namespaceSelector:
+      matchNames:
+      - monitoring
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: prometheus
+        app.kubernetes.io/name: grafana
+
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-kube-prometheus-alertmanager
+    namespace: monitoring
+  spec:
+    endpoints:
+    - enableHttp2: true
+      path: /metrics
+      port: http-web
+    - path: /metrics
+      port: reloader-web
+    namespaceSelector:
+      matchNames:
+      - monitoring
+    selector:
+      matchLabels:
+        app: kube-prometheus-stack-alertmanager
+        release: prometheus
+        self-monitor: "true"
+
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-kube-prometheus-apiserver
+    namespace: monitoring
+  spec:
+    endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      port: https
+      scheme: https
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecureSkipVerify: false
+        serverName: kubernetes
+    jobLabel: component
+    namespaceSelector:
+      matchNames:
+      - default
+    selector:
+      matchLabels:
+        component: apiserver
+        provider: kubernetes
+
+- # ServiceMonitor for Odigos services
+  apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: odigos-system
+    namespace: monitoring
+    labels:
+      release: prometheus-agent
+  spec:
+    selector:
+      matchLabels:
+        odigos.io/system-object: "true"
+    namespaceSelector:
+      matchNames:
+        - odigos-system
+    endpoints:
+      - port: metrics
+        interval: 15s
+        path: /metrics
+
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-kube-prometheus-coredns
+    namespace: monitoring
+  spec:
+    endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      port: http-metrics
+    jobLabel: jobLabel
+    namespaceSelector:
+      matchNames:
+      - kube-system
+    selector:
+      matchLabels:
+        app: kube-prometheus-stack-coredns
+        release: prometheus
+
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-kube-prometheus-kube-controller-manager
+    namespace: monitoring
+  spec:
+    endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      port: http-metrics
+      scheme: https
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecureSkipVerify: true
+    jobLabel: jobLabel
+    namespaceSelector:
+      matchNames:
+      - kube-system
+    selector:
+      matchLabels:
+        app: kube-prometheus-stack-kube-controller-manager
+        release: prometheus
+
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-kube-prometheus-kube-etcd
+    namespace: monitoring
+  spec:
+    endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      port: http-metrics
+    jobLabel: jobLabel
+    namespaceSelector:
+      matchNames:
+      - kube-system
+    selector:
+      matchLabels:
+        app: kube-prometheus-stack-kube-etcd
+        release: prometheus
+
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-kube-prometheus-kube-proxy
+    namespace: monitoring
+  spec:
+    endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      port: http-metrics
+    jobLabel: jobLabel
+    namespaceSelector:
+      matchNames:
+      - kube-system
+    selector:
+      matchLabels:
+        app: kube-prometheus-stack-kube-proxy
+        release: prometheus
+
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-kube-prometheus-kube-scheduler
+    namespace: monitoring
+  spec:
+    endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      port: http-metrics
+      scheme: https
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecureSkipVerify: true
+    jobLabel: jobLabel
+    namespaceSelector:
+      matchNames:
+      - kube-system
+    selector:
+      matchLabels:
+        app: kube-prometheus-stack-kube-scheduler
+        release: prometheus
+
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-kube-prometheus-kubelet
+    namespace: monitoring
+  spec:
+    endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      port: https-metrics
+      scheme: https
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecureSkipVerify: true
+    jobLabel: k8s-app
+    namespaceSelector:
+      matchNames:
+      - kube-system
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: kubelet
+        k8s-app: kubelet
+
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-kube-prometheus-operator
+    namespace: monitoring
+  spec:
+    endpoints:
+    - port: https
+      scheme: https
+      tlsConfig:
+        serverName: prometheus-kube-prometheus-operator
+    namespaceSelector:
+      matchNames:
+      - monitoring
+    selector:
+      matchLabels:
+        app: kube-prometheus-stack-operator
+        release: prometheus
+
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-kube-prometheus-prometheus
+    namespace: monitoring
+  spec:
+    endpoints:
+    - path: /metrics
+      port: http-web
+    - path: /metrics
+      port: reloader-web
+    namespaceSelector:
+      matchNames:
+      - monitoring
+    selector:
+      matchLabels:
+        app: kube-prometheus-stack-prometheus
+        release: prometheus
+        self-monitor: "true"
+
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-kube-state-metrics
+    namespace: monitoring
+  spec:
+    endpoints:
+    - honorLabels: true
+      port: http
+    jobLabel: app.kubernetes.io/name
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: prometheus
+        app.kubernetes.io/name: kube-state-metrics
+
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: prometheus-prometheus-node-exporter
+    namespace: monitoring
+  spec:
+    endpoints:
+    - port: http-metrics
+      scheme: http
+    jobLabel: jobLabel
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: prometheus
+        app.kubernetes.io/name: prometheus-node-exporter

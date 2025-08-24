@@ -10,7 +10,7 @@ variable "region" {
 
 variable "node_count" {
   description = "Number of nodes in the cluster"
-  default     = 2
+  default     = 6
 }
 
 variable "node_spec" {

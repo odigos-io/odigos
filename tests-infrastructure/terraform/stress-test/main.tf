@@ -44,8 +44,9 @@ module "eks" {
   vpc_id          = module.vpc.vpc_id
   subnet_ids      = module.vpc.private_subnets  # Ensures at least 2 AZs
 
-  cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
+  cluster_endpoint_public_access = true
+  cluster_endpoint_public_access_cidrs = ["212.117.136.162/32"]
 
   enable_cluster_creator_admin_permissions = true
 
@@ -95,17 +96,6 @@ resource "aws_security_group" "eks_api_sg" {
   }
 }
 
-# Allow traffic from monitoring EC2 SG to EKS cluster SG on port 8080
-resource "aws_security_group_rule" "allow_k6_to_nlb" {
-  type                     = "ingress"
-  from_port                = 8080
-  to_port                  = 8080
-  protocol                 = "tcp"
-  security_group_id        = "sg-0d4bb22339f543a48" # EKS cluster SG ID
-  source_security_group_id = var.monitoring_sg_id  # EC2's SG
-  description              = "Allow k6 EC2 to reach pods via NLB"
-}
-
 # Allow Kubernetes API to communicate with private services
 resource "aws_security_group_rule" "allow_api_private" {
   type              = "ingress"
@@ -114,5 +104,15 @@ resource "aws_security_group_rule" "allow_api_private" {
   protocol          = "tcp"
   cidr_blocks       = ["10.0.0.0/16"]
   security_group_id = module.eks.cluster_security_group_id
+}
+
+resource "aws_security_group_rule" "allow_k6_to_nlb" {
+  type                     = "ingress"
+  from_port                = 8080
+  to_port                  = 8080
+  protocol                 = "tcp"
+  security_group_id        = module.eks.cluster_security_group_id   # EKS SG
+  source_security_group_id = var.monitoring_sg_id                   # EC2 SG (passed as input)
+  description              = "Allow k6 EC2 to reach pods via NLB"
 }
 

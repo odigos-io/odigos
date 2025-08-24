@@ -88,6 +88,17 @@ resource "aws_security_group_rule" "in_9000_from_nodesg" {
   description              = "ClickHouse native TCP from EKS nodes"
 }
 
+resource "aws_security_group_rule" "allow_k6_to_nlb" {
+  type                     = "ingress"
+  from_port                = 8080
+  to_port                  = 8080
+  protocol                 = "tcp"
+  security_group_id        = module.eks.cluster_security_group_id
+  source_security_group_id = aws_security_group.monitoring_ec2_sg.id
+  description              = "Allow k6 EC2 to reach pods via NLB"
+}
+
+
 # ---------------- SSM for port-forwarding to UIs ----------------
 resource "aws_iam_role" "ssm_core" {
   name               = "monitoring-ec2-ssm-core"
@@ -116,9 +127,9 @@ resource "aws_instance" "monitoring" {
   ami           = data.aws_ami.amazon_linux.id
   instance_type = "m6i.large"
 
-  subnet_id                   = data.terraform_remote_state.eks.outputs.public_subnet_ids[0]
+  subnet_id = data.terraform_remote_state.eks.outputs.private_subnet_ids[0]
   vpc_security_group_ids      = [aws_security_group.monitoring_ec2_sg.id]
-  associate_public_ip_address = true
+  associate_public_ip_address = false
 
   iam_instance_profile = aws_iam_instance_profile.ssm_core.name
 

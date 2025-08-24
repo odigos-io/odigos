@@ -1,9 +1,11 @@
+# Disable full Prometheus & Alertmanager
 prometheus:
   enabled: false
 
 alertmanager:
   enabled: false
 
+# Enable node exporter
 prometheus-node-exporter:
   enabled: true
   hostNetwork: true
@@ -11,12 +13,25 @@ prometheus-node-exporter:
   extraArgs:
     - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+)($|/)
     - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|sysfs|tracefs)$
+  serviceMonitor:
+    labels:
+      release: prometheus-agent
 
+# Enable kube-state-metrics
 kubeStateMetrics:
   enabled: true
-  metricLabelsAllowlist:
-    - pods=[*]
-    - deployments=[*]
-    - nodes=[*]
-    - services=[*]
-    - namespaces=[*]
+  serviceMonitor:
+    labels:
+      release: prometheus-agent
+
+# Scrape the kubelet
+kubelet:
+  serviceMonitor:
+    labels:
+      release: prometheus-agent
+
+# Scrape the API server
+kubeApiServer:
+  serviceMonitor:
+    labels:
+      release: prometheus-agent
