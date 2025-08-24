@@ -5,8 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { EntityTypes } from '@odigos/ui-kit/types';
 import { ServiceMapIcon, TraceViewIcon } from '@odigos/ui-kit/icons';
-import { DATA_FLOW_HEIGHT, MENU_BAR_HEIGHT, ROUTES } from '@/utils';
 import { useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
+import { DATA_FLOW_HEIGHT, NO_MENU_GAP_HEIGHT, ROUTES } from '@/utils';
 import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
 import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
 import { DataFlowActionsMenu, NavIconIds, SideNav, ToastList } from '@odigos/ui-kit/containers';
@@ -103,10 +103,10 @@ function OverviewLayout({ children }: PropsWithChildren) {
         <OverviewHeader />
 
         <ContentWithActions $height={DATA_FLOW_HEIGHT}>
-          {selectedId !== serviceMapId ? (
+          {![serviceMapId, traceViewId].includes(selectedId || '') ? (
             <DataFlowActionsMenu addEntity={entityType} onClickNewDataStream={() => router.push(ROUTES.CHOOSE_STREAM)} updateDataStream={updateDataStream} deleteDataStream={deleteDataStream} />
           ) : (
-            <div style={{ height: `${MENU_BAR_HEIGHT}px` }} />
+            <div style={{ height: `${NO_MENU_GAP_HEIGHT}px` }} />
           )}
 
           <ContentUnderActions>
