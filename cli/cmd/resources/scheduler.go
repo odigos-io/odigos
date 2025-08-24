@@ -109,6 +109,12 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				ResourceNames: []string{k8sconsts.OdigletDaemonSetName},
 				Verbs:         []string{"patch"},
 			},
+			{
+				APIGroups:     []string{"apps"},
+				Resources:     []string{"deployments"},
+				ResourceNames: []string{k8sconsts.SchedulerDeploymentName},
+				Verbs:         []string{"get", "list", "watch"},
+			},
 		},
 	}
 }

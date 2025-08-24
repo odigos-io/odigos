@@ -83,10 +83,7 @@ spec:
         runAsNonRoot: true
       serviceAccountName: odigos-scheduler
       terminationGracePeriodSeconds: 10
-{{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 6 }}
-{{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.scheduler }}
   {{- if .nodeSelector }}
       nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}

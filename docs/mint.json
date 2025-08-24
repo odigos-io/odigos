@@ -26,7 +26,7 @@
     {
       "name": "Demo",
       "icon": "circle-play",
-      "url": "https://www.youtube.com/watch?v=nynyV7FC4VI"
+      "url": "https://odigos.io/?demo"
     },
     {
       "name": "Blog",
@@ -168,7 +168,9 @@
         {
           "group": "Advanced",
           "icon": "gear",
-          "pages": ["instrumentations/configuration/mount-method"]
+          "pages": [
+            "instrumentations/configuration/mount-method"
+          ]
         }
       ]
     },
@@ -320,11 +322,17 @@
     },
     {
       "group": "Feature Guidelines",
-      "pages": ["features/oidc", "features/central"]
+      "pages": [
+        "features/oidc",
+        "features/central"
+      ]
     },
     {
       "group": "Contribution Guidelines",
-      "pages": ["adding-new-dest", "debugging"]
+      "pages": [
+        "adding-new-dest",
+        "debugging"
+      ]
     },
     {
       "group": "VM Agent",
