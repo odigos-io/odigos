@@ -26,7 +26,7 @@ var configs = map[Sizing]SizingConfig{
 			LimitCPUm:                  300,
 			RequestMemoryMiB:           300,
 			LimitMemoryMiB:             300,
-			MemoryLimiterLimitMiB:      250, // LimitCPUm - 50
+			MemoryLimiterLimitMiB:      250, // LimitMemoryMiB - 50
 			MemoryLimiterSpikeLimitMiB: 50,  // 20% of MemoryLimiterLimitMiB
 			GoMemLimitMib:              200, // 80% of MemoryLimiterLimitMiB
 		},
@@ -48,7 +48,7 @@ var configs = map[Sizing]SizingConfig{
 			LimitCPUm:                  1000,
 			RequestMemoryMiB:           500,
 			LimitMemoryMiB:             600,
-			MemoryLimiterLimitMiB:      550, // LimitCPUm - 50
+			MemoryLimiterLimitMiB:      550, // LimitMemoryMiB - 50
 			MemoryLimiterSpikeLimitMiB: 110, // 20% of MemoryLimiterLimitMiB
 			GoMemLimitMib:              440, // 80% of MemoryLimiterLimitMiB
 		},
@@ -70,7 +70,7 @@ var configs = map[Sizing]SizingConfig{
 			LimitCPUm:                  1250,
 			RequestMemoryMiB:           750,
 			LimitMemoryMiB:             850,
-			MemoryLimiterLimitMiB:      800, // LimitCPUm - 50
+			MemoryLimiterLimitMiB:      800, // LimitMemoryMiB - 50
 			MemoryLimiterSpikeLimitMiB: 160, // 20% of MemoryLimiterLimitMiB
 			GoMemLimitMib:              640, // 80% of MemoryLimiterLimitMiB
 		},
