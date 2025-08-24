@@ -211,6 +211,20 @@ spec:
 apiVersion: odigos.io/v1alpha1
 kind: Source
 metadata:
+  name: python-gunicorn-server
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: python-gunicorn-server
+    namespace: default
+    kind: Deployment
+  otelServiceName: python-gunicorn-server-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
   name: dotnet8-glibc
   namespace: default
   labels:

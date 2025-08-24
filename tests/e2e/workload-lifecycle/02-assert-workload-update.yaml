@@ -434,6 +434,30 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   generation: 3
+  labels:
+    app: python-gunicorn-server
+  name: python-gunicorn-server
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: ppython-gunicorn-server
+  template:
+    spec:
+      containers:
+        - image: public.ecr.aws/odigos/python-gunicorn-server:v0.0.1
+          name: python-gunicorn-server
+status:
+  availableReplicas: 1
+  observedGeneration: 3
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 3
   name: dotnet8-musl
   namespace: default
   labels:
