@@ -2,11 +2,16 @@
 
 import React from 'react';
 import { useTraces } from '@/hooks';
-import { Text } from '@odigos/ui-kit/components';
+import { TraceView } from '@odigos/ui-kit/containers';
+import { HEADER_HEIGHT, MENU_BAR_HEIGHT } from '@/utils';
 
 export default function Page() {
-  const { traces } = useTraces({ serviceName: 'frontend' });
-  console.log('traces', traces);
+  const { traces } = useTraces({ serviceName: undefined });
+  console.log('useTraces', traces);
 
-  return <Text>{JSON.stringify(traces, null, 2)}</Text>;
+  return (
+    <>
+      <TraceView heightToRemove={HEADER_HEIGHT + MENU_BAR_HEIGHT} traces={traces} />
+    </>
+  );
 }

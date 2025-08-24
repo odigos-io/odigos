@@ -27,8 +27,9 @@ const ContentWithActions = styled.div<{ $height: CSSProperties['height'] }>`
 const ContentUnderActions = styled(FlexRow)`
   align-items: flex-start !important;
   justify-content: space-between;
-  padding-left: 12px;
-  width: calc(100% - 12px);
+  gap: 4px;
+  padding: 0 12px;
+  width: calc(100% - 24px);
 `;
 
 const serviceMapId = 'service-map';
