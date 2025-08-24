@@ -16,7 +16,7 @@ env:
   DOCKERHUB_REPO: "keyval"
   GCR_REPO: "us-central1-docker.pkg.dev/odigos-cloud/components"
   GHCR_REPO: "ghcr.io/odigos-io"
-  
+
 jobs:
   promote-rc-to-stable:
     runs-on: ubuntu-latest
@@ -142,8 +142,6 @@ jobs:
             fi
 
             git tag ${{ env.STABLE_TAG }}
-            # this is using github actions token which will not not trigger the release which is good
-            # since we don't need a brand new release here.
             git push origin ${{ env.STABLE_TAG }} 
             echo "Successfully created and pushed stable tag ${{ env.STABLE_TAG }}"            
 
