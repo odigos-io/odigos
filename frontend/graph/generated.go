@@ -749,7 +749,7 @@ type ComplexityRoot struct {
 		DestinationCategories             func(childComplexity int) int
 		GetOverviewMetrics                func(childComplexity int) int
 		GetServiceMap                     func(childComplexity int) int
-		GetTraces                         func(childComplexity int, serviceName string, limit int, hoursAgo int) int
+		GetTraces                         func(childComplexity int, serviceName string, limit *int, hoursAgo *int) int
 		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
 		OdigosConfig                      func(childComplexity int) int
 		PotentialDestinations             func(childComplexity int) int
@@ -987,7 +987,7 @@ type QueryResolver interface {
 	PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error)
 	GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error)
 	GetServiceMap(ctx context.Context) (*model.ServiceMap, error)
-	GetTraces(ctx context.Context, serviceName string, limit int, hoursAgo int) ([]*model.Trace, error)
+	GetTraces(ctx context.Context, serviceName string, limit *int, hoursAgo *int) ([]*model.Trace, error)
 	DescribeOdigos(ctx context.Context) (*model.OdigosAnalyze, error)
 	DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error)
 	SourceConditions(ctx context.Context) ([]*model.SourceConditions, error)
@@ -4179,7 +4179,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GetTraces(childComplexity, args["serviceName"].(string), args["limit"].(int), args["hoursAgo"].(int)), true
+		return e.complexity.Query.GetTraces(childComplexity, args["serviceName"].(string), args["limit"].(*int), args["hoursAgo"].(*int)), true
 
 	case "Query.instrumentationInstanceComponents":
 		if e.complexity.Query.InstrumentationInstanceComponents == nil {
@@ -5938,36 +5938,36 @@ func (ec *executionContext) field_Query_getTraces_argsServiceName(
 func (ec *executionContext) field_Query_getTraces_argsLimit(
 	ctx context.Context,
 	rawArgs map[string]any,
-) (int, error) {
+) (*int, error) {
 	if _, ok := rawArgs["limit"]; !ok {
-		var zeroVal int
+		var zeroVal *int
 		return zeroVal, nil
 	}
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
 	if tmp, ok := rawArgs["limit"]; ok {
-		return ec.unmarshalNInt2int(ctx, tmp)
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
 	}
 
-	var zeroVal int
+	var zeroVal *int
 	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_getTraces_argsHoursAgo(
 	ctx context.Context,
 	rawArgs map[string]any,
-) (int, error) {
+) (*int, error) {
 	if _, ok := rawArgs["hoursAgo"]; !ok {
-		var zeroVal int
+		var zeroVal *int
 		return zeroVal, nil
 	}
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("hoursAgo"))
 	if tmp, ok := rawArgs["hoursAgo"]; ok {
-		return ec.unmarshalNInt2int(ctx, tmp)
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
 	}
 
-	var zeroVal int
+	var zeroVal *int
 	return zeroVal, nil
 }
 
@@ -26804,7 +26804,7 @@ func (ec *executionContext) _Query_getTraces(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetTraces(rctx, fc.Args["serviceName"].(string), fc.Args["limit"].(int), fc.Args["hoursAgo"].(int))
+		return ec.resolvers.Query().GetTraces(rctx, fc.Args["serviceName"].(string), fc.Args["limit"].(*int), fc.Args["hoursAgo"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
