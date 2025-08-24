@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const GET_TRACES = gql`
-  query GetTraces($serviceName: String!) {
-    getTraces(serviceName: $serviceName) {
+  query GetTraces($serviceName: String!, $limit: Int!, $hoursAgo: Int!) {
+    getTraces(serviceName: $serviceName, limit: $limit, hoursAgo: $hoursAgo) {
       traceID
       spans {
         traceID

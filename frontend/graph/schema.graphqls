@@ -974,7 +974,7 @@ type Query {
 
   getOverviewMetrics: OverviewMetricsResponse!
   getServiceMap: ServiceMap!
-  getTraces(serviceName: String!): [Trace!]!
+  getTraces(serviceName: String!, limit: Int!, hoursAgo: Int!): [Trace!]!
 
   describeOdigos: OdigosAnalyze!
   describeSource(

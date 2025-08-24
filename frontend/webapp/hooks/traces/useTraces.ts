@@ -16,7 +16,7 @@ export const useTraces = ({ serviceName }: UseTracesParams) => {
   const { addNotification } = useNotificationStore();
 
   const { data } = useQuery<{ getTraces: Trace[] }>(GET_TRACES, {
-    variables: { serviceName },
+    variables: { serviceName, limit: 100, hoursAgo: 24 },
     skip: !serviceName,
     onError: (error) =>
       addNotification({
