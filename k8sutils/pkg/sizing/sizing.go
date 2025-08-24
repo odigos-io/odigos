@@ -46,7 +46,7 @@ var configs = map[Sizing]SizingConfig{
 			MaxReplicas:                8,
 			RequestCPUm:                500,
 			LimitCPUm:                  1000,
-			RequestMemoryMiB:           500,
+			RequestMemoryMiB:           600,
 			LimitMemoryMiB:             600,
 			MemoryLimiterLimitMiB:      550, // LimitMemoryMiB - 50
 			MemoryLimiterSpikeLimitMiB: 110, // 20% of MemoryLimiterLimitMiB
@@ -68,7 +68,7 @@ var configs = map[Sizing]SizingConfig{
 			MaxReplicas:                12,
 			RequestCPUm:                750,
 			LimitCPUm:                  1250,
-			RequestMemoryMiB:           750,
+			RequestMemoryMiB:           850,
 			LimitMemoryMiB:             850,
 			MemoryLimiterLimitMiB:      800, // LimitMemoryMiB - 50
 			MemoryLimiterSpikeLimitMiB: 160, // 20% of MemoryLimiterLimitMiB
