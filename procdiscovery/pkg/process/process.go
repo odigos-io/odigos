@@ -21,7 +21,21 @@ const (
 const (
 	// https://elixir.bootlin.com/linux/v6.5.5/source/include/uapi/linux/auxvec.h
 	AT_SECURE = 23
+
+	defaultProcDir = "/proc"
 )
+
+var procDir = func() string {
+	dir, ok := os.LookupEnv("ODIGOS_PROC_DIR")
+	if !ok || dir == "" {
+		return defaultProcDir
+	}
+	return dir
+}()
+
+func HostProcDir() string {
+	return procDir
+}
 
 // LangsVersionEnvs is a map of environment variables used for detecting the versions of different languages
 var LangsVersionEnvs = map[string]struct{}{
@@ -97,9 +111,14 @@ func (pcx *ProcessContext) CloseFiles() error {
 	return err
 }
 
+// ProcFilePath constructs the file path for a given process ID and file name in the /proc filesystem.
+func ProcFilePath(pid int, fileName string) string {
+	return fmt.Sprintf("%s/%d/%s", procDir, pid, fileName)
+}
+
 func (pcx *ProcessContext) GetExeFile() (ProcessFile, error) {
 	if pcx.exeFile == nil {
-		path := fmt.Sprintf("/proc/%d/exe", pcx.ProcessID)
+		path := ProcFilePath(pcx.ProcessID, "exe")
 		fileData, err := os.Open(path)
 		if err != nil {
 			return nil, err
@@ -116,7 +135,7 @@ func (pcx *ProcessContext) GetExeFile() (ProcessFile, error) {
 
 func (pcx *ProcessContext) GetMapsFile() (ProcessFile, error) {
 	if pcx.mapsFile == nil {
-		mapsPath := fmt.Sprintf("/proc/%d/maps", pcx.ProcessID)
+		mapsPath := ProcFilePath(pcx.ProcessID, "maps")
 		fileData, err := os.Open(mapsPath)
 		if err != nil {
 			return nil, err
@@ -148,8 +167,8 @@ func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
 
 // Find all processes in the system.
 // The function accepts a predicate function that can be used to filter the results.
-func FindAllProcesses(predicate func(string) bool, runtimeDetectionEnvs map[string]struct{}) ([]Details, error) {
-	dirs, err := os.ReadDir("/proc")
+func FindAllProcesses(predicate func(int) bool, runtimeDetectionEnvs map[string]struct{}) ([]Details, error) {
+	dirs, err := os.ReadDir(procDir)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +188,7 @@ func FindAllProcesses(predicate func(string) bool, runtimeDetectionEnvs map[stri
 
 		// predicate is optional, and can be used to filter the results
 		// plus avoid doing unnecessary work (e.g. reading the command line and exe name)
-		if predicate != nil && !predicate(dirName) {
+		if predicate != nil && !predicate(pid) {
 			continue
 		}
 
@@ -205,7 +224,7 @@ func GetPidDetails(pid int, runtimeDetectionEnvs map[string]struct{}) Details {
 // For instance, if a process was started from /usr/bin/python,
 // the exe symbolic link in that process's /proc directory will point to /usr/bin/python.
 func getExePath(pid int) string {
-	exeFileName := fmt.Sprintf("/proc/%d/exe", pid)
+	exeFileName := ProcFilePath(pid, "exe")
 	exePath, err := os.Readlink(exeFileName)
 	if err != nil {
 		// Read link may fail if target process runs not as root
@@ -217,7 +236,7 @@ func getExePath(pid int) string {
 // reads the command line arguments of a Linux process from
 // the cmdline file in the /proc filesystem and converts them into a string
 func getCommandLine(pid int) string {
-	cmdLineFileName := fmt.Sprintf("/proc/%d/cmdline", pid)
+	cmdLineFileName := ProcFilePath(pid, "cmdline")
 	fileContent, err := os.ReadFile(cmdLineFileName)
 	if err != nil {
 		// Ignore errors
@@ -228,7 +247,7 @@ func getCommandLine(pid int) string {
 }
 
 func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) ProcessEnvs {
-	envFileName := fmt.Sprintf("/proc/%d/environ", pid)
+	envFileName := ProcFilePath(pid, "environ")
 	fileContent, err := os.ReadFile(envFileName)
 	if err != nil {
 		// TODO: if we fail to read the environment variables, we should probably return an error
@@ -282,7 +301,7 @@ func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) Proce
 }
 
 func isSecureExecutionMode(pid int) (bool, error) {
-	path := fmt.Sprintf("/proc/%d/auxv", pid)
+	path := ProcFilePath(pid, "auxv")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return false, fmt.Errorf("failed to read auxv: %w", err)

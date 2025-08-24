@@ -47,6 +47,8 @@ spec:
                 type: object
               destinationName:
                 type: string
+              disabled:
+                type: boolean
               secretRef:
                 description: |-
                   LocalObjectReference contains enough information to let you locate the

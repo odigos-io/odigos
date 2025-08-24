@@ -10,7 +10,7 @@ func GetMemoryLimiterConfig(memorySettings odigosv1.CollectorsGroupResourcesSett
 	// this seems to be a reasonable value for the memory limiter and what the processor uses in docs.
 	// preforming memory checks is expensive, so we trade off performance with fast reaction time to memory pressure.
 	return config.GenericMap{
-		"check_interval":  "1s",
+		"check_interval":  "500ms",
 		"limit_mib":       memorySettings.MemoryLimiterLimitMiB,
 		"spike_limit_mib": memorySettings.MemoryLimiterSpikeLimitMiB,
 	}

@@ -24,11 +24,12 @@ import (
 // AddClusterInfoSpecApplyConfiguration represents a declarative configuration of the AddClusterInfoSpec type for use
 // with apply.
 type AddClusterInfoSpecApplyConfiguration struct {
-	ActionName        *string                                    `json:"actionName,omitempty"`
-	Notes             *string                                    `json:"notes,omitempty"`
-	Disabled          *bool                                      `json:"disabled,omitempty"`
-	Signals           []common.ObservabilitySignal               `json:"signals,omitempty"`
-	ClusterAttributes []OtelAttributeWithValueApplyConfiguration `json:"clusterAttributes,omitempty"`
+	ActionName              *string                                    `json:"actionName,omitempty"`
+	Notes                   *string                                    `json:"notes,omitempty"`
+	Disabled                *bool                                      `json:"disabled,omitempty"`
+	Signals                 []common.ObservabilitySignal               `json:"signals,omitempty"`
+	ClusterAttributes       []OtelAttributeWithValueApplyConfiguration `json:"clusterAttributes,omitempty"`
+	OverwriteExistingValues *bool                                      `json:"overwriteExistingValues,omitempty"`
 }
 
 // AddClusterInfoSpecApplyConfiguration constructs a declarative configuration of the AddClusterInfoSpec type for use with
@@ -81,5 +82,13 @@ func (b *AddClusterInfoSpecApplyConfiguration) WithClusterAttributes(values ...*
 		}
 		b.ClusterAttributes = append(b.ClusterAttributes, *values[i])
 	}
+	return b
+}
+
+// WithOverwriteExistingValues sets the OverwriteExistingValues field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the OverwriteExistingValues field is set to the value of the last call.
+func (b *AddClusterInfoSpecApplyConfiguration) WithOverwriteExistingValues(value bool) *AddClusterInfoSpecApplyConfiguration {
+	b.OverwriteExistingValues = &value
 	return b
 }

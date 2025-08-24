@@ -51,7 +51,6 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
 	odigosConfiguration := common.OdigosConfiguration{}
 	err = yaml.Unmarshal([]byte(odigosConfigMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
 	if err != nil {
@@ -345,16 +344,37 @@ func (r *odigosConfigurationController) applyProfileManifests(ctx context.Contex
 		}
 	}
 
+	ActionsList := odigosv1alpha1.ActionList{}
+	err = r.Client.List(ctx, &ActionsList, listOptions)
+	if err != nil {
+		return err
+	}
+
+	for i := range ActionsList.Items {
+		err = r.Client.Delete(ctx, &ActionsList.Items[i])
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 func (r *odigosConfigurationController) applySingleProfileManifest(ctx context.Context, profileName common.ProfileName, yamlBytes []byte, profileDeploymentHash string) error {
-
 	obj := &unstructured.Unstructured{}
 	err := yaml.Unmarshal(yamlBytes, obj)
 	if err != nil {
 		return err
 	}
+
+	odigosNs := env.GetCurrentNamespace()
+
+	// profiles are read without namespace, and we need to add it ourselves.
+	// the namespace is usually odigos-system, but user can set it to anything,
+	// which is why we need to address it here.
+	// the namespace is set on the object itself, but not in the yamlbytes for the apply,
+	// which is ok and works (the applied object takes the namespace from the object)
+	obj.SetNamespace(odigosNs)
 
 	labels := obj.GetLabels()
 	if labels == nil {
@@ -382,7 +402,7 @@ func (r *odigosConfigurationController) applySingleProfileManifest(ctx context.C
 		Resource: resource,
 	}
 
-	resourceClient := r.DynamicClient.Resource(gvr).Namespace(env.GetCurrentNamespace())
+	resourceClient := r.DynamicClient.Resource(gvr).Namespace(odigosNs)
 	_, err = resourceClient.Apply(ctx, obj.GetName(), obj, metav1.ApplyOptions{
 		FieldManager: "scheduler-odigosconfiguration",
 		Force:        true,
@@ -415,6 +435,8 @@ func resolveMountMethod(odigosConfiguration *common.OdigosConfiguration) {
 	case common.K8sHostPathMountMethod:
 		return
 	case common.K8sVirtualDeviceMountMethod:
+		return
+	case common.K8sInitContainerMountMethod:
 		return
 	default:
 		// any illegal value will be defaulted to host-path

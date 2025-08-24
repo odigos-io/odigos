@@ -1,7 +1,7 @@
 import { useLazyQuery } from '@apollo/client';
 import { useNotificationStore } from '@odigos/ui-kit/store';
 import { DESCRIBE_ODIGOS, DESCRIBE_SOURCE } from '@/graphql';
-import { Crud, StatusType, type DescribeOdigos, type DescribeSource } from '@odigos/ui-kit/types';
+import { Crud, StatusType, type DescribeOdigos, type DescribeSource, type WorkloadId } from '@odigos/ui-kit/types';
 
 export const useDescribe = () => {
   const { addNotification } = useNotificationStore();
@@ -14,7 +14,7 @@ export const useDescribe = () => {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message),
   });
 
-  const [fetchDescribeSource] = useLazyQuery<{ describeSource: DescribeSource }>(DESCRIBE_SOURCE, {
+  const [fetchDescribeSource] = useLazyQuery<{ describeSource: DescribeSource }, WorkloadId>(DESCRIBE_SOURCE, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message),
   });
 

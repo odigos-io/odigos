@@ -73,15 +73,12 @@ metadata:
       name: odiglet
 spec:
   containers:
-    - name: deviceplugin
     - name: odiglet
       resources: {}
       securityContext:
-        capabilities:
-          add:
-            - SYS_PTRACE
         privileged: true
       image: registry.odigos.io/odigos-odiglet:e2e-test
+    - name: deviceplugin
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
   nodeName: kind-control-plane
@@ -114,15 +111,12 @@ metadata:
       name: odiglet
 spec:
   containers:
-    - name: deviceplugin
     - name: odiglet
       resources: {}
       securityContext:
-        capabilities:
-          add:
-            - SYS_PTRACE
         privileged: true
       image: registry.odigos.io/odigos-odiglet:e2e-test
+    - name: deviceplugin
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
   nodeName: kind-worker
@@ -236,7 +230,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    (($values.isHelm == `false` && odigos.io/config == "2") || ($values.isHelm == `true` && odigos.io/config == null)): true
+    (($values.isHelm == `true` && odigos.io/config == null) || ($values.isHelm != `true` && odigos.io/config == "2")): true
     odigos.io/system-object: "true"
   name: destinations.odigos.io
 ---
@@ -244,6 +238,6 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    (($values.isHelm == `false` && odigos.io/config == "2") || ($values.isHelm == `true` && odigos.io/config == null)): true
+    (($values.isHelm == `true` && odigos.io/config == null) || ($values.isHelm != `true` && odigos.io/config == "2")): true
     odigos.io/system-object: "true"
   name: processors.odigos.io

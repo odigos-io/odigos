@@ -61,3 +61,7 @@ func GetContainerConfigByName(containers []odigosv1.ContainerAgentConfig, contai
 	}
 	return nil
 }
+
+func IsContainerInCrashLoopBackOff(containerStatus *v1.ContainerStatus) bool {
+	return containerStatus.State.Waiting != nil && containerStatus.State.Waiting.Reason == "CrashLoopBackOff"
+}

@@ -116,6 +116,54 @@ type CodeAttributesInput struct {
 	Stacktrace *bool `json:"stacktrace,omitempty"`
 }
 
+type CollectorGateway struct {
+	RequestMemoryMiB           *int `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *int `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *int `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *int `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *int `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *int `json:"goMemLimitMiB,omitempty"`
+	MinReplicas                *int `json:"minReplicas,omitempty"`
+	MaxReplicas                *int `json:"maxReplicas,omitempty"`
+}
+
+type CollectorGatewayInput struct {
+	RequestMemoryMiB           *int `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *int `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *int `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *int `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *int `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *int `json:"goMemLimitMiB,omitempty"`
+	MinReplicas                *int `json:"minReplicas,omitempty"`
+	MaxReplicas                *int `json:"maxReplicas,omitempty"`
+}
+
+type CollectorNode struct {
+	CollectorOwnMetricsPort    *int    `json:"collectorOwnMetricsPort,omitempty"`
+	RequestMemoryMiB           *int    `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *int    `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *int    `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *int    `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *int    `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int    `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *int    `json:"goMemLimitMiB,omitempty"`
+	K8sNodeLogsDirectory       *string `json:"k8sNodeLogsDirectory,omitempty"`
+}
+
+type CollectorNodeInput struct {
+	CollectorOwnMetricsPort    *int    `json:"collectorOwnMetricsPort,omitempty"`
+	RequestMemoryMiB           *int    `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *int    `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *int    `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *int    `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *int    `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int    `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *int    `json:"goMemLimitMiB,omitempty"`
+	K8sNodeLogsDirectory       *string `json:"k8sNodeLogsDirectory,omitempty"`
+}
+
 type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
 	APITokens            []*APIToken            `json:"apiTokens"`
@@ -211,10 +259,18 @@ func (this DeleteAttributeAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type DesiredConditionStatus struct {
+	Name       string               `json:"name"`
+	Status     DesiredStateProgress `json:"status"`
+	ReasonEnum *string              `json:"reasonEnum,omitempty"`
+	Message    string               `json:"message"`
+}
+
 type Destination struct {
 	ID              string                        `json:"id"`
 	Type            string                        `json:"type"`
 	Name            string                        `json:"name"`
+	Disabled        bool                          `json:"disabled"`
 	DataStreamNames []*string                     `json:"dataStreamNames"`
 	ExportedSignals *ExportedSignals              `json:"exportedSignals"`
 	Fields          string                        `json:"fields"`
@@ -246,6 +302,7 @@ type DestinationInput struct {
 	CurrentStreamName string                `json:"currentStreamName"`
 	ExportedSignals   *ExportedSignalsInput `json:"exportedSignals"`
 	Fields            []*FieldInput         `json:"fields"`
+	Disabled          *bool                 `json:"disabled,omitempty"`
 }
 
 type DestinationTypesCategoryItem struct {
@@ -263,11 +320,21 @@ type DestinationsCategory struct {
 	Items       []*DestinationTypesCategoryItem `json:"items"`
 }
 
+type DistroParam struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
 type EntityProperty struct {
 	Name    string  `json:"name"`
 	Value   string  `json:"value"`
 	Status  *string `json:"status,omitempty"`
 	Explain *string `json:"explain,omitempty"`
+}
+
+type EnvVar struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type ErrorSamplerAction struct {
@@ -315,9 +382,10 @@ type FieldInput struct {
 }
 
 type GetConfigResponse struct {
-	Installation InstallationStatus `json:"installation"`
-	Tier         Tier               `json:"tier"`
-	Readonly     bool               `json:"readonly"`
+	Readonly           bool               `json:"readonly"`
+	Tier               Tier               `json:"tier"`
+	InstallationMethod string             `json:"installationMethod"`
+	InstallationStatus InstallationStatus `json:"installationStatus"`
 }
 
 type GetDestinationCategories struct {
@@ -348,6 +416,11 @@ type InstrumentationInstanceAnalyze struct {
 	Healthy               *EntityProperty   `json:"healthy"`
 	Message               *EntityProperty   `json:"message,omitempty"`
 	IdentifyingAttributes []*EntityProperty `json:"identifyingAttributes"`
+}
+
+type InstrumentationInstanceComponent struct {
+	Name                     string                     `json:"name"`
+	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
 }
 
 type InstrumentationLibraryGlobalID struct {
@@ -487,6 +560,158 @@ type K8sSourceID struct {
 	Name      string          `json:"name"`
 }
 
+type K8sWorkload struct {
+	ID                         *K8sWorkloadID                       `json:"id"`
+	ServiceName                *string                              `json:"serviceName,omitempty"`
+	WorkloadOdigosHealthStatus *DesiredConditionStatus              `json:"workloadOdigosHealthStatus"`
+	Conditions                 *K8sWorkloadConditions               `json:"conditions"`
+	MarkedForInstrumentation   *K8sWorkloadMarkedForInstrumentation `json:"markedForInstrumentation"`
+	RuntimeInfo                *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
+	AgentEnabled               *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
+	Rollout                    *K8sWorkloadRollout                  `json:"rollout,omitempty"`
+	Containers                 []*K8sWorkloadContainer              `json:"containers,omitempty"`
+	Pods                       []*K8sWorkloadPod                    `json:"pods,omitempty"`
+	PodsAgentInjectionStatus   *DesiredConditionStatus              `json:"podsAgentInjectionStatus"`
+	PodsHealthStatus           *DesiredConditionStatus              `json:"podsHealthStatus"`
+	WorkloadHealthStatus       *DesiredConditionStatus              `json:"workloadHealthStatus"`
+	ProcessesHealthStatus      *DesiredConditionStatus              `json:"processesHealthStatus"`
+	TelemetryMetrics           []*K8sWorkloadTelemetryMetrics       `json:"telemetryMetrics"`
+}
+
+type K8sWorkloadAgentEnabled struct {
+	AgentEnabled  bool                                `json:"agentEnabled"`
+	EnabledStatus *DesiredConditionStatus             `json:"enabledStatus"`
+	Containers    []*K8sWorkloadAgentEnabledContainer `json:"containers,omitempty"`
+}
+
+type K8sWorkloadAgentEnabledContainer struct {
+	ContainerName      string                                   `json:"containerName"`
+	AgentEnabled       bool                                     `json:"agentEnabled"`
+	AgentEnabledStatus *DesiredConditionStatus                  `json:"agentEnabledStatus"`
+	OtelDistroName     *string                                  `json:"otelDistroName,omitempty"`
+	EnvInjectionMethod *string                                  `json:"envInjectionMethod,omitempty"`
+	DistroParams       []*DistroParam                           `json:"distroParams,omitempty"`
+	Traces             *K8sWorkloadAgentEnabledContainerTraces  `json:"traces,omitempty"`
+	Metrics            *K8sWorkloadAgentEnabledContainerMetrics `json:"metrics,omitempty"`
+	Logs               *K8sWorkloadAgentEnabledContainerLogs    `json:"logs,omitempty"`
+}
+
+type K8sWorkloadAgentEnabledContainerLogs struct {
+	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadAgentEnabledContainerMetrics struct {
+	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadAgentEnabledContainerTraces struct {
+	Enabled bool `json:"enabled"`
+}
+
+type K8sWorkloadConditions struct {
+	RuntimeDetection      *DesiredConditionStatus `json:"runtimeDetection,omitempty"`
+	AgentInjectionEnabled *DesiredConditionStatus `json:"agentInjectionEnabled,omitempty"`
+	Rollout               *DesiredConditionStatus `json:"rollout,omitempty"`
+	AgentInjected         *DesiredConditionStatus `json:"agentInjected,omitempty"`
+	ProcessesAgentHealth  *DesiredConditionStatus `json:"processesAgentHealth,omitempty"`
+	ExpectingTelemetry    *DesiredConditionStatus `json:"expectingTelemetry,omitempty"`
+}
+
+type K8sWorkloadContainer struct {
+	ContainerName string                            `json:"containerName"`
+	RuntimeInfo   *K8sWorkloadRuntimeInfoContainer  `json:"runtimeInfo,omitempty"`
+	AgentEnabled  *K8sWorkloadAgentEnabledContainer `json:"agentEnabled,omitempty"`
+	Overrides     *K8sWorkloadContainerOverrides    `json:"overrides,omitempty"`
+}
+
+type K8sWorkloadContainerOverrides struct {
+	ContainerName string                           `json:"containerName"`
+	RuntimeInfo   *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
+}
+
+type K8sWorkloadID struct {
+	Namespace string          `json:"namespace"`
+	Kind      K8sResourceKind `json:"kind"`
+	Name      string          `json:"name"`
+}
+
+type K8sWorkloadMarkedForInstrumentation struct {
+	MarkedForInstrumentation *bool  `json:"markedForInstrumentation,omitempty"`
+	DecisionEnum             string `json:"decisionEnum"`
+	Message                  string `json:"message"`
+}
+
+type K8sWorkloadPod struct {
+	PodName                       string                     `json:"podName"`
+	NodeName                      string                     `json:"nodeName"`
+	StartTime                     string                     `json:"startTime"`
+	AgentInjected                 bool                       `json:"agentInjected"`
+	AgentInjectedStatus           *DesiredConditionStatus    `json:"agentInjectedStatus"`
+	RunningLatestWorkloadRevision *string                    `json:"runningLatestWorkloadRevision,omitempty"`
+	PodHealthStatus               *DesiredConditionStatus    `json:"podHealthStatus"`
+	Containers                    []*K8sWorkloadPodContainer `json:"containers"`
+}
+
+type K8sWorkloadPodContainer struct {
+	ContainerName                   string                            `json:"containerName"`
+	OdigosInstrumentationDeviceName *string                           `json:"odigosInstrumentationDeviceName,omitempty"`
+	OtelDistroName                  *string                           `json:"otelDistroName,omitempty"`
+	Started                         *bool                             `json:"started,omitempty"`
+	Ready                           *bool                             `json:"ready,omitempty"`
+	IsCrashLoop                     *bool                             `json:"isCrashLoop,omitempty"`
+	RestartCount                    *int                              `json:"restartCount,omitempty"`
+	RunningStartedTime              *string                           `json:"runningStartedTime,omitempty"`
+	WaitingReasonEnum               *string                           `json:"waitingReasonEnum,omitempty"`
+	WaitingMessage                  *string                           `json:"waitingMessage,omitempty"`
+	HealthStatus                    *DesiredConditionStatus           `json:"healthStatus"`
+	Processes                       []*K8sWorkloadPodContainerProcess `json:"processes"`
+}
+
+type K8sWorkloadPodContainerProcess struct {
+	Healthy               *bool                                      `json:"healthy,omitempty"`
+	HealthStatus          *DesiredConditionStatus                    `json:"healthStatus"`
+	IdentifyingAttributes []*K8sWorkloadPodContainerProcessAttribute `json:"identifyingAttributes"`
+}
+
+type K8sWorkloadPodContainerProcessAttribute struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type K8sWorkloadRollout struct {
+	RolloutStatus *DesiredConditionStatus `json:"rolloutStatus"`
+}
+
+type K8sWorkloadRuntimeInfo struct {
+	Completed         bool                               `json:"completed"`
+	CompletedStatus   *DesiredConditionStatus            `json:"completedStatus"`
+	DetectedLanguages []ProgrammingLanguage              `json:"detectedLanguages,omitempty"`
+	Containers        []*K8sWorkloadRuntimeInfoContainer `json:"containers,omitempty"`
+}
+
+type K8sWorkloadRuntimeInfoContainer struct {
+	ContainerName           string              `json:"containerName"`
+	Language                ProgrammingLanguage `json:"language"`
+	RuntimeVersion          *string             `json:"runtimeVersion,omitempty"`
+	ProcessEnvVars          []*EnvVar           `json:"processEnvVars"`
+	ContainerRuntimeEnvVars []*EnvVar           `json:"containerRuntimeEnvVars,omitempty"`
+	CriErrorMessage         *string             `json:"criErrorMessage,omitempty"`
+	LibcType                *string             `json:"libcType,omitempty"`
+	SecureExecutionMode     *bool               `json:"secureExecutionMode,omitempty"`
+	OtherAgentName          *string             `json:"otherAgentName,omitempty"`
+}
+
+type K8sWorkloadTelemetryMetrics struct {
+	TotalDataSentBytes *int                                                 `json:"totalDataSentBytes,omitempty"`
+	ThroughputBytes    *int                                                 `json:"throughputBytes,omitempty"`
+	ExpectingTelemetry *K8sWorkloadTelemetryMetricsExpectingTelemetryStatus `json:"expectingTelemetry"`
+}
+
+type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
+	IsExpectingTelemetry    *bool                   `json:"isExpectingTelemetry,omitempty"`
+	TelemetryObservedStatus *DesiredConditionStatus `json:"telemetryObservedStatus"`
+}
+
 type LatencySamplerAction struct {
 	ID      string       `json:"id"`
 	Type    string       `json:"type"`
@@ -540,6 +765,11 @@ type NodeCollectorAnalyze struct {
 	AvailableNodes *EntityProperty `json:"availableNodes,omitempty"`
 }
 
+type NonIdentifyingAttribute struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type NumberCondition struct {
 	Operation     NumberOperation `json:"operation"`
 	ExpectedValue float64         `json:"expectedValue"`
@@ -560,6 +790,66 @@ type OdigosAnalyze struct {
 	NodeCollector        *NodeCollectorAnalyze    `json:"nodeCollector"`
 	IsSettled            bool                     `json:"isSettled"`
 	HasErrors            bool                     `json:"hasErrors"`
+}
+
+type OdigosConfiguration struct {
+	KarpenterEnabled                 *bool                 `json:"karpenterEnabled,omitempty"`
+	AllowConcurrentAgents            *bool                 `json:"allowConcurrentAgents,omitempty"`
+	UIPaginationLimit                *int                  `json:"uiPaginationLimit,omitempty"`
+	CentralBackendURL                *string               `json:"centralBackendURL,omitempty"`
+	Oidc                             *OidcConfiguration    `json:"oidc,omitempty"`
+	ClusterName                      *string               `json:"clusterName,omitempty"`
+	ImagePrefix                      *string               `json:"imagePrefix,omitempty"`
+	IgnoredNamespaces                []*string             `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers                []*string             `json:"ignoredContainers,omitempty"`
+	Profiles                         []*string             `json:"profiles,omitempty"`
+	MountMethod                      *string               `json:"mountMethod,omitempty"`
+	AgentEnvVarsInjectionMethod      *string               `json:"agentEnvVarsInjectionMethod,omitempty"`
+	CustomContainerRuntimeSocketPath *string               `json:"customContainerRuntimeSocketPath,omitempty"`
+	OdigletHealthProbeBindPort       *int                  `json:"odigletHealthProbeBindPort,omitempty"`
+	RollbackDisabled                 *bool                 `json:"rollbackDisabled,omitempty"`
+	RollbackGraceTime                *string               `json:"rollbackGraceTime,omitempty"`
+	RollbackStabilityWindow          *string               `json:"rollbackStabilityWindow,omitempty"`
+	Rollout                          *RolloutConfiguration `json:"rollout,omitempty"`
+	CollectorNode                    *CollectorNode        `json:"collectorNode,omitempty"`
+	CollectorGateway                 *CollectorGateway     `json:"collectorGateway,omitempty"`
+	NodeSelector                     *string               `json:"nodeSelector,omitempty"`
+}
+
+type OdigosConfigurationInput struct {
+	KarpenterEnabled                 *bool                      `json:"karpenterEnabled,omitempty"`
+	AllowConcurrentAgents            *bool                      `json:"allowConcurrentAgents,omitempty"`
+	UIPaginationLimit                *int                       `json:"uiPaginationLimit,omitempty"`
+	CentralBackendURL                *string                    `json:"centralBackendURL,omitempty"`
+	Oidc                             *OidcConfigurationInput    `json:"oidc,omitempty"`
+	ClusterName                      *string                    `json:"clusterName,omitempty"`
+	ImagePrefix                      *string                    `json:"imagePrefix,omitempty"`
+	IgnoredNamespaces                []*string                  `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers                []*string                  `json:"ignoredContainers,omitempty"`
+	Profiles                         []*string                  `json:"profiles,omitempty"`
+	MountMethod                      *string                    `json:"mountMethod,omitempty"`
+	AgentEnvVarsInjectionMethod      *string                    `json:"agentEnvVarsInjectionMethod,omitempty"`
+	CustomContainerRuntimeSocketPath *string                    `json:"customContainerRuntimeSocketPath,omitempty"`
+	OdigletHealthProbeBindPort       *int                       `json:"odigletHealthProbeBindPort,omitempty"`
+	RollbackDisabled                 *bool                      `json:"rollbackDisabled,omitempty"`
+	RollbackGraceTime                *string                    `json:"rollbackGraceTime,omitempty"`
+	RollbackStabilityWindow          *string                    `json:"rollbackStabilityWindow,omitempty"`
+	Rollout                          *RolloutConfigurationInput `json:"rollout,omitempty"`
+	CollectorNode                    *CollectorNodeInput        `json:"collectorNode,omitempty"`
+	CollectorGateway                 *CollectorGatewayInput     `json:"collectorGateway,omitempty"`
+	NodeSelector                     *string                    `json:"nodeSelector,omitempty"`
+}
+
+type OidcConfiguration struct {
+	TenantURL    *string `json:"tenantUrl,omitempty"`
+	ClientID     *string `json:"clientId,omitempty"`
+	ClientSecret *string `json:"clientSecret,omitempty"`
+}
+
+type OidcConfigurationInput struct {
+	TenantURL    *string `json:"tenantUrl,omitempty"`
+	ClientID     *string `json:"clientId,omitempty"`
+	ClientSecret *string `json:"clientSecret,omitempty"`
 }
 
 type OtelAgentsAnalyze struct {
@@ -744,6 +1034,14 @@ func (this RenameAttributeAction) GetSignals() []SignalType {
 	return interfaceSlice
 }
 
+type RolloutConfiguration struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+}
+
+type RolloutConfigurationInput struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+}
+
 type RuntimeInfoAnalyze struct {
 	Generation *EntityProperty                `json:"generation"`
 	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
@@ -886,6 +1184,13 @@ type TestConnectionResponse struct {
 	Reason          *string `json:"reason,omitempty"`
 }
 
+type WorkloadFilter struct {
+	Namespace                *string          `json:"namespace,omitempty"`
+	Kind                     *K8sResourceKind `json:"kind,omitempty"`
+	Name                     *string          `json:"name,omitempty"`
+	MarkedForInstrumentation *bool            `json:"markedForInstrumentation,omitempty"`
+}
+
 type BooleanOperation string
 
 const (
@@ -1010,6 +1315,63 @@ func (e *ConditionStatus) UnmarshalGQL(v any) error {
 }
 
 func (e ConditionStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type DesiredStateProgress string
+
+const (
+	DesiredStateProgressError       DesiredStateProgress = "Error"
+	DesiredStateProgressFailure     DesiredStateProgress = "Failure"
+	DesiredStateProgressNotice      DesiredStateProgress = "Notice"
+	DesiredStateProgressPending     DesiredStateProgress = "Pending"
+	DesiredStateProgressWaiting     DesiredStateProgress = "Waiting"
+	DesiredStateProgressUnsupported DesiredStateProgress = "Unsupported"
+	DesiredStateProgressDisabled    DesiredStateProgress = "Disabled"
+	DesiredStateProgressSuccess     DesiredStateProgress = "Success"
+	DesiredStateProgressIrrelevant  DesiredStateProgress = "Irrelevant"
+	DesiredStateProgressUnknown     DesiredStateProgress = "Unknown"
+)
+
+var AllDesiredStateProgress = []DesiredStateProgress{
+	DesiredStateProgressError,
+	DesiredStateProgressFailure,
+	DesiredStateProgressNotice,
+	DesiredStateProgressPending,
+	DesiredStateProgressWaiting,
+	DesiredStateProgressUnsupported,
+	DesiredStateProgressDisabled,
+	DesiredStateProgressSuccess,
+	DesiredStateProgressIrrelevant,
+	DesiredStateProgressUnknown,
+}
+
+func (e DesiredStateProgress) IsValid() bool {
+	switch e {
+	case DesiredStateProgressError, DesiredStateProgressFailure, DesiredStateProgressNotice, DesiredStateProgressPending, DesiredStateProgressWaiting, DesiredStateProgressUnsupported, DesiredStateProgressDisabled, DesiredStateProgressSuccess, DesiredStateProgressIrrelevant, DesiredStateProgressUnknown:
+		return true
+	}
+	return false
+}
+
+func (e DesiredStateProgress) String() string {
+	return string(e)
+}
+
+func (e *DesiredStateProgress) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DesiredStateProgress(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DesiredStateProgress", str)
+	}
+	return nil
+}
+
+func (e DesiredStateProgress) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

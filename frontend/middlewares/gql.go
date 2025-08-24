@@ -32,6 +32,7 @@ func (o *operationInterceptor) InterceptOperation(ctx context.Context, next grap
 				return graphql.ErrorResponse(ctx, "%s", services.ErrorIsReadonly.Error())
 			}
 		}
+		// Note: CSRF validation is handled by the Gin middleware before reaching GraphQL
 	}
 
 	return next(ctx)

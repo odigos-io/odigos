@@ -25,6 +25,11 @@ const (
 	InstrumentationInstancesHealth = "InstrumentationInstancesHealth"
 )
 
+const (
+	// label key set on each instrumentation instance to associate it with the pod it is running in.
+	OwnerPodNameLabel = "ownerPodName"
+)
+
 type InstrumentationInstanceSpec struct {
 	// +required
 	// stores the name of the container in the pod where the SDK is running.

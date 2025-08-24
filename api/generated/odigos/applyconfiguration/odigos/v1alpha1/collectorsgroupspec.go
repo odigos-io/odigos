@@ -29,7 +29,9 @@ type CollectorsGroupSpecApplyConfiguration struct {
 	K8sNodeLogsDirectory    *string                                             `json:"k8sNodeLogsDirectory,omitempty"`
 	ResourcesSettings       *CollectorsGroupResourcesSettingsApplyConfiguration `json:"resourcesSettings,omitempty"`
 	ServiceGraphDisabled    *bool                                               `json:"serviceGraphDisabled,omitempty"`
+	EnableDataCompression   *bool                                               `json:"enableDataCompression,omitempty"`
 	ClusterMetricsEnabled   *bool                                               `json:"clusterMetricsEnabled,omitempty"`
+	HttpsProxyAddress       *string                                             `json:"httpsProxyAddress,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -78,10 +80,26 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithServiceGraphDisabled(value b
 	return b
 }
 
+// WithEnableDataCompression sets the EnableDataCompression field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EnableDataCompression field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithEnableDataCompression(value bool) *CollectorsGroupSpecApplyConfiguration {
+	b.EnableDataCompression = &value
+	return b
+}
+
 // WithClusterMetricsEnabled sets the ClusterMetricsEnabled field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ClusterMetricsEnabled field is set to the value of the last call.
 func (b *CollectorsGroupSpecApplyConfiguration) WithClusterMetricsEnabled(value bool) *CollectorsGroupSpecApplyConfiguration {
 	b.ClusterMetricsEnabled = &value
+	return b
+}
+
+// WithHttpsProxyAddress sets the HttpsProxyAddress field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HttpsProxyAddress field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithHttpsProxyAddress(value string) *CollectorsGroupSpecApplyConfiguration {
+	b.HttpsProxyAddress = &value
 	return b
 }
