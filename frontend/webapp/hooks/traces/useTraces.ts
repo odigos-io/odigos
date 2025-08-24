@@ -9,6 +9,9 @@ interface UseTracesParams {
   serviceName?: string;
 }
 
+const DEFAULT_LIMIT = 100;
+const DEFAULT_HOURS_AGO = 24;
+
 export const useTraces = ({ serviceName }: UseTracesParams) => {
   const [traces, setTraces] = useState<Trace[]>([]);
 
@@ -16,7 +19,7 @@ export const useTraces = ({ serviceName }: UseTracesParams) => {
   const { addNotification } = useNotificationStore();
 
   const { data } = useQuery<{ getTraces: Trace[] }>(GET_TRACES, {
-    variables: { serviceName, limit: 100, hoursAgo: 24 },
+    variables: { serviceName, limit: DEFAULT_LIMIT, hoursAgo: DEFAULT_HOURS_AGO },
     skip: !serviceName,
     onError: (error) =>
       addNotification({
@@ -39,7 +42,7 @@ export const useTraces = ({ serviceName }: UseTracesParams) => {
     if (!serviceName && sources.length > 0) {
       // If there is no service name, we should fetch traces for all sources
       sources.forEach(({ serviceName, name }) => {
-        fetchTraces({ variables: { serviceName: serviceName || name } }).then(({ data }) => {
+        fetchTraces({ variables: { serviceName: serviceName || name, limit: DEFAULT_LIMIT, hoursAgo: DEFAULT_HOURS_AGO } }).then(({ data }) => {
           setTraces((prev) => {
             const newTraces = data?.getTraces?.filter((currTrace) => currTrace.spans.length > 0 && !prev.find((prevTrace) => prevTrace.traceID === currTrace.traceID)) ?? [];
             const arr = [...prev, ...newTraces];
