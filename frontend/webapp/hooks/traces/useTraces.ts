@@ -9,6 +9,12 @@ interface UseTracesParams {
   serviceName?: string;
 }
 
+interface GetTracesVariables {
+  serviceName: string;
+  limit?: number;
+  hoursAgo?: number;
+}
+
 const DEFAULT_LIMIT = 100;
 const DEFAULT_HOURS_AGO = 24;
 
@@ -18,8 +24,8 @@ export const useTraces = ({ serviceName }: UseTracesParams) => {
   const { sources } = useEntityStore();
   const { addNotification } = useNotificationStore();
 
-  const { data } = useQuery<{ getTraces: Trace[] }>(GET_TRACES, {
-    variables: { serviceName, limit: DEFAULT_LIMIT, hoursAgo: DEFAULT_HOURS_AGO },
+  const { data } = useQuery<{ getTraces: Trace[] }, GetTracesVariables>(GET_TRACES, {
+    variables: { serviceName: serviceName || '', limit: DEFAULT_LIMIT, hoursAgo: DEFAULT_HOURS_AGO },
     skip: !serviceName,
     onError: (error) =>
       addNotification({
@@ -29,7 +35,7 @@ export const useTraces = ({ serviceName }: UseTracesParams) => {
       }),
   });
 
-  const [fetchTraces] = useLazyQuery<{ getTraces: Trace[] }>(GET_TRACES, {
+  const [fetchTraces] = useLazyQuery<{ getTraces: Trace[] }, GetTracesVariables>(GET_TRACES, {
     onError: (error) =>
       addNotification({
         type: StatusType.Error,
