@@ -53,6 +53,7 @@ var availableConfigers = []Configer{
 	&NewRelic{},
 	&Nop{},
 	&Observe{},
+	&Odigos{},
 	&OneUptime{},
 	&OpenObserve{},
 	&OpsVerse{},

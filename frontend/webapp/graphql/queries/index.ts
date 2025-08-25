@@ -9,3 +9,4 @@ export * from './namespaces';
 export * from './service-map';
 export * from './source';
 export * from './tokens';
+export * from './traces';

@@ -1,8 +1,8 @@
 ---
 title: "Adding New Observability Destination"
 description: "There are tens if not hundreds of different observability destinations. Odigos's goal is to provide a seamless and easy way to ship observability data to any one of them."
-sidebarTitle: 'Add Destinations'
-icon: 'signal-stream'
+sidebarTitle: "Add Destinations"
+icon: "signal-stream"
 ---
 
 In this guide, you will learn how to contribute a new destination to Odigos. We will create a new dummy destination called `mydest`.
@@ -33,6 +33,7 @@ For our new destination to be visible in the UI, we need to define the destinati
       </g>
     </svg>
     ```
+
   </Step>
   <Step title="Add Destination Metadata">
     Go to [`destinations/data/`](https://github.com/odigos-io/odigos/tree/main/destinations/data) directory and create a new YAML file.
@@ -107,6 +108,7 @@ For our new destination to be visible in the UI, we need to define the destinati
             required: true
           secret: true
     ```
+
   </Step>
 </Steps>
 
@@ -118,6 +120,14 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
   <Step title="Add Destination Type">
     Go to [`common/dests.go`](https://github.com/odigos-io/odigos/tree/main/common/dests.go) and add your new destination to the `DestinationType` enum.
     - Make sure the value is the same as the `type` property in `mydest.yaml`
+    - Example: `&MyDest{}`
+
+    ```go common/dests.go
+    const (
+      MyDestDestinationType           DestinationType = "mydest"
+    )
+    ```
+
   </Step>
   <Step title="Add Collector Config">
     Go to [`common/config`](https://github.com/odigos-io/odigos/tree/main/common/config) directory and create a new GO file.
@@ -217,6 +227,7 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
       return pipelineNames, nil
     }
     ```
+
   </Step>
   <Step title="Add Available Config">
     Go to [`common/config/root.go`](https://github.com/odigos-io/odigos/tree/main/common/config/root.go) and add the new destination to the `availableConfigers` list.
@@ -228,6 +239,7 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
       /* List of existing destinations...  */
     }
     ```
+
   </Step>
 </Steps>
 
@@ -245,6 +257,7 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
     # OR
     python3 sync-dest-doc.py
     ```
+
   </Step>
   <Step title="Edit Documentation">
     The documentation has been generated in the [`docs/backends`](https://github.com/odigos-io/odigos/tree/main/docs/backends) directory. Feel free to add any additional content to the generated file.
@@ -268,9 +281,7 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
         !! END CUSTOM EDIT !!
     */}
     ```
-  </Step>
-  <Step title="Update README.md">
-    Go to [`README.md`](https://github.com/odigos-io/odigos/tree/main/README.md) and add your new destination to the list of destinations.
+
   </Step>
 </Steps>
 

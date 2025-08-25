@@ -48,6 +48,7 @@ const (
 	NewRelicDestinationType               DestinationType = "newrelic"
 	NopDestinationType                    DestinationType = "nop"
 	ObserveDestinationType                DestinationType = "observe"
+	OdigosDestinationType                 DestinationType = "odigos"
 	OneUptimeDestinationType              DestinationType = "oneuptime"
 	OpenObserveDestinationType            DestinationType = "openobserve"
 	OpsVerseDestinationType               DestinationType = "opsverse"

@@ -573,7 +573,7 @@ type K8sWorkload struct {
 	Pods                       []*K8sWorkloadPod                    `json:"pods,omitempty"`
 	PodsAgentInjectionStatus   *DesiredConditionStatus              `json:"podsAgentInjectionStatus"`
 	PodsHealthStatus           *DesiredConditionStatus              `json:"podsHealthStatus"`
-	WorkloadHealthStatus       *DesiredConditionStatus              `json:"workloadHealthStatus"`
+	WorkloadHealthStatus       *DesiredConditionStatus              `json:"workloadHealthStatus,omitempty"`
 	ProcessesHealthStatus      *DesiredConditionStatus              `json:"processesHealthStatus"`
 	TelemetryMetrics           []*K8sWorkloadTelemetryMetrics       `json:"telemetryMetrics"`
 }
@@ -1182,6 +1182,48 @@ type TestConnectionResponse struct {
 	DestinationType *string `json:"destinationType,omitempty"`
 	Message         *string `json:"message,omitempty"`
 	Reason          *string `json:"reason,omitempty"`
+}
+
+type Trace struct {
+	TraceID   string          `json:"traceID"`
+	Spans     []*TraceSpan    `json:"spans"`
+	Processes []*TraceProcess `json:"processes"`
+	Warnings  string          `json:"warnings"`
+}
+
+type TraceLog struct {
+	Timestamp int         `json:"timestamp"`
+	Fields    []*TraceTag `json:"fields"`
+}
+
+type TraceProcess struct {
+	ServiceName string      `json:"serviceName"`
+	Tags        []*TraceTag `json:"tags"`
+}
+
+type TraceReference struct {
+	RefType string `json:"refType"`
+	TraceID string `json:"traceID"`
+	SpanID  string `json:"spanID"`
+}
+
+type TraceSpan struct {
+	TraceID       string            `json:"traceID"`
+	SpanID        string            `json:"spanID"`
+	OperationName string            `json:"operationName"`
+	References    []*TraceReference `json:"references"`
+	StartTime     int               `json:"startTime"`
+	Duration      int               `json:"duration"`
+	Tags          []*TraceTag       `json:"tags"`
+	Logs          []*TraceLog       `json:"logs"`
+	ProcessID     string            `json:"processID"`
+	Warnings      string            `json:"warnings"`
+}
+
+type TraceTag struct {
+	Key   string `json:"key"`
+	Type  string `json:"type"`
+	Value string `json:"value"`
 }
 
 type WorkloadFilter struct {

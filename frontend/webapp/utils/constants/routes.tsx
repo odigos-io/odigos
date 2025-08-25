@@ -10,6 +10,7 @@ export const ROUTES = {
   ACTIONS: '/actions',
   INSTRUMENTATION_RULES: '/instrumentation-rules',
   SERVICE_MAP: '/service-map',
+  TRACE_VIEW: '/trace-view',
 };
 
 export const SKIP_TO_SUMMERY_QUERY_PARAM = 'skipToSummary';

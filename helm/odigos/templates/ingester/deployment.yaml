@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-ingester
+    odigos.io/system-object: "true"
+  name: odigos-ingester
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: odigos-ingester
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: ingester
+      labels:
+        app: odigos-ingester
+    spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: odigos-ingester
+        {{- end }}
+      {{- end }}
+      containers:
+      - name: ingester
+        {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+        image: "jaegertracing/jaeger:2.1.0"
+        ports:
+          - containerPort: 4317
+            name: otlp
+          - containerPort: 16686
+            name: api
+        securityContext:
+          allowPrivilegeEscalation: false
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: odigos-ingester
+      terminationGracePeriodSeconds: 10
+{{- with .Values.ingester }}
+  {{- if .nodeSelector }}
+      nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}
+  {{- end }}
+  {{- if .tolerations }}
+      tolerations: {{ toYaml .tolerations | nindent 8 }}
+  {{- end }}
+  {{- if .affinity }}
+      affinity: {{ toYaml .affinity | nindent 8 }}
+  {{- end }}
+{{- end }}
