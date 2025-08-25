@@ -71,10 +71,6 @@ func NewIngesterDeployment(ns string, version string, imagePrefix string, imageN
 									ContainerPort: consts.OTLPPort,
 								},
 								{
-									Name:          "otlphttp",
-									ContainerPort: consts.OTLPHttpPort,
-								},
-								{
 									Name:          "api",
 									ContainerPort: k8sconsts.IngesterApiPort,
 								},
@@ -128,10 +124,6 @@ func NewIngesterService(ns string) *corev1.Service {
 				{
 					Name: "otlp",
 					Port: consts.OTLPPort,
-				},
-				{
-					Name: "otlphttp",
-					Port: consts.OTLPHttpPort,
 				},
 				{
 					Name: "api",

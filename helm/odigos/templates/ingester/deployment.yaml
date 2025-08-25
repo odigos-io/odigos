@@ -40,8 +40,6 @@ spec:
         ports:
           - containerPort: 4317
             name: otlp
-          - containerPort: 4318
-            name: otlphttp
           - containerPort: 16686
             name: api
         securityContext:
