@@ -89,14 +89,7 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	modifyConfigWithEffectiveProfiles(effectiveProfiles, &odigosConfiguration)
 	odigosConfiguration.Profiles = effectiveProfiles
 
-	// if none of the sizing configuration is set, use size_m as default, so the values are never nil
-	// if the values were already set (by user or config) this is a no-op
-	helmInstallation := false
-	if val, ok := odigosConfigMap.Labels[k8sconsts.AppManagedByHelmLabel]; ok && val == k8sconsts.AppManagedByHelmValue {
-		helmInstallation = true
-	}
-
-	sizing.ModifySizingConfig(&odigosConfiguration, helmInstallation)
+	sizing.ModifyResourceSizePreset(&odigosConfiguration)
 
 	// TODO: revisit doing this here, might be nicer to maintain in a more generic way
 	// and have it on the config object itself.

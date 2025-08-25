@@ -1,4 +1,4 @@
-{{- /* ensure sizingConfig is valid early */ -}}
+{{- /* ensure ResourceSizePreset is valid early */ -}}
 {{- include "collector.validateSizing" . -}}
 
 apiVersion: v1
@@ -125,8 +125,8 @@ data:
     {{- if .Values.instrumentor.checkDeviceHealthBeforeInjection }}
     checkDeviceHealthBeforeInjection: {{ .Values.instrumentor.checkDeviceHealthBeforeInjection }}
     {{- end }}
-    {{- if .Values.sizingConfig }}
-    sizingConfig: {{ .Values.sizingConfig }}
+    {{- if .Values.ResourceSizePreset }}
+    ResourceSizePreset: {{ .Values.ResourceSizePreset }}
     {{- end }}
     {{- $envMethod := .Values.instrumentor.agentEnvVarsInjectionMethod }}
     {{- if and $envMethod (not (has $envMethod (list "loader" "pod-manifest" "loader-fallback-to-pod-manifest"))) }}

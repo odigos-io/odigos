@@ -65,7 +65,7 @@ var configCmd = &cobra.Command{
 	- "%s": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
 	- "%s": List of allowed domains for test connection endpoints (e.g., "https://api.honeycomb.io", "https://otel.example.com"). Use "*" to allow all domains. Empty list allows all domains for backward compatibility.
 	- "%s": Enable or disable data compression before sending data to the Gateway collector. [default: false],
-	- "%s": Set the sizing configuration for the Odigos components. [default: size_m]
+	- "%s": Set the sizing configuration for the Odigos components (size_s, size_m [default], size_l).
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -100,7 +100,7 @@ var configCmd = &cobra.Command{
 		consts.ClickhouseJsonTypeEnabledProperty,
 		consts.AllowedTestConnectionHostsProperty,
 		consts.EnableDataCompressionProperty,
-		consts.SizingConfigProperty,
+		consts.ResourceSizePresetProperty,
 	),
 }
 
@@ -209,7 +209,7 @@ func validatePropertyValue(property string, value []string) error {
 		consts.ServiceGraphDisabledProperty,
 		consts.ClickhouseJsonTypeEnabledProperty,
 		consts.EnableDataCompressionProperty,
-		consts.SizingConfigProperty:
+		consts.ResourceSizePresetProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -457,11 +457,11 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 	case consts.AllowedTestConnectionHostsProperty:
 		config.AllowedTestConnectionHosts = value
 
-	case consts.SizingConfigProperty:
+	case consts.ResourceSizePresetProperty:
 		if !sizing.IsValidSizing(value[0]) {
 			return fmt.Errorf("invalid sizing config: %s (valid values: %s, %s, %s)", value[0], sizing.SizeSmall, sizing.SizeMedium, sizing.SizeLarge)
 		}
-		config.SizingConfig = value[0]
+		config.ResourceSizePreset = value[0]
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)

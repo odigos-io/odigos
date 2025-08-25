@@ -101,7 +101,7 @@ const (
 	ClickhouseJsonTypeEnabledProperty  = "clickhouse-json-type-enabled"
 	AllowedTestConnectionHostsProperty = "allowed-test-connection-hosts"
 	EnableDataCompressionProperty      = "enable-data-compression"
-	SizingConfigProperty               = "sizing-config"
+	ResourceSizePresetProperty         = "resource-size-preset"
 )
 
 var (

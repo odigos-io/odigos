@@ -97,7 +97,7 @@ true
 {{- end }}
 
 {{- define "odigos.odiglet.sizing.resources" -}}
-{{- $s := default "size_m" .Values.sizingConfig -}}
+{{- $s := default "size_m" .Values.ResourceSizePreset -}}
 {{- $sizes := dict
   "size_s" (dict "cpu" "150m" "memory" "300Mi")
   "size_m" (dict "cpu" "500m" "memory" "500Mi")
