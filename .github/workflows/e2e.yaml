@@ -121,7 +121,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: odigos-images
-        timeout-minutes: 5
+        timeout-minutes: 10
 
       - name: Load Odigos Images to Kind Cluster
         run: |
