@@ -40,7 +40,7 @@ test-odigossamplingprocessor:
 
 .PHONY: build-odigoscol
 build-odigoscol: download_builder test-odigossamplingprocessor
-	$(BUILDER) --config builder-config.yaml --skip-generate --skip-get-modules
+	$(BUILDER) --ldflags="-checklinkname=0" --config builder-config.yaml --skip-generate --skip-get-modules
 
 .PHONY: install-tools
 install-tools:
