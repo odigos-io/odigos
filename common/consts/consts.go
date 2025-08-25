@@ -98,6 +98,7 @@ const (
 	OdigletHealthProbeBindPortProperty = "odiglet-health-probe-bind-port"
 	ServiceGraphDisabledProperty       = "service-graph-disabled"
 	GoAutoOffsetsCronProperty          = "go-auto-offsets-cron"
+	GoAutoOffsetsModeProperty          = "go-auto-offsets-mode"
 	ClickhouseJsonTypeEnabledProperty  = "clickhouse-json-type-enabled"
 	AllowedTestConnectionHostsProperty = "allowed-test-connection-hosts"
 	EnableDataCompressionProperty      = "enable-data-compression"
