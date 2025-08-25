@@ -131,7 +131,6 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 
 func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) ([]odigoscommon.ObservabilitySignal, error) {
 	logger := log.FromContext(ctx)
-	memoryLimiterConfiguration := common.GetMemoryLimiterConfig(gateway.Spec.ResourcesSettings)
 
 	enabledDests := &odigosv1.DestinationList{Items: []odigosv1.Destination{}}
 	for _, dest := range dests.Items {
@@ -159,7 +158,6 @@ func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.Proc
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		common.ToExporterConfigurerArray(enabledDests),
 		common.ToProcessorConfigurerArray(processors),
-		memoryLimiterConfiguration,
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
 			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines)
 		},
