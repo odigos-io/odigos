@@ -86,6 +86,15 @@ var configs = map[Sizing]SizingConfig{
 	},
 }
 
+// GetSizingConfig returns the SizingConfig for the given sizing config.
+// If sizingConfig is empty, it returns the default sizing config [size_m].
+func GetSizingConfig(sizingConfig string) SizingConfig {
+	if sizingConfig == "" {
+		sizingConfig = string(SizeMedium)
+	}
+	return configs[Sizing(sizingConfig)]
+}
+
 func ModifySizingConfig(c *common.OdigosConfiguration, helmInstallation bool) {
 	// If helm installation, we don't want to modify the sizing config.
 	if helmInstallation {

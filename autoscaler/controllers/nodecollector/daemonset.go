@@ -10,18 +10,9 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-)
-
-const (
-	containerName                    = "data-collection"
-	containerCommand                 = "/odigosotelcol"
-	confDir                          = "/conf"
-	configHashAnnotation             = "odigos.io/config-hash"
-	logsSymlinkTargetMountVolumeName = "logs-symlink-target"
 )
 
 var (
@@ -37,7 +28,7 @@ type DelayManager struct {
 
 // RunSyncDaemonSetWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
 func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int, signals []odigoscommon.ObservabilitySignal,
-	collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string) {
+	collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client) {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 
@@ -66,7 +57,7 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 		}()
 
 		for i := 0; i < retries; i++ {
-			err = syncCollectorGroup(ctx, collection, c, scheme, secrets, version, signals)
+			err = syncCollectorGroup(ctx, collection, c)
 			if err == nil {
 				return
 			}
@@ -80,9 +71,7 @@ func (dm *DelayManager) finishProgress() {
 	dm.inProgress = false
 }
 
-func syncCollectorGroup(ctx context.Context, datacollection *odigosv1.CollectorsGroup,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
-	clusterCollectorSignals []odigoscommon.ObservabilitySignal) error {
+func syncCollectorGroup(ctx context.Context, datacollection *odigosv1.CollectorsGroup, c client.Client) error {
 	logger := log.FromContext(ctx)
 
 	configMap, err := getConfigMap(ctx, c, datacollection.Namespace)
