@@ -199,7 +199,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Fetch all history for all tags and branches
           token: ${{ secrets.RELEASE_BOT_TOKEN }}
@@ -298,7 +298,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Extract Tag
         id: extract_tag
@@ -404,7 +404,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Start releasing odigos collector as linux packages", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ steps.extract_tag.outputs.tag }}
