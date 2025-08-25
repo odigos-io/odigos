@@ -12,6 +12,7 @@ on:
 
 jobs:
   verify-offsets:
+    if: github.actor != 'keyval-release-bot'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -66,6 +67,7 @@ jobs:
           }" $SLACK_WEBHOOK_URL
 
   verify-dependencies-sync:
+    if: github.actor != 'keyval-release-bot'
     needs: verify-offsets
     runs-on: ubuntu-latest
     strategy:
@@ -121,6 +123,7 @@ jobs:
           }" $SLACK_WEBHOOK_URL
 
   verify-release-blockers:
+    if: github.actor != 'keyval-release-bot'
     needs: verify-dependencies-sync
     runs-on: ubuntu-latest
     strategy:
@@ -176,6 +179,7 @@ jobs:
           }" $SLACK_WEBHOOK_URL
 
   print-tag:
+    if: github.actor != 'keyval-release-bot'
     needs: verify-release-blockers
     runs-on: ubuntu-latest
     steps:
@@ -190,6 +194,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"description":"Detected new git tag. initializing a release", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   tag-modules:
+    if: github.actor != 'keyval-release-bot'
     needs: verify-release-blockers
     runs-on: ubuntu-latest
     steps:
@@ -247,6 +252,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: Odigos go modules release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   publish-images:
+    if: github.actor != 'keyval-release-bot'
     needs: verify-release-blockers
     permissions:
       contents: 'read'
@@ -383,6 +389,7 @@ jobs:
           curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: odigos component ${{ matrix.service }} release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
   publish-collector-linux-packages:
+    if: github.actor != 'keyval-release-bot'
     needs: verify-release-blockers
     runs-on: ubuntu-latest
     steps:
