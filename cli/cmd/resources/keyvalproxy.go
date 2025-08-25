@@ -225,7 +225,9 @@ func NewKeyvalProxyClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string, nodeSelector map[string]string) *appsv1.Deployment {
+func NewKeyvalProxyDeployment(version string, ns string, imagePrefix common.ConfigString, nodeSelector map[string]string) *appsv1.Deployment {
+	// fills in for imagePrefix because it is not accepted by the function GetImageName, imagePrefix is common.ConfigString, not accepted
+	iPrefix := string(imagePrefix)
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -262,7 +264,7 @@ func NewKeyvalProxyDeployment(version string, ns string, imagePrefix string, nod
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.KeyvalProxyAppName,
-							Image: containers.GetImageName(imagePrefix, k8sconsts.KeyvalProxyImage, version),
+							Image: containers.GetImageName(iPrefix, k8sconsts.KeyvalProxyImage, version),
 							Args: []string{
 								"--health-probe-bind-address=:8081",
 								"--metrics-bind-address=127.0.0.1:8080",

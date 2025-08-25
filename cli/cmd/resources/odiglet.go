@@ -65,7 +65,7 @@ func NewOdigletRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewOdigletClusterRole(psp, ownerPermissionEnforcement bool) *rbacv1.ClusterRole {
+func NewOdigletClusterRole(psp, ownerPermissionEnforcement common.ConfigBool) *rbacv1.ClusterRole {
 	finalizersUpdate := []rbacv1.PolicyRule{}
 	if ownerPermissionEnforcement {
 		finalizersUpdate = append(finalizersUpdate, rbacv1.PolicyRule{
@@ -245,8 +245,14 @@ func NewResourceQuota(ns string) *corev1.ResourceQuota {
 	}
 }
 
-func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string,
-	odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails, customContainerRuntimeSocketPath string, nodeSelector map[string]string, healthProbeBindPort int, mountMethod *common.MountMethod) *appsv1.DaemonSet {
+func NewOdigletDaemonSet(ns string, version string, imagePrefix common.ConfigString, imageName string,
+	odigosTier common.OdigosTier, openshiftEnabled common.ConfigBool, clusterDetails *autodetect.ClusterDetails, customContainerRuntimeSocketPath common.ConfigString, nodeSelector map[string]string, healthProbeBindPort common.ConfigInt, mountMethod *common.MountMethod) *appsv1.DaemonSet {
+	// fills in for imagePrefix because it is not accepted by the function GetImageName, imagePrefix is common.ConfigString, not accepted
+	iPrefix := string(imagePrefix)
+	// same things but for different variables
+	customContainer := string(customContainerRuntimeSocketPath)
+	healthport := int(healthProbeBindPort)
+
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -276,12 +282,12 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 	customContainerRuntimeSocketVolumes := []corev1.Volume{}
 	customContainerRunetimeSocketVolumeMounts := []corev1.VolumeMount{}
 	if customContainerRuntimeSocketPath != "" {
-		customContainerRuntimeSocketVolumes = setCustomContainerRuntimeSocketVolume(customContainerRuntimeSocketPath)
-		customContainerRunetimeSocketVolumeMounts = setCustomContainerRuntimeSocketVolumeMount(customContainerRuntimeSocketPath)
+		customContainerRuntimeSocketVolumes = setCustomContainerRuntimeSocketVolume(customContainer)
+		customContainerRunetimeSocketVolumeMounts = setCustomContainerRuntimeSocketVolumeMount(customContainer)
 		dynamicEnv = append(dynamicEnv,
 			corev1.EnvVar{
 				Name:  k8sconsts.CustomContainerRuntimeSocketEnvVar,
-				Value: customContainerRuntimeSocketPath})
+				Value: customContainer})
 	}
 	additionalVolumes = append(additionalVolumes, customContainerRuntimeSocketVolumes...)
 	additionalVolumeMounts = append(additionalVolumeMounts, customContainerRunetimeSocketVolumeMounts...)
@@ -401,7 +407,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					InitContainers: []corev1.Container{
 						{
 							Name:  "init",
-							Image: containers.GetImageName(imagePrefix, imageName, version),
+							Image: containers.GetImageName(iPrefix, imageName, version),
 							Command: []string{
 								"/root/odiglet",
 							},
@@ -484,9 +490,9 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 								"/root/odiglet",
 							},
 							Args: []string{
-								"--health-probe-bind-port=" + strconv.Itoa(healthProbeBindPort),
+								"--health-probe-bind-port=" + strconv.Itoa(healthport),
 							},
-							Image: containers.GetImageName(imagePrefix, imageName, version),
+							Image: containers.GetImageName(iPrefix, imageName, version),
 							Env: append([]corev1.EnvVar{
 								{
 									Name: k8sconsts.NodeNameEnvVar,
@@ -598,7 +604,7 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 	if mountMethod == nil || *mountMethod == common.K8sVirtualDeviceMountMethod {
 		ds.Spec.Template.Spec.Containers = append(ds.Spec.Template.Spec.Containers, corev1.Container{
 			Name:  k8sconsts.OdigletDevicePluginContainerName,
-			Image: containers.GetImageName(imagePrefix, imageName, version),
+			Image: containers.GetImageName(iPrefix, imageName, version),
 			Command: []string{
 				"/root/deviceplugin",
 			},

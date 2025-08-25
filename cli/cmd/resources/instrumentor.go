@@ -145,7 +145,7 @@ func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRole {
+func NewInstrumentorClusterRole(ownerPermissionEnforcement common.ConfigBool) *rbacv1.ClusterRole {
 	finalizersUpdate := []rbacv1.PolicyRule{}
 	if ownerPermissionEnforcement {
 		finalizersUpdate = append(finalizersUpdate, rbacv1.PolicyRule{
@@ -496,7 +496,9 @@ func NewInstrumentorTLSSecret(ns string) *corev1.Secret {
 	}
 }
 
-func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, tier common.OdigosTier, nodeSelector map[string]string, initContainerImage string) *appsv1.Deployment {
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled common.ConfigBool, imagePrefix common.ConfigString, imageName string, tier common.OdigosTier, nodeSelector map[string]string, initContainerImage string) *appsv1.Deployment {
+	// fills in for imagePrefix because it is not accepted by the function GetImageName, imagePrefix is common.ConfigString, not accepted
+	iPrefix := string(imagePrefix)
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -567,7 +569,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.InstrumentorContainerName,
-							Image: containers.GetImageName(imagePrefix, imageName, version),
+							Image: containers.GetImageName(iPrefix, imageName, version),
 							Command: []string{
 								"/app",
 							},
@@ -588,7 +590,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 								// This env var is used to set the image (ubi9 or not) of the init container (odigos-agents)
 								{
 									Name:  k8sconsts.OdigosInitContainerEnvVarName,
-									Value: containers.GetImageName(imagePrefix, initContainerImage, version),
+									Value: containers.GetImageName(iPrefix, initContainerImage, version),
 								},
 								// TODO: this tier env var should be removed once we complete the transition to
 								// enterprise and community images, and the webhook code won't rely on this env var
