@@ -1,0 +1,30 @@
+apiVersion: odigos.io/v1alpha1
+kind: Processor
+metadata:
+  name: transformdynamo
+spec:
+  type: transform
+  processorName: "transformdynamo-transform"
+  notes: "Auto generated rule from transformdynamo profile. Converts aws.dynamodb.table_names to db.collection.name for AWS DynamoDB spans."
+  processorConfig:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          # Remove brackets and quotes, keep a simple comma-separated list
+          - set(attributes["db.collection.name"],
+                replace_all_patterns(
+                  replace_all_patterns(
+                    replace_all_patterns(
+                      String(attributes["aws.dynamodb.table_names"]),
+                      "[\\[\\]\\s]", ""       # drop [ ] and spaces
+                    ),
+                    "\"", ""                  # drop quotes
+                  ),
+                  ",,", ","                   # normalize any accidental double-commas
+                )
+            ) where attributes["aws.dynamodb.table_names"] != nil
+  signals:
+    - TRACES
+  collectorRoles:
+    - CLUSTER_GATEWAY
