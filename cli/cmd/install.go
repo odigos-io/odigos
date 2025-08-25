@@ -310,6 +310,7 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcema
 			KeyvalProxyImage:   k8sconsts.KeyvalProxyImage,
 			SchedulerImage:     k8sconsts.SchedulerImageUBI9,
 			UIImage:            k8sconsts.UIImageUBI9,
+			IngesterImage:      k8sconsts.IngesterImageUBI9,
 		}
 	} else {
 		imageReferences = resourcemanager.ImageReferences{
@@ -321,6 +322,7 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcema
 			KeyvalProxyImage:   k8sconsts.KeyvalProxyImage,
 			SchedulerImage:     k8sconsts.SchedulerImage,
 			UIImage:            k8sconsts.UIImage,
+			IngesterImage:      k8sconsts.IngesterImage,
 		}
 	}
 
