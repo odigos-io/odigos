@@ -8,4 +8,7 @@ const (
 	MetricsDir = "Metrics"
 )
 
-const CliImageName = "odigos-cli"
+const (
+	CliImageName        = "odigos-cli"
+	CLIOffsetsImageName = "odigos-cli-offsets"
+)

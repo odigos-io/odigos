@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -62,6 +63,7 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
   	- "%s": Enable or disable the service graph feature [default: false].
 	- "%s": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
+	- "%s": Mode for automatic Go offsets updates. Options include direct (default) and image.
 	- "%s": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
 	- "%s": List of allowed domains for test connection endpoints (e.g., "https://api.honeycomb.io", "https://otel.example.com"). Use "*" to allow all domains. Empty list allows all domains for backward compatibility.
 	- "%s": Enable or disable data compression before sending data to the Gateway collector. [default: false],
@@ -97,6 +99,7 @@ var configCmd = &cobra.Command{
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.ServiceGraphDisabledProperty,
 		consts.GoAutoOffsetsCronProperty,
+		consts.GoAutoOffsetsModeProperty,
 		consts.ClickhouseJsonTypeEnabledProperty,
 		consts.AllowedTestConnectionHostsProperty,
 		consts.EnableDataCompressionProperty,
@@ -206,6 +209,7 @@ func validatePropertyValue(property string, value []string) error {
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.GoAutoOffsetsCronProperty,
+		consts.GoAutoOffsetsModeProperty,
 		consts.ServiceGraphDisabledProperty,
 		consts.ClickhouseJsonTypeEnabledProperty,
 		consts.EnableDataCompressionProperty,
@@ -449,6 +453,16 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 			}
 		}
 		config.GoAutoOffsetsCron = cronValue
+
+	case consts.GoAutoOffsetsModeProperty:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		modeValue := value[0]
+		if modeValue != "" && modeValue != k8sconsts.OffsetCronJobModeDirect && modeValue != k8sconsts.OffsetCronJobModeImage {
+			return fmt.Errorf("invalid mode: %s. Must be either '%s' or '%s'", modeValue, k8sconsts.OffsetCronJobModeDirect, k8sconsts.OffsetCronJobModeImage)
+		}
+		config.GoAutoOffsetsMode = modeValue
 
 	case consts.ClickhouseJsonTypeEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])

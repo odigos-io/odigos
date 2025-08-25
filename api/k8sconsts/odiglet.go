@@ -26,11 +26,13 @@ const (
 	OdigletDefaultHealthProbeBindPort = 55683
 
 	// ConfigMap used to store custom/updated Go instrumentation offsets
-	GoOffsetsConfigMap  = "odigos-go-offsets"
-	GoOffsetsFileName   = "go_offset_results.json"
-	GoOffsetsEnvVar     = "OTEL_GO_OFFSETS_FILE"
-	OffsetFileMountPath = "/offsets"
-	OffsetCronJobName   = "odigos-go-offsets-updater"
+	GoOffsetsConfigMap      = "odigos-go-offsets"
+	GoOffsetsFileName       = "go_offset_results.json"
+	GoOffsetsEnvVar         = "OTEL_GO_OFFSETS_FILE"
+	OffsetFileMountPath     = "/offsets"
+	OffsetCronJobName       = "odigos-go-offsets-updater"
+	OffsetCronJobModeDirect = "direct"
+	OffsetCronJobModeImage  = "image"
 
 	OdigletLocalTrafficServiceName = "odiglet-local"
 	OdigletMetricsServerPort       = 8080
