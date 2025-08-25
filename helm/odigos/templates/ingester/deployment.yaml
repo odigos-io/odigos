@@ -44,8 +44,6 @@ spec:
             name: otlphttp
           - containerPort: 16686
             name: api
-        resources:
-{{ toYaml .Values.ingester.resources | indent 10 }}
         securityContext:
           allowPrivilegeEscalation: false
       securityContext:
