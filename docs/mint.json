@@ -284,6 +284,7 @@
             "backends/middleware",
             "backends/newrelic",
             "backends/observe",
+            "backends/odigos",
             "backends/oneuptime",
             "backends/openobserve",
             "backends/opsverse",
