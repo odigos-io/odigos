@@ -97,23 +97,15 @@ true
 {{- end }}
 
 {{- define "odigos.odiglet.sizing.resources" -}}
-{{- $profiles := .Values.profiles | default list -}}
-{{- $profile := "" -}}
-{{- range $profiles }}
-  {{- if or (eq . "size_s") (eq . "size_m") (eq . "size_l") }}
-    {{- $profile = . -}}
-  {{- end }}
-{{- end }}
-
-{{- if eq $profile "size_s" }}
-  {{- dict "cpu" "150m" "memory" "300Mi" | toYaml }}
-{{- else if eq $profile "size_m" }}
-  {{- dict "cpu" "500m" "memory" "500Mi" | toYaml }}
-{{- else if eq $profile "size_l" }}
-  {{- dict "cpu" "750m" "memory" "750Mi" | toYaml }}
-{{- else }}
-  {{- "" }}
-{{- end }}
+{{- $s := default "size_m" .Values.ResourceSizePreset -}}
+{{- $sizes := dict
+  "size_s" (dict "cpu" "150m" "memory" "300Mi")
+  "size_m" (dict "cpu" "500m" "memory" "500Mi")
+  "size_l" (dict "cpu" "750m" "memory" "750Mi")
+-}}
+{{- with (get $sizes $s) -}}
+{{ toYaml . }}
+{{- end -}}
 {{- end }}
 
 {{/* Comma-join pull secret names for CLI args */}}

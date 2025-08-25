@@ -18,6 +18,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
+	"github.com/odigos-io/odigos/k8sutils/pkg/sizing"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -63,7 +64,8 @@ var configCmd = &cobra.Command{
 	- "%s": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
 	- "%s": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
 	- "%s": List of allowed domains for test connection endpoints (e.g., "https://api.honeycomb.io", "https://otel.example.com"). Use "*" to allow all domains. Empty list allows all domains for backward compatibility.
-	- "%s": Enable or disable data compression before sending data to the Gateway collector. [default: false]
+	- "%s": Enable or disable data compression before sending data to the Gateway collector. [default: false],
+	- "%s": Set the sizing configuration for the Odigos components (size_s, size_m [default], size_l).
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -98,6 +100,7 @@ var configCmd = &cobra.Command{
 		consts.ClickhouseJsonTypeEnabledProperty,
 		consts.AllowedTestConnectionHostsProperty,
 		consts.EnableDataCompressionProperty,
+		consts.ResourceSizePresetProperty,
 	),
 }
 
@@ -205,7 +208,8 @@ func validatePropertyValue(property string, value []string) error {
 		consts.GoAutoOffsetsCronProperty,
 		consts.ServiceGraphDisabledProperty,
 		consts.ClickhouseJsonTypeEnabledProperty,
-		consts.EnableDataCompressionProperty:
+		consts.EnableDataCompressionProperty,
+		consts.ResourceSizePresetProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -452,6 +456,12 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 
 	case consts.AllowedTestConnectionHostsProperty:
 		config.AllowedTestConnectionHosts = value
+
+	case consts.ResourceSizePresetProperty:
+		if !sizing.IsValidSizing(value[0]) {
+			return fmt.Errorf("invalid sizing config: %s (valid values: %s, %s, %s)", value[0], sizing.SizeSmall, sizing.SizeMedium, sizing.SizeLarge)
+		}
+		config.ResourceSizePreset = value[0]
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
