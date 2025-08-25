@@ -76,9 +76,6 @@ spec:
     - name: odiglet
       resources: {}
       securityContext:
-        capabilities:
-          add:
-            - SYS_PTRACE
         privileged: true
       image: registry.odigos.io/odigos-odiglet:e2e-test
     - name: deviceplugin
@@ -117,9 +114,6 @@ spec:
     - name: odiglet
       resources: {}
       securityContext:
-        capabilities:
-          add:
-            - SYS_PTRACE
         privileged: true
       image: registry.odigos.io/odigos-odiglet:e2e-test
     - name: deviceplugin
