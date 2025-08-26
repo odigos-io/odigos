@@ -86,13 +86,13 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	rollbackDisabled := false
-	if conf.RollbackDisabled != nil {
-		rollbackDisabled = *conf.RollbackDisabled
+	if conf.RollbackDisabled.Value != nil {
+		rollbackDisabled = *conf.RollbackDisabled.Value
 	}
 
 	rollbackGraceTime, _ := time.ParseDuration(consts.DefaultAutoRollbackGraceTime)
 	if conf.RollbackGraceTime != "" {
-		rollbackGraceTime, err = time.ParseDuration(conf.RollbackGraceTime)
+		rollbackGraceTime, err = time.ParseDuration(string(conf.RollbackGraceTime))
 		if err != nil {
 			return false, ctrl.Result{}, fmt.Errorf("invalid duration %q: %w", rollbackGraceTime, err)
 		}
@@ -100,7 +100,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 
 	rollbackStabilityWindow, _ := time.ParseDuration(consts.DefaultAutoRollbackStabilityWindow)
 	if conf.RollbackStabilityWindow != "" {
-		rollbackStabilityWindow, err = time.ParseDuration(conf.RollbackStabilityWindow)
+		rollbackStabilityWindow, err = time.ParseDuration(string(conf.RollbackStabilityWindow))
 		if err != nil {
 			return false, ctrl.Result{}, fmt.Errorf("invalid duration %q: %w", rollbackGraceTime, err)
 		}

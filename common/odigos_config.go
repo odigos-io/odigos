@@ -1,5 +1,242 @@
 package common
 
+import (
+	"fmt"
+	"os"
+	"sort"
+
+	"github.com/odigos-io/odigos/common/consts"
+)
+
+type ConfigField interface {
+	ToString()
+}
+
+type ConfigBool bool
+
+func (data ConfigBool) ToString() {
+	fmt.Printf("%t\n", data)
+}
+
+type ConfigBoolPointer struct {
+	Value *bool
+}
+
+func (data ConfigBoolPointer) ToString() {
+	if data.Value == nil {
+		fmt.Printf("not set\n")
+	} else {
+		fmt.Printf("%v\n", *data.Value)
+	}
+}
+
+type ConfigInt int
+
+func (data ConfigInt) ToString() {
+	fmt.Printf("%d\n", data)
+}
+
+type ConfigString string
+
+func (data ConfigString) ToString() {
+	if data == "" {
+		fmt.Println("not set")
+		return
+	}
+	fmt.Printf("%s\n", data)
+}
+
+type ConfigStringList []string
+
+func (data ConfigStringList) ToString() {
+	fmt.Printf("\n")
+	for _, value := range data {
+		fmt.Printf("		-%s,\n", value)
+	}
+
+}
+
+// no need for a new type, since most of the ones comming up are already types that are structs
+// just give them this ToString() function to make it part of the interface
+func (data *CollectorNodeConfiguration) ToString() {
+	if data == nil {
+		fmt.Println("not set")
+		return
+	} else {
+		var placeholder ConfigString = ConfigString(data.K8sNodeLogsDirectory)
+		placeholder.ToString()
+	}
+}
+
+func (data *MountMethod) ToString() {
+	if data == nil {
+		fmt.Printf("not set\n")
+	} else {
+		fmt.Printf("%v\n", *data)
+	}
+}
+
+func (data UiMode) ToString() {
+	fmt.Printf("%v\n", data)
+}
+
+func (data *EnvInjectionMethod) ToString() {
+	if data == nil {
+		fmt.Printf("not set\n")
+	} else {
+		fmt.Printf("%v\n", *data)
+	}
+}
+
+type ConfigNodeSelector map[string]string
+
+func (data ConfigNodeSelector) ToString() {
+	if len(data) == 0 {
+		fmt.Printf("not set\n")
+	} else {
+		fmt.Printf("\n")
+		for key, value := range data {
+			fmt.Printf("		- key: %+v, value: %+v\n", key, value)
+		}
+	}
+}
+
+func (data *UserInstrumentationEnvs) ToString() {
+	if data == nil {
+		fmt.Printf("not set\n")
+	} else if len(data.Languages) == 0 {
+		fmt.Printf("not set\n")
+	} else {
+		fmt.Printf("\n")
+		for key, value := range data.Languages {
+			fmt.Printf("		- language: %+v, mode: %+v\n", key, value)
+		}
+	}
+}
+
+func (data *RolloutConfiguration) ToString() {
+	if data == nil {
+		fmt.Printf("not set\n")
+	} else {
+		placeholder := ConfigBoolPointer{Value: data.AutomaticRolloutDisabled}
+		placeholder.ToString()
+	}
+}
+
+func (data *CollectorGatewayConfiguration) ToString() {
+	if data == nil {
+		fmt.Printf("not set\n")
+	} else {
+		placeholder := ConfigBoolPointer{Value: data.ServiceGraphDisabled}
+		placeholder.ToString()
+	}
+}
+
+// i will keep the redefining here in order to differentiate between the three values
+// i cannot have 3 ToString() functions for the same struct
+type ConfigOidcTenant OidcConfiguration
+
+func (data *ConfigOidcTenant) ToString() {
+	if data == nil {
+		fmt.Printf("not set\n")
+	} else {
+		var placeholder ConfigString = ConfigString(data.TenantUrl)
+		placeholder.ToString()
+	}
+}
+
+type ConfigOidcClientId OidcConfiguration
+
+func (data *ConfigOidcClientId) ToString() {
+	if data == nil {
+		fmt.Printf("not set\n")
+	} else {
+		var placeholder ConfigString = ConfigString(data.ClientId)
+		placeholder.ToString()
+	}
+}
+
+type ConfigOidcClientSecret OidcConfiguration
+
+func (data *ConfigOidcClientSecret) ToString() {
+	if data == nil {
+		fmt.Printf("not set\n")
+	} else {
+		var placeholder ConfigString = ConfigString(data.ClientSecret)
+		placeholder.ToString()
+	}
+}
+
+func makeAMap(config *OdigosConfiguration) map[string]ConfigField {
+	displayData := map[string]ConfigField{
+		consts.TelemetryEnabledProperty:           config.TelemetryEnabled,
+		consts.OpenshiftEnabledProperty:           config.OpenshiftEnabled,
+		consts.PspProperty:                        config.Psp,
+		consts.SkipWebhookIssuerCreationProperty:  config.SkipWebhookIssuerCreation,
+		consts.AllowConcurrentAgentsProperty:      config.AllowConcurrentAgents,
+		consts.ImagePrefixProperty:                config.ImagePrefix,
+		consts.UiModeProperty:                     config.UiMode,
+		consts.UiPaginationLimitProperty:          config.UiPaginationLimit,
+		consts.UiRemoteUrlProperty:                config.UiRemoteUrl,
+		consts.CentralBackendURLProperty:          config.CentralBackendURL,
+		consts.ClusterNameProperty:                config.ClusterName,
+		consts.IgnoredNamespacesProperty:          config.IgnoredNamespaces,
+		consts.IgnoredContainersProperty:          config.IgnoredContainers,
+		consts.MountMethodProperty:                config.MountMethod,
+		consts.CustomContainerRuntimeSocketPath:   config.CustomContainerRuntimeSocketPath,
+		consts.K8sNodeLogsDirectory:               config.CollectorNode,
+		consts.UserInstrumentationEnvsProperty:    config.UserInstrumentationEnvs,
+		consts.AgentEnvVarsInjectionMethod:        config.AgentEnvVarsInjectionMethod,
+		consts.NodeSelectorProperty:               config.NodeSelector,
+		consts.KarpenterEnabledProperty:           config.KarpenterEnabled,
+		consts.RollbackDisabledProperty:           config.RollbackDisabled,
+		consts.RollbackGraceTimeProperty:          config.RollbackGraceTime,
+		consts.RollbackStabilityWindow:            config.RollbackStabilityWindow,
+		consts.AutomaticRolloutDisabledProperty:   config.Rollout,
+		consts.OidcTenantUrlProperty:              (*ConfigOidcTenant)(config.Oidc),
+		consts.OidcClientIdProperty:               (*ConfigOidcClientId)(config.Oidc),
+		consts.OidcClientSecretProperty:           (*ConfigOidcClientSecret)(config.Oidc),
+		consts.OdigletHealthProbeBindPortProperty: config.OdigletHealthProbeBindPort,
+		consts.ServiceGraphDisabledProperty:       config.CollectorGateway,
+		consts.GoAutoOffsetsCronProperty:          config.GoAutoOffsetsCron,
+		consts.ClickhouseJsonTypeEnabledProperty:  config.ClickhouseJsonTypeEnabledProperty,
+	}
+
+	return displayData
+}
+
+func PrintMap(config *OdigosConfiguration) {
+	display := makeAMap(config)
+
+	var order []string
+	for k := range consts.ConfigDisplay {
+		order = append(order, k)
+	}
+
+	sort.Strings(order)
+
+	for _, key := range order {
+		fmt.Printf("	- %s: ", key)
+		if display[key] == nil {
+			fmt.Println("not set")
+		} else {
+			display[key].ToString()
+		}
+	}
+}
+
+func SpecificFeature(config *OdigosConfiguration, keyword string) {
+	result := makeAMap(config)
+	feature, err := result[keyword]
+	if !err {
+		fmt.Printf("That feature does not exist")
+		os.Exit(1)
+	}
+
+	fmt.Printf("	- %s: ", keyword)
+	feature.ToString()
+}
+
 type ProfileName string
 
 // "normal" is deprecated. Kept here in the enum for backwards compatibility with operator CRD.
@@ -153,40 +390,41 @@ type OidcConfiguration struct {
 }
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
+// the types are changed to the redefined types for the ToString()
 type OdigosConfiguration struct {
 	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
-	TelemetryEnabled          bool                           `json:"telemetryEnabled,omitempty" yaml:"telemetryEnabled"`
-	OpenshiftEnabled          bool                           `json:"openshiftEnabled,omitempty" yaml:"openshiftEnabled"`
-	IgnoredNamespaces         []string                       `json:"ignoredNamespaces,omitempty" yaml:"ignoredNamespaces"`
-	IgnoredContainers         []string                       `json:"ignoredContainers,omitempty" yaml:"ignoredContainers"`
-	Psp                       bool                           `json:"psp,omitempty" yaml:"psp"`
-	ImagePrefix               string                         `json:"imagePrefix,omitempty" yaml:"imagePrefix"`
-	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty" yaml:"skipWebhookIssuerCreation"`
+	TelemetryEnabled          ConfigBool                     `json:"telemetryEnabled,omitempty" yaml:"telemetryEnabled"`
+	OpenshiftEnabled          ConfigBool                     `json:"openshiftEnabled,omitempty" yaml:"openshiftEnabled"`
+	IgnoredNamespaces         ConfigStringList               `json:"ignoredNamespaces,omitempty" yaml:"ignoredNamespaces"`
+	IgnoredContainers         ConfigStringList               `json:"ignoredContainers,omitempty" yaml:"ignoredContainers"`
+	Psp                       ConfigBool                     `json:"psp,omitempty" yaml:"psp"`
+	ImagePrefix               ConfigString                   `json:"imagePrefix,omitempty" yaml:"imagePrefix"`
+	SkipWebhookIssuerCreation ConfigBool                     `json:"skipWebhookIssuerCreation,omitempty" yaml:"skipWebhookIssuerCreation"`
 	CollectorGateway          *CollectorGatewayConfiguration `json:"collectorGateway,omitempty" yaml:"collectorGateway"`
 	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty" yaml:"collectorNode"`
 	Profiles                  []ProfileName                  `json:"profiles,omitempty" yaml:"profiles"`
-	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty" yaml:"allowConcurrentAgents"`
+	AllowConcurrentAgents     ConfigBoolPointer              `json:"allowConcurrentAgents,omitempty" yaml:"allowConcurrentAgents"`
 	UiMode                    UiMode                         `json:"uiMode,omitempty" yaml:"uiMode"`
-	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty" yaml:"uiPaginationLimit"`
-	UiRemoteUrl               string                         `json:"uiRemoteUrl,omitempty" yaml:"uiRemoteUrl"`
-	CentralBackendURL         string                         `json:"centralBackendURL,omitempty" yaml:"centralBackendURL"`
-	ClusterName               string                         `json:"clusterName,omitempty" yaml:"clusterName"`
+	UiPaginationLimit         ConfigInt                      `json:"uiPaginationLimit,omitempty" yaml:"uiPaginationLimit"`
+	UiRemoteUrl               ConfigString                   `json:"uiRemoteUrl,omitempty" yaml:"uiRemoteUrl"`
+	CentralBackendURL         ConfigString                   `json:"centralBackendURL,omitempty" yaml:"centralBackendURL"`
+	ClusterName               ConfigString                   `json:"clusterName,omitempty" yaml:"clusterName"`
 	MountMethod               *MountMethod                   `json:"mountMethod,omitempty" yaml:"mountMethod"`
 	//nolint:lll // CustomContainerRuntimeSocketPath line is long due to struct tag requirements
-	CustomContainerRuntimeSocketPath  string                   `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
+
+	CustomContainerRuntimeSocketPath  ConfigString             `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
 	AgentEnvVarsInjectionMethod       *EnvInjectionMethod      `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
 	UserInstrumentationEnvs           *UserInstrumentationEnvs `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
-	NodeSelector                      map[string]string        `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
-	KarpenterEnabled                  *bool                    `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
+	NodeSelector                      ConfigNodeSelector       `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
+	KarpenterEnabled                  ConfigBoolPointer        `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
 	Rollout                           *RolloutConfiguration    `json:"rollout,omitempty" yaml:"rollout"`
-	RollbackDisabled                  *bool                    `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
-	RollbackGraceTime                 string                   `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
-	RollbackStabilityWindow           string                   `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
+	RollbackDisabled                  ConfigBoolPointer        `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
+	RollbackGraceTime                 ConfigString             `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
+	RollbackStabilityWindow           ConfigString             `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
 	Oidc                              *OidcConfiguration       `json:"oidc,omitempty" yaml:"oidc"`
-	OdigletHealthProbeBindPort        int                      `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
-	GoAutoOffsetsCron                 string                   `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
-	ClickhouseJsonTypeEnabledProperty *bool                    `json:"clickhouseJsonTypeEnabled,omitempty"`
-	CheckDeviceHealthBeforeInjection  *bool                    `json:"checkDeviceHealthBeforeInjection,omitempty"`
-
-	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
+	OdigletHealthProbeBindPort        ConfigInt                `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
+	GoAutoOffsetsCron                 ConfigString             `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
+	ClickhouseJsonTypeEnabledProperty ConfigBoolPointer        `json:"clickhouseJsonTypeEnabled,omitempty"`
+	AllowedTestConnectionHosts        ConfigStringList         `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
+	CheckDeviceHealthBeforeInjection  ConfigBoolPointer        `json:"checkDeviceHealthBeforeInjection,omitempty"`
 }

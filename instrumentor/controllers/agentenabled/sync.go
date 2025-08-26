@@ -603,7 +603,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 
 	// check for presence of other agents
 	if runtimeDetails.OtherAgent != nil {
-		if effectiveConfig.AllowConcurrentAgents == nil || !*effectiveConfig.AllowConcurrentAgents {
+		if effectiveConfig.AllowConcurrentAgents.Value == nil || !*effectiveConfig.AllowConcurrentAgents.Value {
 			return odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
 				AgentEnabled:        false,

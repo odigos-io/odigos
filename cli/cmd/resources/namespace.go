@@ -53,7 +53,7 @@ func GetOdigosNamespace(client *kube.Client, ctx context.Context) (string, error
 	if !IsErrNoOdigosNamespaceFound(err) {
 		return "", fmt.Errorf("failed to get odigos namespace: %w", err)
 	}
-	// we need this fallback because old versions of odigos has legacy config map called "odigos-config", and 
+	// we need this fallback because old versions of odigos has legacy config map called "odigos-config", and
 	// several commands needs to get current namespace from it.
 	legacyConfigMap, err := getNamespaceFromConfigMap(client, ctx, consts.OdigosLegacyConfigName)
 	if err == nil {
