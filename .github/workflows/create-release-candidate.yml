@@ -93,6 +93,14 @@ jobs:
             git pull origin main
             git checkout -b $STABLE_RELEASE_BRANCH_NAME
             git push origin $STABLE_RELEASE_BRANCH_NAME
+
+            echo "Triggering creating release branch workflow in odigos-enterprise"
+            curl -sS -X POST \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
+              https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
+              -d "{\"event_type\":\"ensure-release-branch\",\"client_payload\":{\"branch\":\"$STABLE_RELEASE_BRANCH_NAME\"}}"
+
           else
             echo "Branch $STABLE_RELEASE_BRANCH_NAME already exists"
             # Check out the existing branch and pull latest changes
