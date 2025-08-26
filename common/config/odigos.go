@@ -25,7 +25,7 @@ func (j *Odigos) DestType() common.DestinationType {
 func (j *Odigos) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	uniqueUri := "odigos-" + dest.GetID()
 
-	domain := fmt.Sprintf("%s.%s.svc.cluster.local", "ingester", "odigos-system")
+	domain := fmt.Sprintf("%s.%s", "ingester", "odigos-system")
 	endpoint, err := parseOtlpGrpcUrl(domain, false)
 	if err != nil {
 		return nil, err

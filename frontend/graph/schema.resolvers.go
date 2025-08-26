@@ -1295,14 +1295,10 @@ func (r *queryResolver) GetServiceMap(ctx context.Context) (*model.ServiceMap, e
 
 // GetTraces is the resolver for the getTraces field.
 func (r *queryResolver) GetTraces(ctx context.Context, serviceName string, limit *int, hoursAgo *int) ([]*model.Trace, error) {
-	odigosNamespace := env.GetCurrentNamespace()
-	domain := fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", k8sconsts.IngesterServiceName, odigosNamespace, k8sconsts.IngesterApiPort)
-
 	if limit == nil {
 		limit = new(int)
 		*limit = 100
 	}
-
 	if hoursAgo == nil {
 		hoursAgo = new(int)
 		*hoursAgo = 24
@@ -1318,6 +1314,7 @@ func (r *queryResolver) GetTraces(ctx context.Context, serviceName string, limit
 		SearchDepth:  *limit,
 	}
 
+	domain := services.GetOdigosDestinationDomain(k8sconsts.IngesterApiPort)
 	getResult, err := traces.GetTraces(ctx, domain, options)
 	if err != nil {
 		return nil, err

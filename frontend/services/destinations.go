@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/destinations"
@@ -17,6 +18,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
+
+func GetOdigosDestinationDomain(port int) string {
+	odigosNamespace := env.GetCurrentNamespace()
+	domain := fmt.Sprintf("http://%s.%s:%d", k8sconsts.IngesterServiceName, odigosNamespace, port)
+	// If the above does not work, try: "http://%s.%s.svc.cluster.local:%d"
+
+	return domain
+}
 
 func GetDestinationCategories() model.GetDestinationCategories {
 	var resp model.GetDestinationCategories
