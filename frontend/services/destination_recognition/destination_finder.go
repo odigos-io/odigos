@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/kube"
@@ -55,7 +56,7 @@ func GetAllPotentialDestinationDetails(ctx context.Context, namespaces []k8s.Nam
 }
 
 func getDestinationFinder(serviceName string) IDestinationFinder {
-	if strings.Contains(serviceName, string(common.OdigosDestinationType)) {
+	if strings.Contains(serviceName, string(k8sconsts.IngesterServiceName)) {
 		return &OdigosDestinationFinder{}
 	}
 
@@ -70,8 +71,8 @@ func getDestinationFinder(serviceName string) IDestinationFinder {
 	return nil
 }
 
-func destinationExist(dests *odigosv1.DestinationList, potentialDestination DestinationDetails, destinationFinder IDestinationFinder) bool {
-	for _, dest := range dests.Items {
+func destinationExist(existingDestinations *odigosv1.DestinationList, potentialDestination DestinationDetails, destinationFinder IDestinationFinder) bool {
+	for _, dest := range existingDestinations.Items {
 		if dest.Spec.Type == potentialDestination.Type && dest.GetConfig()[destinationFinder.getServiceURL()] == potentialDestination.Fields[destinationFinder.getServiceURL()] {
 			return true
 		}
