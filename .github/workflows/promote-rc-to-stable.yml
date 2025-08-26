@@ -37,22 +37,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # need to fetch all tags for goreleaser to calculate the changelog
-          ref: ${{ env.RC_TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)          
+          ref: ${{ env.RC_TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
           token: ${{ secrets.RELEASE_BOT_TOKEN }} # so we can push the new tag
 
       - name: Get Stable Tag From Release Candidate
         run: |
             # remove the -rc part and number from the tag
             STABLE_TAG=$(echo "${{ env.RC_TAG }}" | sed 's/-rc[0-9]*$//')
-            
+
             # Validate the stable tag format
             if [[ ! "$STABLE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               echo "ERROR: Invalid stable tag format: $STABLE_TAG"
               exit 1
             fi
-            
+
             echo "STABLE_TAG=${STABLE_TAG}" >> $GITHUB_ENV
-            echo "Extracted stable tag: $STABLE_TAG"      
+            echo "Extracted stable tag: $STABLE_TAG"
 
       - name: Check if stable tag already exists
         run: |
@@ -62,7 +62,7 @@ jobs:
                 exit 1
             else
                 echo "Stable tag ${{ env.STABLE_TAG }} does not exist, proceeding with promotion"
-            fi            
+            fi
 
       - name: Notify Slack Start
         env:
@@ -91,7 +91,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}  
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -104,15 +104,19 @@ jobs:
             IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor")
             REPOS=(${GCR_REPO} ${GHCR_REPO} ${DOCKERHUB_REPO})
             UBI9_SUFFIXES=("" "-ubi9")
-            
             # Track failed copies for potential rollback
             FAILED_COPIES=()
-            
             for REPO in "${REPOS[@]}"; do
               for IMAGE_NAME in "${IMAGE_NAMES[@]}"; do
+
+                # Skip enterprise images for GHCR temporarily - they should be added in the release process and this check should be removed after that.
+                if [[ "${REPO}" == "${GHCR_REPO}" && ( "${IMAGE_NAME}" == "odigos-enterprise-odiglet" || "${IMAGE_NAME}" == "odigos-enterprise-instrumentor" ) ]]; then
+                  echo "Skipping ${IMAGE_NAME} for ${REPO}"
+                  continue
+                fi
+
                 for SUFFIX in "${UBI9_SUFFIXES[@]}"; do
                   echo "Copying ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} to ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
-                  
                   if ! crane copy ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
                     echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME}${SUFFIX}"
                     FAILED_COPIES+=("${REPO}/${IMAGE_NAME}${SUFFIX}")
@@ -122,7 +126,7 @@ jobs:
                 done
               done
             done
-            
+
             # Check if any copies failed
             if [ ${#FAILED_COPIES[@]} -gt 0 ]; then
               echo "ERROR: The following image copies failed:"
@@ -130,8 +134,8 @@ jobs:
               echo "Stable tag creation will be aborted"
               exit 1
             fi
-            
-            echo "All image copies completed successfully"    
+
+            echo "All image copies completed successfully"
 
       - name: Tag Stable Release in GitHub
         run: |
@@ -142,8 +146,8 @@ jobs:
             fi
 
             git tag ${{ env.STABLE_TAG }}
-            git push origin ${{ env.STABLE_TAG }} 
-            echo "Successfully created and pushed stable tag ${{ env.STABLE_TAG }}"            
+            git push origin ${{ env.STABLE_TAG }}
+            echo "Successfully created and pushed stable tag ${{ env.STABLE_TAG }}"
 
       - name: Trigger CLI Release
         run: |
@@ -158,7 +162,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Successfully re-tagged release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}", "tag":"${{ env.STABLE_TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}              
+          curl -X POST -H 'Content-type: application/json' --data '{"description":"Successfully re-tagged release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}", "tag":"${{ env.STABLE_TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack Error
         if: failure()
