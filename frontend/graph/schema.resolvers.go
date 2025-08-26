@@ -1209,9 +1209,9 @@ func (r *queryResolver) DestinationCategories(ctx context.Context) (*model.GetDe
 func (r *queryResolver) PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error) {
 	result := make([]*model.DestinationDetails, 0)
 
-	potentialDestinations := services.PotentialDestinations(ctx)
-	if potentialDestinations == nil {
-		return result, nil
+	potentialDestinations, err := services.PotentialDestinations(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, dest := range potentialDestinations {

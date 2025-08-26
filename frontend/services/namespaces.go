@@ -61,7 +61,13 @@ func GetK8SNamespaces(ctx context.Context, namespaceName *string) ([]*model.K8sA
 
 // getRelevantNameSpaces returns a list of namespaces that are relevant for instrumentation.
 // Taking into account the ignored namespaces from the OdigosConfiguration.
-func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]corev1.Namespace, error) {
+func getRelevantNameSpaces(ctx context.Context, odigosns string, includeOdigosNs ...bool) ([]corev1.Namespace, error) {
+	// Set default value for includeOdigosNs
+	shouldIncludeOdigosNs := false
+	if len(includeOdigosNs) > 0 && includeOdigosNs[0] {
+		shouldIncludeOdigosNs = true
+	}
+
 	var (
 		odigosConfiguration *common.OdigosConfiguration
 		list                *corev1.NamespaceList
@@ -93,6 +99,10 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]corev1.Names
 	result := []corev1.Namespace{}
 	for _, namespace := range list.Items {
 		if utils.IsItemIgnored(namespace.Name, odigosConfiguration.IgnoredNamespaces) {
+			if namespace.Name == odigosns && shouldIncludeOdigosNs {
+				// Do not skip the Odigos namespace if `shouldIncludeOdigosNs` is true
+				result = append(result, namespace)
+			}
 			continue
 		}
 

@@ -23,8 +23,8 @@ type IDestinationFinder interface {
 	getServiceURL() string
 }
 
-func GetAllPotentialDestinationDetails(ctx context.Context, namespaces []k8s.Namespace, dests *odigosv1.DestinationList) ([]DestinationDetails, error) {
-	var destinationDetails []DestinationDetails
+func GetAllPotentialDestinationDetails(ctx context.Context, namespaces []k8s.Namespace, existingDestinations *odigosv1.DestinationList) ([]DestinationDetails, error) {
+	var result []DestinationDetails
 
 	for _, ns := range namespaces {
 		err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.CoreV1().Services(ns.Name).List, ctx, &metav1.ListOptions{},
@@ -35,8 +35,8 @@ func GetAllPotentialDestinationDetails(ctx context.Context, namespaces []k8s.Nam
 					if df != nil && df.isPotentialService(service) {
 						pd := df.fetchDestinationDetails(service)
 
-						if !destinationExist(dests, pd, df) {
-							destinationDetails = append(destinationDetails, pd)
+						if !destinationExist(existingDestinations, pd, df) {
+							result = append(result, pd)
 						}
 						break
 					}
@@ -51,10 +51,14 @@ func GetAllPotentialDestinationDetails(ctx context.Context, namespaces []k8s.Nam
 		}
 	}
 
-	return destinationDetails, nil
+	return result, nil
 }
 
 func getDestinationFinder(serviceName string) IDestinationFinder {
+	if strings.Contains(serviceName, string(common.OdigosDestinationType)) {
+		return &OdigosDestinationFinder{}
+	}
+
 	if strings.Contains(serviceName, string(common.JaegerDestinationType)) {
 		return &JaegerDestinationFinder{}
 	}
