@@ -26,7 +26,8 @@ jobs:
           echo "Commit message: $COMMIT_MSG"
 
           # Extract the tag version from the message (e.g., v1.1.1, v1.2.3-rc4, v1.2.3-foobar)
-          TAG=$(echo "$COMMIT_MSG" | grep -oE '^This is an automated PR for the patch release (.+)' | sed 's/^This is an automated PR for the patch release //')
+          # Handle both "patch release" and "release candidate" formats
+          TAG=$(echo "$COMMIT_MSG" | grep -oE '^This is an automated PR for the (patch release|release candidate) (.+)' | sed 's/^This is an automated PR for the (patch release|release candidate) //')
 
           if [[ -z "$TAG" ]]; then
             echo "No version found in commit message. Skipping."
