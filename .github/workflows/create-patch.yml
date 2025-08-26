@@ -12,30 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check Input Format
+        id: release_branch
         run: |
           # check the format of the input vX.Y
           if [[ ! "${{ github.event.inputs.base_minor_version }}" =~ ^v[0-9]+\.[0-9]+$ ]]; then
             echo "Error: base_minor_version must be in the format of vX.Y"
             exit 1
           fi
+          RELEASE_BRANCH_NAME="releases/${{ github.event.inputs.base_minor_version }}.0"
+          echo "release_branch_name=$RELEASE_BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ steps.release_branch.outputs.release_branch_name }}
           token: ${{ secrets.RELEASE_BOT_TOKEN }}
   
-      - name: Check Release Branch Exists
-        id: check_release_branch
-        run: |
-          # check if the release branch of type "releases/vX.Y.0" exists
-          # TODO: the release branch currently has patch 0 hardcoded, we should revisit this
-          STABLE_RELEASE_BRANCH_NAME="releases/${{ github.event.inputs.base_minor_version }}.0"
-          if ! git rev-parse --verify $STABLE_RELEASE_BRANCH_NAME; then
-            echo "Error: release branch $STABLE_RELEASE_BRANCH_NAME does not exist"
-            exit 1
-          fi
-          echo "stable_release_branch_name=$STABLE_RELEASE_BRANCH_NAME" >> $GITHUB_OUTPUT
-      
       - name: Calculate Patch Version
         id: calculate_patch_version
         run: |
@@ -61,7 +53,7 @@ jobs:
             git config --global user.email "${{ github.actor }}@users.noreply.github.com"
             git config --global user.name "${{ github.actor }}"
   
-            RELEASE_BRANCH="${{ steps.check_release_branch.outputs.stable_release_branch_name }}"
+            RELEASE_BRANCH="${{ steps.release_branch.outputs.release_branch_name }}"
             PR_BRANCH="patch-release/${{ steps.calculate_patch_version.outputs.patch_version }}"
             PR_TITLE="Patch release PR for stable verion ${{ steps.calculate_patch_version.outputs.patch_version }}"
   
