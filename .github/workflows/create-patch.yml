@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       base_minor_version:
-        description: "The minor version to create a patch for (prerequisit: changes are pushed to the release branch for this minor)"
+        description: "version to create a patch for (format: vX.Y)"
         required: true
 
 jobs:
@@ -53,7 +53,7 @@ jobs:
           NEW_PATCH_VERSION="v$major.$minor.$target_patch"
           echo "patch_version=$NEW_PATCH_VERSION" >> $GITHUB_OUTPUT
           
-      - name: Create or Update Pre-release PR
+      - name: Create or Update Patch Release PR
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
         run: |
