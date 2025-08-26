@@ -20,11 +20,12 @@ const DEFAULT_HOURS_AGO = 24;
 
 export const useTraces = ({ serviceName }: UseTracesParams) => {
   const [traces, setTraces] = useState<Trace[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { sources } = useEntityStore();
   const { addNotification } = useNotificationStore();
 
-  const { data } = useQuery<{ getTraces: Trace[] }, GetTracesVariables>(GET_TRACES, {
+  const { data, loading } = useQuery<{ getTraces: Trace[] }, GetTracesVariables>(GET_TRACES, {
     variables: { serviceName: serviceName || '', limit: DEFAULT_LIMIT, hoursAgo: DEFAULT_HOURS_AGO },
     skip: !serviceName,
     onError: (error) =>
@@ -45,10 +46,22 @@ export const useTraces = ({ serviceName }: UseTracesParams) => {
   });
 
   useEffect(() => {
+    // If there is no service name, we should fetch traces for all sources
     if (!serviceName && sources.length > 0) {
-      // If there is no service name, we should fetch traces for all sources
-      sources.forEach(({ serviceName, name }) => {
-        fetchTraces({ variables: { serviceName: serviceName || name, limit: DEFAULT_LIMIT, hoursAgo: DEFAULT_HOURS_AGO } }).then(({ data }) => {
+      setIsLoading(true);
+
+      const promises = sources.map(({ serviceName, name }) => {
+        return fetchTraces({
+          variables: {
+            serviceName: serviceName || name,
+            limit: DEFAULT_LIMIT,
+            hoursAgo: DEFAULT_HOURS_AGO,
+          },
+        });
+      });
+
+      Promise.all(promises).then((results) => {
+        results.forEach(({ data }) => {
           setTraces((prev) => {
             const newTraces = data?.getTraces?.filter((currTrace) => currTrace.spans.length > 0 && !prev.find((prevTrace) => prevTrace.traceID === currTrace.traceID)) ?? [];
             const arr = [...prev, ...newTraces];
@@ -56,11 +69,14 @@ export const useTraces = ({ serviceName }: UseTracesParams) => {
             return arr;
           });
         });
+
+        setIsLoading(false);
       });
     }
   }, [serviceName, sources]);
 
   return {
     traces: serviceName ? data?.getTraces ?? [] : traces,
+    isLoading: isLoading || loading,
   };
 };
