@@ -436,10 +436,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@^0.0.94":
-  version "0.0.94"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.94.tgz#8aee2493d9c659e8c1209517d3cdd6727139d9d2"
-  integrity sha512-S9VZiksAjI6KHqTLgMja/KSP1C0b07TrDTLEprdOUsywlQs9VF1zI+mMAdMcuP4NI/oj73VXWPKSsvYMqXVmug==
+"@odigos/ui-kit@^0.0.95":
+  version "0.0.95"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.95.tgz#8873e6eb9d6ad8743fa237eb08d72d54ddc92b81"
+  integrity sha512-Y75s5LqAdVxpgsjkFJ/vPr3539I8PLLenMnleYgsHx2dhVDOVdZy48EvwvZUa5jNJ5EJiY70tMD3NtMlGBC1OA==
   dependencies:
     "@xyflow/react" "^12.8.3"
     javascript-time-ago "^2.5.11"
@@ -541,7 +541,12 @@
   resolved "https://registry.yarnpkg.com/@types/prismjs/-/prismjs-1.26.5.tgz#72499abbb4c4ec9982446509d2f14fb8483869d6"
   integrity sha512-AUZTa7hQ2KY5L7AmtSiqxlhWxb4ina0yd8hNbl4TWuqnv/pFP0nDMb3YrfSBf4hJVGLh2YEIBfKaBW/9UEl6IQ==
 
-"@types/react-dom@19.1.7", "@types/react-dom@^19.0.0":
+"@types/react-dom@19.1.8":
+  version "19.1.8"
+  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-19.1.8.tgz#6cad88ec938beb2626df7c4cb97b15d9f66a05a9"
+  integrity sha512-xG7xaBMJCpcK0RpN8jDbAACQo54ycO6h4dSSmgv8+fu6ZIAdANkx/WsawASUjVXYfy+J9AbUpRMNNEsXCDfDBQ==
+
+"@types/react-dom@^19.0.0":
   version "19.1.7"
   resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-19.1.7.tgz#2863f2aa89e023592b981204ef92c5221b286410"
   integrity sha512-i5ZzwYpqjmrKenzkoLM2Ibzt6mAsM7pxB6BCIouEVVmgiqaMj1TjaK7hnA36hbW5aZv20kx7Lw6hWzPWg0Rurw==

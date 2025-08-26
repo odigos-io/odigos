@@ -26,8 +26,8 @@ const ContentWithActions = styled.div<{ $height: CSSProperties['height'] }>`
 
 const ContentUnderActions = styled(FlexRow)`
   align-items: flex-start !important;
-  justify-content: space-between;
-  gap: 4px;
+  justify-content: space-between !important;
+  gap: 8px;
   padding: 0 12px;
   width: calc(100% - 24px);
 `;
