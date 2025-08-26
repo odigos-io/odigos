@@ -29,7 +29,7 @@ jobs:
         run: |
           # check if the release branch of type "releases/vX.Y.0" exists
           # TODO: the release branch currently has patch 0 hardcoded, we should revisit this
-          STABLE_RELEASE_BRANCH_NAME="releases/v${{ github.event.inputs.base_minor_version }}.0"
+          STABLE_RELEASE_BRANCH_NAME="releases/${{ github.event.inputs.base_minor_version }}.0"
           if ! git rev-parse --verify $STABLE_RELEASE_BRANCH_NAME; then
             echo "Error: release branch $STABLE_RELEASE_BRANCH_NAME does not exist"
             exit 1
@@ -40,7 +40,7 @@ jobs:
         id: calculate_patch_version
         run: |
           # find the latest stable version for this minor release line
-          LATEST_MINOR_LINE_VERSION=$(git tag -l | grep -E "^v${{ github.event.inputs.base_minor_version }}\.[0-9]+$" | sort -V)
+          LATEST_MINOR_LINE_VERSION=$(git tag -l | grep -E "^${{ github.event.inputs.base_minor_version }}\.[0-9]+$" | sort -V)
           if [[ -z "$LATEST_MINOR_LINE_VERSION" ]]; then
             echo "Error: no stable versions found for minor ${{ github.event.inputs.base_minor_version }}"
             exit 1
