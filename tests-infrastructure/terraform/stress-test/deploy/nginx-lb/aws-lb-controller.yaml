@@ -40,6 +40,24 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: kv-mall-nginx
+  namespace: kv-mall
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - backend:
+          service:
+            name: frontend
+            port:
+              number: 8080
+        path: /kv-mall(/|$)(.*)
+        pathType: ImplementationSpecific
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kv-mall-nginx
   namespace: kv-mall-1
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2

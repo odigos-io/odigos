@@ -1,0 +1,544 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: load-test
+---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: node-src
+#   namespace: load-test
+# data:
+#   package.json: |
+#     {
+#       "name": "odigos-node",
+#       "version": "1.0.0",
+#       "private": true,
+#       "type": "module",
+#       "dependencies": { "express": "4.19.2" }
+#     }
+#   server.js: |
+#     import express from 'express';
+#     import os from 'os';
+#     const app = express(), fw='express', hn=os.hostname();
+#     app.get('/api/success', (_req,res)=>res.status(200).type('text/plain').send(`success ${fw} ${hn}\n`));
+#     app.get('/api/error', (_req,res)=>res.status(500).type('text/plain').send(`error ${fw} ${hn}\n`));
+#     app.use((_req,res)=>res.status(404).send('not found\n'));
+#     app.listen(8080,'0.0.0.0');
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: app-node
+#   namespace: load-test
+#   labels:
+#     app: app-node
+#     framework: express
+# spec:
+#   replicas: 5
+#   selector:
+#     matchLabels:
+#       app: app-node
+#       odigos-target: "true"
+#   template:
+#     metadata:
+#       labels:
+#         app: app-node
+#         framework: express
+#         odigos-target: "true"
+#     spec:
+#       terminationGracePeriodSeconds: 0
+#       initContainers:
+#         - name: copy-src
+#           image: busybox:1.36
+#           command: ["sh","-c"]
+#           args: ["mkdir -p /work && cp -a /src/. /work/"]
+#           volumeMounts:
+#             - name: src
+#               mountPath: /src
+#             - name: workdir
+#               mountPath: /work
+#       containers:
+#         - name: node
+#           image: node:20-alpine
+#           workingDir: /work
+#           ports:
+#             - containerPort: 8080
+#           command: ["sh","-c"]
+#           args: ["npm install --omit=dev && node server.js"]
+#           resources:
+#             requests:
+#               cpu: 150m
+#               memory: 256Mi
+#             limits:
+#               cpu: 400m
+#               memory: 512Mi
+#           volumeMounts:
+#             - name: workdir
+#               mountPath: /work
+#       volumes:
+#         - name: src
+#           configMap:
+#             name: node-src
+#         - name: workdir
+#           emptyDir: {}
+# ---
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: app-node-hpa
+#   namespace: load-test
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: app-node
+#   minReplicas: 5
+#   maxReplicas: 12
+#   metrics:
+#     - type: Resource
+#       resource:
+#         name: cpu
+#         target:
+#           type: Utilization
+#           averageUtilization: 60
+
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: py-src
+#   namespace: load-test
+# data:
+#   requirements.txt: |
+#     fastapi==0.111.0
+#     uvicorn[standard]==0.30.0
+#     gunicorn==22.0.0
+#   main.py: |
+#     import os
+#     from fastapi import FastAPI, Response
+
+#     app = FastAPI()
+#     fw, hn = "fastapi", os.uname().nodename
+
+#     @app.get("/api/success")
+#     def success():
+#         return Response(
+#             content=f"success {fw} {hn}\n",
+#             media_type="text/plain",
+#             status_code=200
+#         )
+
+#     @app.get("/api/error")
+#     def error():
+#         return Response(
+#             content=f"error {fw} {hn}\n",
+#             media_type="text/plain",
+#             status_code=500
+#         )
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: app-python
+#   namespace: load-test
+#   labels:
+#     app: app-python
+#     framework: fastapi
+# spec:
+#   replicas: 12
+#   selector:
+#     matchLabels:
+#       app: app-python
+#       odigos-target: "true"
+#   template:
+#     metadata:
+#       labels:
+#         app: app-python
+#         framework: fastapi
+#         odigos-target: "true"
+#     spec:
+#       terminationGracePeriodSeconds: 0
+#       containers:
+#         - name: python
+#           image: python:3.12-alpine
+#           workingDir: /app
+#           ports:
+#             - containerPort: 8080
+#           command: ["sh","-c"]
+#           args:
+#             - |
+#               pip install --no-cache-dir -r requirements.txt && \
+#               gunicorn -k uvicorn.workers.UvicornWorker -w 4 -b 0.0.0.0:8080 main:app
+#           resources:
+#             requests:
+#               cpu: 200m
+#               memory: 256Mi
+#             limits:
+#               cpu: 800m
+#               memory: 512Mi
+#           volumeMounts:
+#             - name: src
+#               mountPath: /app
+#       volumes:
+#         - name: src
+#           configMap:
+#             name: py-src
+# ---
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: app-python-hpa
+#   namespace: load-test
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: app-python
+#   minReplicas: 12
+#   maxReplicas: 12
+#   metrics:
+#     - type: Resource
+#       resource:
+#         name: cpu
+#         target:
+#           type: Utilization
+#           averageUtilization: 60
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: go-src
+  namespace: load-test
+data:
+  go.mod: |
+    module example.com/odigos-go
+    go 1.22
+    require github.com/gin-gonic/gin v1.10.0
+  main.go: |
+    package main
+    import (
+      "fmt"
+      "net/http"
+      "os"
+      "github.com/gin-gonic/gin"
+    )
+    func main() {
+      r := gin.New()
+      r.Use(gin.Recovery())
+      fw := "gin"; hn, _ := os.Hostname()
+      r.GET("/api/success", func(c *gin.Context){ c.Data(200,"text/plain",[]byte(fmt.Sprintf("success %s %s\n",fw,hn))) })
+      r.GET("/api/error", func(c *gin.Context){ c.Data(500,"text/plain",[]byte(fmt.Sprintf("error %s %s\n",fw,hn))) })
+      r.NoRoute(func(c *gin.Context){ c.String(http.StatusNotFound,"not found\n") })
+      _ = r.Run("0.0.0.0:8080")
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-go
+  namespace: load-test
+  labels:
+    app: app-go
+    framework: gin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-go
+      odigos-target: "true"
+  template:
+    metadata:
+      labels:
+        app: app-go
+        framework: gin
+        odigos-target: "true"
+    spec:
+      terminationGracePeriodSeconds: 0
+      initContainers:
+        - name: copy-src
+          image: busybox:1.36
+          command: ["sh","-c"]
+          args: ["mkdir -p /work && cp -a /src/. /work/"]
+          volumeMounts:
+            - name: src
+              mountPath: /src
+            - name: workdir
+              mountPath: /work
+      containers:
+        - name: go
+          image: golang:1.22-alpine
+          workingDir: /work
+          ports:
+            - containerPort: 8080
+          command: ["sh","-c"]
+          args: ["go mod tidy && go run ."]
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 750m
+              memory: 512Mi
+          volumeMounts:
+            - name: workdir
+              mountPath: /work
+      volumes:
+        - name: src
+          configMap:
+            name: go-src
+        - name: workdir
+          emptyDir: {}
+---
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: app-go-hpa
+#   namespace: load-test
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: app-go
+#   minReplicas: 5
+#   maxReplicas: 12
+#   metrics:
+#     - type: Resource
+#       resource:
+#         name: cpu
+#         target:
+#           type: Utilization
+#           averageUtilization: 60
+
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: java-src
+#   namespace: load-test
+# data:
+#   App.java: |
+#     //DEPS io.javalin:javalin:5.6.1
+#     import io.javalin.Javalin;
+#     public class App {
+#       public static void main(String[] args) throws Exception {
+#         var app = Javalin.create(conf -> {}).start(8080);
+#         final var fw="javalin"; final var hn=java.net.InetAddress.getLocalHost().getHostName();
+#         app.get("/api/success", ctx -> ctx.status(200).contentType("text/plain").result("success "+fw+" "+hn+"\n"));
+#         app.get("/api/error", ctx -> ctx.status(500).contentType("text/plain").result("error "+fw+" "+hn+"\n"));
+#       }
+#     }
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: app-java
+#   namespace: load-test
+#   labels:
+#     app: app-java
+#     framework: javalin
+# spec:
+#   replicas: 5
+#   selector:
+#     matchLabels:
+#       app: app-java
+#       odigos-target: "true"
+#   template:
+#     metadata:
+#       labels:
+#         app: app-java
+#         framework: javalin
+#         odigos-target: "true"
+#     spec:
+#       terminationGracePeriodSeconds: 0
+#       containers:
+#         - name: java
+#           image: jbangdev/jbang:latest
+#           workingDir: /app
+#           ports:
+#             - containerPort: 8080
+#           command: ["sh","-c"]
+#           args: ["jbang /app/App.java"]
+#           resources:
+#             requests:
+#               cpu: 200m
+#               memory: 512Mi
+#             limits:
+#               cpu: 600m
+#               memory: 1Gi
+#           volumeMounts:
+#             - name: src
+#               mountPath: /app
+#       volumes:
+#         - name: src
+#           configMap:
+#             name: java-src
+# ---
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: app-java-hpa
+#   namespace: load-test
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: app-java
+#   minReplicas: 5
+#   maxReplicas: 12
+#   metrics:
+#     - type: Resource
+#       resource:
+#         name: cpu
+#         target:
+#           type: Utilization
+#           averageUtilization: 60
+
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: dotnet-src
+#   namespace: load-test
+# data:
+#   app.csproj: |
+#     <Project Sdk="Microsoft.NET.Sdk.Web">
+#       <PropertyGroup>
+#         <TargetFramework>net8.0</TargetFramework>
+#         <Nullable>enable</Nullable>
+#         <ImplicitUsings>enable</ImplicitUsings>
+#       </PropertyGroup>
+#     </Project>
+#   Program.cs: |
+#     using Microsoft.AspNetCore.Builder;
+#     using Microsoft.AspNetCore.Http;
+#     var builder = WebApplication.CreateBuilder(args);
+#     var app = builder.Build();
+#     var fw = "aspnet";
+#     var hn = System.Net.Dns.GetHostName();
+#     app.MapGet("/api/success", () => Results.Text($"success {fw} {hn}\n","text/plain"));
+#     app.MapGet("/api/error", () => Results.Text($"error {fw} {hn}\n","text/plain", statusCode: 500));
+#     app.Run("http://0.0.0.0:8080");
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: app-dotnet
+#   namespace: load-test
+#   labels:
+#     app: app-dotnet
+#     framework: aspnet
+# spec:
+#   replicas: 5
+#   selector:
+#     matchLabels:
+#       app: app-dotnet
+#       odigos-target: "true"
+#   template:
+#     metadata:
+#       labels:
+#         app: app-dotnet
+#         framework: aspnet
+#         odigos-target: "true"
+#     spec:
+#       terminationGracePeriodSeconds: 0
+#       initContainers:
+#         - name: build-dotnet
+#           image: mcr.microsoft.com/dotnet/sdk:8.0
+#           command: ["sh", "-c"]
+#           args:
+#             - |
+#               mkdir -p /work && cp /src/* /work/ && \
+#               cd /work && \
+#               dotnet publish app.csproj -c Release -o /out
+#           volumeMounts:
+#             - name: src
+#               mountPath: /src
+#             - name: workdir
+#               mountPath: /work
+#             - name: outdir
+#               mountPath: /out
+#       containers:
+#         - name: dotnet
+#           image: mcr.microsoft.com/dotnet/aspnet:8.0
+#           workingDir: /out
+#           ports:
+#             - containerPort: 8080
+#           command: ["dotnet", "app.dll"]
+#           resources:
+#             requests:
+#               cpu: 200m
+#               memory: 512Mi
+#             limits:
+#               cpu: 600m
+#               memory: 1Gi
+#           volumeMounts:
+#             - name: outdir
+#               mountPath: /out
+#       volumes:
+#         - name: src
+#           configMap:
+#             name: dotnet-src
+#         - name: workdir
+#           emptyDir: {}
+#         - name: outdir
+#           emptyDir: {}
+# ---
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: app-dotnet-hpa
+#   namespace: load-test
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: app-dotnet
+#   minReplicas: 5
+#   maxReplicas: 12
+#   metrics:
+#     - type: Resource
+#       resource:
+#         name: cpu
+#         target:
+#           type: Utilization
+#           averageUtilization: 60
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: odigos-aggregate
+#   namespace: load-test
+#   labels:
+#     service: odigos-aggregate
+# spec:
+#   selector:
+#     odigos-target: "true"
+#   ports:
+#     - name: http
+#       port: 80
+#       targetPort: 8080
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: odigos-aggregate-ingress
+#   namespace: load-test
+#   annotations:
+#     spec.ingressClassName: alb
+#     alb.ingress.kubernetes.io/scheme: internal
+#     alb.ingress.kubernetes.io/target-type: ip
+# spec:
+#   rules:
+#   - http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: odigos-aggregate
+#             port:
+#               number: 80

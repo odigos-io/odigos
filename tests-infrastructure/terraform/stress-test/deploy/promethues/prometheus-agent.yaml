@@ -109,7 +109,7 @@ items:
       path: /metrics
       port: http-web
       scheme: http
-      scrapeTimeout: 30s
+      scrapeTimeout: 5s
     jobLabel: prometheus
     namespaceSelector:
       matchNames:
@@ -180,7 +180,7 @@ items:
         - odigos-system
     endpoints:
       - port: metrics
-        interval: 15s
+        interval: 5s
         path: /metrics
 
 - apiVersion: monitoring.coreos.com/v1

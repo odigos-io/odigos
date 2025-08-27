@@ -60,8 +60,8 @@ module "eks" {
       instance_types = [var.node_spec]
 
       min_size     = var.node_count
-      max_size     = var.node_count
-      desired_size = var.node_count
+      desired_size = 5
+      max_size     = 10
     }
   }
 }

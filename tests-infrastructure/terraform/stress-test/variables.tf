@@ -10,12 +10,12 @@ variable "region" {
 
 variable "node_count" {
   description = "Number of nodes in the cluster"
-  default     = 6
+  default     = 5
 }
 
 variable "node_spec" {
   description = "The node spec for the cluster"
-  default     = "m6a.large"
+  default = "c6a.xlarge" 
 }
 
 variable "monitoring_sg_id" {
