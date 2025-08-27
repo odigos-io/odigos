@@ -55,7 +55,7 @@ jobs:
 
             RELEASE_BRANCH="${{ steps.release_branch.outputs.release_branch_name }}"
             PR_BRANCH="patch-release/${{ steps.calculate_patch_version.outputs.patch_version }}"
-            PR_TITLE="Patch release PR for stable verion ${{ steps.calculate_patch_version.outputs.patch_version }}"
+            PR_TITLE="Patch release PR for stable version ${{ steps.calculate_patch_version.outputs.patch_version }}"
 
             # Escape all regex metacharacters properly for branch detection
             ESCAPED_PR_BRANCH=$(echo "$PR_BRANCH" | sed 's/[[\.*^$()+?{|/]/\\&/g')
