@@ -32,7 +32,7 @@ jobs:
         id: calculate_patch_version
         run: |
           # find the latest stable version for this minor release line
-          LATEST_MINOR_LINE_VERSION=$(git tag -l | grep -E "^${{ github.event.inputs.base_minor_version }}\.[0-9]+$" | sort -V)
+          LATEST_MINOR_LINE_VERSION=$(git tag -l | grep -E "^${{ github.event.inputs.base_minor_version }}\.[0-9]+$" | sort -V | tail -n 1)
           if [[ -z "$LATEST_MINOR_LINE_VERSION" ]]; then
             echo "Error: no stable versions found for minor ${{ github.event.inputs.base_minor_version }}"
             exit 1
