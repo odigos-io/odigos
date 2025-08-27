@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
 import { useConfig } from '../config';
-import { useTempHoldStore } from '@/store';
 import { useNamespace } from '../namespaces';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import { getSseTargetFromId, getWorkloadId } from '@odigos/ui-kit/functions';
+import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import type { PaginatedData, SourceConditions, SourceInstrumentInput } from '@/types';
 import { addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
@@ -34,7 +33,6 @@ interface UseSourceCrud {
 export const useSourceCRUD = (): UseSourceCrud => {
   const { isReadonly } = useConfig();
   const { persistNamespaces } = useNamespace();
-  const { setHoldSourceIds } = useTempHoldStore();
   const { addNotification } = useNotificationStore();
   const { selectedStreamName } = useDataStreamStore();
   const { addPendingItems, removePendingItems } = usePendingStore();
@@ -161,15 +159,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
       if (!futueAppsEmpty && !alreadyNotified) {
         alreadyNotified = true;
         notifyUser(StatusType.Default, 'Pending', 'Persisting namespaces...', undefined, true);
-      }
-
-      // hold the source ids for later use (when we get the SSE message that the sources are created and we already have paginated previous sources)
-      if (sources.length) {
-        const selectedSources = persistSourcesPayloads.sources.filter((s) => s.selected);
-        // but only if we have less sources than the selected ones (otherwise we will paginate the sources again, it would be cheaper)
-        if (selectedSources.length < sources.length) {
-          setHoldSourceIds(selectedSources.map((s) => getWorkloadId(s)));
-        }
       }
 
       await mutatePersistSources({ variables: persistSourcesPayloads });

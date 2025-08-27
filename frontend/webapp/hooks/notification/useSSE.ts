@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
+import { useStatusStore } from '@/store';
 import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
 import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';
-import { useStatusStore, useTempHoldStore } from '@/store';
 import { getIdFromSseTarget } from '@odigos/ui-kit/functions';
 import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
 import { type NotifyPayload, useInstrumentStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
@@ -47,7 +47,6 @@ export const useSSE = () => {
         };
 
         const { setInstrumentAwait, isAwaitingInstrumentation, setInstrumentCount, sourcesToCreate, sourcesCreated, sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
-        const { holdSourceIds, setHoldSourceIds } = useTempHoldStore.getState();
 
         const isConnected = [CONNECTED].includes(notification.crdType as string);
         const isSource = [CrdTypes.InstrumentationConfig].includes(notification.crdType as CrdTypes);
@@ -83,9 +82,7 @@ export const useSSE = () => {
               if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
                 addNotification({ type: StatusType.Success, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
                 setInstrumentAwait(false);
-
-                if (!holdSourceIds.length) fetchSourcesPaginated();
-                else fetchSourcesByIds(holdSourceIds).then(() => setHoldSourceIds([]));
+                fetchSourcesPaginated();
               }
               break;
 
