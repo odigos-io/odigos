@@ -40,7 +40,7 @@ metadata:
       kind: CollectorsGroup
       name: odigos-gateway
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       odigos.io/collector-role: "CLUSTER_GATEWAY"
@@ -76,6 +76,6 @@ spec:
             limits:
               (memory != null): true
 status:
-  availableReplicas: 1
-  readyReplicas: 1
-  replicas: 1
+  availableReplicas: 2
+  readyReplicas: 2
+  replicas: 2
