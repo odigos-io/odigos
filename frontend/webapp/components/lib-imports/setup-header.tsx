@@ -159,7 +159,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
 
   return (
     <Header
-      left={[<OdigosLogoText key='logo' size={100} />]}
+      left={[<OdigosLogoText key='logo' size={150} />]}
       center={[
         <Text key='msg' family='secondary'>
           START WITH ODIGOS

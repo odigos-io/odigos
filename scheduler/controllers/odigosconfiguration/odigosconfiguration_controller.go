@@ -10,9 +10,9 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/sizing"
 	"github.com/odigos-io/odigos/profiles"
 	"github.com/odigos-io/odigos/profiles/manifests"
-	"github.com/odigos-io/odigos/profiles/sizing"
 
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -89,9 +89,7 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	modifyConfigWithEffectiveProfiles(effectiveProfiles, &odigosConfiguration)
 	odigosConfiguration.Profiles = effectiveProfiles
 
-	// if none of the profiles set sizing for collectors, use size_s as default, so the values are never nil
-	// if the values were already set (by user or profile) this is a no-op
-	sizing.SizeSProfile.ModifyConfigFunc(&odigosConfiguration)
+	sizing.ModifyResourceSizePreset(&odigosConfiguration)
 
 	// TODO: revisit doing this here, might be nicer to maintain in a more generic way
 	// and have it on the config object itself.
@@ -367,6 +365,15 @@ func (r *odigosConfigurationController) applySingleProfileManifest(ctx context.C
 		return err
 	}
 
+	odigosNs := env.GetCurrentNamespace()
+
+	// profiles are read without namespace, and we need to add it ourselves.
+	// the namespace is usually odigos-system, but user can set it to anything,
+	// which is why we need to address it here.
+	// the namespace is set on the object itself, but not in the yamlbytes for the apply,
+	// which is ok and works (the applied object takes the namespace from the object)
+	obj.SetNamespace(odigosNs)
+
 	labels := obj.GetLabels()
 	if labels == nil {
 		labels = make(map[string]string)
@@ -393,7 +400,7 @@ func (r *odigosConfigurationController) applySingleProfileManifest(ctx context.C
 		Resource: resource,
 	}
 
-	resourceClient := r.DynamicClient.Resource(gvr).Namespace(env.GetCurrentNamespace())
+	resourceClient := r.DynamicClient.Resource(gvr).Namespace(odigosNs)
 	_, err = resourceClient.Apply(ctx, obj.GetName(), obj, metav1.ApplyOptions{
 		FieldManager: "scheduler-odigosconfiguration",
 		Force:        true,

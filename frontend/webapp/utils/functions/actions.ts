@@ -20,6 +20,7 @@ export const mapFetchedActions = (items: FetchedAction[]): Action[] => {
 
       case ActionType.AddClusterInfo:
         spec.clusterAttributes = parsedSpec.clusterAttributes;
+        spec.overwriteExistingValues = parsedSpec.overwriteExistingValues || false;
         break;
 
       case ActionType.DeleteAttributes:
@@ -144,6 +145,7 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
     labelsAttributes,
     annotationsAttributes,
     clusterAttributes,
+    overwriteExistingValues,
     attributeNamesToDelete,
     renames,
     piiCategories,
@@ -176,7 +178,7 @@ export const mapActionsFormToGqlInput = (action: ActionFormData): ActionInput =>
       break;
 
     case ActionType.AddClusterInfo:
-      payload['details'] = JSON.stringify({ clusterAttributes });
+      payload['details'] = JSON.stringify({ clusterAttributes, overwriteExistingValues });
       break;
 
     case ActionType.DeleteAttributes:

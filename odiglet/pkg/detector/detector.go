@@ -35,6 +35,7 @@ func DefaultK8sDetectorOptions(logger logr.Logger, appendEnvVarNames []string) [
 			"/sbin/tini",
 			"/usr/bin/tini",
 		),
+		detector.WithProcFSPath(process.HostProcDir()),
 	}
 
 	if val, ok := os.LookupEnv(durationFilterMillisEnvKey); ok {

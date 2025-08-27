@@ -21,6 +21,7 @@ export interface ParsedActionSpec {
   labelsAttributes?: { labelKey: string; attributeKey: string }[] | null;
   annotationsAttributes?: { annotationKey: string; attributeKey: string }[] | null;
   clusterAttributes?: { attributeName: string; attributeStringValue: string }[] | null;
+  overwriteExistingValues?: boolean | null;
   attributeNamesToDelete?: string[] | null;
   renames?: { [oldKey: string]: string } | null;
   piiCategories?: string[] | null;

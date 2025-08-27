@@ -19,7 +19,6 @@ var KratosProfile = profile.Profile{
 		"code-attributes",
 		"query-operation-detector",
 		"small-batches",
-		"size_m",
 		"allow_concurrent_agents",
 		"mount-method-k8s-host-path",
 		"reduce-span-name-cardinality",

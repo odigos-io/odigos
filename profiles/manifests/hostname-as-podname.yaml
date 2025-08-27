@@ -2,7 +2,6 @@ apiVersion: odigos.io/v1alpha1
 kind: Processor
 metadata:
   name: hostname-as-podname
-  namespace: odigos-system
 spec:
   type: resource
   processorName: "host.name as pod.name"

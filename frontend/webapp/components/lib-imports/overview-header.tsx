@@ -18,7 +18,7 @@ const OverviewHeader = () => {
   return (
     <Header
       left={[
-        <OdigosLogoText key='logo' size={100} />,
+        <OdigosLogoText key='logo' size={150} />,
         <Status key='status' status={status} title={title} subtitle={message} size={14} family='primary' withIcon withBackground />,
         isReadonly && (
           <Tooltip key='readonly' text={FORM_ALERTS.READONLY_WARNING}>

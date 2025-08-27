@@ -1,3 +1,6 @@
+{{- /* ensure ResourceSizePreset is valid early */ -}}
+{{- include "collector.validateSizing" . -}}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -41,34 +44,17 @@ data:
       {{- end }}
     {{- end }}
     {{- if .Values.collectorGateway }}
+    {{- $gwLimiter := include "collector.gateway.memoryLimiter" . | fromYaml }}
     collectorGateway:
-      {{- with .Values.collectorGateway.minReplicas }}
-      MinReplicas: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorGateway.maxReplicas }}
-      MaxReplicas: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorGateway.requestMemoryMiB }}
-      requestMemoryMiB: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorGateway.limitMemoryMiB }}
-      limitMemoryMiB: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorGateway.requestCPUm }}
-      requestCPUm: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorGateway.limitCPUm }}
-      limitCPUm: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorGateway.memoryLimiterLimitMiB }}
-      memoryLimiterLimitMiB: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorGateway.memoryLimiterSpikeLimitMiB }}
-      memoryLimiterSpikeLimitMiB: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorGateway.goMemLimitMiB }}
-      goMemLimitMiB: {{ . }}
-      {{- end }}
+      MinReplicas: {{ include "collector.gateway.minReplicas" . }}
+      MaxReplicas: {{ include "collector.gateway.maxReplicas" . }}
+      requestMemoryMiB: {{ include "collector.gateway.memoryRequest" . }}
+      limitMemoryMiB: {{ include "collector.gateway.memoryLimit" . }}
+      requestCPUm: {{ include "collector.gateway.cpuRequest" . }}
+      limitCPUm: {{ include "collector.gateway.cpuLimit" . }}
+      memoryLimiterLimitMiB: {{ $gwLimiter.limitMiB }}
+      memoryLimiterSpikeLimitMiB: {{ $gwLimiter.spikeMiB }}
+      goMemLimitMiB: {{ $gwLimiter.goMiB }}
       serviceGraphDisabled: {{ .Values.collectorGateway.serviceGraphDisabled }}
       clusterMetricsEnabled: {{ .Values.collectorGateway.clusterMetricsEnabled }}
       {{- with .Values.collectorGateway.httpsProxyAddress }}
@@ -76,31 +62,18 @@ data:
       {{- end }}
     {{- end }}
     {{- if .Values.collectorNode }}
+    {{- $nodeLimiter := include "collector.node.memoryLimiter" . | fromYaml }}
     collectorNode:
       {{- with .Values.collectorNode.collectorOwnMetricsPort }}
       collectorOwnMetricsPort: {{ . }}
       {{- end }}
-      {{- with .Values.collectorNode.requestMemoryMiB }}
-      requestMemoryMiB: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorNode.limitMemoryMiB }}
-      limitMemoryMiB: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorNode.requestCPUm }}
-      requestCPUm: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorNode.limitCPUm }}
-      limitCPUm: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorNode.memoryLimiterLimitMiB }}
-      memoryLimiterLimitMiB: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorNode.memoryLimiterSpikeLimitMiB }}
-      memoryLimiterSpikeLimitMiB: {{ . }}
-      {{- end }}
-      {{- with .Values.collectorNode.goMemLimitMiB }}
-      goMemLimitMiB: {{ . }}
-      {{- end }}
+      requestMemoryMiB: {{ include "collector.node.memoryRequest" . }}
+      limitMemoryMiB:   {{ include "collector.node.memoryLimit" . }}
+      requestCPUm:      {{ include "collector.node.cpuRequest" . }}
+      limitCPUm:        {{ include "collector.node.cpuLimit" . }}
+      memoryLimiterLimitMiB: {{ $nodeLimiter.limitMiB }}
+      memoryLimiterSpikeLimitMiB: {{ $nodeLimiter.spikeMiB }}
+      goMemLimitMiB: {{ $nodeLimiter.goMiB }}
       {{- with .Values.collectorNode.k8sNodeLogsDirectory }}
       k8sNodeLogsDirectory: {{ . }}
       {{- end }}
@@ -151,6 +124,9 @@ data:
     {{- end }}
     {{- if .Values.instrumentor.checkDeviceHealthBeforeInjection }}
     checkDeviceHealthBeforeInjection: {{ .Values.instrumentor.checkDeviceHealthBeforeInjection }}
+    {{- end }}
+    {{- if .Values.ResourceSizePreset }}
+    ResourceSizePreset: {{ .Values.ResourceSizePreset }}
     {{- end }}
     {{- $envMethod := .Values.instrumentor.agentEnvVarsInjectionMethod }}
     {{- if and $envMethod (not (has $envMethod (list "loader" "pod-manifest" "loader-fallback-to-pod-manifest"))) }}

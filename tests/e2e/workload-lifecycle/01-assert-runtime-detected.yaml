@@ -355,6 +355,25 @@ status:
       runtimeVersion: 3.6.15
       secureExecutionMode: false
 ---
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-python-gunicorn-server
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: python-gunicorn-server
+status:
+  runtimeDetailsByContainer:
+    - containerName: python-gunicorn-server
+      language: python
+      runtimeVersion: 3.8.20
+      secureExecutionMode: false
+---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
