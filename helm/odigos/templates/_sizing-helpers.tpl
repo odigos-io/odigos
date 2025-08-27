@@ -1,25 +1,25 @@
 {{/*
     _sizing-helpers.tpl
     Hybrid sizing helpers:
-    - Defaults come from .Values.sizingConfig (size_s | size_m | size_l)
+    - Defaults come from .Values.ResourceSizePreset (size_s | size_m | size_l)
     - Users may override specific CPU/Memory/replica knobs safely
     - Memory-limiter trio (limit/spike/go) is auto-derived from limit unless all three are set explicitly
   */}}
 
   {{/* ------------------------------------------------------------------
-       0) Validate and resolve sizingConfig
+       0) Validate and resolve ResourceSizePreset
   ------------------------------------------------------------------ */}}
 
   {{- define "collector.validateSizing" -}}
-  {{- $s := .Values.sizingConfig | default "size_m" -}}
+  {{- $s := .Values.ResourceSizePreset | default "size_m" -}}
   {{- if not (has $s (list "size_s" "size_m" "size_l")) -}}
-    {{- fail (printf "Invalid sizingConfig=%q. Valid: size_s, size_m, size_l" $s) -}}
+    {{- fail (printf "Invalid ResourceSizePreset=%q. Valid: size_s, size_m, size_l" $s) -}}
   {{- end -}}
   {{- end -}}
 
   {{- define "collector.sizing.resolve" -}}
   {{- include "collector.validateSizing" . -}}
-  {{- .Values.sizingConfig | default "size_m" -}}
+  {{- .Values.ResourceSizePreset | default "size_m" -}}
   {{- end -}}
 
 
@@ -32,10 +32,10 @@
     collector.sizingDefaults
     -------------------------
     Returns a YAML block of default sizing values (CPU/Memory/Replicas) for
-    collectorGateway and collectorNode based on .Values.sizingConfig.
-    - sizingConfig may be: size_s, size_m, size_l (default = size_m)
+    collectorGateway and collectorNode based on .Values.ResourceSizePreset.
+    - ResourceSizePreset may be: size_s, size_m, size_l (default = size_m)
     - Numbers are emitted as integers (not strings) so fromYaml works properly
-    - | trim is used on sizingConfig to avoid newline/space mismatch
+    - | trim is used on ResourceSizePreset to avoid newline/space mismatch
   */}}
 
   {{- define "collector.sizingDefaults" -}}
@@ -54,7 +54,7 @@
   {{- else if eq $s "size_l" }}
   gatewayMinReplicas: 3
   gatewayMaxReplicas: 12
-  gatewayMemoryRequest: 750
+  gatewayMemoryRequest: 850
   gatewayMemoryLimit: 850
   gatewayCPURequest: 750
   gatewayCPULimit: 1250
@@ -65,7 +65,7 @@
   {{- else }} {{/* default size_m */}}
   gatewayMinReplicas: 2
   gatewayMaxReplicas: 8
-  gatewayMemoryRequest: 500
+  gatewayMemoryRequest: 600
   gatewayMemoryLimit: 600
   gatewayCPURequest: 500
   gatewayCPULimit: 1000
@@ -143,11 +143,11 @@
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
   {{- $min := (get .Values.collectorGateway "minReplicas" | default $d.gatewayMinReplicas) | int -}}
   {{- $max := (get .Values.collectorGateway "maxReplicas" | default $d.gatewayMaxReplicas) | int -}}
-  {{- if ge $min $max -}}
-    {{- fail (printf "collectorGateway.minReplicas (%d) must be < collectorGateway.maxReplicas (%d)" $min $max) -}}
+  {{- if gt $min $max -}}
+    {{- fail (printf "collectorGateway.minReplicas (%d) must be <= collectorGateway.maxReplicas (%d)" $min $max) -}}
   {{- end -}}
   {{- $min -}}
-  {{- end -}}
+{{- end -}}
 
   {{- define "collector.gateway.maxReplicas" -}}
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}

@@ -4,7 +4,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
-type SizingConfig struct {
+type ResourceSizePreset struct {
 	CollectorGatewayConfig common.CollectorGatewayConfiguration
 	CollectorNodeConfig    common.CollectorNodeConfiguration
 }
@@ -17,7 +17,7 @@ const (
 	SizeLarge  Sizing = "size_l"
 )
 
-var configs = map[Sizing]SizingConfig{
+var configs = map[Sizing]ResourceSizePreset{
 	SizeSmall: {
 		CollectorGatewayConfig: common.CollectorGatewayConfiguration{
 			MinReplicas:                1,
@@ -86,29 +86,15 @@ var configs = map[Sizing]SizingConfig{
 	},
 }
 
-// GetSizingConfig returns the SizingConfig for the given sizing config.
-// If sizingConfig is empty, it returns the default sizing config [size_m].
-func GetSizingConfig(sizingConfig string) SizingConfig {
-	if sizingConfig == "" {
-		sizingConfig = string(SizeMedium)
-	}
-	return configs[Sizing(sizingConfig)]
-}
-
-func ModifySizingConfig(c *common.OdigosConfiguration, helmInstallation bool) {
-	// If helm installation, we don't want to modify the sizing config.
-	if helmInstallation {
-		return
-	}
-
+func ModifyResourceSizePreset(c *common.OdigosConfiguration) {
 	// if odigos installed using cli
-	//  we want to set the sizing based on the sizing config [default: size_m].
-	if c.SizingConfig == "" {
-		c.SizingConfig = string(SizeMedium)
+	// we want to set the sizing based on the sizing config [default: size_m].
+	if !IsValidSizing(c.ResourceSizePreset) {
+		c.ResourceSizePreset = string(SizeMedium)
 	}
 
 	// Start from base sizing config
-	base := configs[Sizing(c.SizingConfig)]
+	base := configs[Sizing(c.ResourceSizePreset)]
 	gw := base.CollectorGatewayConfig
 	node := base.CollectorNodeConfig
 

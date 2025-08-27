@@ -95,7 +95,7 @@ status:
       restartCount: 0
       started: true
   phase: Running
---- 
+---
 apiVersion: v1
 kind: Pod
 metadata:
@@ -264,7 +264,7 @@ spec:
   containers:
   - env:
     - name: DJANGO_SETTINGS_MODULE
-      (value != null): true  
+      (value != null): true
 status:
   containerStatuses:
     - name: python-min-version
@@ -283,7 +283,7 @@ spec:
   containers:
   - env:
     - name: DJANGO_SETTINGS_MODULE
-      (value != null): true  
+      (value != null): true
 status:
   containerStatuses:
     - name: python-not-supported
@@ -347,3 +347,18 @@ status:
       restartCount: 0
       started: true
   phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: python-gunicorn-server
+  namespace: default
+status:
+  containerStatuses:
+    - name: python-gunicorn-server
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---

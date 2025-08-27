@@ -25,7 +25,6 @@ var AllProfiles = []profile.Profile{
 	attributes.SemconvDynamoProfile,
 	attributes.SemconvRedisProfile,
 	attributes.ReduceSpanNameCardinalityProfile,
-	attributes.LabelAttributeProfile,
 
 	instrumentation.AllowConcurrentAgents,
 	instrumentation.JavaEbpfInstrumentationsProfile,

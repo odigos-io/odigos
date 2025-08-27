@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"slices"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -304,7 +303,7 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 		collectClusterUID = collectClusterUID || config.CollectClusterUID
 		// traces should already contain workload name (if they originated from odigos)
 		// logs collected from filelog receiver will lack this info thus needs to be added
-		collectWorkloadNames = (collectWorkloadNames || slices.Contains(currentAction.Spec.Signals, common.LogsObservabilitySignal))
+		// collectWorkloadNames = (collectWorkloadNames || slices.Contains(currentAction.Spec.Signals, common.LogsObservabilitySignal))
 
 		// Add label attributes, newer configs override older ones with same Tag
 		for _, label := range config.LabelsAttributes {
