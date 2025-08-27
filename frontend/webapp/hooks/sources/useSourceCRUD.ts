@@ -25,6 +25,7 @@ interface UseSourceCrud {
   sourcesLoading: boolean;
   fetchSourcesPaginated: (getAll?: boolean, nextPage?: string) => Promise<void>;
   fetchSourceById: (id: WorkloadId, bypassPaginationLoader?: boolean) => Promise<Source | undefined>;
+  fetchSourcesByIds: (ids: WorkloadId[], bypassPaginationLoader?: boolean) => Promise<void>;
   fetchSourceLibraries: (req: { variables: WorkloadId }) => Promise<{ data?: { instrumentationInstanceComponents: InstrumentationInstanceComponent[] } }>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
@@ -139,6 +140,12 @@ export const useSourceCRUD = (): UseSourceCrud => {
     }
   };
 
+  const fetchSourcesByIds = async (ids: WorkloadId[], bypassPaginationLoader: boolean = false): Promise<void> => {
+    for await (const id of ids) {
+      await fetchSourceById(id, bypassPaginationLoader);
+    }
+  };
+
   const persistSources: UseSourceCrud['persistSources'] = async (selectAppsList, futureSelectAppsList) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
@@ -157,7 +164,13 @@ export const useSourceCRUD = (): UseSourceCrud => {
       }
 
       // hold the source ids for later use (when we get the SSE message that the sources are created and we already have paginated previous sources)
-      if (sources.length) setHoldSourceIds(sources.map((s) => getWorkloadId(s)));
+      if (sources.length) {
+        const selectedSources = persistSourcesPayloads.sources.filter((s) => s.selected);
+        // but only if we have less sources than the selected ones (otherwise we will paginate the sources again, it would be cheaper)
+        if (selectedSources.length < sources.length) {
+          setHoldSourceIds(selectedSources.map((s) => getWorkloadId(s)));
+        }
+      }
 
       await mutatePersistSources({ variables: persistSourcesPayloads });
       setConfiguredSources({});
@@ -195,6 +208,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     sourcesLoading,
     fetchSourcesPaginated,
     fetchSourceById,
+    fetchSourcesByIds,
     fetchSourceLibraries: querySourceLibraries,
     persistSources,
     updateSource,

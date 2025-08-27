@@ -27,7 +27,7 @@ export const useSSE = () => {
   const { addNotification } = useNotificationStore();
   const { title, setStatusStore } = useStatusStore();
   const { fetchDestinations } = useDestinationCRUD();
-  const { fetchSourcesPaginated, fetchSourceById } = useSourceCRUD();
+  const { fetchSourcesPaginated, fetchSourceById, fetchSourcesByIds } = useSourceCRUD();
 
   const retryCount = useRef(0);
   const maxRetries = 10;
@@ -84,12 +84,8 @@ export const useSSE = () => {
                 addNotification({ type: StatusType.Success, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
                 setInstrumentAwait(false);
 
-                if (!holdSourceIds.length) {
-                  fetchSourcesPaginated();
-                } else {
-                  holdSourceIds.forEach((id) => fetchSourceById(id as WorkloadId));
-                  setHoldSourceIds([]);
-                }
+                if (!holdSourceIds.length) fetchSourcesPaginated();
+                else fetchSourcesByIds(holdSourceIds).then(() => setHoldSourceIds([]));
               }
               break;
 
