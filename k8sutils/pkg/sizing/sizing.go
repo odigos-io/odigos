@@ -87,7 +87,6 @@ var configs = map[Sizing]ResourceSizePreset{
 }
 
 func GetResourceSizePreset(sizing string) ResourceSizePreset {
-
 	if !IsValidSizing(sizing) {
 		sizing = string(SizeMedium)
 	}
