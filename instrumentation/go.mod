@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	github.com/cilium/ebpf v0.19.1-0.20250818092626-ae226118949d // indirect
+	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/odigos-io/odigos/common v0.0.0 // indirect
