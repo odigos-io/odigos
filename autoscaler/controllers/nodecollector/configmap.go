@@ -471,7 +471,6 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	}
 	collectMetrics := slices.Contains(signals, odigoscommon.MetricsObservabilitySignal)
 	if collectMetrics {
-		log.Log.V(1).Info("env:NODE_IP")
 		cfg.Receivers["kubeletstats"] = config.GenericMap{
 			"auth_type":            "serviceAccount",
 			"endpoint":             "https://${env:NODE_IP}:10250",
