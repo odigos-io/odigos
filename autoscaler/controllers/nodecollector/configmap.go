@@ -469,6 +469,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			Exporters:  tracesPipelineExporter,
 		}
 	}
+
 	collectMetrics := slices.Contains(signals, odigoscommon.MetricsObservabilitySignal)
 	if collectMetrics {
 		cfg.Receivers["kubeletstats"] = config.GenericMap{
