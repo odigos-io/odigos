@@ -100,8 +100,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/odigos-io/opentelemetry-zap-bridge v0.0.5 h1:UDEKtgab42nGVSvA/F3lLKUYFPETtpl7kpxM9BKBlWk=
 github.com/odigos-io/opentelemetry-zap-bridge v0.0.5/go.mod h1:K98wHhktQ6vCTqeFztcpBDtPTe88vxVgZFlbeGobt24=
-github.com/odigos-io/runtime-detector v0.0.18 h1:21ln38bw1ijT+SgotVefN18lLzGfgThW0GHHMtFaHN4=
-github.com/odigos-io/runtime-detector v0.0.18/go.mod h1:PU48BPpW9+gHxuCBdoKFenVquqI8ScnUW8z/237TbwA=
+github.com/odigos-io/runtime-detector v0.0.19 h1:l05kK4C2Oz79M1c7TuFtTPshSEf3qpfleQ9oy0sfGbU=
+github.com/odigos-io/runtime-detector v0.0.19/go.mod h1:3oYvxttHUm4RqcpyV46r4P+5Z+Nt1u4OPkbb8kn3kxI=
 github.com/onsi/ginkgo/v2 v2.22.0 h1:Yed107/8DjTr0lKCNt7Dn8yQ6ybuDRQoMGrNFKzMfHg=
 github.com/onsi/ginkgo/v2 v2.22.0/go.mod h1:7Du3c42kxCUegi0IImZ1wUQzMBVecgIHjR1C+NkhLQo=
 github.com/onsi/gomega v1.36.1 h1:bJDPBO7ibjxcbHMgSCoo4Yj18UWbKDlLwX1x9sybDcw=
