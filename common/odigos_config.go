@@ -187,6 +187,7 @@ type OdigosConfiguration struct {
 	GoAutoOffsetsCron                 string                   `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
 	ClickhouseJsonTypeEnabledProperty *bool                    `json:"clickhouseJsonTypeEnabled,omitempty"`
 	CheckDeviceHealthBeforeInjection  *bool                    `json:"checkDeviceHealthBeforeInjection,omitempty"`
+	ResourceSizePreset                string                   `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
 
 	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
 }
