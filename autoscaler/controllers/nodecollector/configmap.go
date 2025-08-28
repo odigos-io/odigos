@@ -474,7 +474,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	if collectMetrics {
 		cfg.Receivers["kubeletstats"] = config.GenericMap{
 			"auth_type":            "serviceAccount",
-			"endpoint":             "https://${env:NODE_NAME}:10250",
+			"endpoint":             "https://${env:NODE_IP}:10250",
 			"insecure_skip_verify": true,
 			"collection_interval":  "10s",
 		}
