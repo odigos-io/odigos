@@ -318,6 +318,14 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 									},
 								},
 								{
+									Name: k8sconsts.NodeIPEnvVar,
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
 									Name: "POD_NAME",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
