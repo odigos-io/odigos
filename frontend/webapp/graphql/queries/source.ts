@@ -1,33 +1,30 @@
 import { gql } from '@apollo/client';
 
 export const GET_SOURCES = gql`
-  query GetSources($nextPage: String!) {
+  query GetSources {
     computePlatform {
-      sources(nextPage: $nextPage) {
-        nextPage
-        items {
-          namespace
-          name
-          kind
-          dataStreamNames
-          selected
-          otelServiceName
-          containers {
-            containerName
-            language
-            runtimeVersion
-            overriden
-            instrumented
-            instrumentationMessage
-            otelDistroName
-          }
-          conditions {
-            status
-            type
-            reason
-            message
-            lastTransitionTime
-          }
+      sources {
+        namespace
+        name
+        kind
+        dataStreamNames
+        selected
+        otelServiceName
+        containers {
+          containerName
+          language
+          runtimeVersion
+          overriden
+          instrumented
+          instrumentationMessage
+          otelDistroName
+        }
+        conditions {
+          status
+          type
+          reason
+          message
+          lastTransitionTime
         }
       }
     }

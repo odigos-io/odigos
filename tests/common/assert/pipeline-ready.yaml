@@ -132,6 +132,11 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
+            - name: NODE_IP                                                                                                                                                              
+              valueFrom:                                                                                                                  
+                fieldRef:                                                                                                                                                                
+                  apiVersion: v1                                                                                                                                                                           
+                  fieldPath: status.hostIP
             - name: POD_NAME
               valueFrom:
                 fieldRef:

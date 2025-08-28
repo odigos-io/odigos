@@ -10,14 +10,14 @@ export const addConditionToSources = ({ namespace, name, kind, conditions }: Sou
   if (sources[foundIdx].conditions) {
     return {
       ...sources[foundIdx],
-      conditions: sources[foundIdx].conditions.concat(conditions),
-    };
-  } else {
-    return {
-      ...sources[foundIdx],
-      conditions,
+      conditions: (sources[foundIdx].conditions ?? []).concat(conditions),
     };
   }
+
+  return {
+    ...sources[foundIdx],
+    conditions,
+  };
 };
 
 export const prepareSourcePayloads = (

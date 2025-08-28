@@ -221,11 +221,6 @@ type K8sActualSource {
   conditions: [Condition!]
 }
 
-type PaginatedSources {
-  nextPage: String!
-  items: [K8sActualSource]!
-}
-
 input K8sDesiredSourceInput {
   serviceName: String
   autoInstrument: Boolean
@@ -391,7 +386,7 @@ type ComputePlatform {
   apiTokens: [ApiToken]!
   k8sActualNamespaces: [K8sActualNamespace]!
   k8sActualNamespace(name: String!): K8sActualNamespace
-  sources(nextPage: String!): PaginatedSources!
+  sources: [K8sActualSource!]!
   source(sourceId: K8sSourceId!): K8sActualSource!
   destinations: [Destination!]!
   actions: [PipelineAction!]!
@@ -927,26 +922,32 @@ type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
   odigosConfig: OdigosConfiguration
+
   destinationCategories: GetDestinationCategories
   potentialDestinations: [DestinationDetails!]!
+
   getOverviewMetrics: OverviewMetricsResponse!
   getServiceMap: ServiceMap!
+
   describeOdigos: OdigosAnalyze!
   describeSource(
     namespace: String!
     kind: String!
     name: String!
   ): SourceAnalyze!
+
+  # source conditions (from instance, workload, etc.)
   sourceConditions: [SourceConditions!]!
 
-  # get all sources that match the filter
-  workloads(filter: WorkloadFilter): [K8sWorkload!]!
-  
+  # source libraries
   instrumentationInstanceComponents(
     namespace: String!
     kind: String!
     name: String!
   ): [InstrumentationInstanceComponent!]!
+
+  # get all sources that match the filter
+  workloads(filter: WorkloadFilter): [K8sWorkload!]!
 }
 
 type Mutation {
