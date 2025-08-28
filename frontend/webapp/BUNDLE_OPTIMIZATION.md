@@ -220,9 +220,3 @@ Monitor the build output for:
   }
 }
 ```
-
-## References
-
-- [Next.js Bundle Analyzer](https://www.npmjs.com/package/@next/bundle-analyzer)
-- [Webpack Optimization](https://webpack.js.org/configuration/optimization/)
-- [Next.js Performance](https://nextjs.org/docs/advanced-features/measuring-performance)
