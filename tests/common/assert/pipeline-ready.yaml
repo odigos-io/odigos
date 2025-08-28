@@ -132,16 +132,16 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.name
             - name: NODE_IP                                                                                                                                                              
               valueFrom:                                                                                                                  
                 fieldRef:                                                                                                                                                                
                   apiVersion: v1                                                                                                                                                                           
                   fieldPath: status.hostIP
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
             - name: GOMEMLIMIT
               (value != null): true
             - name: GOMAXPROCS
