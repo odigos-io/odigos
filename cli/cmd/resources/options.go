@@ -23,7 +23,7 @@ type OdigletDaemonSetOptions struct {
 	HealthProbeBindPort              int
 	MountMethod                      *common.MountMethod
 	CustomContainerRuntimeSocketPath string
-	SizingConfig                     string
+	ResourceSizePreset               string
 
 	SignalsEnabled map[common.ObservabilitySignal]bool // nil => default all ON
 }

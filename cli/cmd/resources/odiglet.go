@@ -274,7 +274,7 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 		odigletOptions.NodeSelector = make(map[string]string)
 	}
 
-	sizingConfig := sizing.GetSizingConfig(odigletOptions.SizingConfig)
+	SizePreset := sizing.GetResourceSizePreset(odigletOptions.ResourceSizePreset)
 
 	// Data-collection default: enable all signals (traces, metrics, logs)
 	// TODO: control by configuration later per request
@@ -684,7 +684,7 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 								},
 								{
 									Name:  "GOMEMLIMIT",
-									Value: fmt.Sprintf("%dMiB", sizingConfig.CollectorNodeConfig.GoMemLimitMib),
+									Value: fmt.Sprintf("%dMiB", SizePreset.CollectorNodeConfig.GoMemLimitMib),
 								},
 								{
 									Name: "GOMAXPROCS",
@@ -715,12 +715,12 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 							// For PoC we leave Resources empty or set simple defaults; you can thread values later.
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse(fmt.Sprintf("%dm", sizingConfig.CollectorNodeConfig.RequestCPUm)),
-									"memory": resource.MustParse(fmt.Sprintf("%dMi", sizingConfig.CollectorNodeConfig.RequestMemoryMiB)),
+									"cpu":    resource.MustParse(fmt.Sprintf("%dm", SizePreset.CollectorNodeConfig.RequestCPUm)),
+									"memory": resource.MustParse(fmt.Sprintf("%dMi", SizePreset.CollectorNodeConfig.RequestMemoryMiB)),
 								},
 								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse(fmt.Sprintf("%dm", sizingConfig.CollectorNodeConfig.LimitCPUm)),
-									"memory": resource.MustParse(fmt.Sprintf("%dMi", sizingConfig.CollectorNodeConfig.LimitMemoryMiB)),
+									"cpu":    resource.MustParse(fmt.Sprintf("%dm", SizePreset.CollectorNodeConfig.LimitCPUm)),
+									"memory": resource.MustParse(fmt.Sprintf("%dMi", SizePreset.CollectorNodeConfig.LimitMemoryMiB)),
 								},
 							},
 							VolumeMounts: dataCollectionMounts,
@@ -1024,7 +1024,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		NodeSelector:                     a.config.NodeSelector,
 		HealthProbeBindPort:              a.config.OdigletHealthProbeBindPort,
 		MountMethod:                      a.config.MountMethod,
-		SizingConfig:                     a.config.SizingConfig,
+		ResourceSizePreset:               a.config.ResourceSizePreset,
 	}
 
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding
