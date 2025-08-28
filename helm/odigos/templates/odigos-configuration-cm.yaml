@@ -159,3 +159,6 @@ data:
     {{- if .Values.clickhouseDestinationJsonType.enabled }}
     clickhouseDestinationJsonType: {{ .Values.clickhouseDestinationJsonType.enabled }}
     {{- end }}
+    {{- if .Values.allowConcurrentAgents.enabled }}
+    allowConcurrentAgents: {{ .Values.allowConcurrentAgents.enabled }}
+    {{- end }}
