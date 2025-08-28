@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type NodeCollectorDaemonSetReconciler struct {
+type OdigletDaemonSetReconciler struct {
 	client.Client
 }
 
@@ -22,7 +22,7 @@ type NodeCollectorDaemonSetReconciler struct {
 // we don't want to run the agents before the node collector is ready so we know that data can be exported successfully.
 // and will not cause errors or memory pressure in the application runtime.
 // This should be revisited in the future.
-func (r *NodeCollectorDaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *OdigletDaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling DaemonSet")
 
@@ -39,7 +39,7 @@ func (r *NodeCollectorDaemonSetReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	isNowReady := calcDataCollectionReadyStatus(&ds)
+	isNowReady := calcOdigletReadyStatus(&ds)
 	if !datacollectionCollectortGroup.Status.Ready && isNowReady {
 		if err := r.Status().Patch(ctx, &datacollectionCollectortGroup, client.RawPatch(
 			types.MergePatchType,
@@ -54,6 +54,6 @@ func (r *NodeCollectorDaemonSetReconciler) Reconcile(ctx context.Context, req ct
 }
 
 // Data collection is ready if at least 50% of the pods are ready
-func calcDataCollectionReadyStatus(ds *appsv1.DaemonSet) bool {
+func calcOdigletReadyStatus(ds *appsv1.DaemonSet) bool {
 	return ds.Status.DesiredNumberScheduled > 0 && float64(ds.Status.NumberReady) >= float64(ds.Status.DesiredNumberScheduled)/float64(2)
 }

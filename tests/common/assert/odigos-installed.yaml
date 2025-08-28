@@ -79,6 +79,7 @@ spec:
       resources: {}
       securityContext:
         privileged: true
+    - name: data-collection
     - name: deviceplugin
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
@@ -88,6 +89,10 @@ spec:
   serviceAccountName: odiglet
 status:
   containerStatuses:
+    - name: data-collection
+      ready: true
+      restartCount: 0
+      started: true
     - name: deviceplugin
       ready: true
       restartCount: 0

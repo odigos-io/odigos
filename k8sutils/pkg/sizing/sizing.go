@@ -86,6 +86,14 @@ var configs = map[Sizing]ResourceSizePreset{
 	},
 }
 
+func GetResourceSizePreset(sizing string) ResourceSizePreset {
+	if !IsValidSizing(sizing) {
+		sizing = string(SizeMedium)
+	}
+
+	return configs[Sizing(sizing)]
+}
+
 func ModifyResourceSizePreset(c *common.OdigosConfiguration) {
 	// if odigos installed using cli
 	// we want to set the sizing based on the sizing config [default: size_m].

@@ -1,4 +1,5 @@
 {{- /* ensure ResourceSizePreset is valid early */ -}}
+
 {{- include "collector.validateSizing" . -}}
 
 apiVersion: v1
