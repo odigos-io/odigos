@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "cross-env NODE_ENV=production next build",
+    "build:analyze": "cross-env ANALYZE=true next build",
     "back:build": "cd .. && go build -o odigos-backend",
     "back:start": "cd .. && ./odigos-backend --port 8085 --debug --address 0.0.0.0",
     "cy:run": "cypress run --e2e -q",
@@ -24,10 +25,13 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.2",
     "@types/node": "24.3.0",
     "@types/react": "19.1.11",
     "@types/react-dom": "19.1.7",
     "autoprefixer": "^10.4.21",
+    "compression-webpack-plugin": "^11.1.0",
+    "cross-env": "^10.0.0",
     "cypress": "^14.5.4",
     "eslint": "9.34.0",
     "eslint-config-next": "15.5.2",
