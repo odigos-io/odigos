@@ -29,24 +29,34 @@ jobs:
           # Extract version components
           IFS='.' read -r major minor patch <<< "${LATEST_STABLE#v}"
 
-
           # Increment minor version for new release series
           target_minor=$((minor + 1))
           RELEASE_BASE="v$major.$target_minor.0"
 
-          # Find latest stable in this series
-          SERIES_TAGS=$(git tag -l "v$major.$target_minor.[0-9]*" | sort -V)
+          # Look for tags in the new series, including RCs
+          SERIES_TAGS=$(git tag -l "v$major.$target_minor.*" | sort -V)
+
           if [ -z "$SERIES_TAGS" ]; then
+            # No tags yet in this series → first RC will be vX.Y.0-rc0
             NEXT_STABLE="$RELEASE_BASE"
           else
-            LATEST_SERIES_TAG=$(echo "$SERIES_TAGS" | tail -n 1)
-            series_patch=$(echo "$LATEST_SERIES_TAG" | awk -F. '{print $3}')
-            NEXT_STABLE="v$major.$target_minor.$((series_patch + 1))"
+            # Check if there’s already a stable tag in the series
+            LATEST_SERIES_STABLE=$(echo "$SERIES_TAGS" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | tail -n 1)
+
+            if [ -z "$LATEST_SERIES_STABLE" ]; then
+              # Only RCs exist so far → stick with vX.Y.0
+              NEXT_STABLE="$RELEASE_BASE"
+            else
+              # At least one stable release exists → bump patch
+              series_patch=$(echo "$LATEST_SERIES_STABLE" | awk -F. '{print $3}')
+              NEXT_STABLE="v$major.$target_minor.$((series_patch + 1))"
+            fi
           fi
 
           echo "Next stable version will be: $NEXT_STABLE"
           echo "release_base=$RELEASE_BASE" >> $GITHUB_OUTPUT
           echo "next_stable=$NEXT_STABLE" >> $GITHUB_OUTPUT
+
 
       - name: Calculate RC version
         id: rc_version
@@ -83,6 +93,14 @@ jobs:
             git pull origin main
             git checkout -b $STABLE_RELEASE_BRANCH_NAME
             git push origin $STABLE_RELEASE_BRANCH_NAME
+
+            echo "Triggering creating release branch workflow in odigos-enterprise"
+            curl -sS -X POST \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
+              https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
+              -d "{\"event_type\":\"ensure-release-branch\",\"client_payload\":{\"branch\":\"$STABLE_RELEASE_BRANCH_NAME\"}}"
+
           else
             echo "Branch $STABLE_RELEASE_BRANCH_NAME already exists"
             # Check out the existing branch and pull latest changes
