@@ -169,7 +169,7 @@ type ComputePlatform struct {
 	APITokens            []*APIToken            `json:"apiTokens"`
 	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
 	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
-	Sources              *PaginatedSources      `json:"sources"`
+	Sources              []*K8sActualSource     `json:"sources"`
 	Source               *K8sActualSource       `json:"source"`
 	Destinations         []*Destination         `json:"destinations"`
 	Actions              []*PipelineAction      `json:"actions"`
@@ -861,11 +861,6 @@ type OtelAgentsAnalyze struct {
 type OverviewMetricsResponse struct {
 	Sources      []*SingleSourceMetricsResponse      `json:"sources"`
 	Destinations []*SingleDestinationMetricsResponse `json:"destinations"`
-}
-
-type PaginatedSources struct {
-	NextPage string             `json:"nextPage"`
-	Items    []*K8sActualSource `json:"items"`
 }
 
 type PatchSourceRequestInput struct {
