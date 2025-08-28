@@ -31,6 +31,7 @@ type ImageReferences struct {
 	CentralProxyImage   string
 	CentralBackendImage string
 	CentralUIImage      string
+	IngesterImage       string
 }
 
 type ResourceManager interface {

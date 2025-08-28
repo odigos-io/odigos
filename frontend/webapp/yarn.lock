@@ -563,10 +563,10 @@
   resolved "https://registry.npmjs.org/@types/prismjs/-/prismjs-1.26.5.tgz"
   integrity sha512-AUZTa7hQ2KY5L7AmtSiqxlhWxb4ina0yd8hNbl4TWuqnv/pFP0nDMb3YrfSBf4hJVGLh2YEIBfKaBW/9UEl6IQ==
 
-"@types/react-dom@19.1.7":
-  version "19.1.7"
-  resolved "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.1.7.tgz"
-  integrity sha512-i5ZzwYpqjmrKenzkoLM2Ibzt6mAsM7pxB6BCIouEVVmgiqaMj1TjaK7hnA36hbW5aZv20kx7Lw6hWzPWg0Rurw==
+"@types/react-dom@19.1.8":
+  version "19.1.8"
+  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-19.1.8.tgz#6cad88ec938beb2626df7c4cb97b15d9f66a05a9"
+  integrity sha512-xG7xaBMJCpcK0RpN8jDbAACQo54ycO6h4dSSmgv8+fu6ZIAdANkx/WsawASUjVXYfy+J9AbUpRMNNEsXCDfDBQ==
 
 "@types/react-dom@^19.0.0":
   version "19.1.9"

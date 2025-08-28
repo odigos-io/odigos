@@ -918,6 +918,48 @@ type InstrumentationInstanceComponent {
   nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
 }
 
+type TraceTag {
+  key: String!
+  type: String!
+  value: String!
+}
+
+type TraceReference {
+  refType: String!
+  traceID: String!
+  spanID: String!
+}
+
+type TraceLog {
+  timestamp: Int!
+  fields: [TraceTag!]!
+}
+
+type TraceSpan {
+  traceID: String!
+  spanID: String!
+  operationName: String!
+  references: [TraceReference!]!
+  startTime: Int!
+  duration: Int!
+  tags: [TraceTag!]!
+  logs: [TraceLog!]!
+  processID: String!
+  warnings: String!
+}
+
+type TraceProcess {
+  serviceName: String!
+  tags: [TraceTag!]!
+}
+
+type Trace {
+  traceID: String!
+  spans: [TraceSpan!]!
+  processes: [TraceProcess!]!
+  warnings: String!
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -928,6 +970,7 @@ type Query {
 
   getOverviewMetrics: OverviewMetricsResponse!
   getServiceMap: ServiceMap!
+  getTraces(serviceName: String!, limit: Int, hoursAgo: Int): [Trace!]!
 
   describeOdigos: OdigosAnalyze!
   describeSource(
