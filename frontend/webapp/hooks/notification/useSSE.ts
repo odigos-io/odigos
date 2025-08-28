@@ -27,7 +27,7 @@ export const useSSE = () => {
   const { addNotification } = useNotificationStore();
   const { title, setStatusStore } = useStatusStore();
   const { fetchDestinations } = useDestinationCRUD();
-  const { fetchSourcesPaginated, fetchSourceById, fetchSourcesByIds } = useSourceCRUD();
+  const { fetchSources, fetchSourceById } = useSourceCRUD();
 
   const retryCount = useRef(0);
   const maxRetries = 10;
@@ -67,10 +67,7 @@ export const useSSE = () => {
             case EVENT_TYPES.MODIFIED:
               if (!isAwaitingInstrumentation && notification.target) {
                 const id = getIdFromSseTarget(notification.target, EntityTypes.Source);
-
-                // This timeout is to ensure that the object isn't in paginating state when we start fetching the data,
-                // otherwise paginated-fetch will replace the modified-data with old-data.
-                setTimeout(() => fetchSourceById(id as WorkloadId), 1000);
+                fetchSourceById(id as WorkloadId);
               }
               break;
 
@@ -82,7 +79,7 @@ export const useSSE = () => {
               if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
                 addNotification({ type: StatusType.Success, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
                 setInstrumentAwait(false);
-                fetchSourcesPaginated();
+                fetchSources();
               }
               break;
 
