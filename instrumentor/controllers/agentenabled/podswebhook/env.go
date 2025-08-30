@@ -158,8 +158,17 @@ func InjectUserEnvForLang(odigosConfiguration *common.OdigosConfiguration, pod *
 	}
 }
 
-func InjectLoaderEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
+func InjectLoaderEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) (EnvVarNamesMap, error) {
 	odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
+
+	if existingLdPreload, exists := existingEnvNames[commonconsts.LdPreloadEnvVarName]; exists {
+		if existingLdPreload == odigosLoaderPath {
+			return existingEnvNames, nil
+		} else {
+			return existingEnvNames, fmt.Errorf("LD_PRELOAD env var is set to %s, but odigos loader path is %s", existingLdPreload.Value, odigosLoaderPath)
+		}
+	}
+
 	existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, consts.LdPreloadEnvVarName, odigosLoaderPath)
 	return existingEnvNames
 }

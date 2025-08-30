@@ -391,7 +391,10 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	if containerConfig.EnvInjectionMethod != nil {
 		switch *containerConfig.EnvInjectionMethod {
 		case common.LoaderEnvInjectionMethod:
-			podswebhook.InjectLoaderEnvVar(existingEnvNames, podContainerSpec)
+			_, err = podswebhook.InjectLoaderEnvVar(existingEnvNames, podContainerSpec)
+			if err != nil {
+				return false, nil, err
+			}
 		case common.LoaderFallbackToPodManifestInjectionMethod, common.PodManifestEnvInjectionMethod:
 			// "loader-fallback-to-pod-manifest" in this context, means that we tried loader,
 			// and it cannot be satisfied, thus we falledback to use pod manifest.
