@@ -27,6 +27,8 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
+	rtml "github.com/odigos-io/go-rtml"
+
 	"go.opentelemetry.io/collector/client"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configauth"
@@ -570,19 +572,18 @@ func (gss *ServerConfig) getGrpcServerOptions(
 }
 
 func memoryLimiterUnaryServerInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	realtimeMemlimitRefuse := isMemLimitReached()
-	if realtimeMemlimitRefuse {
+	if rtml.IsMemLimitReached() {
 		return nil, errMemoryLimitReached
 	}
 	return handler(ctx, req)
 }
 
 func memoryLimiterStreamServerInterceptor(srv any, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	ctx := stream.Context()
-	if isMemLimitReached() {
+	if rtml.IsMemLimitReached() {
 		return errMemoryLimitReached
 	}
 
+	ctx := stream.Context()
 	return handler(srv, wrapServerStream(ctx, stream))
 }
 
