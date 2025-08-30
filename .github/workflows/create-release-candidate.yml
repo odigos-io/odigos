@@ -173,3 +173,12 @@ jobs:
               --title "$PR_TITLE" \
               --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }}"
           fi
+
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with: 
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Successfully created release candidate PR for ${{ steps.rc_version.outputs.rc_version }}"
+          failure-description: "ERROR: Failed to create release candidate PR for ${{ steps.rc_version.outputs.rc_version }}"
+          tag: ${{ steps.rc_version.outputs.rc_version }}
