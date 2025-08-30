@@ -160,7 +160,7 @@ jobs:
             echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to Docker Hub" >> $GITHUB_ENV
           else
             echo "SUCCESS_MSG=Odigos CLI pre-release completed successfully" >> $GITHUB_ENV
-            echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to Docker Hub" >> $GITHUB_ENV
+            echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to registries" >> $GITHUB_ENV
           fi
 
       - name: Notify Slack
