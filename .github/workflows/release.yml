@@ -157,7 +157,7 @@ jobs:
         run: |
           if [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
             echo "SUCCESS_MSG=Odigos CLI stable release completed successfully" >> $GITHUB_ENV
-            echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to Docker Hub" >> $GITHUB_ENV
+            echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to registries" >> $GITHUB_ENV
           else
             echo "SUCCESS_MSG=Odigos CLI pre-release completed successfully" >> $GITHUB_ENV
             echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to registries" >> $GITHUB_ENV
