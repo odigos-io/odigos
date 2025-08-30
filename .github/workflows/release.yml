@@ -46,7 +46,7 @@ jobs:
             echo "This is a stable release: $TAG"
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ env.TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
@@ -210,7 +210,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ env.TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
