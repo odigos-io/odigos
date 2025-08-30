@@ -47,7 +47,7 @@ jobs:
       
       - name: Notify Slack
         if: always()
-        uses: odigos-io/github-actions/.github/actions/slack-release-notification@main
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with: 
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "No open offset PRs in `${{ matrix.repo }}`"
@@ -90,7 +90,7 @@ jobs:
 
       - name: Notify Slack
         if: always()
-        uses: odigos-io/github-actions/.github/actions/slack-release-notification@main
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with: 
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "No open dependencies-syncer-bot PRs in `${{ matrix.repo }}`"
@@ -133,7 +133,7 @@ jobs:
 
       - name: Notify Slack
         if: always()
-        uses: odigos-io/github-actions/.github/actions/slack-release-notification@main
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with: 
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "No open release-blocker PRs in `${{ matrix.repo }}`"
@@ -149,7 +149,7 @@ jobs:
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
       - name: Notify Slack Start
-        uses: odigos-io/github-actions/.github/actions/slack-release-notification@main
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with: 
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "detected new git tag ${{ steps.extract_tag.outputs.tag }}, starting a release"
@@ -172,7 +172,7 @@ jobs:
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
       - name: Notify Slack Start
-        uses: odigos-io/github-actions/.github/actions/slack-release-notification@main
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with: 
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "start tagging odigos modules so they can be consumed as libraries"
@@ -203,7 +203,7 @@ jobs:
 
       - name: Notify Slack Success
         if: always()
-        uses: odigos-io/github-actions/.github/actions/slack-release-notification@main
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with: 
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "Odigos go modules tagged successfully"
@@ -264,7 +264,7 @@ jobs:
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
       - name: Notify Slack Start
-        uses: odigos-io/github-actions/.github/actions/slack-release-notification@main
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with: 
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "start publishing docker image for component ${{ matrix.service }} and dockerfile ${{ matrix.dockerfile }}"
@@ -336,7 +336,7 @@ jobs:
 
       - name: Notify Slack
         if: always()
-        uses: odigos-io/github-actions/.github/actions/slack-release-notification@main
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with: 
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "Odigos component ${{ matrix.service }} with dockerfile ${{ matrix.dockerfile }} released successfully"
@@ -354,7 +354,7 @@ jobs:
 
       - name: Notify Slack Start
         if: always()
-        uses: odigos-io/github-actions/.github/actions/slack-release-notification@main
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with: 
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "start releasing odigos collector as linux packages"
@@ -391,7 +391,7 @@ jobs:
 
       - name: Notify Slack Success
         if: always()
-        uses: odigos-io/github-actions/.github/actions/slack-release-notification@main
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with: 
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "Odigos collector linux packages released successfully"
