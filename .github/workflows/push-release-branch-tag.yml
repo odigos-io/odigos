@@ -1,0 +1,79 @@
+name: 'Push Tag for Release PR Merge'
+
+on:
+  push:
+    branches:
+      - 'releases/**'
+
+permissions:
+  contents: write  # Required to push tags using the GITHUB_TOKEN
+
+jobs:
+  tag-release-branch-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history required to create tags
+          token: ${{ secrets.RELEASE_BOT_TOKEN }}
+
+      - name: Extract tag from commit message
+        id: extract_tag
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          echo "Commit message: $COMMIT_MSG"
+
+          # Extract the tag version from the message (e.g., v1.1.1, v1.2.3-rc4, v1.2.3-foobar)
+          # Handle both "patch release" and "release candidate" formats
+          if echo "$COMMIT_MSG" | grep -qE '^This is an automated PR for the (patch release|release candidate)'; then
+            # Extract a proper tag at the end: vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-rcN
+            TAG=$(echo "$COMMIT_MSG" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$' || true)
+          else
+            echo "Commit message does not match expected automated PR formats. Skipping."
+            exit 0
+          fi
+
+          if [ -z "$TAG" ]; then
+            echo "Commit message matched, but no valid tag found at the end. Skipping."
+            exit 0
+          fi
+
+          echo "Found tag from pull request: $TAG"
+          echo "TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Push tag to upstream
+        if: env.TAG != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          # Configure Git user identity for the workflow using the actor who triggered it
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}"
+
+          TAG="${{ env.TAG }}"
+
+          # Check if tag already exists
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists. Skipping push."
+            exit 0
+          fi
+
+          # Create and push the tag
+          git tag "$TAG"
+          git push origin "$TAG"
+
+          # Notify Slack on success
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"✅ Odigos tagging of release PR pushed successfully with the tag: $TAG"}' \
+          $SLACK_WEBHOOK_URL
+
+      - name: Notify Slack on Failure
+        if: ${{ failure() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"❌ Odigos tagging of release PR failed for tag: ${{ env.TAG }}"}' \
+            $SLACK_WEBHOOK_URL

@@ -9,6 +9,31 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 )
 
+func SecurityHeadersMiddleware(c *gin.Context) {
+	// Skip CSP for static files and playground to avoid blocking JavaScript resources
+	if !isStaticFile(c.Request.URL.Path) && c.Request.URL.Path != "/playground" {
+		c.Writer.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' ws: wss:;")
+	}
+	c.Writer.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+	c.Writer.Header().Set("X-Frame-Options", "DENY")
+	c.Next()
+}
+
+// isStaticFile checks if the request is for a static file
+func isStaticFile(path string) bool {
+	staticExtensions := []string{".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff", ".woff2", ".ttf", ".eot"}
+	for _, ext := range staticExtensions {
+		if len(path) >= len(ext) && path[len(path)-len(ext):] == ext {
+			return true
+		}
+	}
+	// Also check for Next.js static paths
+	if len(path) >= 7 && path[:7] == "/_next/" {
+		return true
+	}
+	return false
+}
+
 func OidcMiddleware(ctx context.Context) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		oauth2Config, err := services.GetOidcOauthConfig(ctx)

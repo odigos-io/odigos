@@ -30,6 +30,7 @@ type DestinationSpecApplyConfiguration struct {
 	Data            map[string]string                 `json:"data,omitempty"`
 	SecretRef       *v1.LocalObjectReference          `json:"secretRef,omitempty"`
 	Signals         []common.ObservabilitySignal      `json:"signals,omitempty"`
+	Disabled        *bool                             `json:"disabled,omitempty"`
 	SourceSelector  *SourceSelectorApplyConfiguration `json:"sourceSelector,omitempty"`
 }
 
@@ -84,6 +85,14 @@ func (b *DestinationSpecApplyConfiguration) WithSignals(values ...common.Observa
 	for i := range values {
 		b.Signals = append(b.Signals, values[i])
 	}
+	return b
+}
+
+// WithDisabled sets the Disabled field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Disabled field is set to the value of the last call.
+func (b *DestinationSpecApplyConfiguration) WithDisabled(value bool) *DestinationSpecApplyConfiguration {
+	b.Disabled = &value
 	return b
 }
 

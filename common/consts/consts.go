@@ -97,6 +97,11 @@ const (
 	OidcClientSecretProperty           = "oidc-client-secret"
 	OdigletHealthProbeBindPortProperty = "odiglet-health-probe-bind-port"
 	ServiceGraphDisabledProperty       = "service-graph-disabled"
+	GoAutoOffsetsCronProperty          = "go-auto-offsets-cron"
+	ClickhouseJsonTypeEnabledProperty  = "clickhouse-json-type-enabled"
+	AllowedTestConnectionHostsProperty = "allowed-test-connection-hosts"
+	EnableDataCompressionProperty      = "enable-data-compression"
+	ResourceSizePresetProperty         = "resource-size-preset"
 )
 
 var (

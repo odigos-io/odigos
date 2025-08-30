@@ -26,7 +26,7 @@
     {
       "name": "Demo",
       "icon": "circle-play",
-      "url": "https://www.youtube.com/watch?v=nynyV7FC4VI"
+      "url": "https://odigos.io/?demo"
     },
     {
       "name": "Blog",
@@ -89,7 +89,7 @@
             "cli/odigos_upgrade",
             "cli/odigos_version",
             "cli/odigos_sources",
-            "cli/odigos_configuration"
+            "cli/odigos_config"
           ]
         },
         {
@@ -142,14 +142,6 @@
           ]
         },
         {
-          "group": ".NET",
-          "icon": "code",
-          "pages": [
-            "instrumentations/dotnet/native",
-            "instrumentations/dotnet/enrichment"
-          ]
-        },
-        {
           "group": "PHP",
           "icon": "php",
           "pages": [
@@ -158,9 +150,27 @@
           ]
         },
         {
+          "group": "Ruby",
+          "icon": "code",
+          "pages": [
+            "instrumentations/ruby/native",
+            "instrumentations/ruby/enrichment"
+          ]
+        },
+        {
+          "group": ".NET",
+          "icon": "code",
+          "pages": [
+            "instrumentations/dotnet/native",
+            "instrumentations/dotnet/enrichment"
+          ]
+        },
+        {
           "group": "Advanced",
           "icon": "gear",
-          "pages": ["instrumentations/configuration/mount-method"]
+          "pages": [
+            "instrumentations/configuration/mount-method"
+          ]
         }
       ]
     },
@@ -312,11 +322,17 @@
     },
     {
       "group": "Feature Guidelines",
-      "pages": ["features/oidc", "features/central"]
+      "pages": [
+        "features/oidc",
+        "features/central"
+      ]
     },
     {
       "group": "Contribution Guidelines",
-      "pages": ["adding-new-dest", "debugging"]
+      "pages": [
+        "adding-new-dest",
+        "debugging"
+      ]
     },
     {
       "group": "VM Agent",

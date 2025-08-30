@@ -13,14 +13,12 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 	"github.com/odigos-io/odigos/instrumentor/controllers/workloadmigrations"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/version"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -28,10 +26,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -58,12 +56,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	odigosEffectiveConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
 	odigosEffectiveConfigSelector := fields.AndSelectors(nsSelector, odigosEffectiveConfigNameSelector)
-
-	odigletDaemonsetNameSelector := fields.OneTermEqualSelector("metadata.name", k8sconsts.OdigletDaemonSetName)
-	odigletDaemonsetSelector := fields.AndSelectors(nsSelector, odigletDaemonsetNameSelector)
-
-	instrumentedPodReq, _ := labels.NewRequirement(k8sconsts.OdigosAgentsMetaHashLabel, selection.Exists, []string{})
-	instrumentedPodSelector := labels.NewSelector().Add(*instrumentedPodReq)
 
 	podsTransformFunc := func(obj interface{}) (interface{}, error) {
 		pod, ok := obj.(*corev1.Pod)
@@ -118,21 +110,18 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 
 			Setting the leader election params to 30s/20s/5s should provide a good balance between stability and quick failover.
 		*/
-		LeaseDuration: durationPointer(30 * time.Second),
-		RenewDeadline: durationPointer(20 * time.Second),
-		RetryPeriod:   durationPointer(5 * time.Second),
+		LeaseDuration:                 durationPointer(30 * time.Second),
+		RenewDeadline:                 durationPointer(20 * time.Second),
+		RetryPeriod:                   durationPointer(5 * time.Second),
+		LeaderElectionReleaseOnCancel: true,
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{
 				&corev1.Pod{}: {
-					Label:     instrumentedPodSelector,
 					Transform: podsTransformFunc,
 				},
 				&corev1.ConfigMap{}: {
 					Field: odigosEffectiveConfigSelector,
-				},
-				&appsv1.DaemonSet{}: {
-					Field: odigletDaemonsetSelector,
 				},
 				&odigosv1.CollectorsGroup{}: {
 					Field: nsSelector,
@@ -171,13 +160,13 @@ func durationPointer(d time.Duration) *time.Duration {
 	return &d
 }
 
-func SetupWithManager(mgr manager.Manager, dp *distros.Provider) error {
+func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *version.Version) error {
 	err := agentenabled.SetupWithManager(mgr, dp)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for agent enabled: %w", err)
 	}
 
-	err = sourceinstrumentation.SetupWithManager(mgr)
+	err = sourceinstrumentation.SetupWithManager(mgr, k8sVersion)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for start language detection: %w", err)
 	}
@@ -210,17 +199,21 @@ func RegisterWebhooks(mgr manager.Manager, dp *distros.Provider) error {
 		return err
 	}
 
-	err = builder.
-		WebhookManagedBy(mgr).
-		For(&corev1.Pod{}).
-		WithDefaulter(&agentenabled.PodsWebhook{
-			Client:        mgr.GetClient(),
-			DistrosGetter: dp.Getter,
-		}).
-		Complete()
-	if err != nil {
-		return err
+	decoder := admission.NewDecoder(mgr.GetScheme())
+
+	webhook := &agentenabled.PodsWebhook{
+		Client:        mgr.GetClient(),
+		DistrosGetter: dp.Getter,
+		Decoder:       decoder,
 	}
+
+	// Register directly with GetWebhookServer() since this webhook uses admission.Handler for full control.
+	// We compute a patch from a deep-copied Pod, letting us apply mutations atomically (transaction-like).
+	// Pods are always admitted; mutations are conditionally and atomically applied via the returned patch.
+	mgr.GetWebhookServer().Register(
+		"/mutate--v1-pod",
+		&admission.Webhook{Handler: webhook},
+	)
 
 	return nil
 }

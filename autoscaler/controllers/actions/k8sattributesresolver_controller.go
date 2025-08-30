@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"slices"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -60,7 +59,6 @@ var (
 		string(semconv.K8SDeploymentUIDKey),
 		string(semconv.K8SDaemonSetUIDKey),
 		string(semconv.K8SStatefulSetUIDKey),
-		string(semconv.K8SCronJobUIDKey),
 		string(semconv.K8SJobUIDKey),
 	}
 
@@ -130,23 +128,23 @@ func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctr
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling K8sAttributes action")
 
-	actions := actionv1.K8sAttributesResolverList{}
-	err := r.List(ctx, &actions, client.InNamespace(req.Namespace))
+	legacyActions := actionv1.K8sAttributesResolverList{}
+	err := r.List(ctx, &legacyActions, client.InNamespace(req.Namespace))
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	processor, err := r.convertToUnifiedProcessor(ctx, req.Namespace, &actions)
+	processor, err := r.convertToUnifiedProcessor(ctx, req.Namespace, &legacyActions)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	err = r.Patch(ctx, processor, client.Apply, client.FieldOwner("odigos-k8sattributesresolver"), client.ForceOwnership)
-	reportErr := r.reportActionsStatuses(ctx, &actions, err)
+	reportErr := r.reportActionsStatuses(ctx, &legacyActions, err)
 	return ctrl.Result{}, errors.Join(err, reportErr)
 }
 
-func (r *K8sAttributesResolverReconciler) convertToUnifiedProcessor(ctx context.Context, ns string, actions *actionv1.K8sAttributesResolverList) (*odigosv1.Processor, error) {
+func (r *K8sAttributesResolverReconciler) convertToUnifiedProcessor(ctx context.Context, ns string, legacyActions *actionv1.K8sAttributesResolverList) (*odigosv1.Processor, error) {
 	processor := odigosv1.Processor{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "odigos.io/v1alpha1",
@@ -167,13 +165,7 @@ func (r *K8sAttributesResolverReconciler) convertToUnifiedProcessor(ctx context.
 		},
 	}
 
-	// Convert legacy K8sAttributesResolver to Action format
-	var legacyConfigs []*odigosv1.Action
-	for i := range actions.Items {
-		legacyConfigs = append(legacyConfigs, convertK8sAttributesResolverToAction(&actions.Items[i]))
-	}
-
-	config, signals, ownerReferences, err := k8sAttributeConfig(ctx, r.Client, ns, legacyConfigs)
+	config, signals, ownerReferences, err := k8sAttributeConfig(ctx, r.Client, ns, legacyActions)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +241,7 @@ func convertK8sAttributesResolverToAction(resolver *actionv1.K8sAttributesResolv
 }
 
 // k8sAttributeConfig combines multiple k8sattributes configurations into a single unified processor config
-func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace string, legacyConfigs []*odigosv1.Action) (*k8sAttributesConfig, map[common.ObservabilitySignal]struct{}, []metav1.OwnerReference, error) {
+func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace string, legacyActions *actionv1.K8sAttributesResolverList) (*k8sAttributesConfig, map[common.ObservabilitySignal]struct{}, []metav1.OwnerReference, error) {
 	// Get all actions in the namespace
 	actionList := &odigosv1.ActionList{}
 	err := k8sclient.List(ctx, actionList, client.InNamespace(namespace))
@@ -272,9 +264,28 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 
 	// Merge legacy configs with current actions
 	var allActions []*odigosv1.Action
-	allActions = append(allActions, legacyConfigs...)
+
+	// Convert legacy K8sAttributesResolver to Action format
+	if legacyActions != nil {
+		for i := range legacyActions.Items {
+			allActions = append(allActions, convertK8sAttributesResolverToAction(&legacyActions.Items[i]))
+			ownerReferences = append(ownerReferences, metav1.OwnerReference{
+				APIVersion: legacyActions.Items[i].APIVersion,
+				Kind:       legacyActions.Items[i].Kind,
+				Name:       legacyActions.Items[i].Name,
+				UID:        legacyActions.Items[i].UID,
+			})
+		}
+	}
+
 	for i := range actionList.Items {
 		allActions = append(allActions, &actionList.Items[i])
+		ownerReferences = append(ownerReferences, metav1.OwnerReference{
+			APIVersion: actionList.Items[i].APIVersion,
+			Kind:       actionList.Items[i].Kind,
+			Name:       actionList.Items[i].Name,
+			UID:        actionList.Items[i].UID,
+		})
 	}
 
 	// Collect all k8sattributes configurations
@@ -292,7 +303,7 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 		collectClusterUID = collectClusterUID || config.CollectClusterUID
 		// traces should already contain workload name (if they originated from odigos)
 		// logs collected from filelog receiver will lack this info thus needs to be added
-		collectWorkloadNames = (collectWorkloadNames || slices.Contains(currentAction.Spec.Signals, common.LogsObservabilitySignal))
+		// collectWorkloadNames = (collectWorkloadNames || slices.Contains(currentAction.Spec.Signals, common.LogsObservabilitySignal))
 
 		// Add label attributes, newer configs override older ones with same Tag
 		for _, label := range config.LabelsAttributes {
@@ -316,12 +327,6 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 			signals[currentAction.Spec.Signals[signalIndex]] = struct{}{}
 		}
 
-		ownerReferences = append(ownerReferences, metav1.OwnerReference{
-			APIVersion: currentAction.APIVersion,
-			Kind:       currentAction.Kind,
-			Name:       currentAction.Name,
-			UID:        currentAction.UID,
-		})
 	}
 
 	if collectWorkloadUID {

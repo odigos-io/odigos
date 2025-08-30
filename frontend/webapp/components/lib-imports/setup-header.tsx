@@ -23,6 +23,7 @@ const getFormDataFromDestination = (dest: Destination, selectedStreamName: strin
   const payload: DestinationFormData = {
     type: dest.destinationType.type,
     name: dest.destinationType.displayName,
+    disabled: dest.disabled,
     currentStreamName: selectedStreamName,
     exportedSignals: dest.exportedSignals,
     fields: fieldsArray,
@@ -158,7 +159,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
 
   return (
     <Header
-      left={[<OdigosLogoText key='logo' size={100} />]}
+      left={[<OdigosLogoText key='logo' size={150} />]}
       center={[
         <Text key='msg' family='secondary'>
           START WITH ODIGOS

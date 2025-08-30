@@ -40,28 +40,6 @@ func NewOdigletServiceAccount(ns string) *corev1.ServiceAccount {
 	}
 }
 
-func NewOdigletRole(ns string) *rbacv1.Role {
-	return &rbacv1.Role{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Role",
-			APIVersion: "rbac.authorization.k8s.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.OdigletRoleName,
-			Namespace: ns,
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				// Needed for reading the enabled signals for each source
-				// TODO: rely on inctr. config instead of collectorsgroups, then remove this
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups", "collectorsgroups/status"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		},
-	}
-}
-
 func NewOdigletRoleBinding(ns string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
@@ -268,7 +246,7 @@ func NewResourceQuota(ns string) *corev1.ResourceQuota {
 }
 
 func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageName string,
-	odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails, customContainerRuntimeSocketPath string, nodeSelector map[string]string, healthProbeBindPort int) *appsv1.DaemonSet {
+	odigosTier common.OdigosTier, openshiftEnabled bool, clusterDetails *autodetect.ClusterDetails, customContainerRuntimeSocketPath string, nodeSelector map[string]string, healthProbeBindPort int, mountMethod *common.MountMethod) *appsv1.DaemonSet {
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -371,6 +349,9 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
 						"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue,
+					},
+					Annotations: map[string]string{
+						"kubectl.kubernetes.io/default-container": k8sconsts.OdigletContainerName,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -498,67 +479,6 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  k8sconsts.OdigletDevicePluginContainerName,
-							Image: containers.GetImageName(imagePrefix, imageName, version),
-							Command: []string{
-								"/root/deviceplugin",
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name: k8sconsts.NodeNameEnvVar,
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "spec.nodeName",
-										},
-									},
-								},
-								{
-									Name: "NODE_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.hostIP",
-										},
-									},
-								},
-								{
-									Name: "CURRENT_NS",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.namespace",
-										},
-									},
-								},
-							},
-							Resources: corev1.ResourceRequirements{},
-							LivenessProbe: &corev1.Probe{
-								ProbeHandler: corev1.ProbeHandler{
-									Exec: &corev1.ExecAction{
-										Command: []string{k8sconsts.GrpcHealthBinaryPath, "-addr=" + k8sconsts.GrpcHealthProbePath},
-									},
-								},
-								InitialDelaySeconds: 5,
-								FailureThreshold:    1,
-								PeriodSeconds:       10,
-							},
-							ReadinessProbe: &corev1.Probe{
-								ProbeHandler: corev1.ProbeHandler{
-									Exec: &corev1.ExecAction{
-										Command: []string{k8sconsts.GrpcHealthBinaryPath, "-addr=" + k8sconsts.GrpcHealthProbePath},
-									},
-								},
-								InitialDelaySeconds: 5,
-								FailureThreshold:    1,
-								PeriodSeconds:       10,
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "device-plugins-dir",
-									MountPath: "/var/lib/kubelet/device-plugins",
-								},
-							},
-							ImagePullPolicy: "IfNotPresent",
-						},
-						{
 							Name: k8sconsts.OdigletContainerName,
 							Command: []string{
 								"/root/odiglet",
@@ -672,6 +592,83 @@ func NewOdigletDaemonSet(ns string, version string, imagePrefix string, imageNam
 				},
 			},
 		},
+	}
+
+	// If mount method is not set (default is k8s-virtual-device), or it is k8s-virtual-device, we need to install the device plugin
+	if mountMethod == nil || *mountMethod == common.K8sVirtualDeviceMountMethod {
+		ds.Spec.Template.Spec.Containers = append(ds.Spec.Template.Spec.Containers, corev1.Container{
+			Name:  k8sconsts.OdigletDevicePluginContainerName,
+			Image: containers.GetImageName(imagePrefix, imageName, version),
+			Command: []string{
+				"/root/deviceplugin",
+			},
+			Env: []corev1.EnvVar{
+				{
+					Name: k8sconsts.NodeNameEnvVar,
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "spec.nodeName",
+						},
+					},
+				},
+				{
+					Name: "NODE_IP",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "status.hostIP",
+						},
+					},
+				},
+				{
+					Name: "CURRENT_NS",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.namespace",
+						},
+					},
+				},
+			},
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					"cpu":    resource.MustParse("100m"),
+					"memory": resource.MustParse("300Mi"),
+				},
+				Requests: corev1.ResourceList{
+					"cpu":    resource.MustParse("40m"),
+					"memory": resource.MustParse("200Mi"),
+				},
+			},
+			LivenessProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					Exec: &corev1.ExecAction{
+						Command: []string{k8sconsts.GrpcHealthBinaryPath, "-addr=" + k8sconsts.GrpcHealthProbePath, "-connect-timeout=" + strconv.Itoa(k8sconsts.GrpcHealthProbeTimeout) + "s", "-rpc-timeout=" + strconv.Itoa(k8sconsts.GrpcHealthProbeTimeout) + "s"},
+					},
+				},
+				InitialDelaySeconds: 10,
+				FailureThreshold:    3,
+				PeriodSeconds:       10,
+				TimeoutSeconds:      10,
+			},
+			ReadinessProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					Exec: &corev1.ExecAction{
+						Command: []string{k8sconsts.GrpcHealthBinaryPath, "-addr=" + k8sconsts.GrpcHealthProbePath, "-connect-timeout=" + strconv.Itoa(k8sconsts.GrpcHealthProbeTimeout) + "s", "-rpc-timeout=" + strconv.Itoa(k8sconsts.GrpcHealthProbeTimeout) + "s"},
+					},
+				},
+				InitialDelaySeconds: 10,
+				FailureThreshold:    3,
+				PeriodSeconds:       10,
+				TimeoutSeconds:      10,
+			},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      "device-plugins-dir",
+					MountPath: "/var/lib/kubelet/device-plugins",
+				},
+			},
+			ImagePullPolicy: "IfNotPresent",
+		},
+		)
 	}
 
 	// if inetrnal trffic policy is not yet supported in the cluster, fall back to host network
@@ -837,7 +834,6 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 	}
 	resources := []kube.Object{
 		NewOdigletServiceAccount(a.ns),
-		NewOdigletRole(a.ns),
 		NewOdigletRoleBinding(a.ns),
 		NewOdigletClusterRole(a.config.Psp, a.config.OpenshiftEnabled),
 		NewOdigletClusterRoleBinding(a.ns),
@@ -873,7 +869,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 			&autodetect.ClusterDetails{
 				Kind:       clusterKind,
 				K8SVersion: k8sVersion,
-			}, a.config.CustomContainerRuntimeSocketPath, a.config.NodeSelector, a.config.OdigletHealthProbeBindPort))
+			}, a.config.CustomContainerRuntimeSocketPath, a.config.NodeSelector, a.config.OdigletHealthProbeBindPort, a.config.MountMethod))
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

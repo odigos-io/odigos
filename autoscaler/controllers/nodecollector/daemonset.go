@@ -3,12 +3,14 @@ package nodecollector
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
+	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -44,7 +46,7 @@ type DelayManager struct {
 }
 
 // RunSyncDaemonSetWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
-func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int,
+func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int, signals []odigoscommon.ObservabilitySignal,
 	collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, secrets []string, version string) {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
@@ -74,7 +76,7 @@ func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Dura
 		}()
 
 		for i := 0; i < retries; i++ {
-			_, err = syncDaemonSet(ctx, collection, c, scheme, secrets, version)
+			_, err = syncDaemonSet(ctx, collection, c, scheme, secrets, version, signals)
 			if err == nil {
 				return
 			}
@@ -89,7 +91,7 @@ func (dm *DelayManager) finishProgress() {
 }
 
 func syncDaemonSet(ctx context.Context, datacollection *odigosv1.CollectorsGroup,
-	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.DaemonSet, error) {
+	c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, clusterCollectorSignals []odigoscommon.ObservabilitySignal) (*appsv1.DaemonSet, error) {
 	logger := log.FromContext(ctx)
 
 	odigletDaemonsetPodSpec, err := getOdigletDaemonsetPodSpec(ctx, c, datacollection.Namespace)
@@ -110,7 +112,7 @@ func syncDaemonSet(ctx context.Context, datacollection *odigosv1.CollectorsGroup
 		logger.Error(err, "Failed to get signals from otelcol config")
 		return nil, err
 	}
-	desiredDs, err := getDesiredDaemonSet(datacollection, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec)
+	desiredDs, err := getDesiredDaemonSet(datacollection, scheme, imagePullSecrets, odigosVersion, odigletDaemonsetPodSpec, clusterCollectorSignals)
 	if err != nil {
 		logger.Error(err, "Failed to get desired DaemonSet")
 		return nil, err
@@ -164,7 +166,7 @@ func getOdigletDaemonsetPodSpec(ctx context.Context, c client.Client, namespace 
 
 func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string,
-	odigletDaemonsetPodSpec *corev1.PodSpec) (*appsv1.DaemonSet, error) {
+	odigletDaemonsetPodSpec *corev1.PodSpec, clusterCollectorSignals []odigoscommon.ObservabilitySignal) (*appsv1.DaemonSet, error) {
 	// TODO(edenfed): add log volumes only if needed according to apps or dests
 
 	// 50% of the nodes can be unavailable during the update.
@@ -189,23 +191,87 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 	resourceCpuRequestQuantity := resource.MustParse(fmt.Sprintf("%dm", datacollection.Spec.ResourcesSettings.CpuRequestMillicores))
 	resourceCpuLimitQuantity := resource.MustParse(fmt.Sprintf("%dm", datacollection.Spec.ResourcesSettings.CpuLimitMillicores))
 
-	additionalVolumes := []corev1.Volume{}
-	additionalContainerVolumeMounts := []corev1.VolumeMount{}
-	if datacollection.Spec.K8sNodeLogsDirectory != "" {
-		additionalVolumes = append(additionalVolumes, corev1.Volume{
-			Name: logsSymlinkTargetMountVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: datacollection.Spec.K8sNodeLogsDirectory,
+	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
+	collectMetrics := slices.Contains(clusterCollectorSignals, odigoscommon.MetricsObservabilitySignal)
+
+	volumes := []corev1.Volume{}
+	containerVolumeMounts := []corev1.VolumeMount{}
+
+	if collectLogs {
+		// only add the log volumes if we are actually collecting logs
+		volumes = append(volumes,
+			corev1.Volume{
+				Name: "varlog",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/var/log",
+					},
 				},
 			},
-		})
-		additionalContainerVolumeMounts = append(additionalContainerVolumeMounts, corev1.VolumeMount{
-			Name:      logsSymlinkTargetMountVolumeName,
-			MountPath: datacollection.Spec.K8sNodeLogsDirectory,
-			ReadOnly:  true,
-		})
+			corev1.Volume{
+				Name: "varlibdockercontainers",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/var/lib/docker/containers",
+					},
+				},
+			},
+		)
+		containerVolumeMounts = append(containerVolumeMounts,
+			corev1.VolumeMount{
+				Name:      "varlog",
+				MountPath: "/var/log",
+				ReadOnly:  true,
+			},
+			corev1.VolumeMount{
+				Name:      "varlibdockercontainers",
+				MountPath: "/var/lib/docker/containers",
+				ReadOnly:  true,
+			},
+		)
+
+		if datacollection.Spec.K8sNodeLogsDirectory != "" {
+			volumes = append(volumes, corev1.Volume{
+				Name: logsSymlinkTargetMountVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: datacollection.Spec.K8sNodeLogsDirectory,
+					},
+				},
+			})
+			containerVolumeMounts = append(containerVolumeMounts, corev1.VolumeMount{
+				Name:      logsSymlinkTargetMountVolumeName,
+				MountPath: datacollection.Spec.K8sNodeLogsDirectory,
+				ReadOnly:  true,
+			})
+		}
 	}
+
+	if collectMetrics {
+		// only add the metrics volumes if we are actually collecting metrics
+		// required for the host metrics receiver
+		// see https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/hostmetricsreceiver/README.md#collecting-host-metrics-from-inside-a-container-linux-only
+		volumes = append(volumes,
+			corev1.Volume{
+				Name: "hostfs",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/",
+					},
+				},
+			})
+		containerVolumeMounts = append(containerVolumeMounts,
+			corev1.VolumeMount{
+
+				Name:      "hostfs",
+				MountPath: "/hostfs",
+				ReadOnly:  true,
+			})
+	}
+
+	// currently only run the collector in privileged mode if we are collecting logs or metrics
+	// this can be further refined in the future if we add more mechanism to collect logs or metrics
+	privilegedRequired := collectLogs || collectMetrics
 
 	desiredDs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -230,32 +296,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 					Affinity:           odigletDaemonsetPodSpec.Affinity,
 					Tolerations:        odigletDaemonsetPodSpec.Tolerations,
 					ServiceAccountName: k8sconsts.OdigosNodeCollectorServiceAccountName,
-					Volumes: append([]corev1.Volume{
-						{
-							Name: "varlog",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/log",
-								},
-							},
-						},
-						{
-							Name: "varlibdockercontainers",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/lib/docker/containers",
-								},
-							},
-						},
-						{
-							Name: "hostfs",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/",
-								},
-							},
-						},
-					}, additionalVolumes...),
+					Volumes:            volumes,
 					Containers: []corev1.Container{
 						{
 							Name:  containerName,
@@ -266,29 +307,21 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 								k8sconsts.OdigosNodeCollectorConfigMapName,
 								k8sconsts.OdigosNodeCollectorConfigMapKey),
 							},
-							VolumeMounts: append([]corev1.VolumeMount{
-								{
-									Name:      "varlibdockercontainers",
-									MountPath: "/var/lib/docker/containers",
-									ReadOnly:  true,
-								},
-								{
-									Name:      "varlog",
-									MountPath: "/var/log",
-									ReadOnly:  true,
-								},
-								{
-									Name:      "hostfs",
-									MountPath: "/hostfs",
-									ReadOnly:  true,
-								},
-							}, additionalContainerVolumeMounts...),
+							VolumeMounts: containerVolumeMounts,
 							Env: []corev1.EnvVar{
 								{
 									Name: k8sconsts.NodeNameEnvVar,
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name: k8sconsts.NodeIPEnvVar,
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
 										},
 									},
 								},
@@ -345,7 +378,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
-								Privileged: boolPtr(true),
+								Privileged: &privilegedRequired,
 							},
 						},
 					},
@@ -374,10 +407,6 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 	}
 
 	return desiredDs, nil
-}
-
-func boolPtr(b bool) *bool {
-	return &b
 }
 
 func patchDaemonSet(existing *appsv1.DaemonSet, desired *appsv1.DaemonSet, ctx context.Context, c client.Client) (*appsv1.DaemonSet, error) {

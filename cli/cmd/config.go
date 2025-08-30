@@ -18,6 +18,8 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
+	"github.com/odigos-io/odigos/k8sutils/pkg/sizing"
+	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -59,6 +61,11 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the client secret of the OIDC application.
 	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
   	- "%s": Enable or disable the service graph feature [default: false].
+	- "%s": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
+	- "%s": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
+	- "%s": List of allowed domains for test connection endpoints (e.g., "https://api.honeycomb.io", "https://otel.example.com"). Use "*" to allow all domains. Empty list allows all domains for backward compatibility.
+	- "%s": Enable or disable data compression before sending data to the Gateway collector. [default: false],
+	- "%s": Set the sizing configuration for the Odigos components (size_s, size_m [default], size_l).
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -89,6 +96,11 @@ var configCmd = &cobra.Command{
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.ServiceGraphDisabledProperty,
+		consts.GoAutoOffsetsCronProperty,
+		consts.ClickhouseJsonTypeEnabledProperty,
+		consts.AllowedTestConnectionHostsProperty,
+		consts.EnableDataCompressionProperty,
+		consts.ResourceSizePresetProperty,
 	),
 }
 
@@ -162,7 +174,8 @@ var setConfigCmd = &cobra.Command{
 func validatePropertyValue(property string, value []string) error {
 	switch property {
 	case consts.IgnoredNamespacesProperty,
-		consts.IgnoredContainersProperty:
+		consts.IgnoredContainersProperty,
+		consts.AllowedTestConnectionHostsProperty:
 		if len(value) < 1 {
 			return fmt.Errorf("%s expects at least one value", property)
 		}
@@ -192,7 +205,11 @@ func validatePropertyValue(property string, value []string) error {
 		consts.OidcClientIdProperty,
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
-		consts.ServiceGraphDisabledProperty:
+		consts.GoAutoOffsetsCronProperty,
+		consts.ServiceGraphDisabledProperty,
+		consts.ClickhouseJsonTypeEnabledProperty,
+		consts.EnableDataCompressionProperty,
+		consts.ResourceSizePresetProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -207,7 +224,8 @@ func validatePropertyValue(property string, value []string) error {
 			consts.KarpenterEnabledProperty,
 			consts.RollbackDisabledProperty,
 			consts.AutomaticRolloutDisabledProperty,
-			consts.ServiceGraphDisabledProperty:
+			consts.ServiceGraphDisabledProperty,
+			consts.EnableDataCompressionProperty:
 			_, err := strconv.ParseBool(value[0])
 			if err != nil {
 				return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
@@ -234,8 +252,8 @@ func validatePropertyValue(property string, value []string) error {
 
 		case consts.MountMethodProperty:
 			mountMethod := common.MountMethod(value[0])
-			if mountMethod != common.K8sHostPathMountMethod && mountMethod != common.K8sVirtualDeviceMountMethod {
-				return fmt.Errorf("invalid mount method: %s (valid values: %s, %s)", value[0], common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod)
+			if mountMethod != common.K8sHostPathMountMethod && mountMethod != common.K8sVirtualDeviceMountMethod && mountMethod != common.K8sInitContainerMountMethod {
+				return fmt.Errorf("invalid mount method: %s (valid values: %s, %s, %s)", value[0], common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod, common.K8sInitContainerMountMethod)
 			}
 
 		case consts.AgentEnvVarsInjectionMethod:
@@ -365,6 +383,13 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 		boolValue, _ := strconv.ParseBool(value[0])
 		config.CollectorGateway.ServiceGraphDisabled = &boolValue
 
+	case consts.EnableDataCompressionProperty:
+		if config.CollectorNode == nil {
+			config.CollectorNode = &common.CollectorNodeConfiguration{}
+		}
+		boolValue, _ := strconv.ParseBool(value[0])
+		config.CollectorNode.EnableDataCompression = &boolValue
+
 	case consts.OidcTenantUrlProperty:
 		if config.Oidc == nil {
 			config.Oidc = &common.OidcConfiguration{}
@@ -412,6 +437,31 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 	case consts.OdigletHealthProbeBindPortProperty:
 		intValue, _ := strconv.Atoi(value[0])
 		config.OdigletHealthProbeBindPort = intValue
+	case consts.GoAutoOffsetsCronProperty:
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		cronValue := value[0]
+		if cronValue != "" {
+			parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+			if _, err := parser.Parse(cronValue); err != nil {
+				return fmt.Errorf("invalid cron schedule: %v", err)
+			}
+		}
+		config.GoAutoOffsetsCron = cronValue
+
+	case consts.ClickhouseJsonTypeEnabledProperty:
+		boolValue, _ := strconv.ParseBool(value[0])
+		config.ClickhouseJsonTypeEnabledProperty = &boolValue
+
+	case consts.AllowedTestConnectionHostsProperty:
+		config.AllowedTestConnectionHosts = value
+
+	case consts.ResourceSizePresetProperty:
+		if !sizing.IsValidSizing(value[0]) {
+			return fmt.Errorf("invalid sizing config: %s (valid values: %s, %s, %s)", value[0], sizing.SizeSmall, sizing.SizeMedium, sizing.SizeLarge)
+		}
+		config.ResourceSizePreset = value[0]
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)

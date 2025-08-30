@@ -57,6 +57,10 @@ type CollectorNodeConfiguration struct {
 	// This field is used to specify this target directory in these cases.
 	// A common target directory is '/mnt/var/log'.
 	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
+
+	// EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	EnableDataCompression *bool `json:"enableDataCompression,omitempty"`
 }
 
 type CollectorGatewayConfiguration struct {
@@ -105,6 +109,15 @@ type CollectorGatewayConfiguration struct {
 	// ServiceGraphDisabled is a feature that allows you to visualize the service graph of your application.
 	// It is enabled by default and can be disabled by setting the disabled flag to true.
 	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
+
+	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
+	// https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	// This feature is only available when metrics destination is configured.
+	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
+
+	// for destinations that uses https for exporting data, this value can be used to set the value for the https proxy.
+	HttpsProxyAddress *string `json:"httpsProxyAddress,omitempty"`
 }
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
@@ -141,33 +154,40 @@ type OidcConfiguration struct {
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
-	ConfigVersion                    int                            `json:"configVersion"`
-	TelemetryEnabled                 bool                           `json:"telemetryEnabled,omitempty"`
-	OpenshiftEnabled                 bool                           `json:"openshiftEnabled,omitempty"`
-	IgnoredNamespaces                []string                       `json:"ignoredNamespaces,omitempty"`
-	IgnoredContainers                []string                       `json:"ignoredContainers,omitempty"`
-	Psp                              bool                           `json:"psp,omitempty"`
-	ImagePrefix                      string                         `json:"imagePrefix,omitempty"`
-	SkipWebhookIssuerCreation        bool                           `json:"skipWebhookIssuerCreation,omitempty"`
-	CollectorGateway                 *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
-	CollectorNode                    *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
-	Profiles                         []ProfileName                  `json:"profiles,omitempty"`
-	AllowConcurrentAgents            *bool                          `json:"allowConcurrentAgents,omitempty"`
-	UiMode                           UiMode                         `json:"uiMode,omitempty"`
-	UiPaginationLimit                int                            `json:"uiPaginationLimit,omitempty"`
-	UiRemoteUrl                      string                         `json:"uiRemoteUrl,omitempty"`
-	CentralBackendURL                string                         `json:"centralBackendURL,omitempty"`
-	ClusterName                      string                         `json:"clusterName,omitempty"`
-	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
-	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
-	AgentEnvVarsInjectionMethod      *EnvInjectionMethod            `json:"agentEnvVarsInjectionMethod,omitempty"`
-	UserInstrumentationEnvs          *UserInstrumentationEnvs       `json:"UserInstrumentationEnvs,omitempty"`
-	NodeSelector                     map[string]string              `json:"nodeSelector,omitempty"`
-	KarpenterEnabled                 *bool                          `json:"karpenterEnabled,omitempty"`
-	Rollout                          *RolloutConfiguration          `json:"rollout,omitempty"`
-	RollbackDisabled                 *bool                          `json:"rollbackDisabled,omitempty"`
-	RollbackGraceTime                string                         `json:"rollbackGraceTime,omitempty"`
-	RollbackStabilityWindow          string                         `json:"rollbackStabilityWindow,omitempty"`
-	Oidc                             *OidcConfiguration             `json:"oidc,omitempty"`
-	OdigletHealthProbeBindPort       int                            `json:"odigletHealthProbeBindPort,omitempty"`
+	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
+	TelemetryEnabled          bool                           `json:"telemetryEnabled,omitempty" yaml:"telemetryEnabled"`
+	OpenshiftEnabled          bool                           `json:"openshiftEnabled,omitempty" yaml:"openshiftEnabled"`
+	IgnoredNamespaces         []string                       `json:"ignoredNamespaces,omitempty" yaml:"ignoredNamespaces"`
+	IgnoredContainers         []string                       `json:"ignoredContainers,omitempty" yaml:"ignoredContainers"`
+	Psp                       bool                           `json:"psp,omitempty" yaml:"psp"`
+	ImagePrefix               string                         `json:"imagePrefix,omitempty" yaml:"imagePrefix"`
+	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty" yaml:"skipWebhookIssuerCreation"`
+	CollectorGateway          *CollectorGatewayConfiguration `json:"collectorGateway,omitempty" yaml:"collectorGateway"`
+	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty" yaml:"collectorNode"`
+	Profiles                  []ProfileName                  `json:"profiles,omitempty" yaml:"profiles"`
+	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty" yaml:"allowConcurrentAgents"`
+	UiMode                    UiMode                         `json:"uiMode,omitempty" yaml:"uiMode"`
+	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty" yaml:"uiPaginationLimit"`
+	UiRemoteUrl               string                         `json:"uiRemoteUrl,omitempty" yaml:"uiRemoteUrl"`
+	CentralBackendURL         string                         `json:"centralBackendURL,omitempty" yaml:"centralBackendURL"`
+	ClusterName               string                         `json:"clusterName,omitempty" yaml:"clusterName"`
+	MountMethod               *MountMethod                   `json:"mountMethod,omitempty" yaml:"mountMethod"`
+	//nolint:lll // CustomContainerRuntimeSocketPath line is long due to struct tag requirements
+	CustomContainerRuntimeSocketPath  string                   `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
+	AgentEnvVarsInjectionMethod       *EnvInjectionMethod      `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
+	UserInstrumentationEnvs           *UserInstrumentationEnvs `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
+	NodeSelector                      map[string]string        `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
+	KarpenterEnabled                  *bool                    `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
+	Rollout                           *RolloutConfiguration    `json:"rollout,omitempty" yaml:"rollout"`
+	RollbackDisabled                  *bool                    `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
+	RollbackGraceTime                 string                   `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
+	RollbackStabilityWindow           string                   `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
+	Oidc                              *OidcConfiguration       `json:"oidc,omitempty" yaml:"oidc"`
+	OdigletHealthProbeBindPort        int                      `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
+	GoAutoOffsetsCron                 string                   `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
+	ClickhouseJsonTypeEnabledProperty *bool                    `json:"clickhouseJsonTypeEnabled,omitempty"`
+	CheckDeviceHealthBeforeInjection  *bool                    `json:"checkDeviceHealthBeforeInjection,omitempty"`
+	ResourceSizePreset                string                   `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
+
+	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
 }
