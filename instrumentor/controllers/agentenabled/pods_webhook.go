@@ -208,7 +208,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
-	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw, &odigosConfiguration)
+	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
 	if injectErr != nil {
 		return fmt.Errorf("%w: %v", ErrEnvVarInjection, injectErr)
 	}
@@ -254,7 +254,9 @@ func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod, req admi
 	return pw, nil
 }
 
-func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload, config *common.OdigosConfiguration) error {
+// this entire function is in the process of being refactored.
+// it is using the deprecated common.OtelSdk which we are migrating into distros.
+func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload) error {
 	logger := log.FromContext(ctx)
 
 	otelSdkToUse, err := getRelevantOtelSDKs(ctx, p.Client, *pw)
@@ -264,6 +266,23 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
+
+		containerConfig := ic.Spec.GetContainerAgentConfig(container.Name)
+		if containerConfig == nil {
+			// no config is found for this container, so skip (don't inject anything to it)
+			continue
+		}
+		if !containerConfig.AgentEnabled || containerConfig.OtelDistroName == "" {
+			// container config exists, but no agent should be injected by webhook to this container
+			continue
+		}
+		if containerConfig.EnvInjectionMethod != nil &&
+			(*containerConfig.EnvInjectionMethod == common.LoaderEnvInjectionMethod) {
+			// lodaer has been migrated to use distros.
+			// we only process "pod-manifest" and "loader-fallback-to-pod-manifest" containers here.
+			continue
+		}
+
 		runtimeDetails := getRuntimeInfoForContainerName(ic, container.Name)
 		if runtimeDetails == nil {
 			continue
@@ -278,7 +297,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 			continue
 		}
 
-		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, container, otelSdk, runtimeDetails, config)
+		err = webhookenvinjector.InjectOdigosAgentEnvVars(logger, container, otelSdk, runtimeDetails)
 		if err != nil {
 			return err
 		}
@@ -340,7 +359,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		}
 
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
-			podswebhook.InjectOtelResourceAndServiceNameEnvVars(existingEnvNames, podContainerSpec, distroName, pw, serviceName)
+			existingEnvNames = podswebhook.InjectOtelResourceAndServiceNameEnvVars(existingEnvNames, podContainerSpec, distroName, pw, serviceName)
 		}
 		// TODO: once we have a flag to enable/disable device injection, we should check it here.
 		if distroMetadata.RuntimeAgent.Device != nil {
@@ -366,6 +385,20 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 				}
 				podswebhook.InjectDeviceToContainer(podContainerSpec, deviceName)
 			}
+		}
+	}
+
+	if containerConfig.EnvInjectionMethod != nil {
+		switch *containerConfig.EnvInjectionMethod {
+		case common.LoaderEnvInjectionMethod:
+			_, err = podswebhook.InjectLoaderEnvVar(existingEnvNames, podContainerSpec)
+			if err != nil {
+				return false, nil, err
+			}
+		case common.LoaderFallbackToPodManifestInjectionMethod, common.PodManifestEnvInjectionMethod:
+			// "loader-fallback-to-pod-manifest" in this context, means that we tried loader,
+			// and it cannot be satisfied, thus we falledback to use pod manifest.
+			// TODO: migrate the logic here in a future step
 		}
 	}
 
