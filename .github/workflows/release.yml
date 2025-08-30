@@ -59,10 +59,12 @@ jobs:
           echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
 
       - name: Notify Slack Start
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Starting Odigos CLI release", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with: 
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Starting Odigos CLI release for tag ${{ env.TAG }}"
+          failure-description: "ERROR: Failed to start Odigos CLI release"
+          tag: ${{ env.TAG }}
 
       - name: Verify Components Image Ready
         run: |
@@ -151,26 +153,23 @@ jobs:
           crane copy ${SOURCE_IMAGE}:${{ env.TAG }} ${DEST_IMAGE}:${{ env.TAG }}
           crane copy ${SOURCE_IMAGE}:latest ${DEST_IMAGE}:latest
 
-      - name: Notify Slack End
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+      - name: Set notification messages
         run: |
-          if [[ "${{ env.IS_PRERELEASE }}" == "false" ]]; then
-            DESCRIPTION="Odigos CLI stable release completed successfully"
+          if [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
+            echo "SUCCESS_MSG=Odigos CLI stable release completed successfully" >> $GITHUB_ENV
+            echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to Docker Hub" >> $GITHUB_ENV
           else
-            DESCRIPTION="Odigos CLI pre-release completed successfully"
+            echo "SUCCESS_MSG=Odigos CLI pre-release completed successfully" >> $GITHUB_ENV
+            echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to Docker Hub" >> $GITHUB_ENV
           fi
-          
-          curl -X POST -H 'Content-type: application/json' --data "{\"description\":\"$DESCRIPTION\", \"tag\":\"${{ env.TAG }}\"}" ${{ env.SLACK_WEBHOOK_URL }}
 
-      - name: Notify Slack on Failure
-        if: ${{ failure() || cancelled() }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos CLI", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with: 
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: ${{ env.SUCCESS_MSG }}
+          failure-description: ${{ env.FAILURE_MSG }}
+          tag: ${{ env.TAG }}
 
   trigger-openshift-certification:
     needs: release-cli
@@ -231,17 +230,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: bash ./scripts/release-charts.sh
 
-      - name: Notify Slack End
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Helm charts released successfully. new version is ready", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
 
-      - name: Notify Slack on Failure
-        if: ${{ failure() || cancelled() }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to release Helm charts", "tag":"${{ env.TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with: 
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Helm charts released successfully. new version is ready"
+          failure-description: "ERROR: Failed to release Helm charts"
+          tag: ${{ env.TAG }}
