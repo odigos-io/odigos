@@ -277,10 +277,9 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 			continue
 		}
 		if containerConfig.EnvInjectionMethod != nil &&
-			(*containerConfig.EnvInjectionMethod == common.LoaderFallbackToPodManifestInjectionMethod ||
-				*containerConfig.EnvInjectionMethod == common.LoaderEnvInjectionMethod) {
+			(*containerConfig.EnvInjectionMethod == common.LoaderEnvInjectionMethod) {
 			// lodaer has been migrated to use distros.
-			// we only process "pod-manifest" containers here.
+			// we only process "pod-manifest" and "loader-fallback-to-pod-manifest" containers here.
 			continue
 		}
 
