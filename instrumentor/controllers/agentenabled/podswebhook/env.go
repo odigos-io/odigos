@@ -2,6 +2,7 @@ package podswebhook
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"text/template"
@@ -167,7 +168,7 @@ func InjectLoaderEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Conta
 			if envVar.Value == odigosLoaderPath {
 				return existingEnvNames, nil
 			} else {
-				return existingEnvNames, fmt.Errorf("LD_PRELOAD env var is already set to some non-odigos value which is unsupported. use pod-manifest injection method instead", envVar.Value, odigosLoaderPath)
+				return existingEnvNames, errors.New("LD_PRELOAD env var is already set to some non-odigos value which is unsupported. use pod-manifest injection method instead")
 			}
 		}
 	}
