@@ -85,21 +85,25 @@ func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*core
 	pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("app=%s", k8sconsts.UIAppLabelValue),
 	})
-
 	if err != nil {
 		return nil, err
 	}
 
-	if len(pods.Items) != 1 {
-		return nil, fmt.Errorf("expected to get 1 pod got %d", len(pods.Items))
+	runningPods := []corev1.Pod{}
+	for _, pod := range pods.Items {
+		if pod.Status.Phase == corev1.PodRunning {
+			runningPods = append(runningPods, pod)
+		}
 	}
-
-	pod := &pods.Items[0]
-	if pod.Status.Phase != corev1.PodRunning {
+	if len(runningPods) == 0 {
 		return nil, fmt.Errorf("odigos-ui pod is not running")
 	}
+	if len(runningPods) > 1 {
+		return nil, fmt.Errorf("expected to get 1 running pod, got %d", len(runningPods))
+	}
 
-	return &pods.Items[0], nil
+	pod := &runningPods[0]
+	return pod, nil
 }
 func init() {
 	rootCmd.AddCommand(uiCmd)
