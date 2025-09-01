@@ -111,16 +111,11 @@ jobs:
                 --body "This is an automated PR for the patch release ${{ steps.calculate_patch_version.outputs.patch_version }}"
             fi
 
-      - name: Notify Slack Success
-        if: success()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-              curl -X POST -H 'Content-type: application/json' --data '{"description":"Successfully created patch release PR for ${{ steps.calculate_patch_version.outputs.patch_version }}", "tag":"${{ steps.calculate_patch_version.outputs.patch_version }}"}' ${{ env.SLACK_WEBHOOK_URL }}
-
-      - name: Notify Slack Error
-        if: failure()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"ERROR: Failed to create patch release PR for ${{ steps.calculate_patch_version.outputs.patch_version }}", "tag":"${{ steps.calculate_patch_version.outputs.patch_version }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with: 
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Successfully created patch release PR for ${{ steps.calculate_patch_version.outputs.patch_version }}"
+          failure-description: "ERROR: Failed to create patch release PR for ${{ steps.calculate_patch_version.outputs.patch_version }}"
+          tag: ${{ steps.calculate_patch_version.outputs.patch_version }}
