@@ -7,10 +7,6 @@ on:
       - main
       - 'releases/**'
 
-defaults:
-  run:
-    shell: bash -eo pipefail
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
