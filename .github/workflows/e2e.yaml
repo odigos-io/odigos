@@ -70,7 +70,7 @@ jobs:
       - build-cli
     # workload-lifecycle test scenario requires more resources, so we use a different instance type
     # all other test scenarios use the default instance type which is free and fast
-    runs-on: 'warp-ubuntu-latest-x64-8x-spot'
+    runs-on: warp-ubuntu-latest-x64-8x-spot
     strategy:
       fail-fast: false
       matrix:
@@ -165,6 +165,7 @@ jobs:
             kubectl describe deploy -n "$ns" "$name" || true
           done
 
+      ################### Diagnose and collect logs ###################
       - name: Run diagnose command
         if: ${{ failure() && matrix.test-scenario != 'ui' }}
         run: |
