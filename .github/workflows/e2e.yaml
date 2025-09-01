@@ -171,6 +171,19 @@ jobs:
           ./cli/odigos diagnose
         continue-on-error: true
 
+      - name: Collect cluster logs
+        if: failure()
+        run: |
+          kind export logs ./kind_logs
+          tar -czvf kind_logs.tar.gz kind_logs
+
+      - name: Upload cluster logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kind_logs-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
+          path: kind_logs.tar.gz
+
       - name: Upload diagnose artifact
         if: ${{ failure() && matrix.test-scenario != 'ui' }}
         uses: actions/upload-artifact@v4
