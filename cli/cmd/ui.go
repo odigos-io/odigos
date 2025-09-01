@@ -96,10 +96,10 @@ func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*core
 		}
 	}
 	if len(runningPods) == 0 {
-		return nil, fmt.Errorf("odigos-ui pod is not running")
+		return nil, fmt.Errorf("%s pod is not running", k8sconsts.UIAppLabelValue)
 	}
 	if len(runningPods) > 1 {
-		return nil, fmt.Errorf("expected to get 1 running pod, got %d", len(runningPods))
+		return nil, fmt.Errorf("expected to get 1 running (%s) pod, got %d", k8sconsts.UIAppLabelValue, len(runningPods))
 	}
 
 	pod := &runningPods[0]
