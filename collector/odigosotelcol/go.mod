@@ -470,7 +470,7 @@ require (
 	github.com/mtibben/percent v0.2.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
-	github.com/odigos-io/go-rtml v0.0.0-20250828115257-56abd1103712 // indirect
+	github.com/odigos-io/go-rtml v0.0.1 // indirect
 	github.com/odigos-io/odigos/common v0.0.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
