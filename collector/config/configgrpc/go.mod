@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/mostynb/go-grpc-compression v1.2.3
-	github.com/odigos-io/go-rtml v0.0.0-20250828115257-56abd1103712
+	github.com/odigos-io/go-rtml v0.0.1
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/client v1.36.0
 	go.opentelemetry.io/collector/component v1.36.0
