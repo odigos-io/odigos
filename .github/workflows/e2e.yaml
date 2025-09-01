@@ -7,6 +7,9 @@ on:
       - main
       - 'releases/**'
 
+defaults:
+  run:
+    shell: bash -eo pipefail
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -116,6 +119,12 @@ jobs:
           version: "v0.25.0"
           cluster_name: kind
           config: tests/common/apply/kind-config.yaml
+
+      - name: wait for cluster readiness
+        run: |
+          kubectl wait --for=condition=Ready node --all --timeout=180s
+          kubectl wait -n kube-system --for=condition=Ready pod --all --timeout=300s
+          kubectl rollout status -n kube-system deployment/coredns --timeout=300s
 
       - name: Restore cached Odigos images
         uses: WarpBuilds/cache/restore@v1
