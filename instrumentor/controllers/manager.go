@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
@@ -198,17 +199,21 @@ func RegisterWebhooks(mgr manager.Manager, dp *distros.Provider) error {
 		return err
 	}
 
-	err = builder.
-		WebhookManagedBy(mgr).
-		For(&corev1.Pod{}).
-		WithDefaulter(&agentenabled.PodsWebhook{
-			Client:        mgr.GetClient(),
-			DistrosGetter: dp.Getter,
-		}).
-		Complete()
-	if err != nil {
-		return err
+	decoder := admission.NewDecoder(mgr.GetScheme())
+
+	webhook := &agentenabled.PodsWebhook{
+		Client:        mgr.GetClient(),
+		DistrosGetter: dp.Getter,
+		Decoder:       decoder,
 	}
+
+	// Register directly with GetWebhookServer() since this webhook uses admission.Handler for full control.
+	// We compute a patch from a deep-copied Pod, letting us apply mutations atomically (transaction-like).
+	// Pods are always admitted; mutations are conditionally and atomically applied via the returned patch.
+	mgr.GetWebhookServer().Register(
+		"/mutate--v1-pod",
+		&admission.Webhook{Handler: webhook},
+	)
 
 	return nil
 }

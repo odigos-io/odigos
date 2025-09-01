@@ -16,9 +16,10 @@ query: |
   length([?span.serviceName == 'python-latest-version' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
   length([?span.serviceName == 'python-alpine' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
   length([?span.serviceName == 'python-min-version' && span.spanAttributes."http.route" == 'insert-random/']) > `0` ||
+  length([?span.serviceName == 'python-gunicorn-server']) > `0` ||
   length([?span.serviceName == 'dotnet8-glibc']) > `0` ||
   length([?span.serviceName == 'dotnet8-musl']) > `0` ||
   length([?span.serviceName == 'dotnet6-glibc']) > `0` ||
   length([?span.serviceName == 'dotnet6-musl']) > `0`
 expected:
-  count: 18
+  count: 19

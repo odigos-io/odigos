@@ -3,22 +3,22 @@ package process
 import (
 	"fmt"
 	"os"
-	"path"
 	"strings"
 
 	mount "github.com/moby/sys/mountinfo"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
-func isPodContainerPredicate(podUID string, containerName string) func(string) bool {
+func isPodContainerPredicate(podUID string, containerName string) func(int) bool {
 
 	// Added trailing slash to avoid substring collisions like "membership" matching "membership1".
 	// Real m.Root ends with runtime ID (e.g., .../containers/membership/<runtime-id>), so exact match fails.
 	// Using slash ensures we only match full "containers/<name>/" segments in mount paths.
 	expectedMountRoot := fmt.Sprintf("%s/containers/%s/", podUID, containerName)
 
-	return func(procDirName string) bool {
-		mountInfoFile := path.Join("/proc", procDirName, "mountinfo")
+	return func(pid int) bool {
+		mountInfoFile := process.ProcFilePath(pid, "mountinfo")
 		f, err := os.Open(mountInfoFile)
 		if err != nil {
 			return false

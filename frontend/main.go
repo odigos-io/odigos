@@ -14,6 +14,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/99designs/gqlgen/graphql/executor"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -22,6 +23,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph"
+	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/kube/watchers"
 	"github.com/odigos-io/odigos/frontend/middlewares"
@@ -90,6 +92,7 @@ func startWatchers(ctx context.Context) error {
 }
 
 func startDatabase() error {
+
 	database, err := db.NewSQLiteDB("/data/data.db")
 
 	if err != nil {
@@ -172,8 +175,19 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	// OIDC/OAuth2 handlers
 	r.GET("/auth/oidc-callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c) })
 
+	gqlExecutableSchema := graph.NewExecutableSchema(graph.Config{
+		Resolvers: &graph.Resolver{
+			MetricsConsumer: odigosMetrics,
+			Logger:          logger,
+		},
+	})
+	gqlExecutor := executor.New(gqlExecutableSchema)
+
 	// GraphQL handlers
-	r.POST("/graphql", func(c *gin.Context) { graph.GetGQLHandler(ctx, logger, odigosMetrics).ServeHTTP(c.Writer, c.Request) })
+	r.POST("/graphql", func(c *gin.Context) {
+		c.Request = c.Request.WithContext(loaders.WithLoaders(c.Request.Context(), loaders.NewLoaders(logger)))
+		graph.GetGQLHandler(c.Request.Context(), gqlExecutableSchema).ServeHTTP(c.Writer, c.Request)
+	})
 	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
 	// SSE handler
 	r.GET("/api/events", sse.HandleSSEConnections)
@@ -182,6 +196,28 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	r.POST("/token/update", services.UpdateToken)
 	r.GET("/describe/odigos", services.DescribeOdigos)
 	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", services.DescribeSource)
+	r.GET("/workload", func(c *gin.Context) {
+		services.DescribeWorkload(c, logger, gqlExecutor, nil)
+	})
+	r.GET("/workload/overview", func(c *gin.Context) {
+		verbosity := "overview"
+		services.DescribeWorkload(c, logger, gqlExecutor, &verbosity)
+	})
+	r.GET("/workload/health-summary", func(c *gin.Context) {
+		verbosity := "healthSummary"
+		services.DescribeWorkload(c, logger, gqlExecutor, &verbosity)
+	})
+	r.GET("/workload/:namespace", func(c *gin.Context) {
+		services.DescribeWorkload(c, logger, gqlExecutor, nil)
+	})
+	r.GET("/workload/:namespace/:kind/:name", func(c *gin.Context) {
+		services.DescribeWorkload(c, logger, gqlExecutor, nil)
+	})
+	r.GET("/workload/:namespace/:kind/:name/pods", func(c *gin.Context) {
+		verbosity := "pods"
+		services.DescribeWorkload(c, logger, gqlExecutor, &verbosity)
+	})
+
 	r.POST("/source/namespace/:namespace/kind/:kind/name/:name", services.CreateSourceWithAPI)
 	r.DELETE("/source/namespace/:namespace/kind/:kind/name/:name", services.DeleteSourceWithAPI)
 
