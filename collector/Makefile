@@ -74,7 +74,7 @@ GO_MODS_TO_TEST := $(ALL_GO_MODS:%=test/%)
 test: $(GO_MODS_TO_TEST)
 test/%: GO_MOD=$*
 test/%:
-	cd $(shell dirname $(GO_MOD)) && $(GOCMD) test -v ./...
+	cd $(shell dirname $(GO_MOD)) && $(GOCMD) test --ldflags="-checklinkname=0" -v ./...
 
 .PHONY: go-licenses
 go-licenses:
