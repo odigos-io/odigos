@@ -43,7 +43,7 @@ spec:
     - name: '[1 - Setup] Odiglet ready'
       try:
         - assert:
-            file: ../../common/assert/odiglet-ready.yaml
+            file: odiglet-ready.yaml
 
     - name: '[1 - Setup] Verify Node Odiglet label has been added'
       try:
