@@ -32,8 +32,7 @@ describe('Onboarding', () => {
 
   it('Should allow the user to pass every step, and end-up on the "overview" page.', () => {
     visitPage(ROUTES.CHOOSE_STREAM, () => {
-      cy.get('input').should('exist').type('default');
-      cy.contains('button', BUTTONS.BACK).should('exist');
+      cy.get('input').should('exist').should('have.value', 'default');
       cy.contains('button', BUTTONS.NEXT).should('exist').click();
 
       cy.location('pathname').should('eq', ROUTES.CHOOSE_SOURCES);
