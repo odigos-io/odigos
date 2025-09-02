@@ -69,7 +69,6 @@ func TestCalculateMinimal(t *testing.T) {
 	config, err, statuses, signals := pipelinegen.GetGatewayConfig(
 		make([]config.ExporterConfigurer, 0),
 		make([]config.ProcessorConfigurer, 0),
-		make(config.GenericMap),
 		nil,
 		nil, gatewayOptions,
 	)
@@ -95,7 +94,6 @@ func TestCalculate(t *testing.T) {
 			},
 		},
 		make([]config.ProcessorConfigurer, 0),
-		make(config.GenericMap),
 		nil,
 		nil, gatewayOptions,
 	)

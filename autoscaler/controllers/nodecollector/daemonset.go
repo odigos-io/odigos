@@ -358,6 +358,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 										Port: intstr.FromInt(13133),
 									},
 								},
+								TimeoutSeconds: 5,
 							},
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -366,6 +367,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 										Port: intstr.FromInt(13133),
 									},
 								},
+								TimeoutSeconds: 5,
 							},
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
