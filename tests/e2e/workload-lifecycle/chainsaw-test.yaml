@@ -42,18 +42,6 @@ spec:
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
-
-    - name: '01 - Wait for all pods running'
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              set -e
-
-              echo "Waiting for all pods to be running..."
-              kubectl wait --for=condition=Ready pod --all -n default --timeout=180s
-              echo "✅ All pods are running"
-
     - name: '01 Assert runtime detection'
       try:
         - assert:
@@ -161,17 +149,6 @@ spec:
         - script:
             content: kubectl rollout restart deployment -l odigos.io/e2e=test-workload
 
-    - name: '02 - Wait for all pods running'
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              set -e
-
-              echo "Waiting for all pods to be running..."
-              kubectl wait --for=condition=Ready pod --all -n default --timeout=180s
-              echo "✅ All pods are running"
-
     - name: '02 - Generate Traffic'
       try:
         - script:
@@ -234,17 +211,6 @@ spec:
                   sleep 3
                 fi
               done
-
-    - name: '03 - Wait for all pods running'
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              set -e
-
-              echo "Waiting for all pods to be running..."
-              kubectl wait --for=condition=Ready pod --all -n default --timeout=180s
-              echo "✅ All pods are running"
 
     - name: '03 - Generate Traffic'
       try:
