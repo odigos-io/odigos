@@ -50,6 +50,38 @@ spec:
       securityContext:
         privileged: true
       image: registry.odigos.io/odigos-odiglet:e2e-test
+    - name: data-collection
+      securityContext:
+        privileged: true
+      env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: GOMEMLIMIT
+          (value != null): true
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              containerName: data-collection
+              divisor: "0"
+              resource: limits.cpu
+      resources:
+        requests:
+          (memory != null): true
+        limits:
+          (memory != null): true
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
   nodeName: kind-worker
@@ -59,6 +91,10 @@ spec:
   serviceAccountName: odiglet
 status:
   containerStatuses:
+    - name: data-collection
+      ready: true
+      restartCount: 0
+      started: true
     - name: odiglet
       ready: true
       restartCount: 0
