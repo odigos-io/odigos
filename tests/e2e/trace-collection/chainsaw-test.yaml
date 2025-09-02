@@ -100,14 +100,14 @@ spec:
               done
 
               # Apply the job
-              kubectl apply -f 01-generate-traffic.yaml
+              kubectl apply -f traffic-generator.yaml
 
               # Wait for the job to complete
-              job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
+              job_name=$(kubectl get -f traffic-generator.yaml -o=jsonpath='{.metadata.name}')
               kubectl wait --for=condition=complete job/$job_name --timeout=300s
 
               # Delete the job
-              kubectl delete -f 01-generate-traffic.yaml
+              kubectl delete -f traffic-generator.yaml
 
     - name: Wait for Traces (Phase 1)
       try:
@@ -115,7 +115,7 @@ spec:
             timeout: 2m
             content: |
               while true; do
-                ../../common/simple_trace_db_query_runner.sh 01-wait-for-trace.yaml
+                ../../common/simple_trace_db_query_runner.sh initial-trace-validation.yaml
                 if [ $? -eq 0 ]; then
                   break
                 fi
@@ -123,4 +123,4 @@ spec:
       catch:
         - script:
             content: |
-              ../../common/simple_trace_db_query_runner.sh 01-wait-for-trace.yaml --verbose
+              ../../common/simple_trace_db_query_runner.sh initial-trace-validation.yaml --verbose
