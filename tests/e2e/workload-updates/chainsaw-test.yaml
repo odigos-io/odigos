@@ -33,7 +33,7 @@ spec:
     - name: Install Test Apps
       try:
         - apply:
-            file: ../instrumentation-lifecycle/01-install-test-apps.yaml
+            file: ../instrumentation-lifecycle/install-test-apps.yaml
 
     - name: Assert Apps installed
       try:
@@ -61,23 +61,23 @@ spec:
       try:
         - assert:
             timeout: 3m
-            file: ../instrumentation-lifecycle/01-assert-instrumented.yaml
+            file: ../instrumentation-lifecycle/assert-instrumented.yaml
 
     - name: Update workload manifest template spec
       try:
         - apply:
-            file: 02-update-workload-manifests.yaml
+            file: update-workload-manifests.yaml
         - assert:
             timeout: 2m
-            file: 02-assert-workload-update.yaml
+            file: assert-workload-update.yaml
 
     - name: Update services names and rollout deployments
       try:
         - apply:
-            file: 02-sources-reported-names.yaml
+            file: sources-reported-names.yaml
         - assert:
             timeout: 1m
-            file: 02-assert-ic-service-names.yaml
+            file: assert-ic-service-names.yaml
         - script:
             content: kubectl rollout restart deployment -l odigos.io/e2e=test-workload
 
