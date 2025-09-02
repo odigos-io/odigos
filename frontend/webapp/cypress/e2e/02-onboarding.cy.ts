@@ -32,35 +32,23 @@ describe('Onboarding', () => {
 
   it('Should allow the user to pass every step, and end-up on the "overview" page.', () => {
     visitPage(ROUTES.CHOOSE_STREAM, () => {
-      // cy.get('input').should('exist').should('have.value', 'default');
+      cy.get('input').should('exist').type('default');
       cy.contains('button', BUTTONS.NEXT).should('exist').click();
 
-      // Wait for redirect
-      cy.wait(1000).then(() => {
-        cy.location('pathname').should('eq', ROUTES.CHOOSE_SOURCES);
-        cy.contains('button', BUTTONS.BACK).should('exist');
-        cy.contains('button', BUTTONS.NEXT).should('exist').click();
+      cy.location('pathname').should('eq', ROUTES.CHOOSE_SOURCES);
+      cy.contains('button', BUTTONS.BACK).should('exist');
+      cy.contains('button', BUTTONS.NEXT).should('exist').click();
 
-        // Wait for redirect
-        cy.wait(1000).then(() => {
-          cy.location('pathname').should('eq', ROUTES.CHOOSE_DESTINATION);
-          cy.contains(TEXTS.NO_SOURCES_SELECTED).should('exist');
-          cy.contains('button', BUTTONS.BACK).should('exist');
-          cy.contains('button', BUTTONS.NEXT).should('exist').click();
+      cy.location('pathname').should('eq', ROUTES.CHOOSE_DESTINATION);
+      cy.contains(TEXTS.NO_SOURCES_SELECTED).should('exist');
+      cy.contains('button', BUTTONS.BACK).should('exist');
+      cy.contains('button', BUTTONS.NEXT).should('exist').click();
 
-          // Wait for redirect
-          cy.wait(1000).then(() => {
-            cy.location('pathname').should('eq', ROUTES.SETUP_SUMMARY);
-            cy.contains('button', BUTTONS.BACK).should('exist');
-            cy.contains('button', BUTTONS.DONE).should('exist').click();
+      cy.location('pathname').should('eq', ROUTES.SETUP_SUMMARY);
+      cy.contains('button', BUTTONS.BACK).should('exist');
+      cy.contains('button', BUTTONS.DONE).should('exist').click();
 
-            // Wait for redirect
-            cy.wait(1000).then(() => {
-              cy.location('pathname').should('eq', ROUTES.OVERVIEW);
-            });
-          });
-        });
-      });
+      cy.location('pathname').should('eq', ROUTES.OVERVIEW);
     });
   });
 });
