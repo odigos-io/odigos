@@ -7,8 +7,8 @@ import { EntityTypes } from '@odigos/ui-kit/types';
 import { ServiceMapIcon, TraceViewIcon } from '@odigos/ui-kit/icons';
 import { useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
 import { DATA_FLOW_HEIGHT, NO_MENU_GAP_HEIGHT, ROUTES } from '@/utils';
+import { ErrorBoundary, FlexColumn } from '@odigos/ui-kit/components';
 import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
-import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
 import { DataFlowActionsMenu, NavIconIds, SideNav, ToastList } from '@odigos/ui-kit/containers';
 
 const PageContent = styled(FlexColumn)`
@@ -24,10 +24,10 @@ const ContentWithActions = styled.div<{ $height: CSSProperties['height'] }>`
   position: relative;
 `;
 
-const ContentUnderActions = styled(FlexRow)`
-  align-items: flex-start !important;
-  justify-content: space-between !important;
-  gap: 8px;
+const ContentUnderActions = styled.div`
+  gap: 12px;
+  display: flex;
+  justify-content: space-between;
   padding: 0 12px;
   width: calc(100% - 24px);
 `;
