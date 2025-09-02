@@ -45,35 +45,41 @@ export const useTraces = ({ serviceName }: UseTracesParams) => {
       }),
   });
 
+  const fetchAllTraces = async () => {
+    setIsLoading(true);
+
+    for await (const source of sources) {
+      const { error, data } = await fetchTraces({
+        variables: {
+          serviceName: source.serviceName || source.name,
+          limit: DEFAULT_LIMIT,
+          hoursAgo: DEFAULT_HOURS_AGO,
+        },
+      });
+
+      if (error) {
+        addNotification({
+          type: StatusType.Error,
+          title: error.name || Crud.Read,
+          message: error.cause?.message || error.message,
+        });
+      } else if (data?.getTraces) {
+        setTraces((prev) => {
+          const newTraces = data?.getTraces?.filter((currTrace) => currTrace.spans.length > 0 && !prev.find((prevTrace) => prevTrace.traceID === currTrace.traceID)) ?? [];
+          const arr = [...prev, ...newTraces];
+
+          return arr;
+        });
+      }
+    }
+
+    setIsLoading(false);
+  };
+
   useEffect(() => {
     // If there is no service name, we should fetch traces for all sources
-    if (!serviceName && sources.length > 0) {
-      setIsLoading(true);
-
-      const promises = sources.map(({ serviceName, name }) => {
-        return fetchTraces({
-          variables: {
-            serviceName: serviceName || name,
-            limit: DEFAULT_LIMIT,
-            hoursAgo: DEFAULT_HOURS_AGO,
-          },
-        });
-      });
-
-      Promise.all(promises).then((results) => {
-        results.forEach(({ data }) => {
-          setTraces((prev) => {
-            const newTraces = data?.getTraces?.filter((currTrace) => currTrace.spans.length > 0 && !prev.find((prevTrace) => prevTrace.traceID === currTrace.traceID)) ?? [];
-            const arr = [...prev, ...newTraces];
-
-            return arr;
-          });
-        });
-
-        setIsLoading(false);
-      });
-    }
-  }, [serviceName, sources]);
+    if (!serviceName && sources.length > 0 && traces.length === 0) fetchAllTraces();
+  }, [serviceName, sources.length, traces.length]);
 
   return {
     traces: serviceName ? data?.getTraces ?? [] : traces,
