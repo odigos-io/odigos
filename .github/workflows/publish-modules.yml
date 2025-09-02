@@ -9,10 +9,45 @@ on:
       tag:
         description: 'image tag'
         required: true
+      force_run_on_zero_patch:
+        description: 'Run even when tag is <MAJOR>.<MINOR>.0'
+        required: false
+        default: "false"
 
 jobs:
+  # Skip tags that are exactly v<MAJOR>.<MINOR>.0
+  # unless force_run_on_zero_patch is "true".
+  # This prevents publishing modules when a promote-rc-to-stable tag is created,
+  # but allows overriding manually by setting force_run_on_zero_patch to "true"
+  # when dispatching the workflow.
+  decide:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.decide.outputs.skip }}
+      tag:  ${{ steps.decide.outputs.tag }}
+    steps:
+      - id: decide
+        env:
+          # Prefer manual input for dispatch; otherwise use the pushed tag
+          TAG:   ${{ inputs.tag != '' && inputs.tag || github.ref_name }}
+          # If workflow_dispatch, this can be set to "true" to override skipping
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force_run_on_zero_patch || 'false' }}
+        run: |
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+          if [[ "$TAG" =~ ^v?[0-9]+\.[0-9]+\.0$ ]]; then
+            if [[ "$FORCE" == "true" ]]; then
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
   verify-offsets:
-    if: github.actor != 'keyval-release-bot'
+    needs: decide
+    if: ${{ needs.decide.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -33,7 +68,7 @@ jobs:
           if [ "$count" -gt 0 ]; then
             # Format PR links for display
             pr_links_formatted=$(echo "$pr_links" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
-            
+
             # Write outputs to GITHUB_OUTPUT instead of using ::set-output
             echo "status=failed" >> $GITHUB_OUTPUT
             echo "links=$pr_links" >> $GITHUB_OUTPUT
@@ -44,17 +79,17 @@ jobs:
             echo "status=success" >> $GITHUB_OUTPUT
             echo "✅ No open PRs with label \"offsets\"."
           fi
-      
+
       - name: Notify Slack
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "No open offset PRs in `${{ matrix.repo }}`"
           failure-description: "ERROR: Open offset PRs found in `${{ matrix.repo }}`\n\n${{ steps.verify.outputs.links_formatted }}"
 
   verify-dependencies-sync:
-    if: github.actor != 'keyval-release-bot'
+    if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: verify-offsets
     runs-on: ubuntu-latest
     strategy:
@@ -76,7 +111,7 @@ jobs:
           if [ "$count" -gt 0 ]; then
             # Format PR links for display
             pr_links_formatted=$(echo "$pr_links" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
-            
+
             # Write outputs to GITHUB_OUTPUT instead of using ::set-output
             echo "status=failed" >> $GITHUB_OUTPUT
             echo "links=$pr_links" >> $GITHUB_OUTPUT
@@ -91,13 +126,13 @@ jobs:
       - name: Notify Slack
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "No open dependencies-syncer-bot PRs in `${{ matrix.repo }}`"
           failure-description: "ERROR: Open dependencies-syncer-bot PRs found in `${{ matrix.repo }}`\n\n${{ steps.verify.outputs.pr_links_formatted }}"
 
   verify-release-blockers:
-    if: github.actor != 'keyval-release-bot'
+    if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: verify-dependencies-sync
     runs-on: ubuntu-latest
     strategy:
@@ -119,7 +154,7 @@ jobs:
           if [ "$count" -gt 0 ]; then
             # Format PR links for display
             pr_links_formatted=$(echo "$pr_links" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
-            
+
             # Write outputs to GITHUB_OUTPUT instead of using ::set-output
             echo "status=failed" >> $GITHUB_OUTPUT
             echo "links=$pr_links" >> $GITHUB_OUTPUT
@@ -134,13 +169,13 @@ jobs:
       - name: Notify Slack
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "No open release-blocker PRs in `${{ matrix.repo }}`"
           failure-description: "ERROR: Open release-blocker PRs found in `${{ matrix.repo }}`\n\n${{ steps.verify.outputs.pr_links_formatted }}"
-          
+
   print-tag:
-    if: github.actor != 'keyval-release-bot'
+    if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: verify-release-blockers
     runs-on: ubuntu-latest
     steps:
@@ -150,14 +185,14 @@ jobs:
 
       - name: Notify Slack Start
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "detected new git tag ${{ steps.extract_tag.outputs.tag }}, starting a release"
           failure-description: "error during detection of new git tag ${{ steps.extract_tag.outputs.tag }}"
           tag: ${{ steps.extract_tag.outputs.tag }}
 
   tag-modules:
-    if: github.actor != 'keyval-release-bot'
+    if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: verify-release-blockers
     runs-on: ubuntu-latest
     steps:
@@ -173,7 +208,7 @@ jobs:
 
       - name: Notify Slack Start
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "start tagging odigos modules so they can be consumed as libraries"
           failure-description: "error during tagging of odigos modules"
@@ -204,14 +239,14 @@ jobs:
       - name: Notify Slack Success
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "Odigos go modules tagged successfully"
           failure-description: "ERROR: Odigos go modules tagging failed"
           tag: ${{ steps.extract_tag.outputs.tag }}
 
   publish-images:
-    if: github.actor != 'keyval-release-bot'
+    if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: verify-release-blockers
     permissions:
       contents: 'read'
@@ -265,7 +300,7 @@ jobs:
 
       - name: Notify Slack Start
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "start publishing docker image for component ${{ matrix.service }} and dockerfile ${{ matrix.dockerfile }}"
           failure-description: "error during building or publishing of docker image for component ${{ matrix.service }} and dockerfile ${{ matrix.dockerfile }}"
@@ -337,14 +372,14 @@ jobs:
       - name: Notify Slack
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "Odigos component ${{ matrix.service }} with dockerfile ${{ matrix.dockerfile }} released successfully"
           failure-description: "ERROR: Odigos component ${{ matrix.service }} with dockerfile ${{ matrix.dockerfile }} release failed"
           tag: ${{ steps.extract_tag.outputs.tag }}
 
   publish-collector-linux-packages:
-    if: github.actor != 'keyval-release-bot'
+    if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: verify-release-blockers
     runs-on: ubuntu-latest
     steps:
@@ -355,7 +390,7 @@ jobs:
       - name: Notify Slack Start
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "start releasing odigos collector as linux packages"
           failure-description: "error during releasing of odigos collector as linux packages"
@@ -392,7 +427,7 @@ jobs:
       - name: Notify Slack Success
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "Odigos collector linux packages released successfully"
           failure-description: "ERROR: Odigos collector linux packages release failed"
