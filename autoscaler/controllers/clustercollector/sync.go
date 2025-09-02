@@ -49,7 +49,7 @@ func reconcileClusterCollector(ctx context.Context, k8sClient client.Client, sch
 	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
 
 	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, imagePullSecrets, odigosVersion)
-	statusPatchString := commonconf.GetCollectorsGroupDeployedConditionsPatch(err)
+	statusPatchString := commonconf.GetCollectorsGroupDeployedConditionsPatch(err, gatewayCollectorGroup.Spec.Role)
 	statusErr := k8sClient.Status().Patch(ctx, &gatewayCollectorGroup, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
 	if statusErr != nil {
 		logger.Error(statusErr, "Failed to patch collectors group status")

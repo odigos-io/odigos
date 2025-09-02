@@ -53,7 +53,7 @@ func reconcileNodeCollector(ctx context.Context, c client.Client, scheme *runtim
 		return ctrl.Result{}, err
 	}
 
-	err = syncDataCollection(&ics, clusterCollectorCollectorGroup.Status.ReceiverSignals, &processors, &dataCollectionCollectorGroup, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	err = syncDataCollection(&ics, clusterCollectorCollectorGroup.Status.ReceiverSignals, &processors, &dataCollectionCollectorGroup, ctx, c, scheme)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -63,7 +63,7 @@ func reconcileNodeCollector(ctx context.Context, c client.Client, scheme *runtim
 
 func syncDataCollection(sources *odigosv1.InstrumentationConfigList, signals []common.ObservabilitySignal, processors *odigosv1.ProcessorList,
 	dataCollection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client,
-	scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) error {
+	scheme *runtime.Scheme) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
@@ -79,7 +79,7 @@ func syncDataCollection(sources *odigosv1.InstrumentationConfigList, signals []c
 		return err
 	}
 
-	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, signals, dataCollection, ctx, c, scheme, imagePullSecrets, odigosVersion)
+	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, signals, dataCollection, ctx, c)
 
 	return nil
 }
