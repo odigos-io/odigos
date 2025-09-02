@@ -1,167 +1,364 @@
-# Common assertion to verify that test applications are ready
-# This can be reused across different test suites
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: nodejs-unsupported-version
+  namespace: default
+status:
+  containerStatuses:
+    - name: nodejs-unsupported-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: nodejs-very-old-version
+  namespace: default
+status:
+  containerStatuses:
+    - name: nodejs-very-old-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: nodejs-minimum-version
+  namespace: default
+status:
+  containerStatuses:
+    - name: nodejs-minimum-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: nodejs-latest-version
+  namespace: default
+status:
+  containerStatuses:
+    - name: nodejs-latest-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: nodejs-dockerfile-env
+  namespace: default
+status:
+  containerStatuses:
+    - name: nodejs-dockerfile-env
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: nodejs-manifest-env
+  namespace: default
+status:
+  containerStatuses:
+    - name: nodejs-manifest-env
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: java-unique-exec
+  namespace: default
+status:
+  containerStatuses:
+    - name: java-unique-exec
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: cpp-http-server
+  namespace: default
+status:
+  containerStatuses:
+    - name: cpp-http-server
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
 
-# Node.js workloads
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: nodejs-unsupported-version
+  labels:
+    app: java-supported-version
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: java-supported-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: nodejs-very-old-version
+  labels:
+    app: java-azul
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: java-azul
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: nodejs-minimum-version
+  labels:
+    app: java-supported-docker-env
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: java-supported-docker-env
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: nodejs-latest-version
+  labels:
+    app: java-supported-manifest-env
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: java-supported-manifest-env
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-# Java workloads
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: java-supported-version
+  labels:
+    app: java-latest-version
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: java-latest-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: java-azul
+  labels:
+    app: java-old-version
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: java-old-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: java-latest-version
+  labels:
+    app: python-latest-version
   namespace: default
+spec:
+  containers:
+  - env:
+    - name: DJANGO_SETTINGS_MODULE
+      (value != null): true
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: python-latest-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: java-old-version
+  labels:
+    app: python-other-agent
   namespace: default
+spec:
+  containers:
+  - env:
+    - name: DJANGO_SETTINGS_MODULE
+      (value != null): true
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: python-other-agent
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: java-unique-exec
+  labels:
+    app: python-alpine
   namespace: default
+spec:
+  containers:
+  - env:
+    - name: DJANGO_SETTINGS_MODULE
+      (value != null): true
+    - name: PYTHONPATH
+      (value != null): true
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: python-alpine
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-# Python workloads
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: python-latest-version
+  labels:
+    app: python-min-version
   namespace: default
+spec:
+  containers:
+  - env:
+    - name: DJANGO_SETTINGS_MODULE
+      (value != null): true
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: python-min-version
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: python-alpine
+  labels:
+    app: python-not-supported
   namespace: default
+spec:
+  containers:
+  - env:
+    - name: DJANGO_SETTINGS_MODULE
+      (value != null): true
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: python-not-supported
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: python-min-version
+  labels:
+    app: dotnet8-musl
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: dotnet8-musl
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: python-not-supported
+  labels:
+    app: dotnet6-musl
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: dotnet6-musl
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: python-other-agent
+  labels:
+    app: dotnet6-glibc
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: dotnet6-glibc
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: python-gunicorn-server
+  labels:
+    app: dotnet8-glibc
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: dotnet8-glibc
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-# .NET workloads
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: dotnet8-musl
+  labels:
+    app: python-gunicorn-server
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: python-gunicorn-server
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: dotnet6-musl
-  namespace: default
-status:
-  readyReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: dotnet8-glibc
-  namespace: default
-status:
-  readyReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: dotnet6-glibc
-  namespace: default
-status:
-  readyReplicas: 1
----
-# C++ workload
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: cpp-http-server
-  namespace: default
-status:
-  readyReplicas: 1

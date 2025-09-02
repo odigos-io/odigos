@@ -1,9 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '1'
-  generation: 1
+  generation: 2 # on step 2, the manifest was updated
   labels:
     app: nodejs-unsupported-version
   name: nodejs-unsupported-version
@@ -20,7 +18,7 @@ spec:
           resources: {}
 status:
   availableReplicas: 1
-  observedGeneration: 1
+  observedGeneration: 2
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -28,9 +26,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
-  generation: 2 # the deployment spec changed when odigos resource was added
+  generation: 3
   labels:
     app: nodejs-very-old-version
   name: nodejs-very-old-version
@@ -46,7 +42,7 @@ spec:
           name: nodejs-very-old-version
 status:
   availableReplicas: 1
-  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -54,9 +50,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
-  generation: 2 # the deployment spec changed when odigos resource was added
+  generation: 3
   labels:
     app: nodejs-minimum-version
   name: nodejs-minimum-version
@@ -71,7 +65,7 @@ spec:
         - name: nodejs-minimum-version
 status:
   availableReplicas: 1
-  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -79,9 +73,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
-  generation: 2 # the deployment spec changed when odigos resource was added
+  generation: 3
   labels:
     app: nodejs-latest-version
   name: nodejs-latest-version
@@ -96,7 +88,7 @@ spec:
         - name: nodejs-latest-version
 status:
   availableReplicas: 1
-  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -104,9 +96,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
-  generation: 2 # the deployment spec changed when odigos resource was added
+  generation: 3
   labels:
     app: nodejs-dockerfile-env
   name: nodejs-dockerfile-env
@@ -121,7 +111,7 @@ spec:
         - name: nodejs-dockerfile-env
 status:
   availableReplicas: 1
-  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -129,9 +119,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
-  generation: 2 # the deployment spec changed when odigos resource was added
+  generation: 3
   labels:
     app: nodejs-manifest-env
   name: nodejs-manifest-env
@@ -146,7 +134,7 @@ spec:
         - name: nodejs-manifest-env
 status:
   availableReplicas: 1
-  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -154,9 +142,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '1'
-  generation: 1
+  generation: 2 # on step 2, the manifest was updated (1->2)
   labels:
     app: cpp-http-server
   name: cpp-http-server
@@ -173,7 +159,7 @@ spec:
           resources: {}
 status:
   availableReplicas: 1
-  observedGeneration: 1
+  observedGeneration: 2
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -181,9 +167,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2'
-  generation: 2
+  generation: 3
   labels:
     app: java-supported-version
   name: java-supported-version
@@ -197,12 +181,9 @@ spec:
       containers:
         - image: public.ecr.aws/odigos/java-supported-version:v0.0.1
           name: java-supported-version
-          ports:
-            - containerPort: 3000
-              protocol: TCP
 status:
   availableReplicas: 1
-  observedGeneration: 2
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -210,9 +191,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2'
-  generation: 2
+  generation: 3
   labels:
     app: java-azul
   name: java-azul
@@ -226,12 +205,9 @@ spec:
       containers:
         - image: public.ecr.aws/odigos/java-azul:v0.0.1
           name: java-azul
-          ports:
-            - containerPort: 3000
-              protocol: TCP
 status:
   availableReplicas: 1
-  observedGeneration: 2
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -239,9 +215,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2'
-  generation: 2
+  generation: 3
   labels:
     app: java-supported-docker-env
   name: java-supported-docker-env
@@ -255,22 +229,18 @@ spec:
       containers:
         - image: public.ecr.aws/odigos/java-supported-docker-env:v0.0.1
           name: java-supported-docker-env
-          ports:
-            - containerPort: 3000
-              protocol: TCP
 status:
   availableReplicas: 1
-  observedGeneration: 2
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
+
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2'
-  generation: 2
+  generation: 3
   labels:
     app: java-supported-manifest-env
   name: java-supported-manifest-env
@@ -284,12 +254,9 @@ spec:
       containers:
         - image: public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1
           name: java-supported-manifest-env
-          ports:
-            - containerPort: 3000
-              protocol: TCP
 status:
   availableReplicas: 1
-  observedGeneration: 2
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -297,9 +264,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2'
-  generation: 2
+  generation: 3
   labels:
     app: java-latest-version
   name: java-latest-version
@@ -313,12 +278,9 @@ spec:
       containers:
         - image: public.ecr.aws/odigos/java-latest-version:v0.0.1
           name: java-latest-version
-          ports:
-            - containerPort: 3000
-              protocol: TCP
 status:
   availableReplicas: 1
-  observedGeneration: 2
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -326,9 +288,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2'
-  generation: 2
+  generation: 3
   labels:
     app: java-old-version
   name: java-old-version
@@ -342,12 +302,9 @@ spec:
       containers:
         - image: public.ecr.aws/odigos/java-old-version:v0.0.1
           name: java-old-version
-          ports:
-            - containerPort: 3000
-              protocol: TCP
 status:
   availableReplicas: 1
-  observedGeneration: 2
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -355,9 +312,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2'
-  generation: 2
+  generation: 3
   labels:
     app: java-unique-exec
   name: java-unique-exec
@@ -371,12 +326,9 @@ spec:
       containers:
         - image: public.ecr.aws/odigos/java-unique-exec:v0.0.1
           name: java-unique-exec
-          ports:
-            - containerPort: 3000
-              protocol: TCP
 status:
   availableReplicas: 1
-  observedGeneration: 2
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -384,9 +336,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
-  generation: 2 # the deployment spec changed when odigos resource was added
+  generation: 3
   labels:
     app: python-latest-version
   name: python-latest-version
@@ -402,7 +352,7 @@ spec:
           name: python-latest-version
 status:
   availableReplicas: 1
-  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -410,9 +360,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
-  generation: 2 # the deployment spec changed when odigos resource was added
+  generation: 3
   labels:
     app: python-alpine
   name: python-alpine
@@ -428,7 +376,7 @@ spec:
           name: python-alpine
 status:
   availableReplicas: 1
-  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -436,35 +384,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '1'
-  generation: 1
-  labels:
-    app: python-not-supported
-  name: python-not-supported
-  namespace: default
-spec:
-  selector:
-    matchLabels:
-      app: python-not-supported
-  template:
-    spec:
-      containers:
-        - image: public.ecr.aws/odigos/python-not-supported:v0.0.1
-          name: python-not-supported
-status:
-  availableReplicas: 1
-  observedGeneration: 1
-  readyReplicas: 1
-  replicas: 1
-  updatedReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
-  generation: 2 # the deployment spec changed when odigos resource was added
+  generation: 3
   labels:
     app: python-min-version
   name: python-min-version
@@ -480,7 +400,7 @@ spec:
           name: python-min-version
 status:
   availableReplicas: 1
-  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -488,25 +408,59 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
-  generation: 2 # the deployment spec changed when odigos resource was added
+  generation: 2 # on step 2, the manifest was updated (1->2)
   labels:
-    app: dotnet8-musl
+    app: python-not-supported
+  name: python-not-supported
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: python-not-supported
+  template:
+    spec:
+      containers:
+        - image: public.ecr.aws/odigos/python-not-supported:v0.0.1
+          name: python-not-supported
+          resources: {}
+status:
+  availableReplicas: 1
+  observedGeneration: 2
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 3
   name: dotnet8-musl
   namespace: default
+  labels:
+    app: dotnet8-musl
 spec:
   selector:
     matchLabels:
       app: dotnet8-musl
   template:
+    metadata:
+      labels:
+        app: dotnet8-musl
+      annotations:
+        odigos-test-step: '2'
     spec:
       containers:
-        - image: public.ecr.aws/odigos/dotnet8-musl:v0.0.1
-          name: dotnet8-musl
+        - name: dotnet8-musl
+          image: public.ecr.aws/odigos/dotnet8-musl:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
 status:
   availableReplicas: 1
-  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -514,25 +468,34 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
-  generation: 2 # the deployment spec changed when odigos resource was added
-  labels:
-    app: dotnet6-musl
+  generation: 3
   name: dotnet6-musl
   namespace: default
+  labels:
+    app: dotnet6-musl
 spec:
   selector:
     matchLabels:
       app: dotnet6-musl
   template:
+    metadata:
+      labels:
+        app: dotnet6-musl
+      annotations:
+        odigos-test-step: '2'
     spec:
       containers:
-        - image: public.ecr.aws/odigos/dotnet6-musl:v0.0.1
-          name: dotnet6-musl
+        - name: dotnet6-musl
+          image: public.ecr.aws/odigos/dotnet6-musl:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
 status:
   availableReplicas: 1
-  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -540,25 +503,34 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
-  generation: 2 # the deployment spec changed when odigos resource was added
-  labels:
-    app: dotnet8-glibc
+  generation: 3
   name: dotnet8-glibc
   namespace: default
+  labels:
+    app: dotnet8-glibc
 spec:
   selector:
     matchLabels:
       app: dotnet8-glibc
   template:
+    metadata:
+      labels:
+        app: dotnet8-glibc
+      annotations:
+        odigos-test-step: '2'
     spec:
       containers:
-        - image: public.ecr.aws/odigos/dotnet8-glibc:v0.0.1
-          name: dotnet8-glibc
+        - name: dotnet8-glibc
+          image: public.ecr.aws/odigos/dotnet8-glibc:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
 status:
   availableReplicas: 1
-  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1
@@ -566,25 +538,34 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: '2' # the deployment spec changed when odigos resource was added
-  generation: 2 # the deployment spec changed when odigos resource was added
-  labels:
-    app: dotnet6-glibc
+  generation: 3
   name: dotnet6-glibc
   namespace: default
+  labels:
+    app: dotnet6-glibc
 spec:
   selector:
     matchLabels:
       app: dotnet6-glibc
   template:
+    metadata:
+      labels:
+        app: dotnet6-glibc
+      annotations:
+        odigos-test-step: '2'
     spec:
       containers:
-        - image: public.ecr.aws/odigos/dotnet6-glibc:v0.0.1
-          name: dotnet6-glibc
+        - name: dotnet6-glibc
+          image: public.ecr.aws/odigos/dotnet6-glibc:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
 status:
   availableReplicas: 1
-  observedGeneration: 2 # the deployment spec changed when odigos resource was added
+  observedGeneration: 3
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1

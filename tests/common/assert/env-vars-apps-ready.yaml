@@ -1,41 +1,97 @@
-# Common assertion to verify that environment variables test applications are ready
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nodejs-dockerfile-env
+    app: nodejs-dockerfile-env
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: nodejs-dockerfile-env
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: nodejs-manifest-env
+  labels:
+    app: nodejs-manifest-env
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: nodejs-manifest-env
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: java-supported-docker-env
+  labels:
+    app: java-unique-exec
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: java-unique-exec
+      ready: true
+--
+    app: java-supported-docker-env
+  namespace: default
+status:
+  containerStatuses:
+    - name: java-supported-docker-env
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: java-supported-manifest-env
+  labels:
+    app: java-supported-manifest-env
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: java-supported-manifest-env
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: python-alpine
+  labels:
+    app: java-latest-version
   namespace: default
 status:
-  readyReplicas: 1
+  containerStatuses:
+    - name: java-latest-version
+      ready: true
+--
+    app: python-alpine
+  namespace: default
+spec:
+  containers:
+  - env:
+    - name: DJANGO_SETTINGS_MODULE
+      (value != null): true
+    - name: PYTHONPATH
+      (value != null): true
+status:
+  containerStatuses:
+    - name: python-alpine
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: python-min-version
+  namespace: default
+spec:
+  containers:
+  - env:
+    - name: DJANGO_SETTINGS_MODULE

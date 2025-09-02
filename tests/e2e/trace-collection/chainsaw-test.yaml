@@ -104,7 +104,7 @@ spec:
 
               # Wait for the job to complete
               job_name=$(kubectl get -f 01-generate-traffic.yaml -o=jsonpath='{.metadata.name}')
-              kubectl wait --for=condition=complete job/$job_name
+              kubectl wait --for=condition=complete job/$job_name --timeout=300s
 
               # Delete the job
               kubectl delete -f 01-generate-traffic.yaml

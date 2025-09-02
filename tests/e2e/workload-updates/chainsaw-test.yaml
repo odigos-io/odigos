@@ -66,20 +66,20 @@ spec:
     - name: Update workload manifest template spec
       try:
         - apply:
-            file: ../workload-lifecycle/02-update-workload-manifests.yaml
+            file: 02-update-workload-manifests.yaml
         - assert:
             timeout: 2m
-            file: ../workload-lifecycle/02-assert-workload-update.yaml
+            file: 02-assert-workload-update.yaml
 
     - name: Update services names and rollout deployments
       try:
         - apply:
-            file: ../workload-lifecycle/02-sources-reported-names.yaml
+            file: 02-sources-reported-names.yaml
         - assert:
             timeout: 1m
-            file: ../workload-lifecycle/02-assert-ic-service-names.yaml
+            file: 02-assert-ic-service-names.yaml
         - script:
-            content: kubectl rollout restart deployment -l odigos.io/e2e=instrumentation-lifecycle
+            content: kubectl rollout restart deployment -l odigos.io/e2e=test-workload
 
     - name: Verify Re-instrumentation After Update
       try:

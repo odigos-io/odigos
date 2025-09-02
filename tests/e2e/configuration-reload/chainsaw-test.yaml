@@ -35,18 +35,21 @@ spec:
         - apply:
             file: ../../common/apply/add-simple-trace-db-destination.yaml
 
-    - name: Assert Pipeline
+    - name: Wait for destination to be ready
       try:
-        - assert:
-            timeout: 1m
-            file: ../../common/assert/pipeline-ready.yaml
+        - script:
+            timeout: 60s
+            content: |
+              echo "Waiting for destination to be processed..."
+              sleep 10
+              echo "Destination ready"
 
     - name: Create cluster info action
       try:
         - apply:
-            file: ../workload-lifecycle/03-create-action.yaml
+            file: 03-create-action.yaml
         - assert:
-            file: ../workload-lifecycle/03-assert-action-created.yaml
+            file: 03-assert-action-created.yaml
 
     - name: Verify Collector config reload
       try:

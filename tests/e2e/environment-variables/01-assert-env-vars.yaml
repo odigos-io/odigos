@@ -1,11 +1,3 @@
-# Environment Variables Assertions
-# This file asserts that environment variable detection and handling work correctly
-
-# Node.js dockerfile env - should detect NODE_OPTIONS from container runtime
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentationConfig
-metadata:
   name: deployment-nodejs-dockerfile-env
   namespace: default
   ownerReferences:
@@ -24,7 +16,6 @@ status:
       runtimeVersion: 20.17.0
       secureExecutionMode: false
 ---
-# Node.js manifest env - should NOT detect env from container runtime (it's in manifest)
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
@@ -39,17 +30,27 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: nodejs-manifest-env
-      # the env var is present in the pod manifest, hence the container runtime value
-      # is not relevant and not populated
-      envFromContainerRuntime: null
+# the env var is present in the pod manifest, hence the container runtime value
+# is not relevant and not populated
+      (envFromContainerRuntime == null): true
       language: javascript
       runtimeVersion: 20.17.0
       secureExecutionMode: false
 ---
-# Java dockerfile env - should detect env from container runtime
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
+  name: deployment-cpp-http-server
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: cpp-http-server
+status:
+  runtimeDetailsByContainer:
+--
   name: deployment-java-supported-docker-env
   namespace: default
   ownerReferences:
@@ -67,8 +68,8 @@ status:
           value: ""
       runtimeVersion: 17.0.12+7
       secureExecutionMode: false
+
 ---
-# Java manifest env - should NOT detect env from container runtime (it's in manifest)
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
@@ -84,16 +85,26 @@ status:
   runtimeDetailsByContainer:
     - containerName: java-supported-manifest-env
       language: java
-      # the env var is present in the pod manifest, hence the container runtime value
-      # is not relevant and not populated
-      envFromContainerRuntime: null
+# the env var is present in the pod manifest, hence the container runtime value
+# is not relevant and not populated
+      (envFromContainerRuntime == null): true
       runtimeVersion: 17.0.12+7
       secureExecutionMode: false
+
 ---
-# Python alpine - should NOT detect env from container runtime (PYTHONPATH is in manifest)
+---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
+  name: deployment-java-unique-exec
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-unique-exec
+--
   name: deployment-python-alpine
   namespace: default
   ownerReferences:
@@ -105,9 +116,23 @@ metadata:
 status:
   runtimeDetailsByContainer:
     - containerName: python-alpine
-      # the env var is present in the pod manifest, hence the container runtime value
-      # is not relevant and not populated
-      envFromContainerRuntime: null
+# the env var is present in the pod manifest, hence the container runtime value
+# is not relevant and not populated
+      (envFromContainerRuntime == null): true
       language: python
       runtimeVersion: 3.10.15
       secureExecutionMode: true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-python-latest-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: python-latest-version
+status:
+  runtimeDetailsByContainer:
