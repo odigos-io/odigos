@@ -36,7 +36,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: nodejs-very-old-version
       language: javascript
-      (runtimeVersion == null): true
+      runtimeVersion: null
       secureExecutionMode: false
 ---
 apiVersion: odigos.io/v1alpha1
@@ -72,7 +72,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: nodejs-latest-version
       language: javascript
-      (runtimeVersion != null): true
+      runtimeVersion: "?*"
       secureExecutionMode: false
 ---
 # Java Runtime Detection
@@ -127,7 +127,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: python-latest-version
       language: python
-      (runtimeVersion != null): true
+      runtimeVersion: "?*"
       secureExecutionMode: false
 ---
 apiVersion: odigos.io/v1alpha1
