@@ -1,0 +1,166 @@
+# Runtime Detection Assertions
+# This file asserts that runtime detection works correctly for different languages and versions
+
+# Node.js Runtime Detection
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-nodejs-unsupported-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-unsupported-version
+status:
+  runtimeDetailsByContainer:
+    - containerName: nodejs-unsupported-version
+      language: javascript
+      runtimeVersion: 8.17.0
+      secureExecutionMode: false
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-nodejs-very-old-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-very-old-version
+status:
+  runtimeDetailsByContainer:
+    - containerName: nodejs-very-old-version
+      language: javascript
+      (runtimeVersion == null): true
+      secureExecutionMode: false
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-nodejs-minimum-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-minimum-version
+status:
+  runtimeDetailsByContainer:
+    - containerName: nodejs-minimum-version
+      language: javascript
+      runtimeVersion: 14.0.0
+      secureExecutionMode: false
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-nodejs-latest-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-latest-version
+status:
+  runtimeDetailsByContainer:
+    - containerName: nodejs-latest-version
+      language: javascript
+      (runtimeVersion != null): true
+      secureExecutionMode: false
+---
+# Java Runtime Detection
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-java-supported-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-supported-version
+status:
+  runtimeDetailsByContainer:
+    - containerName: java-supported-version
+      language: java
+      runtimeVersion: 17.0.12+7
+      secureExecutionMode: false
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-java-latest-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-latest-version
+status:
+  runtimeDetailsByContainer:
+    - containerName: java-latest-version
+      language: java
+      secureExecutionMode: false
+---
+# Python Runtime Detection
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-python-latest-version
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: python-latest-version
+status:
+  runtimeDetailsByContainer:
+    - containerName: python-latest-version
+      language: python
+      (runtimeVersion != null): true
+      secureExecutionMode: false
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-python-not-supported
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: python-not-supported
+status:
+  runtimeDetailsByContainer:
+    - containerName: python-not-supported
+      language: python
+      runtimeVersion: 3.6.15
+      secureExecutionMode: false
+---
+# C++ Runtime Detection (unsupported language)
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-cpp-http-server
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: cpp-http-server
+status:
+  runtimeDetailsByContainer:
+    - containerName: cpp-http-server
+      language: cplusplus

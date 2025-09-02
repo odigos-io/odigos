@@ -68,7 +68,7 @@ jobs:
     needs:
       - build-odigos-images
       - build-cli
-    # workload-lifecycle test scenario requires more resources, so we use a different instance type
+    # Some test scenarios require more resources, so we use a different instance type
     # all other test scenarios use the default instance type which is free and fast
     runs-on: warp-ubuntu-latest-x64-8x-spot
     strategy:
@@ -83,7 +83,12 @@ jobs:
           - "helm-chart"
           - "cli-upgrade"
           - "helm-upgrade"
-          - "workload-lifecycle"
+          - "runtime-detection"
+          - "instrumentation-lifecycle"
+          - "environment-variables"
+          - "workload-updates"
+          - "trace-collection"
+          - "configuration-reload"
           - "source"
           - "webhooks"
           - "env-injection"

@@ -1,0 +1,34 @@
+# Common assertion to verify that instrumentation test applications are ready
+# This can be reused across different test suites
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-minimum-version
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-latest-version
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-version
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-latest-version
+  namespace: default
+status:
+  (readyReplicas == 1): true

@@ -1,0 +1,167 @@
+# Common assertion to verify that test applications are ready
+# This can be reused across different test suites
+
+# Node.js workloads
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-unsupported-version
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-very-old-version
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-minimum-version
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-latest-version
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+# Java workloads
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-version
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-azul
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-latest-version
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-old-version
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-unique-exec
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+# Python workloads
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-latest-version
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-alpine
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-min-version
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-not-supported
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-other-agent
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-gunicorn-server
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+# .NET workloads
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet8-musl
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet6-musl
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet8-glibc
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet6-glibc
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+# C++ workload
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpp-http-server
+  namespace: default
+status:
+  (readyReplicas == 1): true

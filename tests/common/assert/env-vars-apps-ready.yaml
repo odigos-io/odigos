@@ -1,0 +1,41 @@
+# Common assertion to verify that environment variables test applications are ready
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-dockerfile-env
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-manifest-env
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-docker-env
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-manifest-env
+  namespace: default
+status:
+  (readyReplicas == 1): true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-alpine
+  namespace: default
+status:
+  (readyReplicas == 1): true

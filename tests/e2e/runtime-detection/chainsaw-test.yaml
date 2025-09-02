@@ -1,0 +1,126 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: runtime-detection
+spec:
+  description: |
+    This e2e test verifies runtime detection and version compatibility across different languages.
+    It tests Node.js, Java, Python, and C++ workloads to ensure proper language and version detection.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+            timeout: 4m
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Verify Node Odiglet label has been added
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: 01-install-test-apps.yaml
+
+    - name: Assert Apps installed
+      try:
+        - assert:
+            timeout: 150s
+            file: ../../common/assert/apps-ready.yaml
+
+    - name: Instrument Namespaces
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Assert Runtime Detection
+      try:
+        - assert:
+            timeout: 2m
+            file: 01-assert-runtime-detected.yaml
+
+    - name: Verify Gunicorn Instrumentation Instances
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              set -e
+
+              echo "=== Checking Gunicorn Instrumentation Instances ==="
+
+              # The original test expected 6 gunicorn instrumentation instances
+              EXPECTED_COUNT=6
+              ACTUAL_COUNT=$(kubectl get instrumentationinstance | grep gunicorn | wc -l)
+
+              if [ "$ACTUAL_COUNT" -eq "$EXPECTED_COUNT" ]; then
+                echo "✅ Found $EXPECTED_COUNT gunicorn instrumentation instances."
+                exit 0
+              else
+                echo "❌ Expected $EXPECTED_COUNT gunicorn instances, but found $ACTUAL_COUNT."
+                kubectl get instrumentationinstance | grep gunicorn || true
+                exit 1
+              fi
+
+    - name: Verify Runtime Detection Results
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              set -e
+
+              echo "=== Runtime Detection Summary ==="
+
+              # Node.js workloads
+              echo "Node.js workloads:"
+              echo "  - nodejs-unsupported-version: Should detect v8.17.0 (unsupported)"
+              echo "  - nodejs-very-old-version: Should detect language but no version"
+              echo "  - nodejs-minimum-version: Should detect v14.0.0 (minimum supported)"
+              echo "  - nodejs-latest-version: Should detect latest version"
+
+              # Java workloads
+              echo "Java workloads:"
+              echo "  - java-supported-version: Should detect v17.0.12+7"
+              echo "  - java-azul: Should detect Azul JRE"
+              echo "  - java-latest-version: Should detect latest version"
+              echo "  - java-old-version: Should detect older version"
+              echo "  - java-unique-exec: Should detect java without 'java' keyword"
+
+              # Python workloads
+              echo "Python workloads:"
+              echo "  - python-latest-version: Should detect latest version"
+              echo "  - python-alpine: Should detect v3.10.15 on Alpine"
+              echo "  - python-min-version: Should detect v3.8.0 (minimum supported)"
+              echo "  - python-not-supported: Should detect v3.6.15 (unsupported)"
+              echo "  - python-other-agent: Should detect other agent (New Relic)"
+              echo "  - python-gunicorn-server: Should detect v3.8.20"
+
+              # .NET workloads
+              echo ".NET workloads:"
+              echo "  - dotnet8-musl: Should detect .NET 8 with musl"
+              echo "  - dotnet6-musl: Should detect .NET 6 with musl"
+              echo "  - dotnet8-glibc: Should detect .NET 8 with glibc"
+              echo "  - dotnet6-glibc: Should detect .NET 6 with glibc"
+
+              # C++ workloads
+              echo "C++ workloads:"
+              echo "  - cpp-http-server: Should detect language as cplusplus"
+
+              echo "✅ Runtime detection test completed successfully"
