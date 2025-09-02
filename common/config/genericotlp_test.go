@@ -87,7 +87,7 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 
 			// Create Generic OTLP configurator
 			genericOtlp := &GenericOTLP{}
-			
+
 			// Create initial config
 			config := &Config{
 				Extensions: make(map[string]interface{}),
@@ -108,12 +108,12 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 			exporterName := "otlp/generic-test-id"
 			assert.Contains(t, config.Exporters, exporterName)
 			exporterConfig := config.Exporters[exporterName].(GenericMap)
-			
+
 			// Check TLS configuration presence
 			if tt.expectTLSConfig {
 				assert.Contains(t, exporterConfig, "tls", "TLS config should be present")
 				tlsConfig := exporterConfig["tls"].(GenericMap)
-				
+
 				if tt.expectedTLS {
 					assert.False(t, tlsConfig["insecure"].(bool), "TLS should be enabled (insecure=false)")
 				} else {
@@ -127,7 +127,7 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 			if tt.expectedAuth {
 				assert.Contains(t, config.Service.Extensions, tt.expectedExtName)
 				assert.Contains(t, config.Extensions, tt.expectedExtName)
-				
+
 				// Verify exporter has auth configuration
 				authConfig := exporterConfig["auth"].(GenericMap)
 				assert.Equal(t, tt.expectedExtName, authConfig["authenticator"])
@@ -143,8 +143,9 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 
 // Mock destination for gRPC testing
 type mockGrpcDestination struct {
-	id     string
-	config map[string]string
+	id        string
+	config    map[string]string
+	namespace string
 }
 
 func (m *mockGrpcDestination) GetID() string {
@@ -165,4 +166,8 @@ func (m *mockGrpcDestination) GetSignals() []common.ObservabilitySignal {
 
 func (m *mockGrpcDestination) GetType() common.DestinationType {
 	return common.GenericOTLPDestinationType
+}
+
+func (m *mockGrpcDestination) GetNamespace() string {
+	return m.namespace
 }

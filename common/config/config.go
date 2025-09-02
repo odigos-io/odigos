@@ -4,11 +4,16 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
+type NamespaceSpecific interface {
+	GetNamespace() string
+}
+
 type SignalSpecific interface {
 	GetSignals() []common.ObservabilitySignal
 }
 
 type ExporterConfigurer interface {
+	NamespaceSpecific
 	SignalSpecific
 	GetType() common.DestinationType
 	// expected to be unique across all instances of exporters used in collector config, [a-zA-Z0-9-_]+

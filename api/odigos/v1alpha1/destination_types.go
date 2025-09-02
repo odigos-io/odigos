@@ -86,6 +86,9 @@ func (dest Destination) GetConfig() map[string]string {
 func (dest Destination) GetSignals() []common.ObservabilitySignal {
 	return dest.Spec.Signals
 }
+func (dest Destination) GetNamespace() string {
+	return dest.Namespace
+}
 
 type SourceSelector struct {
 	// If a namespace is specified, all workloads (sources) within that namespace are allowed to send data.

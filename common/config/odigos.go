@@ -25,7 +25,8 @@ func (j *Odigos) DestType() common.DestinationType {
 func (j *Odigos) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	uniqueUri := "odigos-" + dest.GetID()
 
-	domain := fmt.Sprintf("%s.%s", "ingester", "odigos-system")
+	// The NS of the Destination CRD is the same as Odigos's NS (we need Odigos's NS to be able to reach the ingester)
+	domain := fmt.Sprintf("%s.%s", "ingester", dest.GetNamespace())
 	endpoint, err := parseOtlpGrpcUrl(domain, false)
 	if err != nil {
 		return nil, err
