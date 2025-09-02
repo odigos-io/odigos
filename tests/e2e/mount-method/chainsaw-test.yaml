@@ -38,6 +38,14 @@ spec:
             timeout: 30s
             content: ../../common/assert_config_value.sh -k mountMethod -v k8s-init-container
 
+    - name: '[1 - Setup] Wait for odiglet to be rolled out'
+      try:
+        - script:
+            timeout: 5m
+            content: |
+              sleep 5
+              kubectl rollout status daemonset/odiglet -n odigos-test --timeout=5m
+
     ## After setting mount method, device-plugin container removed from odiglet pod spec
     ## so we need to wait for odiglet to be ready
     - name: '[1 - Setup] Odiglet ready'
