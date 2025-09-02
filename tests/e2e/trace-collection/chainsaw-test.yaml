@@ -1,0 +1,127 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: trace-collection
+spec:
+  description: |
+    This e2e test verifies end-to-end trace collection functionality.
+    It deploys instrumented workloads, generates traffic, and verifies traces are collected.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: ../runtime-detection/install-test-apps.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+            timeout: 4m
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+
+    - name: Assert Apps installed
+      try:
+        - assert:
+            timeout: 5m
+            file: ../../common/assert/apps-ready.yaml
+
+    - name: Instrument Namespaces
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Assert Pipeline
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Wait for Instrumentation
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              set -e
+
+              echo "=== Waiting for instrumentation to be ready ==="
+
+              # Wait for instrumentation configs to be created and ready
+              timeout=180
+              elapsed=0
+              while [ $elapsed -lt $timeout ]; do
+                ready_count=$(kubectl get instrumentationconfig -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="AgentEnabled")].status}{"\n"}{end}' | grep -c "True" || echo "0")
+                if [ "$ready_count" -gt "10" ]; then  # Expecting multiple workloads to be instrumented
+                  echo "✅ Found $ready_count instrumented workloads"
+                  break
+                fi
+                echo "⏳ Waiting for instrumentation... ($ready_count instrumented so far)"
+                sleep 10
+                elapsed=$((elapsed + 10))
+              done
+
+    - name: Generate Traffic (Phase 1)
+      try:
+        - script:
+            timeout: 200s
+            content: |
+              set -e
+
+              NAMESPACE="default"
+              DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
+
+              for DEPLOYMENT in $DEPLOYMENTS; do
+                echo "Waiting for deployment $DEPLOYMENT to finish rollout..."
+                kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE
+                if [ $? -ne 0 ]; then
+                  echo "Deployment $DEPLOYMENT failed to finish rollout."
+                  exit 1
+                fi
+              done
+
+              # Apply the job
+              kubectl apply -f traffic-generator.yaml
+
+              # Wait for the job to complete
+              job_name=$(kubectl get -f traffic-generator.yaml -o=jsonpath='{.metadata.name}')
+              kubectl wait --for=condition=complete job/$job_name --timeout=300s
+
+              # Delete the job
+              kubectl delete -f traffic-generator.yaml
+
+    - name: Wait for Traces (Phase 1)
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh initial-trace-validation.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+              done
+      catch:
+        - script:
+            content: |
+              ../../common/simple_trace_db_query_runner.sh initial-trace-validation.yaml --verbose

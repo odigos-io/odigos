@@ -264,3 +264,31 @@ spec:
     kind: Deployment
   otelServiceName: dotnet6-musl-reported
 ---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: python-other-agent
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: python-other-agent
+    namespace: default
+    kind: Deployment
+  otelServiceName: python-other-agent-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: python-gunicorn-server
+  namespace: default
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: python-gunicorn-server
+    namespace: default
+    kind: Deployment
+  otelServiceName: python-gunicorn-server-reported
+---

@@ -1,0 +1,96 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: environment-variables
+spec:
+  description: |
+    This e2e test verifies environment variable detection and handling for different languages.
+    It tests that environment variables are properly detected from container runtime vs manifest,
+    and that instrumentation preserves and modifies them correctly.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: install-test-apps.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+            timeout: 4m
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Verify Node Odiglet label has been added
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Assert Apps installed
+      try:
+        - assert:
+            timeout: 3m
+            file: assert-apps-ready.yaml
+
+    - name: Instrument Namespaces
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Assert Pipeline
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Assert Environment Variable Detection
+      try:
+        - assert:
+            timeout: 2m
+            file: assert-env-vars.yaml
+
+    - name: Verify Environment Variable Handling
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              set -e
+
+              echo "=== Environment Variable Handling Summary ==="
+
+              # Verify that workloads with environment variables are properly instrumented
+              EXPECTED_DEPLOYMENTS="nodejs-dockerfile-env nodejs-manifest-env java-supported-docker-env java-supported-manifest-env python-alpine"
+
+              for deployment in $EXPECTED_DEPLOYMENTS; do
+                echo "Checking instrumentation for $deployment..."
+                if kubectl get instrumentationconfig deployment-$deployment -o jsonpath='{.status.conditions[?(@.type=="AgentEnabled")].status}' | grep -q "True"; then
+                  echo "✅ $deployment is properly instrumented"
+                else
+                  echo "❌ $deployment is not instrumented correctly"
+                  kubectl get instrumentationconfig deployment-$deployment -o yaml || true
+                  exit 1
+                fi
+              done
+
+              echo "✅ Environment variable handling test completed successfully"

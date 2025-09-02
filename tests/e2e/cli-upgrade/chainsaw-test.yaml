@@ -10,6 +10,12 @@ spec:
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install - Simple Demo Apps
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
@@ -67,20 +73,8 @@ spec:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
 
-    - name: Install - Simple Demo Apps
+    - name: Assert - Simple Demo Apps Installed
       try:
-        - apply:
-            file: ../../common/apply/install-simple-demo.yaml
-        - script:
-            timeout: 2m
-            content: |
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 

@@ -3,9 +3,7 @@ name: E2E Tests
 on:
   merge_group:
   pull_request:
-    branches:
-      - main
-      - 'releases/**'
+    branches: [ main, 'releases/**' ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -13,7 +11,7 @@ concurrency:
 
 jobs:
   build-cli:
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    runs-on: depot-ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,13 +31,13 @@ jobs:
           go build -tags=embed_manifests -o odigos
 
       - name: Save CLI binary to cache
-        uses: WarpBuilds/cache/save@v1
+        uses: actions/cache/save@v4
         with:
           path: cli/odigos
           key: ${{ github.run_id }}-odigos-cli
 
   build-odigos-images:
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    runs-on: depot-ubuntu-24.04-8
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,7 +55,7 @@ jobs:
           docker save registry.odigos.io/odigos-cli:e2e-test -o cli-image.tar
 
       - name: Save Odigos images to cache
-        uses: WarpBuilds/cache/save@v1
+        uses: actions/cache/save@v4
         with:
           path: |
             odigos-images.tar
@@ -65,25 +63,23 @@ jobs:
           key: ${{ github.run_id }}-odigos-images
 
   kubernetes-test:
-    needs:
-      - build-odigos-images
-      - build-cli
-    # workload-lifecycle test scenario requires more resources, so we use a different instance type
-    # all other test scenarios use the default instance type which is free and fast
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    needs: [ build-odigos-images, build-cli ]
+    runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
       matrix:
-        kube-version:
-          - "1.20.15"
-          - "1.23"
-          - "1.32"
+        kube-version: [ "1.32", "1.23", "1.20.15" ]
         test-scenario:
           - "ui"
           - "helm-chart"
           - "cli-upgrade"
           - "helm-upgrade"
-          - "workload-lifecycle"
+          - "runtime-detection"
+          - "instrumentation-lifecycle"
+          - "environment-variables"
+          - "workload-updates"
+          - "trace-collection"
+          - "configuration-reload"
           - "source"
           - "webhooks"
           - "env-injection"
@@ -96,6 +92,7 @@ jobs:
             kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
           - kube-version: "1.32"
             kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -123,7 +120,7 @@ jobs:
           kubectl rollout status -n kube-system deployment/coredns --timeout=300s
 
       - name: Restore cached Odigos images
-        uses: WarpBuilds/cache/restore@v1
+        uses: actions/cache/restore@v4
         with:
           path: |
             odigos-images.tar
@@ -136,19 +133,17 @@ jobs:
           kind load image-archive cli-image.tar
 
       - name: Restore cached CLI binary
-        uses: WarpBuilds/cache/restore@v1
+        uses: actions/cache/restore@v4
         with:
           path: cli/odigos
           key: ${{ github.run_id }}-odigos-cli
 
       - name: Move CLI binary & set permissions
-        run: |
-          chmod +x cli/odigos
+        run: chmod +x cli/odigos
 
       - name: Run E2E Tests
         run: |
           MINOR_VERSION=$(echo ${{ matrix.kube-version }} | sed -E 's/^1\.([0-9]+).*$/\1/')
-
           chainsaw test tests/e2e/${{ matrix.test-scenario }} --values - <<EOF
           k8sMinorVersion: ${MINOR_VERSION}
           isHelm: ${{ matrix.test-scenario == 'helm-chart' || matrix.test-scenario == 'helm-upgrade' }}
@@ -173,8 +168,7 @@ jobs:
       ################### Diagnose and collect logs ###################
       - name: Run diagnose command
         if: ${{ failure() && matrix.test-scenario != 'ui' }}
-        run: |
-          ./cli/odigos diagnose
+        run: ./cli/odigos diagnose
         continue-on-error: true
 
       - name: Upload diagnose artifact

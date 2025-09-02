@@ -10,6 +10,12 @@ spec:
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: '[1 - Setup] Install - Simple Demo Apps'
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+
     - name: '[1 - Setup] Install Odigos'
       try:
         - script:
@@ -37,27 +43,16 @@ spec:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
 
+    - name: '[1 - Setup] Assert - Simple Demo Apps Installed'
+      try:
+        - assert:
+            file: ../../common/assert/simple-demo-installed.yaml
+
     - name: '[1 - Setup] Add Destination'
       try:
         - apply:
             file: ../../common/apply/add-simple-trace-db-destination.yaml
 
-    - name: '[1 - Setup] Install - Simple Demo Apps'
-      try:
-        - apply:
-            file: ../../common/apply/install-simple-demo.yaml
-        - script:
-            timeout: 2m
-            content: |
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
-        - assert:
-            file: ../../common/assert/simple-demo-installed.yaml
 
     - name: '[2 - Workload Instrumentation] Instrument Deployments using Sources with otelServiceName field set'
       try:
