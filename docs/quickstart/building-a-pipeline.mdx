@@ -8,40 +8,29 @@ sidebarTitle: "Building a pipeline"
 You should now see the following page:
 
 <Frame>
-    <img src="/images/ui_choose_apps.png" alt="Select target applications" />
+  <img src="/images/ui_choose_apps.png" alt="Select applications" />
 </Frame>
 
 Select all the applications in the `default` namespace and click `Next`.
+
 <Note>
-Selecting **Apply for future apps** will automatically generate distributed traces for any application that will be deployed on that namespace in the future.
+  Selecting **Apply for future apps** will automatically generate distributed
+  traces for any application that will be deployed on that namespace in the
+  future.
 </Note>
 
-## Adding Jaeger as a destination
+## Configuring a destination
 
-In the next step, you will be asked to select a destination for your traces.
-Scroll down to the self hosted destinations and click on **Jaeger**.
+In the next step, you will be asked to select a destination for your traces. We support over 70+ destinations, but for the simplicity of this tutorial we will simply click on **Odigos**.
 
 <Frame>
-    <img src="/images/ui_choose_dest.png" alt="Select Jaeger" />
+  <img src="/images/ui_choose_dest.png" alt="Select Destination" />
 </Frame>
 
-#### Connection details
+**That's it!** You can click `done` and finish the journey. Odigos will instrument your selected applications and deploy the nessesary OpenTelemetry collectors.
 
-You will now be asked to provide the connection details for your Jaeger instance:
-- **Destination name**: A name for your destination
-- **Host**: The hostname of your Jaeger instance.
-
-Enter any name you want for the destination, and enter `jaeger.tracing:4317` as the host.
+You will be redirected to an overview of your observability pipeline:
 
 <Frame>
-    <img src="/images/ui_jaeger_connection.png" alt="Jaeger connection details" />
-</Frame>
-
-**That's it!** You can now click `Done` and finish the wizard.
-
-Odigos will now instrument your selected applications and deploy the nessesary OpenTelemetry collectors.
-The following page will show an overview of your observability pipeline:
-
-<Frame>
-    <img src="/images/ui_overview.png" alt="Observability pipeline" />
+  <img src="/images/ui_overview.png" alt="Observability pipeline" />
 </Frame>
