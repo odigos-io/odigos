@@ -69,11 +69,13 @@ spec:
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
+          timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /readyz
             port: 8081
           periodSeconds: 10
+          timeoutSeconds: 5
         name: manager
         volumeMounts:
           - name: autoscaler-webhooks-cert
