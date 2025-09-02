@@ -7,8 +7,8 @@ import { EntityTypes } from '@odigos/ui-kit/types';
 import { ServiceMapIcon } from '@odigos/ui-kit/icons';
 import { DATA_FLOW_HEIGHT, MENU_BAR_HEIGHT, ROUTES } from '@/utils';
 import { useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
+import { ErrorBoundary, FlexColumn } from '@odigos/ui-kit/components';
 import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
-import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
 import { DataFlowActionsMenu, NavIconIds, SideNav, ToastList } from '@odigos/ui-kit/containers';
 
 const PageContent = styled(FlexColumn)`
@@ -24,11 +24,12 @@ const ContentWithActions = styled.div<{ $height: CSSProperties['height'] }>`
   position: relative;
 `;
 
-const ContentUnderActions = styled(FlexRow)`
-  align-items: flex-start !important;
+const ContentUnderActions = styled.div`
+  gap: 12px;
+  display: flex;
   justify-content: space-between;
-  padding-left: 12px;
-  width: calc(100% - 12px);
+  padding: 0 12px;
+  width: calc(100% - 24px);
 `;
 
 const serviceMapId = 'service-map';
