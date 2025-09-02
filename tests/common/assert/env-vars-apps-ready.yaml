@@ -1,3 +1,8 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
     app: nodejs-dockerfile-env
   namespace: default
 status:
@@ -33,6 +38,11 @@ status:
     - name: java-unique-exec
       ready: true
 --
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
     app: java-supported-docker-env
   namespace: default
 status:
@@ -68,6 +78,11 @@ status:
     - name: java-latest-version
       ready: true
 --
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
     app: python-alpine
   namespace: default
 spec:

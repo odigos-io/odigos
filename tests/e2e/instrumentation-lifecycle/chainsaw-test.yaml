@@ -75,6 +75,28 @@ spec:
             timeout: 2m
             file: 01-assert-workloads.yaml
 
+    - name: Verify Gunicorn Instrumentation Instances
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              set -e
+
+              echo "=== Checking Gunicorn Instrumentation Instances ==="
+
+              # The original test expected 6 gunicorn instrumentation instances
+              EXPECTED_COUNT=6
+              ACTUAL_COUNT=$(kubectl get instrumentationinstance | grep gunicorn | wc -l)
+
+              if [ "$ACTUAL_COUNT" -eq "$EXPECTED_COUNT" ]; then
+                echo "✅ Found $EXPECTED_COUNT gunicorn instrumentation instances."
+                exit 0
+              else
+                echo "❌ Expected $EXPECTED_COUNT gunicorn instances, but found $ACTUAL_COUNT."
+                kubectl get instrumentationinstance | grep gunicorn || true
+                exit 1
+              fi
+
     - name: Verify Instrumentation Instances Created
       try:
         - script:
