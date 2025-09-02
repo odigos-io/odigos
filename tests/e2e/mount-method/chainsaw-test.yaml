@@ -38,6 +38,13 @@ spec:
             timeout: 30s
             content: ../../common/assert_config_value.sh -k mountMethod -v k8s-init-container
 
+    ## After setting mount method, device-plugin container removed from odiglet pod spec
+    ## so we need to wait for odiglet to be ready
+    - name: '[1 - Setup] Odiglet ready'
+      try:
+        - assert:
+            file: ../../common/assert/odiglet-ready.yaml
+
     - name: '[1 - Setup] Verify Node Odiglet label has been added'
       try:
         - assert:
