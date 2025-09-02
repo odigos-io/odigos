@@ -75,6 +75,17 @@ func NewIngesterDeployment(ns string, version string, imagePrefix string, imageN
 									ContainerPort: k8sconsts.IngesterApiPort,
 								},
 							},
+							// TODO: make these envs configurable
+							Env: []corev1.EnvVar{
+								{
+									Name:  "SPAN_STORAGE_TYPE",
+									Value: "memory",
+								},
+								{
+									Name:  "MEMORY_MAX_TRACES",
+									Value: "10000",
+								},
+							},
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
