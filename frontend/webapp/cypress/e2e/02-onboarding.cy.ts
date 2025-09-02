@@ -35,20 +35,32 @@ describe('Onboarding', () => {
       // cy.get('input').should('exist').should('have.value', 'default');
       cy.contains('button', BUTTONS.NEXT).should('exist').click();
 
-      cy.location('pathname').should('eq', ROUTES.CHOOSE_SOURCES);
-      cy.contains('button', BUTTONS.BACK).should('exist');
-      cy.contains('button', BUTTONS.NEXT).should('exist').click();
+      // Wait for redirect
+      cy.wait(1000).then(() => {
+        cy.location('pathname').should('eq', ROUTES.CHOOSE_SOURCES);
+        cy.contains('button', BUTTONS.BACK).should('exist');
+        cy.contains('button', BUTTONS.NEXT).should('exist').click();
 
-      cy.location('pathname').should('eq', ROUTES.CHOOSE_DESTINATION);
-      cy.contains(TEXTS.NO_SOURCES_SELECTED).should('exist');
-      cy.contains('button', BUTTONS.BACK).should('exist');
-      cy.contains('button', BUTTONS.NEXT).should('exist').click();
+        // Wait for redirect
+        cy.wait(1000).then(() => {
+          cy.location('pathname').should('eq', ROUTES.CHOOSE_DESTINATION);
+          cy.contains(TEXTS.NO_SOURCES_SELECTED).should('exist');
+          cy.contains('button', BUTTONS.BACK).should('exist');
+          cy.contains('button', BUTTONS.NEXT).should('exist').click();
 
-      cy.location('pathname').should('eq', ROUTES.SETUP_SUMMARY);
-      cy.contains('button', BUTTONS.BACK).should('exist');
-      cy.contains('button', BUTTONS.DONE).should('exist').click();
+          // Wait for redirect
+          cy.wait(1000).then(() => {
+            cy.location('pathname').should('eq', ROUTES.SETUP_SUMMARY);
+            cy.contains('button', BUTTONS.BACK).should('exist');
+            cy.contains('button', BUTTONS.DONE).should('exist').click();
 
-      cy.location('pathname').should('eq', ROUTES.OVERVIEW);
+            // Wait for redirect
+            cy.wait(1000).then(() => {
+              cy.location('pathname').should('eq', ROUTES.OVERVIEW);
+            });
+          });
+        });
+      });
     });
   });
 });
