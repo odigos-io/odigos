@@ -184,7 +184,12 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *ver
 	return nil
 }
 
-func RegisterWebhooks(mgr manager.Manager, dp *distros.Provider) error {
+type WebhookConfig struct {
+	DistrosProvider *distros.Provider
+	WaspMutator     func(*corev1.Pod) error
+}
+
+func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 	err := builder.
 		WebhookManagedBy(mgr).
 		For(&odigosv1.Source{}).
@@ -203,8 +208,9 @@ func RegisterWebhooks(mgr manager.Manager, dp *distros.Provider) error {
 
 	webhook := &agentenabled.PodsWebhook{
 		Client:        mgr.GetClient(),
-		DistrosGetter: dp.Getter,
+		DistrosGetter: config.DistrosProvider.Getter,
 		Decoder:       decoder,
+		WaspMutator:   config.WaspMutator,
 	}
 
 	// Register directly with GetWebhookServer() since this webhook uses admission.Handler for full control.

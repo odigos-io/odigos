@@ -460,3 +460,7 @@ allowConcurrentAgents:
 # If set to false, the default schema using Map-type columns will be used instead.
 clickhouseDestinationJsonType:
   enabled: false
+
+# controls the wasp settings
+wasp:
+  enabled: false
