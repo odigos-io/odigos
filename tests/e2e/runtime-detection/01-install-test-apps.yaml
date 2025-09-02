@@ -5,7 +5,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-unsupported-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -30,7 +29,6 @@ metadata:
 spec:
   selector:
     app: nodejs-unsupported-version
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -42,7 +40,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-very-old-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -67,7 +64,6 @@ metadata:
 spec:
   selector:
     app: nodejs-very-old-version
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -79,7 +75,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-minimum-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -104,7 +99,6 @@ metadata:
 spec:
   selector:
     app: nodejs-minimum-version
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -116,7 +110,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-latest-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -141,7 +134,6 @@ metadata:
 spec:
   selector:
     app: nodejs-latest-version
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -153,7 +145,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-dockerfile-env
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -178,7 +169,6 @@ metadata:
 spec:
   selector:
     app: nodejs-dockerfile-env
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -190,7 +180,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-manifest-env
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -218,7 +207,6 @@ metadata:
 spec:
   selector:
     app: nodejs-manifest-env
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -230,7 +218,6 @@ metadata:
   namespace: default
   labels:
     app: cpp-http-server
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -255,7 +242,6 @@ metadata:
 spec:
   selector:
     app: cpp-http-server
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -267,7 +253,6 @@ metadata:
   namespace: default
   labels:
     app: java-supported-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -296,7 +281,6 @@ metadata:
 spec:
   selector:
     app: java-supported-version
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -308,7 +292,6 @@ metadata:
   namespace: default
   labels:
     app: java-azul
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -337,7 +320,6 @@ metadata:
 spec:
   selector:
     app: java-azul
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -350,7 +332,6 @@ metadata:
   namespace: default
   labels:
     app: java-supported-docker-env
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -381,7 +362,6 @@ metadata:
 spec:
   selector:
     app: java-supported-docker-env
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -393,7 +373,6 @@ metadata:
   namespace: default
   labels:
     app: java-supported-manifest-env
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -426,7 +405,6 @@ metadata:
 spec:
   selector:
     app: java-supported-manifest-env
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -438,7 +416,6 @@ metadata:
   namespace: default
   labels:
     app: java-latest-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -467,7 +444,6 @@ metadata:
 spec:
   selector:
     app: java-latest-version
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -479,7 +455,6 @@ metadata:
   namespace: default
   labels:
     app: java-old-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -508,7 +483,6 @@ metadata:
 spec:
   selector:
     app: java-old-version
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -520,7 +494,6 @@ metadata:
   namespace: default
   labels:
     app: java-unique-exec
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -549,7 +522,6 @@ metadata:
 spec:
   selector:
     app: java-unique-exec
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -561,7 +533,6 @@ metadata:
   namespace: default
   labels:
     app: python-latest-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -598,7 +569,6 @@ metadata:
 spec:
   selector:
     app: python-latest-version
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -611,7 +581,6 @@ metadata:
   namespace: default
   labels:
     app: python-other-agent
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -648,7 +617,6 @@ metadata:
 spec:
   selector:
     app: python-other-agent
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -661,7 +629,6 @@ metadata:
   namespace: default
   labels:
     app: python-alpine
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -700,7 +667,6 @@ metadata:
 spec:
   selector:
     app: python-alpine
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -713,7 +679,6 @@ metadata:
   namespace: default
   labels:
     app: python-not-supported
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -750,7 +715,6 @@ metadata:
 spec:
   selector:
     app: python-not-supported
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -763,7 +727,6 @@ metadata:
   namespace: default
   labels:
     app: python-min-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -800,7 +763,6 @@ metadata:
 spec:
   selector:
     app: python-min-version
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 3000
@@ -813,7 +775,6 @@ metadata:
   namespace: default
   labels:
     app: dotnet8-musl
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -841,7 +802,6 @@ metadata:
 spec:
     selector:
         app: dotnet8-musl
-    odigos.io/e2e: test-workload
     ports:
         - protocol: TCP
           port: 8080
@@ -853,7 +813,6 @@ metadata:
   namespace: default
   labels:
     app: dotnet6-musl
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -881,7 +840,6 @@ metadata:
 spec:
   selector:
     app: dotnet6-musl
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 8080
@@ -893,7 +851,6 @@ metadata:
   namespace: default
   labels:
     app: dotnet8-glibc
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -921,7 +878,6 @@ metadata:
 spec:
   selector:
     app: dotnet8-glibc
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 8080
@@ -933,7 +889,6 @@ metadata:
   namespace: default
   labels:
     app: dotnet6-glibc
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -961,7 +916,6 @@ metadata:
 spec:
   selector:
     app: dotnet6-glibc
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 8080
@@ -973,7 +927,6 @@ metadata:
   namespace: default
   labels:
     app: python-gunicorn-server
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -998,7 +951,6 @@ metadata:
 spec:
   selector:
     app: python-gunicorn-server
-    odigos.io/e2e: test-workload
   ports:
     - protocol: TCP
       port: 8000

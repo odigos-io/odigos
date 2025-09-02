@@ -5,17 +5,14 @@ metadata:
   namespace: default
   labels:
     app: nodejs-unsupported-version
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: nodejs-unsupported-version
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: nodejs-unsupported-version
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: nodejs-unsupported-version
@@ -32,7 +29,6 @@ metadata:
 spec:
   selector:
     app: nodejs-unsupported-version
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -44,17 +40,14 @@ metadata:
   namespace: default
   labels:
     app: nodejs-very-old-version
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: nodejs-very-old-version
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: nodejs-very-old-version
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: nodejs-very-old-version
@@ -71,7 +64,6 @@ metadata:
 spec:
   selector:
     app: nodejs-very-old-version
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -83,17 +75,14 @@ metadata:
   namespace: default
   labels:
     app: nodejs-minimum-version
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: nodejs-minimum-version
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: nodejs-minimum-version
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: nodejs-minimum-version
@@ -110,7 +99,6 @@ metadata:
 spec:
   selector:
     app: nodejs-minimum-version
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -122,17 +110,14 @@ metadata:
   namespace: default
   labels:
     app: nodejs-latest-version
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: nodejs-latest-version
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: nodejs-latest-version
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: nodejs-latest-version
@@ -149,7 +134,6 @@ metadata:
 spec:
   selector:
     app: nodejs-latest-version
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -161,17 +145,14 @@ metadata:
   namespace: default
   labels:
     app: nodejs-dockerfile-env
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: nodejs-dockerfile-env
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: nodejs-dockerfile-env
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: nodejs-dockerfile-env
@@ -188,7 +169,6 @@ metadata:
 spec:
   selector:
     app: nodejs-dockerfile-env
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -200,17 +180,14 @@ metadata:
   namespace: default
   labels:
     app: nodejs-manifest-env
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: nodejs-manifest-env
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: nodejs-manifest-env
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: nodejs-manifest-env
@@ -230,7 +207,6 @@ metadata:
 spec:
   selector:
     app: nodejs-manifest-env
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -242,17 +218,14 @@ metadata:
   namespace: default
   labels:
     app: cpp-http-server
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: cpp-http-server
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: cpp-http-server
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: cpp-http-server
@@ -269,7 +242,6 @@ metadata:
 spec:
   selector:
     app: cpp-http-server
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -281,17 +253,14 @@ metadata:
   namespace: default
   labels:
     app: java-supported-version
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: java-supported-version
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: java-supported-version
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: java-supported-version
@@ -312,7 +281,6 @@ metadata:
 spec:
   selector:
     app: java-supported-version
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -324,17 +292,14 @@ metadata:
   namespace: default
   labels:
     app: java-azul
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: java-azul
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: java-azul
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: java-azul
@@ -355,7 +320,6 @@ metadata:
 spec:
   selector:
     app: java-azul
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -368,17 +332,14 @@ metadata:
   namespace: default
   labels:
     app: java-supported-docker-env
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: java-supported-docker-env
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: java-supported-docker-env
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: java-supported-docker-env
@@ -401,7 +362,6 @@ metadata:
 spec:
   selector:
     app: java-supported-docker-env
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -413,17 +373,14 @@ metadata:
   namespace: default
   labels:
     app: java-supported-manifest-env
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: java-supported-manifest-env
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: java-supported-manifest-env
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: java-supported-manifest-env
@@ -448,7 +405,6 @@ metadata:
 spec:
   selector:
     app: java-supported-manifest-env
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -460,17 +416,14 @@ metadata:
   namespace: default
   labels:
     app: java-latest-version
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: java-latest-version
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: java-latest-version
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: java-latest-version
@@ -491,7 +444,6 @@ metadata:
 spec:
   selector:
     app: java-latest-version
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -503,17 +455,14 @@ metadata:
   namespace: default
   labels:
     app: java-old-version
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: java-old-version
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: java-old-version
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: java-old-version
@@ -534,7 +483,6 @@ metadata:
 spec:
   selector:
     app: java-old-version
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -546,17 +494,14 @@ metadata:
   namespace: default
   labels:
     app: java-unique-exec
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: java-unique-exec
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: java-unique-exec
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: java-unique-exec
@@ -577,7 +522,6 @@ metadata:
 spec:
   selector:
     app: java-unique-exec
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -589,17 +533,14 @@ metadata:
   namespace: default
   labels:
     app: python-latest-version
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: python-latest-version
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: python-latest-version
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: python-latest-version
@@ -628,7 +569,6 @@ metadata:
 spec:
   selector:
     app: python-latest-version
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -641,17 +581,14 @@ metadata:
   namespace: default
   labels:
     app: python-other-agent
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: python-other-agent
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: python-other-agent
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: python-other-agent
@@ -680,7 +617,6 @@ metadata:
 spec:
   selector:
     app: python-other-agent
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -693,17 +629,14 @@ metadata:
   namespace: default
   labels:
     app: python-alpine
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: python-alpine
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: python-alpine
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: python-alpine
@@ -734,7 +667,6 @@ metadata:
 spec:
   selector:
     app: python-alpine
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -747,17 +679,14 @@ metadata:
   namespace: default
   labels:
     app: python-not-supported
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: python-not-supported
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: python-not-supported
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: python-not-supported
@@ -786,7 +715,6 @@ metadata:
 spec:
   selector:
     app: python-not-supported
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -799,17 +727,14 @@ metadata:
   namespace: default
   labels:
     app: python-min-version
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: python-min-version
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: python-min-version
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: python-min-version
@@ -838,7 +763,6 @@ metadata:
 spec:
   selector:
     app: python-min-version
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 3000
@@ -851,17 +775,14 @@ metadata:
   namespace: default
   labels:
     app: dotnet8-musl
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: dotnet8-musl
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: dotnet8-musl
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: dotnet8-musl
@@ -881,7 +802,6 @@ metadata:
 spec:
     selector:
         app: dotnet8-musl
-    odigos.io/e2e: trace-collection
     ports:
         - protocol: TCP
           port: 8080
@@ -893,17 +813,14 @@ metadata:
   namespace: default
   labels:
     app: dotnet6-musl
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: dotnet6-musl
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: dotnet6-musl
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: dotnet6-musl
@@ -923,7 +840,6 @@ metadata:
 spec:
   selector:
     app: dotnet6-musl
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 8080
@@ -935,17 +851,14 @@ metadata:
   namespace: default
   labels:
     app: dotnet8-glibc
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: dotnet8-glibc
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: dotnet8-glibc
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: dotnet8-glibc
@@ -965,7 +878,6 @@ metadata:
 spec:
   selector:
     app: dotnet8-glibc
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 8080
@@ -977,17 +889,14 @@ metadata:
   namespace: default
   labels:
     app: dotnet6-glibc
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: dotnet6-glibc
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: dotnet6-glibc
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: dotnet6-glibc
@@ -1007,7 +916,6 @@ metadata:
 spec:
   selector:
     app: dotnet6-glibc
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 8080
@@ -1019,17 +927,14 @@ metadata:
   namespace: default
   labels:
     app: python-gunicorn-server
-    odigos.io/e2e: trace-collection
 spec:
   selector:
     matchLabels:
       app: python-gunicorn-server
-    odigos.io/e2e: trace-collection
   template:
     metadata:
       labels:
         app: python-gunicorn-server
-    odigos.io/e2e: trace-collection
     spec:
       containers:
         - name: python-gunicorn-server
@@ -1046,7 +951,6 @@ metadata:
 spec:
   selector:
     app: python-gunicorn-server
-    odigos.io/e2e: trace-collection
   ports:
     - protocol: TCP
       port: 8000
