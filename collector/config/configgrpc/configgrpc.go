@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/tap"
 
 	rtml "github.com/odigos-io/go-rtml"
 
@@ -533,13 +534,6 @@ func (gss *ServerConfig) getGrpcServerOptions(
 		})
 	}
 
-	uInterceptors = append(uInterceptors, func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-		return memoryLimiterUnaryServerInterceptor(ctx, req, info, handler)
-	})
-	sInterceptors = append(sInterceptors, func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		return memoryLimiterStreamServerInterceptor(srv, ss, info, handler)
-	})
-
 	otelOpts := []otelgrpc.Option{
 		otelgrpc.WithTracerProvider(settings.TracerProvider),
 		otelgrpc.WithPropagators(otel.GetTextMapPropagator()),
@@ -552,6 +546,13 @@ func (gss *ServerConfig) getGrpcServerOptions(
 	sInterceptors = append(sInterceptors, enhanceStreamWithClientInformation(gss.IncludeMetadata))
 
 	opts = append(opts, grpc.StatsHandler(otelgrpc.NewServerHandler(otelOpts...)), grpc.ChainUnaryInterceptor(uInterceptors...), grpc.ChainStreamInterceptor(sInterceptors...))
+
+	opts = append(opts, grpc.InTapHandle(func(ctx context.Context, info *tap.Info) (context.Context, error) {
+		if rtml.IsMemLimitReached() {
+			return ctx, errMemoryLimitReached
+		}
+		return ctx, nil
+	}))
 
 	// Apply middleware options. Note: OpenTelemetry could be registered as an extension.
 	for _, middleware := range gss.Middlewares {
@@ -569,22 +570,6 @@ func (gss *ServerConfig) getGrpcServerOptions(
 	}
 
 	return opts, nil
-}
-
-func memoryLimiterUnaryServerInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	if rtml.IsMemLimitReached() {
-		return nil, errMemoryLimitReached
-	}
-	return handler(ctx, req)
-}
-
-func memoryLimiterStreamServerInterceptor(srv any, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	if rtml.IsMemLimitReached() {
-		return errMemoryLimitReached
-	}
-
-	ctx := stream.Context()
-	return handler(srv, wrapServerStream(ctx, stream))
 }
 
 // getGRPCCompressionName returns compression name registered in grpc.
