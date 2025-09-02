@@ -303,7 +303,7 @@ func TestDefaultGrpcServerSettings(t *testing.T) {
 	}
 	opts, err := gss.getGrpcServerOptions(context.Background(), componenttest.NewNopHost(), componenttest.NewNopTelemetrySettings(), []ToServerOption{})
 	require.NoError(t, err)
-	assert.Len(t, opts, 3)
+	assert.Len(t, opts, 4)
 }
 
 func TestGrpcServerExtraOption(t *testing.T) {
@@ -320,8 +320,8 @@ func TestGrpcServerExtraOption(t *testing.T) {
 		[]ToServerOption{WithGrpcServerOption(extraOpt)},
 	)
 	require.NoError(t, err)
-	assert.Len(t, opts, 4)
-	assert.Equal(t, opts[3], extraOpt)
+	assert.Len(t, opts, 5)
+	assert.Equal(t, opts[4], extraOpt)
 }
 
 func TestGrpcServerValidate(t *testing.T) {
@@ -406,7 +406,7 @@ func TestAllGrpcServerSettingsExceptAuth(t *testing.T) {
 	}
 	opts, err := gss.getGrpcServerOptions(context.Background(), componenttest.NewNopHost(), componenttest.NewNopTelemetrySettings(), []ToServerOption{})
 	require.NoError(t, err)
-	assert.Len(t, opts, 10)
+	assert.Len(t, opts, 11)
 }
 
 func TestGrpcServerAuthSettings(t *testing.T) {
