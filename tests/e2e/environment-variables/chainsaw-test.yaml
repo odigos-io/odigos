@@ -39,13 +39,13 @@ spec:
     - name: Install Test Apps
       try:
         - apply:
-            file: 01-install-test-apps.yaml
+            file: install-test-apps.yaml
 
     - name: Assert Apps installed
       try:
         - assert:
-            timeout: 150s
-            file: ../../common/assert/env-vars-apps-ready.yaml
+            timeout: 3m
+            file: assert-apps-ready.yaml
 
     - name: Instrument Namespaces
       try:
@@ -56,7 +56,7 @@ spec:
       try:
         - assert:
             timeout: 2m
-            file: 01-assert-env-vars.yaml
+            file: assert-env-vars.yaml
 
     - name: Add Destination
       try:
