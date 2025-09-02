@@ -83,6 +83,6 @@ export const useTraces = ({ serviceName }: UseTracesParams) => {
 
   return {
     traces: serviceName ? data?.getTraces ?? [] : traces,
-    isLoading: isLoading || loading,
+    isLoading: (isLoading || loading) && !traces.length,
   };
 };
