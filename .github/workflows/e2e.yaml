@@ -160,9 +160,14 @@ jobs:
           echo "==== Nodes ===="; kubectl get nodes -o wide
           echo "==== Pods (all namespaces) ===="; kubectl get pods -A -o wide
           echo "==== Events (last 10m) ===="; kubectl get events -A --sort-by=.lastTimestamp | tail -n 200
-          echo "==== Deployments not ready ===="; kubectl get deploy -A | awk '$4!="0/0" && $4!=$5 {print $1,$2}' | while read ns name; do
-            echo "--- describe deploy $ns/$name ---"
-            kubectl describe deploy -n "$ns" "$name" || true
+          echo "==== Deployments not ready ===="
+            kubectl get deploy -A -o json | \
+            jq -r '.items[]
+              | select((.status.readyReplicas // 0) != (.status.replicas // 0))
+              | "\(.metadata.namespace) \(.metadata.name)"' \
+            | while read ns name; do
+              echo "--- describe deploy $ns/$name ---"
+              kubectl -n "$ns" describe deploy "$name" || true
           done
 
       ################### Diagnose and collect logs ###################
