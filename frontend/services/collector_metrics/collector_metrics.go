@@ -149,7 +149,7 @@ func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 		return err
 	}
 
-	if strings.HasPrefix(senderPod, k8sconsts.OdigosNodeCollectorDaemonSetName) {
+	if strings.HasPrefix(senderPod, k8sconsts.OdigletDaemonSetName) {
 		c.sources.handleNodeCollectorMetrics(senderPod, md)
 		return nil
 	}

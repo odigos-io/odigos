@@ -1,3 +1,8 @@
+{{- $imageTag := .Values.image.tag | default .Chart.AppVersion -}}
+{{- $signals := .Values.signals | default (list "traces") -}}
+{{- $collectLogs := has "logs" $signals -}}
+{{- $collectMetrics := has "metrics" $signals -}}
+{{- $privilegedRequired := or $collectLogs $collectMetrics -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -22,6 +27,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: odiglet
+        odigos.io/collector-role: NODE_COLLECTOR
       annotations:
         kubectl.kubernetes.io/default-container: odiglet
     spec:
@@ -184,6 +190,72 @@ spec:
               mountPath: /sys/kernel/debug
             - name: odigos-go-offsets
               mountPath: /offsets
+        - name: data-collection
+          image: '{{ template "utils.imageName" (dict "Values" .Values "Component" "collector" "Tag" $imageTag) }}'
+          imagePullPolicy: IfNotPresent
+          command:
+            - /odigosotelcol
+          args:
+            - --config=k8scm:{{ .Release.Namespace }}/odigos-data-collection/conf
+          securityContext:
+            privileged: {{ $privilegedRequired | toYaml }}
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+{{- $nodeLimiter := include "collector.node.memoryLimiter" . | fromYaml }}
+            - name: GOMEMLIMIT
+              value: "{{ $nodeLimiter.goMiB }}MiB"
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: data-collection
+                  resource: limits.cpu
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          resources:
+            requests:
+              memory: "{{ include "collector.node.memoryRequest" . }}Mi"
+              cpu: "{{ include "collector.node.cpuRequest" . }}m"
+            limits:
+              memory: "{{ include "collector.node.memoryLimit" . }}Mi"
+              cpu: "{{ include "collector.node.cpuLimit" . }}m"
+          volumeMounts:
+            {{- if $collectLogs }}
+            - name: varlog
+              mountPath: /var/log
+              readOnly: true
+            - name: varlibdockercontainers
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+            {{- $logsDir := .Values.collectorNode.k8sNodeLogsDirectory | default "" -}}
+            {{- if $logsDir }}
+            - name: logs-symlink-target
+              mountPath: {{ $logsDir }}
+              readOnly: true
+            {{- end }}
+            {{- end }}
+            {{- if $collectMetrics }}
+            - name: hostfs
+              mountPath: /hostfs
+              readOnly: true
+            {{- end }}
 # if hostMounts are not allowed we must use mountMethod of "k8s-init-container"
 {{- if and (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) (.Values.odiglet.noHostPathMounts) }}
 {{ fail "if HostPath mounts are not allowed mount method must be k8s-init-container" }}
@@ -253,6 +325,25 @@ spec:
       priorityClassName: system-node-critical
       serviceAccountName: odiglet
       volumes:
+        {{- if $collectLogs }}
+        - name: varlog
+          hostPath:
+            path: /var/log
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
+        {{- $logsDir := .Values.collectorNode.k8sNodeLogsDirectory | default "" -}}
+        {{- if $logsDir }}
+        - name: logs-symlink-target
+          hostPath:
+            path: {{ $logsDir }}
+        {{- end }}
+        {{- end }}
+        {{- if $collectMetrics }}
+        - name: hostfs
+          hostPath:
+            path: /
+        {{- end }}
       {{- if not .Values.odiglet.noHostPathMounts }}
         - name: run-dir
           hostPath:
