@@ -13,6 +13,11 @@ spec:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
 
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: ../runtime-detection/install-test-apps.yaml
+
     - name: Install Odigos
       try:
         - script:
@@ -30,16 +35,12 @@ spec:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
 
-    - name: Install Test Apps
-      try:
-        - apply:
-            file: ../instrumentation-lifecycle/install-test-apps.yaml
 
     - name: Assert Apps installed
       try:
         - assert:
-            timeout: 150s
-            file: ../../common/assert/instrumentation-apps-ready.yaml
+            timeout: 3m
+            file: ../../common/assert/apps-ready.yaml
 
     - name: Instrument Namespaces
       try:
@@ -61,12 +62,12 @@ spec:
       try:
         - assert:
             timeout: 3m
-            file: ../instrumentation-lifecycle/assert-instrumented.yaml
+            file: ../runtime-detection/assert-runtime-detected.yaml
 
     - name: Update workload manifest template spec
       try:
-        - apply:
-            file: update-workload-manifests.yaml
+        # - apply:
+        #     file: update-workload-manifests.yaml
         - assert:
             timeout: 2m
             file: assert-workload-update.yaml
@@ -90,7 +91,7 @@ spec:
 
               echo "=== Waiting for workload updates to complete ==="
 
-              DEPLOYMENTS=("nodejs-minimum-version" "nodejs-latest-version" "java-supported-version" "python-latest-version")
+              DEPLOYMENTS=("nodejs-minimum-version" "nodejs-latest-version" "nodejs-dockerfile-env" "nodejs-manifest-env" "java-supported-version" "java-azul" "java-supported-docker-env" "java-supported-manifest-env" "java-latest-version" "java-old-version" "java-unique-exec" "python-latest-version" "python-alpine" "python-min-version" "dotnet8-musl" "dotnet6-musl" "dotnet8-glibc" "dotnet6-glibc")
 
               for deployment in "${DEPLOYMENTS[@]}"; do
                 echo "Waiting for deployment $deployment to finish rollout after update..."
