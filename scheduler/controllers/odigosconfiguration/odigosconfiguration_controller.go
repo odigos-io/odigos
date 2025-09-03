@@ -89,7 +89,9 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	modifyConfigWithEffectiveProfiles(effectiveProfiles, &odigosConfiguration)
 	odigosConfiguration.Profiles = effectiveProfiles
 
-	sizing.ModifyResourceSizePreset(&odigosConfiguration)
+	effectiveSizing := sizing.ComputeResourceSizePreset(&odigosConfiguration)
+	odigosConfiguration.CollectorGateway = &effectiveSizing.CollectorGatewayConfig
+	odigosConfiguration.CollectorNode = &effectiveSizing.CollectorNodeConfig
 
 	// TODO: revisit doing this here, might be nicer to maintain in a more generic way
 	// and have it on the config object itself.
