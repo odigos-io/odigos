@@ -33,7 +33,7 @@ describe('Destinations CRUD', () => {
         cy.get('button').contains(BUTTONS.DONE).click();
         // Wait for destinations to create
         cy.wait('@gql').then(() => {
-          awaitToast({ message: TEXTS.NOTIF_DESTINATION_CREATED(SELECTED_ENTITIES.DESTINATION.TYPE) });
+          awaitToast({ message: TEXTS.NOTIF_DESTINATION_CREATED(totalEntities) });
         });
       });
     });
