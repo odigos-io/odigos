@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   build-cli:
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    runs-on: depot-ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
           key: ${{ github.run_id }}-odigos-cli
 
   build-odigos-images:
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    runs-on: depot-ubuntu-24.04-8
     steps:
       - name: Checkout
         uses: actions/checkout@v4

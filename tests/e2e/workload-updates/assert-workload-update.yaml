@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 2 # unsupported Node.js version (v8.17.0 < v14) - not instrumented, but template updated
+  generation: 2 # unsupported Node.js version (v8.17.0 < v14) - not instrumented, but template was updated by test
   labels:
     app: nodejs-unsupported-version
   name: nodejs-unsupported-version
@@ -11,11 +11,22 @@ spec:
     matchLabels:
       app: nodejs-unsupported-version
   template:
+    metadata:
+      labels:
+        app: nodejs-unsupported-version
+      annotations:
+        odigos-test-step: "2"
     spec:
       containers:
         - image: public.ecr.aws/odigos/nodejs-unsupported-version:v0.0.1
+          imagePullPolicy: IfNotPresent
           name: nodejs-unsupported-version
+          ports:
+          - containerPort: 3000
+            protocol: TCP
           resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -142,7 +153,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 2 # C++ is not supported - not instrumented, but template updated
+  generation: 2 # C++ is not supported - not instrumented, but template was updated by test
   labels:
     app: cpp-http-server
   name: cpp-http-server
@@ -152,11 +163,22 @@ spec:
     matchLabels:
       app: cpp-http-server
   template:
+    metadata:
+      labels:
+        app: cpp-http-server
+      annotations:
+        odigos-test-step: "2"
     spec:
       containers:
         - image: public.ecr.aws/odigos/cpp-http-server:v0.0.1
+          imagePullPolicy: IfNotPresent
           name: cpp-http-server
+          ports:
+          - containerPort: 3000
+            protocol: TCP
           resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -408,7 +430,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 2 # unsupported Python version (v3.6.15 < v3.8) - not instrumented, but template updated
+  generation: 2 # unsupported Python version (v3.6.15 < v3.8) - not instrumented, but template was updated by test
   labels:
     app: python-not-supported
   name: python-not-supported
@@ -418,11 +440,34 @@ spec:
     matchLabels:
       app: python-not-supported
   template:
+    metadata:
+      labels:
+        app: python-not-supported
+      annotations:
+        odigos-test-step: "2"
     spec:
       containers:
         - image: public.ecr.aws/odigos/python-not-supported:v0.0.1
+          imagePullPolicy: IfNotPresent
           name: python-not-supported
+          ports:
+          - containerPort: 8000
+            protocol: TCP
           resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          env:
+          - name: DJANGO_SETTINGS_MODULE
+            value: "myapp.settings"
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
 status:
   availableReplicas: 1
   observedGeneration: 2
@@ -563,6 +608,52 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 8080
+status:
+  availableReplicas: 1
+  observedGeneration: 3
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 3
+  labels:
+    app: python-other-agent
+  name: python-other-agent
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: python-other-agent
+  template:
+    spec:
+      containers:
+        - name: python-other-agent
+status:
+  availableReplicas: 1
+  observedGeneration: 3
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 3
+  labels:
+    app: python-gunicorn-server
+  name: python-gunicorn-server
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: python-gunicorn-server
+  template:
+    spec:
+      containers:
+        - name: python-gunicorn-server
 status:
   availableReplicas: 1
   observedGeneration: 3

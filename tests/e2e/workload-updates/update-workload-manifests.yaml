@@ -415,7 +415,7 @@ spec:
       labels:
         app: python-latest-version
       annotations:
-        odigos-test-step: "2"        
+        odigos-test-step: "2"
     spec:
       containers:
         - name: python-latest-version
@@ -453,7 +453,7 @@ spec:
       labels:
         app: python-alpine
       annotations:
-        odigos-test-step: "2"        
+        odigos-test-step: "2"
     spec:
       containers:
         - name: python-alpine
@@ -491,7 +491,7 @@ spec:
       labels:
         app: python-not-supported
       annotations:
-        odigos-test-step: "2"        
+        odigos-test-step: "2"
     spec:
       containers:
         - name: python-not-supported
@@ -529,7 +529,7 @@ spec:
       labels:
         app: python-min-version
       annotations:
-        odigos-test-step: "2"        
+        odigos-test-step: "2"
     spec:
       containers:
         - name: python-min-version
@@ -665,3 +665,67 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-other-agent
+  namespace: default
+  labels:
+    app: python-other-agent
+    odigos.io/e2e: test-workload
+spec:
+  selector:
+    matchLabels:
+      app: python-other-agent
+  template:
+    metadata:
+      labels:
+        app: python-other-agent
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: python-other-agent
+          image: public.ecr.aws/odigos/python-other-agent:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "myapp.settings"
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-gunicorn-server
+  namespace: default
+  labels:
+    app: python-gunicorn-server
+    odigos.io/e2e: test-workload
+spec:
+  selector:
+    matchLabels:
+      app: python-gunicorn-server
+  template:
+    metadata:
+      labels:
+        app: python-gunicorn-server
+      annotations:
+        odigos-test-step: "2"
+    spec:
+      containers:
+        - name: python-gunicorn-server
+          image: public.ecr.aws/odigos/python-gunicorn-server:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000

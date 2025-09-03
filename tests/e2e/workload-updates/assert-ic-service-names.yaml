@@ -141,3 +141,19 @@ metadata:
   namespace: default
 spec:
   serviceName: dotnet6-musl-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-python-other-agent
+  namespace: default
+spec:
+  serviceName: python-other-agent-reported
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-python-gunicorn-server
+  namespace: default
+spec:
+  serviceName: python-gunicorn-server-reported
