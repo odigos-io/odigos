@@ -140,3 +140,8 @@ const (
 	DefaultAutoRollbackGraceTime       = "5m"
 	DefaultAutoRollbackStabilityWindow = "1h"
 )
+
+// K8s attributes related consts
+const (
+	K8sAttributesFromDefaultValue = "pod"
+)

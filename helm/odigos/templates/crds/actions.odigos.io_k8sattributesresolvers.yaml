@@ -59,6 +59,12 @@ spec:
                         The attribute key to be used for the resource attribute created from the label.
                         e.g. "kubectl.kubernetes.restartedAte"
                       type: string
+                    from:
+                      default: pod
+                      description: |-
+                        The source of the annotation.
+                        e.g. "pod" or "namespace"
+                      type: string
                   required:
                   - annotationKey
                   - attributeKey
@@ -102,6 +108,12 @@ spec:
                       description: |-
                         The attribute key to be used for the resource attribute created from the label.
                         e.g. "app.kubernetes.name"
+                      type: string
+                    from:
+                      default: pod
+                      description: |-
+                        The source of the label.
+                        e.g. "pod" or "namespace"
                       type: string
                     labelKey:
                       description: |-

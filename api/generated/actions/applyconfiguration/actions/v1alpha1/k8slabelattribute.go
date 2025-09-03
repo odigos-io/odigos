@@ -22,6 +22,7 @@ package v1alpha1
 type K8sLabelAttributeApplyConfiguration struct {
 	LabelKey     *string `json:"labelKey,omitempty"`
 	AttributeKey *string `json:"attributeKey,omitempty"`
+	From         *string `json:"from,omitempty"`
 }
 
 // K8sLabelAttributeApplyConfiguration constructs a declarative configuration of the K8sLabelAttribute type for use with
@@ -43,5 +44,13 @@ func (b *K8sLabelAttributeApplyConfiguration) WithLabelKey(value string) *K8sLab
 // If called multiple times, the AttributeKey field is set to the value of the last call.
 func (b *K8sLabelAttributeApplyConfiguration) WithAttributeKey(value string) *K8sLabelAttributeApplyConfiguration {
 	b.AttributeKey = &value
+	return b
+}
+
+// WithFrom sets the From field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the From field is set to the value of the last call.
+func (b *K8sLabelAttributeApplyConfiguration) WithFrom(value string) *K8sLabelAttributeApplyConfiguration {
+	b.From = &value
 	return b
 }

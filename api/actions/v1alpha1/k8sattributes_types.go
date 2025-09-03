@@ -30,6 +30,11 @@ type K8sLabelAttribute struct {
 	// e.g. "app.kubernetes.name"
 	// +kubebuilder:validation:Required
 	AttributeKey string `json:"attributeKey"`
+	// The source of the label.
+	// e.g. "pod" or "namespace"
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=pod
+	From *string `json:"from,omitempty"`
 }
 
 type K8sAnnotationAttribute struct {
@@ -41,6 +46,11 @@ type K8sAnnotationAttribute struct {
 	// e.g. "kubectl.kubernetes.restartedAte"
 	// +kubebuilder:validation:Required
 	AttributeKey string `json:"attributeKey"`
+	// The source of the annotation.
+	// e.g. "pod" or "namespace"
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=pod
+	From *string `json:"from,omitempty"`
 }
 
 type K8sAttributesConfig struct {
