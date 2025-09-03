@@ -17,12 +17,16 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+)
+
 // K8sLabelAttributeApplyConfiguration represents a declarative configuration of the K8sLabelAttribute type for use
 // with apply.
 type K8sLabelAttributeApplyConfiguration struct {
-	LabelKey     *string `json:"labelKey,omitempty"`
-	AttributeKey *string `json:"attributeKey,omitempty"`
-	From         *string `json:"from,omitempty"`
+	LabelKey     *string                             `json:"labelKey,omitempty"`
+	AttributeKey *string                             `json:"attributeKey,omitempty"`
+	From         *actionsv1alpha1.K8sAttributeSource `json:"from,omitempty"`
 }
 
 // K8sLabelAttributeApplyConfiguration constructs a declarative configuration of the K8sLabelAttribute type for use with
@@ -50,7 +54,7 @@ func (b *K8sLabelAttributeApplyConfiguration) WithAttributeKey(value string) *K8
 // WithFrom sets the From field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the From field is set to the value of the last call.
-func (b *K8sLabelAttributeApplyConfiguration) WithFrom(value string) *K8sLabelAttributeApplyConfiguration {
+func (b *K8sLabelAttributeApplyConfiguration) WithFrom(value actionsv1alpha1.K8sAttributeSource) *K8sLabelAttributeApplyConfiguration {
 	b.From = &value
 	return b
 }

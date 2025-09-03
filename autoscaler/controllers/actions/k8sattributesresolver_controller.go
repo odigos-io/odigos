@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/actions/v1alpha1"
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -307,27 +308,27 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 
 		// Add label attributes, newer configs override older ones with same Tag
 		for _, label := range config.LabelsAttributes {
-			from := k8sconsts.K8sAttributesFromDefaultValue
+			from := v1alpha1.PodAttributeSource
 			if label.From != nil {
-				from = *label.From
+				from = v1alpha1.K8sAttributeSource(*label.From)
 			}
 			labelAttributes[label.LabelKey] = k8sTagAttribute{
 				Tag:  label.AttributeKey,
 				Key:  label.LabelKey,
-				From: from,
+				From: string(from),
 			}
 		}
 
 		// Add annotation attributes, newer configs override older ones with same Tag
 		for _, annotation := range config.AnnotationsAttributes {
-			from := k8sconsts.K8sAttributesFromDefaultValue
+			from := v1alpha1.PodAttributeSource
 			if annotation.From != nil {
-				from = *annotation.From
+				from = v1alpha1.K8sAttributeSource(*annotation.From)
 			}
 			annotationAttributes[annotation.AnnotationKey] = k8sTagAttribute{
 				Tag:  annotation.AttributeKey,
 				Key:  annotation.AnnotationKey,
-				From: from,
+				From: string(from),
 			}
 		}
 

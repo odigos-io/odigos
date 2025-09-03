@@ -155,6 +155,9 @@ spec:
                           description: |-
                             The source of the label.
                             e.g. "pod" or "namespace"
+                          enum:
+                          - pod
+                          - namespace
                           type: string
                         labelKey:
                           description: |-

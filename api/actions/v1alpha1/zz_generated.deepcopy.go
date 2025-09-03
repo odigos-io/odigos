@@ -632,7 +632,7 @@ func (in *K8sLabelAttribute) DeepCopyInto(out *K8sLabelAttribute) {
 	*out = *in
 	if in.From != nil {
 		in, out := &in.From, &out.From
-		*out = new(string)
+		*out = new(K8sAttributeSource)
 		**out = **in
 	}
 }

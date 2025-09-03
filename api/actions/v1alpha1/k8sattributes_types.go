@@ -21,6 +21,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:validation:Enum=pod;namespace
+type K8sAttributeSource string
+
+const (
+	PodAttributeSource        K8sAttributeSource = "pod"
+	NamespaceAAttributeSource K8sAttributeSource = "namespace"
+)
+
 type K8sLabelAttribute struct {
 	// The label name to be extracted from the pod.
 	// e.g. "app.kubernetes.io/name"
@@ -34,7 +42,7 @@ type K8sLabelAttribute struct {
 	// e.g. "pod" or "namespace"
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=pod
-	From *string `json:"from,omitempty"`
+	From *K8sAttributeSource `json:"from,omitempty"`
 }
 
 type K8sAnnotationAttribute struct {
