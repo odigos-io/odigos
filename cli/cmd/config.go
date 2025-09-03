@@ -211,7 +211,8 @@ func validatePropertyValue(property string, value []string) error {
 		consts.ServiceGraphDisabledProperty,
 		consts.ClickhouseJsonTypeEnabledProperty,
 		consts.EnableDataCompressionProperty,
-		consts.ResourceSizePresetProperty:
+		consts.ResourceSizePresetProperty,
+		consts.WaspEnabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
