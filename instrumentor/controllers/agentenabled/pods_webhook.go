@@ -36,7 +36,7 @@ type PodsWebhook struct {
 	DistrosGetter *distros.Getter
 	// decoder is used to decode the admission request's raw object into a structured corev1.Pod.
 	Decoder     admission.Decoder
-	WaspMutator func(*corev1.Pod) error
+	WaspMutator func(*corev1.Pod, common.OdigosConfiguration) error
 }
 
 var _ admission.Handler = &PodsWebhook{}
@@ -220,7 +220,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 	}
 
 	if odigosConfiguration.WaspEnabled != nil && *odigosConfiguration.WaspEnabled && waspSupported && p.WaspMutator != nil {
-		err = p.WaspMutator(pod)
+		err = p.WaspMutator(pod, odigosConfiguration)
 		if err != nil {
 			return fmt.Errorf("failed to do wasp mutation: %w", err)
 		}

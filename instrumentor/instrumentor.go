@@ -35,10 +35,10 @@ type Instrumentor struct {
 	certReady          chan struct{}
 	dp                 *distros.Provider
 	webhooksRegistered *atomic.Bool
-	waspMutator        func(*corev1.Pod) error
+	waspMutator        func(*corev1.Pod, common.OdigosConfiguration) error
 }
 
-func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator func(*corev1.Pod) error) (*Instrumentor, error) {
+func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator func(*corev1.Pod, common.OdigosConfiguration) error) (*Instrumentor, error) {
 	err := feature.Setup()
 	if err != nil {
 		return nil, err

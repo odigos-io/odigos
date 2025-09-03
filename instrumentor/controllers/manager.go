@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
@@ -186,7 +187,7 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *ver
 
 type WebhookConfig struct {
 	DistrosProvider *distros.Provider
-	WaspMutator     func(*corev1.Pod) error
+	WaspMutator     func(*corev1.Pod, common.OdigosConfiguration) error
 }
 
 func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
