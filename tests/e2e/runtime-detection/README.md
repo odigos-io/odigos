@@ -63,7 +63,7 @@ Instrument namespace → Trigger runtime detection → Verify detection results
 
 ### 4. Validation
 ```
-Assert runtime detection → Verify gunicorn instances → Summary report
+Assert runtime detection → Verify Python instances → Summary report
 ```
 
 ## Key Validations
@@ -75,7 +75,7 @@ Assert runtime detection → Verify gunicorn instances → Summary report
 - **Environment detection** - Container vs manifest environment variables
 
 ### Special Validations
-- **Gunicorn Instance Count** - Verifies exactly 6 gunicorn instrumentation instances are created
+- **Python Instance Count** - Verifies exactly 5 Python instrumentation instances are created (excluding unsupported Python version)
 - **Version Boundaries** - Tests minimum, maximum, and unsupported version handling
 - **JRE Variants** - Ensures different JVM implementations are detected correctly
 - **Library Conflicts** - Detects existing monitoring agents

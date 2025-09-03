@@ -13,6 +13,11 @@ spec:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
 
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: install-test-apps.yaml
+
     - name: Install Odigos
       try:
         - script:
@@ -34,11 +39,6 @@ spec:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
-
-    - name: Install Test Apps
-      try:
-        - apply:
-            file: install-test-apps.yaml
 
     - name: Assert Apps installed
       try:
@@ -68,24 +68,31 @@ spec:
             file: assert-runtime-detected.yaml
             timeout: 2m
 
-    - name: Verify Gunicorn Instrumentation Instances
+    - name: Wait for Gunicorn Instrumentation Instances
       try:
         - script:
             timeout: 3m
             content: |
               set -e
 
-              echo "=== Checking Gunicorn Instrumentation Instances ==="
+              echo "=== Waiting for Gunicorn Instrumentation Instances ==="
 
               # The original test expected 6 gunicorn instrumentation instances
               EXPECTED_COUNT=6
-              ACTUAL_COUNT=$(kubectl get instrumentationinstance | grep gunicorn | wc -l)
+              POLL_INTERVAL=5
 
-              if [ "$ACTUAL_COUNT" -eq "$EXPECTED_COUNT" ]; then
-                echo "✅ Found $EXPECTED_COUNT gunicorn instrumentation instances."
-                exit 0
-              else
-                echo "❌ Expected $EXPECTED_COUNT gunicorn instances, but found $ACTUAL_COUNT."
-                kubectl get instrumentationinstance | grep gunicorn || true
-                exit 1
-              fi
+              while true; do
+                echo "Checking for gunicorn instrumentation instances..."
+
+                ACTUAL_COUNT=$(kubectl get instrumentationinstance | grep gunicorn | wc -l)
+                echo "Found $ACTUAL_COUNT gunicorn instrumentation instances (expected: $EXPECTED_COUNT)"
+
+                if [ "$ACTUAL_COUNT" -eq "$EXPECTED_COUNT" ]; then
+                  echo "✅ Successfully found all $EXPECTED_COUNT gunicorn instrumentation instances!"
+                  kubectl get instrumentationinstance | grep gunicorn || true
+                  exit 0
+                fi
+
+                echo "Waiting $POLL_INTERVAL seconds before next check..."
+                sleep $POLL_INTERVAL
+              done
