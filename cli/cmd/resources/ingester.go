@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -25,6 +26,44 @@ type ingesterResourceManager struct {
 func (u *ingesterResourceManager) Name() string {
 	return "Ingester"
 }
+
+var maxTraces = 1000
+var ingesterConfig = fmt.Sprintf(`
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:%v
+      http:
+        endpoint: 0.0.0.0:%v
+
+processors:
+  batch:
+
+exporters:
+  jaeger_storage_exporter:
+    trace_storage: primary
+
+extensions:
+  jaeger_storage:
+    backends:
+      primary:
+        memory:
+          max_traces: %v
+  jaeger_query:
+    storage:
+      traces: primary
+    http:
+      endpoint: 0.0.0.0:%v
+
+service:
+  extensions: [jaeger_storage, jaeger_query]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [jaeger_storage_exporter]
+`, consts.OTLPPort, consts.OTLPHttpPort, maxTraces, k8sconsts.IngesterApiPort)
 
 func NewIngesterDeployment(ns string, version string, imagePrefix string, imageName string, nodeSelector map[string]string) *appsv1.Deployment {
 	if nodeSelector == nil {
@@ -66,7 +105,7 @@ func NewIngesterDeployment(ns string, version string, imagePrefix string, imageN
 							Name:  k8sconsts.IngesterContainerName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
 							Args: []string{
-								"--set=extensions.jaeger_storage.backends.primary.memory.max_traces=10",
+								"--config=/etc/ingester/config.yaml",
 							},
 							Ports: []corev1.ContainerPort{
 								{
@@ -78,12 +117,31 @@ func NewIngesterDeployment(ns string, version string, imagePrefix string, imageN
 									ContainerPort: k8sconsts.IngesterApiPort,
 								},
 							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "ingester-config",
+									MountPath: "/etc/ingester",
+									ReadOnly:  true,
+								},
+							},
 						},
 					},
 					TerminationGracePeriodSeconds: ptrint64(10),
 					ServiceAccountName:            k8sconsts.IngesterServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: ptrbool(true),
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "ingester-config",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "ingester-config",
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -102,6 +160,22 @@ func NewIngesterServiceAccount(ns string) *corev1.ServiceAccount {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.IngesterServiceAccountName,
 			Namespace: ns,
+		},
+	}
+}
+
+func NewIngesterConfigMap(ns string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ingester-config",
+			Namespace: ns,
+		},
+		Data: map[string]string{
+			"config.yaml": ingesterConfig,
 		},
 	}
 }
@@ -140,6 +214,7 @@ func NewIngesterService(ns string) *corev1.Service {
 func (u *ingesterResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
 		NewIngesterServiceAccount(u.ns),
+		NewIngesterConfigMap(u.ns),
 		NewIngesterDeployment(u.ns, k8sconsts.JaegerVersion, k8sconsts.JaegerPrefix, k8sconsts.JaegerImage, u.config.NodeSelector),
 		NewIngesterService(u.ns),
 	}
