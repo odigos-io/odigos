@@ -25,8 +25,8 @@ import (
 type K8sAttributeSource string
 
 const (
-	PodAttributeSource        K8sAttributeSource = "pod"
-	NamespaceAAttributeSource K8sAttributeSource = "namespace"
+	PodAttributeSource       K8sAttributeSource = "pod"
+	NamespaceAttributeSource K8sAttributeSource = "namespace"
 )
 
 type K8sLabelAttribute struct {
