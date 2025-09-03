@@ -65,6 +65,9 @@ func NewIngesterDeployment(ns string, version string, imagePrefix string, imageN
 						{
 							Name:  k8sconsts.IngesterContainerName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
+							Args: []string{
+								"--set=extensions.jaeger_storage.backends.primary.memory.max_traces=10",
+							},
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "otlp",
@@ -73,17 +76,6 @@ func NewIngesterDeployment(ns string, version string, imagePrefix string, imageN
 								{
 									Name:          "api",
 									ContainerPort: k8sconsts.IngesterApiPort,
-								},
-							},
-							// TODO: make these envs configurable
-							Env: []corev1.EnvVar{
-								{
-									Name:  "SPAN_STORAGE_TYPE",
-									Value: "memory",
-								},
-								{
-									Name:  "MEMORY_MAX_TRACES",
-									Value: "10000",
 								},
 							},
 						},
