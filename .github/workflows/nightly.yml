@@ -5,6 +5,31 @@ on:
     - cron: '0 0 * * *' # Nightly run at midnight
   workflow_call:
   workflow_dispatch:
+    inputs:
+      provider:
+        description: 'Cloud provider to test against (e.g. eks, aks, gke, all)'
+        required: true
+        type: choice
+        options:
+          - all
+          - aks
+          - eks
+      test_scenario:
+        description: 'Test suite to run'
+        required: true
+        type: choice
+        options:
+          - all
+          - helm-chart
+          - source
+      platform:
+        description: 'CPU architecture'
+        required: true
+        type: choice
+        options:
+          - all
+          - amd
+          - arm
 
 permissions:
   id-token: write
@@ -37,13 +62,12 @@ jobs:
   cross-cloud-tests:
     runs-on: warp-ubuntu-latest-x64-8x-spot
     needs: build-images
-
     strategy:
       fail-fast: false
       matrix:
-        provider: [aks, eks]
-        test_scenario: [source, helm-chart]
-        platform: [amd, arm]
+        provider: ${{ fromJSON(github.event_name == 'schedule' && '["aks","eks"]' || github.event.inputs.provider == 'all' && '["aks","eks"]' || format('["{0}"]', github.event.inputs.provider)) }}
+        test_scenario: ${{ fromJSON(github.event_name == 'schedule' && '["source","helm-chart"]' || github.event.inputs.test_scenario == 'all' && '["source","helm-chart"]' || format('["{0}"]', github.event.inputs.test_scenario)) }}
+        platform: ${{ fromJSON(github.event_name == 'schedule' && '["amd","arm"]' || github.event.inputs.platform == 'all' && '["amd","arm"]' || format('["{0}"]', github.event.inputs.platform)) }}
 
     steps:
       - name: Checkout Code
