@@ -151,14 +151,26 @@ runs:
         export COMMIT_HASH="${GITHUB_SHA}"
         chainsaw test "tests/e2e/${{ inputs.test_scenario }}"
 
-    # 14) Run Diagnose Command (always attempts)
+    # 14) Cluster diagnostics
+    - name: Cluster diagnostics
+      if: failure()
+      run: |
+        echo "==== Nodes ===="; kubectl get nodes -o wide
+        echo "==== Pods (all namespaces) ===="; kubectl get pods -A -o wide
+        echo "==== Events (last 10m) ===="; kubectl get events -A --sort-by=.lastTimestamp | tail -n 200
+        echo "==== Deployments not ready ===="; kubectl get deploy -A | awk '$4!="0/0" && $4!=$5 {print $1,$2}' | while read ns name; do
+          echo "--- describe deploy $ns/$name ---"
+          kubectl describe deploy -n "$ns" "$name" || true
+        done
+
+    # 15) Run Diagnose Command (always attempts)
     - name: Run Diagnose Command
       if: always()
       shell: bash
       run: ./cli/odigos diagnose
       continue-on-error: true
 
-    # 15) Upload Artifact (always)
+    # 16) Upload Artifact (always)
     - name: Upload Run Details Artifact
       if: always()
       uses: actions/upload-artifact@v4
@@ -167,7 +179,7 @@ runs:
         path: odigos_debug*.tar.gz
       continue-on-error: true
 
-    # 16) Destroy Resources (always attempts)
+    # 17) Destroy Resources (always attempts)
     - name: Destroy Resources
       if: always()
       shell: bash
@@ -179,7 +191,7 @@ runs:
         tofu -chdir="$TF_DIR" destroy -auto-approve
       continue-on-error: true
 
-    # 17) Extract Tag (optional)
+    # 18) Extract Tag (optional)
     - name: Extract Tag
       if: always()
       id: extract_tag
