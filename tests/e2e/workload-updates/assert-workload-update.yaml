@@ -47,10 +47,22 @@ spec:
     matchLabels:
       app: nodejs-very-old-version
   template:
+    metadata:
+      labels:
+        app: nodejs-very-old-version
+      annotations:
+        odigos-test-step: "2"
     spec:
       containers:
         - image: public.ecr.aws/odigos/nodejs-very-old-version:v0.0.1
+          imagePullPolicy: IfNotPresent
           name: nodejs-very-old-version
+          ports:
+          - containerPort: 3000
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
 status:
   availableReplicas: 1
   observedGeneration: 3
@@ -71,9 +83,22 @@ spec:
     matchLabels:
       app: nodejs-minimum-version
   template:
+    metadata:
+      labels:
+        app: nodejs-minimum-version
+      annotations:
+        odigos-test-step: "2"
     spec:
       containers:
         - name: nodejs-minimum-version
+          image: public.ecr.aws/odigos/nodejs-minimum-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: 3000
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
 status:
   availableReplicas: 1
   observedGeneration: 3
@@ -94,9 +119,22 @@ spec:
     matchLabels:
       app: nodejs-latest-version
   template:
+    metadata:
+      labels:
+        app: nodejs-latest-version
+      annotations:
+        odigos-test-step: "2"
     spec:
       containers:
         - name: nodejs-latest-version
+          image: public.ecr.aws/odigos/nodejs-latest-version:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: 3000
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
 status:
   availableReplicas: 1
   observedGeneration: 3
@@ -618,7 +656,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 3
+  generation: 2 # python-other-agent is not being instrumented, only updated by test
   labels:
     app: python-other-agent
   name: python-other-agent
@@ -628,12 +666,37 @@ spec:
     matchLabels:
       app: python-other-agent
   template:
+    metadata:
+      labels:
+        app: python-other-agent
+      annotations:
+        odigos-test-step: "2"
     spec:
       containers:
         - name: python-other-agent
+          image: public.ecr.aws/odigos/python-other-agent:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: 8000
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          env:
+          - name: DJANGO_SETTINGS_MODULE
+            value: "myapp.settings"
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
 status:
   availableReplicas: 1
-  observedGeneration: 3
+  observedGeneration: 2
   readyReplicas: 1
   replicas: 1
   updatedReplicas: 1

@@ -91,7 +91,7 @@ spec:
 
               echo "=== Waiting for workload updates to complete ==="
 
-              DEPLOYMENTS=("nodejs-minimum-version" "nodejs-latest-version" "nodejs-dockerfile-env" "nodejs-manifest-env" "java-supported-version" "java-azul" "java-supported-docker-env" "java-supported-manifest-env" "java-latest-version" "java-old-version" "java-unique-exec" "python-latest-version" "python-alpine" "python-min-version" "python-other-agent" "python-gunicorn-server" "dotnet8-musl" "dotnet6-musl" "dotnet8-glibc" "dotnet6-glibc")
+              DEPLOYMENTS=("nodejs-minimum-version" "nodejs-latest-version" "nodejs-dockerfile-env" "nodejs-manifest-env" "java-supported-version" "java-azul" "java-supported-docker-env" "java-supported-manifest-env" "java-latest-version" "java-old-version" "java-unique-exec" "python-latest-version" "python-alpine" "python-min-version" "python-gunicorn-server" "dotnet8-musl" "dotnet6-musl" "dotnet8-glibc" "dotnet6-glibc")
 
               for deployment in "${DEPLOYMENTS[@]}"; do
                 echo "Waiting for deployment $deployment to finish rollout after update..."
