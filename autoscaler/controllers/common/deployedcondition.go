@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"time"
 
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func GetCollectorsGroupDeployedConditionsPatch(err error) string {
+func GetCollectorsGroupDeployedConditionsPatch(err error, role odigosv1.CollectorsGroupRole) string {
 
 	status := metav1.ConditionTrue
 	if err != nil {
@@ -36,6 +37,11 @@ func GetCollectorsGroupDeployedConditionsPatch(err error) string {
 				LastTransitionTime: metav1.NewTime(time.Now()),
 			}},
 		},
+	}
+
+	// This is temporary and should consider different approaches in the future
+	if role == odigosv1.CollectorsGroupRoleNodeCollector {
+		patch["status"].(map[string]interface{})["ready"] = true
 	}
 
 	patchData, _ := json.Marshal(patch)

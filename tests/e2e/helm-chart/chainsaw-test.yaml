@@ -50,7 +50,7 @@ spec:
               ../../common/verify_odigos_installation.sh odigos-test
 
         - assert:
-            timeout: 3m
+            timeout: 10s
             file: ../../common/assert/odigos-installed.yaml
 
       catch:
