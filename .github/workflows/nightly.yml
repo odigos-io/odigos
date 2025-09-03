@@ -60,14 +60,14 @@ jobs:
 
 
   cross-cloud-tests:
-      runs-on: warp-ubuntu-latest-x64-8x-spot
-      needs: build-images
-      strategy:
-        fail-fast: false
-        matrix:
-          provider: ${{ fromJSON(github.event_name == 'schedule' && '["aks","eks"]' || github.event.inputs.provider == 'all' && '["aks","eks"]' || format('["{0}"]', github.event.inputs.provider)) }}
-          test_scenario: ${{ fromJSON(github.event_name == 'schedule' && '["source","helm-chart"]' || github.event.inputs.test_scenario == 'all' && '["source","helm-chart"]' || format('["{0}"]', github.event.inputs.test_scenario)) }}
-          platform: ${{ fromJSON(github.event_name == 'schedule' && '["amd","arm"]' || github.event.inputs.platform == 'all' && '["amd","arm"]' || format('["{0}"]', github.event.inputs.platform)) }}
+    runs-on: warp-ubuntu-latest-x64-8x-spot
+    needs: build-images
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: ${{ fromJSON(github.event_name == 'schedule' && '["aks","eks"]' || github.event.inputs.provider == 'all' && '["aks","eks"]' || format('["{0}"]', github.event.inputs.provider)) }}
+        test_scenario: ${{ fromJSON(github.event_name == 'schedule' && '["source","helm-chart"]' || github.event.inputs.test_scenario == 'all' && '["source","helm-chart"]' || format('["{0}"]', github.event.inputs.test_scenario)) }}
+        platform: ${{ fromJSON(github.event_name == 'schedule' && '["amd","arm"]' || github.event.inputs.platform == 'all' && '["amd","arm"]' || format('["{0}"]', github.event.inputs.platform)) }}
 
     steps:
       - name: Checkout Code
