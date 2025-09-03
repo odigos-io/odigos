@@ -22,6 +22,7 @@ package v1alpha1
 type K8sAnnotationAttributeApplyConfiguration struct {
 	AnnotationKey *string `json:"annotationKey,omitempty"`
 	AttributeKey  *string `json:"attributeKey,omitempty"`
+	From          *string `json:"from,omitempty"`
 }
 
 // K8sAnnotationAttributeApplyConfiguration constructs a declarative configuration of the K8sAnnotationAttribute type for use with
@@ -43,5 +44,13 @@ func (b *K8sAnnotationAttributeApplyConfiguration) WithAnnotationKey(value strin
 // If called multiple times, the AttributeKey field is set to the value of the last call.
 func (b *K8sAnnotationAttributeApplyConfiguration) WithAttributeKey(value string) *K8sAnnotationAttributeApplyConfiguration {
 	b.AttributeKey = &value
+	return b
+}
+
+// WithFrom sets the From field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the From field is set to the value of the last call.
+func (b *K8sAnnotationAttributeApplyConfiguration) WithFrom(value string) *K8sAnnotationAttributeApplyConfiguration {
+	b.From = &value
 	return b
 }

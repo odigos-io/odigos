@@ -15,4 +15,7 @@ const (
 	OdigosNodeCollectorRoleBindingName        = "odigos-data-collection"
 	OdigosNodeCollectorClusterRoleName        = "odigos-data-collection"
 	OdigosNodeCollectorClusterRoleBindingName = "odigos-data-collection"
+
+	OdigosNodeCollectorContainerName    = "data-collection"
+	OdigosNodeCollectorContainerCommand = "/odigosotelcol"
 )
