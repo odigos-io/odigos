@@ -29,7 +29,7 @@ describe('Destinations CRUD', () => {
 
       // Wait for destinations to create
       cy.wait('@gql').then(() => {
-        awaitToast({ message: TEXTS.NOTIF_DESTINATION_CREATED(SELECTED_ENTITIES.DESTINATION.TYPE) });
+        awaitToast({ message: TEXTS.NOTIF_DESTINATION_CREATED(totalEntities) });
       });
     });
   });
@@ -77,7 +77,7 @@ describe('Destinations CRUD', () => {
         () => {
           // Wait for the destination to delete
           cy.wait('@gql').then(() => {
-            awaitToast({ message: TEXTS.NOTIF_DESTINATION_DELETED(SELECTED_ENTITIES.DESTINATION.TYPE) }, () => {
+            awaitToast({ message: TEXTS.NOTIF_DESTINATION_DELETED(totalEntities) }, () => {
               getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
             });
           });

@@ -37,7 +37,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const { addPendingItems, removePendingItems } = usePendingStore();
   const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
   const { setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
-  const { sourcesLoading, setEntitiesLoading, sources, addEntities, setEntities, removeEntities } = useEntityStore();
+  const { sourcesLoading, setEntitiesLoading, sources, setEntities, addEntities, removeEntities } = useEntityStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: EntityTypes.Source, target: id ? getSseTargetFromId(id, EntityTypes.Source) : undefined, hideFromHistory });
@@ -52,9 +52,9 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCES, {
     onError: (error) => {
+      setInstrumentAwait(false);
       setInstrumentCount('sourcesToCreate', 0);
       setInstrumentCount('sourcesCreated', 0);
-      setInstrumentAwait(false);
       notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message);
     },
   });
@@ -110,8 +110,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
     } else if (fetchedSources) {
       setEntities(EntityTypes.Source, fetchedSources);
       setEntitiesLoading(EntityTypes.Source, false);
-      setInstrumentCount('sourcesToCreate', 0);
-      setInstrumentCount('sourcesCreated', 0);
       if (fetchedSources.length) fetchAllConditions(fetchedSources);
     }
   };

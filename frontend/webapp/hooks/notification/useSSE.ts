@@ -8,16 +8,14 @@ import { getIdFromSseTarget } from '@odigos/ui-kit/functions';
 import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
 import { type NotifyPayload, useInstrumentStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 
-const CONNECTED = 'CONNECTED';
-
-const EVENT_TYPES = {
-  ADDED: 'Added',
-  MODIFIED: 'Modified',
-  DELETED: 'Deleted',
-};
+enum EventTypes {
+  CONNECTED = 'CONNECTED',
+  ADDED = 'Added',
+  MODIFIED = 'Modified',
+  DELETED = 'Deleted',
+}
 
 enum CrdTypes {
-  Source = 'Source',
   InstrumentationConfig = 'InstrumentationConfig',
   Destination = 'Destination',
 }
@@ -48,11 +46,12 @@ export const useSSE = () => {
 
         const { setInstrumentAwait, isAwaitingInstrumentation, setInstrumentCount, sourcesToCreate, sourcesCreated, sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
 
-        const isConnected = [CONNECTED].includes(notification.crdType as string);
-        const isSource = [CrdTypes.InstrumentationConfig].includes(notification.crdType as CrdTypes);
-        const isDestination = [CrdTypes.Destination].includes(notification.crdType as CrdTypes);
+        const isConnected = [EventTypes.CONNECTED].includes(notification.crdType);
+        const isSource = [CrdTypes.InstrumentationConfig].includes(notification.crdType);
+        const isDestination = [CrdTypes.Destination].includes(notification.crdType);
 
-        if (!isConnected && !(isSource && isAwaitingInstrumentation) && notification.title !== EVENT_TYPES.MODIFIED) {
+        // do not notify for: connected, modified events, or sources that are still being instrumented
+        if (!isConnected && !(isSource && isAwaitingInstrumentation) && notification.title !== EventTypes.MODIFIED) {
           addNotification(notification);
         }
 
@@ -64,35 +63,38 @@ export const useSSE = () => {
           }
         } else if (isSource) {
           switch (notification.title) {
-            case EVENT_TYPES.MODIFIED:
+            case EventTypes.MODIFIED:
               if (!isAwaitingInstrumentation && notification.target) {
                 const id = getIdFromSseTarget(notification.target, EntityTypes.Source);
                 fetchSourceById(id as WorkloadId);
               }
               break;
 
-            case EVENT_TYPES.ADDED:
+            case EventTypes.ADDED:
               const created = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
               setInstrumentCount('sourcesCreated', created);
 
               // If not waiting, or we're at 100%, then proceed
               if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
-                addNotification({ type: StatusType.Success, title: EVENT_TYPES.ADDED, message: `Successfully created ${created} sources` });
+                addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: `Successfully created ${created} sources` });
                 setInstrumentAwait(false);
+                setInstrumentCount('sourcesToCreate', 0);
+                setInstrumentCount('sourcesCreated', 0);
                 fetchSources();
               }
               break;
 
-            case EVENT_TYPES.DELETED:
+            case EventTypes.DELETED:
               const deleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
               setInstrumentCount('sourcesDeleted', deleted);
 
               // If not waiting, or we're at 100%, then proceed
               if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && deleted >= sourcesToDelete)) {
-                addNotification({ type: StatusType.Success, title: EVENT_TYPES.DELETED, message: `Successfully deleted ${deleted} sources` });
+                addNotification({ type: StatusType.Success, title: EventTypes.DELETED, message: `Successfully deleted ${deleted} sources` });
                 setInstrumentAwait(false);
                 setInstrumentCount('sourcesToDelete', 0);
                 setInstrumentCount('sourcesDeleted', 0);
+                fetchSources();
               }
               break;
 
