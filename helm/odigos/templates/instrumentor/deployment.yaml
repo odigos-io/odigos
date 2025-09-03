@@ -84,7 +84,11 @@ spec:
                 key: odigos-onprem-token
           {{- end }}
           - name: ODIGOS_INIT_CONTAINER_IMAGE
+            {{- if include "odigos.secretExists" . }}
+            value: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-agents" "Tag" $imageTag) }}
+            {{- else }}
             value: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $imageTag) }}
+            {{- end }}
         volumeMounts:
           - name: instrumentor-webhooks-cert
             mountPath: /tmp/k8s-webhook-server/serving-certs
@@ -99,11 +103,13 @@ spec:
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
+          timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /readyz
             port: 8081
           periodSeconds: 10
+          timeoutSeconds: 5
         name: manager
         resources:
 {{ toYaml .Values.instrumentor.resources | indent 10 }}

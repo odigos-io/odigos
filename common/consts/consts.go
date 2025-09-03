@@ -100,6 +100,8 @@ const (
 	GoAutoOffsetsCronProperty          = "go-auto-offsets-cron"
 	ClickhouseJsonTypeEnabledProperty  = "clickhouse-json-type-enabled"
 	AllowedTestConnectionHostsProperty = "allowed-test-connection-hosts"
+	EnableDataCompressionProperty      = "enable-data-compression"
+	ResourceSizePresetProperty         = "resource-size-preset"
 )
 
 var (
@@ -131,7 +133,6 @@ const (
 const (
 	GenericBatchProcessorConfigKey = "batch/generic-batch-processor"
 	SmallBatchesProcessor          = "batch/small-batches"
-	MemoryLimiterExtensionKey      = "memory_limiter"
 )
 
 // Auto rollback related consts

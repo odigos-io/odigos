@@ -318,6 +318,14 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 									},
 								},
 								{
+									Name: k8sconsts.NodeIPEnvVar,
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
 									Name: "POD_NAME",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
@@ -350,6 +358,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 										Port: intstr.FromInt(13133),
 									},
 								},
+								TimeoutSeconds: 5,
 							},
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -358,6 +367,7 @@ func getDesiredDaemonSet(datacollection *odigosv1.CollectorsGroup,
 										Port: intstr.FromInt(13133),
 									},
 								},
+								TimeoutSeconds: 5,
 							},
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{

@@ -6,9 +6,10 @@ import { ArrowIcon, OdigosLogoText } from '@odigos/ui-kit/icons';
 import { DEFAULT_DATA_STREAM_NAME } from '@odigos/ui-kit/constants';
 import { Destination, DestinationFormData } from '@odigos/ui-kit/types';
 import { useDataStreamStore, useSetupStore } from '@odigos/ui-kit/store';
-import { useDataStreamsCRUD, useDestinationCRUD, useSourceCRUD } from '@/hooks';
+import { useConfig, useDataStreamsCRUD, useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos/ui-kit/components';
 import { type DataStreamSelectionFormRef, ToggleDarkMode, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
+import { InstallationStatus } from '@/types';
 
 interface SetupHeaderProps {
   step: number;
@@ -49,6 +50,7 @@ const nextRoutes = {
 
 const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef }) => {
   const router = useRouter();
+  const { installationStatus } = useConfig();
 
   const { persistSources } = useSourceCRUD();
   const { fetchDataStreams } = useDataStreamsCRUD();
@@ -121,6 +123,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
   };
 
   const buttons = useMemo(() => {
+    const isNewInstallation = installationStatus === InstallationStatus.New;
     const arr: NavigationButtonsProps['buttons'] = [];
 
     const nextBtn: NavigationButtonsProps['buttons'][0] = {
@@ -144,7 +147,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
       disabled: isLoading,
     };
 
-    if (backRoutes[step as keyof typeof backRoutes]) {
+    if (backRoutes[step as keyof typeof backRoutes] && !(step === 2 && isNewInstallation)) {
       arr.push(backBtn);
     }
     if (nextRoutes[step as keyof typeof nextRoutes]) {
@@ -155,11 +158,11 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
     }
 
     return arr;
-  }, [step, isLoading, onNext, onBack, onDone]);
+  }, [installationStatus, step, isLoading, onNext, onBack, onDone]);
 
   return (
     <Header
-      left={[<OdigosLogoText key='logo' size={100} />]}
+      left={[<OdigosLogoText key='logo' size={150} />]}
       center={[
         <Text key='msg' family='secondary'>
           START WITH ODIGOS

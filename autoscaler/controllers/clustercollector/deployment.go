@@ -224,6 +224,10 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 										Port: intstr.FromInt(13133),
 									},
 								},
+								FailureThreshold: 3,
+								PeriodSeconds:    10,
+								SuccessThreshold: 1,
+								TimeoutSeconds:   5,
 							},
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -232,6 +236,10 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 										Port: intstr.FromInt(13133),
 									},
 								},
+								FailureThreshold: 3,
+								PeriodSeconds:    10,
+								SuccessThreshold: 1,
+								TimeoutSeconds:   5,
 							},
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{

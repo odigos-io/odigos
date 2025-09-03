@@ -1,0 +1,121 @@
+name: 'Create Patch Release'
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_minor_version:
+        description: "version to create a patch for (format: vX.Y)"
+        required: true
+
+jobs:
+  create-patch-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Input Format
+        id: release_branch
+        run: |
+          # check the format of the input vX.Y
+          if [[ ! "${{ github.event.inputs.base_minor_version }}" =~ ^v[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: base_minor_version must be in the format of vX.Y"
+            exit 1
+          fi
+          RELEASE_BRANCH_NAME="releases/${{ github.event.inputs.base_minor_version }}.0"
+          echo "release_branch_name=$RELEASE_BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.release_branch.outputs.release_branch_name }}
+          token: ${{ secrets.RELEASE_BOT_TOKEN }}
+
+      - name: Calculate Patch Version
+        id: calculate_patch_version
+        run: |
+          # find the latest stable version for this minor release line
+          LATEST_MINOR_LINE_VERSION=$(git tag -l | grep -E "^${{ github.event.inputs.base_minor_version }}\.[0-9]+$" | sort -V | tail -n 1)
+          if [[ -z "$LATEST_MINOR_LINE_VERSION" ]]; then
+            echo "Error: no stable versions found for minor ${{ github.event.inputs.base_minor_version }}"
+            exit 1
+          fi
+
+          IFS='.' read -r major minor patch <<< "${LATEST_MINOR_LINE_VERSION#v}"
+
+          # Increment patch version for existing release series
+          target_patch=$((patch + 1))
+          NEW_PATCH_VERSION="v$major.$minor.$target_patch"
+          echo "patch_version=$NEW_PATCH_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create or Update Patch Release PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
+        run: |
+            # Configure Git user identity for the workflow using the actor who triggered it
+            git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+            git config --global user.name "${{ github.actor }}"
+
+            RELEASE_BRANCH="${{ steps.release_branch.outputs.release_branch_name }}"
+            PR_BRANCH="patch-release/${{ steps.calculate_patch_version.outputs.patch_version }}"
+            PR_TITLE="Patch release PR for stable version ${{ steps.calculate_patch_version.outputs.patch_version }}"
+
+            # Escape all regex metacharacters properly for branch detection
+            ESCAPED_PR_BRANCH=$(echo "$PR_BRANCH" | sed 's/[[\.*^$()+?{|/]/\\&/g')
+
+            # Check if the PR branch already exists
+            if git ls-remote --heads origin $PR_BRANCH | grep -q "^[0-9a-f]*\s*refs/heads/${ESCAPED_PR_BRANCH}$"; then
+              echo "PR branch $PR_BRANCH already exists, updating it..."
+
+              # Check out the existing PR branch (create local tracking branch if needed)
+              if git show-ref --verify --quiet refs/heads/$PR_BRANCH; then
+                git checkout $PR_BRANCH
+              else
+                git checkout -b $PR_BRANCH origin/$PR_BRANCH
+              fi
+              git pull origin $PR_BRANCH
+
+              # Reset the branch to point to the current release branch head
+              git reset --hard origin/$RELEASE_BRANCH
+
+              # Create a new commit to trigger the PR checks
+              git commit --allow-empty -m "Update patch release PR for ${{ steps.calculate_patch_version.outputs.patch_version }} - $(date)"
+              git push origin $PR_BRANCH --force
+
+              echo "Updated existing PR branch $PR_BRANCH"
+
+              # Check if PR exists for this branch, recreate if it doesn't
+              if ! gh pr list --head $PR_BRANCH --json number --jq '.[0].number' | grep -q '[0-9]'; then
+                echo "PR for branch $PR_BRANCH doesn't exist, creating new PR..."
+                gh pr create \
+                  --base $RELEASE_BRANCH \
+                  --head $PR_BRANCH \
+                  --title "$PR_TITLE" \
+                  --body "This is an automated PR for the patch release ${{ steps.calculate_patch_version.outputs.patch_version }}"
+              else
+                echo "PR for branch $PR_BRANCH already exists"
+              fi
+            else
+              echo "Creating new PR branch $PR_BRANCH..."
+
+              # Create a new branch for the PR
+              git checkout $RELEASE_BRANCH
+              git checkout -b $PR_BRANCH
+
+              # Create empty commit
+              git commit --allow-empty -m "Patch release commit for ${{ steps.calculate_patch_version.outputs.patch_version }}"
+              git push origin $PR_BRANCH
+
+              # Create PR
+              gh pr create \
+                --base $RELEASE_BRANCH \
+                --head $PR_BRANCH \
+                --title "$PR_TITLE" \
+                --body "This is an automated PR for the patch release ${{ steps.calculate_patch_version.outputs.patch_version }}"
+            fi
+
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with: 
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Successfully created patch release PR for ${{ steps.calculate_patch_version.outputs.patch_version }}"
+          failure-description: "ERROR: Failed to create patch release PR for ${{ steps.calculate_patch_version.outputs.patch_version }}"
+          tag: ${{ steps.calculate_patch_version.outputs.patch_version }}

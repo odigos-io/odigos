@@ -20,8 +20,8 @@ Manage Odigos configuration settings to customize system behavior.
 	- "ui-mode": Sets the UI mode (default/readonly).
 	- "ui-pagination-limit": Controls the number of items to fetch per paginated-batch in the UI.
 	- "ui-remote-url": Sets the public URL of a remotely, self-hosted UI.
-	- "central-backend-url": Sets the URL of the Odigos Central Backend.
-	- "cluster-name": Sets the name of this cluster, for Odigos Central.
+	- "central-backend-url": Sets the URL of the Odigos Tower Backend.
+	- "cluster-name": Sets the name of this cluster, for Odigos Tower.
 	- "ignored-namespaces": List of namespaces to be ignored.
 	- "ignored-containers": List of containers to be ignored.
 	- "mount-method": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
@@ -43,6 +43,8 @@ Manage Odigos configuration settings to customize system behavior.
 	- "go-auto-offsets-cron": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
 	- "clickhouse-json-type-enabled": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
 	- "allowed-test-connection-hosts": List of allowed domains for test connection endpoints (e.g., "https://api.honeycomb.io", "https://otel.example.com"). Use "*" to allow all domains. Empty list allows all domains for backward compatibility.
+	- "enable-data-compression": Enable or disable data compression before sending data to the Gateway collector. [default: false],
+	- "resource-size-preset": Set the sizing configuration for the Odigos components (size_s, size_m [default], size_l).
 	
 
 ### Options

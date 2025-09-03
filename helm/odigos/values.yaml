@@ -54,51 +54,72 @@ userInstrumentationEnvs:
       enabled: false
       env: {}
 
+# Sizing Configurations size_s, size_m, size_l are pre-defined configurations designed to simplify pipeline configurations.
+# The default value is 'size_m', which is the medium size configuration.
+# See https://docs.odigos.io/pipeline/configuration#1-using-sizing-configuration for more details.
+ResourceSizePreset: size_m
+
+
 collectorGateway:
+  # HYBRID CONFIGURATION APPROACH:
+  # By default, all values below are automatically set based on the ResourceSizePreset above.
+  # Uncomment and modify any value to override the automatic sizing for that specific parameter.
+  #
+  # IMPORTANT CONSTRAINTS:
+  # 1. minReplicas must be less or equal to maxReplicas
+  # 2. If you set limitMemoryMiB without requestMemoryMiB, request will equal limit
+  # 3. If you set requestMemoryMiB without limitMemoryMiB, limit will equal request
+  # 4. Same logic applies to CPU settings
+
+
   # the memory request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
   # of the form "memory: <value>Mi".
   # default value is 500Mi
-  # requestMemoryMiB: 500
+  # If you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.
+  # requestMemoryMiB: 625
 
   # the memory limit for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource limit
   # of the form "memory: <value>Mi".
   # default value is 625Mi
-  limitMemoryMiB: 625
+  # If you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.
+  # limitMemoryMiB: 625
 
   # the CPU request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
   # of the form "cpu: <value>m".
   # default value is 500m
+  # If you set only requestCPUm, the limitCPUm will be set to the same value.
   # requestCPUm: 500
 
   # the CPU limit for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource limit
   # of the form "cpu: <value>m".
   # default value is 1000m
-  limitCPUm: 1000
+  # If you set only limitCPUm, the requestCPUm will be set to the same value.
+  # limitCPUm: 1000
 
   # The number of replicas for the cluster gateway collector deployment.
   # Also uses in MinReplicas the HPA config.
-  minReplicas: 1
+  # minReplicas: 1
   # The maxReplicas in the HPA config.
-  maxReplicas: 10
+  # maxReplicas: 10
 
   # sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
   # it is the hard limit after which a force garbage collection will be performed.
-  # if not set, it will be 50Mi below the memory request.
-  # memoryLimiterLimitMiB: 450
+  # if not set, it will be 50Mi below the memory limit.
+  # memoryLimiterLimitMiB: 575
 
   # sets the "spike_limit_mib" parameter in the memory limiter configuration for the collector gateway.
   # note that this is not the processor soft limit, but the diff in MiB between the hard limit and the soft limit.
   # if not specified, this value will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
-  # memoryLimiterSpikeLimitMiB: 90
+  # memoryLimiterSpikeLimitMiB: 110
 
   # the GOMEMLIMIT environment variable value for the collector gateway deployment.
   # this is when go runtime will start garbage collection.
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
-  # goMemLimitMiB: 340
+  # goMemLimitMiB: 460
 
   # Service Graph settings
   # Service Graph is a feature that allows you to visualize the service graph of your application.
@@ -112,8 +133,7 @@ collectorGateway:
 
   # for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
   # when unset or empty, no proxy will be used.
-  # httpsProxyAddress: ""
-
+  # httpsProxyAddress: ''
 
 collectorNode:
   # The port to use for exposing the collector's own metrics as a prometheus endpoint.
@@ -123,24 +143,28 @@ collectorNode:
   # RequestMemoryMiB is the memory request for the node collector daemonset.
   # it will be embedded in the daemonset as a resource request of the form "memory: <value>Mi"
   # default value is 250Mi
+  # If you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.
   # requestMemoryMiB: 250
 
   # LimitMemoryMiB is the memory limit for the node collector daemonset.
   # it will be embedded in the daemonset as a resource limit of the form "memory: <value>Mi"
   # default value is 500Mi
-  limitMemoryMiB: 500
+  # If you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.
+  # limitMemoryMiB: 500
 
   # the CPU request for the node collector daemonset.
   # it will be embedded in the daemonset as a resource request
   # of the form "cpu: <value>m".
   # default value is 250m
+  # If you set only requestCPUm, the limitCPUm will be set to the same value.
   # requestCPUm: 250
 
   # the CPU limit for the node collector daemonset.
   # it will be embedded in the daemonset as a resource limit
   # of the form "cpu: <value>m".
   # default value is 500m
-  limitCPUm: 500
+  # If you set only limitCPUm, the requestCPUm will be set to the same value.
+  # limitCPUm: 500
 
   # this parameter sets the "limit_mib" parameter in the memory limiter configuration for the node collector.
   # it is the hard limit after which a force garbage collection will be performed.
@@ -150,7 +174,7 @@ collectorNode:
   # this parameter sets the "spike_limit_mib" parameter in the memory limiter configuration for the node collector.
   # note that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.
   # if not set, this will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
-  # memoryLimiterSpikeLimitMiB: 55
+  # memoryLimiterSpikeLimitMiB: 90
 
   # the GOMEMLIMIT environment variable value for the node collector daemonset.
   # this is when go runtime will start garbage collection.
@@ -160,6 +184,10 @@ collectorNode:
   # this configuration is used for logs collection where '/var/log' in a k8s node is a symlink
   # to some other directory (for example, '/mnt/var/log')
   k8sNodeLogsDirectory: ''
+
+  # EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+  # It is disabled by default and can be enabled by setting the enabled flag to true.
+  enableDataCompression: false
 
 autoscaler:
   nodeSelector:
@@ -324,6 +352,24 @@ odiglet:
   # into the Odiglet to ensure it can access the container runtime unix socket.
   customContainerRuntimeSocketPath: ''
 
+  # run the odiglet container without privileged containers.
+  # when set to true, odiglet will use the set of capabilities required for eBPF operations.
+  # by default, odiglet runs as a privileged container.
+  unPrivileged: false
+
+  # noHostPathMounts can be set to true to avoid using hostPath mounts in the odiglet daemonset.
+  # When set to true, instrumentor.mountMethod must be set to "k8s-init-container", since that is the only mount method
+  # that does not rely on host mounts to pass the required agents files to instrumented pods.
+  # by default, odiglet will rely on hostPath mounts in /var/odigos
+  noHostPathMounts: false
+
+  # noHostPid can be set to true to avoid using hostPID in the odiglet daemonset.
+  # when set to true, odiglet will mount /proc from the host to be able scan running processes and instrument them.
+  # when noHostPid and noHostPathMounts are set to true the /proc host mount must be allowed.
+  # setting this to true (i.e avoiding hostPid) may limit some eBPF capabilities, depending on the instrumented workloads.
+  # by default, odiglet will use hostPID to be able to scan running processes and instrument them.
+  noHostPid: false
+
 centralProxy:
   enabled: false
   # Central backend URL where this proxy will forward data
@@ -361,13 +407,11 @@ profiles: []
 # Note: Odigos will only be able to instrument workloads on the same nodes.
 nodeSelector: {}
 
-
 # Karpenter settings, before changing to true please modify the karpenter-node-template.yaml file
 # to add the odigos-agent startupTaints configuration.
 # https://docs.odigos.io/setup/odigos-with-karpenter
 karpenter:
   enabled: false
-
 
 # Refer to the official Kubernetes documentation for structure and field details:
 # https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
@@ -379,7 +423,6 @@ karpenter:
 #     topologyKey: "topology.kubernetes.io/zone"
 #     whenUnsatisfiable: "ScheduleAnyway"
 topologySpreadConstraints: []
-
 
 # Auto rollback settings
 # The auto‐rollback feature provides a stability window to test instrumented apps.
@@ -406,6 +449,10 @@ rollout:
 # This reflects Odigos' recommended defaults for maintaining observability continuity without blocking routine maintenance.
 # PDBs are disabled by default and can be enabled in production environments where stability during disruptions is important.
 pdb:
+  enabled: false
+
+# Setting for allowing Odigos to run concurrently with other agents
+allowConcurrentAgents:
   enabled: false
 
 # Enable support for ClickHouse JSON column type when storing Odigos data.
