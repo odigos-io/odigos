@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { SetupHeader } from '@/components';
 import { useNamespace, useSetupHelpers } from '@/hooks';
+import { OnboardingContentWrapper, SetupHeader } from '@/components';
 import { SourceSelectionForm, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
 
 export default function Page() {
@@ -13,7 +13,9 @@ export default function Page() {
   return (
     <>
       <SetupHeader step={3} sourceFormRef={formRef} />
-      <SourceSelectionForm ref={formRef} isModal={false} fetchSingleNamespace={fetchNamespace} onClickSummary={onClickSummary} />
+      <OnboardingContentWrapper>
+        <SourceSelectionForm ref={formRef} isModal={false} fetchSingleNamespace={fetchNamespace} onClickSummary={onClickSummary} />
+      </OnboardingContentWrapper>
     </>
   );
 }

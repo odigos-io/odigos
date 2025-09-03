@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build-cli:
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-8x-spot
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,11 +33,11 @@ jobs:
           cd cli
           go build -tags=embed_manifests -o odigos
 
-      - name: Upload CLI
-        uses: actions/upload-artifact@v4
+      - name: Save CLI binary to cache
+        uses: WarpBuilds/cache/save@v1
         with:
-          name: odigos-cli
           path: cli/odigos
+          key: ${{ github.run_id }}-odigos-cli
 
   build-odigos-images:
     runs-on: warp-ubuntu-latest-x64-8x-spot
@@ -57,13 +57,13 @@ jobs:
           TAG=e2e-test make build-cli-image
           docker save registry.odigos.io/odigos-cli:e2e-test -o cli-image.tar
 
-      - name: Upload Odigos Images
-        uses: actions/upload-artifact@v4
+      - name: Save Odigos images to cache
+        uses: WarpBuilds/cache/save@v1
         with:
-          name: odigos-images
           path: |
             odigos-images.tar
             cli-image.tar
+          key: ${{ github.run_id }}-odigos-images
 
   kubernetes-test:
     needs:
@@ -71,7 +71,7 @@ jobs:
       - build-cli
     # workload-lifecycle test scenario requires more resources, so we use a different instance type
     # all other test scenarios use the default instance type which is free and fast
-    runs-on: ${{ matrix.test-scenario == 'workload-lifecycle' && 'warp-ubuntu-latest-x64-8x-spot' || 'ubuntu-latest' }}
+    runs-on: 'warp-ubuntu-latest-x64-8x-spot'
     strategy:
       fail-fast: false
       matrix:
@@ -117,26 +117,27 @@ jobs:
           cluster_name: kind
           config: tests/common/apply/kind-config.yaml
 
-      - name: Download Odigos Images
-        uses: actions/download-artifact@v4
+      - name: Restore cached Odigos images
+        uses: WarpBuilds/cache/restore@v1
         with:
-          name: odigos-images
-        timeout-minutes: 5
+          path: |
+            odigos-images.tar
+            cli-image.tar
+          key: ${{ github.run_id }}-odigos-images
 
       - name: Load Odigos Images to Kind Cluster
         run: |
           kind load image-archive odigos-images.tar
           kind load image-archive cli-image.tar
 
-      - name: Download CLI binary
-        uses: actions/download-artifact@v4
+      - name: Restore cached CLI binary
+        uses: WarpBuilds/cache/restore@v1
         with:
-          name: odigos-cli
-        timeout-minutes: 1
+          path: cli/odigos
+          key: ${{ github.run_id }}-odigos-cli
 
       - name: Move CLI binary & set permissions
         run: |
-          mv odigos cli/odigos
           chmod +x cli/odigos
 
       - name: Run E2E Tests
@@ -147,6 +148,17 @@ jobs:
           k8sMinorVersion: ${MINOR_VERSION}
           isHelm: ${{ matrix.test-scenario == 'helm-chart' || matrix.test-scenario == 'helm-upgrade' }}
           EOF
+
+      - name: Cluster diagnostics
+        if: failure()
+        run: |
+          echo "==== Nodes ===="; kubectl get nodes -o wide
+          echo "==== Pods (all namespaces) ===="; kubectl get pods -A -o wide
+          echo "==== Events (last 10m) ===="; kubectl get events -A --sort-by=.lastTimestamp | tail -n 200
+          echo "==== Deployments not ready ===="; kubectl get deploy -A | awk '$4!="0/0" && $4!=$5 {print $1,$2}' | while read ns name; do
+            echo "--- describe deploy $ns/$name ---"
+            kubectl describe deploy -n "$ns" "$name" || true
+          done
 
       - name: Run diagnose command
         if: ${{ failure() && matrix.test-scenario != 'ui' }}
