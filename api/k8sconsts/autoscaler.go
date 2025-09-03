@@ -20,8 +20,12 @@ const (
 	// Deprecated: only use for migration purposes.
 	DeprecatedAutoscalerWebhookSecretName = "autoscaler-webhook-cert"
 	DeprecatedAutoscalerWebhookVolumeName = "autoscaler-webhook-cert"
-	AutoscalerWebhookSecretName		      = "autoscaler-webhooks-cert"
-	AutoscalerWebhookVolumeName		      = "autoscaler-webhooks-cert"
+	AutoscalerWebhookSecretName           = "autoscaler-webhooks-cert"
+	AutoscalerWebhookVolumeName           = "autoscaler-webhooks-cert"
 	AutoScalerWebhookServiceName          = "odigos-autoscaler"
 	AutoScalerWebhookFieldOwner           = AutoScalerDeploymentName
+)
+
+const (
+	K8sAttributesFromDefaultValue = "pod"
 )

@@ -99,9 +99,11 @@ spec:
   labelsAttributes:
     - labelKey: "app.kubernetes.io/name"
       attributeKey: "app.kubernetes.name"
+      from: "pod"
   annotationsAttributes:
     - annotationKey: "kubectl.kubernetes.io/restartedAt"
       attributeKey: "kubectl.kubernetes.restartedAt"
+      from: "pod"
   signals:
     - TRACES
     - METRICS

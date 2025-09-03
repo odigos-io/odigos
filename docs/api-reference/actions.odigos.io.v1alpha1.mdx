@@ -1191,8 +1191,30 @@ e.g. &quot;kubectl.kubernetes.io/restartedAt&quot;</p>
 e.g. &quot;kubectl.kubernetes.restartedAte&quot;</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>from</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The source of the annotation.
+e.g. &quot;pod&quot; or &quot;namespace&quot;</p>
+</td>
+</tr>
 </tbody>
 </table>
+
+## `K8sAttributeSource` <a id="K8sAttributeSource"></a>
+    
+(Alias of `string`)
+
+**Appears in:**
+
+- [K8sLabelAttribute](#K8sLabelAttribute)
+
+
 
 ## `K8sAttributesConfig` <a id="K8sAttributesConfig"></a>
     
@@ -1484,6 +1506,18 @@ e.g. &quot;app.kubernetes.io/name&quot;</p>
 <td>
    <p>The attribute key to be used for the resource attribute created from the label.
 e.g. &quot;app.kubernetes.name&quot;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>from</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#K8sAttributeSource"><code>K8sAttributeSource</code></a>
+</td>
+<td>
+   <p>The source of the label.
+e.g. &quot;pod&quot; or &quot;namespace&quot;</p>
 </td>
 </tr>
 </tbody>
