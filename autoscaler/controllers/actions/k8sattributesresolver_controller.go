@@ -10,7 +10,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 
 	semconv1_21 "go.opentelemetry.io/otel/semconv/v1.21.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -308,7 +307,7 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 
 		// Add label attributes, newer configs override older ones with same Tag
 		for _, label := range config.LabelsAttributes {
-			from := consts.K8sAttributesFromDefaultValue
+			from := k8sconsts.K8sAttributesFromDefaultValue
 			if label.From != nil {
 				from = *label.From
 			}
@@ -321,7 +320,7 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 
 		// Add annotation attributes, newer configs override older ones with same Tag
 		for _, annotation := range config.AnnotationsAttributes {
-			from := consts.K8sAttributesFromDefaultValue
+			from := k8sconsts.K8sAttributesFromDefaultValue
 			if annotation.From != nil {
 				from = *annotation.From
 			}
