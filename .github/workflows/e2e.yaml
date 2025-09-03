@@ -31,7 +31,7 @@ jobs:
           go build -tags=embed_manifests -o odigos
 
       - name: Save CLI binary to cache
-        uses: actions/cache/save@v4
+        uses: WarpBuilds/cache/save@v1
         with:
           path: cli/odigos
           key: ${{ github.run_id }}-odigos-cli
@@ -55,7 +55,7 @@ jobs:
           docker save registry.odigos.io/odigos-cli:e2e-test -o cli-image.tar
 
       - name: Save Odigos images to cache
-        uses: actions/cache/save@v4
+        uses: WarpBuilds/cache/save@v1
         with:
           path: |
             odigos-images.tar
@@ -68,7 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        kube-version: [ "1.32" ]
+        kube-version: [ "1.32"] #, "1.23", "1.20.15" ]
         test-scenario:
           - "ui"
           - "helm-chart"
@@ -86,6 +86,10 @@ jobs:
           - "data-streams"
           - "mount-method"
         include:
+          - kube-version: "1.20.15"
+            kind-image: "kindest/node:v1.20.15@sha256:a32bf55309294120616886b5338f95dd98a2f7231519c7dedcec32ba29699394"
+          - kube-version: "1.23"
+            kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
           - kube-version: "1.32"
             kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
 
@@ -116,7 +120,7 @@ jobs:
           kubectl rollout status -n kube-system deployment/coredns --timeout=300s
 
       - name: Restore cached Odigos images
-        uses: actions/cache/restore@v4
+        uses: WarpBuilds/cache/restore@v1
         with:
           path: |
             odigos-images.tar
@@ -129,7 +133,7 @@ jobs:
           kind load image-archive cli-image.tar
 
       - name: Restore cached CLI binary
-        uses: actions/cache/restore@v4
+        uses: WarpBuilds/cache/restore@v1
         with:
           path: cli/odigos
           key: ${{ github.run_id }}-odigos-cli
