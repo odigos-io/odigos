@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
 Copyright 2022.
+=======
+Copyright 2025.
+>>>>>>> 9c5f87341 (Add actions controller suite tests)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -167,6 +171,7 @@ func cleanupResources() {
 		}, timeout, interval).Should(BeTrue())
 	}
 
+<<<<<<< HEAD
 	// Clean up all legacy K8sAttributesResolvers
 	k8sAttributesResolverList := &actionv1.K8sAttributesResolverList{}
 	k8sClient.List(testCtx, k8sAttributesResolverList)
@@ -177,6 +182,8 @@ func cleanupResources() {
 		}, timeout, interval).Should(BeTrue())
 	}
 
+=======
+>>>>>>> 9c5f87341 (Add actions controller suite tests)
 	// Clean up all Processors
 	processorList := &odigosv1.ProcessorList{}
 	k8sClient.List(testCtx, processorList)
