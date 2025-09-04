@@ -5,4 +5,7 @@ const (
 	OdigosInitContainerImageName  = "odigos-agents"
 	OdigosInitContainerName       = "odigos-agents"
 	OdigosInitContainerEnvVarName = "ODIGOS_INIT_CONTAINER_IMAGE"
+
+	ExchangeDir            = "/var/exchange"
+	ExchangeUnixSocketPath = "/var/exchange/exchange.sock"
 )
