@@ -52,7 +52,7 @@ jobs:
         test_scenario: ${{ fromJSON(inputs.test_scenario == 'all' && '["source", "helm-chart"]' || format('["{0}"]', inputs.test_scenario)) }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Cross-Cloud Tests
         if: ${{ !(matrix.provider == 'aks' && matrix.platform == 'arm') }}
