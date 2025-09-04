@@ -138,8 +138,8 @@ spec:
 
               echo "=== Determining appropriate assertion file based on Kubernetes version ==="
 
-              # Get Kubernetes version
-              K8S_VERSION=$(kubectl version --short --client=false | grep "Server Version" | cut -d' ' -f3)
+              # Get Kubernetes version (compatible with older kubectl versions)
+              K8S_VERSION=$(kubectl version --client=false -o json | jq -r '.serverVersion.gitVersion')
               echo "Kubernetes version: $K8S_VERSION"
 
               # Determine which assertion file to use
