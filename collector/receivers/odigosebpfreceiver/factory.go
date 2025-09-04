@@ -20,9 +20,7 @@ func NewFactory() receiver.Factory {
 
 func createDefaultConfig() component.Config {
 	// Return default config object – no extra parameters yet
-	return &Config{
-		Settings: receiver.Settings{},
-	}
+	return &Config{}
 }
 
 func createTracesReceiver(
