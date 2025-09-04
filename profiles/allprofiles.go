@@ -23,6 +23,7 @@ var AllProfiles = []profile.Profile{
 	attributes.QueryOperationDetector,
 	attributes.SemconvUpgraderProfile,
 	attributes.SemconvDynamoProfile,
+	attributes.TransformDynamoProfile,
 	attributes.SemconvRedisProfile,
 	attributes.ReduceSpanNameCardinalityProfile,
 
