@@ -68,7 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        kube-version: [ "1.32"] #, "1.23", "1.20.15" ]
+        kube-version: [ "1.32", "1.23", "1.20.15" ]
         test-scenario:
           - "ui"
           - "helm-chart"
