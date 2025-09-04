@@ -10,6 +10,22 @@ spec:
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install - Simple Demo Apps
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+        - script:
+            timeout: 2m
+            content: |
+              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
+              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
+
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
@@ -67,20 +83,8 @@ spec:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
 
-    - name: Install - Simple Demo Apps
+    - name: Assert - Simple Demo Apps Installed
       try:
-        - apply:
-            file: ../../common/apply/install-simple-demo.yaml
-        - script:
-            timeout: 2m
-            content: |
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
         - assert:
             file: ../../common/assert/simple-demo-installed.yaml
 
@@ -142,14 +146,17 @@ spec:
               K8S_VERSION=$(kubectl version --client=false -o json | jq -r '.serverVersion.gitVersion')
               echo "Kubernetes version: $K8S_VERSION"
 
-              # Determine which assertion file to use
-              if [[ "$K8S_VERSION" == *"v1.20.15"* ]]; then
-                echo "⚠️  Using K8s 1.20.15 specific assertion (allows odiglet restarts due to legacy API issues)"
-                ASSERT_FILE="../../common/assert/odigos-upgraded-k8s-120.yaml"
-              else
-                echo "Using standard assertion file"
-                ASSERT_FILE="../../common/assert/odigos-upgraded.yaml"
-              fi
+              # Determine which assertion file to use (using POSIX-compatible syntax)
+              case "$K8S_VERSION" in
+                *v1.20.15*)
+                  echo "⚠️  Using K8s 1.20.15 specific assertion (allows odiglet restarts due to legacy API issues)"
+                  ASSERT_FILE="../../common/assert/odigos-upgraded-k8s-120.yaml"
+                  ;;
+                *)
+                  echo "Using standard assertion file"
+                  ASSERT_FILE="../../common/assert/odigos-upgraded.yaml"
+                  ;;
+              esac
 
               echo "Using assertion file: $ASSERT_FILE"
 
