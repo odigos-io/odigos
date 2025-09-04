@@ -425,7 +425,7 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 
 	// Build the data-collection container mounts (only for its container)
 	dataCollectionMounts := []corev1.VolumeMount{
-		{Name: "exchange-dir", MountPath: "/var/exchange"},
+		{Name: "exchange-dir", MountPath: k8sconsts.ExchangeDir},
 	}
 	if logsEnabled {
 		dataCollectionMounts = append(dataCollectionMounts,
@@ -659,7 +659,7 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 								},
 								{
 									Name:      "exchange-dir",
-									MountPath: "/var/exchange",
+									MountPath: k8sconsts.ExchangeDir,
 								},
 							}, additionalVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
