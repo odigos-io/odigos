@@ -112,7 +112,7 @@ spec:
           (memory != null): true
   (containers[?name=='deviceplugin']):
     - resources: {}
-  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
+  (hostNetwork == null): true
   hostPID: true
   nodeName: kind-control-plane
   nodeSelector:
@@ -184,7 +184,7 @@ spec:
           (memory != null): true
   (containers[?name=='deviceplugin']):
     - resources: {}
-  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
+  (hostNetwork == null): true
   hostPID: true
   nodeName: kind-worker
   nodeSelector:

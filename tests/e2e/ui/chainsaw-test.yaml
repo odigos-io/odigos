@@ -6,6 +6,11 @@ spec:
   description: Run E2E tests against Odigos UI using Cypress
   skipDelete: true
   steps:
+    - name: Install - Jaeger
+      try:
+        - apply:
+            file: ../../common/apply/install-jaeger.yaml
+
     - name: Install - Simple Demo Apps
       try:
         - apply:
@@ -32,15 +37,8 @@ spec:
             timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
 
-
-    - name: Install - Jaeger
+    - name: Verify - Jaeger Installed
       try:
-        - apply:
-            file: ../../common/apply/install-jaeger.yaml
-        - script:
-            timeout: 1m
-            content: |
-              kubectl wait --for=condition=ready pod -l app=jaeger -n tracing --timeout=60s
         - assert:
             file: ../../common/assert/jaeger-installed.yaml
 
