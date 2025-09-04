@@ -1,6 +1,8 @@
 package ebpf
 
 import (
+	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 
@@ -13,9 +15,9 @@ import (
 const bpfFsPath = "/sys/fs/bpf"
 
 type bpfFsMapsManager struct {
-	logger            logr.Logger
-	mountedFs         bool
-	tracesMap         *ebpf.Map
+	logger    logr.Logger
+	mountedFs bool
+	tracesMap *ebpf.Map
 }
 
 func (b *bpfFsMapsManager) TracesMap() (*ebpf.Map, error) {
@@ -41,19 +43,51 @@ func (b *bpfFsMapsManager) TracesMap() (*ebpf.Map, error) {
 	}
 
 	spec := &ebpf.MapSpec{
-		Type:    ebpf.PerfEventArray,
-		Name:    "traces",
-		Pinning: ebpf.PinByName,
+		Type: ebpf.PerfEventArray,
+		Name: "traces",
 	}
 
-	m, err := ebpf.NewMapWithOptions(spec, ebpf.MapOptions{
-		PinPath: filepath.Join(bpfFsPath, "odiglet"),
-	})
+	m, err := ebpf.NewMap(spec)
 	if err != nil {
 		return nil, err
 	}
 	b.tracesMap = m
+
+	// --- BLOCKING SOCKET HANDOFF ---
+	socketPath := "/var/exchange/exchange.sock"
+	_ = os.Remove(socketPath)
+
+	addr, err := net.ResolveUnixAddr("unix", socketPath)
+	if err != nil {
+		return nil, fmt.Errorf("resolve unix addr: %w", err)
+	}
+
+	ul, err := net.ListenUnix("unix", addr)
+	if err != nil {
+		return nil, fmt.Errorf("listen unix: %w", err)
+	}
+	defer ul.Close()
+
+	b.logger.Info("odiglet waiting for data-collection to connect", "socket", socketPath)
+
+	conn, err := ul.AcceptUnix()
+	if err != nil {
+		return nil, fmt.Errorf("accept unix: %w", err)
+	}
+	defer conn.Close()
+
+	if err := sendFD(conn, m.FD()); err != nil {
+		return nil, fmt.Errorf("sendFD failed: %w", err)
+	}
+	b.logger.Info("✅ FD sent to data-collection")
+
 	return b.tracesMap, nil
+}
+
+func sendFD(c *net.UnixConn, fd int) error {
+	controlMessage := unix.UnixRights(fd)
+	_, _, err := c.WriteMsgUnix([]byte("x"), controlMessage, nil)
+	return err
 }
 
 // mountBpfFs mounts the BPF file-system for the given target.
@@ -80,4 +114,3 @@ func isBPFFSMounted() bool {
 
 	return stat.Type == unix.BPF_FS_MAGIC
 }
-
