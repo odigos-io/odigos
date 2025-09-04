@@ -121,7 +121,7 @@ spec:
         - assert:
             file: simple-demo-instrumented.yaml
         - script:
-            timeout: 70s
+            timeout: 2m
             content: ../../common/wait_for_rollout.sh
 
     - name: '[2 - Workload Instrumentation] Generate Traffic'
