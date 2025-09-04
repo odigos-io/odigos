@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-span-generator
+  namespace: load-test
+  labels:
+    app: node-span-generator
+    odigos-target: "true"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: node-span-generator
+      odigos-target: "true"
+  template:
+    metadata:
+      labels:
+        app: node-span-generator
+        odigos-target: "true"
+    spec:
+      terminationGracePeriodSeconds: 0
+      # affinity:
+      #   nodeAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       nodeSelectorTerms:
+      #       - matchExpressions:
+      #         - key: kubernetes.io/hostname
+      #           operator: In
+      #           values:
+      #           - ip-10-0-1-243.ec2.internal
+      containers:
+        - name: node-span-generator
+          image: public.ecr.aws/odigos/node-span-gen:v0.0.1
+          imagePullPolicy: Always
+          env:
+            - name: OTEL_SERVICE_NAME
+              value: node-span-generator
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=node-span-generator,service.version=v1.0.0
+            - name: SPANS_PER_SEC
+              value: "1000"
+            - name: SPAN_BYTES
+              value: "1000"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "16Mi"
+            limits:
+              cpu: "1"
+              memory: "125Mi"
+          livenessProbe:
+            exec:
+              command:
+                - pgrep
+                - node
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - pgrep
+                - node
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-span-generator-service
+  namespace: load-test
+  labels:
+    app: node-span-generator
+spec:
+  selector:
+    app: node-span-generator
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
