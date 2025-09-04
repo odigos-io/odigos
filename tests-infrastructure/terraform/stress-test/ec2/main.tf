@@ -2,6 +2,16 @@
 # EC2 Prometheus Receiver + Grafana + ClickHouse + K6
 ########################################
 
+# Data sources to get information from EKS deployment
+data "terraform_remote_state" "eks" {
+  backend = "local"
+  config = {
+    path = "../terraform.tfstate"
+  }
+}
+
+# Get EKS node security group ID from remote state
+
 terraform {
   required_version = ">= 1.0.0"
   required_providers {
@@ -17,12 +27,6 @@ provider "aws" {
 }
 
 # Read VPC/subnets + SG IDs from the EKS stack (apply EKS first)
-data "terraform_remote_state" "eks" {
-  backend = "local"
-  config = {
-    path = "../terraform.tfstate"
-  }
-}
 
 # Base AMI (Amazon Linux 2)
 data "aws_ami" "amazon_linux" {
@@ -62,7 +66,7 @@ resource "aws_security_group_rule" "in_9090_from_nodesg" {
   from_port                = 9090
   to_port                  = 9090
   security_group_id        = aws_security_group.monitoring_ec2_sg.id
-  source_security_group_id = data.terraform_remote_state.eks.outputs.eks_node_sg_id
+  source_security_group_id = data.terraform_remote_state.eks.outputs.node_security_group_id
   description              = "Prometheus remote_write from EKS nodes"
 }
 
@@ -73,7 +77,7 @@ resource "aws_security_group_rule" "in_8123_from_nodesg" {
   from_port                = 8123
   to_port                  = 8123
   security_group_id        = aws_security_group.monitoring_ec2_sg.id
-  source_security_group_id = data.terraform_remote_state.eks.outputs.eks_node_sg_id
+  source_security_group_id = data.terraform_remote_state.eks.outputs.node_security_group_id
   description              = "ClickHouse HTTP from EKS nodes"
 }
 
@@ -84,19 +88,11 @@ resource "aws_security_group_rule" "in_9000_from_nodesg" {
   from_port                = 9000
   to_port                  = 9000
   security_group_id        = aws_security_group.monitoring_ec2_sg.id
-  source_security_group_id = data.terraform_remote_state.eks.outputs.eks_node_sg_id
+  source_security_group_id = data.terraform_remote_state.eks.outputs.node_security_group_id
   description              = "ClickHouse native TCP from EKS nodes"
 }
 
-resource "aws_security_group_rule" "allow_k6_to_nlb" {
-  type                     = "ingress"
-  from_port                = 8080
-  to_port                  = 8080
-  protocol                 = "tcp"
-  security_group_id        = module.eks.cluster_security_group_id
-  source_security_group_id = aws_security_group.monitoring_ec2_sg.id
-  description              = "Allow k6 EC2 to reach pods via NLB"
-}
+# This rule was moved to the main EKS configuration
 
 
 # ---------------- SSM for port-forwarding to UIs ----------------
@@ -135,7 +131,7 @@ resource "aws_instance" "monitoring" {
 
   # Root volume
   root_block_device {
-    volume_size           = 40
+    volume_size           = 20
     volume_type           = "gp3"
     delete_on_termination = true
   }
@@ -168,7 +164,7 @@ resource "aws_instance" "monitoring" {
     user_data = <<-BASH
     #!/bin/bash
     set -euxo pipefail
-    exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
+    exec > /var/log/user-data.log 2>&1
 
     yum install -y xfsprogs curl tar yum-utils
 
@@ -205,69 +201,119 @@ resource "aws_instance" "monitoring" {
     chown -R prometheus:prometheus /etc/prometheus /var/lib/prometheus /mnt/prometheus-data
 
     cat >/etc/prometheus/prometheus.yml <<'EOF'
-    global:
-      scrape_interval: 30s
-    scrape_configs: [] # receiver-only
-    EOF
+global:
+  scrape_interval: 30s
+scrape_configs: [] # receiver-only
+EOF
 
     cat >/etc/systemd/system/prometheus.service <<'EOF'
-    [Unit]
-    Description=Prometheus (remote-write receiver)
-    After=network-online.target
+[Unit]
+Description=Prometheus (remote-write receiver)
+After=network-online.target
 
-    [Service]
-    User=prometheus
-    ExecStart=/usr/local/bin/prometheus \
-      --config.file=/etc/prometheus/prometheus.yml \
-      --web.enable-remote-write-receiver \
-      --storage.tsdb.path=/mnt/prometheus-data \
-      --storage.tsdb.retention.time=7d
-    Restart=always
-    RestartSec=5
+[Service]
+User=prometheus
+ExecStart=/usr/local/bin/prometheus \
+  --config.file=/etc/prometheus/prometheus.yml \
+  --web.enable-remote-write-receiver \
+  --storage.tsdb.path=/mnt/prometheus-data \
+  --storage.tsdb.retention.time=7d
+Restart=always
+RestartSec=5
 
-    [Install]
-    WantedBy=multi-user.target
-    EOF
+[Install]
+WantedBy=multi-user.target
+EOF
 
     systemctl daemon-reload
     systemctl enable --now prometheus
 
     # ---------------- Grafana ----------------
     cat >/etc/yum.repos.d/grafana.repo <<'EOF'
-    [grafana]
-    name=Grafana OSS
-    baseurl=https://packages.grafana.com/oss/rpm
-    repo_gpgcheck=1
-    enabled=1
-    gpgcheck=1
-    gpgkey=https://packages.grafana.com/gpg.key
-    EOF
+[grafana]
+name=Grafana OSS
+baseurl=https://packages.grafana.com/oss/rpm
+repo_gpgcheck=1
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.grafana.com/gpg.key
+EOF
     yum install -y grafana
 
     cat >/etc/grafana/grafana.ini <<'EOF'
-    [paths]
-    data = /mnt/grafana-data
-    [server]
-    http_addr = 127.0.0.1
-    http_port = 3000
-    EOF
+[paths]
+data = /mnt/grafana-data
+[server]
+http_addr = 127.0.0.1
+http_port = 3000
+EOF
     chown grafana:grafana /etc/grafana/grafana.ini
 
     mkdir -p /etc/grafana/provisioning/datasources
     cat >/etc/grafana/provisioning/datasources/prometheus.yaml <<'EOF'
-    apiVersion: 1
-    datasources:
-      - name: Prometheus
-        type: prometheus
-        access: proxy
-        url: http://127.0.0.1:9090
-        isDefault: true
-        jsonData:
-          httpMethod: POST
-    EOF
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://127.0.0.1:9090
+    isDefault: true
+    jsonData:
+      httpMethod: POST
+EOF
+
+    # Create dashboard provisioning directory
+    mkdir -p /etc/grafana/provisioning/dashboards
+    cat >/etc/grafana/provisioning/dashboards/dashboard.yaml <<'EOF'
+apiVersion: 1
+providers:
+  - name: 'default'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+EOF
+
+
+
     chown -R grafana:grafana /etc/grafana/provisioning /mnt/grafana-data
 
+    # Create script to import dashboard 15760
+    
+    cat >/usr/local/bin/import-grafana-dashboard.sh <<'EOF'
+#!/bin/bash
+set -e
+
+# Wait for Grafana to be ready
+echo "Waiting for Grafana to be ready..."
+until curl -s http://127.0.0.1:3000/api/health > /dev/null; do
+  sleep 2
+done
+
+# Download dashboard 15760 from Grafana.com
+echo "Downloading dashboard 15760 from Grafana.com..."
+DASHBOARD_JSON=$(curl -s "https://grafana.com/api/dashboards/15760/revisions/1/download")
+
+# Import the dashboard
+echo "Importing dashboard 15760..."
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d "{\"dashboard\": $DASHBOARD_JSON, \"overwrite\": true}" \
+  http://admin:admin@127.0.0.1:3000/api/dashboards/db
+
+echo "Dashboard 15760 imported successfully!"
+EOF
+    
+    chmod +x /usr/local/bin/import-grafana-dashboard.sh
+
     systemctl enable --now grafana-server
+
+    # Import dashboard after Grafana starts
+    nohup /usr/local/bin/import-grafana-dashboard.sh > /var/log/grafana-dashboard-import.log 2>&1 &
 
     # ---------------- ClickHouse ----------------
     rpm --import https://packages.clickhouse.com/rpm/stable/repodata/repomd.xml.key
@@ -281,33 +327,33 @@ resource "aws_instance" "monitoring" {
 
     mkdir -p /etc/clickhouse-server/config.d
     cat >/etc/clickhouse-server/config.d/01-paths.xml <<'EOF'
-    <clickhouse>
-      <path>/mnt/clickhouse-data/</path>
-      <tmp_path>/mnt/clickhouse-data/tmp/</tmp_path>
-      <user_files_path>/mnt/clickhouse-data/user_files/</user_files_path>
-      <format_schema_path>/mnt/clickhouse-data/format_schemas/</format_schema_path>
-    </clickhouse>
-    EOF
+<clickhouse>
+  <path>/mnt/clickhouse-data/</path>
+  <tmp_path>/mnt/clickhouse-data/tmp/</tmp_path>
+  <user_files_path>/mnt/clickhouse-data/user_files/</user_files_path>
+  <format_schema_path>/mnt/clickhouse-data/format_schemas/</format_schema_path>
+</clickhouse>
+EOF
 
     cat >/etc/clickhouse-server/config.d/02-network.xml <<'EOF'
-    <clickhouse>
-      <listen_host>0.0.0.0</listen_host>
-      <tcp_port>9000</tcp_port>
-      <http_port>8123</http_port>
-      <interserver_http_port>9012</interserver_http_port>
-    </clickhouse>
-    EOF
+<clickhouse>
+  <listen_host>0.0.0.0</listen_host>
+  <tcp_port>9000</tcp_port>
+  <http_port>8123</http_port>
+  <interserver_http_port>9012</interserver_http_port>
+</clickhouse>
+EOF
 
     mkdir -p /etc/clickhouse-server/users.d
     cat >/etc/clickhouse-server/users.d/default-password.xml <<'EOF'
-    <clickhouse>
-      <users>
-        <default>
-          <password>123456</password>
-        </default>
-      </users>
-    </clickhouse>
-    EOF
+<clickhouse>
+  <users>
+    <default>
+      <password>stresstest</password>
+    </default>
+  </users>
+</clickhouse>
+EOF
 
     chown clickhouse:clickhouse /etc/clickhouse-server/users.d/default-password.xml
     chmod 640 /etc/clickhouse-server/users.d/default-password.xml
@@ -329,65 +375,39 @@ resource "aws_instance" "monitoring" {
     rm -rf k6-v0.51.0-linux-amd64
 
     mkdir -p /opt/k6/tests
-    cat >/opt/k6/tests/loadtest.js <<'JS'
-    import http from 'k6/http';
+    # Create simple dummy K6 load test script
+    cat >/opt/k6/tests/loadtest.js <<'EOF'
+import http from 'k6/http';
 
-    export const options = {
-      scenarios: {
-        ramping_rps: {
-          executor: 'ramping-arrival-rate',
-          startRate: 10,
-          timeUnit: '1s',
-          preAllocatedVUs: 100,
-          maxVUs: 200,
-          stages: [
-            { target: 30, duration: '30s' },
-            { target: 90, duration: '1m' },
-            { target: 0, duration: '30s' },
-          ],
-        },
-      },
-    };
+export const options = {
+  vus: 1,
+  duration: '30s',
+};
 
-    const frontendURL = http://ae5f01a90ea3b448c87310f92f68cbce-568516596.us-east-1.elb.amazonaws.com:8080;
-    let currentProductID = 1;
-    const maxProductID = 20;
-
-    function getNextProductID() {
-      currentProductID++;
-      if (currentProductID > maxProductID) currentProductID = 1;
-      return currentProductID;
-    }
-
-    export default function () {
-      const pid = getNextProductID();
-
-      const buyRes = http.post(frontendURL + '/buy?id=' + pid);
-      if (buyRes.status !== 200) {
-        console.error('Buy failed for product ' + pid + ' - Status: ' + buyRes.status);
-      }
-
-      const getRes = http.get(frontendURL + '/products');
-      if (getRes.status !== 200) {
-        console.error('Get products failed - Status: ' + getRes.status);
-      }
-    }
-    JS
+export default function () {
+  const url = 'http://localhost:8080/health';
+  const response = http.get(url);
+  console.log('Response status:', response.status);
+}
+EOF
 
     cat >/etc/systemd/system/k6-loadtest.service <<EOF
-    [Unit]
-    Description=K6 Load Test Runner
-    After=network-online.target
+[Unit]
+Description=K6 Load Test Runner
+After=network-online.target
 
-    [Service]
-    Environment=FRONTEND_URL=${var.k6_frontend_url}
-    ExecStart=/usr/bin/k6 run /opt/k6/tests/loadtest.js
-    Restart=on-failure
-    WorkingDirectory=/opt/k6/tests
+[Service]
+# Environment variable for target service URL
+# Set this to your application's URL when ready to test
+# Example: Environment=K6_TARGET_SERVICE_URL=https://your-app.example.com
+Environment=K6_TARGET_SERVICE_URL=
+ExecStart=/usr/bin/k6 run /opt/k6/tests/loadtest.js
+Restart=on-failure
+WorkingDirectory=/opt/k6/tests
 
-    [Install]
-    WantedBy=multi-user.target
-    EOF
+[Install]
+WantedBy=multi-user.target
+EOF
 
     systemctl daemon-reload
     systemctl enable k6-loadtest
@@ -395,4 +415,6 @@ resource "aws_instance" "monitoring" {
 
 
   tags = { Name = "k6-runner" }
+
+
 }
