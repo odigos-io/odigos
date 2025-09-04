@@ -80,9 +80,9 @@ spec:
               echo "=== Environment Variable Handling Summary ==="
 
               # Verify that workloads with environment variables are properly instrumented
-              EXPECTED_DEPLOYMENTS=("nodejs-dockerfile-env" "nodejs-manifest-env" "java-supported-docker-env" "java-supported-manifest-env" "python-alpine")
+              EXPECTED_DEPLOYMENTS="nodejs-dockerfile-env nodejs-manifest-env java-supported-docker-env java-supported-manifest-env python-alpine"
 
-              for deployment in "${EXPECTED_DEPLOYMENTS[@]}"; do
+              for deployment in $EXPECTED_DEPLOYMENTS; do
                 echo "Checking instrumentation for $deployment..."
                 if kubectl get instrumentationconfig deployment-$deployment -o jsonpath='{.status.conditions[?(@.type=="AgentEnabled")].status}' | grep -q "True"; then
                   echo "✅ $deployment is properly instrumented"
