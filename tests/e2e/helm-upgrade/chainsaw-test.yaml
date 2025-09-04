@@ -145,33 +145,33 @@ spec:
                   --set nodeSelector."kubernetes\.io/os"=linux
               fi
             timeout: 3m
+        - assert:
+            file: ../../common/assert/odigos-upgraded.yaml
+            timeout: 3m
+      catch:
         - script:
             content: |
               #!/bin/bash
               set -e
 
-              echo "=== Determining appropriate assertion file based on Kubernetes version ==="
+              echo "=== Handling upgrade assertion failure - checking if K8s 1.20.15 exception applies ==="
 
               # Get Kubernetes version (compatible with older kubectl versions)
               K8S_VERSION=$(kubectl version --client=false -o json | jq -r '.serverVersion.gitVersion')
               echo "Kubernetes version: $K8S_VERSION"
 
-              # Determine which assertion file to use (using POSIX-compatible syntax)
+              # Check if we're on Kubernetes 1.20.15
               case "$K8S_VERSION" in
                 *v1.20.15*)
-                  echo "⚠️  Using K8s 1.20.15 specific assertion (allows odiglet restarts due to legacy API issues)"
-                  ASSERT_FILE="../../common/assert/odigos-upgraded-k8s-120.yaml"
+                  echo "⚠️  Detected Kubernetes 1.20.15 - using K8s 1.20.15 specific assertion (allows odiglet restarts due to legacy API issues)"
+                  # Run the K8s 1.20.15 specific assertion
+                  chainsaw assert --file "../../common/assert/odigos-upgraded-k8s-120.yaml" --timeout 3m
                   ;;
                 *)
-                  echo "Using standard assertion file"
-                  ASSERT_FILE="../../common/assert/odigos-upgraded.yaml"
+                  echo "❌ Upgrade assertion failed and not on K8s 1.20.15 - this is a real failure"
+                  exit 1
                   ;;
               esac
-
-              echo "Using assertion file: $ASSERT_FILE"
-
-              # Run the appropriate assertion
-              chainsaw assert --file "$ASSERT_FILE" --timeout 3m
             timeout: 3m
 
     - name: Verify Helm upgrade version
