@@ -123,7 +123,6 @@ status:
   containerStatuses:
     - name: data-collection
       ready: true
-      restartCount: 0
       started: true
     - name: deviceplugin
       ready: true
@@ -198,7 +197,6 @@ status:
   containerStatuses:
     - name: data-collection
       ready: true
-      restartCount: 0
       started: true
     - name: deviceplugin
       ready: true

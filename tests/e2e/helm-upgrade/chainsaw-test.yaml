@@ -136,8 +136,8 @@ spec:
               fi
             timeout: 3m
         - assert:
-          file: ../../common/assert/odigos-upgraded.yaml
-          timeout: 3m
+            file: ../../common/assert/odigos-upgraded.yaml
+            timeout: 3m
       catch:
         - get:
             apiVersion: v1
