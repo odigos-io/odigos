@@ -190,6 +190,8 @@ spec:
               mountPath: /sys/kernel/debug
             - name: odigos-go-offsets
               mountPath: /offsets
+            - name: exchange-dir
+              mountPath: /var/exchange
         - name: data-collection
           image: '{{ template "utils.imageName" (dict "Values" .Values "Component" "collector" "Tag" $imageTag) }}'
           imagePullPolicy: IfNotPresent
@@ -256,6 +258,8 @@ spec:
               mountPath: /hostfs
               readOnly: true
             {{- end }}
+            - name: exchange-dir
+              mountPath: /var/exchange
 # if hostMounts are not allowed we must use mountMethod of "k8s-init-container"
 {{- if and (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) (.Values.odiglet.noHostPathMounts) }}
 {{ fail "if HostPath mounts are not allowed mount method must be k8s-init-container" }}
@@ -367,6 +371,8 @@ spec:
         - name: odigos
           hostPath:
             path: /var/odigos
+        - name: exchange-dir
+          emptyDir: {}
       {{- end }} # end of hostPath mounts that are not mandatory
         # needed to load eBPF tracepoints - used by runtime-detector
       {{- if .Values.odiglet.noHostPid }}
