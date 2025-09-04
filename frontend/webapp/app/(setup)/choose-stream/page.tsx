@@ -2,7 +2,7 @@
 
 import React, { useRef } from 'react';
 import { useSetupHelpers } from '@/hooks';
-import { SetupHeader } from '@/components';
+import { OnboardingContentWrapper, SetupHeader } from '@/components';
 import { DataStreamSelectionForm, type DataStreamSelectionFormRef } from '@odigos/ui-kit/containers';
 
 export default function Page() {
@@ -12,7 +12,9 @@ export default function Page() {
   return (
     <>
       <SetupHeader step={2} streamFormRef={formRef} />
-      <DataStreamSelectionForm ref={formRef} isModal={false} onClickSummary={onClickSummary} />
+      <OnboardingContentWrapper>
+        <DataStreamSelectionForm ref={formRef} isModal={false} onClickSummary={onClickSummary} />
+      </OnboardingContentWrapper>
     </>
   );
 }
