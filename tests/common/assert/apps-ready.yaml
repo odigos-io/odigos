@@ -11,6 +11,10 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -25,6 +29,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -39,6 +45,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -53,6 +61,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -67,6 +77,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -81,6 +93,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -95,6 +109,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -109,6 +125,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 
 apiVersion: apps/v1
@@ -124,6 +142,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -138,6 +158,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -152,6 +174,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -166,6 +190,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -180,6 +206,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -194,6 +222,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -215,6 +245,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -236,6 +268,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -259,6 +293,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -280,6 +316,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -301,6 +339,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -315,6 +355,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -329,6 +371,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -343,6 +387,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -357,6 +403,8 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -371,4 +419,6 @@ status:
       status: "True"
   readyReplicas: 1
   replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
 ---
