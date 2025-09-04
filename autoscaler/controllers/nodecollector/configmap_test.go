@@ -126,10 +126,20 @@ func TestCalculateConfigMapData(t *testing.T) {
 	}
 
 	got, err := calculateConfigMapData(
-		&v1alpha1.InstrumentationConfigList{
+		&odigosv1.CollectorsGroup{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
+			Spec: odigosv1.CollectorsGroupSpec{
+				CollectorOwnMetricsPort: 4317,
+			},
+		},
+		&odigosv1.InstrumentationConfigList{
 			Items: items,
 		},
-		NewMockDestinationList(),
+		[]common.ObservabilitySignal{
+			common.LogsObservabilitySignal,
+			common.MetricsObservabilitySignal,
+			common.TracesObservabilitySignal,
+		},
 		[]*v1alpha1.Processor{
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "test_processor"},
@@ -148,8 +158,7 @@ func TestCalculateConfigMapData(t *testing.T) {
 					},
 				},
 			},
-		},
-		false, common.CommunityOdigosTier)
+		})
 
 	assert.Equal(t, err, nil)
 	assert.Equal(t, want, got)
