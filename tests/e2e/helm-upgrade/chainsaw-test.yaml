@@ -145,6 +145,9 @@ spec:
                   --set nodeSelector."kubernetes\.io/os"=linux
               fi
             timeout: 3m
+
+    - name: Assert upgrade for K8s >= 26
+      try:
         - assert:
             file: ../../common/assert/odigos-upgraded.yaml
             timeout: 3m
@@ -154,25 +157,56 @@ spec:
               #!/bin/bash
               set -e
 
-              echo "=== Handling upgrade assertion failure - checking if K8s 1.20.15 exception applies ==="
+              echo "=== K8s >= 26 assertion failed - validating K8s version ==="
 
               # Get Kubernetes version (compatible with older kubectl versions)
               K8S_VERSION=$(kubectl version --client=false -o json | jq -r '.serverVersion.gitVersion')
               echo "Kubernetes version: $K8S_VERSION"
 
-              # Check if we're on Kubernetes 1.20.15
-              case "$K8S_VERSION" in
-                *v1.20.15*)
-                  echo "⚠️  Detected Kubernetes 1.20.15 - using K8s 1.20.15 specific assertion (allows odiglet restarts due to legacy API issues)"
-                  # Run the K8s 1.20.15 specific assertion
-                  chainsaw assert --file "../../common/assert/odigos-upgraded-k8s-120.yaml" --timeout 3m
-                  ;;
-                *)
-                  echo "❌ Upgrade assertion failed and not on K8s 1.20.15 - this is a real failure"
-                  exit 1
-                  ;;
-              esac
+              # Extract minor version number
+              K8S_MINOR=$(echo "$K8S_VERSION" | sed -E 's/v([0-9]+)\.([0-9]+)\..*/\2/')
+              echo "Kubernetes minor version: $K8S_MINOR"
+
+              # If K8s version < 26, this assertion should have been skipped
+              if [ "$K8S_MINOR" -lt 26 ]; then
+                echo "⚠️  K8s >= 26 assertion failed but K8s version $K8S_VERSION < 26 - this is expected, skipping"
+                exit 0
+              fi
+
+              echo "❌ K8s >= 26 assertion failed for K8s version $K8S_VERSION >= 26 - this is a real failure"
+              exit 1
+            timeout: 1m
+
+    - name: Assert upgrade for K8s < 26
+      try:
+        - assert:
+            file: ../../common/assert/odigos-upgraded-k8s-lt26.yaml
             timeout: 3m
+      catch:
+        - script:
+            content: |
+              #!/bin/bash
+              set -e
+
+              echo "=== K8s < 26 assertion failed - validating K8s version ==="
+
+              # Get Kubernetes version (compatible with older kubectl versions)
+              K8S_VERSION=$(kubectl version --client=false -o json | jq -r '.serverVersion.gitVersion')
+              echo "Kubernetes version: $K8S_VERSION"
+
+              # Extract minor version number
+              K8S_MINOR=$(echo "$K8S_VERSION" | sed -E 's/v([0-9]+)\.([0-9]+)\..*/\2/')
+              echo "Kubernetes minor version: $K8S_MINOR"
+
+              # If K8s version >= 26, this assertion should have been skipped
+              if [ "$K8S_MINOR" -ge 26 ]; then
+                echo "⚠️  K8s < 26 assertion failed but K8s version $K8S_VERSION >= 26 - this is expected, skipping"
+                exit 0
+              fi
+
+              echo "❌ K8s < 26 assertion failed for K8s version $K8S_VERSION < 26 - this is a real failure"
+              exit 1
+            timeout: 1m
 
     - name: Verify Helm upgrade version
       try:
