@@ -387,6 +387,12 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 				HostPath: &corev1.HostPathVolumeSource{Path: "/sys/kernel/debug"},
 			},
 		},
+		{
+			Name: "exchange-dir",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
 	}
 	// Logs volumes
 	if logsEnabled {
@@ -418,7 +424,9 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 	}
 
 	// Build the data-collection container mounts (only for its container)
-	dataCollectionMounts := []corev1.VolumeMount{}
+	dataCollectionMounts := []corev1.VolumeMount{
+		{Name: "exchange-dir", MountPath: "/var/exchange"},
+	}
 	if logsEnabled {
 		dataCollectionMounts = append(dataCollectionMounts,
 			corev1.VolumeMount{Name: "varlog", MountPath: "/var/log", ReadOnly: true},
@@ -648,6 +656,10 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 								{
 									Name:      "kernel-debug",
 									MountPath: "/sys/kernel/debug",
+								},
+								{
+									Name:      "exchange-dir",
+									MountPath: "/var/exchange",
 								},
 							}, additionalVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
