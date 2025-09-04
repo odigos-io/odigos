@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io/fs"
+	"net"
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/cilium/ebpf"
@@ -17,6 +20,7 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"go.uber.org/zap"
+	"golang.org/x/sys/unix"
 	"google.golang.org/protobuf/proto"
 
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -51,7 +55,7 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 		defer r.wg.Done()
 
 		// Step 1: wait for the map once
-		m, err := r.waitForPinnedMap(ctx)
+		m, err := r.waitForSocketFD(ctx, "/var/exchange/exchange.sock")
 		if err != nil {
 			r.logger.Warn("odigos-ebpf: failed to wait for pinned map", zap.Error(err))
 			return
@@ -283,4 +287,125 @@ func convertResourceSpansToPdata(resourceSpans *tracepb.ResourceSpans) ptrace.Tr
 	}
 
 	return traces
+}
+
+func (r *ebpfReceiver) waitForSocketFD(ctx context.Context, socketPath string) (*ebpf.Map, error) {
+	raddr, err := net.ResolveUnixAddr("unix", socketPath)
+	if err != nil {
+		return nil, fmt.Errorf("resolve unix addr: %w", err)
+	}
+
+	// Quick path: try to dial immediately.
+	if m, err := r.tryDialAndRecv(raddr); err == nil {
+		return m, nil
+	} else if !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, syscall.ECONNREFUSED) {
+		// A "real" error, not just "not ready yet"
+		return nil, err
+	}
+
+	r.logger.Info("socket not ready; waiting for creation", zap.String("path", socketPath))
+
+	dir := filepath.Dir(socketPath)
+
+	// Try fsnotify
+	watcher, wErr := fsnotify.NewWatcher()
+	if wErr == nil {
+		if addErr := watcher.Add(dir); addErr != nil {
+			r.logger.Warn("fsnotify watcher failed; falling back to polling",
+				zap.String("dir", dir), zap.Error(addErr))
+			_ = watcher.Close()
+			watcher = nil
+		}
+	} else {
+		r.logger.Warn("fsnotify not available; falling back to polling", zap.Error(wErr))
+	}
+
+	// If watcher works, wait on events
+	if watcher != nil {
+		defer watcher.Close()
+		for {
+			// Try before blocking, in case we missed the event
+			if m, err := r.tryDialAndRecv(raddr); err == nil {
+				return m, nil
+			}
+
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case ev := <-watcher.Events:
+				if ev.Name == socketPath && ev.Op&fsnotify.Create != 0 {
+					if m, err := r.tryDialAndRecv(raddr); err == nil {
+						r.logger.Info("socket connected and FD received", zap.String("path", socketPath))
+						return m, nil
+					}
+				}
+			case werr := <-watcher.Errors:
+				if werr != nil {
+					r.logger.Warn("fsnotify error; switching to polling", zap.Error(werr))
+					watcher.Close()
+					watcher = nil
+					break
+				}
+			}
+			if watcher == nil {
+				break
+			}
+		}
+	}
+
+	// Fallback polling loop
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(2 * time.Second):
+			if m, err := r.tryDialAndRecv(raddr); err == nil {
+				r.logger.Info("socket connected and FD received (polling)", zap.String("path", socketPath))
+				return m, nil
+			}
+		}
+	}
+}
+
+func (r *ebpfReceiver) tryDialAndRecv(raddr *net.UnixAddr) (*ebpf.Map, error) {
+	conn, err := net.DialUnix("unix", nil, raddr)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	fd, err := recvFD(conn)
+	if err != nil {
+		return nil, err
+	}
+	return ebpf.NewMapFromFD(fd)
+}
+
+func recvFD(c *net.UnixConn) (int, error) {
+	buf := make([]byte, 1)
+	oob := make([]byte, unix.CmsgSpace(4))
+
+	_, oobn, _, _, err := c.ReadMsgUnix(buf, oob)
+	if err != nil {
+		return -1, fmt.Errorf("readmsg: %w", err)
+	}
+
+	msgs, err := unix.ParseSocketControlMessage(oob[:oobn])
+	if err != nil {
+		return -1, fmt.Errorf("parse scm: %w", err)
+	}
+
+	if len(msgs) != 1 {
+		return -1, fmt.Errorf("expected 1 control message got %d", len(msgs))
+	}
+
+	fds, err := unix.ParseUnixRights(&msgs[0])
+	if err != nil {
+		return -1, fmt.Errorf("parse rights: %w", err)
+	}
+	if len(fds) == 0 {
+		return -1, fmt.Errorf("no fd received")
+	}
+
+	return fds[0], nil
 }
