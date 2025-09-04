@@ -1,3 +1,9 @@
+# User should be specifying the signals they want to collect.
+signals:
+  - traces
+  - metrics
+  - logs
+
 image:
   tag: 'v1.0.218'
 imagePullSecrets: []

@@ -154,6 +154,7 @@ runs:
     # 14) Cluster diagnostics
     - name: Cluster diagnostics
       if: failure()
+      shell: bash
       run: |
         echo "==== Nodes ===="; kubectl get nodes -o wide
         echo "==== Pods (all namespaces) ===="; kubectl get pods -A -o wide

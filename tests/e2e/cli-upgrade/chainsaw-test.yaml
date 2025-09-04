@@ -59,7 +59,8 @@ spec:
               ./odigos install --namespace odigos-test
         - assert:
             timeout: 3m
-            file: ../../common/assert/odigos-installed.yaml
+            file: ../../common/assert/latest-odigos-version-installed.yaml
+
     - name: Assert Trace DB is up
       try:
         - assert:

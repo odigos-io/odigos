@@ -10,7 +10,7 @@ spec:
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
-    
+
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
@@ -52,12 +52,12 @@ spec:
                 --create-namespace \
                 --namespace odigos-test \
                 --set nodeSelector."kubernetes\.io/os"=linux
-              
+
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
             timeout: 3m
-            file: ../../common/assert/odigos-installed.yaml
-    
+            file: ../../common/assert/latest-odigos-version-installed.yaml
+
     - name: Assert Trace DB is up
       try:
         - assert:

@@ -105,7 +105,7 @@ jobs:
 
       - name: Retag existing images to stable
         run: |
-            IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor")
+            IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor", "odigos-operator")
             REPOS=(${GCR_REPO} ${GHCR_REPO} ${DOCKERHUB_REPO})
             UBI9_SUFFIXES=("" "-ubi9")
             # Track failed copies for potential rollback
