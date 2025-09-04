@@ -1,4 +1,5 @@
-# Disable full Prometheus & Alertmanager
+# Prometheus Stack Configuration
+# Disable full Prometheus & Alertmanager (we'll use PrometheusAgent instead)
 prometheus:
   enabled: false
 

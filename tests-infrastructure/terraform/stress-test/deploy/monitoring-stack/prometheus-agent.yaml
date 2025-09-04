@@ -12,7 +12,7 @@ spec:
   podMonitorNamespaceSelector: {}
   probeSelector: {}
   remoteWrite:
-  - url: "http://10.0.1.40:9090/api/v1/write"
+  - url: "http://${ec2_ip}:9090/api/v1/write"
     writeRelabelConfigs:
       # Add cluster label
       - targetLabel: cluster
