@@ -48,6 +48,9 @@ func (r *OdigosSamplingReconciler) syncOdigosSamplingProcessor(ctx context.Conte
 	if err != nil {
 		return err
 	}
+	if samplingConf == nil {
+		return nil
+	}
 
 	samplingConfigJson, err := json.Marshal(samplingConf)
 	if err != nil {
@@ -81,13 +84,13 @@ func (r *OdigosSamplingReconciler) syncOdigosSamplingProcessor(ctx context.Conte
 }
 
 // samplersConfig converts the SamplersConfig to the appropriate processor configuration
-func samplersConfig(ctx context.Context, client client.Client, namespace string) (sampling.SamplingConfig, []metav1.OwnerReference, error) {
+func samplersConfig(ctx context.Context, client client.Client, namespace string) (any, []metav1.OwnerReference, error) {
 	desiredActions, err := getRelevantActions(ctx, client, namespace)
 	if err != nil {
-		return sampling.SamplingConfig{}, nil, err
+		return nil, nil, err
 	}
 	if len(desiredActions) == 0 {
-		return sampling.SamplingConfig{}, nil, nil
+		return nil, nil, nil
 	}
 
 	var (
@@ -97,11 +100,18 @@ func samplersConfig(ctx context.Context, client client.Client, namespace string)
 		endpointRules     []sampling.Rule
 	)
 
+	// Track owner references by UID to avoid duplicates
+	ownerRefsByUID := make(map[string]metav1.OwnerReference)
+
 	for actionType, actions := range desiredActions {
 		handler := sampling.SamplingSupportedActions[actionType]
 
 		for _, action := range actions {
-			actionsReferences = append(actionsReferences, handler.GetActionReference(action))
+			ownerRef := handler.GetActionReference(action)
+			// Only add if we haven't seen this UID before
+			if ownerRef.UID != "" {
+				ownerRefsByUID[string(ownerRef.UID)] = ownerRef
+			}
 
 			actionScope := handler.GetActionScope(action)
 			switch actionScope {
@@ -113,8 +123,13 @@ func samplersConfig(ctx context.Context, client client.Client, namespace string)
 				endpointRules = append(endpointRules, handler.GetRuleConfig(action)...)
 			}
 
-			ReportReconciledToProcessor(ctx, client, action)
+			//ReportReconciledToProcessor(ctx, client, action)
 		}
+	}
+
+	// Convert map to slice
+	for _, ownerRef := range ownerRefsByUID {
+		actionsReferences = append(actionsReferences, ownerRef)
 	}
 
 	samplingConf := sampling.SamplingConfig{
@@ -146,7 +161,7 @@ func getRelevantActions(ctx context.Context, client client.Client, namespace str
 			// filter actions with invalid configuration
 			if err := handler.ValidateRuleConfig(handler.GetRuleConfig(action)); err != nil {
 				logger.V(0).Error(err, "Failed to validate rule config")
-				ReportReconciledToProcessorFailed(ctx, client, action, "FailedToTransformToProcessorReason", err.Error())
+				//ReportReconciledToProcessorFailed(ctx, client, action, "FailedToTransformToProcessorReason", err.Error())
 				continue
 			}
 

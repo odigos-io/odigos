@@ -115,6 +115,9 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 			if err != nil {
 				return nil, err
 			}
+			if config == nil {
+				return nil, nil
+			}
 
 			samplingConfigJson, err := json.Marshal(config)
 			if err != nil {
@@ -261,11 +264,11 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		statusErr := r.reportReconciledToProcessorFailed(ctx, action, odigosv1.ActionTransformedToProcessorReasonFailedToCreateProcessor, err)
 		if statusErr == nil {
-			return ctrl.Result{}, err // return original error on success
+			return utils.K8SUpdateErrorHandler(err)
 		} else {
 			logger := ctrl.LoggerFrom(ctx)
 			logger.Error(statusErr, "Failed to set status on action")
-			return ctrl.Result{}, err // return original error if the patch fails
+			return utils.K8SUpdateErrorHandler(err)
 		}
 	}
 

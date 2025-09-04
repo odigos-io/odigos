@@ -68,13 +68,13 @@ func (h *LatencySamplerHandler) List(ctx context.Context, c client.Client, names
 	if err := c.List(ctx, &list, client.InNamespace(namespace)); err != nil && client.IgnoreNotFound(err) != nil {
 		return nil, err
 	}
-	items := make([]metav1.Object, len(list.Items))
+	items := make([]metav1.Object, 0)
 	for i, item := range list.Items {
 		if item.Spec.Samplers.LatencySampler != nil {
-			items[i] = &item
+			items = append(items, &list.Items[i])
 		}
 	}
-	items = append(legacyItems, items...)
+	items = append(items, legacyItems...)
 	return items, nil
 }
 
