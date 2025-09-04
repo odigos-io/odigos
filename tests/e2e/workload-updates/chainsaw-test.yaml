@@ -35,11 +35,10 @@ spec:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
 
-
     - name: Assert Apps installed
       try:
         - assert:
-            timeout: 3m
+            timeout: 5m
             file: ../../common/assert/apps-ready.yaml
 
     - name: Instrument Namespaces

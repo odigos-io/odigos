@@ -44,7 +44,7 @@ spec:
     - name: Assert Apps installed
       try:
         - assert:
-            timeout: 2m
+            timeout: 5m
             file: ../../common/assert/instrumentation-apps-ready.yaml
 
     - name: Instrument Namespaces

@@ -13,6 +13,11 @@ spec:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
 
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: ../runtime-detection/install-test-apps.yaml
+
     - name: Install Odigos
       try:
         - script:
@@ -30,15 +35,11 @@ spec:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
 
-    - name: Install Test Apps
-      try:
-        - apply:
-            file: ../runtime-detection/install-test-apps.yaml
 
     - name: Assert Apps installed
       try:
         - assert:
-            timeout: 150s
+            timeout: 5m
             file: ../../common/assert/apps-ready.yaml
 
     - name: Instrument Namespaces

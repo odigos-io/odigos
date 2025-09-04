@@ -6,17 +6,6 @@ spec:
   description: Run E2E tests against Odigos UI using Cypress
   skipDelete: true
   steps:
-    - name: Install Odigos CLI
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              ../../../cli/odigos install --version e2e-test --namespace odigos-test
-              ../../common/verify_odigos_installation.sh odigos-test
-        - assert:
-            timeout: 3m
-            file: ../../common/assert/odigos-installed.yaml
-
     - name: Install - Simple Demo Apps
       try:
         - apply:
@@ -31,8 +20,18 @@ spec:
               kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
               kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
               kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
+
+    - name: Install Odigos CLI
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              ../../../cli/odigos install --version e2e-test --namespace odigos-test
+              ../../common/verify_odigos_installation.sh odigos-test
         - assert:
-            file: ../../common/assert/simple-demo-installed.yaml
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
 
     - name: Install - Jaeger
       try:
@@ -44,6 +43,11 @@ spec:
               kubectl wait --for=condition=ready pod -l app=jaeger -n tracing --timeout=60s
         - assert:
             file: ../../common/assert/jaeger-installed.yaml
+
+    - name: Assert - Simple Demo Apps Installed
+      try:
+        - assert:
+            file: ../../common/assert/simple-demo-installed.yaml
 
     - name: Start UI from CLI
       try:
