@@ -26,17 +26,39 @@ const (
 	OdigletDefaultHealthProbeBindPort = 55683
 
 	// ConfigMap used to store custom/updated Go instrumentation offsets
-	GoOffsetsConfigMap      = "odigos-go-offsets"
-	GoOffsetsFileName       = "go_offset_results.json"
-	GoOffsetsEnvVar         = "OTEL_GO_OFFSETS_FILE"
-	OffsetFileMountPath     = "/offsets"
-	OffsetCronJobName       = "odigos-go-offsets-updater"
-	OffsetCronJobModeDirect = "direct"
-	OffsetCronJobModeImage  = "image"
+	GoOffsetsConfigMap  = "odigos-go-offsets"
+	GoOffsetsFileName   = "go_offset_results.json"
+	GoOffsetsEnvVar     = "OTEL_GO_OFFSETS_FILE"
+	OffsetFileMountPath = "/offsets"
+	OffsetCronJobName   = "odigos-go-offsets-updater"
 
 	OdigletLocalTrafficServiceName = "odiglet-local"
 	OdigletMetricsServerPort       = 8080
 )
+
+// OffsetCronJobMode represents the mode for the Go offsets cron job
+type OffsetCronJobMode string
+
+const (
+	OffsetCronJobModeDirect OffsetCronJobMode = "direct"
+	OffsetCronJobModeImage  OffsetCronJobMode = "image"
+	OffsetCronJobModeOff    OffsetCronJobMode = "off"
+)
+
+// IsValid returns true if the mode is a valid OffsetCronJobMode
+func (m OffsetCronJobMode) IsValid() bool {
+	switch m {
+	case OffsetCronJobModeDirect, OffsetCronJobModeImage, OffsetCronJobModeOff:
+		return true
+	default:
+		return false
+	}
+}
+
+// String returns the string representation of the mode
+func (m OffsetCronJobMode) String() string {
+	return string(m)
+}
 
 var OdigletOSSInstalled = map[string]string{
 	OdigletOSSInstalledLabel: OdigletInstalledLabelValue,
