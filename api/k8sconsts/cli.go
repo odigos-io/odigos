@@ -10,5 +10,5 @@ const (
 
 const (
 	CliImageName        = "odigos-cli"
-	CLIOffsetsImageName = "odigos-cli-offsets"
+	CliOffsetsImageName = "odigos-cli-offsets"
 )

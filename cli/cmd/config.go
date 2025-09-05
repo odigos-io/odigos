@@ -459,8 +459,12 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 			return fmt.Errorf("%s expects exactly one value", property)
 		}
 		modeValue := value[0]
-		if modeValue != "" && modeValue != k8sconsts.OffsetCronJobModeDirect && modeValue != k8sconsts.OffsetCronJobModeImage {
-			return fmt.Errorf("invalid mode: %s. Must be either '%s' or '%s'", modeValue, k8sconsts.OffsetCronJobModeDirect, k8sconsts.OffsetCronJobModeImage)
+		if modeValue != "" {
+			mode := k8sconsts.OffsetCronJobMode(modeValue)
+			if !mode.IsValid() {
+				return fmt.Errorf("invalid mode: %s. Must be one of: %s, %s, %s",
+					modeValue, k8sconsts.OffsetCronJobModeDirect, k8sconsts.OffsetCronJobModeImage, k8sconsts.OffsetCronJobModeOff)
+			}
 		}
 		config.GoAutoOffsetsMode = modeValue
 
