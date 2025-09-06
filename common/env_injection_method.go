@@ -16,3 +16,15 @@ const (
 	// and taking into account the user defined values and appending if necessary.
 	LoaderFallbackToPodManifestInjectionMethod EnvInjectionMethod = "loader-fallback-to-pod-manifest"
 )
+
+// +kubebuilder:validation:Enum=loader;pod-manifest
+type EnvInjectionDecision string
+
+// The decision on the actual injection method to use for a specific pod.
+// While the configuration allows one to choose options with fallbaks,
+// this decision is based on the runtime inspection, user overrides, and the distro support,
+// and reflects what odigos is actually plan to use.
+const (
+	EnvInjectionDecisionLoader      EnvInjectionDecision = "loader"
+	EnvInjectionDecisionPodManifest EnvInjectionDecision = "pod-manifest"
+)

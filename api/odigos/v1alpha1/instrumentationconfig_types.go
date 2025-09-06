@@ -290,13 +290,11 @@ type ContainerAgentConfig struct {
 	// Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
 	DistroParams map[string]string `json:"distroParams,omitempty"`
 
-	// this value is calculated (at the moment) based on the config, runtime inspection and the user defined overrides.
-	// This field carries the following semantics:
-	// - nil: do not inject any "append variables" (PYTHONPATH, NODE_OPTIONS, etc.) at all.
-	// - "loader": inject the LD_PRELOAD env var to the pod manifest which will trigger the odigos loader.
-	// - "pod-manifest": inject the runtime specific agent loading env vars (e.g PYTHONPATH, NODE_OPTIONS) to the pod manifest as specified in the distro manifest.
-	// - "loader-fallback-to-pod-manifest": use "pod-manifest". it means we tried LD_PRELOAD and it failed, so we falled-back to the pod manifest.
-	EnvInjectionMethod *common.EnvInjectionMethod `json:"agentInjectionMethod,omitempty"`
+	// What method to use for injecting the agent environment variables (just those covered by the loader (PYTHONPATH, JAVA_TOOLS_OPTIONS, NODE_OPTIONS))
+	// Can be either "loader" or "pod-manifest".
+	// The injection should still check the actual values in the container manifest before injecting.
+	// Nil means that this container should not have env injection (agent should not be injected, or distro does not specify "loader" injection envs).
+	EnvInjectionMethod *common.EnvInjectionDecision `json:"envInjectionMethod,omitempty"`
 
 	// Each enabled signal must be set with a non-nil value (even if the config content is empty).
 	// nil means that the signal is disabled and should not be instrumented/collected by the agent.
