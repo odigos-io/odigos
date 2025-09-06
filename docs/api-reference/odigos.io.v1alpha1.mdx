@@ -1139,20 +1139,16 @@ Keys are parameter names (like &quot;libc&quot;) and values are the value to use
 </tr>
 <tr>
 <td>
-<code>agentInjectionMethod</code> <B>[Required]</B>
+<code>envInjectionMethod</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#EnvInjectionMethod"><code>common.EnvInjectionMethod</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#EnvInjectionDecision"><code>common.EnvInjectionDecision</code></a>
 </td>
 <td>
-   <p>this value is calculated (at the moment) based on the config, runtime inspection and the user defined overrides.
-This field carries the following semantics:</p>
-<ul>
-<li>nil: do not inject any &quot;append variables&quot; (PYTHONPATH, NODE_OPTIONS, etc.) at all.</li>
-<li>&quot;loader&quot;: inject the LD_PRELOAD env var to the pod manifest which will trigger the odigos loader.</li>
-<li>&quot;pod-manifest&quot;: inject the runtime specific agent loading env vars (e.g PYTHONPATH, NODE_OPTIONS) to the pod manifest as specified in the distro manifest.</li>
-<li>&quot;loader-fallback-to-pod-manifest&quot;: use &quot;pod-manifest&quot;. it means we tried LD_PRELOAD and it failed, so we falled-back to the pod manifest.</li>
-</ul>
+   <p>What method to use for injecting the agent environment variables (just those covered by the loader (PYTHONPATH, JAVA_TOOLS_OPTIONS, NODE_OPTIONS))
+Can be either &quot;loader&quot; or &quot;pod-manifest&quot;.
+The injection should still check the actual values in the container manifest before injecting.
+Nil means that this container should not have env injection (agent should not be injected, or distro does not specify &quot;loader&quot; injection envs).</p>
 </td>
 </tr>
 <tr>
