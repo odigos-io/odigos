@@ -8,5 +8,5 @@ type ControllerConfig struct {
 	CollectorImage string
 
 	// TODO: remove this once https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/issues/1026 is handled
-	OnGKE          bool
+	OnGKE bool
 }
