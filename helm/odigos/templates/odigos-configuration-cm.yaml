@@ -163,3 +163,9 @@ data:
     {{- if .Values.allowConcurrentAgents.enabled }}
     allowConcurrentAgents: {{ .Values.allowConcurrentAgents.enabled }}
     {{- end }}
+    {{- if .Values.goAutoOffsetsCron }}
+    goAutoOffsetsCron: {{ .Values.goAutoOffsetsCron }}
+    {{- end }}
+    {{- if .Values.goAutoOffsetsMode }}
+    goAutoOffsetsMode: {{ .Values.goAutoOffsetsMode }}
+    {{- end }}

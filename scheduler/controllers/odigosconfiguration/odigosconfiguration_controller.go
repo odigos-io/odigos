@@ -194,8 +194,33 @@ func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Conte
 		apiVersion = "batch/v1"
 	}
 
-	if config.GoAutoOffsetsCron == "" {
+	// Determine the mode to use (default to "direct" if not specified)
+	mode := k8sconsts.OffsetCronJobMode(config.GoAutoOffsetsMode)
+	if mode == "" {
+		mode = k8sconsts.OffsetCronJobModeDirect
+	}
+
+	// Validate the mode
+	if !mode.IsValid() {
+		return fmt.Errorf("invalid go-auto-offsets-mode: %s. Must be one of: %s, %s, %s",
+			mode, k8sconsts.OffsetCronJobModeDirect, k8sconsts.OffsetCronJobModeImage, k8sconsts.OffsetCronJobModeOff)
+	}
+
+	if config.GoAutoOffsetsCron == "" || mode == k8sconsts.OffsetCronJobModeOff {
 		return deleteCronJob(ctx, r.Client, ns, apiVersion)
+	}
+
+	// Determine image name and command based on mode
+	var imageName string
+	var command []string
+
+	switch mode {
+	case k8sconsts.OffsetCronJobModeDirect:
+		imageName = k8sconsts.CliImageName
+		command = []string{"pro", "update-offsets"}
+	case k8sconsts.OffsetCronJobModeImage:
+		imageName = k8sconsts.CliOffsetsImageName
+		command = []string{"pro", "update-offsets", "--from-file", "/odigos/offset_results_min.json"}
 	}
 
 	typeMeta := metav1.TypeMeta{
@@ -214,9 +239,9 @@ func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Conte
 			ServiceAccountName: k8sconsts.SchedulerServiceAccountName,
 			Containers: []corev1.Container{
 				{
-					Name:  k8sconsts.CliImageName,
-					Image: fmt.Sprintf("%s/%s:%s", config.ImagePrefix, k8sconsts.CliImageName, r.OdigosVersion),
-					Args:  []string{"pro", "update-offsets"},
+					Name:  imageName,
+					Image: fmt.Sprintf("%s/%s:%s", config.ImagePrefix, imageName, r.OdigosVersion),
+					Args:  command,
 				},
 			},
 			RestartPolicy: corev1.RestartPolicyNever,
