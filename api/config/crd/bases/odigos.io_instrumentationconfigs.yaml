@@ -161,9 +161,12 @@ spec:
                         containerName:
                           type: string
                         criErrorMessage:
-                          description: Stores the error message from the CRI runtime
-                            if returned to prevent instrumenting the container if
-                            an error exists.
+                          description: |-
+                            CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+                            Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+                            Thus, this field is set only when there is:
+                            - Actual CRI check failed
+                            - The observed environment variables might come from container runtime
                           type: string
                         envFromContainerRuntime:
                           description: Holds the environment variables retrieved from
@@ -746,9 +749,12 @@ spec:
                     containerName:
                       type: string
                     criErrorMessage:
-                      description: Stores the error message from the CRI runtime if
-                        returned to prevent instrumenting the container if an error
-                        exists.
+                      description: |-
+                        CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+                        Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+                        Thus, this field is set only when there is:
+                        - Actual CRI check failed
+                        - The observed environment variables might come from container runtime
                       type: string
                     envFromContainerRuntime:
                       description: Holds the environment variables retrieved from
