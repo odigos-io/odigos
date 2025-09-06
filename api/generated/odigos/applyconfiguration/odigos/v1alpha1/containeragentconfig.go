@@ -31,7 +31,7 @@ type ContainerAgentConfigApplyConfiguration struct {
 	AgentEnabledMessage *string                            `json:"agentEnabledMessage,omitempty"`
 	OtelDistroName      *string                            `json:"otelDistroName,omitempty"`
 	DistroParams        map[string]string                  `json:"distroParams,omitempty"`
-	EnvInjectionMethod  *common.EnvInjectionMethod         `json:"agentInjectionMethod,omitempty"`
+	EnvInjectionMethod  *common.EnvInjectionDecision       `json:"envInjectionMethod,omitempty"`
 	Traces              *odigosv1alpha1.AgentTracesConfig  `json:"traces,omitempty"`
 	Metrics             *odigosv1alpha1.AgentMetricsConfig `json:"metrics,omitempty"`
 	Logs                *odigosv1alpha1.AgentLogsConfig    `json:"logs,omitempty"`
@@ -100,7 +100,7 @@ func (b *ContainerAgentConfigApplyConfiguration) WithDistroParams(entries map[st
 // WithEnvInjectionMethod sets the EnvInjectionMethod field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the EnvInjectionMethod field is set to the value of the last call.
-func (b *ContainerAgentConfigApplyConfiguration) WithEnvInjectionMethod(value common.EnvInjectionMethod) *ContainerAgentConfigApplyConfiguration {
+func (b *ContainerAgentConfigApplyConfiguration) WithEnvInjectionMethod(value common.EnvInjectionDecision) *ContainerAgentConfigApplyConfiguration {
 	b.EnvInjectionMethod = &value
 	return b
 }
