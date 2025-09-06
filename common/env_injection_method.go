@@ -25,6 +25,6 @@ type EnvInjectionDecision string
 // this decision is based on the runtime inspection, user overrides, and the distro support,
 // and reflects what odigos is actually plan to use.
 const (
-	EnvInjectionDecisionLoader      EnvInjectionDecision = "loader"
-	EnvInjectionDecisionPodManifest EnvInjectionDecision = "pod-manifest"
+	EnvInjectionDecisionLoader     =  EnvInjectionDecision(LoaderEnvInjectionMethod)
+	EnvInjectionDecisionPodManifest = EnvInjectionDecision(PodManifestEnvInjectionMethod)
 )
