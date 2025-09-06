@@ -1,0 +1,98 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: runtime-detection
+spec:
+  description: |
+    This e2e test verifies runtime detection and version compatibility across different languages.
+    It tests Node.js, Java, Python, and C++ workloads to ensure proper language and version detection.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: install-test-apps.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+            timeout: 4m
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Verify Node Odiglet label has been added
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Assert Apps installed
+      try:
+        - assert:
+            timeout: 5m
+            file: ../../common/assert/apps-ready.yaml
+
+    - name: Instrument Namespaces
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Assert Pipeline
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Assert Runtime Detection
+      try:
+        - assert:
+            file: assert-runtime-detected.yaml
+            timeout: 2m
+
+    - name: Wait for Gunicorn Instrumentation Instances
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              set -e
+
+              echo "=== Waiting for Gunicorn Instrumentation Instances ==="
+
+              # The original test expected 6 gunicorn instrumentation instances
+              EXPECTED_COUNT=6
+              POLL_INTERVAL=5
+
+              while true; do
+                echo "Checking for gunicorn instrumentation instances..."
+
+                ACTUAL_COUNT=$(kubectl get instrumentationinstance | grep gunicorn | wc -l)
+                echo "Found $ACTUAL_COUNT gunicorn instrumentation instances (expected: $EXPECTED_COUNT)"
+
+                if [ "$ACTUAL_COUNT" -eq "$EXPECTED_COUNT" ]; then
+                  echo "✅ Successfully found all $EXPECTED_COUNT gunicorn instrumentation instances!"
+                  kubectl get instrumentationinstance | grep gunicorn || true
+                  exit 0
+                fi
+
+                echo "Waiting $POLL_INTERVAL seconds before next check..."
+                sleep $POLL_INTERVAL
+              done

@@ -1,0 +1,88 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-lifecycle
+spec:
+  description: |
+    This e2e test verifies the instrumentation device injection and instance lifecycle management.
+    It tests that supported workloads get properly instrumented and that the instrumentation
+    instances are created with correct health status.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: install-test-apps.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+            timeout: 4m
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Verify Node Odiglet label has been added
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Assert Apps installed
+      try:
+        - assert:
+            timeout: 5m
+            file: ../../common/assert/instrumentation-apps-ready.yaml
+
+    - name: Instrument Namespaces
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Assert Pipeline
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Assert Instrumentation Lifecycle
+      try:
+        - assert:
+            timeout: 3m
+            file: assert-instrumented.yaml
+
+    - name: Assert Workload State Changes
+      try:
+        - assert:
+            timeout: 1m
+            file: assert-workloads.yaml
+
+    - name: Assert Instrumentation Instances Created
+      try:
+        - assert:
+            timeout: 1m
+            file: assert-instances.yaml
+
+    - name: Assert Workload Rollouts Completed
+      try:
+        - assert:
+            timeout: 1m
+            file: assert-rollouts.yaml

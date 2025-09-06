@@ -1,0 +1,118 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: workload-updates
+spec:
+  description: |
+    This e2e test verifies workload manifest updates and re-instrumentation.
+    It tests that when workload manifests are updated, the instrumentation is properly re-applied.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: ../runtime-detection/install-test-apps.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+            timeout: 4m
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Assert Apps installed
+      try:
+        - assert:
+            timeout: 5m
+            file: ../../common/assert/apps-ready.yaml
+
+    - name: Instrument Namespaces
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Assert Pipeline
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Wait for Initial Instrumentation
+      try:
+        - assert:
+            timeout: 3m
+            file: ../runtime-detection/assert-runtime-detected.yaml
+
+    - name: Update workload manifest template spec
+      try:
+        - apply:
+            file: update-workload-manifests.yaml
+        - assert:
+            timeout: 2m
+            file: assert-workload-update.yaml
+
+    - name: Update services names and rollout deployments
+      try:
+        - apply:
+            file: sources-reported-names.yaml
+        - assert:
+            timeout: 1m
+            file: assert-ic-service-names.yaml
+        - script:
+            content: kubectl rollout restart deployment -l odigos.io/e2e=test-workload
+
+    - name: Verify Re-instrumentation After Update
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              set -e
+
+              echo "=== Waiting for workload updates to complete ==="
+
+              DEPLOYMENTS="nodejs-minimum-version nodejs-latest-version nodejs-dockerfile-env nodejs-manifest-env java-supported-version java-azul java-supported-docker-env java-supported-manifest-env java-latest-version java-old-version java-unique-exec python-latest-version python-alpine python-min-version python-gunicorn-server dotnet8-musl dotnet6-musl dotnet8-glibc dotnet6-glibc"
+
+              for deployment in $DEPLOYMENTS; do
+                echo "Waiting for deployment $deployment to finish rollout after update..."
+                kubectl rollout status deployment/$deployment -n default --timeout=120s
+                if [ $? -ne 0 ]; then
+                  echo "❌ Deployment $deployment failed to finish rollout after update"
+                  exit 1
+                fi
+                echo "✅ Deployment $deployment rollout completed"
+              done
+
+              echo "=== Verifying re-instrumentation after updates ==="
+
+              for deployment in $DEPLOYMENTS; do
+                echo "Checking instrumentation for $deployment after update..."
+                if kubectl get instrumentationconfig deployment-$deployment -o jsonpath='{.status.conditions[?(@.type=="AgentEnabled")].status}' | grep -q "True"; then
+                  echo "✅ $deployment is properly re-instrumented"
+                else
+                  echo "❌ $deployment is not re-instrumented correctly"
+                  kubectl get instrumentationconfig deployment-$deployment -o yaml || true
+                  exit 1
+                fi
+              done
+
+              echo "✅ Workload updates test completed successfully"

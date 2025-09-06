@@ -1,3 +1,36 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-dockerfile-env
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-manifest-env
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -33,8 +66,17 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: java-latest-version
+  name: python-alpine
   namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - env:
+        - name: DJANGO_SETTINGS_MODULE
+          (value != null): true
+        - name: PYTHONPATH
+          (value != null): true
 status:
   conditions:
     - type: Available
@@ -46,18 +88,3 @@ status:
   updatedReplicas: 1
   availableReplicas: 1
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: inventory
-  namespace: default
-status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
-  readyReplicas: 1
-  replicas: 1
-  updatedReplicas: 1
-  availableReplicas: 1

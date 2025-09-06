@@ -1,0 +1,75 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: configuration-reload
+spec:
+  description: |
+    This e2e test verifies collector configuration reload functionality.
+    It creates an action and verifies that the collector configuration is updated.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+            timeout: 4m
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Wait for destination to be ready
+      try:
+        - script:
+            timeout: 60s
+            content: |
+              echo "Waiting for destination to be processed..."
+              sleep 10
+              echo "Destination ready"
+
+    - name: Create cluster info action
+      try:
+        - apply:
+            file: 03-create-action.yaml
+        - assert:
+            file: 03-assert-action-created.yaml
+
+    - name: Verify Collector config reload
+      try:
+        - script:
+            timeout: 200s
+            content: |
+              set -e
+
+              echo "=== Waiting for collector configuration reload ==="
+
+              # Wait for the collector to reload its configuration
+              while true; do
+                kubectl logs deployment.apps/odigos-gateway -n odigos-test --tail=100 | grep -q "Config updated"
+                if [ $? -eq 0 ]; then
+                  echo "✅ Collector configuration reloaded successfully"
+                  break
+                else
+                  echo "⏳ Waiting for collector config reload..."
+                  sleep 3
+                fi
+              done
+
+              echo "=== Configuration reload test completed successfully ==="
