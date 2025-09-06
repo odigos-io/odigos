@@ -24,12 +24,17 @@ describe('Destinations CRUD', () => {
       cy.get(DATA_IDS.ADD_DESTINATION).click();
       cy.get(DATA_IDS.MODAL_ADD_DESTINATION).should('exist');
       cy.get(DATA_IDS.SELECT_DESTINATION).contains(SELECTED_ENTITIES.DESTINATION.DISPLAY_NAME).should('exist').click();
-      cy.get(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).should('have.value', SELECTED_ENTITIES.DESTINATION.AUTOFILL_VALUE);
-      cy.get('button').contains(BUTTONS.DONE).click();
 
-      // Wait for destinations to create
+      cy.get('button').contains(BUTTONS.TEST_CONNECTION).click();
+      // Wait for the destination to test connection
       cy.wait('@gql').then(() => {
-        awaitToast({ message: TEXTS.NOTIF_DESTINATION_CREATED(totalEntities) });
+        cy.get('button').contains(BUTTONS.CONNECTION_OK).should('exist');
+
+        cy.get('button').contains(BUTTONS.DONE).click();
+        // Wait for destinations to create
+        cy.wait('@gql').then(() => {
+          awaitToast({ message: TEXTS.NOTIF_DESTINATION_CREATED(totalEntities) });
+        });
       });
     });
   });

@@ -1,5 +1,6 @@
 export const HEADER_HEIGHT = 60;
 export const MENU_BAR_HEIGHT = 84;
+export const NO_MENU_GAP_HEIGHT = 20;
 
 export const DATA_FLOW_HEIGHT = `calc(100vh - ${HEADER_HEIGHT + MENU_BAR_HEIGHT}px)`;
 

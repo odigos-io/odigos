@@ -3,15 +3,40 @@ title: "Viewing traces"
 sidebarTitle: "Viewing traces"
 ---
 
-Now that we have some traces, let's view them!
-Access the Jaeger UI by running the following command:
+**Now that we have some traces, let's view them**!
 
-```bash
-kubectl port-forward -n tracing svc/jaeger 16686:16686
-```
+From the Odigos UI, navigate to the [trace view page](http://localhost:3000/trace-view), and explore the traces:
 
-Then, open [http://localhost:16686](http://localhost:16686) in your browser and explore the traces.
+## Traces Overview
+
+- You'll find a list of traces from the targeted applications:
 
 <Frame>
-    <img src="/images/jaeger_ui.png" alt="Jaeger UI" />
+  <img src="/images/ui_trace_view_1.png" alt="Trace View 1" />
+</Frame>
+
+- You can click the trace-dropdown to expand it's view, and see it's child spans (with context propagation):
+
+<Frame>
+  <img src="/images/ui_trace_view_2.png" alt="Trace View 2" />
+</Frame>
+
+- You can click a span to read it's attributes:
+
+<Frame>
+  <img src="/images/ui_trace_view_3.png" alt="Trace View 3" />
+</Frame>
+
+## Traced Error
+
+- Traces that contain errors will be visible as well:
+
+<Frame>
+  <img src="/images/ui_trace_view_4.png" alt="Trace View 4" />
+</Frame>
+
+- Clicking the span that contains the error will give you more information:
+
+<Frame>
+  <img src="/images/ui_trace_view_5.png" alt="Trace View 5" />
 </Frame>

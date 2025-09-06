@@ -36,10 +36,8 @@ export const SELECTED_ENTITIES = {
   NAMESPACE: NAMESPACES.DEFAULT,
   NAMESPACE_SOURCES: ['coupon', 'currency', 'frontend', 'geolocation', 'inventory', 'membership', 'pricing'],
   DESTINATION: {
-    TYPE: 'jaeger',
-    DISPLAY_NAME: 'Jaeger',
-    AUTOFILL_FIELD: 'JAEGER_URL',
-    AUTOFILL_VALUE: 'jaeger.tracing:4317',
+    TYPE: 'odigos',
+    DISPLAY_NAME: 'Odigos',
   },
   ACTIONS: [
     'K8sAttributesResolver',
@@ -60,7 +58,6 @@ export const DATA_IDS = {
   SELECT_NAMESPACE: `[data-id=namespace-${SELECTED_ENTITIES.NAMESPACE}]`,
   SELECT_SOURCE: (sourceName: string) => `[data-id=source-${sourceName}]`,
   SELECT_DESTINATION: `[data-id=select-DetectedbyOdigos-destination-${SELECTED_ENTITIES.DESTINATION.TYPE}]`,
-  SELECT_DESTINATION_AUTOFILL_FIELD: `[data-id=${SELECTED_ENTITIES.DESTINATION.AUTOFILL_FIELD}]`,
 
   ADD_SOURCE: '[data-id=add-Source]',
   ADD_DESTINATION: '[data-id=add-Destination]',
@@ -105,6 +102,8 @@ export const BUTTONS = {
   DONE: 'DONE',
   ADD_DESTINATION: 'Add Destination',
   UNINSTRUMENT: 'Uninstrument',
+  TEST_CONNECTION: 'Test Connection',
+  CONNECTION_OK: 'Connection OK',
 };
 
 export const INPUTS = {

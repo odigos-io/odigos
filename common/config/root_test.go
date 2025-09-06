@@ -28,6 +28,10 @@ func (proc DummyProcessor) GetSignals() []common.ObservabilitySignal {
 	return []common.ObservabilitySignal{common.TracesObservabilitySignal, common.LogsObservabilitySignal}
 }
 
+func (proc DummyProcessor) GetNamespace() string {
+	return "odigos-system"
+}
+
 func (proc DummyProcessor) GetType() string {
 	return "resource"
 }
@@ -47,6 +51,9 @@ func (dest DummyDestination) GetConfig() map[string]string {
 }
 func (dest DummyDestination) GetSignals() []common.ObservabilitySignal {
 	return []common.ObservabilitySignal{common.LogsObservabilitySignal}
+}
+func (dest DummyDestination) GetNamespace() string {
+	return "odigos-system"
 }
 
 func openTestData(t *testing.T, path string) string {

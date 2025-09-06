@@ -22,6 +22,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
+	"github.com/odigos-io/odigos/frontend/services/traces"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -1188,9 +1189,9 @@ func (r *queryResolver) DestinationCategories(ctx context.Context) (*model.GetDe
 func (r *queryResolver) PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error) {
 	result := make([]*model.DestinationDetails, 0)
 
-	potentialDestinations := services.PotentialDestinations(ctx)
-	if potentialDestinations == nil {
-		return result, nil
+	potentialDestinations, err := services.PotentialDestinations(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, dest := range potentialDestinations {
@@ -1270,6 +1271,37 @@ func (r *queryResolver) GetServiceMap(ctx context.Context) (*model.ServiceMap, e
 	}
 
 	return &model.ServiceMap{Services: services}, nil
+}
+
+// GetTraces is the resolver for the getTraces field.
+func (r *queryResolver) GetTraces(ctx context.Context, serviceName string, limit *int, hoursAgo *int) ([]*model.Trace, error) {
+	if limit == nil {
+		limit = new(int)
+		*limit = 100
+	}
+	if hoursAgo == nil {
+		hoursAgo = new(int)
+		*hoursAgo = 24
+	}
+
+	startTime := time.Now().Add(-time.Duration(*hoursAgo) * time.Hour)
+	endTime := time.Now()
+
+	options := traces.JaegerGetTracesOptions{
+		ServiceName:  serviceName,
+		StartTimeMin: startTime.Format(time.RFC3339),
+		StartTimeMax: endTime.Format(time.RFC3339),
+		SearchDepth:  *limit,
+	}
+
+	domain := services.GetOdigosDestinationDomain(k8sconsts.IngesterApiPort)
+	getResult, err := traces.GetTraces(ctx, domain, options)
+	if err != nil {
+		return nil, err
+	}
+
+	traces := traces.ConvertTraces(getResult)
+	return traces, nil
 }
 
 // DescribeOdigos is the resolver for the describeOdigos field.

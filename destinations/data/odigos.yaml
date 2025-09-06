@@ -1,0 +1,16 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: odigos
+  displayName: Odigos
+  category: self hosted
+spec:
+  image: odigos.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  testConnectionSupported: true

@@ -418,8 +418,9 @@ func TestOAuth2Configuration(t *testing.T) {
 
 // Mock destination for testing
 type mockDestination struct {
-	id     string
-	config map[string]string
+	id        string
+	config    map[string]string
+	namespace string
 }
 
 func (m *mockDestination) GetID() string {
@@ -440,4 +441,8 @@ func (m *mockDestination) GetSignals() []common.ObservabilitySignal {
 
 func (m *mockDestination) GetType() common.DestinationType {
 	return common.OtlpHttpDestinationType
+}
+
+func (m *mockDestination) GetNamespace() string {
+	return m.namespace
 }

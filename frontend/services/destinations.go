@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/destinations"
@@ -17,6 +18,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
+
+func GetOdigosDestinationDomain(port int) string {
+	odigosNamespace := env.GetCurrentNamespace()
+	domain := fmt.Sprintf("http://%s.%s:%d", k8sconsts.IngesterServiceName, odigosNamespace, port)
+	// If the above does not work, try: "http://%s.%s.svc.cluster.local:%d"
+
+	return domain
+}
 
 func GetDestinationCategories() model.GetDestinationCategories {
 	var resp model.GetDestinationCategories
@@ -338,26 +347,24 @@ func AddDestinationOwnerReferenceToSecret(ctx context.Context, ns string, dest *
 	return nil
 }
 
-func PotentialDestinations(ctx context.Context) []destination_recognition.DestinationDetails {
-	ns := env.GetCurrentNamespace()
-
-	relevantNamespaces, err := getRelevantNameSpaces(ctx, ns)
+func PotentialDestinations(ctx context.Context) ([]destination_recognition.DestinationDetails, error) {
+	odigosNs := env.GetCurrentNamespace()
+	namespaces, err := getRelevantNameSpaces(ctx, odigosNs, true) // we want to include the Odigos namespace for Odigos destination
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	// Existing Destinations
-	existingDestination, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
+	existingDestinations, err := kube.DefaultClient.OdigosClient.Destinations(odigosNs).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	destinationDetails, err := destination_recognition.GetAllPotentialDestinationDetails(ctx, relevantNamespaces, existingDestination)
+	destinationDetails, err := destination_recognition.GetAllPotentialDestinationDetails(ctx, namespaces, existingDestinations)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return destinationDetails
+	return destinationDetails, nil
 }
 
 func deleteDestinationAndSecret(ctx context.Context, destination *v1alpha1.Destination) error {

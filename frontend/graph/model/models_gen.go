@@ -1179,6 +1179,48 @@ type TestConnectionResponse struct {
 	Reason          *string `json:"reason,omitempty"`
 }
 
+type Trace struct {
+	TraceID   string          `json:"traceID"`
+	Spans     []*TraceSpan    `json:"spans"`
+	Processes []*TraceProcess `json:"processes"`
+	Warnings  string          `json:"warnings"`
+}
+
+type TraceLog struct {
+	Timestamp int         `json:"timestamp"`
+	Fields    []*TraceTag `json:"fields"`
+}
+
+type TraceProcess struct {
+	ServiceName string      `json:"serviceName"`
+	Tags        []*TraceTag `json:"tags"`
+}
+
+type TraceReference struct {
+	RefType string `json:"refType"`
+	TraceID string `json:"traceID"`
+	SpanID  string `json:"spanID"`
+}
+
+type TraceSpan struct {
+	TraceID       string            `json:"traceID"`
+	SpanID        string            `json:"spanID"`
+	OperationName string            `json:"operationName"`
+	References    []*TraceReference `json:"references"`
+	StartTime     int               `json:"startTime"`
+	Duration      int               `json:"duration"`
+	Tags          []*TraceTag       `json:"tags"`
+	Logs          []*TraceLog       `json:"logs"`
+	ProcessID     string            `json:"processID"`
+	Warnings      string            `json:"warnings"`
+}
+
+type TraceTag struct {
+	Key   string `json:"key"`
+	Type  string `json:"type"`
+	Value string `json:"value"`
+}
+
 type WorkloadFilter struct {
 	Namespace                *string          `json:"namespace,omitempty"`
 	Kind                     *K8sResourceKind `json:"kind,omitempty"`

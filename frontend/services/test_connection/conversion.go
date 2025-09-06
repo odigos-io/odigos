@@ -6,11 +6,16 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
 // Implement the ExporterConfigurer interface
 type DestinationConfigurer struct {
 	destination model.DestinationInput
+}
+
+func (dc *DestinationConfigurer) GetNamespace() string {
+	return env.GetCurrentNamespace()
 }
 
 func (dc *DestinationConfigurer) GetSignals() []common.ObservabilitySignal {
