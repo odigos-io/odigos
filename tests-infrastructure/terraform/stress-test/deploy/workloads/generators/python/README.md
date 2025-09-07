@@ -13,7 +13,7 @@ A Python application that generates OpenTelemetry spans for load testing purpose
 ## Environment Variables
 
 - `SPANS_PER_SEC`: Number of spans to generate per second (default: 2000)
-- `SPAN_BYTES`: Size of the payload in bytes (default: 500)
+- `SPAN_BYTES`: Size of the payload in bytes (default: 2000)
 - `OTEL_SERVICE_NAME`: Service name for OpenTelemetry (default: python-span-generator)
 - `OTEL_RESOURCE_ATTRIBUTES`: Resource attributes for OpenTelemetry
 
@@ -46,7 +46,7 @@ python app.py
 ```bash
 make docker-run
 # or
-docker run -e SPANS_PER_SEC=1000 -e SPAN_BYTES=500 python-span-gen
+docker run -e SPANS_PER_SEC=2000 -e SPAN_BYTES=2000 python-span-gen
 ```
 
 ## ECR Deployment

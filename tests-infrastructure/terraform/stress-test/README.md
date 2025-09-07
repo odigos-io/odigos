@@ -111,9 +111,10 @@ aws ssm start-session --target $INSTANCE_ID \
 - **EKS Cluster**: Managed Kubernetes cluster with auto-scaling
 - **Monitoring Stack**: Prometheus, Grafana, ClickHouse on EC2
 - **Odigos Integration**: Automatic telemetry collection and routing
-- **Test Workloads**: Individual span generators (Go, Java, Node.js, Python)
+- **Test Workloads**: High-performance span generators (Go, Java, Node.js, Python)
 - **Automatic Instrumentation**: Odigos auto-detects and instruments applications
 - **Load Testing**: K6 integration for performance testing
+
 
 ## Architecture
 
@@ -158,6 +159,7 @@ node_spec    = "c6a.2xlarge"
 
 ### Service URLs (after port forwarding)
 - **Grafana**: http://localhost:3000 (admin/admin)
+  - Kubernetes Pods View dashboard (ID: 15760) - Comprehensive pod monitoring
 - **Prometheus**: http://localhost:9090
 - **ClickHouse HTTP**: http://localhost:8123
 - **ClickHouse Native**: tcp://<EC2_IP>:9000

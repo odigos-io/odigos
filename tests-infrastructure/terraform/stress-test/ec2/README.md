@@ -106,6 +106,8 @@ aws ssm start-session --target $INSTANCE_ID \
 - **Data Source**: Pre-configured Prometheus connection
 - **Storage**: Dedicated EBS volume
 - **Authentication**: Default admin/admin (change in production)
+- **Dashboards**: 
+  - Kubernetes Pods View (ID: 15760) - Comprehensive pod monitoring
 
 ### ClickHouse
 - **Storage**: Dedicated EBS volume

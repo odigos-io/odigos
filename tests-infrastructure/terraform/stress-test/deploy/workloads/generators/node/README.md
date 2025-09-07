@@ -79,10 +79,3 @@ The application uses `setInterval` to generate spans at the specified rate:
 2. Each span includes configurable attributes
 3. Logs progress every second with total span count
 4. Maintains consistent timing using Node.js event loop
-
-## Performance
-
-- **Default Rate**: 6000 spans/second
-- **Payload Size**: 4000 bytes per span
-- **Memory Usage**: Optimized with Alpine Linux base image
-- **Multi-platform**: Supports both AMD64 and ARM64 architectures

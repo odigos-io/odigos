@@ -90,14 +90,6 @@ The application uses a scheduled executor to generate spans at the specified rat
 4. Includes configurable attributes on each span
 5. Logs progress every second with total span count
 
-## Performance
-
-- **Default Rate**: 3000 spans/second
-- **Payload Size**: 3000 bytes per span
-- **Memory Usage**: Optimized with JRE-only base image
-- **Multi-platform**: Supports both AMD64 and ARM64 architectures
-- **CPU Optimization**: Includes small delays to reduce CPU usage
-
 ## Maven Configuration
 
 The project uses:
