@@ -16,6 +16,7 @@ import (
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/perf"
 	"github.com/fsnotify/fsnotify"
+	"github.com/odigos-io/odigos/common/unixfd"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
@@ -65,34 +66,45 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 			select {
 			case <-ctx.Done():
 				r.logger.Info("receiver supervisor exiting due to shutdown")
-				// If there’s an active map, make sure to clean it up before exit
+
+				// Tear down last generation before exit
 				if cancelPrev != nil {
 					r.logger.Info("canceling last generation of readers before exit")
 					cancelPrev()
 					readersWg.Wait()
 				}
 				if prevMap != nil {
+					r.logger.Info("closing last map FD before exit")
 					prevMap.Close()
 				}
 				return
 			default:
 			}
 
-			// --- STEP 1: wait for odiglet to send us a new FD ---
-			r.logger.Info("supervisor waiting for new map FD from odiglet")
-			newMap, err := r.waitForSocketFD(ctx, "/var/exchange/exchange.sock")
+			// --- STEP 1: request a new FD from odiglet ---
+			r.logger.Info("supervisor requesting new FD from odiglet",
+				zap.String("socket", unixfd.DefaultSocketPath))
+
+			fd, err := unixfd.RequestFD(unixfd.DefaultSocketPath)
 			if err != nil {
-				r.logger.Warn("failed to get map FD", zap.Error(err))
+				r.logger.Warn("failed to request FD", zap.Error(err))
 				time.Sleep(2 * time.Second) // backoff before retry
 				continue
 			}
-			r.logger.Info("supervisor received new map FD from odiglet")
 
-			// --- STEP 2: if we had a previous generation, tear it down ---
+			newMap, err := ebpf.NewMapFromFD(fd)
+			if err != nil {
+				r.logger.Warn("failed to create map from FD", zap.Error(err))
+				time.Sleep(2 * time.Second)
+				continue
+			}
+			r.logger.Info("supervisor received new FD and created map")
+
+			// --- STEP 2: tear down old readers ---
 			if cancelPrev != nil {
 				r.logger.Info("canceling old readers before starting new generation")
-				cancelPrev()     // signal old readers to stop
-				readersWg.Wait() // wait until they are fully stopped
+				cancelPrev()
+				readersWg.Wait()
 				cancelPrev = nil
 
 				if prevMap != nil {
@@ -108,7 +120,7 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 			prevMap = newMap
 
 			const numReaders = 1
-			for i := 0; i < numReaders; i++ {
+			for i := range numReaders {
 				readersWg.Add(1)
 				go func(id int, m *ebpf.Map) {
 					defer readersWg.Done()
@@ -120,9 +132,8 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 				}(i, newMap)
 			}
 
-			// NOTE: we don’t block here.
-			// The loop goes back to waiting for the next FD.
-			// When a new FD arrives, the teardown block above will cancel these readers.
+			// supervisor loop immediately goes back to wait for the next FD.
+			// When a new FD arrives, this block cancels old readers and spins up new ones.
 		}
 	}()
 
@@ -152,98 +163,6 @@ func (r *ebpfReceiver) Shutdown(ctx context.Context) error {
 	}
 }
 
-// tryToLoadPinnedMap attempts to load the pinned map from bpffs.
-func (r *ebpfReceiver) tryToLoadPinnedMap() (*ebpf.Map, error) {
-	m, err := ebpf.LoadPinnedMap(r.mapPath, nil)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-// waitForPinnedMap waits until the pinned map exists.
-// If fsnotify is available on the directory, it waits on events.
-// If fsnotify setup fails (or later errors), it falls back to 10s polling forever.
-func (r *ebpfReceiver) waitForPinnedMap(ctx context.Context) (*ebpf.Map, error) {
-	// Quick path.
-	if m, err := r.tryToLoadPinnedMap(); err == nil {
-		return m, nil
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		// Real error, not just "doesn't exist yet".
-		return nil, err
-	}
-
-	r.logger.Info("pinned map not found; waiting for creation", zap.String("path", r.mapPath))
-
-	// We watch the root bpffs mount (/sys/fs/bpf) instead of the exact pinned map path
-	// because fsnotify cannot watch a file that does not yet exist. The pinned map file
-	// (/sys/fs/bpf/odiglet/traces) will be created dynamically by the odiglet.
-	// By watching the root directory, we can receive a fsnotify.Create event when the
-	// target file is eventually pinned anywhere under it, and then check if the path
-	// matches our target map before attempting to load it.
-	dir := "/sys/fs/bpf"
-
-	// Try to set up fsnotify.
-	watcher, wErr := fsnotify.NewWatcher()
-	if wErr == nil {
-		if addErr := watcher.Add(dir); addErr != nil {
-			r.logger.Warn("fsnotify watcher failed; falling back to 10s polling", zap.String("dir", dir), zap.Error(addErr))
-			_ = watcher.Close()
-			watcher = nil
-		}
-	} else {
-		r.logger.Warn("fsnotify not available; falling back to 10s polling", zap.Error(wErr))
-	}
-
-	// If watcher works, wait on events; otherwise, poll every 10s.
-	if watcher != nil {
-		defer watcher.Close()
-		for {
-			// Try before blocking, in case we missed the event race.
-			if m, err := r.tryToLoadPinnedMap(); err == nil {
-				return m, nil
-			}
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case ev := <-watcher.Events:
-				// React when the map file is created, otherwise waiting for the next event.
-				if ev.Name == filepath.Dir(r.mapPath) && (ev.Op&(fsnotify.Create)) != 0 {
-					if _, err := os.Stat(r.mapPath); err == nil {
-						if m, err := r.tryToLoadPinnedMap(); err == nil {
-							r.logger.Info("pinned map found and loaded", zap.String("path", r.mapPath))
-							return m, nil
-						}
-					}
-				}
-			case werr := <-watcher.Errors:
-				if werr != nil {
-					r.logger.Warn("fsnotify error; switching to 10s polling", zap.Error(werr))
-					// break to polling loop below
-					watcher.Close()
-					watcher = nil
-					break
-				}
-			}
-			if watcher == nil {
-				break
-			}
-		}
-	}
-
-	// Polling fallback: 10s interval, indefinitely.
-	for {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-time.After(PollingInterval):
-			if m, err := r.tryToLoadPinnedMap(); err == nil {
-				r.logger.Info("pinned map found and loaded", zap.String("path", r.mapPath))
-				return m, nil
-			}
-		}
-	}
-}
 func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
 	reader, err := perf.NewReader(m, numOfPages*os.Getpagesize())
 	if err != nil {
