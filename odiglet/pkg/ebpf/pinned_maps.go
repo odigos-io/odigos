@@ -22,33 +22,38 @@ func (b *bpfFsMapsManager) TracesMap() (*ebpf.Map, error) {
 		return b.tracesMap, nil
 	}
 
+	// Create the eBPF map
 	spec := &ebpf.MapSpec{
 		Type: ebpf.PerfEventArray,
 		Name: "traces",
 	}
+
 	m, err := ebpf.NewMap(spec)
 	if err != nil {
 		return nil, err
 	}
 	b.tracesMap = m
 
+	// Start the FD server
 	server := &unixfd.Server{
 		SocketPath: unixfd.DefaultSocketPath,
 		Logger:     b.logger,
-		FDProvider: func() int { return m.FD() },
+		FDProvider: func() int {
+			return m.FD()
+		},
 	}
-	ctx := context.Background()
+
+	// Run server in background
 	go func() {
+		ctx := context.Background()
 		if err := server.Run(ctx); err != nil {
-			b.logger.Error(err, "unixfd server exited with error")
+			b.logger.Error(err, "unixfd server failed")
 		}
 	}()
 
-	// Push FD immediately on creation
-	go server.NotifyNewFD()
-
-	b.logger.Info("TracesMap created and unixfd server started",
-		"socket", unixfd.DefaultSocketPath, "map_name", spec.Name)
+	b.logger.Info("TracesMap created, FD server started",
+		"socket", unixfd.DefaultSocketPath,
+		"map_fd", m.FD())
 
 	return b.tracesMap, nil
 }

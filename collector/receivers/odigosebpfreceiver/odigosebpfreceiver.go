@@ -6,7 +6,6 @@ import (
 	"errors"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/perf"
@@ -15,14 +14,14 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"go.uber.org/zap"
+	"golang.org/x/sys/unix"
 	"google.golang.org/protobuf/proto"
 
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
 const (
-	numOfPages      = 2048
-	PollingInterval = 10 * time.Second
+	numOfPages = 2048
 )
 
 type ebpfReceiver struct {
@@ -44,70 +43,105 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 
-	updates := make(chan *ebpf.Map)
+	updates := make(chan *ebpf.Map, 1)
 
-	// Supervisor goroutine: manage readers
+	// Map manager: handles switching to new maps
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
+
 		var (
-			prevMap    *ebpf.Map
-			readersWg  sync.WaitGroup
-			cancelPrev context.CancelFunc
+			currentMap   *ebpf.Map
+			readerCancel context.CancelFunc
 		)
+
+		// Cleanup on exit
+		defer func() {
+			if readerCancel != nil {
+				readerCancel()
+			}
+			if currentMap != nil {
+				currentMap.Close()
+			}
+		}()
+
 		for {
 			select {
 			case <-ctx.Done():
-				if cancelPrev != nil {
-					cancelPrev()
-					readersWg.Wait()
-				}
-				if prevMap != nil {
-					prevMap.Close()
-				}
 				return
 			case newMap := <-updates:
-				if cancelPrev != nil {
-					cancelPrev()
-					readersWg.Wait()
-					prevMap.Close()
+				// Stop old reader if running
+				if readerCancel != nil {
+					readerCancel()
 				}
-				readersCtx, readersCancel := context.WithCancel(ctx)
-				cancelPrev = readersCancel
-				prevMap = newMap
-				for i := 0; i < 1; i++ {
-					readersWg.Add(1)
-					go func(id int, m *ebpf.Map) {
-						defer readersWg.Done()
-						_ = r.readLoop(readersCtx, m)
-					}(i, newMap)
+				if currentMap != nil {
+					currentMap.Close()
 				}
+
+				// Start new reader with new map
+				currentMap = newMap
+				readerCtx, cancel := context.WithCancel(ctx)
+				readerCancel = cancel
+
+				r.logger.Info("switched to new eBPF map",
+					zap.Int("fd", newMap.FD()),
+					zap.String("mapPath", r.mapPath),
+				)
+
+				// Start reading from new map
+				go func() {
+					defer r.logger.Info("reader stopped")
+					if err := r.readLoop(readerCtx, newMap); err != nil {
+						r.logger.Error("readLoop failed", zap.Error(err))
+					}
+				}()
 			}
 		}
 	}()
 
-	// Client goroutine: connect once and listen for FD updates
+	// FD client: gets new FDs when odiglet restarts
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
-		for {
-			err := unixfd.ConnectAndListen(unixfd.DefaultSocketPath, func(fd int, msg string) {
-				newMap, err := ebpf.NewMapFromFD(fd)
-				if err == nil {
-					updates <- newMap
-				}
-			})
+		defer close(updates)
+
+		r.logger.Info("starting FD client")
+
+		err := unixfd.ConnectAndListen(ctx, unixfd.DefaultSocketPath, func(fd int) {
+			r.logger.Info("received new FD from odiglet",
+				zap.Int("fd", fd),
+			)
+
+			// Create map from FD
+			newMap, err := ebpf.NewMapFromFD(fd)
 			if err != nil {
-				time.Sleep(2 * time.Second) // retry after odiglet restarts
-				continue
+				r.logger.Error("failed to create map from FD",
+					zap.Error(err),
+					zap.Int("fd", fd),
+				)
+				unix.Close(fd)
+				return
 			}
-			<-ctx.Done()
-			return
+
+			// Send to map manager
+			select {
+			case updates <- newMap:
+				r.logger.Info("queued new map for processing")
+			case <-ctx.Done():
+				newMap.Close()
+			}
+		})
+
+		if err != nil && ctx.Err() == nil {
+			r.logger.Error("FD client failed", zap.Error(err))
 		}
 	}()
 
 	return nil
 }
+
+// This will only create a new map when odiglet actually restarts
+// Not on every polling cycle!
 
 func (r *ebpfReceiver) Shutdown(ctx context.Context) error {
 	if r.cancel != nil {

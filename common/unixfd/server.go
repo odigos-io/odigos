@@ -5,115 +5,90 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"sync"
 
 	"github.com/go-logr/logr"
 	"golang.org/x/sys/unix"
 )
 
-// Server handles Unix socket FD requests from data-collection.
+// Server serves the current eBPF map FD to clients
 type Server struct {
 	SocketPath string
 	Logger     logr.Logger
 	FDProvider func() int
-
-	mu    sync.Mutex
-	conns []*net.UnixConn // active client connections
 }
 
-// Run starts listening and serving requests until ctx is canceled.
+// Run starts the server and handles requests until context is canceled
 func (s *Server) Run(ctx context.Context) error {
+	// Remove old socket file
 	_ = os.Remove(s.SocketPath)
 
-	addr, err := net.ResolveUnixAddr("unix", s.SocketPath)
+	listener, err := net.Listen("unix", s.SocketPath)
 	if err != nil {
-		return fmt.Errorf("resolve unix addr: %w", err)
+		return fmt.Errorf("listen on %s: %w", s.SocketPath, err)
 	}
+	defer listener.Close()
+	defer os.Remove(s.SocketPath)
 
-	ul, err := net.ListenUnix("unix", addr)
-	if err != nil {
-		return fmt.Errorf("listen unix: %w", err)
-	}
-	defer ul.Close()
+	s.Logger.Info("unixfd server started", "socket", s.SocketPath)
 
-	s.Logger.Info("unixfd server listening", "socket", s.SocketPath)
+	// Close listener when context is canceled
+	go func() {
+		<-ctx.Done()
+		listener.Close()
+	}()
 
 	for {
-		select {
-		case <-ctx.Done():
-			s.Logger.Info("unixfd server shutting down")
-			return nil
-		default:
-		}
-
-		conn, err := ul.AcceptUnix()
+		conn, err := listener.Accept()
 		if err != nil {
+			if ctx.Err() != nil {
+				s.Logger.Info("server shutting down")
+				return nil
+			}
 			s.Logger.Error(err, "accept failed")
 			continue
 		}
-		go s.handleConn(conn)
+
+		go s.handleRequest(conn.(*net.UnixConn))
 	}
 }
 
-func (s *Server) handleConn(conn *net.UnixConn) {
+// handleRequest processes a single client request
+func (s *Server) handleRequest(conn *net.UnixConn) {
+	defer conn.Close()
+
+	// Read the request
 	buf := make([]byte, 16)
 	n, err := conn.Read(buf)
 	if err != nil {
-		conn.Close()
+		s.Logger.Error(err, "failed to read request")
 		return
 	}
-	req := string(buf[:n])
 
-	if req == ReqGetFD {
-		fd := s.FDProvider()
-		if fd <= 0 {
-			s.Logger.Error(fmt.Errorf("invalid fd"), "FDProvider returned invalid fd")
-			conn.Close()
-			return
-		}
-
-		// Track connection for future NEW_FD pushes
-		s.mu.Lock()
-		s.conns = append(s.conns, conn)
-		s.mu.Unlock()
-
-		// Reply with FD_SENT
-		if err := sendFD(conn, fd, MsgFDSent); err != nil {
-			s.Logger.Error(err, "sendFD failed")
-		} else {
-			s.Logger.Info("✅ FD sent to client", "fd", fd)
-		}
-	} else {
-		s.Logger.Info("unknown request", "req", req)
-		conn.Close()
+	request := string(buf[:n])
+	if request != ReqGetFD {
+		s.Logger.Info("unknown request", "request", request)
+		return
 	}
-}
 
-// NotifyNewFD pushes a NEW_FD message to all active clients.
-// Called when odiglet restarts or recreates its map.
-func (s *Server) NotifyNewFD() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
+	// Get the current FD
 	fd := s.FDProvider()
 	if fd <= 0 {
-		s.Logger.Error(fmt.Errorf("invalid fd"), "FDProvider returned invalid fd for NotifyNewFD")
+		s.Logger.Error(fmt.Errorf("invalid fd %d", fd), "FDProvider returned invalid fd")
 		return
 	}
 
-	for _, c := range s.conns {
-		if err := sendFD(c, fd, MsgNewFD); err != nil {
-			s.Logger.Error(err, "failed to push NEW_FD, dropping client")
-			c.Close()
-		} else {
-			s.Logger.Info("pushed NEW_FD to client", "fd", fd)
-		}
+	// Send the FD to client
+	if err := sendFD(conn, fd); err != nil {
+		s.Logger.Error(err, "failed to send FD")
+		return
 	}
+
+	s.Logger.Info("sent FD to client", "fd", fd)
 }
 
-// sendFD sends a single file descriptor with a message.
-func sendFD(c *net.UnixConn, fd int, msg string) error {
-	control := unix.UnixRights(fd)
-	_, _, err := c.WriteMsgUnix([]byte(msg), control, nil)
+// sendFD sends a file descriptor over the Unix socket
+func sendFD(conn *net.UnixConn, fd int) error {
+	rights := unix.UnixRights(fd)
+	_, _, err := conn.WriteMsgUnix([]byte("OK"), rights, nil)
 	return err
 }
