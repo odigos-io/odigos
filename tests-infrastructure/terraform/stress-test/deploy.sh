@@ -400,6 +400,7 @@ check_status() {
         # Get EC2 instance details
         local instance_id=$(cd ec2 && tofu output -raw monitoring_instance_id 2>/dev/null || echo "Unknown")
         local private_ip=$(cd ec2 && tofu output -raw monitoring_instance_private_ip 2>/dev/null || echo "Unknown")
+        log_info "Instance ID: $instance_id"
         log_info "Private IP: $private_ip"
         
         # Store instance_id for later use in monitoring access commands
