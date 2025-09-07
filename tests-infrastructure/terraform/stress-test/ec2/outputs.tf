@@ -1,3 +1,8 @@
+output "monitoring_instance_id" {
+  description = "Instance ID of the Prometheus receiver EC2"
+  value       = aws_instance.monitoring.id
+}
+
 output "monitoring_instance_private_ip" {
   description = "Private IP of the Prometheus receiver EC2 (use in remote_write URL)"
   value       = aws_instance.monitoring.private_ip
