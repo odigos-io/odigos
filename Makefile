@@ -116,14 +116,6 @@ build-collector:
 build-ui:
 	$(MAKE) build-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
-.PHONY: build-odiglet-with-agents
-build-odiglet-with-agents:
-	docker build -t $(ORG)/odigos-odiglet$(IMG_SUFFIX):$(TAG) . -f odiglet/$(DOCKERFILE) --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-src=../opentelemetry-node \
-	--build-arg VERSION=$(TAG) \
-	--build-arg RELEASE=$(TAG) \
-	--build-arg SUMMARY="Odiglet for Odigos" \
-	--build-arg DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation."
-
 .PHONY: verify-nodejs-agent
 verify-nodejs-agent:
 	@if [ ! -f ../opentelemetry-node/package.json ]; then \
@@ -228,12 +220,6 @@ deploy-%:
 .PHONY: deploy
 deploy:
 	make deploy-odiglet && make deploy-autoscaler && make deploy-collector && make deploy-instrumentor && make deploy-scheduler && make deploy-ui
-
-# Use this target to deploy odiglet with local clones of the agents.
-# To work, the agents must be cloned in the same directory as the odigos (e.g. in '../opentelemetry-node')
-# There you can make code changes to the agents and deploy them with the odiglet.
-.PHONY: deploy-odiglet-with-agents
-deploy-odiglet-with-agents: verify-nodejs-agent build-odiglet-with-agents load-to-kind-odiglet restart-odiglet
 
 .PHONY: debug-odiglet
 debug-odiglet:
