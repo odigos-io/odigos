@@ -25,12 +25,18 @@ The destination is automatically deployed as part of the Terraform EKS provision
 2. **Step 2**: Deploy EC2 monitoring stack  
 3. **Step 3**: Deploy Prometheus agent
 4. **Step 4**: Deploy Odigos
-5. **Step 5**: Deploy workload generators
-6. **Step 6**: Apply Odigos sources (auto-detected)
+5. **Step 5**: Deploy workload generators (only with `--with-load-test` flag)
+6. **Step 6**: Apply Odigos sources (only with `--with-load-test` flag)
 7. **Step 7**: Deploy Odigos ClickHouse destination with dynamic EC2 IP
 
+### Conditional Deployment
+
+- **Full deployment** (`./deploy.sh deploy`): Deploys everything including workload generators and Odigos sources
+- **Core deployment** (`./deploy.sh apps`): Deploys Odigos and ClickHouse destination only
+- **Load test deployment** (`./deploy.sh apps --with-load-test`): Deploys everything including workload generators and Odigos sources
+
 ### Current Status
-✅ **Working**: ClickHouse destination is successfully configured and processing telemetry data from workload generators.
+**Working**: ClickHouse destination is successfully configured and processing telemetry data from workload generators.
 
 ## Automatic Source Detection
 

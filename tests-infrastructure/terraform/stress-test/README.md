@@ -5,8 +5,14 @@ This directory contains the complete infrastructure setup for running stress tes
 ## Quick Start
 
 ```bash
-# Deploy everything (EKS + EC2 + Kubernetes apps)
+# Deploy everything (EKS + EC2 + Kubernetes apps + load-test workloads)
 ./deploy.sh deploy
+
+# Deploy only Kubernetes applications (without load test workloads)
+./deploy.sh apps
+
+# Deploy Kubernetes applications with load test workloads
+./deploy.sh apps --with-load-test
 
 # Check status
 ./deploy.sh status
@@ -32,6 +38,32 @@ stress-test/
 ├── README.md              # This file
 ├── DEPLOYMENT_GUIDE.md    # Detailed deployment guide
 └── TOFU_USAGE.md         # Tofu-specific instructions
+```
+
+## Deployment Options
+
+### Full Deployment
+```bash
+./deploy.sh deploy
+```
+Deploys everything: EKS cluster, EC2 monitoring stack, and all Kubernetes applications including load-test workloads.
+
+### Kubernetes Applications Only
+```bash
+# Deploy core applications (Odigos, Prometheus) without load test workloads
+./deploy.sh apps
+
+# Deploy core applications with load test workloads (span generators)
+./deploy.sh apps --with-load-test
+```
+
+### Infrastructure Only
+```bash
+# Deploy only EKS cluster
+./deploy.sh infrastructure
+
+# Deploy only EC2 monitoring stack
+./deploy.sh ec2
 ```
 
 ## Documentation
