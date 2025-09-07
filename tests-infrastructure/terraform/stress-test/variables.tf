@@ -26,6 +26,12 @@ variable "deploy_kubernetes_apps" {
   default     = true
 }
 
+variable "deploy_load_test_apps" {
+  description = "Whether to deploy load-test applications (workload generators)"
+  type        = bool
+  default     = false
+}
+
 # =============================================================================
 # NETWORK CONFIGURATION
 # =============================================================================

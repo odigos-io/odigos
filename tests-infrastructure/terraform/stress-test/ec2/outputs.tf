@@ -13,3 +13,14 @@ output "prometheus_remote_write_url" {
   description = "Agent remote_write target"
   value       = "http://${aws_instance.monitoring.private_ip}:9090/api/v1/write"
 }
+
+output "clickhouse_connection_info" {
+  description = "ClickHouse connection information"
+  value = {
+    endpoint = "tcp://${aws_instance.monitoring.private_ip}:9000"
+    database = "otel"
+    username = "default"
+    password = "stresstest"
+    namespace = "odigos-system"
+  }
+}

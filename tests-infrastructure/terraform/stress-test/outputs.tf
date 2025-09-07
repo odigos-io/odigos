@@ -86,14 +86,3 @@ output "workload_generators_status" {
   depends_on  = [null_resource.apply_workload_generators]
 }
 
-output "clickhouse_connection_info" {
-  description = "ClickHouse connection information"
-  value = {
-    endpoint = "tcp://${try(data.terraform_remote_state.ec2.outputs.monitoring_instance_private_ip, "destroyed")}:9000"
-    database = "otel"
-    username = "default"
-    password = "stresstest"
-    namespace = "odigos-system"
-  }
-  depends_on = [null_resource.apply_odigos_clickhouse_destination]
-}

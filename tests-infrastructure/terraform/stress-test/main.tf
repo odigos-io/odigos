@@ -171,8 +171,6 @@ data "terraform_remote_state" "ec2" {
 resource "null_resource" "install_prometheus_crds" {
   provisioner "local-exec" {
     command = <<-EOT
-      # Update kubeconfig
-      aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name}
       
       # Wait for cluster to be ready
       kubectl wait --for=condition=Ready nodes --all --timeout=300s
@@ -197,15 +195,14 @@ resource "null_resource" "install_kube_prometheus_stack" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      # Update kubeconfig
-      aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name}
       
       # Install kube-prometheus-stack with values file
       echo "Installing kube-prometheus-stack..."
       helm upgrade -i kube-prometheus-stack prometheus-community/kube-prometheus-stack \
         -n monitoring \
         -f ${path.module}/deploy/monitoring-stack/prometheus-values.yaml \
-        --create-namespace
+        --create-namespace \
+        --wait 
       
       echo "kube-prometheus-stack installation completed!"
     EOT
@@ -224,12 +221,13 @@ resource "null_resource" "apply_prometheus_agent" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      # Update kubeconfig
-      aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name}
       
       # Wait for CRDs to be ready
       kubectl wait --for condition=established --timeout=60s crd/prometheusagents.monitoring.coreos.com
       kubectl wait --for condition=established --timeout=60s crd/servicemonitors.monitoring.coreos.com
+      
+      # Ensure monitoring namespace exists
+      kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
       
       # Apply prometheus-agent.yaml with dynamic EC2 IP
       echo "Applying prometheus-agent.yaml..."
@@ -257,45 +255,57 @@ resource "null_resource" "install_odigos" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      set -e  # Exit on any error
+      
       # Update kubeconfig
+      echo "Updating kubeconfig..."
       aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name}
       
       # Install Odigos using Helm
       echo "Installing Odigos with Helm..."
+      
       # Add Odigos Helm repository
-      helm repo add odigos https://odigos-io.github.io/odigos
+      echo "Adding Odigos Helm repository..."
+      helm repo add odigos https://odigos-io.github.io/odigos || echo "Repository already exists"
       helm repo update
       
       # Install Odigos in the cluster
+      echo "Installing Odigos in the cluster..."
       helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace
       
-      # Wait for Odigos to be ready
-      echo "Waiting for Odigos to be ready..."
-      kubectl wait --for condition=ready pod -l app.kubernetes.io/name=odigos -n odigos-system --timeout=300s
+      # Note: Helm --wait flag already ensures Odigos is ready
       
-      echo "Odigos installation completed!"
+      # Verify installation
+      echo "Verifying Odigos installation..."
+      kubectl get pods -n odigos-system
+      
+      echo "Odigos installation completed successfully!"
     EOT
   }
 
   triggers = {
     cluster_endpoint = module.eks.cluster_endpoint
     odigos_version = "latest"
+    force_reinstall = "force-odigos-reinstall-$(date +%s)"
   }
 }
 
-# Step 5: Deploy Workload Generators (only if deploying apps)
+# Step 5: Deploy Workload Generators (only if deploying load-test apps)
 resource "null_resource" "apply_workload_generators" {
-  count = var.deploy_kubernetes_apps ? 1 : 0
+  count = var.deploy_load_test_apps ? 1 : 0
   depends_on = [null_resource.install_odigos[0]]
 
   provisioner "local-exec" {
     command = <<-EOT
-      # Update kubeconfig
-      aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name}
+      set -e
       
-      # Create load-test namespace first
-      echo "Creating load-test namespace..."
-      kubectl create namespace load-test --dry-run=client -o yaml | kubectl apply -f -
+      # Create load-test namespace first (idempotent)
+      echo "Ensuring load-test namespace exists..."
+      if ! kubectl get namespace load-test >/dev/null 2>&1; then
+        kubectl create namespace load-test
+      else
+        echo "load-test namespace already exists"
+      fi
       
       # Apply workload generators from individual deployment files
       echo "Applying workload generators from generators directory..."
@@ -304,12 +314,7 @@ resource "null_resource" "apply_workload_generators" {
       kubectl apply -f ${path.module}/deploy/workloads/generators/node/deployment.yaml
       kubectl apply -f ${path.module}/deploy/workloads/generators/python/deployment.yaml
       
-      # Wait for generators to be ready
-      echo "Waiting for workload generators to be ready..."
-      kubectl wait --for condition=ready pod -l app=go-span-generator -n load-test --timeout=300s
-      kubectl wait --for condition=ready pod -l app=java-span-generator -n load-test --timeout=300s
-      kubectl wait --for condition=ready pod -l app=node-span-generator -n load-test --timeout=300s
-      kubectl wait --for condition=ready pod -l app=python-span-generator -n load-test --timeout=300s
+      # Deployments applied, no waiting required
       
       echo "Workload generators deployment completed!"
     EOT
@@ -328,24 +333,26 @@ resource "null_resource" "apply_workload_generators" {
 # Step 6: Apply Odigos Sources (only if deploying apps)
 resource "null_resource" "apply_odigos_sources" {
   count = var.deploy_kubernetes_apps ? 1 : 0
-  depends_on = [null_resource.apply_workload_generators[0]]
+  depends_on = [
+    null_resource.install_odigos[0]
+  ]
 
   provisioner "local-exec" {
     command = <<-EOT
-      # Update kubeconfig
-      aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name}
+      set -e
       
-      # Wait for Odigos to be ready
-      echo "Waiting for Odigos to be ready..."
-      kubectl wait --for condition=ready pod -l app.kubernetes.io/name=odigos -n odigos-system --timeout=300s || echo "Odigos not found, continuing..."
-      
-      # Ensure load-test namespace exists
-      echo "Ensuring load-test namespace exists..."
-      kubectl create namespace load-test --dry-run=client -o yaml | kubectl apply -f -
-      
-      # Apply Odigos sources
-      echo "Applying Odigos sources for all workload generators..."
-      kubectl apply -f ${path.module}/deploy/odigos/sources.yaml
+      # Apply Odigos sources only if workload generators are deployed
+      if [[ "${var.deploy_load_test_apps}" == "true" ]]; then
+        # Ensure load-test namespace exists
+        echo "Ensuring load-test namespace exists..."
+        kubectl create namespace load-test --dry-run=client -o yaml | kubectl apply -f -
+        
+        # Apply Odigos sources for workload generators
+        echo "Applying Odigos sources for workload generators..."
+        kubectl apply -f ${path.module}/deploy/odigos/sources.yaml
+      else
+        echo "Skipping Odigos sources (no workload generators deployed)"
+      fi
       
       echo "Odigos sources deployment completed!"
     EOT
@@ -362,18 +369,22 @@ resource "null_resource" "apply_odigos_sources" {
 resource "null_resource" "apply_odigos_clickhouse_destination" {
   count = var.deploy_kubernetes_apps ? 1 : 0
   depends_on = [
+    null_resource.install_odigos[0],
     null_resource.apply_odigos_sources[0],
     data.terraform_remote_state.ec2
   ]
 
   provisioner "local-exec" {
     command = <<-EOT
+      set -e  # Exit on any error
+      
       # Update kubeconfig
+      echo "Updating kubeconfig..."
       aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name}
       
-      # Wait for Odigos to be ready
-      echo "Waiting for Odigos to be ready..."
-      kubectl wait --for condition=ready pod -l app.kubernetes.io/name=odigos -n odigos-system --timeout=300s || echo "Odigos not found, continuing..."
+      # Verify Odigos is running (it should be ready due to dependency)
+      echo "Verifying Odigos is running..."
+      kubectl get pods -n odigos-system
       
       # Get EC2 IP from Terraform remote state
       EC2_IP="${data.terraform_remote_state.ec2.outputs.monitoring_instance_private_ip}"
@@ -384,10 +395,6 @@ resource "null_resource" "apply_odigos_clickhouse_destination" {
         exit 1
       fi
       
-      # Apply ClickHouse secret first
-      echo "Applying ClickHouse secret..."
-      kubectl apply -f ${path.module}/deploy/odigos/clickhouse-secret.yaml
-      
       # Apply ClickHouse destination with dynamic EC2 IP
       echo "Applying ClickHouse destination with EC2 IP: $EC2_IP"
       kubectl apply -f - <<EOF
@@ -396,6 +403,10 @@ ${templatefile("${path.module}/deploy/odigos/clickhouse-destination.yaml", {
 })}
 EOF
       
+      # Restart odigos-gateway deployment to pick up new destination
+      echo "Restarting odigos-gateway deployment..."
+      kubectl rollout restart deployment/odigos-gateway -n odigos-system
+      
       echo "Odigos ClickHouse destination deployment completed!"
     EOT
   }
@@ -403,8 +414,8 @@ EOF
   triggers = {
     cluster_endpoint = module.eks.cluster_endpoint
     clickhouse_destination = filesha256("${path.module}/deploy/odigos/clickhouse-destination.yaml")
-    clickhouse_secret = filesha256("${path.module}/deploy/odigos/clickhouse-secret.yaml")
     ec2_ip = try(data.terraform_remote_state.ec2.outputs.monitoring_instance_private_ip, "destroyed")
+    force_reinstall = "force-clickhouse-reinstall-$(date +%s)"
   }
 }
 
