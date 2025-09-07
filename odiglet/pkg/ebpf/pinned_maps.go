@@ -32,7 +32,6 @@ func (b *bpfFsMapsManager) TracesMap() (*ebpf.Map, error) {
 	}
 	b.tracesMap = m
 
-	// Start Unix FD server in background
 	server := &unixfd.Server{
 		SocketPath: unixfd.DefaultSocketPath,
 		Logger:     b.logger,
@@ -44,6 +43,9 @@ func (b *bpfFsMapsManager) TracesMap() (*ebpf.Map, error) {
 			b.logger.Error(err, "unixfd server exited with error")
 		}
 	}()
+
+	// Push FD immediately on creation
+	go server.NotifyNewFD()
 
 	b.logger.Info("TracesMap created and unixfd server started",
 		"socket", unixfd.DefaultSocketPath, "map_name", spec.Name)

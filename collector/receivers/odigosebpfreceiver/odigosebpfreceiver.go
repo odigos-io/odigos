@@ -4,24 +4,17 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
-	"fmt"
-	"io/fs"
-	"net"
 	"os"
-	"path/filepath"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/perf"
-	"github.com/fsnotify/fsnotify"
 	"github.com/odigos-io/odigos/common/unixfd"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"go.uber.org/zap"
-	"golang.org/x/sys/unix"
 	"google.golang.org/protobuf/proto"
 
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -51,20 +44,20 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 
+	updates := make(chan *ebpf.Map)
+
+	// Supervisor goroutine: manage readers
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
-
 		var (
 			prevMap    *ebpf.Map
 			readersWg  sync.WaitGroup
 			cancelPrev context.CancelFunc
 		)
-
 		for {
 			select {
 			case <-ctx.Done():
-				r.logger.Info("receiver supervisor exiting")
 				if cancelPrev != nil {
 					cancelPrev()
 					readersWg.Wait()
@@ -73,55 +66,43 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 					prevMap.Close()
 				}
 				return
-			default:
-			}
-
-			r.logger.Info("supervisor requesting new FD from odiglet",
-				zap.String("socket", unixfd.DefaultSocketPath))
-
-			fd, err := unixfd.WaitForFD(unixfd.DefaultSocketPath)
-			if err != nil {
-				r.logger.Warn("failed to wait for FD", zap.Error(err))
-				time.Sleep(2 * time.Second)
-				continue
-			}
-
-			newMap, err := ebpf.NewMapFromFD(fd)
-			if err != nil {
-				r.logger.Warn("failed to create map from FD", zap.Error(err))
-				time.Sleep(2 * time.Second)
-				continue
-			}
-			r.logger.Info("supervisor received NEW_FD and created map")
-
-			// Tear down old generation
-			if cancelPrev != nil {
-				cancelPrev()
-				readersWg.Wait()
-				cancelPrev = nil
-				if prevMap != nil {
+			case newMap := <-updates:
+				if cancelPrev != nil {
+					cancelPrev()
+					readersWg.Wait()
 					prevMap.Close()
-					prevMap = nil
+				}
+				readersCtx, readersCancel := context.WithCancel(ctx)
+				cancelPrev = readersCancel
+				prevMap = newMap
+				for i := 0; i < 1; i++ {
+					readersWg.Add(1)
+					go func(id int, m *ebpf.Map) {
+						defer readersWg.Done()
+						_ = r.readLoop(readersCtx, m)
+					}(i, newMap)
 				}
 			}
+		}
+	}()
 
-			// Start readers for new map
-			readersCtx, readersCancel := context.WithCancel(ctx)
-			cancelPrev = readersCancel
-			prevMap = newMap
-
-			const numReaders = 1
-			for i := 0; i < numReaders; i++ {
-				readersWg.Add(1)
-				go func(id int, m *ebpf.Map) {
-					defer readersWg.Done()
-					r.logger.Info("starting reader", zap.Int("reader_id", id))
-					if err := r.readLoop(readersCtx, m); err != nil {
-						r.logger.Error("read loop failed", zap.Int("reader_id", id), zap.Error(err))
-					}
-					r.logger.Info("reader exited", zap.Int("reader_id", id))
-				}(i, newMap)
+	// Client goroutine: connect once and listen for FD updates
+	r.wg.Add(1)
+	go func() {
+		defer r.wg.Done()
+		for {
+			err := unixfd.ConnectAndListen(unixfd.DefaultSocketPath, func(fd int, msg string) {
+				newMap, err := ebpf.NewMapFromFD(fd)
+				if err == nil {
+					updates <- newMap
+				}
+			})
+			if err != nil {
+				time.Sleep(2 * time.Second) // retry after odiglet restarts
+				continue
 			}
+			<-ctx.Done()
+			return
 		}
 	}()
 
@@ -238,125 +219,4 @@ func convertResourceSpansToPdata(resourceSpans *tracepb.ResourceSpans) ptrace.Tr
 	}
 
 	return traces
-}
-
-func (r *ebpfReceiver) waitForSocketFD(ctx context.Context, socketPath string) (*ebpf.Map, error) {
-	raddr, err := net.ResolveUnixAddr("unix", socketPath)
-	if err != nil {
-		return nil, fmt.Errorf("resolve unix addr: %w", err)
-	}
-
-	// Quick path: try to dial immediately.
-	if m, err := r.tryDialAndRecv(raddr); err == nil {
-		return m, nil
-	} else if !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, syscall.ECONNREFUSED) {
-		// A "real" error, not just "not ready yet"
-		return nil, err
-	}
-
-	r.logger.Info("socket not ready; waiting for creation", zap.String("path", socketPath))
-
-	dir := filepath.Dir(socketPath)
-
-	// Try fsnotify
-	watcher, wErr := fsnotify.NewWatcher()
-	if wErr == nil {
-		if addErr := watcher.Add(dir); addErr != nil {
-			r.logger.Warn("fsnotify watcher failed; falling back to polling",
-				zap.String("dir", dir), zap.Error(addErr))
-			_ = watcher.Close()
-			watcher = nil
-		}
-	} else {
-		r.logger.Warn("fsnotify not available; falling back to polling", zap.Error(wErr))
-	}
-
-	// If watcher works, wait on events
-	if watcher != nil {
-		defer watcher.Close()
-		for {
-			// Try before blocking, in case we missed the event
-			if m, err := r.tryDialAndRecv(raddr); err == nil {
-				return m, nil
-			}
-
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case ev := <-watcher.Events:
-				if ev.Name == socketPath && ev.Op&fsnotify.Create != 0 {
-					if m, err := r.tryDialAndRecv(raddr); err == nil {
-						r.logger.Info("socket connected and FD received", zap.String("path", socketPath))
-						return m, nil
-					}
-				}
-			case werr := <-watcher.Errors:
-				if werr != nil {
-					r.logger.Warn("fsnotify error; switching to polling", zap.Error(werr))
-					watcher.Close()
-					watcher = nil
-					break
-				}
-			}
-			if watcher == nil {
-				break
-			}
-		}
-	}
-
-	// Fallback polling loop
-	for {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-time.After(2 * time.Second):
-			if m, err := r.tryDialAndRecv(raddr); err == nil {
-				r.logger.Info("socket connected and FD received (polling)", zap.String("path", socketPath))
-				return m, nil
-			}
-		}
-	}
-}
-
-func (r *ebpfReceiver) tryDialAndRecv(raddr *net.UnixAddr) (*ebpf.Map, error) {
-	conn, err := net.DialUnix("unix", nil, raddr)
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Close()
-
-	fd, err := recvFD(conn)
-	if err != nil {
-		return nil, err
-	}
-	return ebpf.NewMapFromFD(fd)
-}
-
-func recvFD(c *net.UnixConn) (int, error) {
-	buf := make([]byte, 1)
-	oob := make([]byte, unix.CmsgSpace(4))
-
-	_, oobn, _, _, err := c.ReadMsgUnix(buf, oob)
-	if err != nil {
-		return -1, fmt.Errorf("readmsg: %w", err)
-	}
-
-	msgs, err := unix.ParseSocketControlMessage(oob[:oobn])
-	if err != nil {
-		return -1, fmt.Errorf("parse scm: %w", err)
-	}
-
-	if len(msgs) != 1 {
-		return -1, fmt.Errorf("expected 1 control message got %d", len(msgs))
-	}
-
-	fds, err := unix.ParseUnixRights(&msgs[0])
-	if err != nil {
-		return -1, fmt.Errorf("parse rights: %w", err)
-	}
-	if len(fds) == 0 {
-		return -1, fmt.Errorf("no fd received")
-	}
-
-	return fds[0], nil
 }

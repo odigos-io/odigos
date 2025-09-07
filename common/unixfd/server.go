@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sync"
 
 	"github.com/go-logr/logr"
 	"golang.org/x/sys/unix"
@@ -12,14 +13,17 @@ import (
 
 // Server handles Unix socket FD requests from data-collection.
 type Server struct {
-	SocketPath string      // e.g. /var/exchange/exchange.sock
-	Logger     logr.Logger // structured logger
-	FDProvider func() int  // callback returning FD to send
+	SocketPath string
+	Logger     logr.Logger
+	FDProvider func() int
+
+	mu    sync.Mutex
+	conns []*net.UnixConn // active client connections
 }
 
 // Run starts listening and serving requests until ctx is canceled.
 func (s *Server) Run(ctx context.Context) error {
-	_ = os.Remove(s.SocketPath) // cleanup stale file
+	_ = os.Remove(s.SocketPath)
 
 	addr, err := net.ResolveUnixAddr("unix", s.SocketPath)
 	if err != nil {
@@ -44,7 +48,7 @@ func (s *Server) Run(ctx context.Context) error {
 
 		conn, err := ul.AcceptUnix()
 		if err != nil {
-			s.Logger.Error(err, "accept failed", "socket", s.SocketPath)
+			s.Logger.Error(err, "accept failed")
 			continue
 		}
 		go s.handleConn(conn)
@@ -52,41 +56,64 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 func (s *Server) handleConn(conn *net.UnixConn) {
-	defer conn.Close()
-
 	buf := make([]byte, 16)
 	n, err := conn.Read(buf)
 	if err != nil {
-		s.Logger.Error(err, "failed to read request", "socket", s.SocketPath)
+		conn.Close()
 		return
 	}
 	req := string(buf[:n])
-	s.Logger.Info("received request", "req", req, "socket", s.SocketPath)
 
-	switch req {
-	case ReqGetFD:
+	if req == ReqGetFD {
 		fd := s.FDProvider()
 		if fd <= 0 {
-			s.Logger.Info("invalid FD from provider", "socket", s.SocketPath)
+			s.Logger.Error(fmt.Errorf("invalid fd"), "FDProvider returned invalid fd")
+			conn.Close()
 			return
 		}
-		// Always send NEW_FD + FD_SENT
-		if _, err := conn.Write([]byte(MsgNewFD)); err != nil {
-			s.Logger.Error(err, "failed to send NEW_FD", "socket", s.SocketPath)
-			return
-		}
-		if err := sendFD(conn, fd); err != nil {
-			s.Logger.Error(err, "sendFD failed", "socket", s.SocketPath)
+
+		// Track connection for future NEW_FD pushes
+		s.mu.Lock()
+		s.conns = append(s.conns, conn)
+		s.mu.Unlock()
+
+		// Reply with FD_SENT
+		if err := sendFD(conn, fd, MsgFDSent); err != nil {
+			s.Logger.Error(err, "sendFD failed")
 		} else {
-			s.Logger.Info("✅ NEW_FD + FD sent to client")
+			s.Logger.Info("✅ FD sent to client", "fd", fd)
 		}
-	default:
-		s.Logger.Info("unknown request", "req", req, "socket", s.SocketPath)
+	} else {
+		s.Logger.Info("unknown request", "req", req)
+		conn.Close()
 	}
 }
 
-func sendFD(c *net.UnixConn, fd int) error {
-	controlMessage := unix.UnixRights(fd)
-	_, _, err := c.WriteMsgUnix([]byte(MsgFDSent), controlMessage, nil)
+// NotifyNewFD pushes a NEW_FD message to all active clients.
+// Called when odiglet restarts or recreates its map.
+func (s *Server) NotifyNewFD() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	fd := s.FDProvider()
+	if fd <= 0 {
+		s.Logger.Error(fmt.Errorf("invalid fd"), "FDProvider returned invalid fd for NotifyNewFD")
+		return
+	}
+
+	for _, c := range s.conns {
+		if err := sendFD(c, fd, MsgNewFD); err != nil {
+			s.Logger.Error(err, "failed to push NEW_FD, dropping client")
+			c.Close()
+		} else {
+			s.Logger.Info("pushed NEW_FD to client", "fd", fd)
+		}
+	}
+}
+
+// sendFD sends a single file descriptor with a message.
+func sendFD(c *net.UnixConn, fd int, msg string) error {
+	control := unix.UnixRights(fd)
+	_, _, err := c.WriteMsgUnix([]byte(msg), control, nil)
 	return err
 }
