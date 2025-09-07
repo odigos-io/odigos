@@ -47,6 +47,7 @@ type ebpfReceiver struct {
 }
 
 func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
+	// Root context for the entire receiver lifecycle
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 
@@ -54,32 +55,75 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 	go func() {
 		defer r.wg.Done()
 
-		// Step 1: wait for the map once
-		m, err := r.waitForSocketFD(ctx, "/var/exchange/exchange.sock")
-		if err != nil {
-			r.logger.Warn("odigos-ebpf: failed to wait for pinned map", zap.Error(err))
-			return
-		}
+		var (
+			prevMap    *ebpf.Map      // the last map we got from odiglet
+			readersWg  sync.WaitGroup // wait group for reader goroutines
+			cancelPrev context.CancelFunc
+		)
 
-		// Step 2: start N concurrent readers using this map
-		const numReaders = 1
-
-		var readersWg sync.WaitGroup
-
-		for i := range numReaders {
-			readersWg.Add(1)
-			go func(id int) {
-				defer readersWg.Done()
-				if err := r.readLoop(ctx, m); err != nil {
-					r.logger.Error("read loop failed", zap.Int("reader_id", id), zap.Error(err))
+		for {
+			select {
+			case <-ctx.Done():
+				r.logger.Info("receiver supervisor exiting due to shutdown")
+				// If there’s an active map, make sure to clean it up before exit
+				if cancelPrev != nil {
+					r.logger.Info("canceling last generation of readers before exit")
+					cancelPrev()
+					readersWg.Wait()
 				}
-			}(i)
-		}
+				if prevMap != nil {
+					prevMap.Close()
+				}
+				return
+			default:
+			}
 
-		// Step 3: wait for all readers to finish before closing the map
-		readersWg.Wait()
-		m.Close()
-		r.logger.Info("odigos-ebpf: all readers finished, map closed", zap.String("mapPath", r.mapPath))
+			// --- STEP 1: wait for odiglet to send us a new FD ---
+			r.logger.Info("supervisor waiting for new map FD from odiglet")
+			newMap, err := r.waitForSocketFD(ctx, "/var/exchange/exchange.sock")
+			if err != nil {
+				r.logger.Warn("failed to get map FD", zap.Error(err))
+				time.Sleep(2 * time.Second) // backoff before retry
+				continue
+			}
+			r.logger.Info("supervisor received new map FD from odiglet")
+
+			// --- STEP 2: if we had a previous generation, tear it down ---
+			if cancelPrev != nil {
+				r.logger.Info("canceling old readers before starting new generation")
+				cancelPrev()     // signal old readers to stop
+				readersWg.Wait() // wait until they are fully stopped
+				cancelPrev = nil
+
+				if prevMap != nil {
+					r.logger.Info("closing old map FD")
+					prevMap.Close()
+					prevMap = nil
+				}
+			}
+
+			// --- STEP 3: start readers for the new map ---
+			readersCtx, readersCancel := context.WithCancel(ctx)
+			cancelPrev = readersCancel
+			prevMap = newMap
+
+			const numReaders = 1
+			for i := 0; i < numReaders; i++ {
+				readersWg.Add(1)
+				go func(id int, m *ebpf.Map) {
+					defer readersWg.Done()
+					r.logger.Info("starting reader", zap.Int("reader_id", id))
+					if err := r.readLoop(readersCtx, m); err != nil {
+						r.logger.Error("read loop failed", zap.Int("reader_id", id), zap.Error(err))
+					}
+					r.logger.Info("reader exited", zap.Int("reader_id", id))
+				}(i, newMap)
+			}
+
+			// NOTE: we don’t block here.
+			// The loop goes back to waiting for the next FD.
+			// When a new FD arrives, the teardown block above will cancel these readers.
+		}
 	}()
 
 	return nil
