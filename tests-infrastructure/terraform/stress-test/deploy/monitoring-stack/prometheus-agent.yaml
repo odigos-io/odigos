@@ -18,35 +18,6 @@ spec:
       - targetLabel: cluster
         replacement: "stress-tests-eks"
 
-      # # Handle exported_* labels from kube-state-metrics
-      # - sourceLabels: [exported_namespace]
-      #   targetLabel: namespace
-      #   action: replace
-      # - sourceLabels: [exported_pod]
-      #   targetLabel: pod
-      #   action: replace  
-      # - sourceLabels: [exported_container]
-      #   targetLabel: container
-      #   action: replace
-      # - regex: "exported_.*"
-      #   action: labeldrop
-
-      # # Normalize job names for consistency
-      # - sourceLabels: [job]
-      #   regex: "kubelet"
-      #   targetLabel: job
-      #   replacement: "kubernetes-metrics"
-
-      # - sourceLabels: [job] 
-      #   regex: "kube-state-metrics"
-      #   targetLabel: job
-      #   replacement: "kubernetes-metrics"
-
-      # - sourceLabels: [job]
-      #   regex: "monitoring/node-exporter-pods"
-      #   targetLabel: job
-      #   replacement: "node-exporter"
-
 ---
 # ServiceAccount
 apiVersion: v1

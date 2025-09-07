@@ -19,15 +19,6 @@ spec:
         odigos-target: "true"
     spec:
       terminationGracePeriodSeconds: 0
-      # affinity:
-      #   nodeAffinity:
-      #     requiredDuringSchedulingIgnoredDuringExecution:
-      #       nodeSelectorTerms:
-      #       - matchExpressions:
-      #         - key: kubernetes.io/hostname
-      #           operator: In
-      #           values:
-      #           - ip-10-0-1-243.ec2.internal
       containers:
         - name: node-span-generator
           image: public.ecr.aws/odigos/node-span-gen:v0.0.1
@@ -44,7 +35,7 @@ spec:
           resources:
             requests:
               cpu: "500m"
-              memory: "128Mi"
+              memory: "128Mi" 
             limits:
               cpu: "1500m"
               memory: "512Mi"
