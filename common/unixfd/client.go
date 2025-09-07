@@ -4,14 +4,18 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"time"
 
 	"golang.org/x/sys/unix"
 )
 
-// ConnectAndListen connects to odiglet and gets FD only when it changes (odiglet restarts).
-// onFD is called once per odiglet restart with the new FD.
+// ConnectAndListen establishes a connection to the odiglet's Unix socket and retrieves a file descriptor (FD)
+// for the eBPF map used for tracing. The provided onFD callback is invoked only when a new FD is received,
+// which happens if odiglet is restarted and creates a new map (resulting in a different FD).
 func ConnectAndListen(ctx context.Context, socketPath string, onFD func(fd int)) error {
+	var lastFD int = -1
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -22,17 +26,30 @@ func ConnectAndListen(ctx context.Context, socketPath string, onFD func(fd int))
 		// Try to connect and get FD
 		fd, err := connectAndGetFD(socketPath)
 		if err != nil {
-			// Connection failed, odiglet probably not ready yet
+			// Connection attempt failed—odiglet may be down or in the process of restarting.
+			// Retry the connection after a short delay.
 			time.Sleep(2 * time.Second)
 			continue
 		}
 
-		// Successfully got FD - this means odiglet started/restarted
-		onFD(fd)
+		if fd != lastFD {
+			// This is either the first time we're getting an FD,
+			// or we got a different FD (indicating odiglet restarted with a new map)
+			lastFD = fd
+			onFD(fd)
+		}
 
-		// Now wait for odiglet to restart by trying to connect again
-		// This will block until odiglet restarts (connection succeeds again)
-		waitForOdigletRestart(ctx, socketPath)
+		// After getting the FD, monitor the socket file for changes
+		// This allows us to detect odiglet restarts without polling
+		// Once socket is changed, we reset the lastFD to -1 and continue the loop
+		// This will cause the client to reconnect and get a new FD
+		if err := waitForSocketChange(ctx, socketPath); err != nil {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			lastFD = -1
+			continue
+		}
 	}
 }
 
@@ -51,24 +68,6 @@ func connectAndGetFD(socketPath string) (int, error) {
 
 	// Receive the FD
 	return recvFD(conn.(*net.UnixConn))
-}
-
-// waitForOdigletRestart waits until odiglet restarts by polling connection
-func waitForOdigletRestart(ctx context.Context, socketPath string) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(3 * time.Second):
-			// Try to connect - if it works, odiglet restarted
-			conn, err := net.Dial("unix", socketPath)
-			if err == nil {
-				conn.Close()
-				return // Odiglet is back, exit wait loop
-			}
-			// Still down, keep waiting
-		}
-	}
 }
 
 // recvFD reads a file descriptor from the connection
@@ -98,4 +97,40 @@ func recvFD(c *net.UnixConn) (int, error) {
 	}
 
 	return fds[0], nil
+}
+
+// waitForSocketChange monitors the socket file and returns when it changes or disappears
+// This allows us to detect odiglet restarts without continuous polling
+func waitForSocketChange(ctx context.Context, socketPath string) error {
+	// Get initial file info
+	initialStat, err := os.Stat(socketPath)
+	if err != nil {
+		// Socket doesn't exist, odiglet probably restarted
+		return fmt.Errorf("socket disappeared: %w", err)
+	}
+
+	ticker := time.NewTicker(5 * time.Second) // Check every 5 seconds
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			// Check if socket still exists and hasn't changed
+			currentStat, err := os.Stat(socketPath)
+			if err != nil {
+				// Socket disappeared, odiglet restarted
+				return fmt.Errorf("socket disappeared: %w", err)
+			}
+
+			// Check if the socket file changed (different inode or modification time)
+			if !os.SameFile(initialStat, currentStat) ||
+				currentStat.ModTime() != initialStat.ModTime() {
+				// Socket changed, odiglet likely restarted
+				return fmt.Errorf("socket changed")
+			}
+
+		}
+	}
 }

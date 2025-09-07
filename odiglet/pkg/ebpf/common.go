@@ -93,8 +93,8 @@ func newHandler(logger logr.Logger, client client.Client, distributionGetter *di
 	}
 	configGroupResolver := &k8sConfigGroupResolver{}
 	settingsGetter := &k8sSettingsGetter{
-		client: client,
-		commonMapsManager: &bpfFsMapsManager{logger: logger.WithName("bpfFsMapsManager")},
+		client:            client,
+		commonMapsManager: &mapsManager{logger: logger.WithName("mapsManager")},
 	}
 	distributionMatcher := &podDeviceDistributionMatcher{
 		distributionGetter: distributionGetter,

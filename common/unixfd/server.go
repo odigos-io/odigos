@@ -10,14 +10,18 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// Server serves the current eBPF map FD to clients
+// Server serves eBPF map file descriptors to clients over a Unix socket.
+// It acts as a bridge between odiglet (which creates eBPF maps) and data collection clients
+// (which need access to those maps for reading trace data).
 type Server struct {
 	SocketPath string
 	Logger     logr.Logger
-	FDProvider func() int
+	FDProvider func() int // Function that returns the current eBPF map file descriptor
 }
 
-// Run starts the server and handles requests until context is canceled
+// Run starts the Unix domain socket server, which serves eBPF map file descriptors to connecting clients.
+// This allows data collection to access the eBPF map created by odiglet for reading trace data.
+// The server listens for client requests and, upon receiving a request, sends the current updated eBPF map file descriptor.
 func (s *Server) Run(ctx context.Context) error {
 	// Remove old socket file
 	_ = os.Remove(s.SocketPath)

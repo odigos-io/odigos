@@ -8,16 +8,13 @@ import (
 	"github.com/odigos-io/odigos/common/unixfd"
 )
 
-// BPFFsPath is the system path to the BPF file-system.
-const bpfFsPath = "/sys/fs/bpf"
-
-type bpfFsMapsManager struct {
+type mapsManager struct {
 	logger    logr.Logger
 	mountedFs bool
 	tracesMap *ebpf.Map
 }
 
-func (b *bpfFsMapsManager) TracesMap() (*ebpf.Map, error) {
+func (b *mapsManager) TracesMap() (*ebpf.Map, error) {
 	if b.tracesMap != nil {
 		return b.tracesMap, nil
 	}
@@ -43,7 +40,9 @@ func (b *bpfFsMapsManager) TracesMap() (*ebpf.Map, error) {
 		},
 	}
 
-	// Run server in background
+	// Run server in background to serve the map FD to relevant data collection client.
+	// The server will continue running until odiglet shuts down, allowing collectors to reconnect after restarts
+	// and ask for a new FD.
 	go func() {
 		ctx := context.Background()
 		if err := server.Run(ctx); err != nil {

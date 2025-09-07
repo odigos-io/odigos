@@ -19,7 +19,7 @@ import (
 
 type k8sSettingsGetter struct {
 	client            client.Client
-	commonMapsManager *bpfFsMapsManager
+	commonMapsManager *mapsManager
 }
 
 var _ instrumentation.SettingsGetter[K8sProcessDetails] = &k8sSettingsGetter{}
