@@ -8,6 +8,7 @@ spec:
     CLICKHOUSE_CREATE_SCHEME: "true"
     CLICKHOUSE_DATABASE_NAME: otel
     CLICKHOUSE_ENDPOINT: tcp://${ec2_ip}:9000
+    #CLICKHOUSE_ENDPOINT: tcp://10.0.1.198:9000
     CLICKHOUSE_LOGS_TABLE: otel_logs
     CLICKHOUSE_METRICS_TABLE_EXP_HISTOGRAM: otel_metrics_exponential_histogram
     CLICKHOUSE_METRICS_TABLE_GAUGE: otel_metrics_gauge
@@ -16,8 +17,9 @@ spec:
     CLICKHOUSE_METRICS_TABLE_SUMMARY: otel_metrics_summary
     CLICKHOUSE_TRACES_TABLE: otel_traces
     CLICKHOUSE_USERNAME: default
-  destinationName: ""
-  disabled: false
+  secretRef:
+    name: clickhouse-secret
+  destinationName: "clickhouse"
   signals:
   - TRACES
   - METRICS
@@ -26,3 +28,12 @@ spec:
     dataStreams:
     - default
   type: clickhouse
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: clickhouse-secret
+  namespace: odigos-system
+type: Opaque
+data:
+  CLICKHOUSE_PASSWORD: c3RyZXNzdGVzdA== # base64 encoded "stresstest"  
