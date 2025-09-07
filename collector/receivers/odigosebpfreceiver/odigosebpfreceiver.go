@@ -9,13 +9,14 @@ import (
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/perf"
-	"github.com/odigos-io/odigos/common/unixfd"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/odigos-io/odigos/common/unixfd"
 
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )

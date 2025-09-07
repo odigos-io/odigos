@@ -30,15 +30,19 @@ func (s *Server) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("listen on %s: %w", s.SocketPath, err)
 	}
-	defer listener.Close()
-	defer os.Remove(s.SocketPath)
+	defer func() {
+		_ = listener.Close()
+	}()
+	defer func() {
+		_ = os.Remove(s.SocketPath)
+	}()
 
 	s.Logger.Info("unixfd server started", "socket", s.SocketPath)
 
 	// Close listener when context is canceled
 	go func() {
 		<-ctx.Done()
-		listener.Close()
+		_ = listener.Close()
 	}()
 
 	for {
@@ -58,7 +62,9 @@ func (s *Server) Run(ctx context.Context) error {
 
 // handleRequest processes a single client request
 func (s *Server) handleRequest(conn *net.UnixConn) {
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	// Read the request
 	buf := make([]byte, 16)

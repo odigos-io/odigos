@@ -14,7 +14,7 @@ import (
 // for the eBPF map used for tracing. The provided onFD callback is invoked only when a new FD is received,
 // which happens if odiglet is restarted and creates a new map (resulting in a different FD).
 func ConnectAndListen(ctx context.Context, socketPath string, onFD func(fd int)) error {
-	var lastFD int = -1
+	var lastFD = -1
 
 	for {
 		select {
@@ -59,7 +59,9 @@ func connectAndGetFD(socketPath string) (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	// Request the FD
 	if _, err := conn.Write([]byte(ReqGetFD)); err != nil {
@@ -75,7 +77,11 @@ func recvFD(c *net.UnixConn) (int, error) {
 	buf := make([]byte, 16)
 	oob := make([]byte, unix.CmsgSpace(4))
 
-	_, oobn, _, _, err := c.ReadMsgUnix(buf, oob)
+	n, oobn, flags, addr, err := c.ReadMsgUnix(buf, oob)
+	// We only need oobn from this call, ignore for linter
+	_ = n
+	_ = flags
+	_ = addr
 	if err != nil {
 		return -1, fmt.Errorf("readmsg: %w", err)
 	}
@@ -130,7 +136,6 @@ func waitForSocketChange(ctx context.Context, socketPath string) error {
 				// Socket changed, odiglet likely restarted
 				return fmt.Errorf("socket changed")
 			}
-
 		}
 	}
 }
