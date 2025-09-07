@@ -7,7 +7,7 @@ metadata:
     app: python-span-generator
     odigos-target: "true"
 spec:
-  replicas: 3
+  replicas: 4
   selector:
     matchLabels:
       app: python-span-generator
@@ -29,16 +29,16 @@ spec:
             - name: OTEL_RESOURCE_ATTRIBUTES
               value: service.name=python-span-generator,service.version=v1.0.0
             - name: SPANS_PER_SEC
-              value: "500"                                        
+              value: "2000"                                        
             - name: SPAN_BYTES
-              value: "1000"
+              value: "2000"
           resources:
             requests:
-              cpu: "500m"
-              memory: "256Mi"
-            limits:
               cpu: "1000m"
-              memory: "1500Mi"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "3Gi"
           livenessProbe:
             exec:
               command:
