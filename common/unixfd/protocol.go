@@ -1,10 +1,14 @@
 package unixfd
 
-// Currently we only need to request a single FD (ReqGetFD).
-// In the future this can be extended with more messages types (e.g "FD_GET_TRACES", "FD_GET_METRICS", "PING", etc).
-// Keeping them as constants here makes both server and client share the same protocol.
+// Protocol messages exchanged between odiglet (server) and data-collection (client).
+// Can be extended in the future if needed.
 const (
+	// Client → Server
 	ReqGetFD = "GET_FD"
+
+	// Server → Client
+	MsgNewFD  = "NEW_FD"  // server signals a new FD will be sent
+	MsgFDSent = "FD_SENT" // server delivers the FD
 )
 
 const (

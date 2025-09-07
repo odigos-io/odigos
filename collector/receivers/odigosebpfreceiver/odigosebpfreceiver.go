@@ -48,7 +48,6 @@ type ebpfReceiver struct {
 }
 
 func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
-	// Root context for the entire receiver lifecycle
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 
@@ -57,38 +56,33 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 		defer r.wg.Done()
 
 		var (
-			prevMap    *ebpf.Map      // the last map we got from odiglet
-			readersWg  sync.WaitGroup // wait group for reader goroutines
+			prevMap    *ebpf.Map
+			readersWg  sync.WaitGroup
 			cancelPrev context.CancelFunc
 		)
 
 		for {
 			select {
 			case <-ctx.Done():
-				r.logger.Info("receiver supervisor exiting due to shutdown")
-
-				// Tear down last generation before exit
+				r.logger.Info("receiver supervisor exiting")
 				if cancelPrev != nil {
-					r.logger.Info("canceling last generation of readers before exit")
 					cancelPrev()
 					readersWg.Wait()
 				}
 				if prevMap != nil {
-					r.logger.Info("closing last map FD before exit")
 					prevMap.Close()
 				}
 				return
 			default:
 			}
 
-			// --- STEP 1: request a new FD from odiglet ---
 			r.logger.Info("supervisor requesting new FD from odiglet",
 				zap.String("socket", unixfd.DefaultSocketPath))
 
-			fd, err := unixfd.RequestFD(unixfd.DefaultSocketPath)
+			fd, err := unixfd.WaitForFD(unixfd.DefaultSocketPath)
 			if err != nil {
-				r.logger.Warn("failed to request FD", zap.Error(err))
-				time.Sleep(2 * time.Second) // backoff before retry
+				r.logger.Warn("failed to wait for FD", zap.Error(err))
+				time.Sleep(2 * time.Second)
 				continue
 			}
 
@@ -98,29 +92,26 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 				time.Sleep(2 * time.Second)
 				continue
 			}
-			r.logger.Info("supervisor received new FD and created map")
+			r.logger.Info("supervisor received NEW_FD and created map")
 
-			// --- STEP 2: tear down old readers ---
+			// Tear down old generation
 			if cancelPrev != nil {
-				r.logger.Info("canceling old readers before starting new generation")
 				cancelPrev()
 				readersWg.Wait()
 				cancelPrev = nil
-
 				if prevMap != nil {
-					r.logger.Info("closing old map FD")
 					prevMap.Close()
 					prevMap = nil
 				}
 			}
 
-			// --- STEP 3: start readers for the new map ---
+			// Start readers for new map
 			readersCtx, readersCancel := context.WithCancel(ctx)
 			cancelPrev = readersCancel
 			prevMap = newMap
 
 			const numReaders = 1
-			for i := range numReaders {
+			for i := 0; i < numReaders; i++ {
 				readersWg.Add(1)
 				go func(id int, m *ebpf.Map) {
 					defer readersWg.Done()
@@ -131,9 +122,6 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 					r.logger.Info("reader exited", zap.Int("reader_id", id))
 				}(i, newMap)
 			}
-
-			// supervisor loop immediately goes back to wait for the next FD.
-			// When a new FD arrives, this block cancels old readers and spins up new ones.
 		}
 	}()
 

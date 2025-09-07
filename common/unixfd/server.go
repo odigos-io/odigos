@@ -10,12 +10,11 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// Server handles Unix socket FD requests.
-// Typical usage: odiglet side, serving one or more clients (data-collection restarts).
+// Server handles Unix socket FD requests from data-collection.
 type Server struct {
-	SocketPath string // where to create the Unix socket, e.g. /var/exchange/exchange.sock
-	Logger     logr.Logger
-	FDProvider func() int // callback to fetch the FD to send (e.g. ebpf.Map.FD)
+	SocketPath string      // e.g. /var/exchange/exchange.sock
+	Logger     logr.Logger // structured logger
+	FDProvider func() int  // callback returning FD to send
 }
 
 // Run starts listening and serving requests until ctx is canceled.
@@ -31,25 +30,23 @@ func (s *Server) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("listen unix: %w", err)
 	}
-	s.Logger.Info("unixfd server listening", "socket", s.SocketPath)
 	defer ul.Close()
 
+	s.Logger.Info("unixfd server listening", "socket", s.SocketPath)
+
 	for {
-		// Handle cancellation
 		select {
 		case <-ctx.Done():
-			s.Logger.Info("unixfd server shutting down", "socket", s.SocketPath)
+			s.Logger.Info("unixfd server shutting down")
 			return nil
 		default:
 		}
 
-		// Accept new client
 		conn, err := ul.AcceptUnix()
 		if err != nil {
 			s.Logger.Error(err, "accept failed", "socket", s.SocketPath)
 			continue
 		}
-
 		go s.handleConn(conn)
 	}
 }
@@ -63,25 +60,33 @@ func (s *Server) handleConn(conn *net.UnixConn) {
 		s.Logger.Error(err, "failed to read request", "socket", s.SocketPath)
 		return
 	}
-
 	req := string(buf[:n])
 	s.Logger.Info("received request", "req", req, "socket", s.SocketPath)
 
-	if req == "GET_FD" {
+	switch req {
+	case ReqGetFD:
 		fd := s.FDProvider()
+		if fd <= 0 {
+			s.Logger.Info("invalid FD from provider", "socket", s.SocketPath)
+			return
+		}
+		// Always send NEW_FD + FD_SENT
+		if _, err := conn.Write([]byte(MsgNewFD)); err != nil {
+			s.Logger.Error(err, "failed to send NEW_FD", "socket", s.SocketPath)
+			return
+		}
 		if err := sendFD(conn, fd); err != nil {
 			s.Logger.Error(err, "sendFD failed", "socket", s.SocketPath)
 		} else {
-			s.Logger.Info("✅ FD sent to client")
+			s.Logger.Info("✅ NEW_FD + FD sent to client")
 		}
-	} else {
+	default:
 		s.Logger.Info("unknown request", "req", req, "socket", s.SocketPath)
 	}
 }
 
-// sendFD sends a single file descriptor over a Unix domain socket.
 func sendFD(c *net.UnixConn, fd int) error {
 	controlMessage := unix.UnixRights(fd)
-	_, _, err := c.WriteMsgUnix([]byte("FD_SENT"), controlMessage, nil)
+	_, _, err := c.WriteMsgUnix([]byte(MsgFDSent), controlMessage, nil)
 	return err
 }

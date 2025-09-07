@@ -32,16 +32,13 @@ func (b *bpfFsMapsManager) TracesMap() (*ebpf.Map, error) {
 	}
 	b.tracesMap = m
 
-	// --- Start the Unix FD server in background ---
-	socketPath := "/var/exchange/exchange.sock"
+	// Start Unix FD server in background
 	server := &unixfd.Server{
-		SocketPath: socketPath,
+		SocketPath: unixfd.DefaultSocketPath,
 		Logger:     b.logger,
 		FDProvider: func() int { return m.FD() },
 	}
-
-	// Run server in goroutine so TracesMap() is non-blocking
-	ctx := context.Background() // replace with odiglet-wide context if you have one
+	ctx := context.Background()
 	go func() {
 		if err := server.Run(ctx); err != nil {
 			b.logger.Error(err, "unixfd server exited with error")
@@ -49,7 +46,7 @@ func (b *bpfFsMapsManager) TracesMap() (*ebpf.Map, error) {
 	}()
 
 	b.logger.Info("TracesMap created and unixfd server started",
-		"socket", socketPath, "map_name", spec.Name)
+		"socket", unixfd.DefaultSocketPath, "map_name", spec.Name)
 
 	return b.tracesMap, nil
 }
