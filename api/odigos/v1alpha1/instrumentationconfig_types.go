@@ -219,7 +219,11 @@ type RuntimeDetailsByContainer struct {
 	// nil means we were unable to determine the secure-execution mode.
 	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
 
-	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
+	// CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+	// Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+	// Thus, this field is set only when there is:
+	// - Actual CRI check failed
+	// - The observed environment variables might come from container runtime
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
 	// Holds the environment variables retrieved from the container runtime.
 	EnvFromContainerRuntime []EnvVar `json:"envFromContainerRuntime,omitempty"`

@@ -183,6 +183,7 @@ func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrappe
 	var state odigosv1.ProcessingState
 
 	if err != nil {
+		var criErrorMessage *string
 		// If the CRI request fails, we can still attempt to check the /proc/<pid>/environ file.
 		// This is only applicable if the relevant value in /proc is EMPTY and we are certain it wasn't present in the manifest (as indicated by reaching this point in the code).
 		// In such cases, we can mark the state as `ProcessingStateSucceeded` and proceed without setting any environment variables.
@@ -192,16 +193,16 @@ func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrappe
 				state = odigosv1.ProcessingStateSucceeded
 			} else {
 				state = odigosv1.ProcessingStateFailed
-				// In Java, there are two potential relevant environment variables. If either of them exists or is not nil, we cannot consider the process as succeeded.
+				errMessage := fmt.Sprintf("CRI communication error for container %s in pod %s/%s",
+					container.Name, pod.Namespace, pod.Name)
+				criErrorMessage = &errMessage
 				break
 			}
 		}
 
 		log.Logger.Error(err, "failed to get relevant env var per language from CRI", "container", container.Name, "pod", pod.Name, "namespace", pod.Namespace)
-		errMessage := fmt.Sprintf("CRI communication error for container %s in pod %s/%s",
-			container.Name, pod.Namespace, pod.Name)
 
-		runtimeDetailsByContainer.CriErrorMessage = &errMessage
+		runtimeDetailsByContainer.CriErrorMessage = criErrorMessage
 
 	} else {
 		state = odigosv1.ProcessingStateSucceeded
