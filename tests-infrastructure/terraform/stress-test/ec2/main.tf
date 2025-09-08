@@ -276,19 +276,7 @@ providers:
     allowUiUpdates: true
     options:
       path: /etc/grafana/provisioning/dashboards
-  - name: 'kubernetes-dashboards'
-    orgId: 1
-    folder: 'Kubernetes'
-    type: file
-    disableDeletion: false
-    updateIntervalSeconds: 10
-    allowUiUpdates: true
-    options:
-      path: /etc/grafana/provisioning/dashboards/kubernetes
 EOF
-
-    # Create Kubernetes dashboards directory
-    mkdir -p /etc/grafana/provisioning/dashboards/kubernetes
 
 
 
@@ -301,44 +289,22 @@ EOF
 set -e
 
 # Wait for Grafana to be ready
-echo "Waiting for Grafana to be ready..."
 until curl -s http://127.0.0.1:3000/api/health > /dev/null; do
   sleep 2
 done
 
-# Wait a bit more for Grafana to fully initialize
+# Wait for Grafana to fully initialize
 sleep 10
 
-# Download dashboard 15760 from Grafana.com
-echo "Downloading Kubernetes Pods View dashboard (ID: 15760) from Grafana.com..."
-DASHBOARD_JSON=$(curl -s "https://grafana.com/api/dashboards/15760/revisions/1/download")
+# Download dashboard 15760 JSON
+curl -s -L "https://grafana.com/api/dashboards/15760/revisions/latest/download" \
+  -o /etc/grafana/provisioning/dashboards/kubernetes-pods-view.json
 
-# Check if download was successful
-if [ -z "$DASHBOARD_JSON" ] || echo "$DASHBOARD_JSON" | grep -q "error"; then
-  echo "Failed to download dashboard 15760, trying alternative method..."
-  # Try alternative download method
-  DASHBOARD_JSON=$(curl -s "https://grafana.com/api/dashboards/15760/download")
-fi
+# Fix permissions
+chown grafana:grafana /etc/grafana/provisioning/dashboards/kubernetes-pods-view.json
 
-# Save dashboard to provisioning directory
-echo "Saving dashboard to provisioning directory..."
-echo "$DASHBOARD_JSON" > /etc/grafana/provisioning/dashboards/kubernetes/kubernetes-pods-view.json
-chown grafana:grafana /etc/grafana/provisioning/dashboards/kubernetes/kubernetes-pods-view.json
-
-# Import the dashboard via API
-echo "Importing Kubernetes Pods View dashboard..."
-RESPONSE=$(curl -s -X POST \
-  -H "Content-Type: application/json" \
-  -d "{\"dashboard\": $DASHBOARD_JSON, \"overwrite\": true}" \
-  http://admin:admin@127.0.0.1:3000/api/dashboards/db)
-
-# Check if import was successful
-if echo "$RESPONSE" | grep -q "success"; then
-  echo "Kubernetes Pods View dashboard imported successfully!"
-else
-  echo "Dashboard import response: $RESPONSE"
-  echo "Dashboard 15760 may already exist or will be loaded via provisioning"
-fi
+# Force Grafana to reload dashboards
+curl -s -X POST http://127.0.0.1:3000/api/admin/provisioning/dashboards/reload || true
 
 EOF
     

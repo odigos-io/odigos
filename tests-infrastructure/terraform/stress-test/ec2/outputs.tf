@@ -13,7 +13,6 @@ output "monitoring_ec2_sg_id" {
   value       = aws_security_group.monitoring_ec2_sg.id
 }
 
-# (Nice to have) direct remote_write URL for your agent values
 output "prometheus_remote_write_url" {
   description = "Agent remote_write target"
   value       = "http://${aws_instance.monitoring.private_ip}:9090/api/v1/write"

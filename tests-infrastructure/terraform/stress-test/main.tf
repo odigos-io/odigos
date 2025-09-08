@@ -167,10 +167,13 @@ data "terraform_remote_state" "ec2" {
 # PROMETHEUS DEPLOYMENT (3-step process)
 # =============================================================================
 
-# Step 1: Install Prometheus Operator CRDs
+# Step 1: Install Prometheus Operator CRDs (only if deploying apps)
 resource "null_resource" "install_prometheus_crds" {
+  count = var.deploy_kubernetes_apps ? 1 : 0
+  
   provisioner "local-exec" {
     command = <<-EOT
+      set -e
       
       # Wait for cluster to be ready
       kubectl wait --for=condition=Ready nodes --all --timeout=300s
@@ -191,10 +194,11 @@ resource "null_resource" "install_prometheus_crds" {
 # Step 2: Install kube-prometheus-stack (only if deploying apps)
 resource "null_resource" "install_kube_prometheus_stack" {
   count = var.deploy_kubernetes_apps ? 1 : 0
-  depends_on = [null_resource.install_prometheus_crds]
+  depends_on = [null_resource.install_prometheus_crds[0]]
 
   provisioner "local-exec" {
     command = <<-EOT
+      set -e
       
       # Install kube-prometheus-stack with values file
       echo "Installing kube-prometheus-stack..."
@@ -202,7 +206,7 @@ resource "null_resource" "install_kube_prometheus_stack" {
         -n monitoring \
         -f ${path.module}/deploy/monitoring-stack/prometheus-values.yaml \
         --create-namespace \
-        --wait 
+        --wait
       
       echo "kube-prometheus-stack installation completed!"
     EOT
@@ -343,10 +347,6 @@ resource "null_resource" "apply_odigos_sources" {
       
       # Apply Odigos sources only if workload generators are deployed
       if [[ "${var.deploy_load_test_apps}" == "true" ]]; then
-        # Ensure load-test namespace exists
-        echo "Ensuring load-test namespace exists..."
-        kubectl create namespace load-test --dry-run=client -o yaml | kubectl apply -f -
-        
         # Apply Odigos sources for workload generators
         echo "Applying Odigos sources for workload generators..."
         kubectl apply -f ${path.module}/deploy/odigos/sources.yaml
