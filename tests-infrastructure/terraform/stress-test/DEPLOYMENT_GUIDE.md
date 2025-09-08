@@ -1,427 +1,359 @@
-# Odigos Stress Test Infrastructure - Deployment Guide
+# Odigos Stress Testing Infrastructure - Deployment Guide
 
-This guide provides detailed instructions for deploying and managing the Odigos stress testing infrastructure.
-
-## Overview
-
-The infrastructure consists of:
-- **EKS Cluster**: Kubernetes cluster with Odigos for automatic telemetry collection
-- **EC2 Monitoring Stack**: Prometheus, Grafana, ClickHouse, and K6 for monitoring and testing
-- **Test Workloads**: Span generators and test applications for load testing
+This guide will walk you through deploying the complete stress testing infrastructure for Odigos.
 
 ## Prerequisites
 
 ### Required Tools
-- **AWS CLI**: Configured with appropriate permissions
-- **OpenTofu/Terraform**: >= 1.0.0
-- **kubectl**: For Kubernetes cluster management
-- **Docker**: For building test applications (optional)
+
+1. **AWS CLI** - Configured with appropriate permissions
+2. **Terraform/OpenTofu** >= 1.0.0
+3. **kubectl** - For Kubernetes cluster interaction
+4. **Docker** - For building test applications
 
 ### AWS Permissions
-Your AWS credentials need permissions for:
-- EKS cluster creation and management
-- EC2 instance creation and management
-- VPC and networking configuration
-- IAM role and policy management
+
+Your AWS credentials need the following permissions:
+- EC2 (VPC, Security Groups, Instances, EBS)
+- EKS (Clusters, Node Groups, IAM Roles)
+- IAM (Role creation and attachment)
 - Systems Manager (for EC2 access)
 
-## Quick Deployment
+## Quick Start
 
-### 1. Clone and Navigate
+### Automated Deployment
+
 ```bash
-git clone <repository>
-cd tests-infrastructure/terraform/stress-test
+# Deploy everything automatically
+./scripts/deploy.sh
+
+# Check status
+./scripts/deploy.sh status
+
+# Deploy only applications
+./scripts/deploy.sh k8s-apps
 ```
 
-### 2. Deploy Everything
+### Manual Deployment
+
+#### Step 1: Configure Infrastructure
+
+1. **Edit terraform.tfvars:**
+   ```hcl
+   # Basic Configuration
+   cluster_name = "your-odigos-stress-test"
+   region       = "us-east-1"
+   
+   # Security - IMPORTANT: Restrict this in production!
+   cluster_endpoint_public_access_cidrs = ["YOUR_IP/32"]
+   
+   # Node Configuration
+   node_spec        = "c6a.2xlarge"
+   node_desired_size = 3
+   node_max_size    = 5
+   ```
+
+#### Step 2: Deploy Infrastructure
+
 ```bash
-# Deploy complete infrastructure (EKS + EC2 + Kubernetes apps)
-./deploy.sh deploy
-
-# Check deployment status
-./deploy.sh status
-```
-
-### 3. Verify Deployment
-```bash
-# Check cluster status
-kubectl get nodes
-
-# Check Odigos status
-kubectl get pods -n odigos-system
-
-# Check workload generators
-kubectl get pods -n load-test
-
-# Check destinations
-kubectl get destinations -n odigos-system
-```
-
-## Detailed Deployment Process
-
-### Phase 1: EKS Infrastructure
-```bash
-# Deploy EKS cluster and networking
-tofu apply -var="deploy_kubernetes_apps=false" -auto-approve
-```
-
-This creates:
-- VPC with public/private subnets
-- EKS cluster with managed node groups
-- Security groups and IAM roles
-- KMS encryption keys
-
-### Phase 2: EC2 Monitoring Stack
-```bash
-# Deploy EC2 monitoring instance
-cd ec2
+# Deploy EKS infrastructure
 tofu init
-tofu apply -auto-approve
+tofu plan
+tofu apply
+
+# Deploy monitoring stack
+cd ec2/
+tofu init
+tofu apply
 cd ..
+
+# Connect monitoring to EKS
+tofu apply
 ```
 
-This creates:
-- EC2 instance with monitoring stack
-- Prometheus, Grafana, ClickHouse, K6
-- Encrypted EBS volumes
-- Security groups for EKS communication
+#### Step 3: Deploy Applications
 
-### Phase 3: Kubernetes Applications
 ```bash
-# Deploy Kubernetes applications
-tofu apply -var="deploy_kubernetes_apps=true" -auto-approve
+# Configure kubectl
+aws eks update-kubeconfig --region us-east-1 --name your-cluster-name
+
+# Deploy test workloads
+kubectl apply -f deploy/workloads/ --recursive
+
+# Deploy Odigos configurations
+kubectl apply -f deploy/odigos/
 ```
 
-This deploys:
-- Prometheus agent in EKS
-- Odigos for telemetry collection
-- Workload generators (Go, Java, Node.js, Python)
-- Odigos sources and ClickHouse destination
+## Architecture Overview
 
-## Configuration
-
-### Terraform Variables
-Edit `terraform.tfvars` to customize your deployment:
-
-```hcl
-# Cluster configuration
-cluster_name = "odigos-stress-test"
-region       = "us-east-1"
-node_count   = 3
-node_spec    = "c6a.2xlarge"
-
-# EC2 configuration
-ec2_instance_type = "m6i.large"
-ec2_volume_size  = 100
-
-# Monitoring configuration
-prometheus_retention = "7d"
-grafana_admin_password = "admin"
-clickhouse_password = "stresstest"
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   EKS Cluster   │    │  Monitoring      │    │  Test Workloads │
+│                 │    │  Stack           │    │                 │
+│ • Kubernetes    │◄──►│ • Prometheus     │    │ • Span Gen      │
+│ • Node Groups   │    │ • Grafana        │    │ • HTTP Servers  │
+│ • Applications  │    │ • ClickHouse     │    │ • Go Apps       │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
-### Workload Generator Configuration
-Workload generators are configured in `deploy/workloads/generators/`:
-- **Go**: High-performance span generation
-- **Java**: JVM-based workload testing
-- **Node.js**: JavaScript/TypeScript applications
-- **Python**: Python-based applications
+## Directory Structure
 
-Each generator includes:
-- Pre-configured span generation
-- Odigos auto-instrumentation labels
-- Resource limits and scaling
+```
+stress-test/
+├── README.md                    # Quick start guide
+├── main.tf                      # EKS infrastructure
+├── variables.tf                 # EKS variables
+├── outputs.tf                   # EKS outputs
+├── provider.tf                  # AWS provider config
+├── terraform.tfvars             # Configuration
+├── ec2/                         # Monitoring stack
+│   ├── main.tf                  # EC2 instance with monitoring tools
+│   ├── variables.tf             # EC2 variables
+│   └── outputs.tf               # EC2 outputs
+├── deploy/                      # Kubernetes manifests
+│   ├── workloads/               # Test applications
+│   │   ├── generators/          # Span generators (Go, Java, Node, Python)
+│   │   ├── services/            # HTTP services
+│   │   └── applications/        # Full applications
+│   ├── monitoring-stack/        # Prometheus configuration
+│   └── odigos/                  # Odigos configurations
+├── scripts/                     # Deployment scripts
+│   └── deploy.sh                # Main deployment script
+└── docs/                        # Documentation
+    ├── DEPLOYMENT_GUIDE.md      # This file
+    └── README.md                # Architecture overview
+```
 
-## Accessing Services
+## Monitoring Stack
 
-### Get Connection Information
+The monitoring EC2 instance includes:
+
+- **Prometheus**: Metrics collection and storage
+- **Grafana**: Visualization and dashboards  
+- **ClickHouse**: High-performance data storage
+- **K6**: Load testing framework
+
+### Accessing Services
+
+All monitoring services run on the EC2 instance. Use AWS Systems Manager Session Manager for port forwarding:
+
 ```bash
-# Get all outputs
-tofu output
-
-# Get specific information
-tofu output cluster_info
-tofu output clickhouse_connection_info
-tofu output ec2_instance_id
-```
-
-### Port Forwarding to EC2 Services
-```bash
-# Get instance ID
-INSTANCE_ID=$(tofu output -raw ec2_instance_id)
+# Get monitoring instance ID
+cd ec2/
+tofu output monitoring_instance_private_ip
+cd ..
 
 # Grafana (port 3000)
-aws ssm start-session --target $INSTANCE_ID \
+aws ssm start-session --target <instance-id> \
   --document-name AWS-StartPortForwardingSession \
   --parameters '{"portNumber":["3000"],"localPortNumber":["3000"]}'
 
 # Prometheus (port 9090)
-aws ssm start-session --target $INSTANCE_ID \
+aws ssm start-session --target <instance-id> \
   --document-name AWS-StartPortForwardingSession \
   --parameters '{"portNumber":["9090"],"localPortNumber":["9090"]}'
 
 # ClickHouse HTTP (port 8123)
-aws ssm start-session --target $INSTANCE_ID \
+aws ssm start-session --target <instance-id> \
   --document-name AWS-StartPortForwardingSession \
   --parameters '{"portNumber":["8123"],"localPortNumber":["8123"]}'
 ```
 
-### Service URLs
-After port forwarding:
-- **Grafana**: http://localhost:3000 (admin/admin)
-- **Prometheus**: http://localhost:9090
-- **ClickHouse HTTP**: http://localhost:8123
-- **ClickHouse Native**: tcp://<EC2_IP>:9000
+## Test Applications
 
-## Monitoring and Observability
+### Span Generators
 
-### Odigos Telemetry Collection
-Odigos automatically:
-- Detects applications with `odigos-target=true` label
-- Instruments them for traces, metrics, and logs
-- Routes telemetry to ClickHouse destination
+Multi-language applications that generate telemetry data:
 
-### Data Flow
-```
-Test Applications → Odigos Sources → Odigos Gateway → ClickHouse (EC2)
-                                                      ↓
-                                                 Prometheus (EC2)
-                                                      ↓
-                                                 Grafana (EC2)
-```
+- **Go**: High-performance span generation
+- **Java**: Spring Boot application
+- **Node.js**: Express.js application  
+- **Python**: FastAPI application
 
-### ClickHouse Tables
-The following tables are automatically created:
-- `otel_traces` - OpenTelemetry traces
-- `otel_logs` - Application logs
-- `otel_metrics_gauge` - Gauge metrics
-- `otel_metrics_sum` - Sum metrics
-- `otel_metrics_histogram` - Histogram metrics
-- `otel_metrics_exponential_histogram` - Exponential histogram metrics
-- `otel_metrics_summary` - Summary metrics
-
-## Load Testing
-
-### K6 Integration
-K6 is pre-installed on the EC2 instance for load testing:
+### Deployment
 
 ```bash
-# Access EC2 instance
-aws ssm start-session --target $INSTANCE_ID
+# Deploy all span generators
+kubectl apply -f deploy/workloads/generators/
 
-# Check K6 status
-sudo systemctl status k6-loadtest
-
-# View K6 logs
-sudo journalctl -u k6-loadtest -f
-
-# Run custom K6 tests
-sudo nano /opt/k6/tests/loadtest.js
-sudo systemctl restart k6-loadtest
+# Deploy specific language
+kubectl apply -f deploy/workloads/generators/go/
+kubectl apply -f deploy/workloads/generators/java/
+kubectl apply -f deploy/workloads/generators/node/
+kubectl apply -f deploy/workloads/generators/python/
 ```
 
-### Test Scenarios
-Default K6 script includes:
-- Health check endpoints
-- API status checks
-- POST request testing
-- Configurable via environment variables
+## Odigos Integration
+
+### ClickHouse Destination
+
+The infrastructure automatically configures Odigos to send telemetry data to ClickHouse:
+
+```bash
+# Check destination status
+kubectl get destinations -n odigos-system
+
+# Check destination details
+kubectl describe destination clickhouse-destination -n odigos-system
+```
+
+### Data Flow
+
+```
+EKS Applications → Odigos Collector → ClickHouse (EC2)
+                                      ↓
+                                 Grafana (EC2)
+```
+
+## Running Load Tests
+
+### Using K6
+
+The K6 load testing script is pre-configured on the monitoring instance:
+
+```bash
+# SSH to monitoring instance
+aws ssm start-session --target <instance-id>
+
+# Run load test
+sudo systemctl start k6-loadtest
+
+# Check status
+sudo systemctl status k6-loadtest
+
+# View logs
+sudo journalctl -u k6-loadtest -f
+```
+
+## Verification Checklist
+
+- [ ] EKS cluster is running and accessible
+- [ ] All nodes are in Ready state
+- [ ] Test applications are deployed and running
+- [ ] Monitoring services are accessible
+- [ ] Odigos destination is configured
+- [ ] Metrics are flowing to Prometheus
+- [ ] Telemetry data is flowing to ClickHouse
+- [ ] Grafana dashboards are populated
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### 1. EKS Cluster Not Ready
-```bash
-# Check cluster status
-aws eks describe-cluster --name odigos-stress-test
+1. **Cluster not accessible:**
+   ```bash
+   # Check security groups
+   aws ec2 describe-security-groups --group-ids <sg-id>
+   
+   # Verify kubectl config
+   kubectl config current-context
+   ```
 
-# Check node groups
-aws eks describe-nodegroup --cluster-name odigos-stress-test --nodegroup-name stress-test-nodes
+2. **Applications not starting:**
+   ```bash
+   # Check pod status
+   kubectl get pods --all-namespaces
+   
+   # Check pod logs
+   kubectl logs <pod-name> -n <namespace>
+   
+   # Check resource limits
+   kubectl describe pod <pod-name> -n <namespace>
+   ```
 
-# Check node status
-kubectl get nodes
-```
+3. **Monitoring not accessible:**
+   ```bash
+   # Check EC2 instance status
+   aws ec2 describe-instances --instance-ids <instance-id>
+   
+   # Check security groups
+   aws ec2 describe-security-groups --group-ids <sg-id>
+   
+   # Check SSM agent
+   aws ssm describe-instance-information --filters "Key=InstanceIds,Values=<instance-id>"
+   ```
 
-#### 2. Odigos Not Working
-```bash
-# Check Odigos pods
-kubectl get pods -n odigos-system
-
-# Check destination status
-kubectl describe destination clickhouse-destination -n odigos-system
-
-# Check gateway logs
-kubectl logs -l app.kubernetes.io/name=odigos -n odigos-system
-
-# Check sources
-kubectl get sources -n load-test
-```
-
-#### 3. ClickHouse Connection Issues
-```bash
-# Test connectivity from EKS
-kubectl run test-clickhouse --image=busybox --rm -it --restart=Never -- sh -c "nc -zv <EC2_IP> 9000"
-
-# Check ClickHouse on EC2
-aws ssm start-session --target $INSTANCE_ID
-sudo systemctl status clickhouse-server
-ss -tlnp | grep 9000
-```
-
-#### 4. EC2 Services Not Starting
-```bash
-# Check service status
-sudo systemctl status prometheus grafana-server clickhouse-server
-
-# View service logs
-sudo journalctl -u prometheus -f
-sudo journalctl -u grafana-server -f
-sudo journalctl -u clickhouse-server -f
-
-# Check disk space
-df -h
-```
+4. **Odigos destination issues:**
+   ```bash
+   # Check destination conditions
+   kubectl describe destination clickhouse-destination -n odigos-system
+   
+   # Check ClickHouse connectivity
+   kubectl run test-clickhouse --image=busybox --rm -it --restart=Never -- sh -c "nc -zv <EC2_IP> 9000"
+   ```
 
 ### Useful Commands
 
-#### EKS Cluster
 ```bash
-# Update kubeconfig
-aws eks update-kubeconfig --region us-east-1 --name odigos-stress-test
+# Check cluster status
+kubectl get nodes
+kubectl get pods --all-namespaces
 
-# Check all resources
-kubectl get all --all-namespaces
-
-# Check specific namespaces
-kubectl get pods -n odigos-system
-kubectl get pods -n load-test
-kubectl get pods -n monitoring
-```
-
-#### EC2 Instance
-```bash
-# Get instance ID
-INSTANCE_ID=$(tofu output -raw ec2_instance_id)
-
-# Check instance status
-aws ec2 describe-instances --instance-ids $INSTANCE_ID
-
-# Access instance
-aws ssm start-session --target $INSTANCE_ID
+# Check resource usage
+kubectl top nodes
+kubectl top pods --all-namespaces
 
 # Check services
-sudo systemctl status prometheus grafana-server clickhouse-server k6-loadtest
+kubectl get svc --all-namespaces
 
-# Check disk usage
-df -h
-lsblk
+# View terraform outputs
+tofu output
+
+# Check EC2 status
+cd ec2/
+tofu output
 ```
-
-## Scaling and Performance
-
-### EKS Cluster Scaling
-```bash
-# Scale node group
-aws eks update-nodegroup-config \
-  --cluster-name odigos-stress-test \
-  --nodegroup-name stress-test-nodes \
-  --scaling-config minSize=2,maxSize=10,desiredSize=5
-```
-
-### Workload Generator Scaling
-```bash
-# Scale specific generators
-kubectl scale deployment go-span-generator -n load-test --replicas=5
-kubectl scale deployment java-span-generator -n load-test --replicas=3
-```
-
-### EC2 Instance Scaling
-For high-load scenarios, consider:
-- Upgrading EC2 instance type
-- Increasing EBS volume sizes
-- Adding additional monitoring instances
-
-## Security Considerations
-
-### Network Security
-- EKS cluster runs in private subnets
-- EC2 instance accessible only via Systems Manager
-- Security groups configured for least privilege access
-- All EBS volumes encrypted
-
-### Access Control
-- IAM roles with minimal required permissions
-- No SSH keys required (Systems Manager only)
-- KMS encryption for sensitive data
-
-### Data Protection
-- All telemetry data encrypted in transit
-- ClickHouse data encrypted at rest
-- Prometheus metrics encrypted at rest
 
 ## Cleanup
 
-### Complete Cleanup
-```bash
-# Destroy everything
-./deploy.sh destroy
-```
+To destroy the infrastructure:
 
-### Partial Cleanup
 ```bash
-# Destroy only Kubernetes applications
-tofu apply -var="deploy_kubernetes_apps=false" -auto-approve
+# Automated cleanup
+./scripts/deploy.sh destroy
 
-# Destroy only EC2 stack
-cd ec2
+# Manual cleanup
+kubectl delete -f deploy/ --recursive
 tofu destroy
-cd ..
-
-# Destroy only EKS cluster
+cd ec2/
 tofu destroy
 ```
 
-### Manual Cleanup
-```bash
-# Delete EKS cluster
-aws eks delete-cluster --name odigos-stress-test
+## Security Best Practices
 
-# Delete EC2 instance
-aws ec2 terminate-instances --instance-ids <instance-id>
+1. **Network Security:**
+   - Use private subnets for all resources
+   - Restrict EKS endpoint access to specific IPs
+   - Use security groups with least privilege
 
-# Clean up Terraform state
-rm -rf .terraform/
-rm terraform.tfstate*
-```
+2. **Access Control:**
+   - Use IAM roles instead of access keys
+   - Enable MFA for AWS console access
+   - Use AWS Systems Manager for EC2 access
 
-## Support and Maintenance
+3. **Data Protection:**
+   - Enable encryption for all EBS volumes
+   - Use AWS Secrets Manager for sensitive data
+   - Enable CloudTrail for audit logging
 
-### Regular Maintenance
-- Monitor disk usage on EC2 instance
-- Check service health and logs
-- Update software versions as needed
-- Review and rotate credentials
+4. **Monitoring:**
+   - Set up CloudWatch alarms
+   - Enable VPC Flow Logs
+   - Monitor resource usage and costs
 
-### Monitoring
-- Set up CloudWatch alarms for critical metrics
-- Monitor EKS cluster health
-- Track EC2 instance performance
-- Monitor ClickHouse storage usage
+## Cost Optimization Tips
 
-### Backup
-- EBS snapshots for EC2 volumes
-- EKS cluster configuration backup
-- Terraform state backup
-- ClickHouse data export (if needed)
+1. **Use Spot Instances:** Configure node groups to use spot instances for non-critical workloads
+2. **Auto Scaling:** Set up HPA for test applications
+3. **Resource Limits:** Set appropriate CPU/memory limits
+4. **Scheduled Scaling:** Use KEDA or similar tools for scheduled scaling
+5. **Cleanup:** Destroy infrastructure when not in use
+6. **Monitoring:** Set up cost alerts and budgets
 
-## Next Steps
+## Support
 
-After successful deployment:
-1. **Access Grafana**: Set up dashboards for your specific use case
-2. **Configure Alerts**: Set up Prometheus alerts for critical metrics
-3. **Customize Workloads**: Modify test applications for your specific scenarios
-4. **Scale Testing**: Run load tests with K6 to validate performance
-5. **Monitor Data Flow**: Verify telemetry data is flowing correctly through the pipeline
-
-For additional support or questions, refer to the main README.md or create an issue in the repository.
+For issues or questions:
+1. Check the troubleshooting section
+2. Review AWS and Kubernetes documentation
+3. Check the main README.md file
+4. Contact the platform team

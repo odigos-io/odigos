@@ -32,8 +32,8 @@ The destination is automatically deployed as part of the Terraform EKS provision
 ### Conditional Deployment
 
 - **Full deployment** (`./deploy.sh deploy`): Deploys everything including workload generators and Odigos sources
-- **Core deployment** (`./deploy.sh apps`): Deploys Odigos and ClickHouse destination only
-- **Load test deployment** (`./deploy.sh apps --with-load-test`): Deploys everything including workload generators and Odigos sources
+- **Core deployment** (`./deploy.sh k8s-apps`): Deploys Odigos and ClickHouse destination only
+- **Load test deployment** (`./deploy.sh k8s-apps --with-load-test`): Deploys everything including workload generators and Odigos sources
 
 ### Current Status
 **Working**: ClickHouse destination is successfully configured and processing telemetry data from workload generators.

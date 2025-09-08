@@ -9,10 +9,10 @@ This directory contains the complete infrastructure setup for running stress tes
 ./deploy.sh deploy
 
 # Deploy only Kubernetes applications (without load test workloads)
-./deploy.sh apps
+./deploy.sh k8s-apps
 
 # Deploy Kubernetes applications with load test workloads
-./deploy.sh apps --with-load-test
+./deploy.sh k8s-apps --with-load-test
 
 # Check status
 ./deploy.sh status
@@ -51,10 +51,10 @@ Deploys everything: EKS cluster, EC2 monitoring stack, and all Kubernetes applic
 ### Kubernetes Applications Only
 ```bash
 # Deploy core applications (Odigos, Prometheus) without load test workloads
-./deploy.sh apps
+./deploy.sh k8s-apps
 
 # Deploy core applications with load test workloads (span generators)
-./deploy.sh apps --with-load-test
+./deploy.sh k8s-apps --with-load-test
 ```
 
 ### Infrastructure Only
