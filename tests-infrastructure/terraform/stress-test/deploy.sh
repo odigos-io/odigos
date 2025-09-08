@@ -184,22 +184,6 @@ deploy_infrastructure() {
         return 1
     fi
     
-    # Check if required variables are declared
-    log_info "Checking required variables..."
-    if ! check_tf_variable "deploy_kubernetes_apps"; then
-        log_warn "Variable declaration issue detected. Attempting to clean up Terraform state..."
-        if ! cleanup_tf_state; then
-            log_error "Failed to clean up Terraform state. Please run 'rm -rf .terraform .terraform.lock.hcl' and try again."
-            return 1
-        fi
-        
-        # Re-check variable after cleanup
-        if ! check_tf_variable "deploy_kubernetes_apps"; then
-            log_error "Required variable 'deploy_kubernetes_apps' is still not properly declared after cleanup"
-            return 1
-        fi
-    fi
-    
     # Deploy EKS cluster infrastructure only (creates VPC, no apps)
     log_info "Step 1: Deploying EKS cluster infrastructure..."
     if ! run_tf "." "apply" "-var=deploy_kubernetes_apps=false" "-auto-approve"; then
@@ -214,6 +198,7 @@ deploy_infrastructure() {
         log_error "EC2 Terraform initialization failed"
         return 1
     fi
+    
     if ! run_tf "ec2" "apply" "-auto-approve"; then
         log_error "EC2 monitoring stack deployment failed (monitoring instance, ClickHouse, Grafana)"
         return 1
@@ -234,8 +219,8 @@ deploy_infrastructure() {
         return 1
     fi
     
-    if ! run_tf "." "apply" "-var=deploy_kubernetes_apps=true" "-auto-approve"; then
-        log_error "Kubernetes applications deployment failed (Odigos, Prometheus, ClickHouse destination)"
+    if ! run_tf "." "apply" "-var=deploy_kubernetes_apps=true" "-var=deploy_load_test_apps=true" "-auto-approve"; then
+        log_error "Kubernetes applications deployment failed (Odigos, Prometheus, ClickHouse destination, load-test apps)"
         return 1
     fi
     
@@ -246,12 +231,12 @@ deploy_infrastructure() {
     local instance_id=$(cd ec2 && tofu output -raw monitoring_instance_id 2>/dev/null || echo "Unknown")
     if [[ "$instance_id" != "Unknown" && "$instance_id" != "None" ]]; then
         log_info "Monitoring Access Commands:"
-        echo "  • Grafana (port 3000):"
-        echo "    aws ssm start-session --target $instance_id --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"3000\"],\"localPortNumber\":[\"3000\"]}' --region $(get_tf_var region)"
         echo "  • ClickHouse (port 8123):"
-        echo "    aws ssm start-session --target $instance_id --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"8123\"],\"localPortNumber\":[\"8123\"]}' --region $(get_tf_var region)"
+        echo "    aws ssm start-session --target $instance_id --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"8123\"],\"localPortNumber\":[\"8123\"]}'"
         echo "  • Prometheus (port 9090):"
-        echo "    aws ssm start-session --target $instance_id --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"9090\"],\"localPortNumber\":[\"9090\"]}' --region $(get_tf_var region)"
+        echo "    aws ssm start-session --target $instance_id --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"9090\"],\"localPortNumber\":[\"9090\"]}'"
+        echo "  • Grafana (port 3000):"
+        echo "    aws ssm start-session --target $instance_id --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"3000\"],\"localPortNumber\":[\"3000\"]}'"
     else
         log_warn "EC2 monitoring instance not found or not running"
     fi
@@ -405,77 +390,21 @@ check_status() {
         
         # Store instance_id for later use in monitoring access commands
         export EC2_INSTANCE_ID="$instance_id"
-    else
-        log_warn "EC2 monitoring stack not found in state"
-    fi
-    
-    
-    # Check Terraform-managed Kubernetes resources
-    log_info "Terraform-managed Kubernetes Resources:"
-    local k8s_resources=$(tofu state list 2>/dev/null | grep -E "(null_resource.*install_|null_resource.*apply_)" || echo "")
-    if [[ -n "$k8s_resources" ]]; then
-        log_success "Kubernetes resources managed by Terraform:"
         
-        # Display resources with readable names
-        while IFS= read -r resource; do
-            case "$resource" in
-                "null_resource.install_prometheus_crds")
-                    echo "  • Prometheus CRDs Installation"
-                    ;;
-                "null_resource.install_kube_prometheus_stack[0]")
-                    echo "  • Prometheus Stack Deployment"
-                    ;;
-                "null_resource.apply_prometheus_agent[0]")
-                    echo "  • Prometheus Agent Configuration"
-                    ;;
-                "null_resource.install_odigos[0]")
-                    echo "  • Odigos Observability Platform"
-                    ;;
-                "null_resource.apply_workload_generators[0]")
-                    echo "  • Workload Generators (Go/Java/Node/Python)"
-                    ;;
-                "null_resource.apply_odigos_sources[0]")
-                    echo "  • Odigos Source Configuration"
-                    ;;
-                "null_resource.apply_odigos_clickhouse_destination[0]")
-                    echo "  • ClickHouse Destination Setup"
-                    ;;
-                *)
-                    echo "  • $resource"
-                    ;;
-            esac
-        done <<< "$k8s_resources"
-        
-        # Check application-specific health
-        log_info "Application Health Check:"
-        if kubectl cluster-info &>/dev/null; then
-            # Check Odigos pods
-            local odigos_pods=$(kubectl get pods -n odigos-system --no-headers 2>/dev/null | wc -l)
-            local running_odigos_pods=$(kubectl get pods -n odigos-system --no-headers 2>/dev/null | grep " Running " | wc -l)
-            if [[ $odigos_pods -gt 0 ]]; then
-                log_info "Odigos pods: $running_odigos_pods/$odigos_pods running"
-            fi
-            
-            # Check workload generators
-            local workload_pods=$(kubectl get pods -n load-test --no-headers 2>/dev/null | wc -l)
-            local running_workload_pods=$(kubectl get pods -n load-test --no-headers 2>/dev/null | grep " Running " | wc -l)
-            if [[ $workload_pods -gt 0 ]]; then
-                log_info "Workload generators: $running_workload_pods/$workload_pods running"
-            fi
-            
-            # Check monitoring stack
-            local monitoring_pods=$(kubectl get pods -n monitoring --no-headers 2>/dev/null | wc -l)
-            local running_monitoring_pods=$(kubectl get pods -n monitoring --no-headers 2>/dev/null | grep " Running " | wc -l)
-            if [[ $monitoring_pods -gt 0 ]]; then
-                log_info "Monitoring stack: $running_monitoring_pods/$monitoring_pods running"
-            fi
-            
-            
+        # Display monitoring access commands
+        if [[ "$instance_id" != "Unknown" && "$instance_id" != "None" ]]; then
+            log_info "Monitoring Access Commands:"
+            echo "  • Grafana (port 3000):"
+            echo "    aws ssm start-session --target $instance_id --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"3000\"],\"localPortNumber\":[\"3000\"]}'"
+            echo "  • ClickHouse (port 8123):"
+            echo "    aws ssm start-session --target $instance_id --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"8123\"],\"localPortNumber\":[\"8123\"]}'"
+            echo "  • Prometheus (port 9090):"
+            echo "    aws ssm start-session --target $instance_id --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"9090\"],\"localPortNumber\":[\"9090\"]}'"
         else
-            log_warn "Cannot check application health (kubectl not accessible)"
+            log_warn "EC2 monitoring instance not found or not running"
         fi
     else
-        log_warn "No Kubernetes resources found in Terraform state"
+        log_warn "EC2 monitoring stack not found in state"
     fi
 }
 
@@ -563,17 +492,14 @@ deploy_apps() {
     log_info "Deploying Kubernetes applications with Terraform..."
     
     # Check if load-test apps flag is provided
-    echo "DEBUG: First argument is: '${1:-}'"
     if [[ "${1:-}" == "--with-load-test" ]]; then
         log_info "Including load-test applications..."
-        echo "DEBUG: Running with deploy_load_test_apps=true"
         if ! run_tf "." "apply" "-var=deploy_kubernetes_apps=true" "-var=deploy_load_test_apps=true" "-auto-approve"; then
             log_error "Kubernetes applications deployment failed (with load-test apps)"
             return 1
         fi
     else
         log_info "Deploying core applications only..."
-        echo "DEBUG: Running with deploy_load_test_apps=false"
         if ! run_tf "." "apply" "-var=deploy_kubernetes_apps=true" "-var=deploy_load_test_apps=false" "-auto-approve"; then
             log_error "Kubernetes applications deployment failed (core apps only)"
             return 1
@@ -588,12 +514,6 @@ main() {
     case "${1:-}" in
         "deploy")
             deploy_infrastructure
-            # Deploy load-test specific components
-            log_info "Deploying load-test specific components..."
-            if ! run_tf "." "apply" "-var=deploy_kubernetes_apps=true" "-var=deploy_load_test_apps=true" "-auto-approve"; then
-                log_error "Load-test components deployment failed"
-                return 1
-            fi
             ;;
         "apps")
             deploy_apps "${2:-}"
