@@ -77,9 +77,10 @@ spec:
 
     - name: Assert Traffic Job Complete
       try:
-        - assert:
+        - script:
             timeout: 2m
-            file: assert-traffic-job-complete.yaml
+            content: |
+              kubectl wait --for=condition=complete job/step-01-generate-traffic --timeout=120s
 
     - name: Cleanup Traffic Generator
       try:
