@@ -16,8 +16,6 @@ status:
         - name: NODE_OPTIONS
           value: "--require /app/execute_before.js --max-old-space-size=256"
       language: javascript
-      runtimeVersion: 20.17.0
-      secureExecutionMode: false
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -37,8 +35,6 @@ status:
 # is not relevant and not populated
       (envFromContainerRuntime == null): true
       language: javascript
-      runtimeVersion: 20.17.0
-      secureExecutionMode: false
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -58,8 +54,6 @@ status:
       envFromContainerRuntime:
         - name: LD_PRELOAD
           value: ""
-      runtimeVersion: 17.0.12+7
-      secureExecutionMode: false
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -79,8 +73,6 @@ status:
 # the env var is present in the pod manifest, hence the container runtime value
 # is not relevant and not populated
       (envFromContainerRuntime == null): true
-      runtimeVersion: 17.0.12+7
-      secureExecutionMode: false
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -100,6 +92,4 @@ status:
 # is not relevant and not populated
       (envFromContainerRuntime == null): true
       language: python
-      runtimeVersion: 3.10.15
-      secureExecutionMode: true
 ---
