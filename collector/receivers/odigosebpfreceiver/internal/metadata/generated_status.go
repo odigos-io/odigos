@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Type      = component.MustNewType("odigosebpfreceiver")
+	Type      = component.MustNewType("odigosebpf")
 	ScopeName = "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver"
 )
 

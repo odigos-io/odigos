@@ -1,4 +1,4 @@
-type: odigosebpfreceiver
+type: odigosebpf
 status:
   class: receiver
 
