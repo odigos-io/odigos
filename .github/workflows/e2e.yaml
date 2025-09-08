@@ -119,6 +119,7 @@ jobs:
           kubectl rollout status -n kube-system deployment/coredns --timeout=300s
 
       - name: Restore cached Odigos images
+        id: restore-images-cache
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -126,7 +127,13 @@ jobs:
             cli-image.tar
           fail-on-cache-miss: true
           key: ${{ github.run_id }}-odigos-images
-          max_attempts: 3
+
+      - name: Check if images cache was restored
+        if: steps.restore-images-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "❌ Cache miss for Odigos images - this should not happen!"
+          echo "Expected cache key: ${{ github.run_id }}-odigos-images"
+          exit 1
 
       - name: Load Odigos Images to Kind Cluster
         run: |
@@ -134,12 +141,19 @@ jobs:
           kind load image-archive cli-image.tar
 
       - name: Restore cached CLI binary
+        id: restore-cli-cache
         uses: actions/cache/restore@v4
         with:
           path: cli/odigos
           fail-on-cache-miss: true
           key: ${{ github.run_id }}-odigos-cli
-          max_attempts: 3
+
+      - name: Check if CLI cache was restored
+        if: steps.restore-cli-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "❌ Cache miss for CLI binary - this should not happen!"
+          echo "Expected cache key: ${{ github.run_id }}-odigos-cli"
+          exit 1
 
       - name: Move CLI binary & set permissions
         run: chmod +x cli/odigos
