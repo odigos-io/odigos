@@ -18,7 +18,14 @@ package v1alpha1
 
 import "github.com/odigos-io/odigos/api/k8sconsts"
 
-const ActionNameSamplers = "Samplers"
+const (
+	ActionNameSamplers             = "Samplers"
+	ActionNameSpanAttributeSampler = "SpanAttributeSampler"
+	ActionNameLatencySampler       = "LatencySampler"
+	ActionNameErrorSampler         = "ErrorSampler"
+	ActionNameServiceNameSampler   = "ServiceNameSampler"
+	ActionNameProbabilisticSampler = "ProbabilisticSampler"
+)
 
 type SamplersConfig struct {
 	DefaultSamplerConfig `json:",inline"`
