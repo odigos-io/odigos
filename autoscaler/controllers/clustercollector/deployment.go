@@ -4,18 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"errors"
-
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/autoscaler/controllers/common"
-	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
-	"github.com/odigos-io/odigos/common/consts"
-	odigosconsts "github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,7 +14,20 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	"errors"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/autoscaler/controllers/common"
+	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/autoscaler/k8sconfig"
+	"github.com/odigos-io/odigos/common/consts"
+	odigosconsts "github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
 const (
@@ -256,6 +257,19 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 				},
 			},
 		},
+	}
+
+	k8sConfigers, err := k8sconfig.LoadK8sConfigers()
+	if err != nil {
+		return nil, errors.Join(err, errors.New("failed to load k8s configers"))
+	}
+	for _, dest := range dests.Items {
+		if k8sConfiger, exists := k8sConfigers[dest.GetType()]; exists {
+			err := k8sConfiger.ModifyGatewayCollectorDeployment(dest, desiredDeployment)
+			if err != nil {
+				return nil, errors.Join(err, errors.New("failed to modify gateway collector deployment"))
+			}
+		}
 	}
 
 	if len(imagePullSecrets) > 0 {
