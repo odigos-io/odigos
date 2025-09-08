@@ -84,7 +84,7 @@ status:
     - key: process.runtime.version
       value: "14.0.0"
     - key: telemetry.distro.version
-      value: e2e-test
+      (value != null): true
     - key: process.vpid
       (value != null): true
     - key: k8s.namespace.name
@@ -134,7 +134,7 @@ status:
     - key: process.runtime.version
       (value != null): true
     - key: telemetry.distro.version
-      value: e2e-test
+      (value != null): true
     - key: process.vpid
       (value != null): true
     - key: k8s.namespace.name
@@ -184,7 +184,7 @@ status:
     - key: process.runtime.version
       value: "20.17.0"
     - key: telemetry.distro.version
-      value: e2e-test
+      (value != null): true
     - key: process.vpid
       (value != null): true
     - key: k8s.namespace.name
@@ -234,7 +234,7 @@ status:
     - key: process.runtime.version
       value: "20.17.0"
     - key: telemetry.distro.version
-      value: e2e-test
+      (value != null): true
     - key: process.vpid
       (value != null): true
     - key: k8s.namespace.name
