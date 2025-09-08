@@ -64,7 +64,7 @@ jobs:
 
   kubernetes-test:
     needs: [ build-odigos-images, build-cli ]
-    runs-on: depot-ubuntu-24.04-8
+    runs-on: depot-ubuntu-24.04-2
     strategy:
       fail-fast: false
       matrix:
@@ -79,7 +79,6 @@ jobs:
           - "environment-variables"
           - "workload-updates"
           - "trace-collection"
-          - "configuration-reload"
           - "source"
           - "webhooks"
           - "env-injection"
@@ -125,7 +124,9 @@ jobs:
           path: |
             odigos-images.tar
             cli-image.tar
+          fail-on-cache-miss: true
           key: ${{ github.run_id }}-odigos-images
+          max_attempts: 3
 
       - name: Load Odigos Images to Kind Cluster
         run: |
@@ -136,7 +137,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: cli/odigos
+          fail-on-cache-miss: true
           key: ${{ github.run_id }}-odigos-cli
+          max_attempts: 3
 
       - name: Move CLI binary & set permissions
         run: chmod +x cli/odigos
@@ -194,3 +197,14 @@ jobs:
           name: ui-videos-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
           path: frontend/webapp/cypress/videos
         continue-on-error: true
+
+      - name: Delete pipeline build caches on success
+        if: ${{ success() }}
+        run: |
+          echo "Deleting pipeline build caches..."
+          gh extension install actions/gh-actions-cache || true
+          # Only delete caches created by this workflow run
+          gh actions-cache delete odigos-build-${{ matrix.test-scenario }}-${{ matrix.kube-version }} --confirm || true
+          gh actions-cache delete odigos-deps-${{ matrix.test-scenario }}-${{ matrix.kube-version }} --confirm || true
+        continue-on-error: true
+

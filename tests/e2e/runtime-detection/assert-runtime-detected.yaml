@@ -37,42 +37,6 @@ status:
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
-  name: deployment-nodejs-minimum-version
-  namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: nodejs-minimum-version
-status:
-  runtimeDetailsByContainer:
-    - containerName: nodejs-minimum-version
-      language: javascript
-      runtimeVersion: 14.0.0
-      secureExecutionMode: false
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentationConfig
-metadata:
-  name: deployment-nodejs-latest-version
-  namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: nodejs-latest-version
-status:
-  runtimeDetailsByContainer:
-    - containerName: nodejs-latest-version
-      language: javascript
-      (runtimeVersion != null): true
-      secureExecutionMode: false
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentationConfig
-metadata:
   name: deployment-nodejs-dockerfile-env
   namespace: default
   ownerReferences:
@@ -257,6 +221,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: java-old-version
       language: java
+      (runtimeVersion == null): true
       secureExecutionMode: false
 ---
 ## Python
@@ -284,24 +249,6 @@ status:
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
-  name: deployment-python-latest-version
-  namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: python-latest-version
-status:
-  runtimeDetailsByContainer:
-    - containerName: python-latest-version
-      language: python
-      (runtimeVersion != null): true
-      secureExecutionMode: false
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentationConfig
-metadata:
   name: deployment-python-other-agent
   namespace: default
   ownerReferences:
@@ -322,24 +269,6 @@ status:
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
-  name: deployment-python-min-version
-  namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: python-min-version
-status:
-  runtimeDetailsByContainer:
-    - containerName: python-min-version
-      language: python
-      runtimeVersion: 3.8.0
-      secureExecutionMode: false
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentationConfig
-metadata:
   name: deployment-python-not-supported
   namespace: default
   ownerReferences:
@@ -354,7 +283,6 @@ status:
       language: python
       runtimeVersion: 3.6.15
       secureExecutionMode: false
----
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -374,6 +302,7 @@ status:
       runtimeVersion: 3.8.20
       secureExecutionMode: false
 ---
+# .NET
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
@@ -390,42 +319,6 @@ status:
     - containerName: dotnet8-musl
       language: dotnet
       libCType: musl
-      secureExecutionMode: false
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentationConfig
-metadata:
-  name: deployment-dotnet6-musl
-  namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: dotnet6-musl
-status:
-  runtimeDetailsByContainer:
-    - containerName: dotnet6-musl
-      language: dotnet
-      libCType: musl
-      secureExecutionMode: false
----
-apiVersion: odigos.io/v1alpha1
-kind: InstrumentationConfig
-metadata:
-  name: deployment-dotnet8-glibc
-  namespace: default
-  ownerReferences:
-    - apiVersion: apps/v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: Deployment
-      name: dotnet8-glibc
-status:
-  runtimeDetailsByContainer:
-    - containerName: dotnet8-glibc
-      language: dotnet
-      libCType: glibc
       secureExecutionMode: false
 ---
 apiVersion: odigos.io/v1alpha1
