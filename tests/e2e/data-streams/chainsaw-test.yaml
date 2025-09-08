@@ -52,6 +52,7 @@ spec:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
         - assert:
+            timeout: 3m
             file: ../../common/assert/simple-demo-installed.yaml
 
     - name: '[2 - Workload Instrumentation] Instrument Deployments using Sources'

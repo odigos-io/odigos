@@ -35,6 +35,7 @@ spec:
     - name: Assert - Simple Demo Apps Installed
       try:
         - assert:
+            timeout: 3m
             file: ../../common/assert/simple-demo-installed.yaml
 
     - name: Start UI from CLI
