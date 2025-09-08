@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/detector"
 
+	cilumebpf "github.com/cilium/ebpf"
 	processdetector "github.com/odigos-io/runtime-detector"
 	"go.opentelemetry.io/otel/metric"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,7 +27,8 @@ type InstrumentationManagerOptions struct {
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
 // Instrumentation factories must be provided in order to create the instrumentation objects.
 // Detector options can be provided to configure the process detector, but if not provided, default options will be used.
-func NewManager(client client.Client, logger logr.Logger, opts InstrumentationManagerOptions, configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup], appendEnvVarNames map[string]struct{}) (instrumentation.Manager, error) {
+func NewManager(client client.Client, logger logr.Logger, opts InstrumentationManagerOptions, configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup],
+	appendEnvVarNames map[string]struct{}) (instrumentation.Manager, error) {
 	if len(opts.Factories) == 0 {
 		return nil, errors.New("instrumentation factories must be provided")
 	}
@@ -40,6 +42,19 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 		appendEnvVarSlice = append(appendEnvVarSlice, env)
 	}
 
+	// creating ebpf map for traces
+	// later this can be expanded to other maps [e.g., metrics, logs]
+	// Create the eBPF map
+	spec := &cilumebpf.MapSpec{
+		Type: cilumebpf.PerfEventArray,
+		Name: "traces",
+	}
+
+	m, err := cilumebpf.NewMap(spec)
+	if err != nil {
+		return nil, err
+	}
+
 	managerOpts := instrumentation.ManagerOptions[K8sProcessDetails, K8sConfigGroup]{
 		Logger:          logger,
 		Factories:       opts.Factories,
@@ -47,6 +62,7 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 		DetectorOptions: detector.DefaultK8sDetectorOptions(logger, appendEnvVarSlice),
 		ConfigUpdates:   configUpdates,
 		MeterProvider:   opts.MeterProvider,
+		TracesMap:       m,
 	}
 
 	// Add file open triggers from all distributions.
@@ -93,8 +109,7 @@ func newHandler(logger logr.Logger, client client.Client, distributionGetter *di
 	}
 	configGroupResolver := &k8sConfigGroupResolver{}
 	settingsGetter := &k8sSettingsGetter{
-		client:            client,
-		commonMapsManager: &mapsManager{logger: logger.WithName("mapsManager")},
+		client: client,
 	}
 	distributionMatcher := &podDeviceDistributionMatcher{
 		distributionGetter: distributionGetter,

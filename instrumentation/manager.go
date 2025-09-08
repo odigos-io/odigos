@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"time"
 
+	cilumebpf "github.com/cilium/ebpf"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-logr/logr"
-
+	"github.com/odigos-io/odigos/common/unixfd"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 )
 
@@ -70,6 +71,9 @@ type ManagerOptions[processDetails ProcessDetails, configGroup ConfigGroup] stru
 	// MeterProvider is used to create a meter for recording metrics.
 	// If non provided, a no-op provider will be used from the global OpenTelemetry API.
 	MeterProvider metric.MeterProvider
+
+	// TracesMap is the optional common eBPF map that will be used to send events from eBPF probes.
+	TracesMap *cilumebpf.Map
 }
 
 // Manager is used to orchestrate the ebpf instrumentations lifecycle.
@@ -100,6 +104,8 @@ type manager[processDetails ProcessDetails, configGroup ConfigGroup] struct {
 	configUpdates <-chan ConfigUpdate[configGroup]
 
 	metrics *managerMetrics
+
+	tracesMap *cilumebpf.Map
 }
 
 func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options ManagerOptions[processDetails, configGroup]) (Manager, error) {
@@ -159,6 +165,7 @@ func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options 
 		detailsByWorkload: map[configGroup]map[int]*instrumentationDetails[processDetails, configGroup]{},
 		configUpdates:     options.ConfigUpdates,
 		metrics:           managerMetrics,
+		tracesMap:         options.TracesMap,
 	}, nil
 }
 
@@ -256,6 +263,29 @@ func (m *manager[ProcessDetails, ConfigGroup]) Run(ctx context.Context) error {
 		return nil
 	})
 
+	g.Go(func() error {
+		// Start the FD server
+		server := &unixfd.Server{
+			SocketPath: unixfd.DefaultSocketPath,
+			Logger:     m.logger,
+			FDProvider: func() int {
+				return m.tracesMap.FD()
+			},
+		}
+
+		// Run server in background to serve the map FD to relevant data collection client.
+		// The server will continue running until odiglet shuts down, allowing collectors to reconnect after restarts
+		// and ask for a new FD.
+		if err := server.Run(ctx); err != nil {
+			m.logger.Error(err, "unixfd server failed")
+		}
+
+		m.logger.Info("TracesMap created, FD server started",
+			"socket", unixfd.DefaultSocketPath,
+			"map_fd", m.tracesMap.FD())
+		return nil
+	})
+
 	err := g.Wait()
 
 	return err
@@ -328,6 +358,11 @@ func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context
 		//
 		m.logger.Info("failed to get initial settings for instrumentation", "language", otelDistro.Language, "distroName", otelDistro.Name, "error", err)
 		// return nil
+	}
+
+	settings.TracesMap = ReaderMap{
+		Map:            m.tracesMap,
+		ExternalReader: true,
 	}
 
 	inst, initErr := factory.CreateInstrumentation(ctx, e.PID, settings)
