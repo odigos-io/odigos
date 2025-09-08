@@ -194,7 +194,10 @@ func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
 	return nil
 }
 
-func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal,
+func calculateConfigMapData(
+	nodeCG *odigosv1.CollectorsGroup,
+	sources *odigosv1.InstrumentationConfigList,
+	signals []odigoscommon.ObservabilitySignal,
 	processors []*odigosv1.Processor) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
@@ -223,7 +226,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	}
 	// This is a workaround to avoid adding the gcp detector if not running on a gke environment
 	// once https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/issues/1026 is resolved, we can always put the gcp detector
-	if commonconf.ControllerConfig.OnGKE {
+	if commonconf.ControllerConfig != nil && commonconf.ControllerConfig.OnGKE {
 		resourceDetectionProcessor["detectors"] = append(resourceDetectionProcessor["detectors"].([]string), "gcp")
 	}
 	processorsCfg["resourcedetection"] = resourceDetectionProcessor
