@@ -1,63 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nodejs-unsupported-version
-  namespace: default
-  labels:
-    app: nodejs-unsupported-version
-    odigos.io/e2e: test-workload
-spec:
-  selector:
-    matchLabels:
-      app: nodejs-unsupported-version
-  template:
-    metadata:
-      labels:
-        app: nodejs-unsupported-version
-      annotations:
-        odigos-test-step: "2"
-    spec:
-      containers:
-        - name: nodejs-unsupported-version
-          image: public.ecr.aws/odigos/nodejs-unsupported-version:v0.0.1
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 3000
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nodejs-very-old-version
-  namespace: default
-  labels:
-    app: nodejs-very-old-version
-    odigos.io/e2e: test-workload
-spec:
-  selector:
-    matchLabels:
-      app: nodejs-very-old-version
-  template:
-    metadata:
-      labels:
-        app: nodejs-very-old-version
-      annotations:
-        odigos-test-step: "2"
-    spec:
-      containers:
-        - name: nodejs-very-old-version
-          image: public.ecr.aws/odigos/nodejs-very-old-version:v0.0.1
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 3000
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: nodejs-minimum-version
   namespace: default
   labels:
     app: nodejs-minimum-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -66,8 +13,6 @@ spec:
     metadata:
       labels:
         app: nodejs-minimum-version
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: nodejs-minimum-version
@@ -76,6 +21,18 @@ spec:
           ports:
             - containerPort: 3000
 ---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nodejs-minimum-version
+  namespace: default
+spec:
+  selector:
+    app: nodejs-minimum-version
+  ports:
+    - protocol: TCP
+      port: 3000
+---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -83,7 +40,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-latest-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -92,8 +48,6 @@ spec:
     metadata:
       labels:
         app: nodejs-latest-version
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: nodejs-latest-version
@@ -102,6 +56,18 @@ spec:
           ports:
             - containerPort: 3000
 ---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nodejs-latest-version
+  namespace: default
+spec:
+  selector:
+    app: nodejs-latest-version
+  ports:
+    - protocol: TCP
+      port: 3000
+---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -109,7 +75,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-dockerfile-env
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -118,8 +83,6 @@ spec:
     metadata:
       labels:
         app: nodejs-dockerfile-env
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: nodejs-dockerfile-env
@@ -128,6 +91,18 @@ spec:
           ports:
             - containerPort: 3000
 ---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nodejs-dockerfile-env
+  namespace: default
+spec:
+  selector:
+    app: nodejs-dockerfile-env
+  ports:
+    - protocol: TCP
+      port: 3000
+---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -135,7 +110,6 @@ metadata:
   namespace: default
   labels:
     app: nodejs-manifest-env
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -144,8 +118,6 @@ spec:
     metadata:
       labels:
         app: nodejs-manifest-env
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: nodejs-manifest-env
@@ -157,40 +129,25 @@ spec:
             - name: NODE_OPTIONS
               value: "--require /app/execute_before.js --max-old-space-size=256"
 ---
-kind: Deployment
-apiVersion: apps/v1
+kind: Service
+apiVersion: v1
 metadata:
-  name: cpp-http-server
+  name: nodejs-manifest-env
   namespace: default
-  labels:
-    app: cpp-http-server
-    odigos.io/e2e: test-workload
 spec:
   selector:
-    matchLabels:
-      app: cpp-http-server
-  template:
-    metadata:
-      labels:
-        app: cpp-http-server
-      annotations:
-        odigos-test-step: "2"
-    spec:
-      containers:
-        - name: cpp-http-server
-          image: public.ecr.aws/odigos/cpp-http-server:v0.0.1
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 3000
+    app: nodejs-manifest-env
+  ports:
+    - protocol: TCP
+      port: 3000
 ---
-kind: Deployment
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: java-supported-version
   namespace: default
   labels:
     app: java-supported-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -199,8 +156,6 @@ spec:
     metadata:
       labels:
         app: java-supported-version
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: java-supported-version
@@ -213,14 +168,25 @@ spec:
               port: 3000
             initialDelaySeconds: 20
 ---
-kind: Deployment
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-supported-version
+  namespace: default
+spec:
+  selector:
+    app: java-supported-version
+  ports:
+    - protocol: TCP
+      port: 3000
+---
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: java-azul
   namespace: default
   labels:
     app: java-azul
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -229,8 +195,6 @@ spec:
     metadata:
       labels:
         app: java-azul
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: java-azul
@@ -243,14 +207,26 @@ spec:
               port: 3000
             initialDelaySeconds: 20
 ---
-kind: Deployment
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-azul
+  namespace: default
+spec:
+  selector:
+    app: java-azul
+  ports:
+    - protocol: TCP
+      port: 3000
+---
+
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: java-supported-docker-env
   namespace: default
   labels:
     app: java-supported-docker-env
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -259,8 +235,6 @@ spec:
     metadata:
       labels:
         app: java-supported-docker-env
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: java-supported-docker-env
@@ -273,15 +247,27 @@ spec:
               port: 3000
             initialDelaySeconds: 20
 
+
 ---
-kind: Deployment
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-supported-docker-env
+  namespace: default
+spec:
+  selector:
+    app: java-supported-docker-env
+  ports:
+    - protocol: TCP
+      port: 3000
+---
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: java-supported-manifest-env
   namespace: default
   labels:
     app: java-supported-manifest-env
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -290,8 +276,6 @@ spec:
     metadata:
       labels:
         app: java-supported-manifest-env
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: java-supported-manifest-env
@@ -299,20 +283,34 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Dnot.work=true"
           readinessProbe:
             tcpSocket:
               port: 3000
             initialDelaySeconds: 20
 
 ---
-kind: Deployment
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-supported-manifest-env
+  namespace: default
+spec:
+  selector:
+    app: java-supported-manifest-env
+  ports:
+    - protocol: TCP
+      port: 3000
+---
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: java-latest-version
   namespace: default
   labels:
     app: java-latest-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -321,8 +319,6 @@ spec:
     metadata:
       labels:
         app: java-latest-version
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: java-latest-version
@@ -335,15 +331,25 @@ spec:
               port: 3000
             initialDelaySeconds: 20
 ---
-
-kind: Deployment
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-latest-version
+  namespace: default
+spec:
+  selector:
+    app: java-latest-version
+  ports:
+    - protocol: TCP
+      port: 3000
+---
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: java-old-version
   namespace: default
   labels:
     app: java-old-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -352,8 +358,6 @@ spec:
     metadata:
       labels:
         app: java-old-version
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: java-old-version
@@ -366,15 +370,25 @@ spec:
               port: 3000
             initialDelaySeconds: 20
 ---
-
-kind: Deployment
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-old-version
+  namespace: default
+spec:
+  selector:
+    app: java-old-version
+  ports:
+    - protocol: TCP
+      port: 3000
+---
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: java-unique-exec
   namespace: default
   labels:
     app: java-unique-exec
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -383,8 +397,6 @@ spec:
     metadata:
       labels:
         app: java-unique-exec
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: java-unique-exec
@@ -397,7 +409,18 @@ spec:
               port: 3000
             initialDelaySeconds: 20
 ---
-
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-unique-exec
+  namespace: default
+spec:
+  selector:
+    app: java-unique-exec
+  ports:
+    - protocol: TCP
+      port: 3000
+---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -405,7 +428,6 @@ metadata:
   namespace: default
   labels:
     app: python-latest-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -414,8 +436,6 @@ spec:
     metadata:
       labels:
         app: python-latest-version
-      annotations:
-        odigos-test-step: "2"        
     spec:
       containers:
         - name: python-latest-version
@@ -436,6 +456,19 @@ spec:
             failureThreshold: 3
             successThreshold: 1
 ---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-latest-version
+  namespace: default
+spec:
+  selector:
+    app: python-latest-version
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 8000
+---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -443,7 +476,6 @@ metadata:
   namespace: default
   labels:
     app: python-alpine
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -452,8 +484,6 @@ spec:
     metadata:
       labels:
         app: python-alpine
-      annotations:
-        odigos-test-step: "2"        
     spec:
       containers:
         - name: python-alpine
@@ -464,6 +494,8 @@ spec:
           env:
             - name: DJANGO_SETTINGS_MODULE
               value: "myapp.settings"
+            - name: PYTHONPATH
+              value: "/app"
           livenessProbe:
             httpGet:
               path: /health/
@@ -474,43 +506,18 @@ spec:
             failureThreshold: 3
             successThreshold: 1
 ---
-kind: Deployment
-apiVersion: apps/v1
+kind: Service
+apiVersion: v1
 metadata:
-  name: python-not-supported
+  name: python-alpine
   namespace: default
-  labels:
-    app: python-not-supported
-    odigos.io/e2e: test-workload
 spec:
   selector:
-    matchLabels:
-      app: python-not-supported
-  template:
-    metadata:
-      labels:
-        app: python-not-supported
-      annotations:
-        odigos-test-step: "2"        
-    spec:
-      containers:
-        - name: python-not-supported
-          image: public.ecr.aws/odigos/python-not-supported:v0.0.1
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8000
-          env:
-            - name: DJANGO_SETTINGS_MODULE
-              value: "myapp.settings"
-          livenessProbe:
-            httpGet:
-              path: /health/
-              port: 8000
-            initialDelaySeconds: 10
-            periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
-            successThreshold: 1
+    app: python-alpine
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 8000
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -519,7 +526,6 @@ metadata:
   namespace: default
   labels:
     app: python-min-version
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -528,8 +534,6 @@ spec:
     metadata:
       labels:
         app: python-min-version
-      annotations:
-        odigos-test-step: "2"        
     spec:
       containers:
         - name: python-min-version
@@ -550,6 +554,19 @@ spec:
             failureThreshold: 3
             successThreshold: 1
 ---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-min-version
+  namespace: default
+spec:
+  selector:
+    app: python-min-version
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 8000
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -557,7 +574,6 @@ metadata:
   namespace: default
   labels:
     app: dotnet8-musl
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -566,8 +582,6 @@ spec:
     metadata:
       labels:
         app: dotnet8-musl
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: dotnet8-musl
@@ -579,6 +593,18 @@ spec:
             tcpSocket:
               port: 8080
 ---
+kind: Service
+apiVersion: v1
+metadata:
+  name: dotnet8-musl
+  namespace: default
+spec:
+    selector:
+        app: dotnet8-musl
+    ports:
+        - protocol: TCP
+          port: 8080
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -586,7 +612,6 @@ metadata:
   namespace: default
   labels:
     app: dotnet6-musl
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -595,8 +620,6 @@ spec:
     metadata:
       labels:
         app: dotnet6-musl
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: dotnet6-musl
@@ -608,6 +631,18 @@ spec:
             tcpSocket:
               port: 8080
 ---
+kind: Service
+apiVersion: v1
+metadata:
+  name: dotnet6-musl
+  namespace: default
+spec:
+  selector:
+    app: dotnet6-musl
+  ports:
+    - protocol: TCP
+      port: 8080
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -615,7 +650,6 @@ metadata:
   namespace: default
   labels:
     app: dotnet8-glibc
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -624,8 +658,6 @@ spec:
     metadata:
       labels:
         app: dotnet8-glibc
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: dotnet8-glibc
@@ -637,6 +669,18 @@ spec:
             tcpSocket:
               port: 8080
 ---
+kind: Service
+apiVersion: v1
+metadata:
+  name: dotnet8-glibc
+  namespace: default
+spec:
+  selector:
+    app: dotnet8-glibc
+  ports:
+    - protocol: TCP
+      port: 8080
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -644,7 +688,6 @@ metadata:
   namespace: default
   labels:
     app: dotnet6-glibc
-    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -653,8 +696,6 @@ spec:
     metadata:
       labels:
         app: dotnet6-glibc
-      annotations:
-        odigos-test-step: "2"
     spec:
       containers:
         - name: dotnet6-glibc
@@ -665,3 +706,51 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: dotnet6-glibc
+  namespace: default
+spec:
+  selector:
+    app: dotnet6-glibc
+  ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-gunicorn-server
+  namespace: default
+  labels:
+    app: python-gunicorn-server
+spec:
+  selector:
+    matchLabels:
+      app: python-gunicorn-server
+  template:
+    metadata:
+      labels:
+        app: python-gunicorn-server
+    spec:
+      containers:
+        - name: python-gunicorn-server
+          image: public.ecr.aws/odigos/python-gunicorn-server:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: python-gunicorn-server
+  namespace: default
+spec:
+  selector:
+    app: python-gunicorn-server
+  ports:
+    - protocol: TCP
+      port: 8000
+---
