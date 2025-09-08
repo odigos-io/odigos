@@ -410,7 +410,7 @@ func (in *ContainerAgentConfig) DeepCopyInto(out *ContainerAgentConfig) {
 	}
 	if in.EnvInjectionMethod != nil {
 		in, out := &in.EnvInjectionMethod, &out.EnvInjectionMethod
-		*out = new(common.EnvInjectionMethod)
+		*out = new(common.EnvInjectionDecision)
 		**out = **in
 	}
 	if in.Traces != nil {
