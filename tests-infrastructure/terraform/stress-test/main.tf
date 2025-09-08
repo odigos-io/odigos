@@ -75,8 +75,6 @@ module "eks" {
       desired_size   = var.node_desired_size
       max_size       = var.node_max_size
       disk_size      = var.node_disk_size
-      
-      taints = []
     }
   }
 }
@@ -225,6 +223,7 @@ resource "null_resource" "apply_prometheus_agent" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      set -e
       
       # Wait for CRDs to be ready
       kubectl wait --for condition=established --timeout=60s crd/prometheusagents.monitoring.coreos.com
@@ -347,6 +346,10 @@ resource "null_resource" "apply_odigos_sources" {
       
       # Apply Odigos sources only if workload generators are deployed
       if [[ "${var.deploy_load_test_apps}" == "true" ]]; then
+        # Wait for odigos-instrumentor to be ready before applying sources
+        echo "Waiting for odigos-instrumentor to be ready..."
+        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name: odigos-instrumentor -n odigos-system
+        
         # Apply Odigos sources for workload generators
         echo "Applying Odigos sources for workload generators..."
         kubectl apply -f ${path.module}/deploy/odigos/sources.yaml
