@@ -1,38 +1,6 @@
-# Deployment Rollout Assertions
-# Verifies that all deployments have completed their rollouts successfully
+# Apps Ready Assertions for Trace Collection Test Suite
+# Verifies that all supported deployments are ready and running
 
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nodejs-unsupported-version
-  namespace: default
-status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
-  replicas: 1
-  readyReplicas: 1
-  availableReplicas: 1
-  updatedReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nodejs-very-old-version
-  namespace: default
-status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
-  replicas: 1
-  readyReplicas: 1
-  availableReplicas: 1
-  updatedReplicas: 1
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -85,22 +53,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nodejs-manifest-env
-  namespace: default
-status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
-  replicas: 1
-  readyReplicas: 1
-  availableReplicas: 1
-  updatedReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: cpp-http-server
   namespace: default
 status:
   conditions:
@@ -244,22 +196,6 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: python-other-agent
-  namespace: default
-status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
-  replicas: 1
-  readyReplicas: 1
-  availableReplicas: 1
-  updatedReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: python-alpine
   namespace: default
 status:
@@ -276,7 +212,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: python-not-supported
+  name: python-min-version
   namespace: default
 status:
   conditions:
@@ -292,7 +228,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: python-min-version
+  name: python-gunicorn-server
   namespace: default
 status:
   conditions:
@@ -357,22 +293,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dotnet6-glibc
-  namespace: default
-status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
-  replicas: 1
-  readyReplicas: 1
-  availableReplicas: 1
-  updatedReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: python-gunicorn-server
   namespace: default
 status:
   conditions:

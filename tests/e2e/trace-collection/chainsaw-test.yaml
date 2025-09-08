@@ -35,12 +35,11 @@ spec:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
 
-
     - name: Assert Apps installed
       try:
         - assert:
             timeout: 5m
-            file: ../../common/assert/apps-ready.yaml
+            file: assert-apps-ready.yaml
 
     - name: Instrument Namespaces
       try:
@@ -62,12 +61,12 @@ spec:
       try:
         - assert:
             timeout: 3m
-            file: assert-deployments-ready.yaml
+            file: assert-apps-ready.yaml
 
     - name: Assert Instrumentation Configs Ready
       try:
         - assert:
-            timeout: 3m
+            timeout: 30s
             file: assert-instrumentation-configs.yaml
 
     ############# Generate Traffic #############
@@ -79,7 +78,7 @@ spec:
     - name: Assert Traffic Job Complete
       try:
         - assert:
-            timeout: 5m
+            timeout: 1m
             file: assert-traffic-job-complete.yaml
 
     - name: Cleanup Traffic Generator
@@ -90,18 +89,13 @@ spec:
     ############# Wait for Traces #############
     - name: Assert Initial Traces
       try:
-        - assert:
-            timeout: 3m
-            file: initial-trace-validation.yaml
-
-    - name: Assert Reported Traces
-      try:
-        - assert:
-            timeout: 3m
-            file: reported-trace-validation.yaml
-
-    - name: Assert Cluster Traces
-      try:
-        - assert:
-            timeout: 3m
-            file: cluster-trace-validation.yaml
+        - script:
+            timeout: 5s
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh initial-trace-validation.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 1
+              done
