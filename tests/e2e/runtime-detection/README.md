@@ -1,48 +1,62 @@
 # Runtime Detection Test Suite
 
 ## Purpose
-This test suite verifies that Odigos correctly detects programming languages and their versions across different runtime environments and configurations.
+This test suite verifies that Odigos correctly detects programming languages, their versions, and runtime characteristics across different environments and configurations. It tests the core runtime detection functionality that determines which workloads can be instrumented.
 
 ## What is Tested
 
 ### Languages Covered
-- **Node.js** - JavaScript runtime detection
-- **Java** - JVM-based applications
-- **Python** - Python interpreter detection
-- **.NET** - .NET Core/Framework applications
+- **Node.js/JavaScript** - JavaScript runtime detection and version parsing
+- **Java** - JVM-based applications with different implementations
+- **Python** - Python interpreter detection with various configurations
+- **.NET** - .NET Core/Framework applications with different libc types
 - **C++** - Unsupported language detection
 
-### Test Scenarios
+### Test Workloads
 
-#### Node.js Runtime Detection
+#### Node.js Runtime Detection 4
 - `nodejs-unsupported-version` - Detects v8.17.0 (below minimum support)
-- `nodejs-very-old-version` - Detects language but no version info
-- `nodejs-minimum-version` - Detects v14.0.0 (minimum supported)
-- `nodejs-latest-version` - Detects latest Node.js version
+- `nodejs-very-old-version` - Detects language but no version info available
+- `nodejs-dockerfile-env` - Detects v20.17.0 with environment variables from container runtime
+- `nodejs-manifest-env` - Detects v20.17.0 with environment variables from manifest
 
-#### Java Runtime Detection
+#### Java Runtime Detection 6
 - `java-supported-version` - Detects v17.0.12+7 (standard OpenJDK)
-- `java-azul` - Detects Azul Zulu JRE (alternative JVM)
-- `java-latest-version` - Detects latest Java version
-- `java-old-version` - Detects older Java version (v11)
-- `java-unique-exec` - Detects Java without "java" keyword in exec path
+- `java-azul` - Detects Azul Zulu JRE (alternative JVM implementation)
+- `java-supported-docker-env` - Detects v17.0.12+7 with container runtime env vars
+- `java-supported-manifest-env` - Detects v17.0.12+7 with manifest env vars
+- `java-latest-version` - Detects latest Java version (no specific version assertion)
+- `java-old-version` - Detects older Java version (v11.0.27+6)
+- `java-unique-exec` - Detects Java without "java" keyword in exec path (v21.0.7+6)
 
-#### Python Runtime Detection
-- `python-latest-version` - Detects latest Python version
-- `python-alpine` - Detects v3.10.15 on Alpine Linux
-- `python-min-version` - Detects v3.8.0 (minimum supported)
+#### Python Runtime Detection 5
+- `python-alpine` - Detects v3.10.15 on Alpine Linux with secure execution mode
+- `python-other-agent` - Detects existing agent conflicts (New Relic)
 - `python-not-supported` - Detects v3.6.15 (unsupported version)
-- `python-other-agent` - Detects existing agent (New Relic) conflicts
-- `python-gunicorn-server` - Detects Python with Gunicorn WSGI server
+- `python-gunicorn-server` - Detects v3.8.20 with Gunicorn WSGI server
 
-#### .NET Runtime Detection
-- `dotnet8-musl` - Detects .NET 8 with musl libc (Alpine)
-- `dotnet6-musl` - Detects .NET 6 with musl libc
-- `dotnet8-glibc` - Detects .NET 8 with glibc (standard Linux)
-- `dotnet6-glibc` - Detects .NET 6 with glibc
+#### .NET Runtime Detection 2
+- `dotnet8-musl` - Detects .NET 8 with musl libc (Alpine Linux)
+- `dotnet6-glibc` - Detects .NET 6 with glibc (standard Linux)
 
 #### Unsupported Language Detection
 - `cpp-http-server` - Detects C++ as unsupported language
+
+## Runtime Detection Fields Tested
+
+### Core Fields
+- **`language`** - Programming language identification (javascript, java, python, dotnet, cplusplus)
+- **`runtimeVersion`** - Version string parsing and validation
+
+### Environment Detection Fields
+- **`envFromContainerRuntime`** - Environment variables detected from container runtime
+- **`envFromManifest`** - Environment variables from Kubernetes manifest (implicitly tested via null checks)
+
+### .NET-Specific Fields
+- **`libCType`** - C library type detection (musl vs glibc)
+
+### Agent Conflict Detection
+- **`otherAgent`** - Detection of existing monitoring agents (New Relic)
 
 ## Test Flow
 
@@ -53,7 +67,7 @@ Prepare destination → Install Odigos → Verify installation → Start trace D
 
 ### 2. Application Deployment
 ```
-Deploy all 24 test workloads → Wait for pods to be ready
+Deploy 18 test workloads → Wait for pods to be ready
 ```
 
 ### 3. Runtime Detection
@@ -63,22 +77,8 @@ Instrument namespace → Trigger runtime detection → Verify detection results
 
 ### 4. Validation
 ```
-Assert runtime detection → Verify Python instances → Summary report
+Assert runtime detection → Verify specific field values → Summary report
 ```
-
-## Key Validations
-
-### Runtime Detection Assertions
-- **Language identification** - Correct language detected for each workload
-- **Version detection** - Accurate version strings where available
-- **Support classification** - Proper supported/unsupported determination
-- **Environment detection** - Container vs manifest environment variables
-
-### Special Validations
-- **Python Instance Count** - Verifies exactly 5 Python instrumentation instances are created (excluding unsupported Python version)
-- **Version Boundaries** - Tests minimum, maximum, and unsupported version handling
-- **JRE Variants** - Ensures different JVM implementations are detected correctly
-- **Library Conflicts** - Detects existing monitoring agents
 
 ## Expected Outcomes
 
@@ -93,33 +93,3 @@ Assert runtime detection → Verify Python instances → Summary report
 - Python < 3.8
 - C++ applications
 
-### Runtime Information Captured
-- Language name and version
-- Execution environment details
-- Environment variables from container runtime
-- Security execution mode (where applicable)
-- Library type (musl vs glibc for .NET)
-
-## Files Structure
-```
-runtime-detection/
-├── README.md                          # This file
-├── chainsaw-test.yaml                 # Main test definition
-├── 01-install-test-apps.yaml          # All 24 workload definitions
-└── 01-assert-runtime-detected.yaml    # Runtime detection assertions
-```
-
-## Dependencies
-- Requires Odigos installation with runtime detection capabilities
-- Uses common trace database for destination
-- Relies on public ECR images for test workloads
-
-## Duration
-Approximately 8-12 minutes depending on image pull times and cluster resources.
-
-## Success Criteria
-- All 24 workloads deploy successfully
-- Runtime detection completes for all workloads
-- Language and version information is accurate
-- Supported/unsupported classification is correct
-- Gunicorn instance count matches expected value (6)

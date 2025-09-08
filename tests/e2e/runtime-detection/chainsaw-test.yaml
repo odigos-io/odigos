@@ -23,11 +23,17 @@ spec:
         - script:
             content: |
               ../../../cli/odigos install --namespace odigos-test --version e2e-test
-              ../../common/verify_odigos_installation.sh odigos-test
             timeout: 4m
+
+    - name: Assert Odigos Installed
+      try:
         - assert:
             timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
+        - script:
+            content: |
+              ../../common/verify_odigos_installation.sh odigos-test
+            timeout: 1m
 
     - name: Verify Node Odiglet label has been added
       try:
@@ -44,7 +50,7 @@ spec:
       try:
         - assert:
             timeout: 5m
-            file: ../../common/assert/apps-ready.yaml
+            file: assert-apps-ready.yaml
 
     - name: Instrument Namespaces
       try:

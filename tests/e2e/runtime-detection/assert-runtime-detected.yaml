@@ -221,7 +221,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: java-old-version
       language: java
-      (runtimeVersion == null): true
+      runtimeVersion: 11.0.27+6
       secureExecutionMode: false
 ---
 ## Python
