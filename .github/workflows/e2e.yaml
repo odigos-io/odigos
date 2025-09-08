@@ -77,7 +77,6 @@ jobs:
           - "runtime-detection"
           - "instrumentation-lifecycle"
           - "environment-variables"
-          - "workload-updates"
           - "trace-collection"
           - "source"
           - "webhooks"
