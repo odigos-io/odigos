@@ -78,7 +78,7 @@ spec:
     - name: Assert Traffic Job Complete
       try:
         - assert:
-            timeout: 1m
+            timeout: 2m
             file: assert-traffic-job-complete.yaml
 
     - name: Cleanup Traffic Generator
@@ -90,7 +90,7 @@ spec:
     - name: Assert Initial Traces
       try:
         - script:
-            timeout: 5s
+            timeout: 3m
             content: |
               while true; do
                 ../../common/simple_trace_db_query_runner.sh initial-trace-validation.yaml

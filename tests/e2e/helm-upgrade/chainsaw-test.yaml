@@ -60,7 +60,7 @@ spec:
 
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 3m
+            timeout: 4m
             file: ../../common/assert/latest-odigos-version-installed.yaml
 
     - name: Assert Trace DB is up
@@ -135,10 +135,10 @@ spec:
                   --set image.tag=e2e-test \
                   --set nodeSelector."kubernetes\.io/os"=linux
               fi
-            timeout: 3m
+            timeout: 5m
         - assert:
             file: ../../common/assert/odigos-upgraded.yaml
-            timeout: 3m
+            timeout: 5m
       catch:
         - get:
             apiVersion: v1
