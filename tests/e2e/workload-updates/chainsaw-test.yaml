@@ -39,7 +39,7 @@ spec:
       try:
         - assert:
             timeout: 5m
-            file: ../../common/assert/apps-ready.yaml
+            file: ../runtime-detection/assert-apps-ready.yaml
 
     - name: Instrument Namespaces
       try:
