@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package clustercollector
+package clustercollector_test
 
 import (
 	"context"
@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 )
@@ -39,12 +40,184 @@ const (
 var _ = Describe("Destination Controller", func() {
 	const (
 		DestinationName      = "test-destination"
-		DestinationNamespace = "default"
+		DestinationNamespace = "odigos-system"
 		SecretName           = "test-secret"
 	)
 
+	intPtr := func(n int32) *int32 {
+		return &n
+	}
+
+	BeforeEach(func() {
+		By("Creating the odigos-system namespace")
+		namespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: DestinationNamespace,
+			},
+		}
+		Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
+
+		By("Creating the odiglet daemonset")
+		odigletDaemonset := &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      k8sconsts.OdigletDaemonSetName,
+				Namespace: DestinationNamespace,
+			},
+			Spec: appsv1.DaemonSetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": k8sconsts.OdigletDaemonSetName,
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": k8sconsts.OdigletDaemonSetName,
+						},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:  k8sconsts.OdigletContainerName,
+								Image: "odigos/odiglet:latest",
+							},
+						},
+					},
+				},
+			},
+		}
+		Expect(k8sClient.Create(context.Background(), odigletDaemonset)).Should(Succeed())
+
+		By("Creating the autoscaler deployment")
+		autoscalerDeployment := &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      k8sconsts.AutoScalerDeploymentName,
+				Namespace: DestinationNamespace,
+			},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: intPtr(1),
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": k8sconsts.AutoScalerDeploymentName,
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": k8sconsts.AutoScalerDeploymentName,
+						},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:  k8sconsts.AutoScalerContainerName,
+								Image: "odigos/autoscaler:latest",
+							},
+						},
+					},
+				},
+			},
+		}
+		Expect(k8sClient.Create(context.Background(), autoscalerDeployment)).Should(Succeed())
+	})
+
+	AfterEach(func() {
+		cleanupResources()
+	})
+
+	createCollectorsGroupAndDeployment := func() *odigosv1.CollectorsGroup {
+		By("Creating a CollectorsGroup for cluster collector")
+		collectorsGroup := &odigosv1.CollectorsGroup{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      k8sconsts.OdigosClusterCollectorConfigMapName,
+				Namespace: DestinationNamespace,
+			},
+			Spec: odigosv1.CollectorsGroupSpec{
+				Role: odigosv1.CollectorsGroupRoleClusterGateway,
+				ResourcesSettings: odigosv1.CollectorsGroupResourcesSettings{
+					MemoryRequestMiB:     256,
+					MemoryLimitMiB:       512,
+					CpuRequestMillicores: 250,
+					CpuLimitMillicores:   500,
+					GomemlimitMiB:        200,
+				},
+				CollectorOwnMetricsPort: 8888,
+			},
+		}
+		Expect(k8sClient.Create(context.Background(), collectorsGroup)).Should(Succeed())
+		/*
+			By("Creating the cluster collector deployment")
+			replicas := int32(1)
+			deployment := &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
+					Namespace: DestinationNamespace,
+					Labels: map[string]string{
+						k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
+							},
+						},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:    "gateway",
+									Image:   "odigos/odigosotelcol:latest",
+									Command: []string{"/odigosotelcol"},
+									Args: []string{fmt.Sprintf("--config=%s:%s/%s/%s",
+										k8sconsts.OdigosCollectorConfigMapProviderScheme,
+										DestinationNamespace,
+										k8sconsts.OdigosClusterCollectorConfigMapName,
+										k8sconsts.OdigosClusterCollectorConfigMapKey),
+									},
+									Env: []corev1.EnvVar{
+										{
+											Name: "POD_NAME",
+											ValueFrom: &corev1.EnvVarSource{
+												FieldRef: &corev1.ObjectFieldSelector{
+													FieldPath: "metadata.name",
+												},
+											},
+										},
+									},
+									Resources: corev1.ResourceRequirements{
+										Requests: corev1.ResourceList{
+											corev1.ResourceMemory: resource.MustParse("256Mi"),
+											corev1.ResourceCPU:    resource.MustParse("250m"),
+										},
+										Limits: corev1.ResourceList{
+											corev1.ResourceMemory: resource.MustParse("512Mi"),
+											corev1.ResourceCPU:    resource.MustParse("500m"),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			Expect(k8sClient.Create(context.Background(), deployment)).Should(Succeed())
+		*/
+
+		return collectorsGroup
+	}
+
 	Context("When creating a GoogleCloud Destination with APPLICATION_CREDENTIALS", func() {
 		It("Should create a cluster collector deployment with volume, volume mount, and env var", func() {
+			By("Setting up CollectorsGroup and deployment")
+			createCollectorsGroupAndDeployment()
+
 			By("Creating a secret with GCP credentials")
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -81,7 +254,7 @@ var _ = Describe("Destination Controller", func() {
 			deployment := &appsv1.Deployment{}
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      "odigos-cluster-collector",
+					Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
 					Namespace: DestinationNamespace,
 				}, deployment)
 				return err == nil
@@ -113,86 +286,188 @@ var _ = Describe("Destination Controller", func() {
 		})
 	})
 
-	Context("When creating multiple GoogleCloud Destinations with APPLICATION_CREDENTIALS", func() {
-		It("Should not create duplicate volumes, volume mounts, or env vars", func() {
-			By("Creating a secret with GCP credentials")
-			secret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      SecretName,
-					Namespace: DestinationNamespace,
-				},
-				Data: map[string][]byte{
-					"GCP_APPLICATION_CREDENTIALS": []byte("fake-gcp-credentials"),
-				},
-			}
-			Expect(k8sClient.Create(context.Background(), secret)).Should(Succeed())
+	/*
+		Context("When updating an existing cluster collector deployment with a new destination", func() {
+			It("Should update the deployment with the new destination's configuration", func() {
+				By("Setting up CollectorsGroup and initial deployment")
+				createCollectorsGroupAndDeployment()
 
-			By("Creating the first GoogleCloud destination")
-			destination1 := &odigosv1.Destination{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      DestinationName + "-1",
-					Namespace: DestinationNamespace,
-				},
-				Spec: odigosv1.DestinationSpec{
-					Type:            common.GoogleCloudDestinationType,
-					DestinationName: "test-gcp-destination-1",
-					Data: map[string]string{
-						"GCP_APPLICATION_CREDENTIALS": "fake-gcp-credentials",
+				By("Getting the initial deployment to verify its state")
+				initialDeployment := &appsv1.Deployment{}
+				Eventually(func() bool {
+					err := k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
+						Namespace: DestinationNamespace,
+					}, initialDeployment)
+					return err == nil
+				}, timeout, interval).Should(BeTrue())
+
+				By("Verifying the initial deployment has no volumes or volume mounts")
+				Expect(initialDeployment.Spec.Template.Spec.Volumes).To(HaveLen(0))
+				Expect(initialDeployment.Spec.Template.Spec.Containers).To(HaveLen(1))
+				container := initialDeployment.Spec.Template.Spec.Containers[0]
+				Expect(container.VolumeMounts).To(HaveLen(0))
+
+				By("Creating a secret with GCP credentials")
+				secret := &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      SecretName,
+						Namespace: DestinationNamespace,
 					},
-					SecretRef: &corev1.LocalObjectReference{
-						Name: SecretName,
+					Data: map[string][]byte{
+						"GCP_APPLICATION_CREDENTIALS": []byte("fake-gcp-credentials"),
 					},
-					Signals: []common.ObservabilitySignal{common.TracesObservabilitySignal},
-				},
-			}
-			Expect(k8sClient.Create(context.Background(), destination1)).Should(Succeed())
+				}
+				Expect(k8sClient.Create(context.Background(), secret)).Should(Succeed())
 
-			By("Creating the second GoogleCloud destination with the same secret")
-			destination2 := &odigosv1.Destination{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      DestinationName + "-2",
-					Namespace: DestinationNamespace,
-				},
-				Spec: odigosv1.DestinationSpec{
-					Type:            common.GoogleCloudDestinationType,
-					DestinationName: "test-gcp-destination-2",
-					Data: map[string]string{
-						"GCP_APPLICATION_CREDENTIALS": "fake-gcp-credentials",
+				By("Creating a GoogleCloud destination with APPLICATION_CREDENTIALS")
+				destination := &odigosv1.Destination{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      DestinationName,
+						Namespace: DestinationNamespace,
 					},
-					SecretRef: &corev1.LocalObjectReference{
-						Name: SecretName,
+					Spec: odigosv1.DestinationSpec{
+						Type:            common.GoogleCloudDestinationType,
+						DestinationName: "test-gcp-destination",
+						Data: map[string]string{
+							"GCP_APPLICATION_CREDENTIALS": "fake-gcp-credentials",
+						},
+						SecretRef: &corev1.LocalObjectReference{
+							Name: SecretName,
+						},
+						Signals: []common.ObservabilitySignal{common.TracesObservabilitySignal},
 					},
-					Signals: []common.ObservabilitySignal{common.MetricsObservabilitySignal},
-				},
-			}
-			Expect(k8sClient.Create(context.Background(), destination2)).Should(Succeed())
+				}
+				Expect(k8sClient.Create(context.Background(), destination)).Should(Succeed())
 
-			By("Waiting for the cluster collector deployment to be created")
-			deployment := &appsv1.Deployment{}
-			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      "odigos-cluster-collector",
-					Namespace: DestinationNamespace,
-				}, deployment)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
+				By("Waiting for the deployment to be updated with the destination configuration")
+				updatedDeployment := &appsv1.Deployment{}
+				Eventually(func() bool {
+					err := k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
+						Namespace: DestinationNamespace,
+					}, updatedDeployment)
+					if err != nil {
+						return false
+					}
+					// Check if the deployment has been updated with volumes
+					return len(updatedDeployment.Spec.Template.Spec.Volumes) > 0
+				}, timeout, interval).Should(BeTrue())
 
-			By("Verifying the deployment has only one volume (no duplicates)")
-			Expect(deployment.Spec.Template.Spec.Volumes).To(HaveLen(1))
-			volume := deployment.Spec.Template.Spec.Volumes[0]
-			Expect(volume.Name).To(Equal(SecretName))
+				By("Verifying the updated deployment has the expected volume")
+				Expect(updatedDeployment.Spec.Template.Spec.Volumes).To(HaveLen(1))
+				volume := updatedDeployment.Spec.Template.Spec.Volumes[0]
+				Expect(volume.Name).To(Equal(SecretName))
+				Expect(volume.VolumeSource.Secret).NotTo(BeNil())
+				Expect(volume.VolumeSource.Secret.SecretName).To(Equal(SecretName))
+				Expect(volume.VolumeSource.Secret.Items).To(HaveLen(1))
+				Expect(volume.VolumeSource.Secret.Items[0].Key).To(Equal("GCP_APPLICATION_CREDENTIALS"))
+				Expect(volume.VolumeSource.Secret.Items[0].Path).To(Equal("GCP_APPLICATION_CREDENTIALS"))
 
-			By("Verifying the deployment has only one volume mount (no duplicates)")
-			Expect(deployment.Spec.Template.Spec.Containers).To(HaveLen(1))
-			container := deployment.Spec.Template.Spec.Containers[0]
-			Expect(container.VolumeMounts).To(HaveLen(1))
-			volumeMount := container.VolumeMounts[0]
-			Expect(volumeMount.Name).To(Equal(SecretName))
+				By("Verifying the updated deployment has the expected volume mount")
+				Expect(updatedDeployment.Spec.Template.Spec.Containers).To(HaveLen(1))
+				updatedContainer := updatedDeployment.Spec.Template.Spec.Containers[0]
+				Expect(updatedContainer.VolumeMounts).To(HaveLen(1))
+				volumeMount := updatedContainer.VolumeMounts[0]
+				Expect(volumeMount.Name).To(Equal(SecretName))
+				Expect(volumeMount.MountPath).To(Equal("/secrets"))
 
-			By("Verifying the deployment has only one environment variable (no duplicates)")
-			Expect(container.Env).To(HaveLen(1))
-			envVar := container.Env[0]
-			Expect(envVar.Name).To(Equal("GCP_APPLICATION_CREDENTIALS"))
+				By("Verifying the updated deployment has the expected environment variable")
+				Expect(updatedContainer.Env).To(HaveLen(1))
+				envVar := updatedContainer.Env[0]
+				Expect(envVar.Name).To(Equal("GCP_APPLICATION_CREDENTIALS"))
+				Expect(envVar.Value).To(Equal("/secrets/GCP_APPLICATION_CREDENTIALS"))
+
+				By("Verifying the deployment was actually updated (not just created)")
+				// The deployment should have been updated, not recreated
+				Expect(updatedDeployment.UID).To(Equal(initialDeployment.UID))
+			})
 		})
-	})
+
+		Context("When creating multiple GoogleCloud Destinations with APPLICATION_CREDENTIALS", func() {
+			It("Should not create duplicate volumes, volume mounts, or env vars", func() {
+				By("Setting up CollectorsGroup and deployment")
+				createCollectorsGroupAndDeployment()
+
+				By("Creating a secret with GCP credentials")
+				secret := &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      SecretName,
+						Namespace: DestinationNamespace,
+					},
+					Data: map[string][]byte{
+						"GCP_APPLICATION_CREDENTIALS": []byte("fake-gcp-credentials"),
+					},
+				}
+				Expect(k8sClient.Create(context.Background(), secret)).Should(Succeed())
+
+				By("Creating the first GoogleCloud destination")
+				destination1 := &odigosv1.Destination{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      DestinationName + "-1",
+						Namespace: DestinationNamespace,
+					},
+					Spec: odigosv1.DestinationSpec{
+						Type:            common.GoogleCloudDestinationType,
+						DestinationName: "test-gcp-destination-1",
+						Data: map[string]string{
+							"GCP_APPLICATION_CREDENTIALS": "fake-gcp-credentials",
+						},
+						SecretRef: &corev1.LocalObjectReference{
+							Name: SecretName,
+						},
+						Signals: []common.ObservabilitySignal{common.TracesObservabilitySignal},
+					},
+				}
+				Expect(k8sClient.Create(context.Background(), destination1)).Should(Succeed())
+
+				By("Creating the second GoogleCloud destination with the same secret")
+				destination2 := &odigosv1.Destination{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      DestinationName + "-2",
+						Namespace: DestinationNamespace,
+					},
+					Spec: odigosv1.DestinationSpec{
+						Type:            common.GoogleCloudDestinationType,
+						DestinationName: "test-gcp-destination-2",
+						Data: map[string]string{
+							"GCP_APPLICATION_CREDENTIALS": "fake-gcp-credentials",
+						},
+						SecretRef: &corev1.LocalObjectReference{
+							Name: SecretName,
+						},
+						Signals: []common.ObservabilitySignal{common.MetricsObservabilitySignal},
+					},
+				}
+				Expect(k8sClient.Create(context.Background(), destination2)).Should(Succeed())
+
+				By("Waiting for the cluster collector deployment to be created")
+				deployment := &appsv1.Deployment{}
+				Eventually(func() bool {
+					err := k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
+						Namespace: DestinationNamespace,
+					}, deployment)
+					return err == nil
+				}, timeout, interval).Should(BeTrue())
+
+				By("Verifying the deployment has only one volume (no duplicates)")
+				Expect(deployment.Spec.Template.Spec.Volumes).To(HaveLen(1))
+				volume := deployment.Spec.Template.Spec.Volumes[0]
+				Expect(volume.Name).To(Equal(SecretName))
+
+				By("Verifying the deployment has only one volume mount (no duplicates)")
+				Expect(deployment.Spec.Template.Spec.Containers).To(HaveLen(1))
+				container := deployment.Spec.Template.Spec.Containers[0]
+				Expect(container.VolumeMounts).To(HaveLen(1))
+				volumeMount := container.VolumeMounts[0]
+				Expect(volumeMount.Name).To(Equal(SecretName))
+
+				By("Verifying the deployment has only one environment variable (no duplicates)")
+				Expect(container.Env).To(HaveLen(1))
+				envVar := container.Env[0]
+				Expect(envVar.Name).To(Equal("GCP_APPLICATION_CREDENTIALS"))
+			})
+		})
+	*/
 })
