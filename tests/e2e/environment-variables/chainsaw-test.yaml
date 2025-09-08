@@ -70,27 +70,8 @@ spec:
             timeout: 2m
             file: assert-env-vars.yaml
 
-    - name: Verify Environment Variable Handling
+    - name: Assert Instrumentation Ready
       try:
-        - script:
+        - assert:
             timeout: 2m
-            content: |
-              set -e
-
-              echo "=== Environment Variable Handling Summary ==="
-
-              # Verify that workloads with environment variables are properly instrumented
-              EXPECTED_DEPLOYMENTS="nodejs-dockerfile-env nodejs-manifest-env java-supported-docker-env java-supported-manifest-env python-alpine"
-
-              for deployment in $EXPECTED_DEPLOYMENTS; do
-                echo "Checking instrumentation for $deployment..."
-                if kubectl get instrumentationconfig deployment-$deployment -o jsonpath='{.status.conditions[?(@.type=="AgentEnabled")].status}' | grep -q "True"; then
-                  echo "✅ $deployment is properly instrumented"
-                else
-                  echo "❌ $deployment is not instrumented correctly"
-                  kubectl get instrumentationconfig deployment-$deployment -o yaml || true
-                  exit 1
-                fi
-              done
-
-              echo "✅ Environment variable handling test completed successfully"
+            file: assert-instrumentation-ready.yaml
