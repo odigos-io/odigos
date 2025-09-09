@@ -116,7 +116,8 @@ describe('Actions CRUD', () => {
       SELECTED_ENTITIES.ACTIONS.forEach((actionType, idx) => {
         updateEntity(
           {
-            nodeId: DATA_IDS.ACTION_NODE(idx),
+            // no indexed node, because actions are fetched in random order
+            nodeId: 'div',
             nodeContains: actionType,
             fieldKey: DATA_IDS.TITLE,
             fieldValue: TEXTS.UPDATED_NAME,
@@ -145,8 +146,8 @@ describe('Actions CRUD', () => {
       SELECTED_ENTITIES.ACTIONS.forEach((actionType) => {
         deleteEntity(
           {
-            // always index 0, because when one action is deleted, it shifts the index of the next action
-            nodeId: DATA_IDS.ACTION_NODE(0),
+            // no indexed node, because actions are fetched in random order
+            nodeId: 'div',
             nodeContains: actionType,
             warnModalTitle: TEXTS.ACTION_WARN_MODAL_TITLE,
           },
