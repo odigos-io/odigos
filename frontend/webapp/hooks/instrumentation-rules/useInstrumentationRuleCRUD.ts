@@ -20,7 +20,7 @@ interface UseInstrumentationRuleCrud {
 export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
   const { isReadonly, isEnterprise } = useConfig();
   const { addNotification } = useNotificationStore();
-  const { instrumentationRulesLoading, setEntitiesLoading, instrumentationRules, addEntities, removeEntities } = useEntityStore();
+  const { instrumentationRulesLoading, setEntitiesLoading, instrumentationRules, setEntities, addEntities, removeEntities } = useEntityStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: EntityTypes.InstrumentationRule, target: id ? getSseTargetFromId(id, EntityTypes.InstrumentationRule) : undefined, hideFromHistory });
@@ -37,7 +37,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     } else if (data?.computePlatform?.instrumentationRules) {
       const { instrumentationRules: items } = data.computePlatform;
 
-      addEntities(EntityTypes.InstrumentationRule, items);
+      setEntities(EntityTypes.InstrumentationRule, items);
       setEntitiesLoading(EntityTypes.InstrumentationRule, false);
     }
   };

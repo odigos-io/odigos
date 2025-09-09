@@ -41,7 +41,7 @@ const parseRenames = (action: FetchedAction): Action => {
 export const useActionCRUD = (): UseActionCrud => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
-  const { actionsLoading, setEntitiesLoading, actions, addEntities, removeEntities } = useEntityStore();
+  const { actionsLoading, setEntitiesLoading, actions, setEntities, removeEntities } = useEntityStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: EntityTypes.Action, target: id ? getSseTargetFromId(id, EntityTypes.Action) : undefined, hideFromHistory });
@@ -58,7 +58,7 @@ export const useActionCRUD = (): UseActionCrud => {
     } else if (data?.computePlatform?.actions) {
       const { actions: items } = data.computePlatform;
 
-      addEntities(EntityTypes.Action, items.map(parseRenames));
+      setEntities(EntityTypes.Action, items.map(parseRenames));
       setEntitiesLoading(EntityTypes.Action, false);
     }
   };

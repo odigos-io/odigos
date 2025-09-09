@@ -28,7 +28,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
   const { selectedStreamName } = useDataStreamStore();
-  const { destinationsLoading, setEntitiesLoading, destinations, setEntities, addEntities, removeEntities } = useEntityStore();
+  const { destinationsLoading, setEntitiesLoading, destinations, setEntities } = useEntityStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: EntityTypes.Destination, target: id ? getSseTargetFromId(id, EntityTypes.Destination) : undefined, hideFromHistory });
