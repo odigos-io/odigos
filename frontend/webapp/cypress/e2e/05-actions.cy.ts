@@ -6,7 +6,7 @@ import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, upda
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
 const namespace = NAMESPACES.ODIGOS_TEST;
-const crdNames = CRD_NAMES.ACTIONS;
+const crdName = CRD_NAMES.ACTION;
 const totalEntities = SELECTED_ENTITIES.ACTIONS.length;
 
 describe('Actions CRUD', () => {
@@ -15,11 +15,8 @@ describe('Actions CRUD', () => {
     handleExceptions();
   });
 
-  it(`Should have 0 ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
-    expect(crdNames.length).to.eq(totalEntities);
-    crdNames.forEach((crdName) => {
-      getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
-    });
+  it(`Should have 0 ${crdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 
   it(`Should create ${totalEntities} actions via API, and notify locally`, () => {
@@ -110,12 +107,8 @@ describe('Actions CRUD', () => {
     });
   });
 
-  it(`Should have ${totalEntities} ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
-    expect(crdNames.length).to.eq(totalEntities);
-    crdNames.forEach((crdName) => {
-      // always 1, because each CRD has a unique name (actions only)
-      getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 });
-    });
+  it(`Should have ${totalEntities} ${crdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities });
   });
 
   it(`Should update ${totalEntities} actions via API, and notify locally`, () => {
@@ -139,14 +132,10 @@ describe('Actions CRUD', () => {
     });
   });
 
-  it(`Should update ${totalEntities} ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
-    expect(crdNames.length).to.eq(totalEntities);
-    crdNames.forEach((crdName) => {
-      // always 1, because each CRD has a unique name (actions only)
-      getCrdIds({ namespace, crdName, expectedError: '', expectedLength: 1 }, (crdIds) => {
-        crdIds.forEach((crdId) => {
-          getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'actionName', expectedValue: TEXTS.UPDATED_NAME });
-        });
+  it(`Should update ${totalEntities} ${crdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
+      crdIds.forEach((crdId) => {
+        getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'actionName', expectedValue: TEXTS.UPDATED_NAME });
       });
     });
   });
@@ -172,10 +161,7 @@ describe('Actions CRUD', () => {
     });
   });
 
-  it(`Should have ${0} ${JSON.stringify(crdNames)} CRDs in the cluster`, () => {
-    expect(crdNames.length).to.eq(totalEntities);
-    crdNames.forEach((crdName) => {
-      getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
-    });
+  it(`Should have ${0} ${crdName} CRDs in the cluster`, () => {
+    getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 });
