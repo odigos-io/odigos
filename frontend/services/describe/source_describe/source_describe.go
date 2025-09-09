@@ -139,7 +139,7 @@ func convertInstrumentationInstancesToGQL(instances []source.InstrumentationInst
 	gqlInstances := make([]*model.InstrumentationInstanceAnalyze, 0, len(instances))
 	for _, instance := range instances {
 		// TODO: remove this 'if' once core team fixes the issue
-		if instance.Message.Value == "could not find function offsets instrumentor" {
+		if instance.Message.Value == "could not find function offsets for instrumentor" {
 			instance.Message = nil
 			instance.Healthy.Value = "true"
 			instance.Healthy.Status = properties.PropertyStatusSuccess
