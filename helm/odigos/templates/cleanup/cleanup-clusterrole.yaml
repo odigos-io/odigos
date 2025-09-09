@@ -10,7 +10,7 @@ rules:
   verbs: ["list", "delete"]
 - apiGroups: [""]
   resources: ["pods", "namespaces"]
-  verbs: ["list"]
+  verbs: ["list", "patch"]
 - apiGroups: ["apps"]
   resources: ["deployments", "statefulsets", "daemonsets"]
   verbs: ["list", "patch"]
