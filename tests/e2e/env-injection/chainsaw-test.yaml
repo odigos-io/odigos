@@ -92,7 +92,9 @@ spec:
       try:
         - script:
             timeout: 1m
-            content: kubectl rollout restart deployment
+            content: |
+              kubectl rollout restart deployment
+              sleep 2 # Allow some buffer time between rollouts
 
     - name: 02 - Assert Environment Variables
       try:
@@ -117,7 +119,8 @@ spec:
       try:
         - script:
             timeout: 1m
-            content: kubectl rollout restart deployment
+            content: |
+              kubectl rollout restart deployment
 
     - name: 03 - Assert Environment Variables
       try:

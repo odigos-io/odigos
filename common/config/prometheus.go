@@ -40,10 +40,22 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		"endpoint": fmt.Sprintf("%s/api/v1/write", url),
 	}
 
+	resourceAttributesLabels, exists := config[prometheusResourceAttributesLabelsKey]
+	processors, err := promResourceAttributesProcessors(resourceAttributesLabels, exists, uniqueUri)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("failed to parse prometheus resource attributes labels, gateway will not be configured for prometheus"))
+	}
+	processorNames := []string{}
+	for k, v := range processors {
+		currentConfig.Processors[k] = v
+		processorNames = append(processorNames, k)
+	}
+
 	metricsPipelineName := "metrics/" + uniqueUri
 	currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
-		Receivers: []string{spanMetricNames.SpanMetricsConnector},
-		Exporters: []string{rwExporterName},
+		Receivers:  []string{spanMetricNames.SpanMetricsConnector},
+		Exporters:  []string{rwExporterName},
+		Processors: processorNames,
 	}
 
 	return []string{metricsPipelineName, spanMetricNames.TracesPipeline}, nil
