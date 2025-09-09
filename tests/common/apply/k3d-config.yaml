@@ -1,4 +1,4 @@
-apiVersion: k3d.io/v1alpha4
+apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
   name: odigos-test
@@ -14,8 +14,6 @@ kubeAPI:
 # - v1.23: rancher/k3s:v1.23.17-k3s1
 # - v1.32: rancher/k3s:v1.32.0-k3s1
 image: rancher/k3s:v1.32.0-k3s1
-network: k3d-odigos-test
-subnet: "172.28.0.0/16"
 token: odigos-test-token
 options:
   k3d:
