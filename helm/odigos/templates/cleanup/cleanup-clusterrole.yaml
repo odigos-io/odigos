@@ -9,6 +9,9 @@ rules:
   resources: ["sources"]
   verbs: ["list", "delete"]
 - apiGroups: [""]
-  resources: ["pods"]
+  resources: ["pods", "namespaces"]
+  verbs: ["list"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
   verbs: ["list"]
 
