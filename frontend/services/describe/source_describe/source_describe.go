@@ -3,6 +3,7 @@ package source_describe
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
@@ -139,7 +140,7 @@ func convertInstrumentationInstancesToGQL(instances []source.InstrumentationInst
 	gqlInstances := make([]*model.InstrumentationInstanceAnalyze, 0, len(instances))
 	for _, instance := range instances {
 		// TODO: remove this 'if' once core team fixes the issue
-		if instance.Message.Value == "could not find function offsets for instrumentor" {
+		if strings.Contains(instance.Message.Value.(string), "could not find function offsets") {
 			instance.Message = nil
 			instance.Healthy.Value = "true"
 			instance.Healthy.Status = properties.PropertyStatusSuccess
