@@ -13,5 +13,5 @@ rules:
   verbs: ["list"]
 - apiGroups: ["apps"]
   resources: ["deployments", "statefulsets", "daemonsets"]
-  verbs: ["list"]
+  verbs: ["list", "patch"]
 
