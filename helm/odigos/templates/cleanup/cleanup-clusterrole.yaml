@@ -12,6 +12,6 @@ rules:
   resources: ["pods", "namespaces"]
   verbs: ["list"]
 - apiGroups: ["apps"]
-  resources: ["deployments"]
+  resources: ["deployments", "statefulsets", "daemonsets"]
   verbs: ["list"]
 
