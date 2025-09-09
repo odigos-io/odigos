@@ -184,6 +184,13 @@ load-to-kind-%:
 load-to-kind:
 	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
+load-to-k3d-%:
+	k3d image import $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) -c odigos-test
+
+.PHONY: load-to-k3d
+load-to-k3d:
+	make -j 6 load-to-k3d-instrumentor load-to-k3d-autoscaler load-to-k3d-scheduler load-to-k3d-odiglet load-to-k3d-collector load-to-k3d-ui load-to-k3d-cli load-to-k3d-agents ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+
 .PHONY: restart-ui
 restart-ui:
 	-kubectl rollout restart deployment odigos-ui -n odigos-system
@@ -372,14 +379,40 @@ dev-tests-kind-cluster:
 	kind delete cluster
 	kind create cluster --config=tests/common/apply/kind-config.yaml
 
+.PHONY: dev-tests-k3d-cluster
+dev-tests-k3d-cluster:
+	@echo "Creating a k3d cluster for development"
+	k3d cluster delete odigos-test || true
+	k3d cluster create odigos-test --agents 1 --image rancher/k3s:v1.32.0-k3s1 --config=tests/common/apply/k3d-config.yaml
+
+.PHONY: dev-tests-k3d-cluster-1.23
+dev-tests-k3d-cluster-1.23:
+	@echo "Creating a k3d cluster for development (K8s 1.23)"
+	k3d cluster delete odigos-test || true
+	k3d cluster create odigos-test --agents 1 --image rancher/k3s:v1.23.17-k3s1 --config=tests/common/apply/k3d-config.yaml
+
+.PHONY: dev-tests-k3d-cluster-1.20
+dev-tests-k3d-cluster-1.20:
+	@echo "Creating a k3d cluster for development (K8s 1.20)"
+	k3d cluster delete odigos-test || true
+	k3d cluster create odigos-test --agents 1 --image rancher/k3s:v1.20.15-k3s1 --config=tests/common/apply/k3d-config.yaml
+
 .PHONY: dev-tests-setup
 dev-tests-setup: TAG := e2e-test
-dev-tests-setup: dev-tests-kind-cluster cli-build build-cli-image build-images load-to-kind
+dev-tests-setup: dev-tests-k3d-cluster cli-build build-cli-image build-images load-to-k3d
+
+.PHONY: dev-tests-setup-kind
+dev-tests-setup-kind: TAG := e2e-test
+dev-tests-setup-kind: dev-tests-kind-cluster cli-build build-cli-image build-images load-to-kind
 
 # Use this target to avoid rebuilding the images if all that changed is the e2e test code
 .PHONY: dev-tests-setup-no-build
 dev-tests-setup-no-build: TAG := e2e-test
-dev-tests-setup-no-build: dev-tests-kind-cluster load-to-kind
+dev-tests-setup-no-build: dev-tests-k3d-cluster load-to-k3d
+
+.PHONY: dev-tests-setup-kind-no-build
+dev-tests-setup-kind-no-build: TAG := e2e-test
+dev-tests-setup-kind-no-build: dev-tests-kind-cluster load-to-kind
 
 # Use this for debug to add a destination which only prints samples of telemetry items to the cluster gateway collector logs
 .PHONY: dev-debug-destination

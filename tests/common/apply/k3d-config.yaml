@@ -1,0 +1,34 @@
+apiVersion: k3d.io/v1alpha4
+kind: Simple
+metadata:
+  name: odigos-test
+servers: 1
+agents: 1
+kubeAPI:
+  host: "0.0.0.0"
+  hostIP: "127.0.0.1"
+  hostPort: "6443"
+# Note: The image will be overridden by the k3d command with the appropriate version
+# Supported versions:
+# - v1.20.15: rancher/k3s:v1.20.15-k3s1
+# - v1.23: rancher/k3s:v1.23.17-k3s1
+# - v1.32: rancher/k3s:v1.32.0-k3s1
+image: rancher/k3s:v1.32.0-k3s1
+network: k3d-odigos-test
+subnet: "172.28.0.0/16"
+token: odigos-test-token
+options:
+  k3d:
+    wait: true
+    timeout: "60s"
+    disableLoadbalancer: false
+    disableImageVolume: false
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:0
+          - agent:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true

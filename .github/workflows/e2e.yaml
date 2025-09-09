@@ -85,11 +85,11 @@ jobs:
           - "mount-method"
         include:
           - kube-version: "1.20.15"
-            kind-image: "kindest/node:v1.20.15@sha256:a32bf55309294120616886b5338f95dd98a2f7231519c7dedcec32ba29699394"
+            k3d-image: "rancher/k3s:v1.20.15-k3s1"
           - kube-version: "1.23"
-            kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
+            k3d-image: "rancher/k3s:v1.23.17-k3s1"
           - kube-version: "1.32"
-            kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
+            k3d-image: "rancher/k3s:v1.32.0-k3s1"
 
     steps:
       - name: Checkout
@@ -103,13 +103,14 @@ jobs:
       - name: Install chainsaw
         uses: kyverno/action-install-chainsaw@v0.2.12
 
-      - name: Create Kind Cluster
-        uses: helm/kind-action@v1.12.0
+      - name: Create k3d Cluster
+        uses: AbsaOSS/k3d-action@v2
         with:
-          node_image: ${{ matrix.kind-image }}
-          version: "v0.25.0"
-          cluster_name: kind
-          config: tests/common/apply/kind-config.yaml
+          cluster-name: "odigos-test"
+          args: >-
+            --agents 1
+            --image ${{ matrix.k3d-image }}
+            --config=tests/common/apply/k3d-config.yaml
 
       - name: wait for cluster readiness
         run: |
@@ -134,10 +135,10 @@ jobs:
           echo "Expected cache key: ${{ github.run_id }}-odigos-images"
           exit 1
 
-      - name: Load Odigos Images to Kind Cluster
+      - name: Load Odigos Images to k3d Cluster
         run: |
-          kind load image-archive odigos-images.tar
-          kind load image-archive cli-image.tar
+          k3d image import odigos-images.tar -c odigos-test
+          k3d image import cli-image.tar -c odigos-test
 
       - name: Restore cached CLI binary
         id: restore-cli-cache
