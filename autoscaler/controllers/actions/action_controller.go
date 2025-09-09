@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,6 +47,11 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 	}
 
 	if action.Spec.PiiMasking != nil {
+		/*for _, signal := range action.Spec.Signals {
+			if _, ok := piiMaskingSupportedSignals[signal]; !ok {
+				return nil, fmt.Errorf("unsupported signal in PiiMasking action: %s", signal)
+			}
+		}*/
 		config, err := piiMaskingConfig(action.Spec.PiiMasking.PiiCategories)
 		if err != nil {
 			return nil, err
@@ -62,7 +68,7 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 	}
 
 	if action.Spec.K8sAttributes != nil {
-		config, signals, ownerReferences, err := k8sAttributeConfig(ctx, k8sclient, action.Namespace, nil)
+		config, signals, ownerReferences, err := k8sAttributeConfig(ctx, k8sclient, action.Namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -99,6 +105,12 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 	if action.Spec.Samplers != nil {
 		// Handle probabilistic sampler separately since it has different processor requirements
 		if action.Spec.Samplers.ProbabilisticSampler != nil {
+			for _, signal := range action.Spec.Signals {
+				if _, ok := supportedProbabilisticSignals[signal]; !ok {
+					return nil, fmt.Errorf("unsupported signal: %s", signal)
+				}
+			}
+
 			// Convert string percentage to float
 			config, err := probabilisticSamplerConfig(action.Spec.Samplers.ProbabilisticSampler.SamplingPercentage)
 			if err != nil {

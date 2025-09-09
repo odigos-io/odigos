@@ -2,20 +2,16 @@ package actions
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
 
-	"github.com/odigos-io/odigos/api/actions/v1alpha1"
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	semconv1_21 "go.opentelemetry.io/otel/semconv/v1.21.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -129,120 +125,81 @@ func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctr
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling K8sAttributes action")
 
-	legacyActions := actionv1.K8sAttributesResolverList{}
-	err := r.List(ctx, &legacyActions, client.InNamespace(req.Namespace))
+	// Get the specific K8sAttributesResolver that triggered this reconcile
+	action := &actionv1.K8sAttributesResolver{}
+	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	processor, err := r.convertToUnifiedProcessor(ctx, req.Namespace, &legacyActions)
+	// Migrate to odigosv1.Action
+	migratedActionName := odigosv1.ActionMigratedLegacyPrefix + action.Name
+	odigosAction := &odigosv1.Action{}
+	err = r.Get(ctx, client.ObjectKey{Name: migratedActionName, Namespace: action.Namespace}, odigosAction)
 	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	err = r.Patch(ctx, processor, client.Apply, client.FieldOwner("odigos-k8sattributesresolver"), client.ForceOwnership)
-	reportErr := r.reportActionsStatuses(ctx, &legacyActions, err)
-	return ctrl.Result{}, errors.Join(err, reportErr)
-}
-
-func (r *K8sAttributesResolverReconciler) convertToUnifiedProcessor(ctx context.Context, ns string, legacyActions *actionv1.K8sAttributesResolverList) (*odigosv1.Processor, error) {
-	processor := odigosv1.Processor{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "odigos.io/v1alpha1",
-			Kind:       "Processor",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-k8sattributes",
-			Namespace: ns,
-		},
-		Spec: odigosv1.ProcessorSpec{
-			Type:          "k8sattributes",
-			ProcessorName: "Unified Kubernetes Attributes",
-			CollectorRoles: []odigosv1.CollectorsGroupRole{
-				odigosv1.CollectorsGroupRoleNodeCollector,
-			},
-			OrderHint: 0,
-			Disabled:  false,
-		},
-	}
-
-	config, signals, ownerReferences, err := k8sAttributeConfig(ctx, r.Client, ns, legacyActions)
-	if err != nil {
-		return nil, err
-	}
-
-	processor.ObjectMeta.OwnerReferences = ownerReferences
-	for signal := range signals {
-		processor.Spec.Signals = append(processor.Spec.Signals, signal)
-	}
-	configJson, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-	processor.Spec.ProcessorConfig = runtime.RawExtension{Raw: configJson}
-	return &processor, nil
-}
-
-func (r *K8sAttributesResolverReconciler) reportActionsStatuses(ctx context.Context, actions *actionv1.K8sAttributesResolverList, processorErr error) error {
-	var updateErr error
-	status := metav1.ConditionTrue
-	message := "The action successfully transformed to a unified processor"
-	reason := "ProcessorCreated"
-
-	if processorErr != nil {
-		status = metav1.ConditionFalse
-		message = fmt.Sprintf("Failed to transform the action to a unified processor: %s", processorErr.Error())
-		reason = "ProcessorCreationFailed"
-	}
-
-	for actionIndex := range actions.Items {
-		action := &actions.Items[actionIndex]
-		changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
-			Type:    "ActionTransformedToProcessorType",
-			Status:  status,
-			Reason:  reason,
-			Message: message,
-		})
-
-		if changed {
-			err := r.Status().Update(ctx, action)
-			updateErr = errors.Join(updateErr, err)
+		if client.IgnoreNotFound(err) != nil {
+			return ctrl.Result{}, err
+		}
+		// Action doesn't exist, create new one
+		odigosAction = r.createMigratedAction(action, migratedActionName)
+		err = r.Create(ctx, odigosAction)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		// Action exists, update it
+		updatedAction := r.createMigratedAction(action, migratedActionName)
+		updatedAction.ResourceVersion = odigosAction.ResourceVersion
+		err = r.Update(ctx, updatedAction)
+		if err != nil {
+			return utils.K8SUpdateErrorHandler(err)
 		}
 	}
 
-	return updateErr
+	return ctrl.Result{}, nil
 }
 
-// convertK8sAttributesResolverToAction converts a K8sAttributesResolver to an Action
-func convertK8sAttributesResolverToAction(resolver *actionv1.K8sAttributesResolver) *odigosv1.Action {
-	return &odigosv1.Action{
+func (r *K8sAttributesResolverReconciler) createMigratedAction(action *actionv1.K8sAttributesResolver, migratedActionName string) *odigosv1.Action {
+	config := actionv1.K8sAttributesConfig{
+		CollectContainerAttributes:  action.Spec.CollectContainerAttributes,
+		CollectReplicaSetAttributes: action.Spec.CollectReplicaSetAttributes,
+		CollectWorkloadUID:          action.Spec.CollectWorkloadUID,
+		CollectClusterUID:           action.Spec.CollectClusterUID,
+		LabelsAttributes:            action.Spec.LabelsAttributes,
+		AnnotationsAttributes:       action.Spec.AnnotationsAttributes,
+	}
+
+	odigosAction := &odigosv1.Action{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "odigos.io/v1alpha1",
 			Kind:       "Action",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      resolver.Name,
-			Namespace: resolver.Namespace,
-		},
-		Spec: odigosv1.ActionSpec{
-			ActionName: resolver.Spec.ActionName,
-			Notes:      resolver.Spec.Notes,
-			Disabled:   resolver.Spec.Disabled,
-			Signals:    resolver.Spec.Signals,
-			K8sAttributes: &actionv1.K8sAttributesConfig{
-				CollectContainerAttributes:  resolver.Spec.CollectContainerAttributes,
-				CollectReplicaSetAttributes: resolver.Spec.CollectReplicaSetAttributes,
-				CollectWorkloadUID:          resolver.Spec.CollectWorkloadUID,
-				CollectClusterUID:           resolver.Spec.CollectClusterUID,
-				LabelsAttributes:            resolver.Spec.LabelsAttributes,
-				AnnotationsAttributes:       resolver.Spec.AnnotationsAttributes,
+			Name:      migratedActionName,
+			Namespace: action.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: action.APIVersion,
+					Kind:       action.Kind,
+					Name:       action.Name,
+					UID:        action.UID,
+				},
 			},
 		},
+		Spec: odigosv1.ActionSpec{
+			ActionName:    action.Spec.ActionName,
+			Notes:         action.Spec.Notes,
+			Disabled:      action.Spec.Disabled,
+			Signals:       action.Spec.Signals,
+			K8sAttributes: &config,
+		},
 	}
+
+	return odigosAction
 }
 
 // k8sAttributeConfig combines multiple k8sattributes configurations into a single unified processor config
-func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace string, legacyActions *actionv1.K8sAttributesResolverList) (*k8sAttributesConfig, map[common.ObservabilitySignal]struct{}, []metav1.OwnerReference, error) {
+func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace string) (*k8sAttributesConfig, map[common.ObservabilitySignal]struct{}, []metav1.OwnerReference, error) {
 	// Get all actions in the namespace
 	actionList := &odigosv1.ActionList{}
 	err := k8sclient.List(ctx, actionList, client.InNamespace(namespace))
@@ -263,24 +220,7 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 		collectWorkloadNames = false
 	)
 
-	// Merge legacy configs with current actions
-	var allActions []*odigosv1.Action
-
-	// Convert legacy K8sAttributesResolver to Action format
-	if legacyActions != nil {
-		for i := range legacyActions.Items {
-			allActions = append(allActions, convertK8sAttributesResolverToAction(&legacyActions.Items[i]))
-			ownerReferences = append(ownerReferences, metav1.OwnerReference{
-				APIVersion: legacyActions.Items[i].APIVersion,
-				Kind:       legacyActions.Items[i].Kind,
-				Name:       legacyActions.Items[i].Name,
-				UID:        legacyActions.Items[i].UID,
-			})
-		}
-	}
-
 	for i := range actionList.Items {
-		allActions = append(allActions, &actionList.Items[i])
 		ownerReferences = append(ownerReferences, metav1.OwnerReference{
 			APIVersion: actionList.Items[i].APIVersion,
 			Kind:       actionList.Items[i].Kind,
@@ -290,7 +230,7 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 	}
 
 	// Collect all k8sattributes configurations
-	for _, currentAction := range allActions {
+	for _, currentAction := range actionList.Items {
 		if currentAction.Spec.K8sAttributes == nil || currentAction.Spec.Disabled {
 			continue
 		}
@@ -308,9 +248,9 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 
 		// Add label attributes, newer configs override older ones with same Tag
 		for _, label := range config.LabelsAttributes {
-			from := v1alpha1.PodAttributeSource
+			from := actionv1.PodAttributeSource
 			if label.From != nil {
-				from = v1alpha1.K8sAttributeSource(*label.From)
+				from = actionv1.K8sAttributeSource(*label.From)
 			}
 			labelAttributes[label.LabelKey] = k8sTagAttribute{
 				Tag:  label.AttributeKey,
@@ -321,9 +261,9 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 
 		// Add annotation attributes, newer configs override older ones with same Tag
 		for _, annotation := range config.AnnotationsAttributes {
-			from := v1alpha1.PodAttributeSource
+			from := actionv1.PodAttributeSource
 			if annotation.From != nil {
-				from = v1alpha1.K8sAttributeSource(*annotation.From)
+				from = actionv1.K8sAttributeSource(*annotation.From)
 			}
 			annotationAttributes[annotation.AnnotationKey] = k8sTagAttribute{
 				Tag:  annotation.AttributeKey,

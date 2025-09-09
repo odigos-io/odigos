@@ -73,8 +73,8 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 
 			ownerRefs := processor.GetOwnerReferences()
 			Expect(len(ownerRefs)).Should(Equal(1))
-			Expect(ownerRefs[0].Name).Should(Equal(ActionName + "-basic"))
-			Expect(ownerRefs[0].Kind).Should(Equal("K8sAttributesResolver"))
+			Expect(ownerRefs[0].Name).Should(Equal(odigosv1.ActionMigratedLegacyPrefix + ActionName + "-basic"))
+			Expect(ownerRefs[0].Kind).Should(Equal("Action"))
 		})
 
 		It("Should create a Processor with container attributes enabled", func() {
@@ -695,11 +695,17 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 			Expect(len(ownerRefs)).Should(Equal(2))
 
 			ownerNames := make(map[string]bool)
+			ownerKinds := make(map[string]bool)
 			for _, ownerRef := range ownerRefs {
 				ownerNames[ownerRef.Name] = true
+				ownerKinds[ownerRef.Kind] = true
 			}
-			Expect(ownerNames[ActionName+"-merge-1"]).Should(BeTrue())
-			Expect(ownerNames[ActionName+"-merge-2"]).Should(BeTrue())
+			Expect(ownerNames[odigosv1.ActionMigratedLegacyPrefix+ActionName+"-merge-1"]).Should(BeTrue())
+			Expect(ownerNames[odigosv1.ActionMigratedLegacyPrefix+ActionName+"-merge-2"]).Should(BeTrue())
+			Expect(ownerNames[ActionName+"-merge-1"]).Should(BeFalse())
+			Expect(ownerNames[ActionName+"-merge-2"]).Should(BeFalse())
+			Expect(ownerKinds["K8sAttributesResolver"]).Should(BeFalse())
+			Expect(ownerKinds["Action"]).Should(BeTrue())
 		})
 	})
 
@@ -946,9 +952,10 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 				ownerNames[ownerRef.Name] = true
 				ownerKinds[ownerRef.Kind] = true
 			}
-			Expect(ownerNames[ActionName+"-legacy-merge"]).Should(BeTrue())
+			Expect(ownerNames[ActionName+"-legacy-merge"]).Should(BeFalse())
+			Expect(ownerNames[odigosv1.ActionMigratedLegacyPrefix+ActionName+"-legacy-merge"]).Should(BeTrue())
 			Expect(ownerNames[ActionName+"-modern-merge"]).Should(BeTrue())
-			Expect(ownerKinds["K8sAttributesResolver"]).Should(BeTrue())
+			Expect(ownerKinds["K8sAttributesResolver"]).Should(BeFalse())
 			Expect(ownerKinds["Action"]).Should(BeTrue())
 		})
 	})
