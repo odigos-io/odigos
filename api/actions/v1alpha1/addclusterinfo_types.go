@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -45,6 +46,13 @@ func (AddClusterInfoConfig) ProcessorType() string {
 func (AddClusterInfoConfig) OrderHint() int {
 	return 1
 }
+
+func (AddClusterInfoConfig) CollectorRoles() []k8sconsts.CollectorRole {
+	return []k8sconsts.CollectorRole{
+		k8sconsts.CollectorsRoleClusterGateway,
+	}
+}
+
 
 // AddClusterInfoSpec defines the desired state of AddClusterInfo action
 type AddClusterInfoSpec struct {
