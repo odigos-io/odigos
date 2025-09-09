@@ -772,19 +772,20 @@ func GetOtherConditionsForSources(ctx context.Context, namespace string, name st
 		}
 	}
 
-	workloadsConditions, err := getWorkloadsConditions(ctx, namespace, name, kind)
-	if err != nil {
-		return nil, err
-	}
-	for _, workloadItem := range workloadsConditions {
-		key := fmt.Sprintf("%s/%s/%s", workloadItem.Namespace, workloadItem.Name, workloadItem.Kind)
-		if _, exists := conditionsMap[key]; !exists {
-			conditionsMap[key] = workloadItem
-		} else {
-			conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, workloadItem.Conditions...)
-			SortConditions(conditionsMap[key].Conditions)
-		}
-	}
+	// TODO: uncomment this when we have a better way to differentiate between errors
+	// workloadsConditions, err := getWorkloadsConditions(ctx, namespace, name, kind)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// for _, workloadItem := range workloadsConditions {
+	// 	key := fmt.Sprintf("%s/%s/%s", workloadItem.Namespace, workloadItem.Name, workloadItem.Kind)
+	// 	if _, exists := conditionsMap[key]; !exists {
+	// 		conditionsMap[key] = workloadItem
+	// 	} else {
+	// 		conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, workloadItem.Conditions...)
+	// 		SortConditions(conditionsMap[key].Conditions)
+	// 	}
+	// }
 
 	for _, item := range conditionsMap {
 		result = append(result, item)
