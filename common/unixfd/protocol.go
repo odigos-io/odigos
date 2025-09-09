@@ -11,5 +11,4 @@ const (
 
 const (
 	DefaultSocketPath = "/var/exchange/exchange.sock"
-	ExchangeDir       = "/var/exchange"
 )
