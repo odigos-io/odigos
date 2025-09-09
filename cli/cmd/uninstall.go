@@ -402,7 +402,7 @@ func removeAllSources(ctx context.Context, client *kube.Client) error {
 		} else if errors.Is(pollErr, context.Canceled) {
 			returnErr = fmt.Errorf("canceled while waiting sources to be deleted\n")
 		} else {
-			returnErr = fmt.Errorf("error while waiting for sources to be deleted: %s\n", err)
+			returnErr = fmt.Errorf("error while waiting for sources to be deleted: %w\n", pollErr)
 		}
 	}
 	return returnErr

@@ -6,10 +6,16 @@ spec:
   description: This e2e test runs a multi-apps scenario with mount method instrumentation
   skipDelete: true
   steps:
+    - name: '[1 - Setup] Install - Simple Demo Apps'
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+
     - name: '[1 - Setup] Prepare destination'
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
+
     - name: '[1 - Setup] Install Odigos'
       try:
         - script:
@@ -26,6 +32,12 @@ spec:
             timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
 
+    - name: '[1 - Setup] Assert - Simple Demo Apps Installed'
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/simple-demo-installed.yaml
+
     - name: '[1 - Setup] Set mount method to k8s-init-container'
       try:
         - script:
@@ -37,6 +49,21 @@ spec:
         - script:
             timeout: 30s
             content: ../../common/assert_config_value.sh -k mountMethod -v k8s-init-container
+
+    - name: '[1 - Setup] Wait for odiglet to be rolled out'
+      try:
+        - script:
+            timeout: 5m
+            content: |
+              sleep 5
+              kubectl rollout status daemonset/odiglet -n odigos-test --timeout=5m
+
+    ## After setting mount method, device-plugin container removed from odiglet pod spec
+    ## so we need to wait for odiglet to be ready
+    - name: '[1 - Setup] Odiglet ready'
+      try:
+        - assert:
+            file: odiglet-ready.yaml
 
     - name: '[1 - Setup] Verify Node Odiglet label has been added'
       try:
@@ -53,23 +80,6 @@ spec:
       try:
         - apply:
             file: ../../common/apply/add-simple-trace-db-destination.yaml
-
-    - name: '[1 - Setup] Install - Simple Demo Apps'
-      try:
-        - apply:
-            file: ../../common/apply/install-simple-demo.yaml
-        - script:
-            timeout: 2m
-            content: |
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
-        - assert:
-            file: ../../common/assert/simple-demo-installed.yaml
 
     - name: '[2 - Workload Instrumentation] Instrument default ns workloads'
       try:
@@ -106,7 +116,7 @@ spec:
         - assert:
             file: simple-demo-instrumented.yaml
         - script:
-            timeout: 70s
+            timeout: 2m
             content: ../../common/wait_for_rollout.sh
 
     - name: '[2 - Workload Instrumentation] Generate Traffic'

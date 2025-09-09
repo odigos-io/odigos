@@ -31,7 +31,7 @@ download_builder:
 
 .PHONY: genodigoscol
 genodigoscol: download_builder
-	$(BUILDER) --config builder-config.yaml
+	$(BUILDER) --ldflags="-checklinkname=0" --config builder-config.yaml
 
 .PHONY: test-odigossamplingprocessor
 test-odigossamplingprocessor:
@@ -40,7 +40,7 @@ test-odigossamplingprocessor:
 
 .PHONY: build-odigoscol
 build-odigoscol: download_builder test-odigossamplingprocessor
-	$(BUILDER) --config builder-config.yaml --skip-generate --skip-get-modules
+	$(BUILDER) --ldflags="-checklinkname=0" --config builder-config.yaml --skip-generate --skip-get-modules
 
 .PHONY: install-tools
 install-tools:
@@ -74,7 +74,7 @@ GO_MODS_TO_TEST := $(ALL_GO_MODS:%=test/%)
 test: $(GO_MODS_TO_TEST)
 test/%: GO_MOD=$*
 test/%:
-	cd $(shell dirname $(GO_MOD)) && $(GOCMD) test -v ./...
+	cd $(shell dirname $(GO_MOD)) && $(GOCMD) test --ldflags="-checklinkname=0" -v ./...
 
 .PHONY: go-licenses
 go-licenses:

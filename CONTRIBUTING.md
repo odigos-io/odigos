@@ -174,12 +174,6 @@ make deploy-ui
 
 First - make sure you clone the [nodejs agent](https://github.com/odigos-io/opentelemetry-node) repos in the same directory as the odigos repo. e.g. `../opentelemetry-node` should exist alongside the odigos repo in your local filesystem.
 
-To deploy odiglet with agents from this source directory:
-
-```bash
-make deploy-odiglet-with-agents
-```
-
 See the [Odigos docs](https://docs.odigos.io/intro) for the full steps on debugging Odigos locally.
 
 ### How to Build and run Odigos Frontend Locally

@@ -1,3 +1,9 @@
+# User should be specifying the signals they want to collect.
+signals:
+  - traces
+  - metrics
+  - logs
+
 image:
   tag: ''
 imagePullSecrets: []
@@ -449,6 +455,10 @@ rollout:
 # This reflects Odigos' recommended defaults for maintaining observability continuity without blocking routine maintenance.
 # PDBs are disabled by default and can be enabled in production environments where stability during disruptions is important.
 pdb:
+  enabled: false
+
+# Setting for allowing Odigos to run concurrently with other agents
+allowConcurrentAgents:
   enabled: false
 
 # Enable support for ClickHouse JSON column type when storing Odigos data.

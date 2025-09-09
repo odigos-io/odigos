@@ -64,11 +64,15 @@ jobs:
                 echo "Stable tag ${{ env.STABLE_TAG }} does not exist, proceeding with promotion"
             fi
 
+
       - name: Notify Slack Start
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Starting to promote release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}", "tag":"${{ env.RC_TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with: 
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Starting to promote release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          failure-description: "ERROR: Failed to promote release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          tag: ${{ env.RC_TAG }}
 
       - name: Install crane
         uses: imjasonh/setup-crane@v0.4
@@ -101,7 +105,7 @@ jobs:
 
       - name: Retag existing images to stable
         run: |
-            IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor")
+            IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor" "odigos-operator")
             REPOS=(${GCR_REPO} ${GHCR_REPO} ${DOCKERHUB_REPO})
             UBI9_SUFFIXES=("" "-ubi9")
             # Track failed copies for potential rollback
@@ -157,16 +161,11 @@ jobs:
             https://api.github.com/repos/odigos-io/odigos/dispatches \
             -d '{"event_type": "release_cli", "client_payload": {"tag": "${{ env.STABLE_TAG }}"}}'
 
-      - name: Notify Slack Success
-        if: success()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Successfully re-tagged release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}", "tag":"${{ env.STABLE_TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
-
-      - name: Notify Slack Error
-        if: failure()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"ERROR: Failed to re-tag release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}", "tag":"${{ env.STABLE_TAG }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with: 
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Successfully re-tagged release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          failure-description: "ERROR: Failed to re-tag release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          tag: ${{ env.STABLE_TAG }}

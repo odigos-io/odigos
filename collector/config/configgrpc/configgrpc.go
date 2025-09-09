@@ -26,6 +26,9 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/tap"
+
+	rtml "github.com/odigos-io/go-rtml"
 
 	"go.opentelemetry.io/collector/client"
 	"go.opentelemetry.io/collector/component"
@@ -175,8 +178,6 @@ type KeepaliveEnforcementPolicy struct {
 func NewDefaultKeepaliveEnforcementPolicy() KeepaliveEnforcementPolicy {
 	return KeepaliveEnforcementPolicy{}
 }
-
-type memoryLimiterExtension = interface{ MustRefuse() bool }
 
 // ServerConfig defines common settings for a gRPC server configuration.
 type ServerConfig struct {
@@ -533,20 +534,6 @@ func (gss *ServerConfig) getGrpcServerOptions(
 		})
 	}
 
-	if gss.MemoryLimiter != nil {
-		memoryLimiter, err := getMemoryLimiterExtension(gss.MemoryLimiter, host.GetExtensions())
-		if err != nil {
-			return nil, err
-		}
-
-		uInterceptors = append(uInterceptors, func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-			return memoryLimiterUnaryServerInterceptor(ctx, req, info, handler, memoryLimiter)
-		})
-		sInterceptors = append(sInterceptors, func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-			return memoryLimiterStreamServerInterceptor(srv, ss, info, handler, memoryLimiter)
-		})
-	}
-
 	otelOpts := []otelgrpc.Option{
 		otelgrpc.WithTracerProvider(settings.TracerProvider),
 		otelgrpc.WithPropagators(otel.GetTextMapPropagator()),
@@ -559,6 +546,13 @@ func (gss *ServerConfig) getGrpcServerOptions(
 	sInterceptors = append(sInterceptors, enhanceStreamWithClientInformation(gss.IncludeMetadata))
 
 	opts = append(opts, grpc.StatsHandler(otelgrpc.NewServerHandler(otelOpts...)), grpc.ChainUnaryInterceptor(uInterceptors...), grpc.ChainStreamInterceptor(sInterceptors...))
+
+	opts = append(opts, grpc.InTapHandle(func(ctx context.Context, info *tap.Info) (context.Context, error) {
+		if rtml.IsMemLimitReached() {
+			return ctx, errMemoryLimitReached
+		}
+		return ctx, nil
+	}))
 
 	// Apply middleware options. Note: OpenTelemetry could be registered as an extension.
 	for _, middleware := range gss.Middlewares {
@@ -576,34 +570,6 @@ func (gss *ServerConfig) getGrpcServerOptions(
 	}
 
 	return opts, nil
-}
-
-func memoryLimiterUnaryServerInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler, ml memoryLimiterExtension) (any, error) {
-	if ml.MustRefuse() {
-		return nil, errMemoryLimitReached
-	}
-
-	return handler(ctx, req)
-}
-
-func memoryLimiterStreamServerInterceptor(srv any, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler, ml memoryLimiterExtension) error {
-	ctx := stream.Context()
-	if ml.MustRefuse() {
-		return errMemoryLimitReached
-	}
-
-	return handler(srv, wrapServerStream(ctx, stream))
-}
-
-func getMemoryLimiterExtension(extID *component.ID, extensions map[component.ID]component.Component) (memoryLimiterExtension, error) {
-	if ext, found := extensions[*extID]; found {
-		if server, ok := ext.(memoryLimiterExtension); ok {
-			return server, nil
-		}
-		return nil, fmt.Errorf("requested MemoryLimiter, %s, is not a memoryLimiterExtension", extID)
-	}
-
-	return nil, fmt.Errorf("failed to resolve memoryLimiterExtension %q: %s", extID, "memory limiter extension not found")
 }
 
 // getGRPCCompressionName returns compression name registered in grpc.
