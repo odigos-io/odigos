@@ -14,10 +14,7 @@ import (
 	"github.com/odigos-io/odigos/profiles"
 	"github.com/odigos-io/odigos/profiles/manifests"
 
-	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -25,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -99,12 +95,6 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	resolveMountMethod(&odigosConfiguration)
 	resolveEnvInjectionMethod(&odigosConfiguration)
 
-	// Handle the Go offsets CronJob
-	err = r.handleGoOffsetsCronJob(ctx, &odigosConfiguration, env.GetCurrentNamespace())
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	err = r.persistEffectiveConfig(ctx, &odigosConfiguration, odigosConfigMap)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -174,145 +164,6 @@ func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Conte
 
 	logger := ctrl.LoggerFrom(ctx)
 	logger.Info("Successfully persisted effective configuration")
-
-	return nil
-}
-
-func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Context, config *common.OdigosConfiguration, ns string) error {
-	// Get the Kubernetes server version to determine the API version to use for the CronJob
-	cfg := ctrl.GetConfigOrDie()
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes server version: %v", err)
-	}
-	verInfo, err := discoveryClient.ServerVersion()
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes server version: %v", err)
-	}
-	apiVersion := "batch/v1beta1"
-	if verInfo.Minor >= "21" {
-		apiVersion = "batch/v1"
-	}
-
-	// Determine the mode to use (default to "direct" if not specified)
-	mode := k8sconsts.OffsetCronJobMode(config.GoAutoOffsetsMode)
-	if mode == "" {
-		mode = k8sconsts.OffsetCronJobModeDirect
-	}
-
-	// Validate the mode
-	if !mode.IsValid() {
-		return fmt.Errorf("invalid go-auto-offsets-mode: %s. Must be one of: %s, %s, %s",
-			mode, k8sconsts.OffsetCronJobModeDirect, k8sconsts.OffsetCronJobModeImage, k8sconsts.OffsetCronJobModeOff)
-	}
-
-	if config.GoAutoOffsetsCron == "" || mode == k8sconsts.OffsetCronJobModeOff {
-		return deleteCronJob(ctx, r.Client, ns, apiVersion)
-	}
-
-	// Determine image name and command based on mode
-	var imageName string
-	var command []string
-
-	switch mode {
-	case k8sconsts.OffsetCronJobModeDirect:
-		imageName = k8sconsts.CliImageName
-		command = []string{"pro", "update-offsets"}
-	case k8sconsts.OffsetCronJobModeImage:
-		imageName = k8sconsts.CliOffsetsImageName
-		command = []string{"pro", "update-offsets", "--from-file", "/odigos/offset_results_min.json"}
-	}
-
-	typeMeta := metav1.TypeMeta{
-		Kind:       "CronJob",
-		APIVersion: apiVersion,
-	}
-	objectMeta := metav1.ObjectMeta{
-		Name:      k8sconsts.OffsetCronJobName,
-		Namespace: ns,
-		Labels: map[string]string{
-			k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue,
-		},
-	}
-	template := corev1.PodTemplateSpec{
-		Spec: corev1.PodSpec{
-			ServiceAccountName: k8sconsts.SchedulerServiceAccountName,
-			Containers: []corev1.Container{
-				{
-					Name:  imageName,
-					Image: fmt.Sprintf("%s/%s:%s", config.ImagePrefix, imageName, r.OdigosVersion),
-					Args:  command,
-				},
-			},
-			RestartPolicy: corev1.RestartPolicyNever,
-		},
-	}
-
-	if apiVersion == "batch/v1beta1" {
-		cronJob := &batchv1beta1.CronJob{
-			TypeMeta:   typeMeta,
-			ObjectMeta: objectMeta,
-			Spec: batchv1beta1.CronJobSpec{
-				Schedule: config.GoAutoOffsetsCron,
-				JobTemplate: batchv1beta1.JobTemplateSpec{
-					Spec: batchv1.JobSpec{
-						Template: template,
-					},
-				},
-			},
-		}
-		return applyCronJob(ctx, r.Client, ns, cronJob, config)
-	}
-	cronJob := &batchv1.CronJob{
-		TypeMeta:   typeMeta,
-		ObjectMeta: objectMeta,
-		Spec: batchv1.CronJobSpec{
-			Schedule: config.GoAutoOffsetsCron,
-			JobTemplate: batchv1.JobTemplateSpec{
-				Spec: batchv1.JobSpec{
-					Template: template,
-				},
-			},
-		},
-	}
-	return applyCronJob(ctx, r.Client, ns, cronJob, config)
-}
-
-func deleteCronJob(ctx context.Context, kubeClient client.Client, ns string, apiVersion string) error {
-	var cronJob client.Object
-	if apiVersion == "batch/v1" {
-		cronJob = &batchv1.CronJob{}
-	} else {
-		cronJob = &batchv1beta1.CronJob{}
-	}
-	err := kubeClient.Get(ctx, types.NamespacedName{Namespace: ns, Name: k8sconsts.OffsetCronJobName}, cronJob)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-	err = kubeClient.Delete(ctx, cronJob)
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete go offsets CronJob: %v", err)
-		}
-		return nil
-	}
-	return nil
-}
-
-func applyCronJob(ctx context.Context, kubeClient client.Client, ns string, cronJob client.Object, config *common.OdigosConfiguration) error {
-	// Apply the CronJob
-	objApplyBytes, err := yaml.Marshal(cronJob)
-	if err != nil {
-		return err
-	}
-
-	err = kubeClient.Patch(ctx, cronJob, client.RawPatch(types.ApplyYAMLPatchType, objApplyBytes), client.ForceOwnership, client.FieldOwner("scheduler-odigosconfig"))
-	if err != nil {
-		return fmt.Errorf("failed to apply go offsets CronJob: %v", err)
-	}
 
 	return nil
 }

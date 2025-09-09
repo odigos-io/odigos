@@ -442,6 +442,13 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 		intValue, _ := strconv.Atoi(value[0])
 		config.OdigletHealthProbeBindPort = intValue
 	case consts.GoAutoOffsetsCronProperty:
+		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, namespace)
+		if err != nil {
+			return fmt.Errorf("unable to read the current Odigos tier: %w", err)
+		}
+		if currentTier == common.CommunityOdigosTier {
+			return fmt.Errorf("custom offsets support is only available in Odigos pro tier.")
+		}
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
 		}
@@ -455,6 +462,13 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 		config.GoAutoOffsetsCron = cronValue
 
 	case consts.GoAutoOffsetsModeProperty:
+		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, namespace)
+		if err != nil {
+			return fmt.Errorf("unable to read the current Odigos tier: %w", err)
+		}
+		if currentTier == common.CommunityOdigosTier {
+			return fmt.Errorf("custom offsets support is only available in Odigos pro tier.")
+		}
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
 		}
