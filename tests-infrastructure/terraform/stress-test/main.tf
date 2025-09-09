@@ -79,7 +79,7 @@ module "eks" {
   }
 }
 
-# VPC Endpoint for EKS API communication (optional)
+# VPC Endpoint for EKS API communication (Kubernetes API server)
 resource "aws_vpc_endpoint" "eks_api" {
   vpc_id          = module.vpc.vpc_id
   service_name    = "com.amazonaws.${var.region}.eks"
@@ -178,7 +178,7 @@ resource "null_resource" "install_prometheus_crds" {
       
       # Install Prometheus Operator CRDs
       echo "Installing Prometheus Operator CRDs..."
-      helm install prometheus-crds prometheus-community/prometheus-operator-crds
+      helm upgrade --install prometheus-crds prometheus-community/prometheus-operator-crds
       
       echo "Prometheus CRDs installation completed!"
     EOT
@@ -346,9 +346,9 @@ resource "null_resource" "apply_odigos_sources" {
       
       # Apply Odigos sources only if workload generators are deployed
       if [[ "${var.deploy_load_test_apps}" == "true" ]]; then
-        # Wait for odigos-instrumentor to be ready before applying sources
-        echo "Waiting for odigos-instrumentor to be ready..."
-        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name: odigos-instrumentor -n odigos-system
+        # Wait for odigos-instrumentor deployment to be ready before applying sources
+        echo "Waiting for odigos-instrumentor deployment to be ready..."
+        kubectl wait --for=condition=available --timeout=120s deployment/odigos-instrumentor -n odigos-system
         
         # Apply Odigos sources for workload generators
         echo "Applying Odigos sources for workload generators..."
@@ -417,7 +417,7 @@ EOF
   triggers = {
     cluster_endpoint = module.eks.cluster_endpoint
     clickhouse_destination = filesha256("${path.module}/deploy/odigos/clickhouse-destination.yaml")
-    ec2_ip = try(data.terraform_remote_state.ec2.outputs.monitoring_instance_private_ip, "destroyed")
+    ec2_ip = try(data.terraform_remote_state.ec2.outputs.monitoring_instance_private_ip, "pending")
     force_reinstall = "force-clickhouse-reinstall-$(date +%s)"
   }
 }

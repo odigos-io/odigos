@@ -11,7 +11,7 @@ NC='\033[0m' # No Color
 # ECR repository details
 ECR_REPO="public.ecr.aws/odigos"
 IMAGE_NAME="go-span-gen"
-TAG="v0.0.1"
+TAG="v0.0.2"
 
 FULL_IMAGE_NAME="${ECR_REPO}/${IMAGE_NAME}:${TAG}"
 

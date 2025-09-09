@@ -207,7 +207,13 @@ deploy_infrastructure() {
     # Deploy Kubernetes applications (now that EC2 IP is available)
     log_info "Step 3: Deploying Kubernetes applications with EC2 IP..."
     
-    # Re-initialize and validate before deploying apps to ensure clean state
+    # Configure kubectl to use the correct cluster endpoint
+    local cluster_name=$(tofu output -raw cluster_name 2>/dev/null || get_tf_var cluster_name "odigos-stress-test")
+    local region=$(tofu output -raw region 2>/dev/null || get_tf_var region "us-east-1")
+    log_info "Configuring kubectl for cluster: $cluster_name"
+    aws eks update-kubeconfig --region "$region" --name "$cluster_name"
+    
+    # Re-initialize and validate before deploying k8s apps to ensure clean state
     log_info "Re-initializing Terraform for Kubernetes applications..."
     if ! run_tf "." "init" "-upgrade"; then
         log_error "Terraform re-initialization failed"
@@ -409,7 +415,7 @@ check_status() {
 }
 
 # Deploy only Kubernetes applications
-deploy_apps() {
+deploy_k8s_apps() {
     log_info "Deploying Kubernetes applications..."
     
     # Check if EKS cluster exists
@@ -420,6 +426,10 @@ deploy_apps() {
         log_error "EKS cluster not found. Please deploy infrastructure first with './deploy.sh deploy'"
         exit 1
     fi
+    
+    # Configure kubectl to use the correct cluster endpoint
+    log_info "Configuring kubectl for cluster: $cluster_name"
+    aws eks update-kubeconfig --region "$region" --name "$cluster_name"
     
     # Check if critical components are actually installed, if not, force re-deployment
     log_info "Checking if Kubernetes applications are properly installed..."
@@ -482,7 +492,7 @@ deploy_apps() {
     # Initialize Terraform to ensure all variables and providers are properly set up
     log_info "Initializing Terraform configuration..."
     if ! run_tf "." "init"; then
-        log_error "Terraform initialization failed for apps deployment"
+        log_error "Terraform initialization failed for k8s apps deployment"
         return 1
     fi
     
@@ -492,7 +502,7 @@ deploy_apps() {
     log_info "Deploying Kubernetes applications with Terraform..."
     
     # Check if load-test apps flag is provided
-    if [[ "${1:-}" == "--with-load-test" ]]; then
+    if [[ "$1" == "--with-load-test" ]]; then
         log_info "Including load-test applications..."
         if ! run_tf "." "apply" "-var=deploy_kubernetes_apps=true" "-var=deploy_load_test_apps=true" "-auto-approve"; then
             log_error "Kubernetes applications deployment failed (with load-test apps)"
@@ -515,8 +525,8 @@ main() {
         "deploy")
             deploy_infrastructure
             ;;
-        "apps")
-            deploy_apps "${2:-}"
+        "k8s-apps")
+            deploy_k8s_apps "${2:-}"
             ;;
         "destroy")
             destroy_infrastructure
@@ -525,11 +535,11 @@ main() {
             check_status
             ;;
         *)
-            echo "Usage: $0 {deploy|apps|destroy|status}"
+            echo "Usage: $0 {deploy|k8s-apps|destroy|status}"
             echo ""
             echo "Commands:"
             echo "  deploy  - Deploy the complete infrastructure (EKS + EC2 + Kubernetes apps + load-test workloads)"
-            echo "  apps [--with-load-test] - Deploy only Kubernetes applications (requires EKS cluster)"
+            echo "  k8s-apps [--with-load-test] - Deploy only Kubernetes applications (requires EKS cluster)"
             echo "    --with-load-test  - Also deploy load-test applications"
             echo "  destroy - Destroy the infrastructure with proper dependency order"
             echo "  status  - Check the current status of infrastructure"
