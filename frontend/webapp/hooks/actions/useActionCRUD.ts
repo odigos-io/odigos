@@ -41,7 +41,7 @@ const parseRenames = (action: FetchedAction): Action => {
 export const useActionCRUD = (): UseActionCrud => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
-  const { actionsLoading, setEntitiesLoading, actions, setEntities, removeEntities } = useEntityStore();
+  const { actionsLoading, setEntitiesLoading, actions, setEntities, addEntities, removeEntities } = useEntityStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: EntityTypes.Action, target: id ? getSseTargetFromId(id, EntityTypes.Action) : undefined, hideFromHistory });
@@ -66,20 +66,20 @@ export const useActionCRUD = (): UseActionCrud => {
   const [mutateCreate] = useMutation<{ createAction: FetchedAction }, { action: ActionInput }>(CREATE_ACTION, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Create, error.cause?.message || error.message),
     onCompleted: (res) => {
-      const id = res.createAction.id;
-      const type = res.createAction.type;
+      const action = res.createAction;
+      const { id, type } = action;
+      addEntities(EntityTypes.Action, [action]);
       notifyUser(StatusType.Success, Crud.Create, `Successfully created "${type}" action`, id);
-      fetchActions();
     },
   });
 
   const [mutateUpdate] = useMutation<{ updateAction: FetchedAction }, { id: string; action: ActionInput }>(UPDATE_ACTION, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
     onCompleted: (res) => {
-      const id = res.updateAction.id;
-      const type = res.updateAction.type;
+      const action = res.updateAction;
+      const { id, type } = action;
+      addEntities(EntityTypes.Action, [action]);
       notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${type}" action`, id);
-      fetchActions();
     },
   });
 
