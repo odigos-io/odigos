@@ -1,0 +1,314 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-unsupported-version
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-very-old-version
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-dockerfile-env
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-manifest-env
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-unique-exec
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpp-http-server
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-version
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-azul
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-docker-env
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-supported-manifest-env
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-latest-version
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-old-version
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-other-agent
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - env:
+        - name: DJANGO_SETTINGS_MODULE
+          (value != null): true
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-alpine
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - env:
+        - name: DJANGO_SETTINGS_MODULE
+          (value != null): true
+        - name: PYTHONPATH
+          (value != null): true
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-not-supported
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - env:
+        - name: DJANGO_SETTINGS_MODULE
+          (value != null): true
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet8-musl
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet6-glibc
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-gunicorn-server
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---

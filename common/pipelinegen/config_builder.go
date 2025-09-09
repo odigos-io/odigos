@@ -22,12 +22,11 @@ type GatewayConfigOptions struct {
 func GetGatewayConfig(
 	dests []config.ExporterConfigurer,
 	processors []config.ProcessorConfigurer,
-	memoryLimiterConfig config.GenericMap,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
 	gatewayOptions GatewayConfigOptions,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
-	currentConfig := GetBasicConfig(memoryLimiterConfig)
+	currentConfig := GetBasicConfig()
 	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions)
 }
 
@@ -101,7 +100,7 @@ func CalculateGatewayConfig(
 			// add the forward connector as a receiver to the pipeline
 			pipeline.Receivers = append(pipeline.Receivers, connectorName)
 			// every destination pipeline should have a generic batch processor
-			pipeline.Processors = []string{consts.GenericBatchProcessorConfigKey}
+			pipeline.Processors = append(pipeline.Processors, consts.GenericBatchProcessorConfigKey)
 
 			// track which signals are enabled based on the destination pipeline names
 			switch {
@@ -260,7 +259,7 @@ func insertServiceGraphPipeline(currentConfig *config.Config) {
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
 }
 
-func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
+func GetBasicConfig() *config.Config {
 	return &config.Config{
 		Connectors: config.GenericMap{},
 		Receivers: config.GenericMap{
@@ -279,7 +278,6 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 								"max_connection_age_grace": consts.GatewayMaxConnectionAgeGrace,
 							},
 						},
-						"memory_limiter": consts.MemoryLimiterExtensionKey, // tells the receiver to check this "memory_limiter" extension when receiving data
 					},
 					// Node collectors send in gRPC, so this is probably not needed
 					"http": config.GenericMap{
@@ -301,7 +299,6 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 			consts.GenericBatchProcessorConfigKey: config.GenericMap{},
 		},
 		Extensions: config.GenericMap{
-			consts.MemoryLimiterExtensionKey: memoryLimiterConfig,
 			"health_check": config.GenericMap{
 				"endpoint": "0.0.0.0:13133",
 			},
@@ -312,7 +309,7 @@ func GetBasicConfig(memoryLimiterConfig config.GenericMap) *config.Config {
 		Exporters: map[string]interface{}{},
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{},
-			Extensions: []string{"health_check", "pprof", consts.MemoryLimiterExtensionKey},
+			Extensions: []string{"health_check", "pprof"},
 		},
 	}
 }

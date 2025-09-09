@@ -84,10 +84,18 @@ func initKubernetesClient(flags *Flags) error {
 }
 
 func startWatchers(ctx context.Context) error {
+	odigosNs := env.GetCurrentNamespace()
+
 	err := watchers.StartInstrumentationConfigWatcher(ctx, "")
 	if err != nil {
 		return fmt.Errorf("error starting InstrumentationConfig watcher: %v", err)
 	}
+
+	err = watchers.StartDestinationWatcher(ctx, odigosNs)
+	if err != nil {
+		return fmt.Errorf("error starting Destination watcher: %v", err)
+	}
+
 	return nil
 }
 

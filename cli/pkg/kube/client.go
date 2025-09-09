@@ -8,6 +8,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -148,7 +149,14 @@ func (c *Client) ApplyResource(ctx context.Context, configVersion int, obj Objec
 func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNamespace ResourceAndNs, configVersion int, k8sVersion *version.Version) error {
 	systemObject, _ := k8slabels.NewRequirement(k8sconsts.OdigosSystemLabelKey, selection.Equals, []string{k8sconsts.OdigosSystemLabelValue})
 	notLatestVersion, _ := k8slabels.NewRequirement(k8sconsts.OdigosSystemConfigLabelKey, selection.NotEquals, []string{strconv.Itoa(configVersion)})
-	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).String()
+
+	// Items with preserve="true" are excluded from deletion.
+	// e.g data-collection configmap
+	skipPreserved, _ := k8slabels.NewRequirement(
+		k8sconsts.OdigosPreserveLabelKey, selection.NotEquals,
+		[]string{"true"},
+	)
+	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).Add(*skipPreserved).String()
 	resource := resourceAndNamespace.Resource
 	ns := resourceAndNamespace.Namespace
 	// DeleteCollection is only available in k8s 1.23 and above, for older versions we need to list and delete each resource
@@ -174,4 +182,34 @@ func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNa
 		}
 	}
 	return nil
+}
+
+// ExistsByObject checks if a namespaced object exists, deriving the GVR from the obj's GVK.
+// Assumes TypeMeta (Kind/APIVersion) is set on obj (as you already do in your builders).
+func (c *Client) ExistsByObject(ctx context.Context, obj Object) (bool, error) {
+	resourceName := obj.GetName()
+	ns := obj.GetNamespace()
+
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	if gvk.Empty() {
+		return false, fmt.Errorf("ExistsByObject: object has empty GVK (ensure TypeMeta.Kind/APIVersion are set)")
+	}
+	resource := TypeMetaToDynamicResource(gvk)
+
+	_, err := c.Dynamic.Resource(resource).Namespace(ns).Get(ctx, resourceName, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+func (c *Client) ApplyResourceIfAbsent(ctx context.Context, configVersion int, obj Object, managerOpts resourcemanager.ManagerOpts) error {
+	exists, err := c.ExistsByObject(ctx, obj)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil // do nothing; keep existing content
+	}
+	return c.ApplyResource(ctx, configVersion, obj, managerOpts)
 }

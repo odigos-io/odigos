@@ -27,6 +27,8 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest ExporterConfigurer, currentCo
 		return nil, errors.New("metrics not enabled, gateway will not be configured for grafana cloud prometheus")
 	}
 
+	uniqueUri := "grafana-" + dest.GetID()
+
 	promRwUrl, exists := dest.GetConfig()[grafanaCloudPrometheusRWurlKey]
 	if !exists {
 		return nil, errors.New("Grafana Cloud Prometheus remote write endpoint not specified, gateway will not be configured" +
@@ -44,7 +46,7 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest ExporterConfigurer, currentCo
 	}
 
 	resourceAttributesLabels, exists := dest.GetConfig()[prometheusResourceAttributesLabelsKey]
-	processors, err := promResourceAttributesProcessors(resourceAttributesLabels, exists, dest.GetID())
+	processors, err := promResourceAttributesProcessors(resourceAttributesLabels, exists, uniqueUri)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to parse grafana cloud prometheus resource attributes labels, gateway will "+
 			"not be configured for Prometheus"))
@@ -117,7 +119,7 @@ func validateGrafanaPrometheusUrl(input string) error {
 	return nil
 }
 
-func promResourceAttributesProcessors(rawLabels string, exists bool, destName string) (GenericMap, error) {
+func promResourceAttributesProcessors(rawLabels string, exists bool, destUniqueUri string) (GenericMap, error) {
 	if !exists {
 		return nil, nil
 	}
@@ -139,7 +141,7 @@ func promResourceAttributesProcessors(rawLabels string, exists bool, destName st
 		transformStatements = append(transformStatements, statement)
 	}
 
-	processorName := "transform/grafana-" + destName
+	processorName := "transform/" + destUniqueUri
 	return GenericMap{
 		processorName: GenericMap{
 			"metric_statements": []GenericMap{

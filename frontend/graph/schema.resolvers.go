@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -104,42 +103,23 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 }
 
 // Sources is the resolver for the sources field.
-func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error) {
-	limit, _ := services.GetPageLimit(ctx)
-	icList, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
-		Limit:    int64(limit),
-		Continue: nextPage,
-	})
-
+func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
+	icList, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
-		if strings.Contains(err.Error(), "The provided continue parameter is too old") {
-			// Retry without the continue token
-			icList, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
-				Limit: int64(limit),
-			})
-
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
-	var actualSources []*model.K8sActualSource
+	sources := make([]*model.K8sActualSource, 0)
 	for _, ic := range icList.Items {
 		dataStreamNames := services.ExtractDataStreamsFromInstrumentationConfig(&ic)
-		actualSource, err := instrumentationConfigToActualSource(ctx, ic, dataStreamNames)
+		source, err := instrumentationConfigToActualSource(ctx, ic, dataStreamNames)
 		if err != nil {
 			return nil, err
 		}
-		actualSources = append(actualSources, actualSource)
+		sources = append(sources, source)
 	}
 
-	return &model.PaginatedSources{
-		NextPage: icList.GetContinue(),
-		Items:    actualSources,
-	}, nil
+	return sources, nil
 }
 
 // Source is the resolver for the source field.
@@ -1307,22 +1287,6 @@ func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceCo
 	return services.GetOtherConditionsForSources(ctx, "", "", "")
 }
 
-// Workloads is the resolver for the workloads field.
-func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error) {
-	l := loaders.For(ctx)
-	err := l.SetFilters(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	sources := make([]*model.K8sWorkload, 0)
-	for _, sourceId := range l.GetWorkloadIds() {
-		sources = append(sources, &model.K8sWorkload{
-			ID: &sourceId,
-		})
-	}
-	return sources, nil
-}
-
 // InstrumentationInstanceComponents is the resolver for the instrumentationInstanceComponents field.
 func (r *queryResolver) InstrumentationInstanceComponents(ctx context.Context, namespace string, kind string, name string) ([]*model.InstrumentationInstanceComponent, error) {
 	instances, err := services.GetInstrumentationInstances(ctx, namespace, name, kind)
@@ -1360,6 +1324,22 @@ func (r *queryResolver) InstrumentationInstanceComponents(ctx context.Context, n
 	}
 
 	return components, nil
+}
+
+// Workloads is the resolver for the workloads field.
+func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error) {
+	l := loaders.For(ctx)
+	err := l.SetFilters(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	sources := make([]*model.K8sWorkload, 0)
+	for _, sourceId := range l.GetWorkloadIds() {
+		sources = append(sources, &model.K8sWorkload{
+			ID: &sourceId,
+		})
+	}
+	return sources, nil
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.

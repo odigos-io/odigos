@@ -75,3 +75,40 @@ rules:
       - get
       - patch
       - update
+## related to node collector
+  - apiGroups:
+      - ''
+    resources:
+      - nodes/stats
+      - nodes/proxy
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - ''
+    resources:
+      - pods
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - replicasets
+      - deployments
+      - daemonsets
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ''
+    resources:
+      - endpoints
+    verbs:
+      - get
+      - list
+      - watch
