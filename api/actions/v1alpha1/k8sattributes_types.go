@@ -17,9 +17,12 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const ActionNameK8sAttributes = "K8sAttributes"
 
 // +kubebuilder:validation:Enum=pod;namespace
 type K8sAttributeSource string
@@ -99,6 +102,12 @@ func (K8sAttributesConfig) ProcessorType() string {
 
 func (K8sAttributesConfig) OrderHint() int {
 	return 0
+}
+
+func (K8sAttributesConfig) CollectorRoles() []k8sconsts.CollectorRole {
+	return []k8sconsts.CollectorRole{
+		k8sconsts.CollectorsRoleNodeCollector,
+	}
 }
 
 type K8sAttributesSpec struct {

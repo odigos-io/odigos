@@ -184,6 +184,15 @@ func applySpanMetricsConnector(currentConfig *Config, uniqueUri string) SpanMetr
 			{
 				"name": "http.route",
 			},
+			{
+				"name": "k8s.pod.name",
+			},
+			{
+				"name": "k8s.namespace.name",
+			},
+			{
+				"name": "k8s.container.name",
+			},
 		},
 		"exemplars": GenericMap{
 			"enabled": true,

@@ -93,19 +93,6 @@ spec:
                       - RuntimeDetailsUnavailable
                       - CrashLoopBackOff
                       type: string
-                    agentInjectionMethod:
-                      description: |-
-                        this value is calculated (at the moment) based on the config, runtime inspection and the user defined overrides.
-                        This field carries the following semantics:
-                        - nil: do not inject any "append variables" (PYTHONPATH, NODE_OPTIONS, etc.) at all.
-                        - "loader": inject the LD_PRELOAD env var to the pod manifest which will trigger the odigos loader.
-                        - "pod-manifest": inject the runtime specific agent loading env vars (e.g PYTHONPATH, NODE_OPTIONS) to the pod manifest as specified in the distro manifest.
-                        - "loader-fallback-to-pod-manifest": use "pod-manifest". it means we tried LD_PRELOAD and it failed, so we falled-back to the pod manifest.
-                      enum:
-                      - loader
-                      - pod-manifest
-                      - loader-fallback-to-pod-manifest
-                      type: string
                     containerName:
                       description: The name of the container to which this configuration
                         applies.
@@ -117,6 +104,16 @@ spec:
                         Additional parameters to the distro that controls how it's being applied.
                         Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
                       type: object
+                    envInjectionMethod:
+                      description: |-
+                        What method to use for injecting the agent environment variables (just those covered by the loader (PYTHONPATH, JAVA_TOOLS_OPTIONS, NODE_OPTIONS))
+                        Can be either "loader" or "pod-manifest".
+                        The injection should still check the actual values in the container manifest before injecting.
+                        Nil means that this container should not have env injection (agent should not be injected, or distro does not specify "loader" injection envs).
+                      enum:
+                      - loader
+                      - pod-manifest
+                      type: string
                     logs:
                       description: |-
                         all "logs" related configuration for an agent running on any process in a specific container.
@@ -161,9 +158,12 @@ spec:
                         containerName:
                           type: string
                         criErrorMessage:
-                          description: Stores the error message from the CRI runtime
-                            if returned to prevent instrumenting the container if
-                            an error exists.
+                          description: |-
+                            CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+                            Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+                            Thus, this field is set only when there is:
+                            - Actual CRI check failed
+                            - The observed environment variables might come from container runtime
                           type: string
                         envFromContainerRuntime:
                           description: Holds the environment variables retrieved from
@@ -746,9 +746,12 @@ spec:
                     containerName:
                       type: string
                     criErrorMessage:
-                      description: Stores the error message from the CRI runtime if
-                        returned to prevent instrumenting the container if an error
-                        exists.
+                      description: |-
+                        CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+                        Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+                        Thus, this field is set only when there is:
+                        - Actual CRI check failed
+                        - The observed environment variables might come from container runtime
                       type: string
                     envFromContainerRuntime:
                       description: Holds the environment variables retrieved from
