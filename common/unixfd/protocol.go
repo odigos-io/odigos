@@ -4,8 +4,12 @@ package unixfd
 const (
 	// Client → Server
 	ReqGetFD = "GET_FD"
+
+	// Server → Client
+	RespOK = "OK"
 )
 
 const (
 	DefaultSocketPath = "/var/exchange/exchange.sock"
+	ExchangeDir       = "/var/exchange"
 )

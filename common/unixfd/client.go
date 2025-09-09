@@ -7,13 +7,14 @@ import (
 	"os"
 	"time"
 
+	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
 )
 
 // ConnectAndListen establishes a connection to the odiglet's Unix socket and retrieves a file descriptor (FD)
 // for the eBPF map used for tracing. The provided onFD callback is invoked only when a new FD is received,
 // which happens if odiglet is restarted and creates a new map (resulting in a different FD).
-func ConnectAndListen(ctx context.Context, socketPath string, onFD func(fd int)) error {
+func ConnectAndListen(ctx context.Context, socketPath string, logger *zap.Logger, onFD func(fd int)) error {
 	var lastFD = -1
 
 	for {
@@ -28,7 +29,9 @@ func ConnectAndListen(ctx context.Context, socketPath string, onFD func(fd int))
 		if err != nil {
 			// Connection attempt failed—odiglet may be down or in the process of restarting.
 			// Retry the connection after a short delay.
-			time.Sleep(2 * time.Second)
+			sleepTime := 2 * time.Second
+			logger.Info("Waiting for odiglet unix socket to be ready to receive FD", zap.Error(err), zap.Duration("sleepTime", sleepTime))
+			time.Sleep(sleepTime)
 			continue
 		}
 
@@ -79,11 +82,18 @@ func recvFD(c *net.UnixConn) (int, error) {
 
 	n, oobn, flags, addr, err := c.ReadMsgUnix(buf, oob)
 	// We only need oobn from this call, ignore for linter
-	_ = n
 	_ = flags
 	_ = addr
 	if err != nil {
 		return -1, fmt.Errorf("readmsg: %w", err)
+	}
+
+	// Validate the server response (defensive programming)
+	if n > 0 {
+		response := string(buf[:n])
+		if response != RespOK {
+			return -1, fmt.Errorf("unexpected server response: %q, expected %q", response, RespOK)
+		}
 	}
 
 	msgs, err := unix.ParseSocketControlMessage(oob[:oobn])
@@ -98,7 +108,7 @@ func recvFD(c *net.UnixConn) (int, error) {
 	if err != nil {
 		return -1, fmt.Errorf("parse rights: %w", err)
 	}
-	if len(fds) == 0 {
+	if len(fds) != 1 {
 		return -1, fmt.Errorf("no fd received")
 	}
 

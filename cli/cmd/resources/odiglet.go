@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/autodetect"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/unixfd"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -425,7 +426,7 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 
 	// Build the data-collection container mounts (only for its container)
 	dataCollectionMounts := []corev1.VolumeMount{
-		{Name: "exchange-dir", MountPath: k8sconsts.ExchangeDir},
+		{Name: "exchange-dir", MountPath: unixfd.ExchangeDir},
 	}
 	if logsEnabled {
 		dataCollectionMounts = append(dataCollectionMounts,
@@ -659,7 +660,7 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 								},
 								{
 									Name:      "exchange-dir",
-									MountPath: k8sconsts.ExchangeDir,
+									MountPath: unixfd.ExchangeDir,
 								},
 							}, additionalVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",

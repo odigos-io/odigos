@@ -77,11 +77,14 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 		var (
 			currentMap   *ebpf.Map
 			readerCancel context.CancelFunc
+			readerWg     sync.WaitGroup // Tracks the current reader goroutine
 		)
 
 		defer func() {
 			if readerCancel != nil {
 				readerCancel()
+				// Wait for the current reader to stop before cleanup
+				readerWg.Wait()
 			}
 			if currentMap != nil {
 				currentMap.Close()
@@ -92,10 +95,16 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 			select {
 			case <-ctx.Done():
 				return
-			case newMap := <-updates:
+			case newMap, ok := <-updates:
+				if !ok {
+					return
+				}
 				// Clean up the previous map and reader
 				if readerCancel != nil {
 					readerCancel()
+					// Wait for the current reader goroutine to fully stop
+					// This prevents race conditions between old and new readers
+					readerWg.Wait()
 				}
 				if currentMap != nil {
 					currentMap.Close()
@@ -109,8 +118,12 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 				r.logger.Info("switched to new eBPF map", zap.Int("fd", newMap.FD()))
 
 				// Start reading from the new map
+				readerWg.Add(1)
 				go func() {
-					defer r.logger.Info("reader stopped")
+					defer func() {
+						r.logger.Info("reader stopped")
+						readerWg.Done() // Signal that this reader has stopped
+					}()
 					if err := r.readLoop(readerCtx, newMap); err != nil {
 						r.logger.Error("readLoop failed", zap.Error(err))
 					}
@@ -132,7 +145,7 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 
 		r.logger.Info("starting FD client")
 
-		err := unixfd.ConnectAndListen(ctx, unixfd.DefaultSocketPath, func(fd int) {
+		err := unixfd.ConnectAndListen(ctx, unixfd.DefaultSocketPath, r.logger, func(fd int) {
 			r.logger.Info("received new FD from odiglet", zap.Int("fd", fd))
 
 			// Convert the file descriptor into an eBPF map object

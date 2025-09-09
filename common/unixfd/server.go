@@ -99,6 +99,6 @@ func (s *Server) handleRequest(conn *net.UnixConn) {
 // sendFD sends a file descriptor over the Unix socket
 func sendFD(conn *net.UnixConn, fd int) error {
 	rights := unix.UnixRights(fd)
-	_, _, err := conn.WriteMsgUnix([]byte("OK"), rights, nil)
+	_, _, err := conn.WriteMsgUnix([]byte(RespOK), rights, nil)
 	return err
 }
