@@ -4,6 +4,15 @@ metadata:
   name: odigos-test
 servers: 1
 agents: 1
+env:
+  - envVar: K3S_KUBECONFIG_OUTPUT=/output/kubeconfig.yaml
+    nodeFilters:
+      - server:0
+      - agent:*
+  - envVar: K3S_TOKEN=odigos-test-token
+    nodeFilters:
+      - server:0
+      - agent:*
 kubeAPI:
   host: "0.0.0.0"
   hostIP: "127.0.0.1"
@@ -18,7 +27,7 @@ token: odigos-test-token
 options:
   k3d:
     wait: true
-    timeout: "60s"
+    timeout: "300s"
     disableLoadbalancer: false
     disableImageVolume: false
   k3s:
@@ -26,7 +35,9 @@ options:
       - arg: --disable=traefik
         nodeFilters:
           - server:0
-          - agent:*
+      - arg: --disable=servicelb
+        nodeFilters:
+          - server:0
   kubeconfig:
     updateDefaultKubeconfig: true
     switchCurrentContext: true
