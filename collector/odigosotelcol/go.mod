@@ -5,7 +5,6 @@ module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 go 1.24.0
 
 require (
-	github.com/elastic/go-elasticsearch/v8 v8.18.1
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.130.0
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.130.0
 	github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.130.0
@@ -331,6 +330,7 @@ require (
 	github.com/edsrzf/mmap-go v1.2.0 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.7.0 // indirect
 	github.com/elastic/go-docappender/v2 v2.10.0 // indirect
+	github.com/elastic/go-elasticsearch/v8 v8.18.1 // indirect
 	github.com/elastic/go-freelru v0.16.0 // indirect
 	github.com/elastic/go-grok v0.3.1 // indirect
 	github.com/elastic/go-structform v0.0.12 // indirect
