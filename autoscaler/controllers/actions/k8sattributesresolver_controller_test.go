@@ -710,7 +710,7 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 	})
 
 	Context("When updating a K8sAttributesResolver", func() {
-		It("Should update the corresponding Processor", func() {
+		It("Should not update the corresponding Processor", func() {
 			By("Creating a K8sAttributesResolver")
 			resolver := &actionv1.K8sAttributesResolver{
 				ObjectMeta: metav1.ObjectMeta{
@@ -718,8 +718,9 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 					Namespace: ActionNamespace,
 				},
 				Spec: actionv1.K8sAttributesSpec{
-					ActionName: "test-update-k8sattributes",
-					Signals:    []common.ObservabilitySignal{common.TracesObservabilitySignal},
+					ActionName:                 "test-update-k8sattributes",
+					Signals:                    []common.ObservabilitySignal{common.TracesObservabilitySignal},
+					CollectContainerAttributes: true,
 				},
 			}
 
@@ -740,11 +741,11 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 				Name:      ActionName + "-update",
 				Namespace: ActionNamespace,
 			}, resolver)).Should(Succeed())
-			resolver.Spec.CollectContainerAttributes = true
+			resolver.Spec.CollectContainerAttributes = false
 			Expect(k8sClient.Update(testCtx, resolver)).Should(Succeed())
 
-			By("Checking that the Processor is updated")
-			Eventually(func() bool {
+			By("Checking that the Processor is not updated")
+			Consistently(func() bool {
 				err := k8sClient.Get(testCtx, types.NamespacedName{
 					Name:      "odigos-k8sattributes",
 					Namespace: ActionNamespace,

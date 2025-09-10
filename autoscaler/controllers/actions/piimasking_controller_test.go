@@ -97,7 +97,7 @@ var _ = Describe("PiiMasking Controller", func() {
 			Expect(ownerRefs[0].Kind).Should(Equal("PiiMasking"))
 		})
 
-		It("Should update existing migrated Action when legacy action changes", func() {
+		It("Should not update existing migrated Action when legacy action changes", func() {
 			By("Creating a legacy PiiMasking action")
 			legacyAction := &actionv1.PiiMasking{
 				ObjectMeta: metav1.ObjectMeta{
@@ -133,8 +133,8 @@ var _ = Describe("PiiMasking Controller", func() {
 
 			Expect(k8sClient.Update(testCtx, legacyAction)).Should(Succeed())
 
-			By("Checking that the migrated Action is updated")
-			Eventually(func() bool {
+			By("Checking that the migrated Action is not updated")
+			Consistently(func() bool {
 				err := k8sClient.Get(testCtx, types.NamespacedName{
 					Name:      odigosv1.ActionMigratedLegacyPrefix + ActionName,
 					Namespace: ActionNamespace,
@@ -142,8 +142,8 @@ var _ = Describe("PiiMasking Controller", func() {
 				if err != nil {
 					return false
 				}
-				return migratedAction.Spec.Notes == "Updated PII masking notes" &&
-					migratedAction.Spec.Disabled == true
+				return migratedAction.Spec.Notes == "Initial notes" &&
+					migratedAction.Spec.Disabled == false
 			}, timeout, interval).Should(BeTrue())
 		})
 

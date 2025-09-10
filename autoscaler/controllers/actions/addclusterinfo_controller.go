@@ -21,7 +21,6 @@ import (
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -39,6 +38,7 @@ type AddClusterInfoReconciler struct {
 func (r *AddClusterInfoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling AddClusterInfo action")
+	logger.V(0).Info("WARNING: AddClusterInfo action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
 
 	action := &actionv1.AddClusterInfo{}
 	err := r.Get(ctx, req.NamespacedName, action)
@@ -54,26 +54,13 @@ func (r *AddClusterInfoReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
+		logger.V(0).Info("Migrating legacy Action to odigosv1.Action. This is a one-way change, and modifications to the legacy Action will not be reflected in the migrated Action.")
 		// Action doesn't exist, create new one
 		odigosAction = r.createMigratedAction(action, migratedActionName)
 		err = r.Create(ctx, odigosAction)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	} else {
-		odigosAction.Spec.AddClusterInfo = &actionv1.AddClusterInfoConfig{
-			ClusterAttributes:       action.Spec.ClusterAttributes,
-			OverwriteExistingValues: action.Spec.OverwriteExistingValues,
-		}
-		odigosAction.Spec.Notes = action.Spec.Notes
-		odigosAction.Spec.Disabled = action.Spec.Disabled
-		odigosAction.Spec.Signals = action.Spec.Signals
-		err = r.Update(ctx, odigosAction)
-		if err != nil {
-			return utils.K8SUpdateErrorHandler(err)
-		}
+		return ctrl.Result{}, err
 	}
-
+	logger.V(0).Info("Migrated Action already exists, skipping update")
 	return ctrl.Result{}, nil
 }
 

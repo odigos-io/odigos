@@ -31,6 +31,7 @@ const (
 func (r *OdigosSamplingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Sampling action")
+	logger.V(0).Info("WARNING: Sampling action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
 
 	// Find the action type and handler for this request
 	var action metav1.Object
@@ -70,21 +71,9 @@ func (r *OdigosSamplingReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// Action doesn't exist, create new one
 		odigosAction = r.createMigratedAction(action, handler, migratedActionName)
 		err = r.Create(ctx, odigosAction)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	} else {
-		// Action exists, update it
-		convertedAction := handler.ConvertLegacyToAction(action).(*v1.Action)
-		odigosAction.Spec.Notes = convertedAction.Spec.Notes
-		odigosAction.Spec.Disabled = convertedAction.Spec.Disabled
-		odigosAction.Spec.Signals = convertedAction.Spec.Signals
-		err = r.Update(ctx, odigosAction)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
+		return ctrl.Result{}, err
 	}
-
+	logger.V(0).Info("Migrated Action already exists, skipping update")
 	return ctrl.Result{}, nil
 }
 

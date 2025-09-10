@@ -7,7 +7,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	semconv1_21 "go.opentelemetry.io/otel/semconv/v1.21.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -126,6 +125,7 @@ type k8sAttributesConfig struct {
 func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling K8sAttributes action")
+	logger.V(0).Info("WARNING: K8sAttributes action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
 
 	// Get the specific K8sAttributesResolver that triggered this reconcile
 	action := &actionv1.K8sAttributesResolver{}
@@ -142,32 +142,14 @@ func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctr
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
+		logger.V(0).Info("Migrating legacy Action to odigosv1.Action. This is a one-way change, and modifications to the legacy Action will not be reflected in the migrated Action.")
 		// Action doesn't exist, create new one
 		odigosAction = r.createMigratedAction(action, migratedActionName)
 		err = r.Create(ctx, odigosAction)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	} else {
-		// Action exists, update it
-		config := actionv1.K8sAttributesConfig{
-			CollectContainerAttributes:  action.Spec.CollectContainerAttributes,
-			CollectReplicaSetAttributes: action.Spec.CollectReplicaSetAttributes,
-			CollectWorkloadUID:          action.Spec.CollectWorkloadUID,
-			CollectClusterUID:           action.Spec.CollectClusterUID,
-			LabelsAttributes:            action.Spec.LabelsAttributes,
-			AnnotationsAttributes:       action.Spec.AnnotationsAttributes,
-		}
-		odigosAction.Spec.Notes = action.Spec.Notes
-		odigosAction.Spec.Disabled = action.Spec.Disabled
-		odigosAction.Spec.Signals = action.Spec.Signals
-		odigosAction.Spec.K8sAttributes = &config
-		err = r.Update(ctx, odigosAction)
-		if err != nil {
-			return utils.K8SUpdateErrorHandler(err)
-		}
+		return ctrl.Result{}, err
 	}
 
+	logger.V(0).Info("Migrated Action already exists, skipping update")
 	return ctrl.Result{}, nil
 }
 

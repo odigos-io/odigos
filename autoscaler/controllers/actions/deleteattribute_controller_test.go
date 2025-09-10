@@ -100,7 +100,7 @@ var _ = Describe("DeleteAttribute Controller", func() {
 			Expect(ownerRefs[0].Kind).Should(Equal("DeleteAttribute"))
 		})
 
-		It("Should update existing migrated Action when legacy action changes", func() {
+		It("Should not update existing migrated Action when legacy action changes", func() {
 			By("Creating a legacy DeleteAttribute action")
 			legacyAction := &actionv1.DeleteAttribute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -137,8 +137,8 @@ var _ = Describe("DeleteAttribute Controller", func() {
 
 			Expect(k8sClient.Update(testCtx, legacyAction)).Should(Succeed())
 
-			By("Checking that the migrated Action is updated")
-			Eventually(func() bool {
+			By("Checking that the migrated Action is not updated")
+			Consistently(func() bool {
 				err := k8sClient.Get(testCtx, types.NamespacedName{
 					Name:      odigosv1.ActionMigratedLegacyPrefix + ActionName,
 					Namespace: ActionNamespace,
@@ -146,9 +146,9 @@ var _ = Describe("DeleteAttribute Controller", func() {
 				if err != nil {
 					return false
 				}
-				return migratedAction.Spec.Notes == "Updated delete attribute notes" &&
-					len(migratedAction.Spec.DeleteAttribute.AttributeNamesToDelete) == 2 &&
-					migratedAction.Spec.Disabled == true
+				return migratedAction.Spec.Notes == "Initial notes" &&
+					len(migratedAction.Spec.DeleteAttribute.AttributeNamesToDelete) == 1 &&
+					migratedAction.Spec.Disabled == false
 			}, timeout, interval).Should(BeTrue())
 		})
 
