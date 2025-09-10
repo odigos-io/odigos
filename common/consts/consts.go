@@ -18,15 +18,6 @@ const (
 	OTLPHttpPort                = 4318
 	PprofOdigosPort             = 6060
 
-	// Deprecated: Sources are used to mark workloads for instrumentation.
-	OdigosInstrumentationLabel = "odigos-instrumentation"
-
-	// Deprecated: Sources are used to mark workloads for instrumentation.
-	InstrumentationEnabled = "enabled"
-
-	// Deprecated: Sources are used to mark workloads for instrumentation.
-	InstrumentationDisabled = "disabled"
-
 	// DefaultDataStream is the default data stream name used for telemetry data.
 	DefaultDataStream = "default"
 
