@@ -108,7 +108,7 @@ func (l *Loaders) loadSources(ctx context.Context) error {
 	if l.sourcesFetched {
 		return nil
 	}
-	workloadSources, namespaceSources, err := fetchSources(ctx, l.logger, l.workloadFilter, l.k8sCacheClient)
+	workloadSources, namespaceSources, err := fetchSources(ctx, l.workloadFilter, l.k8sCacheClient)
 	if err != nil {
 		return err
 	}
