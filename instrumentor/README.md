@@ -20,7 +20,7 @@ Downstream, Odiglet is responsible for handling the instrumentation devices and 
 
 Odiglet is responsible for creating the instrumented application objects once it inspects the runtime details of a pod. Since odiglet is a daemonset, the logic for creating and updating the object is run multiple times, because extracting the runtime details must run on the same node as the pod. 
 
-Deleting the object, however, can only be done once. The instrumentor is responsible for watching for changes in the workload manifests and deleting the instrumented application objects when the workload instrumentation label is removed.
+Deleting the object, however, can only be done once. The instrumentor is responsible for watching for changes in the workload manifests and deleting the instrumented application objects when the corresponding Source is removed.
 
 ## Development
 

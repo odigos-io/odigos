@@ -1,18 +1,13 @@
 package workload
 
 import (
-	"context"
 	"errors"
-
-	"github.com/odigos-io/odigos/common/consts"
 
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Workload interface {
@@ -103,57 +98,4 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 	default:
 		return nil, errors.New("unknown kind")
 	}
-}
-
-// Deprecated: this should only be used for backward compatibility migration.
-func IsObjectLabeledForInstrumentation(obj client.Object) bool {
-	labels := obj.GetLabels()
-	if labels == nil {
-		return false
-	}
-
-	val, exists := labels[consts.OdigosInstrumentationLabel]
-	if !exists {
-		return false
-	}
-
-	return val == consts.InstrumentationEnabled
-}
-
-// Deprecated: this should only be used for backward compatibility migration.
-func IsWorkloadInstrumentationEffectiveEnabled(ctx context.Context, kubeClient client.Client, obj client.Object) (bool, error) {
-	// if the object itself is labeled, we will use that value
-	workloadLabels := obj.GetLabels()
-	if val, exists := workloadLabels[consts.OdigosInstrumentationLabel]; exists {
-		return val == consts.InstrumentationEnabled, nil
-	}
-
-	// we will get here if the workload instrumentation label is not set.
-	// no label means inherit the instrumentation value from namespace.
-	var ns corev1.Namespace
-	err := kubeClient.Get(ctx, client.ObjectKey{Name: obj.GetNamespace()}, &ns)
-	if err != nil {
-		logger := log.FromContext(ctx)
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-
-		logger.Error(err, "error fetching namespace object")
-		return false, err
-	}
-
-	return IsObjectLabeledForInstrumentation(&ns), nil
-}
-
-// Deprecated: this should only be used for backward compatibility migration.
-func IsInstrumentationDisabledExplicitly(obj client.Object) bool {
-	labels := obj.GetLabels()
-	if labels != nil {
-		val, exists := labels[consts.OdigosInstrumentationLabel]
-		if exists && val == consts.InstrumentationDisabled {
-			return true
-		}
-	}
-
-	return false
 }
