@@ -47,11 +47,11 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 	}
 
 	if action.Spec.PiiMasking != nil {
-		/*for _, signal := range action.Spec.Signals {
+		for _, signal := range action.Spec.Signals {
 			if _, ok := piiMaskingSupportedSignals[signal]; !ok {
 				return nil, fmt.Errorf("unsupported signal in PiiMasking action: %s", signal)
 			}
-		}*/
+		}
 		config, err := piiMaskingConfig(action.Spec.PiiMasking.PiiCategories)
 		if err != nil {
 			return nil, err

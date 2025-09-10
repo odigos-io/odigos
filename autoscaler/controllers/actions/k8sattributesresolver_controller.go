@@ -12,6 +12,7 @@ import (
 	semconv1_21 "go.opentelemetry.io/otel/semconv/v1.21.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// DEPRECATED: Use odigosv1.Action instead
 type K8sAttributesResolverReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -137,7 +139,7 @@ func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctr
 	odigosAction := &odigosv1.Action{}
 	err = r.Get(ctx, client.ObjectKey{Name: migratedActionName, Namespace: action.Namespace}, odigosAction)
 	if err != nil {
-		if client.IgnoreNotFound(err) != nil {
+		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
 		// Action doesn't exist, create new one
@@ -148,9 +150,19 @@ func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	} else {
 		// Action exists, update it
-		updatedAction := r.createMigratedAction(action, migratedActionName)
-		updatedAction.ResourceVersion = odigosAction.ResourceVersion
-		err = r.Update(ctx, updatedAction)
+		config := actionv1.K8sAttributesConfig{
+			CollectContainerAttributes:  action.Spec.CollectContainerAttributes,
+			CollectReplicaSetAttributes: action.Spec.CollectReplicaSetAttributes,
+			CollectWorkloadUID:          action.Spec.CollectWorkloadUID,
+			CollectClusterUID:           action.Spec.CollectClusterUID,
+			LabelsAttributes:            action.Spec.LabelsAttributes,
+			AnnotationsAttributes:       action.Spec.AnnotationsAttributes,
+		}
+		odigosAction.Spec.Notes = action.Spec.Notes
+		odigosAction.Spec.Disabled = action.Spec.Disabled
+		odigosAction.Spec.Signals = action.Spec.Signals
+		odigosAction.Spec.K8sAttributes = &config
+		err = r.Update(ctx, odigosAction)
 		if err != nil {
 			return utils.K8SUpdateErrorHandler(err)
 		}

@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// DEPRECATED: Use odigosv1.Action instead
 type OdigosSamplingReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -63,7 +64,7 @@ func (r *OdigosSamplingReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	odigosAction := &v1.Action{}
 	err = r.Get(ctx, client.ObjectKey{Name: migratedActionName, Namespace: action.GetNamespace()}, odigosAction)
 	if err != nil {
-		if client.IgnoreNotFound(err) != nil {
+		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
 		// Action doesn't exist, create new one
@@ -74,9 +75,11 @@ func (r *OdigosSamplingReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	} else {
 		// Action exists, update it
-		updatedAction := r.createMigratedAction(action, handler, migratedActionName)
-		updatedAction.ResourceVersion = odigosAction.ResourceVersion
-		err = r.Update(ctx, updatedAction)
+		convertedAction := handler.ConvertLegacyToAction(action).(*v1.Action)
+		odigosAction.Spec.Notes = convertedAction.Spec.Notes
+		odigosAction.Spec.Disabled = convertedAction.Spec.Disabled
+		odigosAction.Spec.Signals = convertedAction.Spec.Signals
+		err = r.Update(ctx, odigosAction)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -91,9 +94,7 @@ func (r *OdigosSamplingReconciler) createMigratedAction(action metav1.Object, ha
 
 	// Cast to odigosv1.Action
 	odigosAction := convertedAction.(*v1.Action)
-
-	// Update the name to the migrated name
-	odigosAction.Name = migratedActionName
+	odigosAction.ObjectMeta.Name = migratedActionName
 
 	// Add owner reference to the original action
 	ownerRef := handler.GetActionReference(action)
@@ -142,7 +143,6 @@ func samplersConfig(ctx context.Context, client client.Client, namespace string)
 				endpointRules = append(endpointRules, handler.GetRuleConfig(action)...)
 			}
 
-			//ReportReconciledToProcessor(ctx, client, action)
 		}
 	}
 

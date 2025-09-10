@@ -24,6 +24,7 @@ import (
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// DEPRECATED: Use odigosv1.Action instead
 type DeleteAttributeReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -51,7 +53,7 @@ func (r *DeleteAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	odigosAction := &v1.Action{}
 	err = r.Get(ctx, client.ObjectKey{Name: migratedActionName, Namespace: action.Namespace}, odigosAction)
 	if err != nil {
-		if client.IgnoreNotFound(err) != nil {
+		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
 		// Action doesn't exist, create new one
@@ -61,10 +63,13 @@ func (r *DeleteAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			return ctrl.Result{}, err
 		}
 	} else {
-		// Action exists, update it
-		updatedAction := r.createMigratedAction(action, migratedActionName)
-		updatedAction.ResourceVersion = odigosAction.ResourceVersion
-		err = r.Update(ctx, updatedAction)
+		odigosAction.Spec.DeleteAttribute = &actionv1.DeleteAttributeConfig{
+			AttributeNamesToDelete: action.Spec.AttributeNamesToDelete,
+		}
+		odigosAction.Spec.Notes = action.Spec.Notes
+		odigosAction.Spec.Disabled = action.Spec.Disabled
+		odigosAction.Spec.Signals = action.Spec.Signals
+		err = r.Update(ctx, odigosAction)
 		if err != nil {
 			return utils.K8SUpdateErrorHandler(err)
 		}
