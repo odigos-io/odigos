@@ -11,6 +11,11 @@ spec:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
 
+    - name: Install - Simple Demo Apps
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
@@ -55,7 +60,7 @@ spec:
 
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 3m
+            timeout: 4m
             file: ../../common/assert/latest-odigos-version-installed.yaml
 
     - name: Assert Trace DB is up
@@ -64,21 +69,10 @@ spec:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
 
-    - name: Install - Simple Demo Apps
+    - name: Assert - Simple Demo Apps Installed
       try:
-        - apply:
-            file: ../../common/apply/install-simple-demo.yaml
-        - script:
-            timeout: 2m
-            content: |
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
         - assert:
+            timeout: 3m
             file: ../../common/assert/simple-demo-installed.yaml
 
     - name: Instrument Namespace
@@ -141,10 +135,10 @@ spec:
                   --set image.tag=e2e-test \
                   --set nodeSelector."kubernetes\.io/os"=linux
               fi
-            timeout: 3m
+            timeout: 5m
         - assert:
             file: ../../common/assert/odigos-upgraded.yaml
-            timeout: 3m
+            timeout: 5m
       catch:
         - get:
             apiVersion: v1

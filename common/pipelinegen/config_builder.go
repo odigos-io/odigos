@@ -100,7 +100,7 @@ func CalculateGatewayConfig(
 			// add the forward connector as a receiver to the pipeline
 			pipeline.Receivers = append(pipeline.Receivers, connectorName)
 			// every destination pipeline should have a generic batch processor
-			pipeline.Processors = []string{consts.GenericBatchProcessorConfigKey}
+			pipeline.Processors = append(pipeline.Processors, consts.GenericBatchProcessorConfigKey)
 
 			// track which signals are enabled based on the destination pipeline names
 			switch {

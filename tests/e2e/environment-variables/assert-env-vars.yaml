@@ -1,0 +1,95 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-nodejs-dockerfile-env
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-dockerfile-env
+status:
+  runtimeDetailsByContainer:
+    - containerName: nodejs-dockerfile-env
+      envFromContainerRuntime:
+        - name: NODE_OPTIONS
+          value: "--require /app/execute_before.js --max-old-space-size=256"
+      language: javascript
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-nodejs-manifest-env
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: nodejs-manifest-env
+status:
+  runtimeDetailsByContainer:
+    - containerName: nodejs-manifest-env
+# the env var is present in the pod manifest, hence the container runtime value
+# is not relevant and not populated
+      (envFromContainerRuntime == null): true
+      language: javascript
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-java-supported-docker-env
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-supported-docker-env
+status:
+  runtimeDetailsByContainer:
+    - containerName: java-supported-docker-env
+      language: java
+      envFromContainerRuntime:
+        - name: LD_PRELOAD
+          value: ""
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-java-supported-manifest-env
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: java-supported-manifest-env
+status:
+  runtimeDetailsByContainer:
+    - containerName: java-supported-manifest-env
+      language: java
+# the env var is present in the pod manifest, hence the container runtime value
+# is not relevant and not populated
+      (envFromContainerRuntime == null): true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-python-alpine
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: python-alpine
+status:
+  runtimeDetailsByContainer:
+    - containerName: python-alpine
+# the env var is present in the pod manifest, hence the container runtime value
+# is not relevant and not populated
+      (envFromContainerRuntime == null): true
+      language: python
+---

@@ -124,21 +124,23 @@ type ProbabilisticSamplerConfig struct {
 	HashSeed int     `json:"hash_seed"`
 }
 
-func (r *ProbabilisticSamplerReconciler) convertToProcessor(action *actionv1.ProbabilisticSampler) (*v1.Processor, error) {
+func probabilisticSamplerConfig(percentage string) (ProbabilisticSamplerConfig, error) {
+	samplingPercentage, err := strconv.ParseFloat(percentage, 32)
+	if err != nil {
+		return ProbabilisticSamplerConfig{}, err
+	}
 
-	samplingPercentage, err := strconv.ParseFloat(action.Spec.SamplingPercentage, 32)
+	if samplingPercentage < 0 || samplingPercentage > 100 {
+		return ProbabilisticSamplerConfig{}, errors.New("sampling percentage must be between 0 and 100")
+	}
+
+	return ProbabilisticSamplerConfig{Value: samplingPercentage, HashSeed: 123}, nil
+}
+
+func (r *ProbabilisticSamplerReconciler) convertToProcessor(action *actionv1.ProbabilisticSampler) (*v1.Processor, error) {
+	config, err := probabilisticSamplerConfig(action.Spec.SamplingPercentage)
 	if err != nil {
 		return nil, err
-	}
-
-	if samplingPercentage < 0 {
-		return nil, errors.New("sampling_precentage cannot be negative")
-	}
-
-	config := ProbabilisticSamplerConfig{
-		Value: samplingPercentage,
-		// Arbitrary hash seed set to maximize processor creating abstraction for the user.
-		HashSeed: 123,
 	}
 
 	configJson, err := json.Marshal(config)
