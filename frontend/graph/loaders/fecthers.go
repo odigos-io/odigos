@@ -20,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // formatOperationMessage creates a clean operation message that handles empty values gracefully
@@ -110,57 +111,39 @@ func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filter
 	}
 }
 
-func fetchSourcesForWorkload(ctx context.Context, logger logr.Logger, filters *WorkloadFilterSingleWorkload) (*odigosv1.SourceList, error) {
+func fetchSourcesForWorkload(ctx context.Context, logger logr.Logger, filters *WorkloadFilterSingleWorkload, k8sCacheClient client.Client) (*odigosv1.SourceList, error) {
 	// for workload we need to fetch both the workload and namespace sources.
-	selectorWorkload := metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			k8sconsts.WorkloadNamespaceLabel: filters.Namespace,
-			k8sconsts.WorkloadKindLabel:      string(filters.WorkloadKind),
-			k8sconsts.WorkloadNameLabel:      filters.WorkloadName,
-		},
+	workloadLabels := map[string]string{
+		k8sconsts.WorkloadNamespaceLabel: filters.Namespace,
+		k8sconsts.WorkloadKindLabel:      string(filters.WorkloadKind),
+		k8sconsts.WorkloadNameLabel:      filters.WorkloadName,
 	}
-	workloadSources, err := timedAPICall(
-		logger,
-		fmt.Sprintf("List Sources for workload %s/%s/%s", filters.Namespace, filters.WorkloadKind, filters.WorkloadName),
-		func() (*odigosv1.SourceList, error) {
-			return kube.DefaultClient.OdigosClient.Sources(filters.Namespace).List(ctx, metav1.ListOptions{
-				LabelSelector: metav1.FormatLabelSelector(&selectorWorkload),
-			})
-		},
-	)
+	workloadSources := &odigosv1.SourceList{}
+	err := k8sCacheClient.List(ctx, workloadSources, client.InNamespace(filters.Namespace), client.MatchingLabels(workloadLabels))
 	if err != nil {
 		return nil, err
 	}
 
-	selectorNamespace := metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			k8sconsts.WorkloadNamespaceLabel: filters.Namespace,
-			k8sconsts.WorkloadKindLabel:      string(k8sconsts.WorkloadKindNamespace),
-			k8sconsts.WorkloadNameLabel:      filters.Namespace,
-		},
+	namespaceLabels := map[string]string{
+		k8sconsts.WorkloadNamespaceLabel: filters.Namespace,
+		k8sconsts.WorkloadKindLabel:      string(k8sconsts.WorkloadKindNamespace),
+		k8sconsts.WorkloadNameLabel:      filters.Namespace,
 	}
-	namespaceSources, err := timedAPICall(
-		logger,
-		formatOperationMessage("List Sources for namespace", filters.Namespace),
-		func() (*odigosv1.SourceList, error) {
-			return kube.DefaultClient.OdigosClient.Sources(filters.Namespace).List(ctx, metav1.ListOptions{
-				LabelSelector: metav1.FormatLabelSelector(&selectorNamespace),
-			})
-		},
-	)
+	namespaceSources := &odigosv1.SourceList{}
+	err = k8sCacheClient.List(ctx, namespaceSources, client.InNamespace(filters.Namespace), client.MatchingLabels(namespaceLabels))
 	if err != nil {
 		return nil, err
 	}
 
 	// merge the two lists into a odigosv1.SourceList
-	sources := &odigosv1.SourceList{
+	allSources := &odigosv1.SourceList{
 		Items: append(workloadSources.Items, namespaceSources.Items...),
 	}
 
-	return sources, nil
+	return allSources, nil
 }
 
-func fetchSourcesForNamespace(ctx context.Context, logger logr.Logger, filters *WorkloadFilterSingleNamespace) (*odigosv1.SourceList, error) {
+func fetchSourcesForNamespace(ctx context.Context, logger logr.Logger, filters *WorkloadFilterSingleNamespace, k8sCacheClient client.Client) (*odigosv1.SourceList, error) {
 	// will return both "workload" sources and "namespace" sources as required
 	selector := metav1.LabelSelector{
 		MatchLabels: map[string]string{
@@ -179,14 +162,9 @@ func fetchSourcesForNamespace(ctx context.Context, logger logr.Logger, filters *
 	)
 }
 
-func fetchAllSources(ctx context.Context, logger logr.Logger, ignoredNamespaces map[string]struct{}) (*odigosv1.SourceList, error) {
-	sources, err := timedAPICall(
-		logger,
-		"List all Sources across all namespaces",
-		func() (*odigosv1.SourceList, error) {
-			return kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
-		},
-	)
+func fetchAllSources(ctx context.Context, logger logr.Logger, ignoredNamespaces map[string]struct{}, k8sCacheClient client.Client) (*odigosv1.SourceList, error) {
+	sources := &odigosv1.SourceList{}
+	err := k8sCacheClient.List(ctx, sources, client.MatchingLabels(map[string]string{}))
 	if err != nil {
 		return nil, err
 	}
@@ -202,15 +180,15 @@ func fetchAllSources(ctx context.Context, logger logr.Logger, ignoredNamespaces 
 	return sources, nil
 }
 
-func fetchSources(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (workloadSources map[model.K8sWorkloadID]*odigosv1.Source, namespaceSources map[string]*odigosv1.Source, err error) {
+func fetchSources(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, k8sCacheClient client.Client) (workloadSources map[model.K8sWorkloadID]*odigosv1.Source, namespaceSources map[string]*odigosv1.Source, err error) {
 
 	var sources *odigosv1.SourceList
 	if filters.SingleWorkload != nil {
-		sources, err = fetchSourcesForWorkload(ctx, logger, filters.SingleWorkload)
+		sources, err = fetchSourcesForWorkload(ctx, logger, filters.SingleWorkload, k8sCacheClient)
 	} else if filters.SingleNamespace != nil {
-		sources, err = fetchSourcesForNamespace(ctx, logger, filters.SingleNamespace)
+		sources, err = fetchSourcesForNamespace(ctx, logger, filters.SingleNamespace, k8sCacheClient)
 	} else {
-		sources, err = fetchAllSources(ctx, logger, filters.IgnoredNamespaces)
+		sources, err = fetchAllSources(ctx, logger, filters.IgnoredNamespaces, k8sCacheClient)
 	}
 	if err != nil {
 		return nil, nil, err

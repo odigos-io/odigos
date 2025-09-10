@@ -19,6 +19,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -34,6 +35,8 @@ type ContainerId struct {
 
 type Loaders struct {
 	logger logr.Logger
+
+	k8sCacheClient client.Client
 
 	mu sync.Mutex
 
@@ -73,9 +76,10 @@ func For(ctx context.Context) *Loaders {
 	return ctx.Value(loadersKey).(*Loaders)
 }
 
-func NewLoaders(logger logr.Logger) *Loaders {
+func NewLoaders(logger logr.Logger, k8sCacheClient client.Client) *Loaders {
 	return &Loaders{
-		logger: logger,
+		logger:         logger,
+		k8sCacheClient: k8sCacheClient,
 	}
 }
 
@@ -104,7 +108,7 @@ func (l *Loaders) loadSources(ctx context.Context) error {
 	if l.sourcesFetched {
 		return nil
 	}
-	workloadSources, namespaceSources, err := fetchSources(ctx, l.logger, l.workloadFilter)
+	workloadSources, namespaceSources, err := fetchSources(ctx, l.logger, l.workloadFilter, l.k8sCacheClient)
 	if err != nil {
 		return err
 	}
