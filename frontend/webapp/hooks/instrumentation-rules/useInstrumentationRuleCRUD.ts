@@ -20,7 +20,7 @@ interface UseInstrumentationRuleCrud {
 export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
   const { isReadonly, isEnterprise } = useConfig();
   const { addNotification } = useNotificationStore();
-  const { instrumentationRulesLoading, setEntitiesLoading, instrumentationRules, addEntities, removeEntities } = useEntityStore();
+  const { instrumentationRulesLoading, setEntitiesLoading, instrumentationRules, setEntities, addEntities, removeEntities } = useEntityStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: EntityTypes.InstrumentationRule, target: id ? getSseTargetFromId(id, EntityTypes.InstrumentationRule) : undefined, hideFromHistory });
@@ -37,7 +37,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     } else if (data?.computePlatform?.instrumentationRules) {
       const { instrumentationRules: items } = data.computePlatform;
 
-      addEntities(EntityTypes.InstrumentationRule, items);
+      setEntities(EntityTypes.InstrumentationRule, items);
       setEntitiesLoading(EntityTypes.InstrumentationRule, false);
     }
   };
@@ -46,9 +46,9 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Create, error.cause?.message || error.message),
     onCompleted: (res) => {
       const rule = res.createInstrumentationRule;
-      const type = rule.type;
+      const { ruleId, type } = rule;
       addEntities(EntityTypes.InstrumentationRule, [rule]);
-      notifyUser(StatusType.Success, Crud.Create, `Successfully created "${type}" rule`, rule.ruleId);
+      notifyUser(StatusType.Success, Crud.Create, `Successfully created "${type}" rule`, ruleId);
     },
   });
 
@@ -56,9 +56,9 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
     onCompleted: (res) => {
       const rule = res.updateInstrumentationRule;
-      const type = rule.type;
+      const { ruleId, type } = rule;
       addEntities(EntityTypes.InstrumentationRule, [rule]);
-      notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${type}" rule`, rule.ruleId);
+      notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${type}" rule`, ruleId);
     },
   });
 
@@ -67,7 +67,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     onCompleted: (res, req) => {
       const id = req?.variables?.ruleId as string;
       const rule = instrumentationRules.find((r) => r.ruleId === id);
-      const type = rule?.type || '';
+      const { type } = rule || {};
       removeEntities(EntityTypes.InstrumentationRule, [id]);
       notifyUser(StatusType.Success, Crud.Delete, `Successfully deleted "${type || id}" rule`, id);
     },

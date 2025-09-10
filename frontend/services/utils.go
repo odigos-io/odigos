@@ -57,15 +57,37 @@ func GetPageLimit(ctx context.Context) (int, error) {
 	return defaultValue, nil
 }
 
+func ConvertConditions(conditions []metav1.Condition) []*model.Condition {
+	var result []*model.Condition
+	for _, c := range conditions {
+		if c.Type != "AppliedInstrumentationDevice" {
+			reason := c.Reason
+			message := c.Message
+			if message == "" {
+				message = string(c.Reason)
+			}
+
+			result = append(result, &model.Condition{
+				Status:             TransformConditionStatus(c.Status, c.Type, reason),
+				Type:               c.Type,
+				Reason:             &reason,
+				Message:            &message,
+				LastTransitionTime: k8sLastTransitionTimeToGql(c.LastTransitionTime),
+			})
+		}
+	}
+	return result
+}
+
 func ConvertSignals(signals []model.SignalType) ([]common.ObservabilitySignal, error) {
 	var result []common.ObservabilitySignal
 	for _, s := range signals {
 		switch s {
-		case model.SignalTypeTraces:
+		case model.SignalTypeTraces, model.SignalTypetraces:
 			result = append(result, common.TracesObservabilitySignal)
-		case model.SignalTypeMetrics:
+		case model.SignalTypeMetrics, model.SignalTypemetrics:
 			result = append(result, common.MetricsObservabilitySignal)
-		case model.SignalTypeLogs:
+		case model.SignalTypeLogs, model.SignalTypelogs:
 			result = append(result, common.LogsObservabilitySignal)
 		default:
 			return nil, fmt.Errorf("unknown signal type: %v", s)
@@ -224,4 +246,12 @@ func getKubeVersion() (*version.Version, error) {
 	}
 
 	return parsedVer, nil
+}
+
+func k8sLastTransitionTimeToGql(t metav1.Time) *string {
+	if t.IsZero() {
+		return nil
+	}
+	str := t.UTC().Format(time.RFC3339)
+	return &str
 }

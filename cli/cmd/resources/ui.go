@@ -198,9 +198,9 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"collectorsgroups"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed for CRUD on pipeline actions
-				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"*"},
+			{ // Needed for CRUD on actions
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"actions"},
 				Verbs:     []string{"get", "list"},
 			},
 		}
@@ -231,9 +231,9 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"collectorsgroups"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed for CRUD on pipeline actions
-				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"*"},
+			{ // Needed for CRUD on actions
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"actions"},
 				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
 			},
 		}
