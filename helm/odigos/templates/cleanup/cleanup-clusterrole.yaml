@@ -11,4 +11,13 @@ rules:
 - apiGroups: [""]
   resources: ["pods"]
   verbs: ["list"]
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["list", "patch"]
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  verbs: ["list", "delete"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "delete"]
 

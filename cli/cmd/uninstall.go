@@ -100,6 +100,9 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 					os.Exit(1)
 				}
 			}
+
+			UninstallClusterResources(ctx, client, ns)
+
 			// If the user only wants to uninstall instrumentation, we exit here.
 			// This flag being used by users who want to remove instrumentation without removing the entire Odigos setup,
 			// And by cleanup jobs that runs as helm pre-uninstall hook before helm uninstall command.
@@ -147,8 +150,6 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 		} else {
 			fmt.Println("Odigos is not installed in any namespace. cleaning up any other Odigos resources that might be left in the cluster...")
 		}
-
-		UninstallClusterResources(ctx, client, ns)
 
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos uninstalled.\n")
 	},
