@@ -11,4 +11,10 @@ rules:
 - apiGroups: [""]
   resources: ["pods"]
   verbs: ["list"]
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["list", "patch"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "delete"]
 
