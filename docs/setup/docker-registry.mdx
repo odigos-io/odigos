@@ -41,6 +41,14 @@ make sure the odigos-agents image is also pulled, as it's required by the inject
 docker pull registry.odigos.io/odigos-agents:$VERSION
 ```
 
+If you are using [image mirrored Go offsets updates](/instrumentations/golang/ebpf#about-go-offsets), also mirror the offsets image:
+
+```
+docker pull registry.odigos.io/cli-offsets:latest
+```
+
+Keeping this image regularly up-to-date is necessary to pull the latest offsets into your cluster.
+
 <Warning>
 Odigos component images are published in multi-arch for ARM64 and AMD64 architectures. When pulling these images, be sure to specify the correct architecture *for the environment they will be deployed*.
 </Warning>
