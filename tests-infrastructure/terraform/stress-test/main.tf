@@ -274,7 +274,11 @@ resource "null_resource" "install_odigos" {
       
       # Install Odigos in the cluster
       echo "Installing Odigos in the cluster..."
-      helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace
+      helm upgrade --install odigos odigos/odigos \
+        --namespace odigos-system \
+        --create-namespace \
+        --set image.tag=${var.odigos_tag} \
+        --set onprem-token=${var.odigos_api_key}
       
       # Note: Helm --wait flag already ensures Odigos is ready
       

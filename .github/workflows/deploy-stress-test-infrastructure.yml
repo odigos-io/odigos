@@ -16,16 +16,6 @@ on:
         required: false
         default: true
         type: boolean
-      region:
-        description: 'AWS region'
-        required: false
-        default: 'us-east-1'
-        type: choice
-        options:
-          - us-east-1
-          - us-west-2
-          - eu-west-1
-          - ap-southeast-1
 
 jobs:
   deploy-stress-test-infrastructure:
@@ -49,7 +39,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::061717858829:role/GitHubActionsEKSCreatorRole
-          aws-region: ${{ inputs.region }}
+          aws-region: us-east-1
 
       - name: Install Tofu (OpenTofu)
         uses: opentofu/setup-opentofu@v1
@@ -75,17 +65,11 @@ jobs:
         working-directory: tests-infrastructure/terraform/stress-test
         env:
           TF_VAR_cluster_name: ${{ steps.cluster_name.outputs.cluster_name }}
-          TF_VAR_region: ${{ inputs.region }}
-          ODIGOS_TAG: ${{ steps.tag.outputs.tag }}
+          TF_VAR_odigos_tag: ${{ steps.tag.outputs.tag }}
+          TF_VAR_odigos_api_key: ${{ secrets.ODIGOS_API_KEY }}
         run: |
           chmod +x deploy.sh
           ./deploy.sh deploy
-
-      - name: Wait for Infrastructure to Stabilize
-        working-directory: tests-infrastructure/terraform/stress-test
-        run: |
-          echo "Waiting 60 seconds for infrastructure to stabilize..."
-          sleep 60
 
       - name: Get Infrastructure Status
         id: status
@@ -95,13 +79,6 @@ jobs:
           echo "status_output<<EOF" >> $GITHUB_OUTPUT
           ./deploy.sh status >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Deploy Load Test Applications (Optional)
-        if: steps.deploy.outcome == 'success' && inputs.deploy_load_test_apps == true
-        working-directory: tests-infrastructure/terraform/stress-test
-        run: |
-          echo "Deploying load test applications..."
-          ./deploy.sh apps --with-load-test
 
       - name: Get Final Status
         id: final_status
@@ -122,7 +99,7 @@ jobs:
             
             **Odigos Tag:** ${{ steps.tag.outputs.tag }}
             **Cluster:** ${{ steps.cluster_name.outputs.cluster_name }}
-            **Region:** ${{ inputs.region }}
+            **Region:** us-east-1
             **Load Test Apps:** ${{ inputs.deploy_load_test_apps }}
             
             **Infrastructure Status:**
@@ -134,7 +111,7 @@ jobs:
             
             **Odigos Tag:** ${{ steps.tag.outputs.tag }}
             **Cluster:** ${{ steps.cluster_name.outputs.cluster_name }}
-            **Region:** ${{ inputs.region }}
+            **Region:** us-east-1
             
             **Last Status Check:**
             ```

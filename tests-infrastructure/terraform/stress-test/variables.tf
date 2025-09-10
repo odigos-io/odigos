@@ -143,3 +143,20 @@ variable "create_monitoring_connection" {
   type        = bool
   default     = false
 }
+
+# =============================================================================
+# ODIGOS CONFIGURATION
+# =============================================================================
+
+variable "odigos_tag" {
+  description = "Odigos image tag to deploy"
+  type        = string
+  default     = "latest"
+}
+
+variable "odigos_api_key" {
+  description = "Odigos API key for on-premises deployment"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
