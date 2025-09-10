@@ -101,9 +101,18 @@ var _ = Describe("AddClusterInfo Controller", func() {
 
 			By("Verifying owner references")
 			ownerRefs := migratedAction.GetOwnerReferences()
-			Expect(ownerRefs).Should(HaveLen(1))
-			Expect(ownerRefs[0].Name).Should(Equal(ActionName))
-			Expect(ownerRefs[0].Kind).Should(Equal("AddClusterInfo"))
+			Expect(ownerRefs).Should(HaveLen(0))
+
+			Eventually(func() bool {
+				err := k8sClient.Get(testCtx, types.NamespacedName{
+					Name:      ActionName,
+					Namespace: ActionNamespace,
+				}, legacyAction)
+				Expect(err).Should(BeNil())
+				return len(legacyAction.GetOwnerReferences()) == 1
+			}, timeout, interval).Should(BeTrue())
+			Expect(legacyAction.GetOwnerReferences()[0].Name).Should(Equal(odigosv1.ActionMigratedLegacyPrefix + ActionName))
+			Expect(legacyAction.GetOwnerReferences()[0].Kind).Should(Equal("Action"))
 		})
 
 		It("Should not update existing migrated Action when legacy action changes", func() {
@@ -148,6 +157,14 @@ var _ = Describe("AddClusterInfo Controller", func() {
 			})
 			legacyAction.Spec.OverwriteExistingValues = true
 
+			Eventually(func() bool {
+				err := k8sClient.Get(testCtx, types.NamespacedName{
+					Name:      ActionName,
+					Namespace: ActionNamespace,
+				}, legacyAction)
+				Expect(err).Should(BeNil())
+				return len(legacyAction.GetOwnerReferences()) == 1
+			}, timeout, interval).Should(BeTrue())
 			Expect(k8sClient.Update(testCtx, legacyAction)).Should(Succeed())
 
 			By("Checking that the migrated Action is not updated")

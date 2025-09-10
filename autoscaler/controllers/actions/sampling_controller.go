@@ -71,6 +71,16 @@ func (r *OdigosSamplingReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// Action doesn't exist, create new one
 		odigosAction = r.createMigratedAction(action, handler, migratedActionName)
 		err = r.Create(ctx, odigosAction)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		action.SetOwnerReferences(append(action.GetOwnerReferences(), metav1.OwnerReference{
+			APIVersion: "odigos.io/v1alpha1",
+			Kind:       "Action",
+			Name:       odigosAction.Name,
+			UID:        odigosAction.UID,
+		}))
+		err = r.Update(ctx, action.(client.Object))
 		return ctrl.Result{}, err
 	}
 	logger.V(0).Info("Migrated Action already exists, skipping update")
@@ -84,10 +94,6 @@ func (r *OdigosSamplingReconciler) createMigratedAction(action metav1.Object, ha
 	// Cast to odigosv1.Action
 	odigosAction := convertedAction.(*v1.Action)
 	odigosAction.ObjectMeta.Name = migratedActionName
-
-	// Add owner reference to the original action
-	ownerRef := handler.GetActionReference(action)
-	odigosAction.OwnerReferences = []metav1.OwnerReference{ownerRef}
 
 	return odigosAction
 }

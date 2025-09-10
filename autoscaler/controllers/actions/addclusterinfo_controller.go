@@ -58,6 +58,16 @@ func (r *AddClusterInfoReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// Action doesn't exist, create new one
 		odigosAction = r.createMigratedAction(action, migratedActionName)
 		err = r.Create(ctx, odigosAction)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		action.OwnerReferences = append(action.OwnerReferences, metav1.OwnerReference{
+			APIVersion: "odigos.io/v1alpha1",
+			Kind:       "Action",
+			Name:       odigosAction.Name,
+			UID:        odigosAction.UID,
+		})
+		err = r.Update(ctx, action)
 		return ctrl.Result{}, err
 	}
 	logger.V(0).Info("Migrated Action already exists, skipping update")
@@ -88,14 +98,6 @@ func (r *AddClusterInfoReconciler) createMigratedAction(action *actionv1.AddClus
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      migratedActionName,
 			Namespace: action.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: action.APIVersion,
-					Kind:       action.Kind,
-					Name:       action.Name,
-					UID:        action.UID,
-				},
-			},
 		},
 		Spec: v1.ActionSpec{
 			ActionName:     action.Spec.ActionName,
