@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,8 +40,9 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string) (
 	// Create cache options
 	cacheOptions := cache.Options{
 		Scheme: scheme,
-		// Set sync period for cache refresh
-		SyncPeriod: &[]time.Duration{30 * time.Second}[0],
+		ByObject: map[client.Object]cache.ByObject{
+			&v1alpha1.Source{}: {},
+		},
 	}
 
 	// Create the cache
