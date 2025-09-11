@@ -7,8 +7,8 @@ on:
       - main
 
 jobs:
-  build-autoscaler:
-    name: build-autoscaler
+  build-and-test-autoscaler:
+    name: build-and-test-autoscaler
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
@@ -26,6 +26,10 @@ jobs:
           provenance: false
           build-args: SERVICE_NAME=autoscaler
           file: ${{ matrix.dockerfile }}
+      - name: run tests
+        working-directory: ./autoscaler
+        run: |
+          make test
 
   build-scheduler:
     name: build-scheduler

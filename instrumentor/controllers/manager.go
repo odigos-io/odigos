@@ -12,7 +12,6 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
-	"github.com/odigos-io/odigos/instrumentor/controllers/workloadmigrations"
 
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -175,11 +174,6 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *ver
 	err = instrumentationconfig.SetupWithManager(mgr)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for instrumentation config: %w", err)
-	}
-
-	err = workloadmigrations.SetupWithManager(mgr)
-	if err != nil {
-		return fmt.Errorf("failed to create controller for workload migrations: %w", err)
 	}
 
 	return nil

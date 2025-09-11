@@ -7,3 +7,4 @@ builds:
       - -X github.com/odigos-io/odigos/cli/cmd.OdigosDate={{ .Env.DATE }}
     flags:
       - -tags=embed_manifests
+defaultBaseImage: gcr.io/distroless/static:nonroot

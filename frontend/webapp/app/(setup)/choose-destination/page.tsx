@@ -2,8 +2,8 @@
 
 import React, { useMemo } from 'react';
 import { ROUTES } from '@/utils';
-import { SetupHeader } from '@/components';
 import { useSetupStore } from '@odigos/ui-kit/store';
+import { OnboardingContentWrapper, SetupHeader } from '@/components';
 import { DestinationSelectionForm } from '@odigos/ui-kit/containers';
 import { useDestinationCategories, usePotentialDestinations, useSetupHelpers, useTestConnection } from '@/hooks';
 
@@ -24,14 +24,16 @@ export default function Page() {
   return (
     <>
       <SetupHeader step={4} />
-      <DestinationSelectionForm
-        categories={categories}
-        potentialDestinations={potentialDestinations}
-        testConnection={testConnection}
-        isSourcesListEmpty={isSourcesListEmpty}
-        goToSources={goToSources}
-        onClickSummary={onClickSummary}
-      />
+      <OnboardingContentWrapper>
+        <DestinationSelectionForm
+          categories={categories}
+          potentialDestinations={potentialDestinations}
+          testConnection={testConnection}
+          isSourcesListEmpty={isSourcesListEmpty}
+          goToSources={goToSources}
+          onClickSummary={onClickSummary}
+        />
+      </OnboardingContentWrapper>
     </>
   );
 }

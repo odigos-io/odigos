@@ -335,12 +335,12 @@ func isLoaderInjectionSupportedByRuntimeDetails(containerName string, runtimeDet
 // - a container agent config to signal any failures in using the loader in these conditions.
 //
 // second returned value acts as an "error" value, user should first check if it's not nil and handle any errors accordingly.
-func getEnvInjectionMethod(
+func getEnvInjectionDecision(
 	containerName string,
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
 	distro *distro.OtelDistro,
-) (*common.EnvInjectionMethod, *odigosv1.ContainerAgentConfig) {
+) (*common.EnvInjectionDecision, *odigosv1.ContainerAgentConfig) {
 
 	if effectiveConfig.AgentEnvVarsInjectionMethod == nil {
 		// this should never happen, as the config is reconciled with default value.
@@ -369,7 +369,7 @@ func getEnvInjectionMethod(
 		} else {
 			// loader is requested by config and distro, and supported by the runtime details.
 			// thus, we can use the loader injection method in webhook.
-			loaderInjectionMethod := common.LoaderEnvInjectionMethod
+			loaderInjectionMethod := common.EnvInjectionDecisionLoader
 			return &loaderInjectionMethod, nil
 		}
 	}
@@ -387,22 +387,8 @@ func getEnvInjectionMethod(
 		return nil, nil
 	}
 
-	// at this point we know there are "append env vars" and that they should be used.
-	// we return the injection method accordingly.
-	if loaderRequested {
-		// loader is requested by config, but we falled-back to pod-maifest.
-		// return the 'loader-fallback-to-pod-manifest' to indicate that we tried loader and fallbacked to using pod-manifest.
-		// webhook should interpret this as "use pod-manifest injection method".
-		// ui and describe can enhance to show reason why use pod-manifest.
-		manifestInjectionMethod := common.LoaderFallbackToPodManifestInjectionMethod
-		return &manifestInjectionMethod, nil
-	} else {
-		// return the pod-manifest injection method to signal that:
-		// - this is what pod webhook should use to inject the agent.
-		// - this is the value configured by the user in the config.
-		manifestInjectionMethod := common.PodManifestEnvInjectionMethod
-		return &manifestInjectionMethod, nil
-	}
+	envInjectionDecision := common.EnvInjectionDecisionPodManifest
+	return &envInjectionDecision, nil
 }
 
 func calculateContainerInstrumentationConfig(containerName string,
@@ -488,7 +474,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	envInjectionMethod, unsupportedDetails := getEnvInjectionMethod(containerName, effectiveConfig, runtimeDetails, distro)
+	envInjectionDecision, unsupportedDetails := getEnvInjectionDecision(containerName, effectiveConfig, runtimeDetails, distro)
 	if unsupportedDetails != nil {
 		// if we have a container agent config with reason and message, we return it.
 		// this is a failure to inject the agent, and we should not proceed with other checks.
@@ -619,7 +605,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 				AgentEnabledMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
 				OtelDistroName:      distroName,
 				DistroParams:        distroParameters,
-				EnvInjectionMethod:  envInjectionMethod,
+				EnvInjectionMethod:  envInjectionDecision,
 				Traces:              tracesConfig,
 				Metrics:             metricsConfig,
 				Logs:                logsConfig,
@@ -632,7 +618,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		AgentEnabled:       true,
 		OtelDistroName:     distroName,
 		DistroParams:       distroParameters,
-		EnvInjectionMethod: envInjectionMethod,
+		EnvInjectionMethod: envInjectionDecision,
 		Traces:             tracesConfig,
 		Metrics:            metricsConfig,
 		Logs:               logsConfig,

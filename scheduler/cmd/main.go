@@ -197,7 +197,7 @@ func main() {
 		setupLog.Error(err, "unable to create controllers for odigos configuration")
 		os.Exit(1)
 	}
-	err = odigospro.SetupWithManager(mgr)
+	err = odigospro.SetupWithManager(mgr, odigosVersion)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller for odigos pro")
 		os.Exit(1)

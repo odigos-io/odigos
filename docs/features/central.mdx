@@ -1,7 +1,7 @@
 ---
-title: 'Odigos Central'
-description: 'Odigos Central is the centralized deployment mode of Odigos, allowing organizations to manage observability configurations from a single UI across multiple Kubernetes clusters.'
-sidebarTitle: 'Odigos Central'
+title: 'Odigos Tower'
+description: 'Odigos Tower is the centralized deployment mode of Odigos, allowing organizations to manage observability configurations from a single UI across multiple Kubernetes clusters.'
+sidebarTitle: 'Odigos Tower'
 icon: 'folder-tree'
 ---
 
@@ -10,22 +10,17 @@ icon: 'folder-tree'
   Odigos team to inquire about access to the Enterprise version.
 </Note>
 
-<Warning>
-  **Beta Feature**: Odigos Central is currently in beta. The API and
-  functionality may change in future releases.
-</Warning>
+## What does Odigos Tower include?
 
-## What does Odigos Central include?
-
-Odigos Central consists of three main components:
+Odigos Tower consists of three main components:
 
 - **Central UI** – A user interface for managing all connected clusters, sources, destinations, and sampling configurations.
 - **Central Backend** – The brain of the centralized system; stores configuration and communicates with remote clusters via a proxy.
 - **Central Proxy** – A lightweight service deployed in each connected (remote) cluster. It securely forwards requests from the central backend to the local Odigos services (which run without public internet access).
 
-## Why use Odigos Central?
+## Why use Odigos Tower?
 
-If you're running multiple Kubernetes clusters, Odigos Central helps you:
+If you're running multiple Kubernetes clusters, Odigos Tower helps you:
 
 - Manage instrumentation, sampling, and observability pipelines from one place
 - Avoid logging into each cluster separately
@@ -33,11 +28,11 @@ If you're running multiple Kubernetes clusters, Odigos Central helps you:
 
 ## Getting Started
 
-To get started with Odigos Central, you need to install the central components and configure remote clusters to connect to them.
+To get started with Odigos Tower, you need to install the central components and configure remote clusters to connect to them.
 
 <Steps>
-  <Step title="Install Odigos Central">
-    You can install Odigos Central using the CLI or Helm chart.
+  <Step title="Install Odigos Tower">
+    You can install Odigos Tower using the CLI or Helm chart.
     <Tabs>
       <Tab title="CLI">
         Use the [`odigos pro central install`](/cli/odigos_pro_central_install) command:
@@ -55,7 +50,7 @@ To get started with Odigos Central, you need to install the central components a
         - keycloak (as identity provider)
       </Tab>
       <Tab title="Helm">
-        You can use the Helm chart to install Odigos Central:
+        You can use the Helm chart to install Odigos Tower:
 
         ```bash
         helm repo add odigos https://odigos-io.github.io/odigos/
@@ -83,13 +78,13 @@ To get started with Odigos Central, you need to install the central components a
 
   </Step>
   <Step title="Connect Remote Clusters">
-    To connect remote clusters to your Central deployment, you can use the `odigos config set` command to configure the central backend URL and cluster name:
+    To connect remote clusters to your Tower deployment, you can use the `odigos config set` command to configure the central backend URL and cluster name:
 
     ```bash
     # Set the central backend URL
     odigos config set central-backend-url <your-central-backend-url>
 
-    # Set the cluster name for identification in Central
+    # Set the cluster name for identification in Tower
     odigos config set cluster-name <your-cluster-name>
     ```
 
@@ -108,6 +103,6 @@ To get started with Odigos Central, you need to install the central components a
 </Steps>
 
 <Warning>
-  Odigos Central is an Enterprise feature and requires a valid license token.
-  Make sure your `--onprem-token` is valid and has the necessary permissions.
+  Odigos Tower is an Enterprise feature and requires a valid license token. Make
+  sure your `--onprem-token` is valid and has the necessary permissions.
 </Warning>

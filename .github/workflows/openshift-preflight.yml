@@ -92,7 +92,7 @@ jobs:
 
       - name: Run Preflight
         run: |
-          ./preflight-linux-amd64 check container registry.odigos.io/odigos-${{ matrix.service }}-ubi9:${{ env.TAG }} --pyxis-api-token=${{ secrets.OPENSHIFT_PYXIS_TOKEN }} --certification-project-id ${{ matrix.project_id }} --submit
+          ./preflight-linux-amd64 check container registry.odigos.io/odigos-${{ matrix.service }}-ubi9:${{ env.TAG }} --pyxis-api-token=${{ secrets.OPENSHIFT_PYXIS_TOKEN }} --certification-component-id ${{ matrix.project_id }} --submit
 
 
       - name: Notify Slack

@@ -1,0 +1,101 @@
+# Instrumentation Lifecycle Assertions - Only for the 4 workloads in this test
+
+# nodejs-minimum-version - should be instrumented successfully
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-nodejs-minimum-version
+status:
+  conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [nodejs-minimum-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
+---
+# nodejs-latest-version - should be instrumented successfully
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-nodejs-latest-version
+status:
+  conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [nodejs-latest-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
+---
+# java-supported-version - should be instrumented successfully
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-java-supported-version
+status:
+  conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [java-supported-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
+---
+# python-latest-version - should be instrumented successfully
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  namespace: default
+  name: deployment-python-latest-version
+status:
+  conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [python-latest-version]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout

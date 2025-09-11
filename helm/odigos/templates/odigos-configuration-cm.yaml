@@ -1,4 +1,5 @@
 {{- /* ensure ResourceSizePreset is valid early */ -}}
+
 {{- include "collector.validateSizing" . -}}
 
 apiVersion: v1
@@ -126,7 +127,7 @@ data:
     checkDeviceHealthBeforeInjection: {{ .Values.instrumentor.checkDeviceHealthBeforeInjection }}
     {{- end }}
     {{- if .Values.ResourceSizePreset }}
-    ResourceSizePreset: {{ .Values.ResourceSizePreset }}
+    resourceSizePreset: {{ .Values.ResourceSizePreset }}
     {{- end }}
     {{- $envMethod := .Values.instrumentor.agentEnvVarsInjectionMethod }}
     {{- if and $envMethod (not (has $envMethod (list "loader" "pod-manifest" "loader-fallback-to-pod-manifest"))) }}
@@ -164,4 +165,10 @@ data:
     {{- end }}
     {{- if .Values.wasp.enabled }}
     waspEnabled: {{ .Values.wasp.enabled }}
+    {{- end }}
+    {{- if .Values.goAutoOffsetsCron }}
+    goAutoOffsetsCron: {{ .Values.goAutoOffsetsCron }}
+    {{- end }}
+    {{- if .Values.goAutoOffsetsMode }}
+    goAutoOffsetsMode: {{ .Values.goAutoOffsetsMode }}
     {{- end }}

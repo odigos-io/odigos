@@ -23,7 +23,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -118,14 +117,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	// check if the workload is enabled by deprecated labels,
-	// once we fully remove the support for the instrumentation labels, we can remove this check
-	enabledByDeprecatedLabels, err := workload.IsWorkloadInstrumentationEffectiveEnabled(ctx, r.Client, workloadObject)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if !enabled && !enabledByDeprecatedLabels {
+	if !enabled {
 		logger.Info("Deleting instrumentationconfig for non-enabled workload")
 		err := r.Client.Delete(ctx, &instrumentationConfig)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
