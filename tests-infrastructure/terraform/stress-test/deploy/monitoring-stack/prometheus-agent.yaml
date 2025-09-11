@@ -134,7 +134,7 @@ items:
         component: apiserver
         provider: kubernetes
 
-- # ServiceMonitor for Odigos services
+- # ServiceMonitor for Odigos system services
   apiVersion: monitoring.coreos.com/v1
   kind: ServiceMonitor
   metadata:
@@ -153,6 +153,48 @@ items:
       - port: metrics
         interval: 5s
         path: /metrics
+
+- # ServiceMonitor for Odigos Node Collector (otelcol metrics)
+  apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: odigos-node-collector
+    namespace: monitoring
+    labels:
+      release: prometheus-agent
+  spec:
+    selector:
+      matchLabels:
+        odigos.io/collector-role: NODE_COLLECTOR
+    namespaceSelector:
+      matchNames:
+        - odigos-system
+    endpoints:
+      - port: metrics
+        interval: 10s
+        path: /metrics
+        scrapeTimeout: 5s
+
+- # ServiceMonitor for Odigos Cluster Gateway (otelcol metrics)
+  apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    name: odigos-cluster-gateway
+    namespace: monitoring
+    labels:
+      release: prometheus-agent
+  spec:
+    selector:
+      matchLabels:
+        odigos.io/collector-role: CLUSTER_GATEWAY
+    namespaceSelector:
+      matchNames:
+        - odigos-system
+    endpoints:
+      - port: metrics
+        interval: 10s
+        path: /metrics
+        scrapeTimeout: 5s
 
 - apiVersion: monitoring.coreos.com/v1
   kind: ServiceMonitor
