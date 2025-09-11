@@ -22,14 +22,14 @@ ARG NODEJS_AGENT_VERSION=main
 RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentelemetry-node && git checkout $NODEJS_AGENT_VERSION
 
 # The second build stage 'nodejs-agent-src' prepares the actual code we are going to compile and embed in odiglet.
-# By default, it uses the previous 'nodejs-agent-src' stage, but one can override it by setting the 
+# By default, it uses the previous 'nodejs-agent-src' stage, but one can override it by setting the
 # --build-context nodejs-agent-src=../opentelemetry-node flag in the docker build command.
 # This allows us to nobe the agent sources and test changes during development.
 # The output of this stage is the resolved source code to be used in the next stage.
 FROM scratch AS nodejs-agent-src
 COPY --from=nodejs-agent-clone /src/opentelemetry-node /
 
-# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for 
+# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for
 # being dependency of the native-community agent.
 FROM node:18 AS nodejs-agent-build
 ARG ODIGOS_VERSION
@@ -202,7 +202,7 @@ COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.3 /instrumentations/ru
 COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.4 /instrumentations/ruby/3.4
 
 # loader
-ARG ODIGOS_LOADER_VERSION=v0.0.4
+ARG ODIGOS_LOADER_VERSION=v0.0.5
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
 FROM registry.fedoraproject.org/fedora-minimal:38
