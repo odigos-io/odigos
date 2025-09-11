@@ -2,13 +2,18 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
+	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v3/pkg/repo"
 )
 
 var (
@@ -20,10 +25,8 @@ var (
 	helmChartVersion string
 )
 
-// these will be injected at build time with ldflags from .ko.yaml
-var (
-	OdigosChartVersion string
-)
+// injected at build time with ldflags from .ko.yaml
+var OdigosChartVersion string
 
 // helmInstallCmd represents the helm-install command
 var helmInstallCmd = &cobra.Command{
@@ -34,16 +37,6 @@ It wraps "helm upgrade --install" and supports --values and --set just like Helm
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runHelmUpgradeInstall()
 	},
-	Example: `
-# Install Odigos using the baked-in chart version
-odigos helm-install --release-name odigos --namespace odigos-system --chart odigos/odigos
-
-# Install Odigos with a custom values.yaml
-odigos helm-install --release-name odigos --namespace odigos-system --chart odigos/odigos --values my-values.yaml
-
-# Install Odigos and override specific values
-odigos helm-install --release-name odigos --namespace odigos-system --chart odigos/odigos --set replicaCount=3,image.tag=latest
-`,
 }
 
 func runHelmUpgradeInstall() error {
@@ -58,27 +51,67 @@ func runHelmUpgradeInstall() error {
 		return err
 	}
 
-	upgrade := action.NewUpgrade(actionConfig)
-	upgrade.Namespace = helmNamespace
-	upgrade.Install = true // enables upgrade --install
+	// prepare chart & values
+	ch, vals, err := prepareChartAndValues(settings)
+	if err != nil {
+		return err
+	}
 
-	// Pin to baked-in chart version unless user explicitly sets --chart-version
+	// run upgrade, fallback to install if needed
+	rel, err := runUpgrade(actionConfig, ch, vals)
+	if err != nil {
+		// fallback conditions from Helm SDK
+		if strings.Contains(err.Error(), "release: not found") ||
+			strings.Contains(err.Error(), "has no deployed releases") {
+			rel, err = runInstall(actionConfig, ch, vals)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Release %q installed in namespace %q (chart version: %s)\n",
+				rel.Name, helmNamespace, ch.Metadata.Version)
+			return nil
+		}
+		return err
+	}
+
+	fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Release %q upgraded in namespace %q (chart version: %s)\n",
+		rel.Name, helmNamespace, ch.Metadata.Version)
+	return nil
+}
+
+func prepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]interface{}, error) {
+	// choose version
+	version := ""
 	if helmChartVersion != "" {
-		upgrade.ChartPathOptions.Version = helmChartVersion
+		version = strings.TrimPrefix(helmChartVersion, "v")
 	} else if OdigosChartVersion != "" {
-		upgrade.ChartPathOptions.Version = OdigosChartVersion
+		version = strings.TrimPrefix(OdigosChartVersion, "v")
 	}
 
-	chartPath, err := upgrade.ChartPathOptions.LocateChart(helmChart, settings)
+	// ensure odigos repo exists if using odigos/ chart
+	if strings.HasPrefix(helmChart, "odigos/") {
+		if err := ensureHelmRepo(settings, "odigos", "https://odigos-io.github.io/odigos/"); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	// refresh repo index if using a remote chart
+	if strings.Contains(helmChart, "/") {
+		refreshHelmRepo(settings, helmChart)
+	}
+
+	// load chart
+	chartPathOptions := action.ChartPathOptions{Version: version}
+	chartPath, err := chartPathOptions.LocateChart(helmChart, settings)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-
-	chart, err := loader.Load(chartPath)
+	ch, err := loader.Load(chartPath)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
+	// merge values
 	valOpts := &values.Options{
 		ValueFiles: []string{},
 		Values:     helmSetArgs,
@@ -86,21 +119,103 @@ func runHelmUpgradeInstall() error {
 	if helmValuesFile != "" {
 		valOpts.ValueFiles = append(valOpts.ValueFiles, helmValuesFile)
 	}
-
 	vals, err := valOpts.MergeValues(getter.All(settings))
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	rel, err := upgrade.Run(helmReleaseName, chart, vals)
+	// fallback image.tag to AppVersion if not set
+	if ch.Metadata.AppVersion != "" {
+		if _, ok := vals["image"]; !ok {
+			vals["image"] = map[string]interface{}{}
+		}
+		if imgVals, ok := vals["image"].(map[string]interface{}); ok {
+			if _, hasTag := imgVals["tag"]; !hasTag || imgVals["tag"] == "" {
+				imgVals["tag"] = ch.Metadata.AppVersion
+				fmt.Printf("Using appVersion %s as image.tag\n", ch.Metadata.AppVersion)
+			}
+		}
+	}
+
+	return ch, vals, nil
+}
+
+func runUpgrade(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}) (*release.Release, error) {
+	upgrade := action.NewUpgrade(actionConfig)
+	upgrade.Namespace = helmNamespace
+	upgrade.Install = true
+	upgrade.ChartPathOptions.Version = ch.Metadata.Version
+	return upgrade.Run(helmReleaseName, ch, vals)
+}
+
+func runInstall(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}) (*release.Release, error) {
+	install := action.NewInstall(actionConfig)
+	install.ReleaseName = helmReleaseName
+	install.Namespace = helmNamespace
+	install.CreateNamespace = true
+	install.ChartPathOptions.Version = ch.Metadata.Version
+	return install.Run(ch, vals)
+}
+
+// ensureHelmRepo adds a repo if missing
+func ensureHelmRepo(settings *cli.EnvSettings, name, url string) error {
+	repoFile := settings.RepositoryConfig
+	f, err := repo.LoadFile(repoFile)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	// check if exists
+	if f != nil {
+		for _, r := range f.Repositories {
+			if r.Name == name {
+				return nil // already present
+			}
+		}
+	} else {
+		f = repo.NewFile()
+	}
+
+	// add new repo
+	entry := &repo.Entry{Name: name, URL: url}
+	r, err := repo.NewChartRepository(entry, getter.All(settings))
 	if err != nil {
 		return err
 	}
+	_, err = r.DownloadIndexFile()
+	if err != nil {
+		return fmt.Errorf("cannot reach repo %s at %s: %w", name, url, err)
+	}
+	f.Update(entry)
+	return f.WriteFile(repoFile, 0644)
+}
 
-	fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Release %q installed/updated in namespace %q (chart version: %s)\n",
-		rel.Name, helmNamespace, upgrade.ChartPathOptions.Version)
+// refreshHelmRepo updates repo index (like `helm repo update`)
+func refreshHelmRepo(settings *cli.EnvSettings, chartRef string) {
+	repoFile := settings.RepositoryConfig
+	repoCache := settings.RepositoryCache
 
-	return nil
+	f, err := repo.LoadFile(repoFile)
+	if err != nil {
+		fmt.Printf("Warning: cannot load Helm repo file: %v\n", err)
+		return
+	}
+
+	for _, r := range f.Repositories {
+		if strings.HasPrefix(chartRef, r.Name+"/") {
+			chartRepo, err := repo.NewChartRepository(r, getter.All(settings))
+			if err != nil {
+				fmt.Printf("Warning: cannot create repo client for %s: %v\n", r.Name, err)
+				continue
+			}
+			chartRepo.CachePath = repoCache
+			_, err = chartRepo.DownloadIndexFile()
+			if err != nil {
+				fmt.Printf("Warning: failed to update repo %s: %v\n", r.Name, err)
+			} else {
+				fmt.Printf("Updated Helm repo: %s\n", r.Name)
+			}
+		}
+	}
 }
 
 func init() {
