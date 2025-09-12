@@ -382,9 +382,9 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 			},
 		},
 		{
-			Name: "kernel-debug",
+			Name: "sys-kernel",
 			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{Path: "/sys/kernel/debug"},
+				HostPath: &corev1.HostPathVolumeSource{Path: "/sys/kernel"},
 			},
 		},
 	}
@@ -646,8 +646,8 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 									ReadOnly:  true,
 								},
 								{
-									Name:      "kernel-debug",
-									MountPath: "/sys/kernel/debug",
+									Name:      "sys-kernel",
+									MountPath: "/sys/kernel",
 								},
 							}, additionalVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
