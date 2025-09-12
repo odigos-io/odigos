@@ -94,6 +94,7 @@ const (
 	AllowedTestConnectionHostsProperty = "allowed-test-connection-hosts"
 	EnableDataCompressionProperty      = "enable-data-compression"
 	ResourceSizePresetProperty         = "resource-size-preset"
+	WaspEnabledProperty                = "wasp-enabled"
 )
 
 var (

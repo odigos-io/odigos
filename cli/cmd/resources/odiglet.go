@@ -887,6 +887,11 @@ func NewOdigletLocalTrafficService(ns string) *corev1.Service {
 					Port:       8080,
 					TargetPort: intstr.FromInt(8080),
 				},
+				{
+					Name:       "wasp",
+					Port:       int32(k8sconsts.OdigletWaspServicePort),
+					TargetPort: intstr.FromInt(k8sconsts.OdigletWaspServicePort),
+				},
 			},
 			InternalTrafficPolicy: &localTrafficPolicy,
 		},
