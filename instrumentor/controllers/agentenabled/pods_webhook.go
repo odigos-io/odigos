@@ -158,7 +158,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 	}
 
 	karpenterDisabled := odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled
-	mountIsHostPath := odigosConfiguration.MountMethod != nil && *odigosConfiguration.MountMethod == common.K8sHostPathMountMethod
+	mountIsHostPath := mountMethod == common.K8sHostPathMountMethod
 
 	// Add odiglet-installed node affinity to the pod for non-Karpenter installations,
 	// but only when the mount method is hostPath. This ensures that the pod is scheduled
@@ -193,17 +193,16 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		dirsToCopy = mergeMaps(dirsToCopy, containerDirsToCopy)
 	}
 
-	if mountMethod == common.K8sHostPathMountMethod && volumeMounted {
-		// only mount the volume if at least one container has a volume to mount
-		podswebhook.MountPodVolumeToHostPath(pod)
-	}
-
-	if odigosConfiguration.MountMethod != nil && *odigosConfiguration.MountMethod == common.K8sInitContainerMountMethod && volumeMounted {
-		// only mount the volume if at least one container has a volume to mount
-		podswebhook.MountPodVolumeToEmptyDir(pod)
-		if len(dirsToCopy) > 0 {
-			// Create the init container that will copy the directories to the empty dir based on dirsToCopy
-			createInitContainer(pod, dirsToCopy, odigosConfiguration)
+	if volumeMounted { // only mount the volume if at least one container has a volume to mount
+		switch mountMethod {
+		case common.K8sHostPathMountMethod:
+			podswebhook.MountPodVolumeToHostPath(pod)
+		case common.K8sInitContainerMountMethod:
+			podswebhook.MountPodVolumeToEmptyDir(pod)
+			if len(dirsToCopy) > 0 {
+				// Create the init container that will copy the directories to the empty dir based on dirsToCopy
+				createInitContainer(pod, dirsToCopy, odigosConfiguration)
+			}
 		}
 	}
 
