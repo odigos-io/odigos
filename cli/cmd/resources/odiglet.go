@@ -759,6 +759,21 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 			Command: []string{
 				"/root/deviceplugin",
 			},
+			Env: []corev1.EnvVar{
+				{
+					Name:  "GOMEMLIMIT",
+					Value: "40MiB",
+				},
+				{
+					Name: "GOMAXPROCS",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							ContainerName: k8sconsts.OdigletDevicePluginContainerName,
+							Resource:      "limits.cpu",
+						},
+					},
+				},
+			},
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
 					"cpu":    resource.MustParse("10m"),

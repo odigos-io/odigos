@@ -273,6 +273,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - /root/deviceplugin
+          env:
+            - name: GOMEMLIMIT
+              value: {{ .Values.odiglet.deviceplugin.goMemLimit }}
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: deviceplugin
+                  resource: limits.cpu
           volumeMounts:
             - name: device-plugins-dir
               mountPath: /var/lib/kubelet/device-plugins
