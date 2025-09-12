@@ -97,7 +97,7 @@ spec:
               sleep 2
               for i in 1 2 3; do
                 kubectl rollout restart deployment && break || sleep 2
-              done
+              done || exit 1 # Exit with error if all attempts fail
 
     - name: 02 - Assert Environment Variables
       try:
