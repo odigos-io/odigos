@@ -339,8 +339,10 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 				volumeMounted = true
 			}
 		case common.K8sVirtualDeviceMountMethod:
-			deviceName := *distroMetadata.RuntimeAgent.Device
-			podswebhook.InjectDeviceToContainer(podContainerSpec, deviceName)
+			if distroMetadata.RuntimeAgent.Device != nil {
+				deviceName := *distroMetadata.RuntimeAgent.Device
+				podswebhook.InjectDeviceToContainer(podContainerSpec, deviceName)
+			}
 		}
 
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
