@@ -62,9 +62,11 @@ func (p *plugin) GetPreferredAllocation(ctx context.Context, request *v1beta1.Pr
 func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest) (*v1beta1.AllocateResponse, error) {
 	res := &v1beta1.AllocateResponse{}
 
+	log.Logger.V(0).Info("Serving Allocate request for devices", "numContainers", len(request.ContainerRequests))
+
 	for _, req := range request.ContainerRequests {
 		if len(req.DevicesIDs) != 1 {
-			log.Logger.V(0).Info("got  instrumentation device not equal to 1, skipping", "devices", req.DevicesIDs)
+			log.Logger.V(0).Info("got instrumentation device not equal to 1, skipping", "devices", req.DevicesIDs)
 			continue
 		}
 
