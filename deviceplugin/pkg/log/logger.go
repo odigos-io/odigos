@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
-	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 	"go.uber.org/zap"
 )
 
@@ -18,7 +17,6 @@ func Init() error {
 		return err
 	}
 
-	zapLogger = bridge.AttachToZapLogger(zapLogger)
 	Logger = zapr.NewLogger(zapLogger)
 
 	flag.Parse()
