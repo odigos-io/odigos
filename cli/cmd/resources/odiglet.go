@@ -759,40 +759,14 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 			Command: []string{
 				"/root/deviceplugin",
 			},
-			Env: []corev1.EnvVar{
-				{
-					Name: k8sconsts.NodeNameEnvVar,
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
-							FieldPath: "spec.nodeName",
-						},
-					},
-				},
-				{
-					Name: "NODE_IP",
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
-							FieldPath: "status.hostIP",
-						},
-					},
-				},
-				{
-					Name: "CURRENT_NS",
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
-							FieldPath: "metadata.namespace",
-						},
-					},
-				},
-			},
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
-					"cpu":    resource.MustParse("100m"),
-					"memory": resource.MustParse("300Mi"),
+					"cpu":    resource.MustParse("10m"),
+					"memory": resource.MustParse("50Mi"),
 				},
 				Requests: corev1.ResourceList{
-					"cpu":    resource.MustParse("40m"),
-					"memory": resource.MustParse("200Mi"),
+					"cpu":    resource.MustParse("10m"),
+					"memory": resource.MustParse("50Mi"),
 				},
 			},
 			LivenessProbe: &corev1.Probe{

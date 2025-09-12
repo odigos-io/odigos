@@ -337,11 +337,11 @@ odiglet:
   deviceplugin:
     resources:
       requests:
-        cpu: 40m
-        memory: 200Mi
+        cpu: 10m
+        memory: 50Mi
       limits:
-        cpu: 100m
-        memory: 300Mi
+        cpu: 10m
+        memory: 50Mi
 
   ## Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.
   ## There is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.
