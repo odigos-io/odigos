@@ -20,7 +20,7 @@ import (
 
 type DistroParam = map[string]string
 
-func AddLibcDistroParamFromRuntimeDetails(params DistroParam, distroName string, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (err *odigosv1.ContainerAgentConfig) {
+func addLibcDistroParamFromRuntimeDetails(params DistroParam, distroName string, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (err *odigosv1.ContainerAgentConfig) {
 	if runtimeDetails.LibCType == nil {
 		return &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
@@ -34,7 +34,7 @@ func AddLibcDistroParamFromRuntimeDetails(params DistroParam, distroName string,
 	return nil
 }
 
-func AddRuntimeVersionMajorMinorDistroParamFromRuntimeDetails(params DistroParam, distroName string, runtimeDetails *odigosv1.RuntimeDetailsByContainer) *odigosv1.ContainerAgentConfig {
+func addRuntimeVersionMajorMinorDistroParamFromRuntimeDetails(params DistroParam, distroName string, runtimeDetails *odigosv1.RuntimeDetailsByContainer) *odigosv1.ContainerAgentConfig {
 	if runtimeDetails.RuntimeVersion == "" {
 		return &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
@@ -66,33 +66,46 @@ func AddRuntimeVersionMajorMinorDistroParamFromRuntimeDetails(params DistroParam
 	return nil
 }
 
-func CalculateRequiredParametersFromRuntimeDetails(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (requiredParams DistroParam, err *odigosv1.ContainerAgentConfig) {
+func processSingleRequiredParameter(existingParams DistroParam, distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer, parameterName string) (err *odigosv1.ContainerAgentConfig) {
+	switch parameterName {
+	case common.LibcTypeDistroParameterName:
+		return addLibcDistroParamFromRuntimeDetails(existingParams, distro.Name, runtimeDetails)
+	case distroTypes.RuntimeVersionMajorMinorDistroParameterName:
+		return addRuntimeVersionMajorMinorDistroParamFromRuntimeDetails(existingParams, distro.Name, runtimeDetails)
+	default:
+		return &odigosv1.ContainerAgentConfig{
+			ContainerName:       runtimeDetails.ContainerName,
+			AgentEnabled:        false,
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+			AgentEnabledMessage: fmt.Sprintf("unsupported parameter '%s' for distro '%s'", parameterName, distro.Name),
+		}
+	}
+}
+
+func calculateRequiredParametersFromRuntimeDetails(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (requiredParams DistroParam, err *odigosv1.ContainerAgentConfig) {
 	requiredParams = DistroParam{}
 	for _, parameterName := range distro.RequireParameters {
-		switch parameterName {
-		case common.LibcTypeDistroParameterName:
-			err := AddLibcDistroParamFromRuntimeDetails(requiredParams, distro.Name, runtimeDetails)
-			if err != nil {
-				return requiredParams, err
-			}
-		case distroTypes.RuntimeVersionMajorMinorDistroParameterName:
-			err := AddRuntimeVersionMajorMinorDistroParamFromRuntimeDetails(requiredParams, distro.Name, runtimeDetails)
-			if err != nil {
-				return requiredParams, err
-			}
-		default:
-			return requiredParams, &odigosv1.ContainerAgentConfig{
-				ContainerName:       runtimeDetails.ContainerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-				AgentEnabledMessage: fmt.Sprintf("unsupported parameter '%s' for distro '%s'", parameterName, distro.Name),
-			}
+		err := processSingleRequiredParameter(requiredParams, distro, runtimeDetails, parameterName)
+		if err != nil {
+			return requiredParams, err
 		}
 	}
 	return requiredParams, nil
 }
 
-func CalculateAppendEnvParametersFromRuntimeDetails(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (appendEnvParams DistroParam, err *odigosv1.ContainerAgentConfig) {
+func calculateAppendEnvParametersFromRuntimeDetails(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (appendEnvParams DistroParam, err *odigosv1.ContainerAgentConfig) {
+	appendEnvParams = DistroParam{}
+	for _, envVar := range distro.EnvironmentVariables.AppendOdigosVariables {
+		envName := envVar.EnvName
+		criValue, ok := getEnvVarFromList(runtimeDetails.EnvFromContainerRuntime, envName)
+		if ok && criValue != "" {
+			appendEnvParams[envName] = criValue
+		}
+	}
+	return appendEnvParams, nil
+}
+
+func calculateAppendEnvParametersFromRuntimeDetails(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (appendEnvParams DistroParam, err *odigosv1.ContainerAgentConfig) {
 
 	// at this point we should have already checked for CRI errors and not execute this code,
 	// but let's check to be more robust and avoid using invalid data
@@ -122,14 +135,14 @@ func CalculateDistroParams(distro *distroTypes.OtelDistro, runtimeDetails *odigo
 	distroParams = DistroParam{}
 
 	if len(distro.RequireParameters) > 0 {
-		distroParams, err = CalculateRequiredParametersFromRuntimeDetails(distro, runtimeDetails)
+		distroParams, err = calculateRequiredParametersFromRuntimeDetails(distro, runtimeDetails)
 		if err != nil {
 			return distroParams, err
 		}
 	}
 
 	if len(distro.EnvironmentVariables.AppendOdigosVariables) > 0 {
-		appendEnvParams, err := CalculateAppendEnvParametersFromRuntimeDetails(distro, runtimeDetails)
+		appendEnvParams, err := calculateAppendEnvParametersFromRuntimeDetails(distro, runtimeDetails)
 		if err != nil {
 			return distroParams, err
 		}
