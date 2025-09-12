@@ -82,7 +82,7 @@ func processSingleRequiredParameter(existingParams DistroParam, distro *distroTy
 	}
 }
 
-func calculateRequiredParametersFromRuntimeDetails(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (requiredParams DistroParam, err *odigosv1.ContainerAgentConfig) {
+func calculateRequiredParameters(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (requiredParams DistroParam, err *odigosv1.ContainerAgentConfig) {
 	requiredParams = DistroParam{}
 	for _, parameterName := range distro.RequireParameters {
 		err := processSingleRequiredParameter(requiredParams, distro, runtimeDetails, parameterName)
@@ -93,16 +93,13 @@ func calculateRequiredParametersFromRuntimeDetails(distro *distroTypes.OtelDistr
 	return requiredParams, nil
 }
 
-func calculateAppendEnvParametersFromRuntimeDetails(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (appendEnvParams DistroParam, err *odigosv1.ContainerAgentConfig) {
-
-	// at this point we should have already checked for CRI errors and not execute this code,
-	// but let's check to be more robust and avoid using invalid data
+func calculateAppendEnvParameters(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (appendEnvParams DistroParam, err *odigosv1.ContainerAgentConfig) {
 	if runtimeDetails.CriErrorMessage != nil {
 		return appendEnvParams, &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
 			AgentEnabled:        false,
 			AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-			AgentEnabledMessage: fmt.Sprintf("failed to get env var from runtime details: %s", *runtimeDetails.CriErrorMessage),
+			AgentEnabledMessage: fmt.Sprintf("failed to detect environment variables from container runtime: %s", *runtimeDetails.CriErrorMessage),
 		}
 	}
 
@@ -119,18 +116,19 @@ func calculateAppendEnvParametersFromRuntimeDetails(distro *distroTypes.OtelDist
 	return appendEnvParams, nil
 }
 
-func CalculateDistroParams(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (distroParams DistroParam, err *odigosv1.ContainerAgentConfig) {
+func calculateDistroParams(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer, envInjectionMethod *common.EnvInjectionDecision) (distroParams DistroParam, err *odigosv1.ContainerAgentConfig) {
 	distroParams = DistroParam{}
 
 	if len(distro.RequireParameters) > 0 {
-		distroParams, err = calculateRequiredParametersFromRuntimeDetails(distro, runtimeDetails)
+		distroParams, err = calculateRequiredParameters(distro, runtimeDetails)
 		if err != nil {
 			return distroParams, err
 		}
 	}
 
-	if len(distro.EnvironmentVariables.AppendOdigosVariables) > 0 {
-		appendEnvParams, err := calculateAppendEnvParametersFromRuntimeDetails(distro, runtimeDetails)
+	envInjectionMethodIsPodManifest := envInjectionMethod != nil && *envInjectionMethod == common.EnvInjectionDecisionPodManifest
+	if envInjectionMethodIsPodManifest && len(distro.EnvironmentVariables.AppendOdigosVariables) > 0 {
+		appendEnvParams, err := calculateAppendEnvParameters(distro, runtimeDetails)
 		if err != nil {
 			return distroParams, err
 		}

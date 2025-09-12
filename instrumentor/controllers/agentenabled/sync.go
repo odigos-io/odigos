@@ -328,19 +328,6 @@ func isLoaderInjectionSupportedByRuntimeDetails(containerName string, runtimeDet
 	return nil
 }
 
-func isPodManifestInjectionSupportedByRuntimeDetails(containerName string, runtimeDetails *odigosv1.RuntimeDetailsByContainer) *odigosv1.ContainerAgentConfig {
-	if runtimeDetails.CriErrorMessage != nil {
-		return &odigosv1.ContainerAgentConfig{
-			ContainerName:       containerName,
-			AgentEnabled:        false,
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
-			AgentEnabledMessage: "failed to inspect container runtime environment variables, cannot use pod manifest env injection method",
-		}
-	}
-
-	return nil
-}
-
 // Will calculate the env injection method for the container based on the relevant parameters.
 // returned paramters are:
 // - the env injection method to use for this container (may be nil if no injection should take place)
@@ -388,7 +375,7 @@ func getEnvInjectionDecision(
 
 	// at this point, we know that either:
 	// - user configured to use pod manifest injection, or
-	// - usser requested loader fallback to pod manifest, and we are at the fallback stage.
+	// - user requested loader fallback to pod manifest, and we are at the fallback stage.
 	distroHasAppendEnvVar := len(distro.EnvironmentVariables.AppendOdigosVariables) > 0
 	if !distroHasAppendEnvVar {
 		// this is a common case, where a distro doesn't support nor loader or append env var injection.
@@ -396,11 +383,6 @@ func getEnvInjectionDecision(
 		// for those we mark env injection as nil to denote "no injection"
 		// and return err as nil to denote "no error".
 		return nil, nil
-	}
-
-	err := isPodManifestInjectionSupportedByRuntimeDetails(containerName, runtimeDetails)
-	if err != nil {
-		return nil, err
 	}
 
 	envInjectionDecision := common.EnvInjectionDecisionPodManifest
@@ -539,7 +521,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	distroParameters, err := CalculateDistroParams(distro, runtimeDetails)
+	distroParameters, err := calculateDistroParams(distro, runtimeDetails, envInjectionDecision)
 	if err != nil {
 		return *err
 	}
