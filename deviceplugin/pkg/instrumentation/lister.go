@@ -4,18 +4,20 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
-
-	"github.com/odigos-io/odigos/common"
 )
 
 const GenericPluginName = "generic"
+
+// defining it here again, so to not pull tons of dependencies from odigos/api just for a constant
+const OdigosAgentsDirectory = "/var/odigos"
+const OdigosResourceNamespace = "instrumentation.odigos.io"
 
 type lister struct {
 	genericPlugin dpm.PluginInterface
 }
 
 func (l *lister) GetResourceNamespace() string {
-	return common.OdigosResourceNamespace
+	return OdigosResourceNamespace
 }
 
 func (l *lister) Discover(pluginNameLists chan dpm.PluginNameList) {
