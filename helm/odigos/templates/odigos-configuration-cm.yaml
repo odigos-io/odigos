@@ -163,6 +163,9 @@ data:
     {{- if .Values.allowConcurrentAgents.enabled }}
     allowConcurrentAgents: {{ .Values.allowConcurrentAgents.enabled }}
     {{- end }}
+    {{- if .Values.wasp.enabled }}
+    waspEnabled: {{ .Values.wasp.enabled }}
+    {{- end }}
     {{- if .Values.goAutoOffsetsCron }}
     goAutoOffsetsCron: {{ .Values.goAutoOffsetsCron }}
     {{- end }}
