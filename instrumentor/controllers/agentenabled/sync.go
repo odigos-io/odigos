@@ -15,7 +15,6 @@ import (
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
-	distroTypes "github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -284,11 +283,11 @@ func getEnabledSignalsForContainer(nodeCollectorsGroup *odigosv1.CollectorsGroup
 	return tracesEnabled, metricsEnabled, logsEnabled
 }
 
-func getEnvVarFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContainer, envVarName string) (string, bool) {
+func getEnvVarFromList(envVars []odigosv1.EnvVar, envVarName string) (string, bool) {
 	// here we check for the value of LD_PRELOAD in the EnvVars list,
 	// which returns the env as read from /proc to make sure if there is any value set,
 	// via any mechanism (manifest, device, script, other agent, etc.) then we are aware.
-	for _, envVar := range runtimeDetails.EnvVars {
+	for _, envVar := range envVars {
 		if envVar.Name == envVarName {
 			return envVar.Value, true
 		}
@@ -315,7 +314,7 @@ func isLoaderInjectionSupportedByRuntimeDetails(containerName string, runtimeDet
 	}
 
 	odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
-	ldPreloadVal, ldPreloadFoundInInspection := getEnvVarFromRuntimeDetails(runtimeDetails, commonconsts.LdPreloadEnvVarName)
+	ldPreloadVal, ldPreloadFoundInInspection := getEnvVarFromList(runtimeDetails.EnvVars, commonconsts.LdPreloadEnvVarName)
 	ldPreloadUnsetOrExpected := !ldPreloadFoundInInspection || strings.Contains(ldPreloadVal, odigosLoaderPath)
 	if !ldPreloadUnsetOrExpected {
 		return &odigosv1.ContainerAgentConfig{
@@ -540,57 +539,9 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	distroParameters := map[string]string{}
-	for _, parameterName := range distro.RequireParameters {
-		switch parameterName {
-		case common.LibcTypeDistroParameterName:
-			if runtimeDetails.LibCType == nil {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-					AgentEnabledMessage: fmt.Sprintf("missing required parameter '%s' for distro '%s'", common.LibcTypeDistroParameterName, distroName),
-				}
-			}
-			distroParameters[common.LibcTypeDistroParameterName] = string(*runtimeDetails.LibCType)
-
-		case distroTypes.RuntimeVersionMajorMinorDistroParameterName:
-			if runtimeDetails.RuntimeVersion == "" {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-					AgentEnabledMessage: fmt.Sprintf("missing required parameter '%s' for distro '%s'", distroTypes.RuntimeVersionMajorMinorDistroParameterName, distroName),
-				}
-			}
-			version, err := version.NewVersion(runtimeDetails.RuntimeVersion)
-			if err != nil {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-					AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version: %s", runtimeDetails.RuntimeVersion),
-				}
-			}
-			versionAsMajorMinor, err := common.MajorMinorStringOnly(version)
-			if err != nil {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-					AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version as major.minor: %s", runtimeDetails.RuntimeVersion),
-				}
-			}
-			distroParameters[distroTypes.RuntimeVersionMajorMinorDistroParameterName] = versionAsMajorMinor
-
-		default:
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-				AgentEnabledMessage: fmt.Sprintf("unsupported parameter '%s' for distro '%s'", parameterName, distroName),
-			}
-		}
+	distroParameters, err := CalculateDistroParams(distro, runtimeDetails)
+	if err != nil {
+		return *err
 	}
 
 	if crashDetected {
