@@ -94,18 +94,6 @@ func calculateRequiredParametersFromRuntimeDetails(distro *distroTypes.OtelDistr
 }
 
 func calculateAppendEnvParametersFromRuntimeDetails(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (appendEnvParams DistroParam, err *odigosv1.ContainerAgentConfig) {
-	appendEnvParams = DistroParam{}
-	for _, envVar := range distro.EnvironmentVariables.AppendOdigosVariables {
-		envName := envVar.EnvName
-		criValue, ok := getEnvVarFromList(runtimeDetails.EnvFromContainerRuntime, envName)
-		if ok && criValue != "" {
-			appendEnvParams[envName] = criValue
-		}
-	}
-	return appendEnvParams, nil
-}
-
-func calculateAppendEnvParametersFromRuntimeDetails(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (appendEnvParams DistroParam, err *odigosv1.ContainerAgentConfig) {
 
 	// at this point we should have already checked for CRI errors and not execute this code,
 	// but let's check to be more robust and avoid using invalid data
