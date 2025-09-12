@@ -4,40 +4,25 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
-	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/instrumentation/devices"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/log"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
-type LangSpecificFunc func(deviceId string) *v1beta1.ContainerAllocateResponse
-
 type plugin struct {
-	idsManager       devices.DeviceManager
-	stopCh           chan struct{}
-	LangSpecificFunc LangSpecificFunc
+	idsManager devices.DeviceManager
+	stopCh     chan struct{}
 }
 
-func NewPlugin(initialSize int64, lsf LangSpecificFunc) dpm.PluginInterface {
+func NewGenericPlugin(initialSize int64) dpm.PluginInterface {
 	idManager := devices.NewIDManager(initialSize)
 
 	return &plugin{
-		idsManager:       idManager,
-		stopCh:           make(chan struct{}),
-		LangSpecificFunc: lsf,
+		idsManager: idManager,
+		stopCh:     make(chan struct{}),
 	}
-}
-
-func NewMuslPlugin(lang common.ProgrammingLanguage, maxPods int64, lsf LangSpecificFunc) dpm.PluginInterface {
-	wrappedLsf := func(deviceId string) *v1beta1.ContainerAllocateResponse {
-		res := lsf(deviceId)
-		libc.ModifyEnvVarsForMusl(lang, res.Envs)
-		return res
-	}
-
-	return NewPlugin(maxPods, wrappedLsf)
 }
 
 func (p *plugin) GetDevicePluginOptions(ctx context.Context, empty *v1beta1.Empty) (*v1beta1.DevicePluginOptions, error) {
@@ -84,8 +69,17 @@ func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest)
 			continue
 		}
 
-		deviceId := req.DevicesIDs[0]
-		res.ContainerResponses = append(res.ContainerResponses, p.LangSpecificFunc(deviceId))
+		genericPluginResponse := &v1beta1.ContainerAllocateResponse{
+			Mounts: []*v1beta1.Mount{
+				{
+					ContainerPath: k8sconsts.OdigosAgentsDirectory,
+					HostPath:      k8sconsts.OdigosAgentsDirectory,
+					ReadOnly:      true,
+				},
+			},
+		}
+
+		res.ContainerResponses = append(res.ContainerResponses, genericPluginResponse)
 	}
 
 	return res, nil
