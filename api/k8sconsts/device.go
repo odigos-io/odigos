@@ -1,7 +1,5 @@
 package k8sconsts
 
-type OdigosInstrumentationDevice string
-
 const (
 	// This is the resource namespace of the lister in k8s device plugin manager.
 	// from the "github.com/kubevirt/device-plugin-manager" package source:
