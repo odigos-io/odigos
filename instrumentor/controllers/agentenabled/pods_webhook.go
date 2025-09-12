@@ -321,7 +321,8 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	volumeMounted := false
 	containerDirsToCopy := make(map[string]struct{})
 	if distroMetadata.RuntimeAgent != nil {
-		if *config.MountMethod == common.K8sHostPathMountMethod || *config.MountMethod == common.K8sInitContainerMountMethod {
+		switch *config.MountMethod { // verfied as not nil in webhook start
+		case common.K8sHostPathMountMethod, common.K8sInitContainerMountMethod:
 			// mount directory only if the mount type is host-path or init container
 			for _, agentDirectoryName := range distroMetadata.RuntimeAgent.DirectoryNames {
 				containerDirsToCopy[agentDirectoryName] = struct{}{}
@@ -337,35 +338,13 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 				podswebhook.MountDirectory(podContainerSpec, filepath.Join(k8sconsts.OdigosAgentsDirectory, consts.OdigosLoaderDirName))
 				volumeMounted = true
 			}
+		case common.K8sVirtualDeviceMountMethod:
+			deviceName := *distroMetadata.RuntimeAgent.Device
+			podswebhook.InjectDeviceToContainer(podContainerSpec, deviceName)
 		}
 
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
 			podswebhook.InjectOtelResourceAndServiceNameEnvVars(existingEnvNames, podContainerSpec, distroName, pw, serviceName)
-		}
-		// TODO: once we have a flag to enable/disable device injection, we should check it here.
-		if distroMetadata.RuntimeAgent.Device != nil {
-
-			// amir 17 feb 2025, this is here only for migration.
-			// even if mount method is not device, we still need to inject the deprecated agent specific device
-			// while we remove them one by one
-			isGenericDevice := *distroMetadata.RuntimeAgent.Device == k8sconsts.OdigosGenericDeviceName
-			if *config.MountMethod == common.K8sVirtualDeviceMountMethod || !isGenericDevice {
-				deviceName := *distroMetadata.RuntimeAgent.Device
-				// TODO: currently devices are composed with glibc as input for dotnet.
-				// as devices will soon converge to a single device, I am hardcoding the logic here,
-				// which will eventually be removed once dotnet specific devices are removed.
-				if containerConfig.DistroParams != nil {
-					libcType, ok := containerConfig.DistroParams[common.LibcTypeDistroParameterName]
-					if ok {
-						libcPrefix := ""
-						if libcType == string(common.Musl) {
-							libcPrefix = "musl-"
-						}
-						deviceName = strings.ReplaceAll(deviceName, "{{param.LIBC_TYPE}}", libcPrefix)
-					}
-				}
-				podswebhook.InjectDeviceToContainer(podContainerSpec, deviceName)
-			}
 		}
 	}
 
