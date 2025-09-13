@@ -157,9 +157,10 @@ func TransformFieldsToDataAndSecrets(destTypeConfig *destinations.Destination, f
 			if fieldName == fieldConfig.Name {
 				if fieldConfig.Secret {
 					secretFields[fieldName] = fieldValue
-				} else {
-					dataFields[fieldName] = fieldValue
+					// Preserve the fact that the field is set so that we can act on that once it has been processed to a Destination.
+					fieldValue = "redacted"
 				}
+				dataFields[fieldName] = fieldValue
 			}
 		}
 	}

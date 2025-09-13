@@ -87,6 +87,10 @@ func (dest Destination) GetSignals() []common.ObservabilitySignal {
 	return dest.Spec.Signals
 }
 
+func (dest Destination) GetSecretRef() *v1.LocalObjectReference {
+	return dest.Spec.SecretRef
+}
+
 type SourceSelector struct {
 	// If a namespace is specified, all workloads (sources) within that namespace are allowed to send data.
 	// Example:

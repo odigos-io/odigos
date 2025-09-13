@@ -13,4 +13,22 @@ spec:
       supported: false
     logs:
       supported: true
-  fields: []
+  fields:
+    - name: GCP_TIMEOUT
+      displayName: Timeout
+      componentType: input
+      componentProps:
+        type: text
+        placeholder: 10s
+        tooltip: The request timeout in seconds for the Google Cloud Monitoring API.
+    - name: GCP_PROJECT_ID
+      displayName: Project ID
+      componentType: input
+      componentProps:
+        type: text
+        tooltip: The project ID for the Google Cloud Monitoring API.
+    - name: GCP_BILLING_PROJECT
+      displayName: Billing Project
+      componentType: input
+      componentProps:
+        type: text
