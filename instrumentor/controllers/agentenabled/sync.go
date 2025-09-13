@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -129,6 +130,14 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	return res, err
 }
 
+func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfig, newValue string) {
+	if ic.Spec.AgentsMetaHash == newValue {
+		return
+	}
+	ic.Spec.AgentsMetaHash = newValue
+	ic.Spec.AgentsMetaHashChangedTime = &metav1.Time{Time: time.Now()}
+}
+
 // this function receives a workload object, and updates the instrumentation config object ptr.
 // if the function returns without an error, it means the instrumentation config object was updated.
 // caller should persist the object to the API server.
@@ -146,7 +155,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	prerequisiteCompleted, reason, message := isReadyForInstrumentation(cg, ic)
 	if !prerequisiteCompleted {
 		ic.Spec.AgentInjectionEnabled = false
-		ic.Spec.AgentsMetaHash = ""
+		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		ic.Spec.Containers = []odigosv1.ContainerAgentConfig{}
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionUnknown,
@@ -210,7 +219,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		if err != nil {
 			return nil, err
 		}
-		ic.Spec.AgentsMetaHash = string(agentsDeploymentHash)
+		updateInstrumentationConfigAgentsMetaHash(ic, string(agentsDeploymentHash))
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
 			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
@@ -220,7 +229,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// if none of the containers are instrumented, we can set the status to false
 		// to signal to the webhook that those pods should not be processed.
 		ic.Spec.AgentInjectionEnabled = false
-		ic.Spec.AgentsMetaHash = ""
+		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		return aggregatedCondition, nil
 	}
 }
