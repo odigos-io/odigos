@@ -11,7 +11,7 @@ FROM public.ecr.aws/odigos/agents/nodejs-community:v0.0.4 AS nodejs-community
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
-ARG DOTNET_OTEL_VERSION=v1.9.0
+ARG DOTNET_OTEL_VERSION=v1.12.0
 ARG TARGETARCH
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
     echo "arm64" > /tmp/arch_suffix; \
@@ -143,7 +143,7 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 WORKDIR /instrumentations
 
 # Java
-ARG JAVA_OTEL_VERSION=v2.10.0
+ARG JAVA_OTEL_VERSION=v2.19.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
