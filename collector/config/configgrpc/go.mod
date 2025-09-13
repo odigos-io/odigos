@@ -1,8 +1,6 @@
 module go.opentelemetry.io/collector/config/configgrpc
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.23.0
 
 require (
 	github.com/mostynb/go-grpc-compression v1.2.3
@@ -52,7 +50,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/collector/confmap v1.36.0 // indirect
