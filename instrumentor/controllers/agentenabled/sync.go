@@ -131,7 +131,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	return res, err
 }
 
-func updateInstrumentationConfigMetaHash(ic *odigosv1.InstrumentationConfig, newValue string) {
+func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfig, newValue string) {
 	if ic.Spec.AgentsMetaHash == newValue {
 		return
 	}
@@ -156,7 +156,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	prerequisiteCompleted, reason, message := isReadyForInstrumentation(cg, ic)
 	if !prerequisiteCompleted {
 		ic.Spec.AgentInjectionEnabled = false
-		updateInstrumentationConfigMetaHash(ic, "")
+		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		ic.Spec.Containers = []odigosv1.ContainerAgentConfig{}
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionUnknown,
@@ -220,7 +220,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		if err != nil {
 			return nil, err
 		}
-		updateInstrumentationConfigMetaHash(ic, string(agentsDeploymentHash))
+		updateInstrumentationConfigAgentsMetaHash(ic, string(agentsDeploymentHash))
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
 			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
@@ -230,7 +230,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// if none of the containers are instrumented, we can set the status to false
 		// to signal to the webhook that those pods should not be processed.
 		ic.Spec.AgentInjectionEnabled = false
-		updateInstrumentationConfigMetaHash(ic, "")
+		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		return aggregatedCondition, nil
 	}
 }
