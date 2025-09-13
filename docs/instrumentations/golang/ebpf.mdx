@@ -16,7 +16,7 @@ import EbpfKernelVersionNote from '/snippets/ebpf-kernel-version-note.mdx';
 
 Odigos uses the official [opentelemetry-go-instrumentation](https://github.com/open-telemetry/opentelemetry-go-instrumentation) OpenTelemetry Auto Instrumentation using eBPF, thus it supports the same golang versions as this project.
 
-- Go runtime versions **1.17** and above are supported.
+- Go runtime versions **1.19** and above are supported.
 
 <EbpfKernelVersionNote />
 
@@ -77,3 +77,37 @@ versions of instrumented libraries.
 This precompiled list is updated to be up-to-date with every release of Odigos. But, this means that you may encounter errors instrumenting applications
 that use very newly released versions of dependencies. If this occurs, it will be resolved by updating to the next release of Odigos, or alternatively
 upgrading the locally-stored offsets with the [`odigos pro update-offsets`](/cli/odigos_pro_update-offsets) command.
+
+### Updating Offsets Between Versions
+
+It is possible to pull the latest Go library support for Odigos without updating the entire Odigos installation. There are 3 ways to do so:
+
+1. Manual updates (with [`odigos pro update-offsets`](/cli/odigos_pro_update-offsets)).
+2. Direct automatic updates (recommended, see below).
+3. Mirrored image automatic updates (for disconnected environments, see below).
+
+In both automatic modes, a Kubernetes CronJob is created which updates the locally stored Go library offsets used by the Odiglet. The differences
+between these modes and how to enable them are described below.
+
+#### Direct automatic updates
+
+In "direct" mode, the CronJob will pull the latest Go library offsets directly from the Odigos cloud server and apply it to the cluster. This
+option consumes the fewest resources but requires that your cluster has direct internet access to this file hosted on the web. If you have
+restricted Internet egress policies, see "mirrored image updates" below.
+
+Enable automatic updates on any standard cron schedule by setting the [`odigos config set go-auto-offsets-cron`](/cli/odigos_config) option to
+any valid cron schedule. For example, enable nightly updates at midnight with `odigos config set go-auto-offsets-cron "0 0 * * *"`.
+
+To disable automatic updates, set the cron value to an empty string with `odigos config set go-auto-offsets-cron ""`.
+
+#### Mirrored image automatic updates
+
+For clusters with restricted traffic policies, you have the option to [mirror the Go library updates as an image](/setup/docker-registry#install-odigos-images-from-a-custom-docker-registry).
+In this mode, the CronJob will run an image that contains the latest Go library offsets bundled into the image itself. This mode
+does not require direct Internet access from the cluster, but it does require you to mirror this image into your own registry and maintain
+the latest version on your nodes.
+
+To enable mirrored image updates, run `odigos config set go-auto-offsets-mode "image"`. Then use the `go-auto-offsets-cron` option described above to set the schedule.
+
+To disable mirrored image updates, run `odigos config set go-auto-offsets-mode "direct"` (to switch back to direct mode), or set the `go-auto-offsets-cron`
+setting to an empty string (`""`) as described above to disable automatic updates entirely.

@@ -1,3 +1,8 @@
+{{- $imageTag := .Values.image.tag | default .Chart.AppVersion -}}
+{{- $signals := .Values.signals | default (list "traces") -}}
+{{- $collectLogs := has "logs" $signals -}}
+{{- $collectMetrics := has "metrics" $signals -}}
+{{- $privilegedRequired := or $collectLogs $collectMetrics -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -22,11 +27,16 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: odiglet
+        odigos.io/collector-role: NODE_COLLECTOR
+      annotations:
+        kubectl.kubernetes.io/default-container: odiglet
     spec:
       {{- if .Values.nodeSelector }}
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
+      # if host mounts are not allowed we don't need the init container
+      {{- if not .Values.odiglet.noHostPathMounts }}
       initContainers:
         - name: init
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
@@ -41,21 +51,22 @@ spec:
           args:
             - init
           volumeMounts:
+          {{- if not .Values.odiglet.noHostPathMounts}}
             - name: odigos
               mountPath: /var/odigos
-            {{- if .Values.openshift.enabled }}
+          {{- if .Values.openshift.enabled }}
             - name: host
               mountPath: /host
               readOnly: true
             - name: selinux
               mountPath: /host/etc/selinux
               mountPropagation: Bidirectional
-            {{- end }}
+          {{- end }}
+          {{- end }}
           securityContext:
+          {{- if not .Values.odiglet.unPrivileged}}
             privileged: true
-            capabilities:
-              add:
-                - SYS_PTRACE
+          {{- end }}
           env:
             - name: NODE_NAME
               valueFrom:
@@ -78,7 +89,180 @@ spec:
                   resource: limits.cpu
           resources:
 {{ toYaml .Values.odiglet.initContainerResources | indent 12 }}
+      {{- end }} # end of optional init container
       containers:
+        - name: odiglet
+          {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+          {{- if include "odigos.secretExists" . }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
+          {{- else }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
+          {{- end }}
+          args:
+            - --health-probe-bind-port={{ .Values.odiglet.odiglet.livenessProbe.httpGet.port }}
+          command:
+            - /root/odiglet
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            {{- if not .Values.odiglet.unPrivileged }}
+            privileged: true
+            {{- else }}
+            privileged: false
+            capabilities:
+              add:
+                - BPF
+                - PERFMON
+                - SYS_PTRACE
+                - DAC_READ_SEARCH
+              drop:
+                - ALL
+            {{- end }}
+          livenessProbe:
+{{ toYaml .Values.odiglet.odiglet.livenessProbe | indent 12 }}
+          readinessProbe:
+{{ toYaml .Values.odiglet.odiglet.readinessProbe | indent 12 }}
+          resources:
+{{ include "odigos.odiglet.resolvedResources" . | indent 12 }}
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
+            - name: CONTAINER_RUNTIME_SOCK
+              value: {{ .Values.odiglet.customContainerRuntimeSocketPath }}
+          {{- end }}
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: CURRENT_NS
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OTEL_LOG_LEVEL
+              value: info
+          {{- if include "odigos.secretExists" . }}
+            - name: OTEL_GO_OFFSETS_FILE
+              value: /offsets/go_offset_results.json
+            - name: ODIGOS_ONPREM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-pro
+                  key: odigos-onprem-token
+          {{- end }}
+            - name: GOMEMLIMIT
+              value: {{ include "odigos.odiglet.gomemlimitFromLimit" . }}
+          {{- if .Values.odiglet.noHostPid }}
+            - name: ODIGOS_PROC_DIR
+              value: /hostproc
+          {{- end}}
+          envFrom:
+            - configMapRef:
+                name: odigos-own-telemetry-otel-config
+                optional: true
+          volumeMounts:
+          {{- if not .Values.odiglet.noHostPathMounts }}
+            - name: run-dir
+              mountPath: /run
+             {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
+            - name: custom-container-runtime-socket
+              mountPath: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
+             {{- end }}
+             {{- if .Values.openshift.enabled }}
+            - name: host
+              mountPath: /host
+              readOnly: true
+            - name: selinux
+              mountPath: /host/etc/selinux
+              mountPropagation: Bidirectional
+             {{- end }}
+            - name: odigos
+              mountPath: /var/odigos
+              readOnly: true
+          {{- end }} # end of optional hostPath mounts
+          {{- if .Values.odiglet.noHostPid }}
+            - name: hostproc
+              mountPath: /hostproc
+          {{- end }}
+             # needed to load eBPF tracepoints - used by runtime-detector
+            - name: sys-kernel
+              mountPath: /sys/kernel
+            - name: odigos-go-offsets
+              mountPath: /offsets
+        - name: data-collection
+          image: '{{ template "utils.imageName" (dict "Values" .Values "Component" "collector" "Tag" $imageTag) }}'
+          imagePullPolicy: IfNotPresent
+          command:
+            - /odigosotelcol
+          args:
+            - --config=k8scm:{{ .Release.Namespace }}/odigos-data-collection/conf
+          securityContext:
+            privileged: {{ $privilegedRequired | toYaml }}
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+{{- $nodeLimiter := include "collector.node.memoryLimiter" . | fromYaml }}
+            - name: GOMEMLIMIT
+              value: "{{ $nodeLimiter.goMiB }}MiB"
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: data-collection
+                  resource: limits.cpu
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          resources:
+            requests:
+              memory: "{{ include "collector.node.memoryRequest" . }}Mi"
+              cpu: "{{ include "collector.node.cpuRequest" . }}m"
+            limits:
+              memory: "{{ include "collector.node.memoryLimit" . }}Mi"
+              cpu: "{{ include "collector.node.cpuLimit" . }}m"
+          volumeMounts:
+            {{- if $collectLogs }}
+            - name: varlog
+              mountPath: /var/log
+              readOnly: true
+            - name: varlibdockercontainers
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+            {{- $logsDir := .Values.collectorNode.k8sNodeLogsDirectory | default "" -}}
+            {{- if $logsDir }}
+            - name: logs-symlink-target
+              mountPath: {{ $logsDir }}
+              readOnly: true
+            {{- end }}
+            {{- end }}
+            {{- if $collectMetrics }}
+            - name: hostfs
+              mountPath: /hostfs
+              readOnly: true
+            {{- end }}
+# if hostMounts are not allowed we must use mountMethod of "k8s-init-container"
+{{- if and (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) (.Values.odiglet.noHostPathMounts) }}
+{{ fail "if HostPath mounts are not allowed mount method must be k8s-init-container" }}
+{{- end }}
+# to use device plugins we need to have the "k8s-virtual-device" mount method or non specified (default)
+# and to have hostMounts allowed
+{{- if and (or (eq .Values.instrumentor.mountMethod "") (eq .Values.instrumentor.mountMethod "k8s-virtual-device")) (not .Values.odiglet.noHostPathMounts) }}
         - name: deviceplugin
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           {{- if include "odigos.secretExists" . }}
@@ -112,144 +296,92 @@ spec:
               command:
                 - /root/grpc_health_probe
                 - -addr=unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic
-            initialDelaySeconds: 5
-            failureThreshold: 1
+                - -connect-timeout=10s
+                - -rpc-timeout=10s
+            initialDelaySeconds: 10
+            failureThreshold: 3
             periodSeconds: 10
+            timeoutSeconds: 10
           readinessProbe:
             exec:
               command:
                 - /root/grpc_health_probe
                 - -addr=unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic
-            initialDelaySeconds: 5
-            failureThreshold: 1
+                - -connect-timeout=10s
+                - -rpc-timeout=10s
+            initialDelaySeconds: 10
+            failureThreshold: 3
             periodSeconds: 10
-        - name: odiglet
-          {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          {{- if include "odigos.secretExists" . }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
-          {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
-          {{- end }}
-          args:
-            - --health-probe-bind-port={{ .Values.odiglet.readinessAndLivenessProbePort }}
-          command:
-            - /root/odiglet
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-            capabilities:
-              add:
-                - SYS_PTRACE
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
-            initialDelaySeconds: 15
-            periodSeconds: 20
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: {{ .Values.odiglet.readinessAndLivenessProbePort }}
-            periodSeconds: 10
-          resources:
-{{ include "odigos.odiglet.resolvedResources" . | indent 12 }}
-          env:
-            - name: NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
-            - name: CONTAINER_RUNTIME_SOCK
-              value: {{ .Values.odiglet.customContainerRuntimeSocketPath }}
-            {{- end }}
-            - name: NODE_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
-            - name: CURRENT_NS
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: OTEL_LOG_LEVEL
-              value: info
-            {{- if include "odigos.secretExists" . }}
-            - name: OTEL_GO_OFFSETS_FILE
-              value: /offsets/go_offset_results.json
-            - name: ODIGOS_ONPREM_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: odigos-pro
-                  key: odigos-onprem-token
-            {{- end }}
-            - name: GOMEMLIMIT
-              value: {{ include "odigos.odiglet.gomemlimitFromLimit" . }}
-          envFrom:
-            - configMapRef:
-                name: odigos-own-telemetry-otel-config
-                optional: true
-          volumeMounts:
-            - name: run-dir
-              mountPath: /run
-            {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
-            - name: custom-container-runtime-socket
-              mountPath: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
-            {{- end }}
-            {{- if .Values.openshift.enabled }}
-            - name: host
-              mountPath: /host
-              readOnly: true
-            - name: selinux
-              mountPath: /host/etc/selinux
-              mountPropagation: Bidirectional
-            {{- end }}
-            - name: odigos
-              mountPath: /var/odigos
-              readOnly: true
-            - name: kernel-debug
-              mountPath: /sys/kernel/debug
-            - name: odigos-go-offsets
-              mountPath: /offsets
+            timeoutSeconds: 10
+{{- end }}
       {{- $version := include "utils.cleanKubeVersion" . }}
       {{- if semverCompare "<1.26.0" $version }}
       hostNetwork: true
       {{- end}}
+      {{- if not .Values.odiglet.noHostPid }}
       hostPID: true
+      {{- end }}
       dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical
       serviceAccountName: odiglet
       volumes:
+        {{- if $collectLogs }}
+        - name: varlog
+          hostPath:
+            path: /var/log
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
+        {{- $logsDir := .Values.collectorNode.k8sNodeLogsDirectory | default "" -}}
+        {{- if $logsDir }}
+        - name: logs-symlink-target
+          hostPath:
+            path: {{ $logsDir }}
+        {{- end }}
+        {{- end }}
+        {{- if $collectMetrics }}
+        - name: hostfs
+          hostPath:
+            path: /
+        {{- end }}
+      {{- if not .Values.odiglet.noHostPathMounts }}
         - name: run-dir
           hostPath:
             path: /run
-        {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
+         {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
         - name: custom-container-runtime-socket
           hostPath:
             path: {{ dir .Values.odiglet.customContainerRuntimeSocketPath }}
-        {{- end }}
-        {{- if .Values.openshift.enabled }}
+         {{- end }}
+         {{- if .Values.openshift.enabled }}
         - name: host
           hostPath:
             path: /
         - name: selinux
           hostPath:
             path: /etc/selinux
-        {{- end }}
+         {{- end }}
         - name: device-plugins-dir
           hostPath:
             path: /var/lib/kubelet/device-plugins
         - name: odigos
           hostPath:
             path: /var/odigos
-        - name: kernel-debug
+      {{- end }} # end of hostPath mounts that are not mandatory
+        # needed to load eBPF tracepoints - used by runtime-detector
+      {{- if .Values.odiglet.noHostPid }}
+        - name: hostproc
           hostPath:
-            path: /sys/kernel/debug
+            path: /proc
+            type: Directory
+      {{- end }}
+        - name: sys-kernel
+          hostPath:
+            path: /sys/kernel
         - name: odigos-go-offsets
           configMap:
             name: odigos-go-offsets
-{{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 6 }}
-{{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.odiglet }}
   {{- if .nodeSelector }}
       nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}

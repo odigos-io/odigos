@@ -10,14 +10,11 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/sizing"
 	"github.com/odigos-io/odigos/profiles"
 	"github.com/odigos-io/odigos/profiles/manifests"
-	"github.com/odigos-io/odigos/profiles/sizing"
 
-	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -25,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,7 +47,6 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
 	odigosConfiguration := common.OdigosConfiguration{}
 	err = yaml.Unmarshal([]byte(odigosConfigMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
 	if err != nil {
@@ -90,21 +85,15 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	modifyConfigWithEffectiveProfiles(effectiveProfiles, &odigosConfiguration)
 	odigosConfiguration.Profiles = effectiveProfiles
 
-	// if none of the profiles set sizing for collectors, use size_s as default, so the values are never nil
-	// if the values were already set (by user or profile) this is a no-op
-	sizing.SizeSProfile.ModifyConfigFunc(&odigosConfiguration)
+	effectiveSizing := sizing.ComputeResourceSizePreset(&odigosConfiguration)
+	odigosConfiguration.CollectorGateway = &effectiveSizing.CollectorGatewayConfig
+	odigosConfiguration.CollectorNode = &effectiveSizing.CollectorNodeConfig
 
 	// TODO: revisit doing this here, might be nicer to maintain in a more generic way
 	// and have it on the config object itself.
 	// I want to preserve that user input (specific request or empty), and persist the resolved value in effective config.
 	resolveMountMethod(&odigosConfiguration)
 	resolveEnvInjectionMethod(&odigosConfiguration)
-
-	// Handle the Go offsets CronJob
-	err = r.handleGoOffsetsCronJob(ctx, &odigosConfiguration, env.GetCurrentNamespace())
-	if err != nil {
-		return ctrl.Result{}, err
-	}
 
 	err = r.persistEffectiveConfig(ctx, &odigosConfiguration, odigosConfigMap)
 	if err != nil {
@@ -179,120 +168,6 @@ func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Conte
 	return nil
 }
 
-func (r *odigosConfigurationController) handleGoOffsetsCronJob(ctx context.Context, config *common.OdigosConfiguration, ns string) error {
-	// Get the Kubernetes server version to determine the API version to use for the CronJob
-	cfg := ctrl.GetConfigOrDie()
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes server version: %v", err)
-	}
-	verInfo, err := discoveryClient.ServerVersion()
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes server version: %v", err)
-	}
-	apiVersion := "batch/v1beta1"
-	if verInfo.Minor >= "21" {
-		apiVersion = "batch/v1"
-	}
-
-	if config.GoAutoOffsetsCron == "" {
-		return deleteCronJob(ctx, r.Client, ns, apiVersion)
-	}
-
-	typeMeta := metav1.TypeMeta{
-		Kind:       "CronJob",
-		APIVersion: apiVersion,
-	}
-	objectMeta := metav1.ObjectMeta{
-		Name:      k8sconsts.OffsetCronJobName,
-		Namespace: ns,
-		Labels: map[string]string{
-			k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue,
-		},
-	}
-	template := corev1.PodTemplateSpec{
-		Spec: corev1.PodSpec{
-			ServiceAccountName: k8sconsts.SchedulerServiceAccountName,
-			Containers: []corev1.Container{
-				{
-					Name:  k8sconsts.CliImageName,
-					Image: fmt.Sprintf("%s/%s:%s", config.ImagePrefix, k8sconsts.CliImageName, r.OdigosVersion),
-					Args:  []string{"pro", "update-offsets"},
-				},
-			},
-			RestartPolicy: corev1.RestartPolicyNever,
-		},
-	}
-
-	if apiVersion == "batch/v1beta1" {
-		cronJob := &batchv1beta1.CronJob{
-			TypeMeta:   typeMeta,
-			ObjectMeta: objectMeta,
-			Spec: batchv1beta1.CronJobSpec{
-				Schedule: config.GoAutoOffsetsCron,
-				JobTemplate: batchv1beta1.JobTemplateSpec{
-					Spec: batchv1.JobSpec{
-						Template: template,
-					},
-				},
-			},
-		}
-		return applyCronJob(ctx, r.Client, ns, cronJob, config)
-	}
-	cronJob := &batchv1.CronJob{
-		TypeMeta:   typeMeta,
-		ObjectMeta: objectMeta,
-		Spec: batchv1.CronJobSpec{
-			Schedule: config.GoAutoOffsetsCron,
-			JobTemplate: batchv1.JobTemplateSpec{
-				Spec: batchv1.JobSpec{
-					Template: template,
-				},
-			},
-		},
-	}
-	return applyCronJob(ctx, r.Client, ns, cronJob, config)
-}
-
-func deleteCronJob(ctx context.Context, kubeClient client.Client, ns string, apiVersion string) error {
-	var cronJob client.Object
-	if apiVersion == "batch/v1" {
-		cronJob = &batchv1.CronJob{}
-	} else {
-		cronJob = &batchv1beta1.CronJob{}
-	}
-	err := kubeClient.Get(ctx, types.NamespacedName{Namespace: ns, Name: k8sconsts.OffsetCronJobName}, cronJob)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-	err = kubeClient.Delete(ctx, cronJob)
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete go offsets CronJob: %v", err)
-		}
-		return nil
-	}
-	return nil
-}
-
-func applyCronJob(ctx context.Context, kubeClient client.Client, ns string, cronJob client.Object, config *common.OdigosConfiguration) error {
-	// Apply the CronJob
-	objApplyBytes, err := yaml.Marshal(cronJob)
-	if err != nil {
-		return err
-	}
-
-	err = kubeClient.Patch(ctx, cronJob, client.RawPatch(types.ApplyYAMLPatchType, objApplyBytes), client.ForceOwnership, client.FieldOwner("scheduler-odigosconfig"))
-	if err != nil {
-		return fmt.Errorf("failed to apply go offsets CronJob: %v", err)
-	}
-
-	return nil
-}
-
 func (r *odigosConfigurationController) applyProfileManifests(ctx context.Context, effectiveProfiles []common.ProfileName) error {
 
 	profileDeploymentHash := calculateProfilesDeploymentHash(effectiveProfiles, r.OdigosVersion)
@@ -345,16 +220,37 @@ func (r *odigosConfigurationController) applyProfileManifests(ctx context.Contex
 		}
 	}
 
+	ActionsList := odigosv1alpha1.ActionList{}
+	err = r.Client.List(ctx, &ActionsList, listOptions)
+	if err != nil {
+		return err
+	}
+
+	for i := range ActionsList.Items {
+		err = r.Client.Delete(ctx, &ActionsList.Items[i])
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 func (r *odigosConfigurationController) applySingleProfileManifest(ctx context.Context, profileName common.ProfileName, yamlBytes []byte, profileDeploymentHash string) error {
-
 	obj := &unstructured.Unstructured{}
 	err := yaml.Unmarshal(yamlBytes, obj)
 	if err != nil {
 		return err
 	}
+
+	odigosNs := env.GetCurrentNamespace()
+
+	// profiles are read without namespace, and we need to add it ourselves.
+	// the namespace is usually odigos-system, but user can set it to anything,
+	// which is why we need to address it here.
+	// the namespace is set on the object itself, but not in the yamlbytes for the apply,
+	// which is ok and works (the applied object takes the namespace from the object)
+	obj.SetNamespace(odigosNs)
 
 	labels := obj.GetLabels()
 	if labels == nil {
@@ -382,7 +278,7 @@ func (r *odigosConfigurationController) applySingleProfileManifest(ctx context.C
 		Resource: resource,
 	}
 
-	resourceClient := r.DynamicClient.Resource(gvr).Namespace(env.GetCurrentNamespace())
+	resourceClient := r.DynamicClient.Resource(gvr).Namespace(odigosNs)
 	_, err = resourceClient.Apply(ctx, obj.GetName(), obj, metav1.ApplyOptions{
 		FieldManager: "scheduler-odigosconfiguration",
 		Force:        true,
@@ -415,6 +311,8 @@ func resolveMountMethod(odigosConfiguration *common.OdigosConfiguration) {
 	case common.K8sHostPathMountMethod:
 		return
 	case common.K8sVirtualDeviceMountMethod:
+		return
+	case common.K8sInitContainerMountMethod:
 		return
 	default:
 		// any illegal value will be defaulted to host-path

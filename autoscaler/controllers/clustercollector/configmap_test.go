@@ -1,7 +1,6 @@
 package clustercollector
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -68,7 +67,7 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 				},
 				Processors: config.GenericMap{
 					"memory_limiter": config.GenericMap{
-						"check_interval": "1s",
+						"check_interval": "500ms",
 					},
 					"resource/odigos-version": config.GenericMap{
 						"attributes": []config.GenericMap{
@@ -104,20 +103,23 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			c := tc.cfg
-			err := addSelfTelemetryPipeline(c, 1234, []string{}, []string{})
+			err := addSelfTelemetryPipeline(c, k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault, []string{"traces/user-pipeline"}, []string{})
 			if !assert.ErrorIs(t, err, tc.err) {
 				return
 			}
 			if err != nil {
 				return
 			}
-			assert.NotEmpty(t, c.Receivers["prometheus"])
+			assert.NotEmpty(t, c.Receivers["prometheus/self-metrics"])
 			assert.NotEmpty(t, c.Processors["resource/pod-name"])
 			assert.NotEmpty(t, c.Service.Pipelines["metrics/otelcol"])
-			assert.Equal(t, []string{"prometheus"}, c.Service.Pipelines["metrics/otelcol"].Receivers)
+			assert.Equal(t, []string{"prometheus/self-metrics"}, c.Service.Pipelines["metrics/otelcol"].Receivers)
 			assert.Equal(t, []string{"resource/pod-name"}, c.Service.Pipelines["metrics/otelcol"].Processors)
-			assert.Equal(t, []string{"otlp/ui"}, c.Service.Pipelines["metrics/otelcol"].Exporters)
-			assert.Equal(t, fmt.Sprintf("0.0.0.0:%d", k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault), c.Service.Telemetry.Metrics["address"])
+			assert.Equal(t, []string{"otlp/odigos-own-telemetry-ui"}, c.Service.Pipelines["metrics/otelcol"].Exporters)
+			port := c.Service.Telemetry.Metrics["readers"].([]config.GenericMap)[0]["pull"].(config.GenericMap)["exporter"].(config.GenericMap)["prometheus"].(config.GenericMap)["port"]
+			address := c.Service.Telemetry.Metrics["readers"].([]config.GenericMap)[0]["pull"].(config.GenericMap)["exporter"].(config.GenericMap)["prometheus"].(config.GenericMap)["host"]
+			assert.Equal(t, k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault, port)
+			assert.Equal(t, "0.0.0.0", address)
 			for pipelineName, pipeline := range c.Service.Pipelines {
 				if pipelineName == "metrics/otelcol" {
 					assert.NotContains(t, pipeline.Processors, "odigostrafficmetrics")

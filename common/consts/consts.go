@@ -18,15 +18,6 @@ const (
 	OTLPHttpPort                = 4318
 	PprofOdigosPort             = 6060
 
-	// Deprecated: Sources are used to mark workloads for instrumentation.
-	OdigosInstrumentationLabel = "odigos-instrumentation"
-
-	// Deprecated: Sources are used to mark workloads for instrumentation.
-	InstrumentationEnabled = "enabled"
-
-	// Deprecated: Sources are used to mark workloads for instrumentation.
-	InstrumentationDisabled = "disabled"
-
 	// DefaultDataStream is the default data stream name used for telemetry data.
 	DefaultDataStream = "default"
 
@@ -98,6 +89,12 @@ const (
 	OdigletHealthProbeBindPortProperty = "odiglet-health-probe-bind-port"
 	ServiceGraphDisabledProperty       = "service-graph-disabled"
 	GoAutoOffsetsCronProperty          = "go-auto-offsets-cron"
+	GoAutoOffsetsModeProperty          = "go-auto-offsets-mode"
+	ClickhouseJsonTypeEnabledProperty  = "clickhouse-json-type-enabled"
+	AllowedTestConnectionHostsProperty = "allowed-test-connection-hosts"
+	EnableDataCompressionProperty      = "enable-data-compression"
+	ResourceSizePresetProperty         = "resource-size-preset"
+	WaspEnabledProperty                = "wasp-enabled"
 )
 
 var (
@@ -129,7 +126,6 @@ const (
 const (
 	GenericBatchProcessorConfigKey = "batch/generic-batch-processor"
 	SmallBatchesProcessor          = "batch/small-batches"
-	MemoryLimiterExtensionKey      = "memory_limiter"
 )
 
 // Auto rollback related consts

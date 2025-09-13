@@ -7,14 +7,14 @@ on:
       - main
 
 jobs:
-  build-autoscaler:
-    name: build-autoscaler
+  build-and-test-autoscaler:
+    name: build-and-test-autoscaler
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build Autoscaler Image
@@ -26,6 +26,10 @@ jobs:
           provenance: false
           build-args: SERVICE_NAME=autoscaler
           file: ${{ matrix.dockerfile }}
+      - name: run tests
+        working-directory: ./autoscaler
+        run: |
+          make test
 
   build-scheduler:
     name: build-scheduler
@@ -34,7 +38,7 @@ jobs:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build Scheduler Image
@@ -47,6 +51,26 @@ jobs:
           build-args: SERVICE_NAME=scheduler
           file: ${{ matrix.dockerfile }}
 
+  build-agents:
+    name: build-agents
+    strategy:
+      matrix:
+        dockerfile: ['agents/Dockerfile', 'agents/Dockerfile.rhel']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Agents Image
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: agents:pr-${{ github.event.number }}
+          provenance: false
+          file: ${{ matrix.dockerfile }}
+          build-args: SERVICE_NAME=agents
+
   build-and-test-instrumentor:
     name: build-and-test-instrumentor
     strategy:
@@ -54,7 +78,7 @@ jobs:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - uses: actions/setup-go@v5
@@ -81,7 +105,7 @@ jobs:
         dockerfile: ['collector/Dockerfile', 'collector/Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: build Odigos Collector Image
@@ -104,7 +128,7 @@ jobs:
         dockerfile: ['odiglet/Dockerfile', 'odiglet/Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Set up QEMU
@@ -133,7 +157,7 @@ jobs:
         dockerfile: ['frontend/Dockerfile', 'frontend/Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build Frontend Image
@@ -153,7 +177,7 @@ jobs:
         dockerfile: ['operator/Dockerfile', 'operator/Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build Operator Image
@@ -169,7 +193,7 @@ jobs:
   build-cli:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -183,7 +207,7 @@ jobs:
   test-k8sutils:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24.0'
@@ -195,7 +219,7 @@ jobs:
   test-common:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24.0'
@@ -207,7 +231,7 @@ jobs:
   test-procdiscovery:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24.0'

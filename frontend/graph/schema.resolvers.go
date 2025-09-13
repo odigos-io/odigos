@@ -8,12 +8,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -24,6 +25,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	yaml "gopkg.in/yaml.v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -101,42 +103,23 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 }
 
 // Sources is the resolver for the sources field.
-func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform, nextPage string) (*model.PaginatedSources, error) {
-	limit, _ := services.GetPageLimit(ctx)
-	icList, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
-		Limit:    int64(limit),
-		Continue: nextPage,
-	})
-
+func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
+	icList, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
 	if err != nil {
-		if strings.Contains(err.Error(), "The provided continue parameter is too old") {
-			// Retry without the continue token
-			icList, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{
-				Limit: int64(limit),
-			})
-
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
-	var actualSources []*model.K8sActualSource
+	sources := make([]*model.K8sActualSource, 0)
 	for _, ic := range icList.Items {
 		dataStreamNames := services.ExtractDataStreamsFromInstrumentationConfig(&ic)
-		actualSource, err := instrumentationConfigToActualSource(ctx, ic, dataStreamNames)
+		source, err := instrumentationConfigToActualSource(ctx, ic, dataStreamNames)
 		if err != nil {
 			return nil, err
 		}
-		actualSources = append(actualSources, actualSource)
+		sources = append(sources, source)
 	}
 
-	return &model.PaginatedSources{
-		NextPage: icList.GetContinue(),
-		Items:    actualSources,
-	}, nil
+	return sources, nil
 }
 
 // Source is the resolver for the source field.
@@ -491,6 +474,57 @@ func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bo
 	return err == nil, nil
 }
 
+// UpdateOdigosConfig is the resolver for the updateOdigosConfig field.
+func (r *mutationResolver) UpdateOdigosConfig(ctx context.Context, odigosConfig model.OdigosConfigurationInput) (bool, error) {
+	ns := env.GetCurrentNamespace()
+	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+	if err != nil {
+		return false, fmt.Errorf("failed to get odigos configuration: %v", err)
+	}
+
+	cfg, err := convertOdigosConfigToK8s(&odigosConfig)
+	if err != nil {
+		return false, fmt.Errorf("failed to convert odigos configuration: %v", err)
+	}
+
+	if cfg.Oidc != nil && cfg.Oidc.ClientSecret != "" {
+		// ensure the oidc secret exists and is updated
+		err = services.EnsureOidcSecret(ctx, cfg.Oidc.ClientSecret)
+		if err != nil {
+			return false, fmt.Errorf("failed to ensure oidc secret: %v", err)
+		}
+		// update the odigos configmap with the secret ref
+		cfg.Oidc.ClientSecret = fmt.Sprintf("secretRef:%s", consts.OidcSecretName)
+	}
+
+	yamlBytes, err := yaml.Marshal(cfg)
+	if err != nil {
+		return false, fmt.Errorf("failed to marshal odigos configuration: %v", err)
+	}
+
+	// Update the config map
+	if cm.Data == nil {
+		cm.Data = make(map[string]string)
+	}
+	cm.Data[consts.OdigosConfigurationFileName] = string(yamlBytes)
+
+	_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
+	if err != nil {
+		return false, fmt.Errorf("failed to update odigos configuration: %v", err)
+	}
+
+	return true, nil
+}
+
+// UninstrumentCluster is the resolver for the uninstrumentCluster field.
+func (r *mutationResolver) UninstrumentCluster(ctx context.Context) (bool, error) {
+	err := services.UninstrumentCluster(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to uninstrument cluster: %v", err)
+	}
+	return true, nil
+}
+
 // PersistK8sNamespaces is the resolver for the persistK8sNamespaces field.
 func (r *mutationResolver) PersistK8sNamespaces(ctx context.Context, namespaces []*model.PersistNamespaceItemInput) (bool, error) {
 	persistObjects := []*model.PersistNamespaceSourceInput{}
@@ -629,6 +663,11 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 	dataField, secretFields := services.TransformFieldsToDataAndSecrets(destTypeConfig, fieldsMap)
 	generateNamePrefix := "odigos.io.dest." + string(destType) + "-"
 
+	disabled := false
+	if destination.Disabled != nil {
+		disabled = *destination.Disabled
+	}
+
 	k8sDestination := v1alpha1.Destination{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: generateNamePrefix,
@@ -638,6 +677,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 			DestinationName: destName,
 			Data:            dataField,
 			Signals:         services.ExportedSignalsObjectToSlice(destination.ExportedSignals),
+			Disabled:        &disabled,
 		},
 	}
 	if destination.CurrentStreamName != "" {
@@ -766,6 +806,9 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	dest.Spec.DestinationName = destName
 	dest.Spec.Data = dataFields
 	dest.Spec.Signals = services.ExportedSignalsObjectToSlice(destination.ExportedSignals)
+	if destination.Disabled != nil {
+		dest.Spec.Disabled = destination.Disabled
+	}
 
 	if destination.CurrentStreamName != "" {
 		// Init empty struct if nil
@@ -828,6 +871,20 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 
 	if !destConfig.Spec.TestConnectionSupported {
 		return nil, fmt.Errorf("destination type %s does not support test connection", destination.Type)
+	}
+
+	// Validate URLs for test connection based on AllowedTestConnectionHosts configuration
+	err = services.ValidateDestinationURLs(ctx, destination)
+	if err != nil {
+		errMsg := err.Error()
+		reason := string(testconnection.FailedToConnect)
+		return &model.TestConnectionResponse{
+			Succeeded:       false,
+			StatusCode:      403,
+			DestinationType: (*string)(&destType),
+			Message:         &errMsg,
+			Reason:          &reason,
+		}, nil
 	}
 
 	configurer, err := testconnection.ConvertDestinationToConfigurer(destination)
@@ -1092,6 +1149,34 @@ func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, e
 	return &config, nil
 }
 
+// OdigosConfig is the resolver for the odigosConfig field.
+func (r *queryResolver) OdigosConfig(ctx context.Context) (*model.OdigosConfiguration, error) {
+	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get odigos configuration: %v", err)
+	}
+
+	cfg := common.OdigosConfiguration{}
+	err = yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal odigos configuration: %v", err)
+	}
+
+	odigosConfig, err := convertOdigosConfigToGql(&cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert odigos configuration: %v", err)
+	}
+	if odigosConfig.Oidc != nil {
+		oidcSecret, err := services.GetOidcSecret(ctx)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return nil, fmt.Errorf("failed to get oidc secret: %v", err)
+		}
+		odigosConfig.Oidc.ClientSecret = &oidcSecret
+	}
+
+	return odigosConfig, nil
+}
+
 // DestinationCategories is the resolver for the destinationCategories field.
 func (r *queryResolver) DestinationCategories(ctx context.Context) (*model.GetDestinationCategories, error) {
 	destTypes := services.GetDestinationCategories()
@@ -1101,15 +1186,14 @@ func (r *queryResolver) DestinationCategories(ctx context.Context) (*model.GetDe
 
 // PotentialDestinations is the resolver for the potentialDestinations field.
 func (r *queryResolver) PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error) {
+	result := make([]*model.DestinationDetails, 0)
+
 	potentialDestinations := services.PotentialDestinations(ctx)
 	if potentialDestinations == nil {
-		return nil, fmt.Errorf("failed to fetch potential destinations")
+		return result, nil
 	}
 
-	// Convert []destination_recognition.DestinationDetails to []*DestinationDetails
-	var result []*model.DestinationDetails
 	for _, dest := range potentialDestinations {
-
 		fieldsString, err := json.Marshal(dest.Fields)
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling fields: %v", err)
@@ -1201,6 +1285,61 @@ func (r *queryResolver) DescribeSource(ctx context.Context, namespace string, ki
 // SourceConditions is the resolver for the sourceConditions field.
 func (r *queryResolver) SourceConditions(ctx context.Context) ([]*model.SourceConditions, error) {
 	return services.GetOtherConditionsForSources(ctx, "", "", "")
+}
+
+// InstrumentationInstanceComponents is the resolver for the instrumentationInstanceComponents field.
+func (r *queryResolver) InstrumentationInstanceComponents(ctx context.Context, namespace string, kind string, name string) ([]*model.InstrumentationInstanceComponent, error) {
+	instances, err := services.GetInstrumentationInstances(ctx, namespace, name, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return empty components if no instrumentation instances found
+	if len(instances) == 0 {
+		return []*model.InstrumentationInstanceComponent{}, nil
+	}
+
+	components := make([]*model.InstrumentationInstanceComponent, 0)
+	seenNames := make(map[string]bool)
+
+	for _, instance := range instances {
+		for _, component := range instance.Status.Components {
+			nonIdentifyingAttributes := make([]*model.NonIdentifyingAttribute, 0)
+
+			for _, attribute := range component.NonIdentifyingAttributes {
+				nonIdentifyingAttributes = append(nonIdentifyingAttributes, &model.NonIdentifyingAttribute{
+					Key:   attribute.Key,
+					Value: attribute.Value,
+				})
+			}
+
+			if _, ok := seenNames[component.Name]; !ok {
+				seenNames[component.Name] = true
+				components = append(components, &model.InstrumentationInstanceComponent{
+					Name:                     component.Name,
+					NonIdentifyingAttributes: nonIdentifyingAttributes,
+				})
+			}
+		}
+	}
+
+	return components, nil
+}
+
+// Workloads is the resolver for the workloads field.
+func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error) {
+	l := loaders.For(ctx)
+	err := l.SetFilters(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	sources := make([]*model.K8sWorkload, 0)
+	for _, sourceId := range l.GetWorkloadIds() {
+		sources = append(sources, &model.K8sWorkload{
+			ID: &sourceId,
+		})
+	}
+	return sources, nil
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.

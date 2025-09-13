@@ -89,7 +89,7 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 			},
 			{ // apply profiles
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"processors", "instrumentationrules"},
+				Resources: []string{"processors", "instrumentationrules", "actions"},
 				Verbs:     []string{"get", "list", "watch", "patch", "delete", "create"},
 			},
 			{ // read odigos pro token
@@ -108,6 +108,12 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				Resources:     []string{"daemonsets"},
 				ResourceNames: []string{k8sconsts.OdigletDaemonSetName},
 				Verbs:         []string{"patch"},
+			},
+			{
+				APIGroups:     []string{"apps"},
+				Resources:     []string{"deployments"},
+				ResourceNames: []string{k8sconsts.SchedulerDeploymentName},
+				Verbs:         []string{"get", "list", "watch"},
 			},
 		},
 	}
@@ -312,7 +318,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 									},
 								},
 								InitialDelaySeconds: 15,
-								TimeoutSeconds:      0,
+								TimeoutSeconds:      5,
 								PeriodSeconds:       20,
 								SuccessThreshold:    0,
 								FailureThreshold:    0,
@@ -328,7 +334,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 									},
 								},
 								InitialDelaySeconds: 15,
-								TimeoutSeconds:      0,
+								TimeoutSeconds:      5,
 								PeriodSeconds:       20,
 								SuccessThreshold:    0,
 								FailureThreshold:    0,

@@ -71,7 +71,7 @@ const (
 	MarkedForInstrumentationReasonError MarkedForInstrumentationReason = "RetirableError"
 )
 
-// +kubebuilder:validation:Enum=DetectedSuccessfully;WaitingForDetection;NoRunningPods;Error
+// +kubebuilder:validation:Enum=NotMakredForInstrumentation;DetectedSuccessfully;WaitingForDetection;NoRunningPods;Error
 type RuntimeDetectionReason string
 
 const (
@@ -219,7 +219,11 @@ type RuntimeDetailsByContainer struct {
 	// nil means we were unable to determine the secure-execution mode.
 	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
 
-	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
+	// CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+	// Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+	// Thus, this field is set only when there is:
+	// - Actual CRI check failed
+	// - The observed environment variables might come from container runtime
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
 	// Holds the environment variables retrieved from the container runtime.
 	EnvFromContainerRuntime []EnvVar `json:"envFromContainerRuntime,omitempty"`
@@ -290,13 +294,11 @@ type ContainerAgentConfig struct {
 	// Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
 	DistroParams map[string]string `json:"distroParams,omitempty"`
 
-	// this value is calculated (at the moment) based on the config, runtime inspection and the user defined overrides.
-	// This field carries the following semantics:
-	// - nil: do not inject any "append variables" (PYTHONPATH, NODE_OPTIONS, etc.) at all.
-	// - "loader": inject the LD_PRELOAD env var to the pod manifest which will trigger the odigos loader.
-	// - "pod-manifest": inject the runtime specific agent loading env vars (e.g PYTHONPATH, NODE_OPTIONS) to the pod manifest as specified in the distro manifest.
-	// - "loader-fallback-to-pod-manifest": use "pod-manifest". it means we tried LD_PRELOAD and it failed, so we falled-back to the pod manifest.
-	EnvInjectionMethod *common.EnvInjectionMethod `json:"agentInjectionMethod,omitempty"`
+	// What method to use for injecting the agent environment variables (just those covered by the loader (PYTHONPATH, JAVA_TOOLS_OPTIONS, NODE_OPTIONS))
+	// Can be either "loader" or "pod-manifest".
+	// The injection should still check the actual values in the container manifest before injecting.
+	// Nil means that this container should not have env injection (agent should not be injected, or distro does not specify "loader" injection envs).
+	EnvInjectionMethod *common.EnvInjectionDecision `json:"envInjectionMethod,omitempty"`
 
 	// Each enabled signal must be set with a non-nil value (even if the config content is empty).
 	// nil means that the signal is disabled and should not be instrumented/collected by the agent.
@@ -330,6 +332,11 @@ type InstrumentationConfigSpec struct {
 	// or something else that requires rollout, the hash change will indicate that.
 	// if the hash is empty, it means that no agent should be enabled in any pod container.
 	AgentsMetaHash string `json:"agentsMetaHash,omitempty"`
+
+	// The last time at which the agents meta hash value was changed.
+	// Pods created before this time may not be in alignment with the AgentsMetaHash.
+	// e.g. can lack the odigos label, or have a different value.
+	AgentsMetaHashChangedTime *metav1.Time `json:"agentsMetaHashChangedTime,omitempty"`
 
 	// Configuration for the OpenTelemetry SDKs that this workload should use.
 	// The SDKs are identified by the programming language they are written in.

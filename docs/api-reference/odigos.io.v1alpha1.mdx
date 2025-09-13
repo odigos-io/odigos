@@ -519,6 +519,17 @@ auto_generated: true
    <p>K8sAttributes is the config for the K8sAttributes Action.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>samplers</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.SamplersConfig</code>
+</td>
+<td>
+   <p>Samplers is the config for the Samplers Action.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -963,6 +974,18 @@ It is enabled by default and can be disabled by setting the enabled flag to fals
 </tr>
 <tr>
 <td>
+<code>enableDataCompression</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+It is disabled by default and can be enabled by setting the enabled flag to true.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>clusterMetricsEnabled</code> <B>[Required]</B>
 </td>
 <td>
@@ -971,6 +994,18 @@ It is enabled by default and can be disabled by setting the enabled flag to fals
 <td>
    <p>ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
 It is disabled by default and can be enabled by setting the enabled flag to true.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>httpsProxyAddress</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
+when unset or empty, no proxy will be used.</p>
 </td>
 </tr>
 </tbody>
@@ -1115,20 +1150,16 @@ Keys are parameter names (like &quot;libc&quot;) and values are the value to use
 </tr>
 <tr>
 <td>
-<code>agentInjectionMethod</code> <B>[Required]</B>
+<code>envInjectionMethod</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#EnvInjectionMethod"><code>common.EnvInjectionMethod</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#EnvInjectionDecision"><code>common.EnvInjectionDecision</code></a>
 </td>
 <td>
-   <p>this value is calculated (at the moment) based on the config, runtime inspection and the user defined overrides.
-This field carries the following semantics:</p>
-<ul>
-<li>nil: do not inject any &quot;append variables&quot; (PYTHONPATH, NODE_OPTIONS, etc.) at all.</li>
-<li>&quot;loader&quot;: inject the LD_PRELOAD env var to the pod manifest which will trigger the odigos loader.</li>
-<li>&quot;pod-manifest&quot;: inject the runtime specific agent loading env vars (e.g PYTHONPATH, NODE_OPTIONS) to the pod manifest as specified in the distro manifest.</li>
-<li>&quot;loader-fallback-to-pod-manifest&quot;: use &quot;pod-manifest&quot;. it means we tried LD_PRELOAD and it failed, so we falled-back to the pod manifest.</li>
-</ul>
+   <p>What method to use for injecting the agent environment variables (just those covered by the loader (PYTHONPATH, JAVA_TOOLS_OPTIONS, NODE_OPTIONS))
+Can be either &quot;loader&quot; or &quot;pod-manifest&quot;.
+The injection should still check the actual values in the container manifest before injecting.
+Nil means that this container should not have env injection (agent should not be injected, or distro does not specify &quot;loader&quot; injection envs).</p>
 </td>
 </tr>
 <tr>
@@ -1272,6 +1303,17 @@ and the distro to use will be calculated based on this value.</p>
 </td>
 <td>
 <a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -1486,6 +1528,19 @@ this is updated only when the overrides are changed, and not when some other cha
 e.g. when the distro for container changes, or it's compatibility version,
 or something else that requires rollout, the hash change will indicate that.
 if the hash is empty, it means that no agent should be enabled in any pod container.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentsMetaHashChangedTime</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>The last time at which the agents meta hash value was changed.
+Pods created before this time may not be in alignment with the AgentsMetaHash.
+e.g. can lack the odigos label, or have a different value.</p>
 </td>
 </tr>
 <tr>
@@ -2414,7 +2469,13 @@ nil means we were unable to determine the secure-execution mode.</p>
 <code>string</code>
 </td>
 <td>
-   <p>Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.</p>
+   <p>CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+Thus, this field is set only when there is:</p>
+<ul>
+<li>Actual CRI check failed</li>
+<li>The observed environment variables might come from container runtime</li>
+</ul>
 </td>
 </tr>
 <tr>

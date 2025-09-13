@@ -116,7 +116,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 									},
 								},
 								InitialDelaySeconds: 15,
-								TimeoutSeconds:      0,
+								TimeoutSeconds:      5,
 								PeriodSeconds:       20,
 								SuccessThreshold:    0,
 								FailureThreshold:    0,
@@ -131,7 +131,8 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 										},
 									},
 								},
-								PeriodSeconds: 10,
+								PeriodSeconds:  10,
+								TimeoutSeconds: 5,
 							},
 							SecurityContext: &corev1.SecurityContext{},
 						},
@@ -205,10 +206,10 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 		}
 	} else {
 		rules = []rbacv1.PolicyRule{
-			{ // Needed to read odigos-configuration configmap for settings
+			{ // Needed to read and update odigos-configuration configmap for settings
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
-				Verbs:     []string{"get", "list"},
+				Verbs:     []string{"get", "list", "update", "patch"},
 			},
 			{ // Needed for secret values in destinations
 				APIGroups: []string{""},

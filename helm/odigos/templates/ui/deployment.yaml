@@ -61,11 +61,13 @@ spec:
             port: 3000
           initialDelaySeconds: 15
           periodSeconds: 20
+          timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /readyz
             port: 3000
           periodSeconds: 10
+          timeoutSeconds: 5
         resources:
 {{ toYaml .Values.ui.resources | indent 10 }}
         securityContext:
@@ -81,10 +83,7 @@ spec:
         - name: ui-db-storage
           emptyDir:
             sizeLimit: 50Mi
-{{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 6 }}
-{{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.ui }}
   {{- if .nodeSelector }}
       nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}
