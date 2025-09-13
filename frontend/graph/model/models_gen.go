@@ -484,15 +484,16 @@ type K8sActualNamespace struct {
 }
 
 type K8sActualSource struct {
-	Namespace         string             `json:"namespace"`
-	Name              string             `json:"name"`
-	Kind              K8sResourceKind    `json:"kind"`
-	DataStreamNames   []*string          `json:"dataStreamNames"`
-	NumberOfInstances *int               `json:"numberOfInstances,omitempty"`
-	Selected          *bool              `json:"selected,omitempty"`
-	OtelServiceName   *string            `json:"otelServiceName,omitempty"`
-	Containers        []*SourceContainer `json:"containers,omitempty"`
-	Conditions        []*Condition       `json:"conditions,omitempty"`
+	Namespace                  string                  `json:"namespace"`
+	Name                       string                  `json:"name"`
+	Kind                       K8sResourceKind         `json:"kind"`
+	DataStreamNames            []*string               `json:"dataStreamNames"`
+	NumberOfInstances          *int                    `json:"numberOfInstances,omitempty"`
+	Selected                   *bool                   `json:"selected,omitempty"`
+	OtelServiceName            *string                 `json:"otelServiceName,omitempty"`
+	Containers                 []*SourceContainer      `json:"containers,omitempty"`
+	Conditions                 []*Condition            `json:"conditions,omitempty"`
+	WorkloadOdigosHealthStatus *DesiredConditionStatus `json:"workloadOdigosHealthStatus,omitempty"`
 }
 
 type K8sAnnotationAttribute struct {
