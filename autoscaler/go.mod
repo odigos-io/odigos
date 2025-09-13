@@ -12,8 +12,8 @@ require (
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.37.0
-	github.com/open-policy-agent/cert-controller v0.12.1-0.20250516200449-317fe19e3eb5
+	github.com/onsi/gomega v1.38.0
+	github.com/open-policy-agent/cert-controller v0.14.0
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/otel v1.37.0
 	golang.org/x/sync v0.17.0
