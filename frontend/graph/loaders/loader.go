@@ -364,7 +364,7 @@ func getEnvValueFromManifest(envVarManifest []corev1.EnvVar, envVarName string) 
 func getOdigosInstrumentationDeviceName(resources corev1.ResourceList) *string {
 	for resourceName := range resources {
 		resourceNameStr := string(resourceName)
-		if strings.HasPrefix(resourceNameStr, common.OdigosResourceNamespace) {
+		if strings.HasPrefix(resourceNameStr, k8sconsts.OdigosResourceNamespace) {
 			return &resourceNameStr
 		}
 	}
