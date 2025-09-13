@@ -24,6 +24,7 @@ spec:
         description: |-
           ServiceNameSampler is the Schema for the servicenamesamplers API.
           It enables trace sampling based on whether specific services appear within a trace.
+          DEPRECATED: Use odigosv1.Action instead
         properties:
           apiVersion:
             description: |-

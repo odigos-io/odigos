@@ -33,6 +33,8 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
 
 ## Configuration Options
 
+The ErrorSampler action is configured using the `odigos.io/v1alpha1.Action` CRD with the `samplers` configuration section.
+
 <AccordionGroup>
   <Accordion title="actionName">
     **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
@@ -49,42 +51,50 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
     - This field is *optional*, and defaults to `false`
   </Accordion>
   <Accordion title="signals *">
-    **signals** `string[]` : An array with the signals that the processor will act on.
+    **signals** `string[]` : An array with the signals that the action will operate on.
     - This field is *required*
     - Supported values: `TRACES`
   </Accordion>
-  <Accordion title="fallback_sampling_ratio *">
-    **fallback_sampling_ratio** `string` : Specifies the ratio of non-error traces you still want to retain.
-    - This field is *required*
-    - For example: setting it to "50" ensures that 50% of the non-error traces will be retained.
+  <Accordion title="samplers *">
+    **samplers** `object` : Configuration for sampling actions.
+    - This field is *required* for this action type
+    <AccordionGroup>
+      <Accordion title="errorSampler *">
+        **errorSampler** `object` : Configuration for the ErrorSampler.
+        - This field is *required* for this action type
+        <AccordionGroup>
+          <Accordion title="fallback_sampling_ratio *">
+            **fallback_sampling_ratio** `number` : Specifies the ratio of non-error traces you still want to retain.
+            - This field is *required*
+            - For example: setting it to 50 ensures that 50% of the non-error traces will be retained.
+          </Accordion>
+        </AccordionGroup>
+      </Accordion>
+    </AccordionGroup>
   </Accordion>
 </AccordionGroup>
 
 ## Basic Example
 
-The following example demonstrates how to add a sampler that retains 100% of error traces and 50% of non-error traces.
+The following example demonstrates how to add a sampler that retains 100% of error traces and 50% of non-error traces using the new Action CRD.
 
 <Steps>
   <Step>
     Create a YAML file with the following content:
 
     ```yaml error-sampler.yaml
-    apiVersion: actions.odigos.io/v1alpha1
-    kind: ErrorSampler
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
     metadata:
       name: example-error-sampler
       namespace: odigos-system
     spec:
       actionName: "configure-error-sampler"
-      fallback_sampling_ratio: 50
       signals:
         - TRACES
-    ```
-
-    Apply the action to the cluster:
-
-    ```bash
-    kubectl apply -f error-sampler.yaml
+      samplers:
+        errorSampler:
+          fallback_sampling_ratio: 50
     ```
   </Step>
   <Step>

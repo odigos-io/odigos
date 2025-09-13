@@ -88,6 +88,7 @@ type ServiceNameSamplerStatus struct {
 
 // ServiceNameSampler is the Schema for the servicenamesamplers API.
 // It enables trace sampling based on whether specific services appear within a trace.
+// DEPRECATED: Use odigosv1.Action instead
 type ServiceNameSampler struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -99,6 +100,7 @@ type ServiceNameSampler struct {
 // +kubebuilder:object:root=true
 
 // ServiceNameSamplerList contains a list of ServiceNameSampler resources.
+// DEPRECATED: Use odigosv1.ActionList instead
 type ServiceNameSamplerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

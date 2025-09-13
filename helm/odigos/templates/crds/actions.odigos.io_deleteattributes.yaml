@@ -21,8 +21,9 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: DeleteAttribute is the Schema for the DeleteAttribute odigos
-          action API
+        description: |-
+          DeleteAttribute is the Schema for the DeleteAttribute odigos action API
+          DEPRECATED: Use odigosv1.Action instead
         properties:
           apiVersion:
             description: |-

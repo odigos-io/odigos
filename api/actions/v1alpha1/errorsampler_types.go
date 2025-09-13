@@ -66,6 +66,7 @@ type ErrorSamplerStatus struct {
 // ErrorSampler is the Schema for the ErrorSampler CRD.
 // It defines sampling logic that always retains traces with errors, and optionally samples
 // non-error traces based on the fallback ratio.
+// DEPRECATED: Use odigosv1.Action instead
 type ErrorSampler struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -77,6 +78,7 @@ type ErrorSampler struct {
 //+kubebuilder:object:root=true
 
 // ErrorSamplerList contains a list of ErrorSampler resources.
+// DEPRECATED: Use odigosv1.ActionList instead
 type ErrorSamplerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

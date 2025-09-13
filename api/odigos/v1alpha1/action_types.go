@@ -23,6 +23,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const ActionMigratedLegacyPrefix = "migrated-legacy-"
+
 // condition types for action CR
 const (
 	// TransformedToProcessor is the condition when the action CR is transformed to a processor CR.

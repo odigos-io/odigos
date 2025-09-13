@@ -73,8 +73,8 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 
 			ownerRefs := processor.GetOwnerReferences()
 			Expect(len(ownerRefs)).Should(Equal(1))
-			Expect(ownerRefs[0].Name).Should(Equal(ActionName + "-basic"))
-			Expect(ownerRefs[0].Kind).Should(Equal("K8sAttributesResolver"))
+			Expect(ownerRefs[0].Name).Should(Equal(odigosv1.ActionMigratedLegacyPrefix + ActionName + "-basic"))
+			Expect(ownerRefs[0].Kind).Should(Equal("Action"))
 		})
 
 		It("Should create a Processor with container attributes enabled", func() {
@@ -695,16 +695,22 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 			Expect(len(ownerRefs)).Should(Equal(2))
 
 			ownerNames := make(map[string]bool)
+			ownerKinds := make(map[string]bool)
 			for _, ownerRef := range ownerRefs {
 				ownerNames[ownerRef.Name] = true
+				ownerKinds[ownerRef.Kind] = true
 			}
-			Expect(ownerNames[ActionName+"-merge-1"]).Should(BeTrue())
-			Expect(ownerNames[ActionName+"-merge-2"]).Should(BeTrue())
+			Expect(ownerNames[odigosv1.ActionMigratedLegacyPrefix+ActionName+"-merge-1"]).Should(BeTrue())
+			Expect(ownerNames[odigosv1.ActionMigratedLegacyPrefix+ActionName+"-merge-2"]).Should(BeTrue())
+			Expect(ownerNames[ActionName+"-merge-1"]).Should(BeFalse())
+			Expect(ownerNames[ActionName+"-merge-2"]).Should(BeFalse())
+			Expect(ownerKinds["K8sAttributesResolver"]).Should(BeFalse())
+			Expect(ownerKinds["Action"]).Should(BeTrue())
 		})
 	})
 
 	Context("When updating a K8sAttributesResolver", func() {
-		It("Should update the corresponding Processor", func() {
+		It("Should not update the corresponding Processor", func() {
 			By("Creating a K8sAttributesResolver")
 			resolver := &actionv1.K8sAttributesResolver{
 				ObjectMeta: metav1.ObjectMeta{
@@ -712,8 +718,9 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 					Namespace: ActionNamespace,
 				},
 				Spec: actionv1.K8sAttributesSpec{
-					ActionName: "test-update-k8sattributes",
-					Signals:    []common.ObservabilitySignal{common.TracesObservabilitySignal},
+					ActionName:                 "test-update-k8sattributes",
+					Signals:                    []common.ObservabilitySignal{common.TracesObservabilitySignal},
+					CollectContainerAttributes: true,
 				},
 			}
 
@@ -734,11 +741,11 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 				Name:      ActionName + "-update",
 				Namespace: ActionNamespace,
 			}, resolver)).Should(Succeed())
-			resolver.Spec.CollectContainerAttributes = true
+			resolver.Spec.CollectContainerAttributes = false
 			Expect(k8sClient.Update(testCtx, resolver)).Should(Succeed())
 
-			By("Checking that the Processor is updated")
-			Eventually(func() bool {
+			By("Checking that the Processor is not updated")
+			Consistently(func() bool {
 				err := k8sClient.Get(testCtx, types.NamespacedName{
 					Name:      "odigos-k8sattributes",
 					Namespace: ActionNamespace,
@@ -946,9 +953,10 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 				ownerNames[ownerRef.Name] = true
 				ownerKinds[ownerRef.Kind] = true
 			}
-			Expect(ownerNames[ActionName+"-legacy-merge"]).Should(BeTrue())
+			Expect(ownerNames[ActionName+"-legacy-merge"]).Should(BeFalse())
+			Expect(ownerNames[odigosv1.ActionMigratedLegacyPrefix+ActionName+"-legacy-merge"]).Should(BeTrue())
 			Expect(ownerNames[ActionName+"-modern-merge"]).Should(BeTrue())
-			Expect(ownerKinds["K8sAttributesResolver"]).Should(BeTrue())
+			Expect(ownerKinds["K8sAttributesResolver"]).Should(BeFalse())
 			Expect(ownerKinds["Action"]).Should(BeTrue())
 		})
 	})

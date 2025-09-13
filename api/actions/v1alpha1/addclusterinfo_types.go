@@ -84,6 +84,7 @@ type AddClusterInfoStatus struct {
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // AddClusterInfo is the Schema for the addclusterinfo odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type AddClusterInfo struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -95,6 +96,7 @@ type AddClusterInfo struct {
 //+kubebuilder:object:root=true
 
 // AddClusterInfoList contains a list of AddClusterInfo
+// DEPRECATED: Use odigosv1.ActionList instead
 type AddClusterInfoList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

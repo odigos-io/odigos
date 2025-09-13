@@ -70,6 +70,7 @@ type DeleteAttributeStatus struct {
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // DeleteAttribute is the Schema for the DeleteAttribute odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type DeleteAttribute struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -81,6 +82,7 @@ type DeleteAttribute struct {
 //+kubebuilder:object:root=true
 
 // DeleteAttributeList contains a list of DeleteAttribute
+// DEPRECATED: Use odigosv1.ActionList instead
 type DeleteAttributeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

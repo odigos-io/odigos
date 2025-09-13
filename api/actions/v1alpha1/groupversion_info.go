@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains API Schema definitions for the actions.odigos.io v1alpha1 API group
+// DEPRECATED: Use odigosv1.Action instead
 // +kubebuilder:object:generate=true
 // +groupName=actions.odigos.io
 package v1alpha1

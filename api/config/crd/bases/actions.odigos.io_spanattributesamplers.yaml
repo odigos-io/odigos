@@ -25,6 +25,7 @@ spec:
           SpanAttributeSampler is the Schema for the spanattributesamplers API.
           It holds the specification for sampling spans based on attribute conditions,
           as well as the sampler's current status.
+          DEPRECATED: Use odigosv1.Action instead
         properties:
           apiVersion:
             description: |-
