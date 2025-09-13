@@ -185,9 +185,11 @@ type OdigosConfiguration struct {
 	Oidc                              *OidcConfiguration       `json:"oidc,omitempty" yaml:"oidc"`
 	OdigletHealthProbeBindPort        int                      `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
 	GoAutoOffsetsCron                 string                   `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
+	GoAutoOffsetsMode                 string                   `json:"goAutoOffsetsMode,omitempty" yaml:"goAutoOffsetsMode"`
 	ClickhouseJsonTypeEnabledProperty *bool                    `json:"clickhouseJsonTypeEnabled,omitempty"`
 	CheckDeviceHealthBeforeInjection  *bool                    `json:"checkDeviceHealthBeforeInjection,omitempty"`
 	ResourceSizePreset                string                   `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
+	WaspEnabled                       *bool                    `json:"waspEnabled,omitempty" yaml:"waspEnabled"`
 
 	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
 }
