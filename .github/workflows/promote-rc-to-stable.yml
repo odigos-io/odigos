@@ -106,7 +106,7 @@ jobs:
       - name: Retag existing images to stable
         run: |
             ALL_REGISTRIES_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator")
-            ONLY_GCP_IMAGE_NAMES=("odigos-enterprise-instrumentor" "odigos-enterprise-odiglet" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui")
+            ONLY_GCR_IMAGE_NAMES=("odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui")
 
             ALL_REGISTRIES=(${GCR_REPO} ${GHCR_REPO} ${DOCKERHUB_REPO})
             UBI9_SUFFIXES=("" "-ubi9")
@@ -126,7 +126,7 @@ jobs:
                 done
               done
 
-              for IMAGE_NAME in "${ONLY_GCP_IMAGE_NAMES[@]}"; do
+              for IMAGE_NAME in "${ONLY_GCR_IMAGE_NAMES[@]}"; do
                 REPO=${GCR_REPO}
                 echo "Copying ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} to ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
                 if ! crane copy ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
