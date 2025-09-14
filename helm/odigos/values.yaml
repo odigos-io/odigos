@@ -63,7 +63,7 @@ userInstrumentationEnvs:
 # Sizing Configurations size_s, size_m, size_l are pre-defined configurations designed to simplify pipeline configurations.
 # The default value is 'size_m', which is the medium size configuration.
 # See https://docs.odigos.io/pipeline/configuration#1-using-sizing-configuration for more details.
-ResourceSizePreset: size_m
+ResourceSizePreset: size_s
 
 
 collectorGateway:
@@ -90,7 +90,7 @@ collectorGateway:
   # of the form "memory: <value>Mi".
   # default value is 625Mi
   # If you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.
-  # limitMemoryMiB: 625
+  limitMemoryMiB: 888
 
   # the CPU request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request

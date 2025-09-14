@@ -80,7 +80,6 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 		if imgVals, ok := vals["image"].(map[string]interface{}); ok {
 			if _, hasTag := imgVals["tag"]; !hasTag || imgVals["tag"] == "" {
 				imgVals["tag"] = ch.Metadata.AppVersion
-				fmt.Printf("Using appVersion %s as image.tag\n", ch.Metadata.AppVersion)
 			}
 		}
 	}
@@ -147,8 +146,4 @@ func refreshHelmRepo(settings *cli.EnvSettings, chartRef string) {
 			}
 		}
 	}
-}
-
-func DebugLogger(format string, v ...interface{}) {
-	fmt.Printf(format+"\n", v...)
 }

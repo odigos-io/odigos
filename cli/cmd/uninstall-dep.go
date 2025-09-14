@@ -29,7 +29,7 @@ import (
 
 // uninstallCmd represents the uninstall command
 var uninstallCmd = &cobra.Command{
-	Use: "uninstall",
+	Use: "uninstall-deprecated",
 	Short: `Revert all the changes made by the ` + "`odigos install`" + ` command.
 This command will uninstall Odigos from your cluster. It will delete all Odigos objects
 and rollback any metadata changes made to your objects.
