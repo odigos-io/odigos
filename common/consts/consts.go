@@ -133,3 +133,8 @@ const (
 	DefaultAutoRollbackGraceTime       = "5m"
 	DefaultAutoRollbackStabilityWindow = "1h"
 )
+
+// UnixFD related consts
+const (
+	ExchangeDir = "/var/exchange"
+)
