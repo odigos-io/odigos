@@ -11,18 +11,7 @@ export const CRD_NAMES = {
   SOURCE: 'sources.odigos.io',
   INSTRUMENTATION_CONFIG: 'instrumentationconfigs.odigos.io',
   DESTINATION: 'destinations.odigos.io',
-  ACTIONS: [
-    'k8sattributesresolvers.actions.odigos.io',
-    'addclusterinfos.actions.odigos.io',
-    'deleteattributes.actions.odigos.io',
-    'renameattributes.actions.odigos.io',
-    'piimaskings.actions.odigos.io',
-    'errorsamplers.actions.odigos.io',
-    'latencysamplers.actions.odigos.io',
-    'probabilisticsamplers.actions.odigos.io',
-    'servicenamesamplers.actions.odigos.io',
-    'spanattributesamplers.actions.odigos.io',
-  ],
+  ACTION: 'actions.odigos.io',
   INSTRUMENTATION_RULE: 'instrumentationrules.odigos.io',
 };
 
