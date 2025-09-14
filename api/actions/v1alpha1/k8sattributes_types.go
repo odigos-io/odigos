@@ -165,6 +165,7 @@ type K8sAttributesStatus struct {
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // K8sAttributesResolver allows adding an action to collect k8s attributes.
+// DEPRECATED: Use odigosv1.Action instead
 type K8sAttributesResolver struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -176,6 +177,7 @@ type K8sAttributesResolver struct {
 //+kubebuilder:object:root=true
 
 // K8sAttributesResolverList contains a list of K8sAttributes
+// DEPRECATED: Use odigosv1.ActionList instead
 type K8sAttributesResolverList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

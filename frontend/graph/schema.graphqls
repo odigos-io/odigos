@@ -28,8 +28,11 @@ enum ProgrammingLanguage {
 
 enum SignalType {
   TRACES
+  traces
   METRICS
+  metrics
   LOGS
+  logs
 }
 
 enum SpanKind {
@@ -50,6 +53,20 @@ enum Tier {
   community
   cloud
   onprem
+}
+
+enum ActionType {
+  K8sAttributesResolver
+  AddClusterInfo
+  DeleteAttribute
+  RenameAttribute
+  PiiMasking
+  ErrorSampler
+  ProbabilisticSampler
+  LatencySampler
+  ServiceNameSampler
+  SpanAttributeSampler
+  UnknownType
 }
 
 enum InstrumentationRuleType {
@@ -390,7 +407,7 @@ type ComputePlatform {
   sources: [K8sActualSource!]!
   source(sourceId: K8sSourceId!): K8sActualSource!
   destinations: [Destination!]!
-  actions: [PipelineAction!]!
+  actions: [Action!]!
   instrumentationRules: [InstrumentationRule!]!
   dataStreams: [DataStream!]!
 }
@@ -515,13 +532,6 @@ type DestinationDetails {
   fields: String!
 }
 
-type PipelineAction {
-  id: String!
-  type: String!
-  spec: String!
-  conditions: [Condition!]
-}
-
 input PatchSourceRequestInput {
   currentStreamName: String!
   otelServiceName: String
@@ -531,13 +541,126 @@ input PatchSourceRequestInput {
   version: String
 }
 
-interface Action {
-  id: ID!
-  type: String!
+input ActionInput {
+  type: ActionType!
   name: String
   notes: String
-  disable: Boolean!
+  disabled: Boolean!
   signals: [SignalType!]!
+  fields: ActionFieldsInput!
+}
+
+input ActionFieldsInput {
+  collectContainerAttributes: Boolean
+  collectReplicaSetAttributes: Boolean
+  collectWorkloadId: Boolean
+  collectClusterId: Boolean
+  labelsAttributes: [K8sLabelAttributeInput!]
+  annotationsAttributes: [K8sAnnotationAttributeInput!]
+
+  clusterAttributes: [ClusterAttributeInput!]
+  overwriteExistingValues: Boolean
+  attributeNamesToDelete: [String!]
+  renames: String
+  piiCategories: [String!]
+
+  samplingPercentage: String
+  fallbackSamplingRatio: Int
+  endpointsFilters: [HttpRouteFilterInput!]
+  servicesNameFilters: [ServiceNameFilterInput!]
+  attributeFilters: [SpanAttributeFilterInput!]
+}
+
+input K8sLabelAttributeInput {
+  labelKey: String!
+  attributeKey: String!
+}
+
+input K8sAnnotationAttributeInput {
+  annotationKey: String!
+  attributeKey: String!
+}
+
+input ClusterAttributeInput {
+  attributeName: String!
+  attributeStringValue: String!
+}
+
+input HttpRouteFilterInput {
+  httpRoute: String!
+  serviceName: String!
+  minimumLatencyThreshold: Int!
+  fallbackSamplingRatio: Float!
+}
+
+input ServiceNameFilterInput {
+  serviceName: String!
+  samplingRatio: Float!
+  fallbackSamplingRatio: Float!
+}
+
+input SpanAttributeFilterInput {
+  serviceName: String!
+  attributeKey: String!
+  fallbackSamplingRatio: Float!
+  condition: AttributeFiltersConditionInput!
+}
+
+input StringConditionInput {
+  operation: StringOperation!
+  expectedValue: String
+}
+input NumberConditionInput {
+  operation: NumberOperation!
+  expectedValue: Float!
+}
+input BooleanConditionInput {
+  operation: BooleanOperation!
+  expectedValue: Boolean!
+}
+input JsonConditionInput {
+  operation: JsonOperation!
+  expectedValue: String
+  jsonPath: String
+}
+
+input AttributeFiltersConditionInput {
+  stringCondition: StringConditionInput
+  numberCondition: NumberConditionInput
+  booleanCondition: BooleanConditionInput
+  jsonCondition: JsonConditionInput
+}
+
+type Action {
+  id: ID!
+  type: ActionType!
+  name: String
+  notes: String
+  disabled: Boolean!
+  signals: [SignalType!]!
+  fields: ActionFields!
+  conditions: [Condition!]
+}
+
+type ActionFields {
+  collectContainerAttributes: Boolean
+  collectReplicaSetAttributes: Boolean
+  collectWorkloadId: Boolean
+  collectClusterId: Boolean
+  labelsAttributes: [K8sLabelAttribute!]
+  annotationsAttributes: [K8sAnnotationAttribute!]
+
+  clusterAttributes: [ClusterAttribute!]
+  overwriteExistingValues: Boolean
+  attributeNamesToDelete: [String!]
+  renames: String
+  piiCategories: [String!]
+
+  samplingPercentage: String
+  fallbackSamplingRatio: Int
+  endpointsFilters: [HttpRouteFilter!]
+  servicesNameFilters: [ServiceNameFilter!]
+  attributeFilters: [SpanAttributeFilter!]
 }
 
 type K8sLabelAttribute {
@@ -550,114 +673,30 @@ type K8sAnnotationAttribute {
   attributeKey: String!
 }
 
-type K8sAttributes {
-  collectContainerAttributes: Boolean!
-  collectReplicaSetAttributes: Boolean!
-  collectWorkloadId: Boolean!
-  collectClusterId: Boolean!
-  labelsAttributes: [K8sLabelAttribute!]!
-  annotationsAttributes: [K8sAnnotationAttribute!]!
-}
-
-type K8sAttributesAction implements Action {
-  id: ID!
-  type: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: K8sAttributes!
-}
-
-type ClusterInfo {
+type ClusterAttribute {
   attributeName: String!
-  attributeStringValue: String
+  attributeStringValue: String!
 }
 
-type AddClusterInfoAction implements Action {
-  id: ID!
-  type: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: [ClusterInfo!]!
+type HttpRouteFilter {
+  httpRoute: String!
+  serviceName: String!
+  minimumLatencyThreshold: Int!
+  fallbackSamplingRatio: Float!
 }
 
-type DeleteAttributeAction implements Action {
-  id: ID!
-  type: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: [String!]!
-}
-
-type PiiMaskingAction implements Action {
-  id: ID!
-  type: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: [String!]
-}
-
-type ErrorSamplerAction implements Action {
-  id: ID!
-  type: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: String!
-}
-
-type LatencySamplerAction implements Action {
-  id: ID!
-  type: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: [String]!
-}
-
-type ProbabilisticSamplerAction implements Action {
-  id: ID!
-  type: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: String!
-}
-
-type ServiceNameFilters {
+type ServiceNameFilter {
   serviceName: String!
   samplingRatio: Float!
   fallbackSamplingRatio: Float!
 }
 
-type ServiceNameSamplerAction implements Action {
-  id: ID!
-  type: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: [ServiceNameFilters!]!
-}
-
-type RenameAttributeAction implements Action {
-  id: ID!
-  type: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: String!
+type SpanAttributeFilter {
+  serviceName: String!
+  attributeKey: String!
+  condition: AttributeFiltersCondition!
+  samplingRatio: Float!
+  fallbackSamplingRatio: Float!
 }
 
 enum StringOperation {
@@ -722,25 +761,6 @@ type AttributeFilters {
   attributeKey: String!
   fallbackSamplingRatio: Float!
   condition: AttributeFiltersCondition!
-}
-
-type SpanAttributeSamplerAction implements Action {
-  id: ID!
-  type: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: [AttributeFilters!]!
-}
-
-input ActionInput {
-  type: String!
-  name: String
-  notes: String
-  disable: Boolean!
-  signals: [SignalType!]!
-  details: String!
 }
 
 type OverviewMetricsResponse {
