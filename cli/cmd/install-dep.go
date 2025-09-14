@@ -67,7 +67,7 @@ type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns stri
 
 // installCmd represents the install command
 var installCmd = &cobra.Command{
-	Use:   "install",
+	Use:   "install-deprecated",
 	Short: "Install Odigos in your kubernetes cluster.",
 	Long: `This sub command will Install Odigos in your kubernetes cluster.
 It will install k8s components that will auto-instrument your applications with OpenTelemetry and send traces, metrics and logs to any telemetry backend`,
