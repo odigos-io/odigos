@@ -24,13 +24,13 @@ spec:
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
               else
-                ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
+                ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set instrumentor.mountMethod=k8s-init-container
               fi
 
               ../../common/verify_odigos_installation.sh odigos-test
         - assert:
             timeout: 3m
-            file: ../../common/assert/odigos-installed.yaml
+            file: ../../common/assert/odigos-installed-no-device-plugin.yaml
 
     - name: '[1 - Setup] Assert - Simple Demo Apps Installed'
       try:
@@ -38,11 +38,6 @@ spec:
             timeout: 3m
             file: ../../common/assert/simple-demo-installed.yaml
 
-    - name: '[1 - Setup] Set mount method to k8s-init-container'
-      try:
-        - script:
-            timeout: 1m
-            content: ../../../cli/odigos config set mount-method k8s-init-container
 
     - name: '[1 - Setup] Assert config set successfully'
       try:
