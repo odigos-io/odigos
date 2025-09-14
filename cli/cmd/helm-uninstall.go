@@ -11,7 +11,7 @@ import (
 
 var helmUninstallCmd = &cobra.Command{
 	Use:   "uninstall",
-	Short: "Uninstall Odigos using Helm under the hood",
+	Short: "Uninstall Odigos using Helm SDK under the hood",
 	Long:  `Revert all the changes made by the odigos install command. This command will uninstall Odigos from your cluster. It will delete all Odigos objects and rollback any metadata changes made to your objects.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runHelmUninstall()

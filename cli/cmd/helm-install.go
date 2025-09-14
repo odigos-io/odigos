@@ -14,7 +14,7 @@ import (
 
 var helmInstallCmd = &cobra.Command{
 	Use:   "install",
-	Short: "Install and upgrade Odigos using Helm under the hood",
+	Short: "Install and upgrade Odigos using Helm SDK under the hood",
 	Long:  `This sub command will Install and upgrade Odigos in your kubernetes cluster. It will install k8s components that will auto-instrument your applications with OpenTelemetry and send traces, metrics and logs to any telemetry backend.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runInstallOrUpgrade()
