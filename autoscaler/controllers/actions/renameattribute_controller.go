@@ -18,13 +18,12 @@ package actions
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"k8s.io/apimachinery/pkg/api/meta"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -32,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// DEPRECATED: Use odigosv1.Action instead
 type RenameAttributeReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -40,6 +40,7 @@ type RenameAttributeReconciler struct {
 func (r *RenameAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling RenameAttribute action")
+	logger.V(0).Info("WARNING: RenameAttribute action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
 
 	action := &actionv1.RenameAttribute{}
 	err := r.Get(ctx, req.NamespacedName, action)
@@ -47,60 +48,32 @@ func (r *RenameAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	processor, err := r.convertToProcessor(action)
+	// Migrate to odigosv1.Action
+	migratedActionName := v1.ActionMigratedLegacyPrefix + action.Name
+	odigosAction := &v1.Action{}
+	err = r.Get(ctx, client.ObjectKey{Name: migratedActionName, Namespace: action.Namespace}, odigosAction)
 	if err != nil {
-		r.ReportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+		logger.V(0).Info("Migrating legacy Action to odigosv1.Action. This is a one-way change, and modifications to the legacy Action will not be reflected in the migrated Action.")
+		// Action doesn't exist, create new one
+		odigosAction = r.createMigratedAction(action, migratedActionName)
+		err = r.Create(ctx, odigosAction)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		action.OwnerReferences = append(action.OwnerReferences, metav1.OwnerReference{
+			APIVersion: "odigos.io/v1alpha1",
+			Kind:       "Action",
+			Name:       odigosAction.Name,
+			UID:        odigosAction.UID,
+		})
+		err = r.Update(ctx, action)
 		return ctrl.Result{}, err
 	}
-
-	err = r.Patch(ctx, processor, client.Apply, client.FieldOwner(action.Name), client.ForceOwnership)
-	if err != nil {
-		r.ReportReconciledToProcessorFailed(ctx, action, FailedToCreateProcessorReason, err.Error())
-		return ctrl.Result{}, err
-	}
-
-	err = r.ReportReconciledToProcessor(ctx, action)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
+	logger.V(0).Info("Migrated Action already exists, skipping update")
 	return ctrl.Result{}, nil
-}
-
-func (r *RenameAttributeReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.RenameAttribute, reason string, msg string) error {
-	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
-		Type:               ActionTransformedToProcessorType,
-		Status:             metav1.ConditionFalse,
-		Reason:             reason,
-		Message:            msg,
-		ObservedGeneration: action.Generation,
-	})
-
-	if changed {
-		err := r.Status().Update(ctx, action)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (r *RenameAttributeReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.RenameAttribute) error {
-	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
-		Type:               ActionTransformedToProcessorType,
-		Status:             metav1.ConditionTrue,
-		Reason:             ProcessorCreatedReason,
-		Message:            "The action has been reconciled to a processor resource.",
-		ObservedGeneration: action.Generation,
-	})
-
-	if changed {
-		err := r.Status().Update(ctx, action)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func renameAttributeConfig(cfg map[string]string, signals []common.ObservabilitySignal) (TransformProcessorConfig, error) {
@@ -180,46 +153,38 @@ func renameAttributeConfig(cfg map[string]string, signals []common.Observability
 	return config, nil
 }
 
-func (r *RenameAttributeReconciler) convertToProcessor(action *actionv1.RenameAttribute) (*v1.Processor, error) {
-
-	config, err := renameAttributeConfig(action.Spec.Renames, action.Spec.Signals)
-	if err != nil {
-		return nil, err
+func (r *RenameAttributeReconciler) createMigratedAction(action *actionv1.RenameAttribute, migratedActionName string) *v1.Action {
+	config := actionv1.RenameAttributeConfig{
+		Renames: action.Spec.Renames,
 	}
 
-	configJson, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	processor := v1.Processor{
+	odigosAction := &v1.Action{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "odigos.io/v1alpha1",
-			Kind:       "Processor",
+			Kind:       "Action",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      action.Name,
+			Name:      migratedActionName,
 			Namespace: action.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: action.APIVersion,
-					Kind:       action.Kind,
-					Name:       action.Name,
-					UID:        action.UID,
-				},
-			},
 		},
-		Spec: v1.ProcessorSpec{
-			Type:            "transform",
-			ProcessorName:   action.Spec.ActionName,
-			Disabled:        action.Spec.Disabled,
+		Spec: v1.ActionSpec{
+			ActionName:      action.Spec.ActionName,
 			Notes:           action.Spec.Notes,
+			Disabled:        action.Spec.Disabled,
 			Signals:         action.Spec.Signals,
-			CollectorRoles:  []v1.CollectorsGroupRole{v1.CollectorsGroupRoleClusterGateway},
-			OrderHint:       -50,
-			ProcessorConfig: runtime.RawExtension{Raw: configJson},
+			RenameAttribute: &config,
 		},
 	}
 
-	return &processor, nil
+	return odigosAction
+}
+
+func (r *RenameAttributeReconciler) updateMigratedAction(action *actionv1.RenameAttribute, odigosAction *v1.Action) *v1.Action {
+	odigosAction.Spec.Notes = action.Spec.Notes
+	odigosAction.Spec.Disabled = action.Spec.Disabled
+	odigosAction.Spec.Signals = action.Spec.Signals
+	odigosAction.Spec.RenameAttribute = &actionv1.RenameAttributeConfig{
+		Renames: action.Spec.Renames,
+	}
+	return odigosAction
 }
