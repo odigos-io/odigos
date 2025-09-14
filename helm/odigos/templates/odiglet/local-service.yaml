@@ -16,6 +16,9 @@ spec:
     - name: metrics
       port: 8080
       targetPort: 8080
+    - name: wasp
+      port: 4040
+      targetPort: 4040
   selector:
     app.kubernetes.io/name: odiglet
   internalTrafficPolicy: Local
