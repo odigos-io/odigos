@@ -22,7 +22,7 @@ jobs:
           RELEASE_BRANCH_NAME="releases/${{ github.event.inputs.base_minor_version }}.0"
           echo "release_branch_name=$RELEASE_BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ steps.release_branch.outputs.release_branch_name }}

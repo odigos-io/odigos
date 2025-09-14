@@ -61,10 +61,10 @@ Namespace:  default
 
 Labels:
   Instrumented:  true
-  Workload: odigos-instrumentation=enabled
-  Namespace: odigos-instrumentation=enabled
-  Decision: Workload is instrumented because the deployment contains the label 'odigos-instrumentation=enabled'
-  Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#1-odigos-instrumentation-label
+  Workload:  instrumented
+  Namespace: unset
+  Decision: Workload is instrumented because there is an enabled Source for this workload
+  Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#1-source-configuration
 
 Instrumentation Config:
   Created at 2024-07-30 19:00:40 +0300 IDT
