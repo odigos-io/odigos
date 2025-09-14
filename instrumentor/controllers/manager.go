@@ -7,11 +7,11 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
-	"github.com/odigos-io/odigos/instrumentor/controllers/workloadmigrations"
 
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -176,15 +176,15 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *ver
 		return fmt.Errorf("failed to create controller for instrumentation config: %w", err)
 	}
 
-	err = workloadmigrations.SetupWithManager(mgr)
-	if err != nil {
-		return fmt.Errorf("failed to create controller for workload migrations: %w", err)
-	}
-
 	return nil
 }
 
-func RegisterWebhooks(mgr manager.Manager, dp *distros.Provider) error {
+type WebhookConfig struct {
+	DistrosProvider *distros.Provider
+	WaspMutator     func(*corev1.Pod, common.OdigosConfiguration) error
+}
+
+func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 	err := builder.
 		WebhookManagedBy(mgr).
 		For(&odigosv1.Source{}).
@@ -203,8 +203,9 @@ func RegisterWebhooks(mgr manager.Manager, dp *distros.Provider) error {
 
 	webhook := &agentenabled.PodsWebhook{
 		Client:        mgr.GetClient(),
-		DistrosGetter: dp.Getter,
+		DistrosGetter: config.DistrosProvider.Getter,
 		Decoder:       decoder,
+		WaspMutator:   config.WaspMutator,
 	}
 
 	// Register directly with GetWebhookServer() since this webhook uses admission.Handler for full control.

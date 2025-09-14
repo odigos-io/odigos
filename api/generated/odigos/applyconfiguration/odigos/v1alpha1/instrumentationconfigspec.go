@@ -17,16 +17,21 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 // InstrumentationConfigSpecApplyConfiguration represents a declarative configuration of the InstrumentationConfigSpec type for use
 // with apply.
 type InstrumentationConfigSpecApplyConfiguration struct {
-	ServiceName            *string                                  `json:"serviceName,omitempty"`
-	AgentInjectionEnabled  *bool                                    `json:"agentInjectionEnabled,omitempty"`
-	Containers             []ContainerAgentConfigApplyConfiguration `json:"containers,omitempty"`
-	ContainersOverrides    []ContainerOverrideApplyConfiguration    `json:"containersOverrides,omitempty"`
-	ContainerOverridesHash *string                                  `json:"containerOverridesHash,omitempty"`
-	AgentsMetaHash         *string                                  `json:"agentsMetaHash,omitempty"`
-	SdkConfigs             []SdkConfigApplyConfiguration            `json:"sdkConfigs,omitempty"`
+	ServiceName               *string                                  `json:"serviceName,omitempty"`
+	AgentInjectionEnabled     *bool                                    `json:"agentInjectionEnabled,omitempty"`
+	Containers                []ContainerAgentConfigApplyConfiguration `json:"containers,omitempty"`
+	ContainersOverrides       []ContainerOverrideApplyConfiguration    `json:"containersOverrides,omitempty"`
+	ContainerOverridesHash    *string                                  `json:"containerOverridesHash,omitempty"`
+	AgentsMetaHash            *string                                  `json:"agentsMetaHash,omitempty"`
+	AgentsMetaHashChangedTime *v1.Time                                 `json:"agentsMetaHashChangedTime,omitempty"`
+	SdkConfigs                []SdkConfigApplyConfiguration            `json:"sdkConfigs,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -90,6 +95,14 @@ func (b *InstrumentationConfigSpecApplyConfiguration) WithContainerOverridesHash
 // If called multiple times, the AgentsMetaHash field is set to the value of the last call.
 func (b *InstrumentationConfigSpecApplyConfiguration) WithAgentsMetaHash(value string) *InstrumentationConfigSpecApplyConfiguration {
 	b.AgentsMetaHash = &value
+	return b
+}
+
+// WithAgentsMetaHashChangedTime sets the AgentsMetaHashChangedTime field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AgentsMetaHashChangedTime field is set to the value of the last call.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithAgentsMetaHashChangedTime(value v1.Time) *InstrumentationConfigSpecApplyConfiguration {
+	b.AgentsMetaHashChangedTime = &value
 	return b
 }
 

@@ -55,6 +55,13 @@ spec:
                   or something else that requires rollout, the hash change will indicate that.
                   if the hash is empty, it means that no agent should be enabled in any pod container.
                 type: string
+              agentsMetaHashChangedTime:
+                description: |-
+                  The last time at which the agents meta hash value was changed.
+                  Pods created before this time may not be in alignment with the AgentsMetaHash.
+                  e.g. can lack the odigos label, or have a different value.
+                format: date-time
+                type: string
               containerOverridesHash:
                 description: |-
                   An hash of the containers overrides, used to determine if the overrides have changed for event filtering.
