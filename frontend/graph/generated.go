@@ -41,6 +41,7 @@ type Config struct {
 type ResolverRoot interface {
 	ComputePlatform() ComputePlatformResolver
 	K8sActualNamespace() K8sActualNamespaceResolver
+	K8sActualSource() K8sActualSourceResolver
 	K8sWorkload() K8sWorkloadResolver
 	K8sWorkloadPodContainer() K8sWorkloadPodContainerResolver
 	K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsResolver
@@ -371,15 +372,16 @@ type ComplexityRoot struct {
 	}
 
 	K8sActualSource struct {
-		Conditions        func(childComplexity int) int
-		Containers        func(childComplexity int) int
-		DataStreamNames   func(childComplexity int) int
-		Kind              func(childComplexity int) int
-		Name              func(childComplexity int) int
-		Namespace         func(childComplexity int) int
-		NumberOfInstances func(childComplexity int) int
-		OtelServiceName   func(childComplexity int) int
-		Selected          func(childComplexity int) int
+		Conditions                 func(childComplexity int) int
+		Containers                 func(childComplexity int) int
+		DataStreamNames            func(childComplexity int) int
+		Kind                       func(childComplexity int) int
+		Name                       func(childComplexity int) int
+		Namespace                  func(childComplexity int) int
+		NumberOfInstances          func(childComplexity int) int
+		OtelServiceName            func(childComplexity int) int
+		Selected                   func(childComplexity int) int
+		WorkloadOdigosHealthStatus func(childComplexity int) int
 	}
 
 	K8sAnnotationAttribute struct {
@@ -816,6 +818,9 @@ type ComputePlatformResolver interface {
 }
 type K8sActualNamespaceResolver interface {
 	Sources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error)
+}
+type K8sActualSourceResolver interface {
+	WorkloadOdigosHealthStatus(ctx context.Context, obj *model.K8sActualSource) (*model.DesiredConditionStatus, error)
 }
 type K8sWorkloadResolver interface {
 	ServiceName(ctx context.Context, obj *model.K8sWorkload) (*string, error)
@@ -2331,6 +2336,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sActualSource.Selected(childComplexity), true
+
+	case "K8sActualSource.workloadOdigosHealthStatus":
+		if e.complexity.K8sActualSource.WorkloadOdigosHealthStatus == nil {
+			break
+		}
+
+		return e.complexity.K8sActualSource.WorkloadOdigosHealthStatus(childComplexity), true
 
 	case "K8sAnnotationAttribute.annotationKey":
 		if e.complexity.K8sAnnotationAttribute.AnnotationKey == nil {
@@ -9050,6 +9062,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_sources(_ context.Conte
 				return ec.fieldContext_K8sActualSource_containers(ctx, field)
 			case "conditions":
 				return ec.fieldContext_K8sActualSource_conditions(ctx, field)
+			case "workloadOdigosHealthStatus":
+				return ec.fieldContext_K8sActualSource_workloadOdigosHealthStatus(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -9114,6 +9128,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_source(ctx context.Cont
 				return ec.fieldContext_K8sActualSource_containers(ctx, field)
 			case "conditions":
 				return ec.fieldContext_K8sActualSource_conditions(ctx, field)
+			case "workloadOdigosHealthStatus":
+				return ec.fieldContext_K8sActualSource_workloadOdigosHealthStatus(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -14485,6 +14501,8 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_sources(_ context.Co
 				return ec.fieldContext_K8sActualSource_containers(ctx, field)
 			case "conditions":
 				return ec.fieldContext_K8sActualSource_conditions(ctx, field)
+			case "workloadOdigosHealthStatus":
+				return ec.fieldContext_K8sActualSource_workloadOdigosHealthStatus(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -14896,6 +14914,57 @@ func (ec *executionContext) fieldContext_K8sActualSource_conditions(_ context.Co
 				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sActualSource_workloadOdigosHealthStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sActualSource_workloadOdigosHealthStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sActualSource().WorkloadOdigosHealthStatus(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sActualSource_workloadOdigosHealthStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sActualSource",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
 	}
 	return fc, nil
@@ -34057,22 +34126,22 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 		case "namespace":
 			out.Values[i] = ec._K8sActualSource_namespace(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._K8sActualSource_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "kind":
 			out.Values[i] = ec._K8sActualSource_kind(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "dataStreamNames":
 			out.Values[i] = ec._K8sActualSource_dataStreamNames(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "numberOfInstances":
 			out.Values[i] = ec._K8sActualSource_numberOfInstances(ctx, field, obj)
@@ -34084,6 +34153,39 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._K8sActualSource_containers(ctx, field, obj)
 		case "conditions":
 			out.Values[i] = ec._K8sActualSource_conditions(ctx, field, obj)
+		case "workloadOdigosHealthStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sActualSource_workloadOdigosHealthStatus(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

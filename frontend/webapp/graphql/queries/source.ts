@@ -57,6 +57,11 @@ export const GET_SOURCE = gql`
           message
           lastTransitionTime
         }
+        workloadOdigosHealthStatus {
+          status
+          reasonEnum
+          message
+        }
       }
     }
   }
