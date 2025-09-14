@@ -1,0 +1,75 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: runtime-detection
+spec:
+  description: |
+    This e2e test verifies runtime detection and version compatibility across different languages.
+    It tests Node.js, Java, Python, and C++ workloads to ensure proper language and version detection.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: install-test-apps.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+            timeout: 4m
+
+    - name: Assert Odigos Installed
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+        - script:
+            content: |
+              ../../common/verify_odigos_installation.sh odigos-test
+            timeout: 1m
+
+    - name: Verify Node Odiglet label has been added
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Assert Apps installed
+      try:
+        - assert:
+            timeout: 5m
+            file: assert-apps-ready.yaml
+
+    - name: Instrument Namespaces
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Assert Pipeline
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Assert Runtime Detection
+      try:
+        - assert:
+            file: assert-runtime-detected.yaml
+            timeout: 2m

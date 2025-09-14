@@ -34,7 +34,32 @@ const (
 
 	OdigletLocalTrafficServiceName = "odiglet-local"
 	OdigletMetricsServerPort       = 8080
+	OdigletWaspServicePort         = 4040
 )
+
+// OffsetCronJobMode represents the mode for the Go offsets cron job
+type OffsetCronJobMode string
+
+const (
+	OffsetCronJobModeDirect OffsetCronJobMode = "direct"
+	OffsetCronJobModeImage  OffsetCronJobMode = "image"
+	OffsetCronJobModeOff    OffsetCronJobMode = "off"
+)
+
+// IsValid returns true if the mode is a valid OffsetCronJobMode
+func (m OffsetCronJobMode) IsValid() bool {
+	switch m {
+	case OffsetCronJobModeDirect, OffsetCronJobModeImage, OffsetCronJobModeOff:
+		return true
+	default:
+		return false
+	}
+}
+
+// String returns the string representation of the mode
+func (m OffsetCronJobMode) String() string {
+	return string(m)
+}
 
 var OdigletOSSInstalled = map[string]string{
 	OdigletOSSInstalledLabel: OdigletInstalledLabelValue,

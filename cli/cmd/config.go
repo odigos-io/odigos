@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -62,10 +63,12 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the port for the Odiglet health probes (readiness/liveness).
   	- "%s": Enable or disable the service graph feature [default: false].
 	- "%s": Cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
+	- "%s": Mode for automatic Go offsets updates. Options include direct (default) and image.
 	- "%s": Enable or disable ClickHouse JSON column support. When enabled, telemetry data is written using a new schema with JSON-typed columns (requires ClickHouse v25.3+). [default: false]
 	- "%s": List of allowed domains for test connection endpoints (e.g., "https://api.honeycomb.io", "https://otel.example.com"). Use "*" to allow all domains. Empty list allows all domains for backward compatibility.
 	- "%s": Enable or disable data compression before sending data to the Gateway collector. [default: false],
 	- "%s": Set the sizing configuration for the Odigos components (size_s, size_m [default], size_l).
+	- "%s": Enable wasp.
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -97,10 +100,12 @@ var configCmd = &cobra.Command{
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.ServiceGraphDisabledProperty,
 		consts.GoAutoOffsetsCronProperty,
+		consts.GoAutoOffsetsModeProperty,
 		consts.ClickhouseJsonTypeEnabledProperty,
 		consts.AllowedTestConnectionHostsProperty,
 		consts.EnableDataCompressionProperty,
 		consts.ResourceSizePresetProperty,
+		consts.WaspEnabledProperty,
 	),
 }
 
@@ -206,10 +211,12 @@ func validatePropertyValue(property string, value []string) error {
 		consts.OidcClientSecretProperty,
 		consts.OdigletHealthProbeBindPortProperty,
 		consts.GoAutoOffsetsCronProperty,
+		consts.GoAutoOffsetsModeProperty,
 		consts.ServiceGraphDisabledProperty,
 		consts.ClickhouseJsonTypeEnabledProperty,
 		consts.EnableDataCompressionProperty,
-		consts.ResourceSizePresetProperty:
+		consts.ResourceSizePresetProperty,
+		consts.WaspEnabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -225,7 +232,8 @@ func validatePropertyValue(property string, value []string) error {
 			consts.RollbackDisabledProperty,
 			consts.AutomaticRolloutDisabledProperty,
 			consts.ServiceGraphDisabledProperty,
-			consts.EnableDataCompressionProperty:
+			consts.EnableDataCompressionProperty,
+			consts.WaspEnabledProperty:
 			_, err := strconv.ParseBool(value[0])
 			if err != nil {
 				return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
@@ -438,6 +446,13 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 		intValue, _ := strconv.Atoi(value[0])
 		config.OdigletHealthProbeBindPort = intValue
 	case consts.GoAutoOffsetsCronProperty:
+		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, namespace)
+		if err != nil {
+			return fmt.Errorf("unable to read the current Odigos tier: %w", err)
+		}
+		if currentTier == common.CommunityOdigosTier {
+			return fmt.Errorf("custom offsets support is only available in Odigos pro tier.")
+		}
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
 		}
@@ -449,6 +464,27 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 			}
 		}
 		config.GoAutoOffsetsCron = cronValue
+
+	case consts.GoAutoOffsetsModeProperty:
+		currentTier, err := odigospro.GetCurrentOdigosTier(ctx, client, namespace)
+		if err != nil {
+			return fmt.Errorf("unable to read the current Odigos tier: %w", err)
+		}
+		if currentTier == common.CommunityOdigosTier {
+			return fmt.Errorf("custom offsets support is only available in Odigos pro tier.")
+		}
+		if len(value) != 1 {
+			return fmt.Errorf("%s expects exactly one value", property)
+		}
+		modeValue := value[0]
+		if modeValue != "" {
+			mode := k8sconsts.OffsetCronJobMode(modeValue)
+			if !mode.IsValid() {
+				return fmt.Errorf("invalid mode: %s. Must be one of: %s, %s, %s",
+					modeValue, k8sconsts.OffsetCronJobModeDirect, k8sconsts.OffsetCronJobModeImage, k8sconsts.OffsetCronJobModeOff)
+			}
+		}
+		config.GoAutoOffsetsMode = modeValue
 
 	case consts.ClickhouseJsonTypeEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
@@ -462,6 +498,10 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 			return fmt.Errorf("invalid sizing config: %s (valid values: %s, %s, %s)", value[0], sizing.SizeSmall, sizing.SizeMedium, sizing.SizeLarge)
 		}
 		config.ResourceSizePreset = value[0]
+
+	case consts.WaspEnabledProperty:
+		boolValue, _ := strconv.ParseBool(value[0])
+		config.WaspEnabled = &boolValue
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)

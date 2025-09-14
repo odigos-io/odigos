@@ -382,9 +382,9 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 			},
 		},
 		{
-			Name: "kernel-debug",
+			Name: "sys-kernel",
 			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{Path: "/sys/kernel/debug"},
+				HostPath: &corev1.HostPathVolumeSource{Path: "/sys/kernel"},
 			},
 		},
 	}
@@ -646,8 +646,8 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 									ReadOnly:  true,
 								},
 								{
-									Name:      "kernel-debug",
-									MountPath: "/sys/kernel/debug",
+									Name:      "sys-kernel",
+									MountPath: "/sys/kernel",
 								},
 							}, additionalVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
@@ -897,6 +897,11 @@ func NewOdigletLocalTrafficService(ns string) *corev1.Service {
 					Name:       "metrics",
 					Port:       8080,
 					TargetPort: intstr.FromInt(8080),
+				},
+				{
+					Name:       "wasp",
+					Port:       int32(k8sconsts.OdigletWaspServicePort),
+					TargetPort: intstr.FromInt(k8sconsts.OdigletWaspServicePort),
 				},
 			},
 			InternalTrafficPolicy: &localTrafficPolicy,

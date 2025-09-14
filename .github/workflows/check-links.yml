@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -22,7 +22,7 @@ jobs:
           restore-keys: cache-lychee-pr-
 
       - name: Link Checker
-        uses: lycheeverse/lychee-action@v2.4.1
+        uses: lycheeverse/lychee-action@v2.6.1
         with:
           args: >-
             -v -n "*.md" "**/*.md" "**/*.mdx"

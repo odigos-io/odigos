@@ -34,7 +34,7 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # need to fetch all tags for goreleaser to calculate the changelog
           ref: ${{ env.RC_TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
@@ -79,7 +79,7 @@ jobs:
 
       - id: gcp-auth
         name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           token_format: 'access_token'
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}

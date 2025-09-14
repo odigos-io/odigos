@@ -7,7 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func SetupWithManager(mgr ctrl.Manager) error {
+func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 
 	err := ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Secret{}).
@@ -28,6 +28,18 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		WithEventFilter(predicate.And(&odigospredicates.OdigosDeploymentConfigMapPredicate, &odigospredicates.CreationPredicate{})).
 		Complete(&odigossecretController{
 			Client: mgr.GetClient(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&corev1.ConfigMap{}).
+		Named("odigospro-odigosgoautooffsets").
+		WithEventFilter(predicate.Or(&odigospredicates.OdigosDeploymentConfigMapPredicate, &odigospredicates.OdigosConfigMapPredicate, &odigospredicates.OdigosProSecretPredicate)).
+		Complete(&odigosproOffsetsController{
+			Client:        mgr.GetClient(),
+			OdigosVersion: odigosVersion,
 		})
 	if err != nil {
 		return err
