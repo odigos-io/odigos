@@ -25,9 +25,17 @@ jobs:
           cache-dependency-path: |
             **/go.sum
 
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.2
+
       - name: Build CLI
         run: |
           cd cli
+          TAG=e2e-test
+          sed -i -E 's/0.0.0/'"${TAG#v}"'/' ../helm/odigos/Chart.yaml
+          helm package ../helm/odigos -d pkg/helm/embedded
           go build -tags=embed_manifests -o odigos
 
       - name: Save CLI binary to cache
@@ -35,6 +43,7 @@ jobs:
         with:
           path: cli/odigos
           key: ${{ github.run_id }}-odigos-cli
+
 
   build-odigos-images:
     runs-on: depot-ubuntu-24.04-8

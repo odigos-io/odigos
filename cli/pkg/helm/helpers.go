@@ -26,7 +26,6 @@ var (
 // injected at build time
 var OdigosChartVersion string
 
-// prepareChartAndValues loads chart and merges values
 func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]interface{}, error) {
 	// choose version
 	version := ""
@@ -36,19 +35,53 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 		version = strings.TrimPrefix(OdigosChartVersion, "v")
 	}
 
-	// ensure odigos repo exists if using odigos/ chart
+	// Use embedded chart if available (default odigos/odigos and no override)
+	if HelmChart == "odigos/odigos" && HelmChartVersion == "" {
+		ch, err := LoadEmbeddedChart(version)
+		if err == nil {
+			fmt.Printf("📦 Using embedded chart %s (chart version: %s)\n", ch.Metadata.Name, ch.Metadata.Version)
+
+			// merge values like normal (so --set and --values flags work)
+			valOpts := &values.Options{
+				ValueFiles: []string{},
+				Values:     HelmSetArgs,
+			}
+			if HelmValuesFile != "" {
+				valOpts.ValueFiles = append(valOpts.ValueFiles, HelmValuesFile)
+			}
+			vals, err := valOpts.MergeValues(getter.All(settings))
+			if err != nil {
+				return nil, nil, err
+			}
+
+			// fallback image.tag to AppVersion if not set
+			if ch.Metadata.AppVersion != "" {
+				if _, ok := vals["image"]; !ok {
+					vals["image"] = map[string]interface{}{}
+				}
+				if imgVals, ok := vals["image"].(map[string]interface{}); ok {
+					if _, hasTag := imgVals["tag"]; !hasTag || imgVals["tag"] == "" {
+						imgVals["tag"] = ch.Metadata.AppVersion
+						fmt.Printf("Using appVersion %s as image.tag\n", ch.Metadata.AppVersion)
+					}
+				}
+			}
+
+			return ch, vals, nil
+		}
+		// if no embedded chart found, continue with repo fallback
+	}
+
+	// otherwise: use remote/local chart like today
 	if strings.HasPrefix(HelmChart, "odigos/") {
 		if err := ensureHelmRepo(settings, "odigos", "https://odigos-io.github.io/odigos/"); err != nil {
 			return nil, nil, err
 		}
 	}
-
-	// refresh repo index if using a remote chart
 	if strings.Contains(HelmChart, "/") {
 		refreshHelmRepo(settings, HelmChart)
 	}
 
-	// load chart
 	chartPathOptions := action.ChartPathOptions{Version: version}
 	chartPath, err := chartPathOptions.LocateChart(HelmChart, settings)
 	if err != nil {
@@ -59,7 +92,6 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 		return nil, nil, err
 	}
 
-	// merge values
 	valOpts := &values.Options{
 		ValueFiles: []string{},
 		Values:     HelmSetArgs,
@@ -72,7 +104,6 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 		return nil, nil, err
 	}
 
-	// fallback image.tag to AppVersion if not set
 	if ch.Metadata.AppVersion != "" {
 		if _, ok := vals["image"]; !ok {
 			vals["image"] = map[string]interface{}{}
@@ -80,6 +111,7 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 		if imgVals, ok := vals["image"].(map[string]interface{}); ok {
 			if _, hasTag := imgVals["tag"]; !hasTag || imgVals["tag"] == "" {
 				imgVals["tag"] = ch.Metadata.AppVersion
+				fmt.Printf("Using appVersion %s as image.tag\n", ch.Metadata.AppVersion)
 			}
 		}
 	}
