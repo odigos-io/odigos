@@ -33,10 +33,12 @@ jobs:
       - name: Build CLI
         run: |
           cd cli
-          TAG=e2e-test
+          TAG=0.0.0-e2e-test
           sed -i -E 's/0.0.0/'"${TAG#v}"'/' ../helm/odigos/Chart.yaml
           helm package ../helm/odigos -d pkg/helm/embedded
-          go build -tags=embed_manifests -o odigos
+          go build -tags=embed_manifests \
+            -ldflags "-X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=${TAG#v}" \
+            -o odigos
 
       - name: Save CLI binary to cache
         uses: actions/cache/save@v4
