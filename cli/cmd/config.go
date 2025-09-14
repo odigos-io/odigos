@@ -68,6 +68,7 @@ var configCmd = &cobra.Command{
 	- "%s": List of allowed domains for test connection endpoints (e.g., "https://api.honeycomb.io", "https://otel.example.com"). Use "*" to allow all domains. Empty list allows all domains for backward compatibility.
 	- "%s": Enable or disable data compression before sending data to the Gateway collector. [default: false],
 	- "%s": Set the sizing configuration for the Odigos components (size_s, size_m [default], size_l).
+	- "%s": Enable wasp.
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -104,6 +105,7 @@ var configCmd = &cobra.Command{
 		consts.AllowedTestConnectionHostsProperty,
 		consts.EnableDataCompressionProperty,
 		consts.ResourceSizePresetProperty,
+		consts.WaspEnabledProperty,
 	),
 }
 
@@ -213,7 +215,8 @@ func validatePropertyValue(property string, value []string) error {
 		consts.ServiceGraphDisabledProperty,
 		consts.ClickhouseJsonTypeEnabledProperty,
 		consts.EnableDataCompressionProperty,
-		consts.ResourceSizePresetProperty:
+		consts.ResourceSizePresetProperty,
+		consts.WaspEnabledProperty:
 
 		if len(value) != 1 {
 			return fmt.Errorf("%s expects exactly one value", property)
@@ -229,7 +232,8 @@ func validatePropertyValue(property string, value []string) error {
 			consts.RollbackDisabledProperty,
 			consts.AutomaticRolloutDisabledProperty,
 			consts.ServiceGraphDisabledProperty,
-			consts.EnableDataCompressionProperty:
+			consts.EnableDataCompressionProperty,
+			consts.WaspEnabledProperty:
 			_, err := strconv.ParseBool(value[0])
 			if err != nil {
 				return fmt.Errorf("invalid boolean value for %s: %s", property, value[0])
@@ -494,6 +498,10 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 			return fmt.Errorf("invalid sizing config: %s (valid values: %s, %s, %s)", value[0], sizing.SizeSmall, sizing.SizeMedium, sizing.SizeLarge)
 		}
 		config.ResourceSizePreset = value[0]
+
+	case consts.WaspEnabledProperty:
+		boolValue, _ := strconv.ParseBool(value[0])
+		config.WaspEnabled = &boolValue
 
 	default:
 		return fmt.Errorf("invalid property: %s", property)
