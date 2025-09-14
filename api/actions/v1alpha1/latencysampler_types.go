@@ -89,6 +89,7 @@ type LatencySamplerStatus struct {
 // LatencySampler is the Schema for defining latency-based trace sampling rules.
 // It supports targeting specific services and HTTP routes and applying latency thresholds
 // to determine sampling eligibility.
+// DEPRECATED: Use odigosv1.Action instead
 type LatencySampler struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -100,6 +101,7 @@ type LatencySampler struct {
 //+kubebuilder:object:root=true
 
 // LatencySamplerList contains a list of LatencySampler objects.
+// DEPRECATED: Use odigosv1.ActionList instead
 type LatencySamplerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
