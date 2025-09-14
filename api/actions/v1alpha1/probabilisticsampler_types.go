@@ -50,6 +50,7 @@ type ProbabilisticSamplerStatus struct {
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // ProbabilisticSampler is the Schema for the ProbabilisticSampler odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type ProbabilisticSampler struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -61,6 +62,7 @@ type ProbabilisticSampler struct {
 //+kubebuilder:object:root=true
 
 // ProbabilisticSamplerList contains a list of ProbabilisticSampler
+// DEPRECATED: Use odigosv1.ActionList instead
 type ProbabilisticSamplerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

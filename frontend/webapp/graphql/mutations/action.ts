@@ -5,6 +5,64 @@ export const CREATE_ACTION = gql`
     createAction(action: $action) {
       id
       type
+      name
+      notes
+      disabled
+      signals
+      fields {
+        collectContainerAttributes
+        collectReplicaSetAttributes
+        collectWorkloadId
+        collectClusterId
+        labelsAttributes {
+          labelKey
+          attributeKey
+        }
+        annotationsAttributes {
+          annotationKey
+          attributeKey
+        }
+        clusterAttributes {
+          attributeName
+          attributeStringValue
+        }
+        overwriteExistingValues
+        attributeNamesToDelete
+        renames
+        piiCategories
+
+        samplingPercentage
+        fallbackSamplingRatio
+        endpointsFilters {
+          httpRoute
+          serviceName
+          minimumLatencyThreshold
+          fallbackSamplingRatio
+        }
+        servicesNameFilters {
+          serviceName
+          samplingRatio
+          fallbackSamplingRatio
+        }
+        attributeFilters {
+          serviceName
+          attributeKey
+          fallbackSamplingRatio
+          condition {
+            stringCondition {
+              operation
+              expectedValue
+            }
+          }
+        }
+      }
+      conditions {
+        status
+        type
+        reason
+        message
+        lastTransitionTime
+      }
     }
   }
 `;
@@ -14,6 +72,64 @@ export const UPDATE_ACTION = gql`
     updateAction(id: $id, action: $action) {
       id
       type
+      name
+      notes
+      disabled
+      signals
+      fields {
+        collectContainerAttributes
+        collectReplicaSetAttributes
+        collectWorkloadId
+        collectClusterId
+        labelsAttributes {
+          labelKey
+          attributeKey
+        }
+        annotationsAttributes {
+          annotationKey
+          attributeKey
+        }
+        clusterAttributes {
+          attributeName
+          attributeStringValue
+        }
+        overwriteExistingValues
+        attributeNamesToDelete
+        renames
+        piiCategories
+
+        samplingPercentage
+        fallbackSamplingRatio
+        endpointsFilters {
+          httpRoute
+          serviceName
+          minimumLatencyThreshold
+          fallbackSamplingRatio
+        }
+        servicesNameFilters {
+          serviceName
+          samplingRatio
+          fallbackSamplingRatio
+        }
+        attributeFilters {
+          serviceName
+          attributeKey
+          fallbackSamplingRatio
+          condition {
+            stringCondition {
+              operation
+              expectedValue
+            }
+          }
+        }
+      }
+      conditions {
+        status
+        type
+        reason
+        message
+        lastTransitionTime
+      }
     }
   }
 `;

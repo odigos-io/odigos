@@ -167,7 +167,7 @@ var _ = Describe("ProbabilisticSampler Controller", func() {
 			processor := &odigosv1.Processor{}
 			Eventually(func() bool {
 				err := k8sClient.Get(testCtx, types.NamespacedName{
-					Name:      ActionName + "-legacy",
+					Name:      odigosv1.ActionMigratedLegacyPrefix + ActionName + "-legacy",
 					Namespace: ActionNamespace,
 				}, processor)
 				if err != nil {
@@ -318,7 +318,7 @@ var _ = Describe("ProbabilisticSampler Controller", func() {
 	})
 
 	Context("When creating ProbabilisticSampler Actions with legacy objects", func() {
-		It("Should merge all legacy ProbabilisticSampler objects into multiple probabilistic_sampler processors with owner references", func() {
+		It("Should process all legacy ProbabilisticSampler objects into multiple probabilistic_sampler processors with owner references", func() {
 			By("Creating multiple legacy ProbabilisticSampler objects")
 			legacyProbSampler1 := &actionv1.ProbabilisticSampler{
 				ObjectMeta: metav1.ObjectMeta{
@@ -368,7 +368,7 @@ var _ = Describe("ProbabilisticSampler Controller", func() {
 			processor := &odigosv1.Processor{}
 			Eventually(func() bool {
 				err := k8sClient.Get(testCtx, types.NamespacedName{
-					Name:      ActionName + "-legacy-prob-1",
+					Name:      odigosv1.ActionMigratedLegacyPrefix + ActionName + "-legacy-prob-1",
 					Namespace: ActionNamespace,
 				}, processor)
 				if err != nil {
@@ -381,11 +381,9 @@ var _ = Describe("ProbabilisticSampler Controller", func() {
 			Expect(processor.Spec.Type).Should(Equal("probabilistic_sampler"))
 			Expect(processor.Spec.OrderHint).Should(Equal(1))
 
-			By("Verifying that the processor has owner references to all legacy ProbabilisticSampler objects")
-			// The processor should have owner references to all the legacy ProbabilisticSampler objects
-			// This ensures that when legacy objects are deleted, the processor is also cleaned up
+			By("Verifying that the processor does not have owner references to legacy ProbabilisticSampler objects")
+			// The processor should not have owner references to all the legacy ProbabilisticSampler objects
 			ownerRefs := processor.GetOwnerReferences()
-
 			found := false
 			for _, ownerRef := range ownerRefs {
 				if ownerRef.Name == ActionName+"-legacy-prob-1" && ownerRef.Kind == "ProbabilisticSampler" {
@@ -393,13 +391,22 @@ var _ = Describe("ProbabilisticSampler Controller", func() {
 					break
 				}
 			}
-			Expect(found).Should(BeTrue(), "Owner reference for %s should be present", ActionName+"-legacy-prob-1")
+			Expect(found).Should(BeFalse(), "Owner reference for legacy %s should not be present", ActionName+"-legacy-prob-1")
+
+			found = false
+			for _, ownerRef := range ownerRefs {
+				if ownerRef.Name == odigosv1.ActionMigratedLegacyPrefix+ActionName+"-legacy-prob-1" && ownerRef.Kind == "Action" {
+					found = true
+					break
+				}
+			}
+			Expect(found).Should(BeTrue(), "Owner reference for %s should be present", odigosv1.ActionMigratedLegacyPrefix+ActionName+"-legacy-prob-1")
 
 			processor2 := &odigosv1.Processor{}
 
 			Eventually(func() bool {
 				err := k8sClient.Get(testCtx, types.NamespacedName{
-					Name:      ActionName + "-legacy-prob-2",
+					Name:      odigosv1.ActionMigratedLegacyPrefix + ActionName + "-legacy-prob-2",
 					Namespace: ActionNamespace,
 				}, processor2)
 				if err != nil {
@@ -412,17 +419,25 @@ var _ = Describe("ProbabilisticSampler Controller", func() {
 			Expect(processor2.Spec.Type).Should(Equal("probabilistic_sampler"))
 			Expect(processor2.Spec.OrderHint).Should(Equal(1))
 
-			By("Verifying that the processor has owner references to the legacy ProbabilisticSampler object")
+			By("Verifying that the processor does not have owner references to the legacy ProbabilisticSampler object")
 			ownerRefs2 := processor2.GetOwnerReferences()
-
 			found2 := false
 			for _, ownerRef := range ownerRefs2 {
-				if ownerRef.Name == ActionName+"-legacy-prob-2" && ownerRef.Kind == "ProbabilisticSampler" {
+				if ownerRef.Name == odigosv1.ActionMigratedLegacyPrefix+ActionName+"-legacy-prob-2" && ownerRef.Kind == "ProbabilisticSampler" {
 					found2 = true
 					break
 				}
 			}
-			Expect(found2).Should(BeTrue(), "Owner reference for %s should be present", ActionName+"-legacy-prob-2")
+			Expect(found2).Should(BeFalse(), "Owner reference for %s should not be present", ActionName+"-legacy-prob-2")
+
+			found2 = false
+			for _, ownerRef := range ownerRefs2 {
+				if ownerRef.Name == odigosv1.ActionMigratedLegacyPrefix+ActionName+"-legacy-prob-2" && ownerRef.Kind == "Action" {
+					found2 = true
+					break
+				}
+			}
+			Expect(found2).Should(BeTrue(), "Owner reference for %s should be present", odigosv1.ActionMigratedLegacyPrefix+ActionName+"-legacy-prob-2")
 		})
 
 		It("Should handle mixed legacy and new ProbabilisticSampler configurations", func() {
@@ -462,7 +477,7 @@ var _ = Describe("ProbabilisticSampler Controller", func() {
 			processor := &odigosv1.Processor{}
 			Eventually(func() bool {
 				err := k8sClient.Get(testCtx, types.NamespacedName{
-					Name:      ActionName + "-legacy-mixed",
+					Name:      odigosv1.ActionMigratedLegacyPrefix + ActionName + "-legacy-mixed",
 					Namespace: ActionNamespace,
 				}, processor)
 				if err != nil {
@@ -478,7 +493,7 @@ var _ = Describe("ProbabilisticSampler Controller", func() {
 			By("Verifying that the processor has owner references to the legacy ProbabilisticSampler object")
 			ownerRefs := processor.GetOwnerReferences()
 
-			// Verify that the owner reference includes the legacy ProbabilisticSampler object
+			// Verify that the owner reference does not include the legacy ProbabilisticSampler object
 			found := false
 			for _, ownerRef := range ownerRefs {
 				if ownerRef.Name == ActionName+"-legacy-mixed" && ownerRef.Kind == "ProbabilisticSampler" {
@@ -486,7 +501,16 @@ var _ = Describe("ProbabilisticSampler Controller", func() {
 					break
 				}
 			}
-			Expect(found).Should(BeTrue(), "Owner reference for legacy ProbabilisticSampler should be present")
+			Expect(found).Should(BeFalse(), "Owner reference for legacy ProbabilisticSampler should not be present")
+
+			found = false
+			for _, ownerRef := range ownerRefs {
+				if ownerRef.Name == odigosv1.ActionMigratedLegacyPrefix+ActionName+"-legacy-mixed" && ownerRef.Kind == "Action" {
+					found = true
+					break
+				}
+			}
+			Expect(found).Should(BeTrue(), "Owner reference for %s should be present", odigosv1.ActionMigratedLegacyPrefix+ActionName+"-legacy-mixed")
 
 			processor2 := &odigosv1.Processor{}
 			Eventually(func() bool {
@@ -504,7 +528,7 @@ var _ = Describe("ProbabilisticSampler Controller", func() {
 			Expect(processor.Spec.Type).Should(Equal("probabilistic_sampler"))
 			Expect(processor.Spec.OrderHint).Should(Equal(1))
 
-			By("Verifying that the processor has owner references to the legacy ProbabilisticSampler object")
+			By("Verifying that the processor does not have owner references to the legacy ProbabilisticSampler object")
 			ownerRefs2 := processor2.GetOwnerReferences()
 
 			// Verify that the owner reference includes the legacy ProbabilisticSampler object

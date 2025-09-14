@@ -114,6 +114,9 @@ type RuntimeAgent struct {
 
 	// If true, the agent supports ld-preload injection of "append" environment variables.
 	LdPreloadInjectionSupported bool `yaml:"ldPreloadInjectionSupported,omitempty"`
+
+	// If true, the agent supports wasp
+	WaspSupported bool `yaml:"waspSupported,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,

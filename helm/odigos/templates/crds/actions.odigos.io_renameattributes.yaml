@@ -19,8 +19,9 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: RenameAttribute is the Schema for the RenameAttribute odigos
-          action API
+        description: |-
+          RenameAttribute is the Schema for the RenameAttribute odigos action API
+          DEPRECATED: Use odigosv1.Action instead
         properties:
           apiVersion:
             description: |-

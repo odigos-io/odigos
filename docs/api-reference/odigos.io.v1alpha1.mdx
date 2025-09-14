@@ -1532,6 +1532,19 @@ if the hash is empty, it means that no agent should be enabled in any pod contai
 </tr>
 <tr>
 <td>
+<code>agentsMetaHashChangedTime</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>The last time at which the agents meta hash value was changed.
+Pods created before this time may not be in alignment with the AgentsMetaHash.
+e.g. can lack the odigos label, or have a different value.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>sdkConfigs</code> <B>[Required]</B>
 </td>
 <td>

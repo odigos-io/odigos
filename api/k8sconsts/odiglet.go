@@ -34,6 +34,7 @@ const (
 
 	OdigletLocalTrafficServiceName = "odiglet-local"
 	OdigletMetricsServerPort       = 8080
+	OdigletWaspServicePort         = 4040
 )
 
 // OffsetCronJobMode represents the mode for the Go offsets cron job

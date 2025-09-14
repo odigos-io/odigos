@@ -52,18 +52,6 @@ func (h *LatencySamplerHandler) ConvertLegacyToAction(legacyAction metav1.Object
 }
 
 func (h *LatencySamplerHandler) List(ctx context.Context, c client.Client, namespace string) ([]metav1.Object, error) {
-	var legacyList actionv1.LatencySamplerList
-	if err := c.List(ctx, &legacyList, client.InNamespace(namespace)); err != nil && client.IgnoreNotFound(err) != nil {
-		return nil, err
-	}
-
-	// Handle the migration from legacy latencysampler to odigos action, convert legacy latencysampler to odigos action
-	// and add the new odigos action to the list
-	legacyItems := make([]metav1.Object, len(legacyList.Items))
-	for i, item := range legacyList.Items {
-		legacyItems[i] = &item
-	}
-
 	var list odigosv1.ActionList
 	if err := c.List(ctx, &list, client.InNamespace(namespace)); err != nil && client.IgnoreNotFound(err) != nil {
 		return nil, err
@@ -74,7 +62,6 @@ func (h *LatencySamplerHandler) List(ctx context.Context, c client.Client, names
 			items = append(items, &list.Items[i])
 		}
 	}
-	items = append(items, legacyItems...)
 	return items, nil
 }
 

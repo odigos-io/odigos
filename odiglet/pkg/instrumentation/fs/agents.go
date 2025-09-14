@@ -41,6 +41,7 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/java-ext-ebpf/javaagent.jar":                                                      {},
 		"/var/odigos/java-ext-ebpf/otel_agent_extension.jar":                                           {},
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
+		"/var/odigos/loader/loader.so":                                                                 {},
 	}
 	empty, err := isDirEmptyOrNotExist(k8sconsts.OdigosAgentsDirectory)
 	if err != nil {

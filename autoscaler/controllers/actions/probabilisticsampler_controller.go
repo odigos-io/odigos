@@ -15,15 +15,13 @@ package actions
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"k8s.io/apimachinery/pkg/api/meta"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,10 +29,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var supportedSignals = map[common.ObservabilitySignal]struct{}{
+var supportedProbabilisticSignals = map[common.ObservabilitySignal]struct{}{
 	common.TracesObservabilitySignal: {},
 }
 
+// DEPRECATED: Use odigosv1.Action instead
 type ProbabilisticSamplerReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -44,6 +43,7 @@ func (r *ProbabilisticSamplerReconciler) Reconcile(ctx context.Context, req ctrl
 
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling ProbabilisticSampler action")
+	logger.V(0).Info("WARNING: ProbabilisticSampler action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
 
 	action := &actionv1.ProbabilisticSampler{}
 	err := r.Get(ctx, req.NamespacedName, action)
@@ -51,72 +51,32 @@ func (r *ProbabilisticSamplerReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	for _, signal := range action.Spec.Signals {
-
-		if _, ok := supportedSignals[signal]; !ok {
-
-			err = fmt.Errorf("unsupported signal: %s", signal)
-			logger.V(0).Error(err, err.Error())
-			r.ReportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
-			return ctrl.Result{}, nil
+	// Migrate to odigosv1.Action
+	migratedActionName := v1.ActionMigratedLegacyPrefix + action.Name
+	odigosAction := &v1.Action{}
+	err = r.Get(ctx, client.ObjectKey{Name: migratedActionName, Namespace: action.Namespace}, odigosAction)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
 		}
-	}
-
-	processor, err := r.convertToProcessor(action)
-	if err != nil {
-		logger.V(0).Error(err, "failed to convert ProbabilisticSampler to processor")
-		r.ReportReconciledToProcessorFailed(ctx, action, FailedToTransformToProcessorReason, err.Error())
-		return ctrl.Result{}, nil
-	}
-
-	err = r.Patch(ctx, processor, client.Apply, client.FieldOwner(action.Name), client.ForceOwnership)
-	if err != nil {
-		r.ReportReconciledToProcessorFailed(ctx, action, FailedToCreateProcessorReason, err.Error())
+		logger.V(0).Info("Migrating legacy Action to odigosv1.Action. This is a one-way change, and modifications to the legacy Action will not be reflected in the migrated Action.")
+		// Action doesn't exist, create new one
+		odigosAction = r.createMigratedAction(action, migratedActionName)
+		err = r.Create(ctx, odigosAction)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		action.OwnerReferences = append(action.OwnerReferences, metav1.OwnerReference{
+			APIVersion: "odigos.io/v1alpha1",
+			Kind:       "Action",
+			Name:       odigosAction.Name,
+			UID:        odigosAction.UID,
+		})
+		err = r.Update(ctx, action)
 		return ctrl.Result{}, err
 	}
-
-	err = r.ReportReconciledToProcessor(ctx, action)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
+	logger.V(0).Info("Migrated Action already exists, skipping update")
 	return ctrl.Result{}, nil
-}
-
-func (r *ProbabilisticSamplerReconciler) ReportReconciledToProcessorFailed(ctx context.Context, action *actionv1.ProbabilisticSampler, reason string, msg string) error {
-	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
-		Type:               ActionTransformedToProcessorType,
-		Status:             metav1.ConditionFalse,
-		Reason:             reason,
-		Message:            msg,
-		ObservedGeneration: action.Generation,
-	})
-
-	if changed {
-		err := r.Status().Update(ctx, action)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (r *ProbabilisticSamplerReconciler) ReportReconciledToProcessor(ctx context.Context, action *actionv1.ProbabilisticSampler) error {
-	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
-		Type:               ActionTransformedToProcessorType,
-		Status:             metav1.ConditionTrue,
-		Reason:             ProcessorCreatedReason,
-		Message:            "The action has been reconciled to a processor resource.",
-		ObservedGeneration: action.Generation,
-	})
-
-	if changed {
-		err := r.Status().Update(ctx, action)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 type ProbabilisticSamplerConfig struct {
@@ -137,45 +97,30 @@ func probabilisticSamplerConfig(percentage string) (ProbabilisticSamplerConfig, 
 	return ProbabilisticSamplerConfig{Value: samplingPercentage, HashSeed: 123}, nil
 }
 
-func (r *ProbabilisticSamplerReconciler) convertToProcessor(action *actionv1.ProbabilisticSampler) (*v1.Processor, error) {
-	config, err := probabilisticSamplerConfig(action.Spec.SamplingPercentage)
-	if err != nil {
-		return nil, err
+func (r *ProbabilisticSamplerReconciler) createMigratedAction(action *actionv1.ProbabilisticSampler, migratedActionName string) *v1.Action {
+	config := actionv1.ProbabilisticSamplerConfig{
+		SamplingPercentage: action.Spec.SamplingPercentage,
 	}
 
-	configJson, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	processor := v1.Processor{
+	odigosAction := &v1.Action{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "odigos.io/v1alpha1",
-			Kind:       "Processor",
+			Kind:       "Action",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      action.Name,
+			Name:      migratedActionName,
 			Namespace: action.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: action.APIVersion,
-					Kind:       action.Kind,
-					Name:       action.Name,
-					UID:        action.UID,
-				},
-			},
 		},
-		Spec: v1.ProcessorSpec{
-			Type:            "probabilistic_sampler",
-			ProcessorName:   action.Spec.ActionName,
-			Disabled:        action.Spec.Disabled,
-			Notes:           action.Spec.Notes,
-			Signals:         action.Spec.Signals,
-			CollectorRoles:  []v1.CollectorsGroupRole{v1.CollectorsGroupRoleNodeCollector},
-			OrderHint:       1,
-			ProcessorConfig: runtime.RawExtension{Raw: configJson},
+		Spec: v1.ActionSpec{
+			ActionName: action.Spec.ActionName,
+			Notes:      action.Spec.Notes,
+			Disabled:   action.Spec.Disabled,
+			Signals:    action.Spec.Signals,
+			Samplers: &actionv1.SamplersConfig{
+				ProbabilisticSampler: &config,
+			},
 		},
 	}
 
-	return &processor, nil
+	return odigosAction
 }

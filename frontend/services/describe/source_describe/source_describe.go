@@ -140,10 +140,14 @@ func convertInstrumentationInstancesToGQL(instances []source.InstrumentationInst
 	gqlInstances := make([]*model.InstrumentationInstanceAnalyze, 0, len(instances))
 	for _, instance := range instances {
 		// TODO: remove this 'if' once core team fixes the issue
-		if strings.Contains(instance.Message.Value.(string), "could not find function offsets") {
-			instance.Message = nil
-			instance.Healthy.Value = "true"
-			instance.Healthy.Status = properties.PropertyStatusSuccess
+		if instance.Message != nil {
+			if v, ok := instance.Message.Value.(string); ok {
+				if strings.Contains(v, "could not find function offsets") {
+					instance.Message = nil
+					instance.Healthy.Value = "true"
+					instance.Healthy.Status = properties.PropertyStatusSuccess
+				}
+			}
 		}
 		gqlInstances = append(gqlInstances, &model.InstrumentationInstanceAnalyze{
 			Healthy:               describe_utils.ConvertEntityPropertyToGQL(&instance.Healthy),

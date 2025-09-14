@@ -105,6 +105,10 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 			// This flag being used by users who want to remove instrumentation without removing the entire Odigos setup,
 			// And by cleanup jobs that runs as helm pre-uninstall hook before helm uninstall command.
 			if cmd.Flag("instrumentation-only").Changed {
+				// Node labels are added by the Odiglet, and since it's not managed by Helm, we need to clean them up here.
+				// In CLI logic, this is done in UninstallClusterResources after the Odiglet is deleted.
+				createKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
+					client, ns, k8sconsts.OdigosSystemLabelKey, cleanupNodeOdigosLabels)
 				// MIGRATION: In older versions of Odigos, a legacy ConfigMap named "odigos-config" was used.
 				// It has since been replaced by "odigos-configuration", which is Helm-managed and does not include hook annotations.
 				// As part of the migration, we explicitly delete the legacy ConfigMap if it still exists.

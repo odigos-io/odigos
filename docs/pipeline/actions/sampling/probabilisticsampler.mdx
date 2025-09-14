@@ -35,10 +35,12 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
 
 ## Configuration Options
 
+The ProbabilisticSampler action is configured using the `odigos.io/v1alpha1.Action` CRD with the `samplers` configuration section.
+
 <AccordionGroup>
   <Accordion title="actionName">
     **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
-    - This field is
+    - This field is *optional*
     - <AssumeNoMeaning />
   </Accordion>
   <Accordion title="notes">
@@ -51,36 +53,50 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
     - This field is *optional*, and defaults to `false`
   </Accordion>
   <Accordion title="signals *">
-    **signals** `string[]` : An array with the signals that the processor will act on.
+    **signals** `string[]` : An array with the signals that the action will operate on.
     - This field is *required*
     - Supported values: `TRACES`
   </Accordion>
-  <Accordion title="sampling_percentage *">
-    **sampling_percentage** `string` : Percentage at which items are sampled.
-    - This field is *required*
-    - 100 = all items, 0 = no items
+  <Accordion title="samplers *">
+    **samplers** `object` : Configuration for sampling actions.
+    - This field is *required* for this action type
+    <AccordionGroup>
+      <Accordion title="probabilisticSampler *">
+        **probabilisticSampler** `object` : Configuration for the ProbabilisticSampler.
+        - This field is *required* for this action type
+        <AccordionGroup>
+          <Accordion title="sampling_percentage *">
+            **sampling_percentage** `string` : Percentage at which items are sampled.
+            - This field is *required*
+            - 100 = all items, 0 = no items
+          </Accordion>
+        </AccordionGroup>
+      </Accordion>
+    </AccordionGroup>
   </Accordion>
 </AccordionGroup>
 
 ## Basic Example
 
-The following example demonstrates how to add a sampler with a 15% sampling percentage.
+The following example demonstrates how to add a sampler with a 15% sampling percentage using the new Action CRD.
 
 <Steps>
   <Step>
     Create a YAML file with the following content:
 
     ```yaml probabilistic-sampler.yaml
-    apiVersion: actions.odigos.io/v1alpha1
-    kind: ProbabilisticSampler
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
     metadata:
       name: example-probabilistic-sampler
       namespace: odigos-system
     spec:
       actionName: "configure probabilistic_sampler"
-      sampling_percentage: "15"
       signals:
         - TRACES
+      samplers:
+        probabilisticSampler:
+          sampling_percentage: "15"
     ```
   </Step>
   <Step>

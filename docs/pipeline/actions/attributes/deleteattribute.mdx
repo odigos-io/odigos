@@ -33,6 +33,8 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
 
 ## Configuration Options
 
+The DeleteAttribute action is configured using the `odigos.io/v1alpha1.Action` CRD with the `deleteAttribute` configuration section.
+
 <AccordionGroup>
   <Accordion title="actionName">
     **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
@@ -49,38 +51,45 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
     - This field is *optional*, and defaults to `false`
   </Accordion>
   <Accordion title="signals *">
-    **signals** `string[]` : An array with the signals that the processor will act on.
+    **signals** `string[]` : An array with the signals that the action will operate on.
     - This field is *required*
     - Supported values: `TRACES`, `METRICS`, `LOGS`
   </Accordion>
-  <Accordion title="attributeNamesToDelete *">
-    **attributeNamesToDelete** `string[]` : An array of strings representing the names of the attributes to be deleted from the telemetry signals.
-    - This field is *required*
+  <Accordion title="deleteAttribute *">
+    **deleteAttribute** `object` : Configuration for the DeleteAttribute action.
+    - This field is *required* for this action type
+    <AccordionGroup>
+      <Accordion title="attributeNamesToDelete *">
+        **attributeNamesToDelete** `string[]` : An array of strings representing the names of the attributes to be deleted from the telemetry signals.
+        - This field is *required*
+      </Accordion>
+    </AccordionGroup>
   </Accordion>
 </AccordionGroup>
 
 ## Basic Example
 
-The following example demonstrates how to delete the `host.name` attribute from all telemetry signals.
+The following example demonstrates how to delete the `host.name` attribute from all telemetry signals using the new Action CRD.
 
 <Steps>
   <Step>
     Create a YAML file with the following content:
 
     ```yaml delete-host-name.yaml
-    apiVersion: actions.odigos.io/v1alpha1
-    kind: DeleteAttribute
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
     metadata:
       name: delete-host-name
       namespace: odigos-system
     spec:
       actionName: "delete host.name"
-      attributeNamesToDelete:
-        - host.name
       signals:
         - TRACES
         - METRICS
         - LOGS
+      deleteAttribute:
+        attributeNamesToDelete:
+          - host.name
     ```
   </Step>
   <Step>

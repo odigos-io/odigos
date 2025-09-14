@@ -701,6 +701,10 @@ func (in *InstrumentationConfigSpec) DeepCopyInto(out *InstrumentationConfigSpec
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.AgentsMetaHashChangedTime != nil {
+		in, out := &in.AgentsMetaHashChangedTime, &out.AgentsMetaHashChangedTime
+		*out = (*in).DeepCopy()
+	}
 	if in.SdkConfigs != nil {
 		in, out := &in.SdkConfigs, &out.SdkConfigs
 		*out = make([]SdkConfig, len(*in))

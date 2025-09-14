@@ -333,6 +333,11 @@ type InstrumentationConfigSpec struct {
 	// if the hash is empty, it means that no agent should be enabled in any pod container.
 	AgentsMetaHash string `json:"agentsMetaHash,omitempty"`
 
+	// The last time at which the agents meta hash value was changed.
+	// Pods created before this time may not be in alignment with the AgentsMetaHash.
+	// e.g. can lack the odigos label, or have a different value.
+	AgentsMetaHashChangedTime *metav1.Time `json:"agentsMetaHashChangedTime,omitempty"`
+
 	// Configuration for the OpenTelemetry SDKs that this workload should use.
 	// The SDKs are identified by the programming language they are written in.
 	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.

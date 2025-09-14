@@ -35,7 +35,8 @@ type PodsWebhook struct {
 	client.Client
 	DistrosGetter *distros.Getter
 	// decoder is used to decode the admission request's raw object into a structured corev1.Pod.
-	Decoder admission.Decoder
+	Decoder     admission.Decoder
+	WaspMutator func(*corev1.Pod, common.OdigosConfiguration) error
 }
 
 var _ admission.Handler = &PodsWebhook{}
@@ -170,6 +171,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 	}
 
 	volumeMounted := false
+	waspSupported := false
 
 	dirsToCopy := make(map[string]struct{})
 	for i := range pod.Spec.Containers {
@@ -184,9 +186,19 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 			continue
 		}
 
-		containerVolumeMounted, containerDirsToCopy, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, odigosConfiguration)
+		distroName := containerConfig.OtelDistroName
+		distroMetadata := p.DistrosGetter.GetDistroByName(distroName)
+		if distroMetadata == nil {
+			return ErrUnknownDistroName
+		}
+
+		containerVolumeMounted, containerDirsToCopy, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, odigosConfiguration, distroMetadata)
 		if err != nil {
 			return err
+		}
+
+		if distroMetadata.RuntimeAgent != nil && distroMetadata.RuntimeAgent.WaspSupported {
+			waspSupported = true
 		}
 
 		volumeMounted = volumeMounted || containerVolumeMounted
@@ -207,6 +219,13 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		}
 	}
 
+	if odigosConfiguration.WaspEnabled != nil && *odigosConfiguration.WaspEnabled && waspSupported && p.WaspMutator != nil {
+		err = p.WaspMutator(pod, odigosConfiguration)
+		if err != nil {
+			return fmt.Errorf("failed to do wasp mutation: %w", err)
+		}
+	}
+
 	// Inject ODIGOS environment variables and instrumentation device into all containers
 	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw, &odigosConfiguration)
 	if injectErr != nil {
@@ -224,9 +243,9 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 	return nil
 }
 
-func mergeMaps(a, b map[string]struct{}) map[string]struct{} {
-	for k := range b {
-		a[k] = struct{}{}
+func mergeMaps[T any](a, b map[string]T) map[string]T {
+	for k, v := range b {
+		a[k] = v
 	}
 	return a
 }
@@ -287,14 +306,8 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 }
 
 func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container,
-	pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration) (bool, map[string]struct{}, error) {
+	pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration, distroMetadata *distro.OtelDistro) (bool, map[string]struct{}, error) {
 	var err error
-
-	distroName := containerConfig.OtelDistroName
-	distroMetadata := p.DistrosGetter.GetDistroByName(distroName)
-	if distroMetadata == nil {
-		return false, nil, ErrUnknownDistroName
-	}
 
 	// check for existing env vars so we don't introduce them again
 	existingEnvNames := podswebhook.GetEnvVarNamesSet(podContainerSpec)
@@ -304,7 +317,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	if err != nil {
 		return false, nil, err
 	}
-	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroName, pw.Namespace)
+	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroMetadata.Name, pw.Namespace)
 	if distroMetadata.EnvironmentVariables.OpAmpClientEnvironments {
 		existingEnvNames = podswebhook.InjectOpampServerEnvVar(existingEnvNames, podContainerSpec)
 	}
@@ -340,7 +353,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		}
 
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
-			podswebhook.InjectOtelResourceAndServiceNameEnvVars(existingEnvNames, podContainerSpec, distroName, pw, serviceName)
+			podswebhook.InjectOtelResourceAndServiceNameEnvVars(existingEnvNames, podContainerSpec, distroMetadata.Name, pw, serviceName)
 		}
 		// TODO: once we have a flag to enable/disable device injection, we should check it here.
 		if distroMetadata.RuntimeAgent.Device != nil {

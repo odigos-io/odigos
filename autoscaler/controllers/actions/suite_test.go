@@ -107,16 +107,6 @@ var _ = AfterSuite(func() {
 })
 
 func cleanupResources() {
-	// Clean up all Actions
-	actionList := &odigosv1.ActionList{}
-	k8sClient.List(testCtx, actionList)
-	for _, action := range actionList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &action)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
-	}
-
 	// Clean up all legacy ErrorSamplers
 	errorSamplerList := &actionv1.ErrorSamplerList{}
 	k8sClient.List(testCtx, errorSamplerList)
@@ -173,6 +163,56 @@ func cleanupResources() {
 	for _, resolver := range k8sAttributesResolverList.Items {
 		Eventually(func() bool {
 			err := k8sClient.Delete(testCtx, &resolver)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
+	}
+
+	// Clean up all legacy AddClusterInfos
+	addClusterInfoList := &actionv1.AddClusterInfoList{}
+	k8sClient.List(testCtx, addClusterInfoList)
+	for _, action := range addClusterInfoList.Items {
+		Eventually(func() bool {
+			err := k8sClient.Delete(testCtx, &action)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
+	}
+
+	// Clean up all legacy DeleteAttributes
+	deleteAttributeList := &actionv1.DeleteAttributeList{}
+	k8sClient.List(testCtx, deleteAttributeList)
+	for _, action := range deleteAttributeList.Items {
+		Eventually(func() bool {
+			err := k8sClient.Delete(testCtx, &action)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
+	}
+
+	// Clean up all legacy PiiMaskings
+	piiMaskingList := &actionv1.PiiMaskingList{}
+	k8sClient.List(testCtx, piiMaskingList)
+	for _, action := range piiMaskingList.Items {
+		Eventually(func() bool {
+			err := k8sClient.Delete(testCtx, &action)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
+	}
+
+	// Clean up all legacy RenameAttributes
+	renameAttributeList := &actionv1.RenameAttributeList{}
+	k8sClient.List(testCtx, renameAttributeList)
+	for _, action := range renameAttributeList.Items {
+		Eventually(func() bool {
+			err := k8sClient.Delete(testCtx, &action)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
+	}
+
+	// Clean up all Actions
+	actionList := &odigosv1.ActionList{}
+	k8sClient.List(testCtx, actionList)
+	for _, action := range actionList.Items {
+		Eventually(func() bool {
+			err := k8sClient.Delete(testCtx, &action)
 			return err == nil
 		}, timeout, interval).Should(BeTrue())
 	}

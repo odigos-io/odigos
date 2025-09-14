@@ -6,7 +6,57 @@ export const GET_ACTIONS = gql`
       actions {
         id
         type
-        spec
+        name
+        notes
+        disabled
+        signals
+        fields {
+          collectContainerAttributes
+          collectReplicaSetAttributes
+          collectWorkloadId
+          collectClusterId
+          labelsAttributes {
+            labelKey
+            attributeKey
+          }
+          annotationsAttributes {
+            annotationKey
+            attributeKey
+          }
+          clusterAttributes {
+            attributeName
+            attributeStringValue
+          }
+          overwriteExistingValues
+          attributeNamesToDelete
+          renames
+          piiCategories
+
+          samplingPercentage
+          fallbackSamplingRatio
+          endpointsFilters {
+            httpRoute
+            serviceName
+            minimumLatencyThreshold
+            fallbackSamplingRatio
+          }
+          servicesNameFilters {
+            serviceName
+            samplingRatio
+            fallbackSamplingRatio
+          }
+          attributeFilters {
+            serviceName
+            attributeKey
+            fallbackSamplingRatio
+            condition {
+              stringCondition {
+                operation
+                expectedValue
+              }
+            }
+          }
+        }
         conditions {
           status
           type
