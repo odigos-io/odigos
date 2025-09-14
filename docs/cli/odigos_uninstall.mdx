@@ -4,11 +4,11 @@ sidebarTitle: "odigos uninstall"
 ---
 ## odigos uninstall
 
-Revert all the changes made by the `odigos install` command.
-This command will uninstall Odigos from your cluster. It will delete all Odigos objects
-and rollback any metadata changes made to your objects.
+Uninstall Odigos using Helm SDK under the hood
 
-Note: Namespaces created during Odigos CLI installation will be deleted during uninstallation. This applies only to CLI installs, not Helm.
+### Synopsis
+
+Revert all the changes made by the odigos install command. This command will uninstall Odigos from your cluster. It will delete all Odigos objects and rollback any metadata changes made to your objects.
 
 ```
 odigos uninstall [flags]
@@ -18,32 +18,17 @@ odigos uninstall [flags]
 
 ```
 
-# Uninstall Odigos open-source or cloud from the cluster in your kubeconfig active context.
+# Uninstall Odigos
 odigos uninstall
-
-# Uninstall Odigos without confirmation
-odigos uninstall --yes
-
-# Uninstall Odigos without waiting for pods to rollout without instrumentation
-odigos uninstall --no-wait
-
-# Uninstall Odigos cloud from a specific cluster
-odigos uninstall --kubeconfig <path-to-kubeconfig>
-
-# Install a fresh setup of Odigos
-odigos uninstall
-odigos install
 
 ```
 
 ### Options
 
 ```
-  -h, --help                   help for uninstall
-      --instrumentation-only   only remove instrumentation from workloads, without removing the entire Odigos setup
-      --namespace string       namespace to uninstall Odigos from (overrides auto-detection)
-      --no-wait                skip waiting for pods to rollout without instrumentation
-      --yes                    skip the confirmation prompt
+  -h, --help                  help for uninstall
+      --ns string             Target Kubernetes namespace (default "odigos-system")
+      --release-name string   Helm release name (default "odigos")
 ```
 
 ### Options inherited from parent commands
