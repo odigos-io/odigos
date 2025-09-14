@@ -242,9 +242,9 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 	return nil
 }
 
-func mergeMaps(a, b map[string]struct{}) map[string]struct{} {
-	for k := range b {
-		a[k] = struct{}{}
+func mergeMaps[T any](a, b map[string]T) map[string]T {
+	for k, v := range b {
+		a[k] = v
 	}
 	return a
 }

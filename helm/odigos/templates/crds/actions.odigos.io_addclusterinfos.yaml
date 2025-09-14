@@ -21,8 +21,9 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: AddClusterInfo is the Schema for the addclusterinfo odigos action
-          API
+        description: |-
+          AddClusterInfo is the Schema for the addclusterinfo odigos action API
+          DEPRECATED: Use odigosv1.Action instead
         properties:
           apiVersion:
             description: |-
