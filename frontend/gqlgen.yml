@@ -22,12 +22,12 @@ resolver:
   layout: follow-schema
   dir: graph
   package: graph
-  filename_template: '{name}.resolvers.go'
+  filename_template: "{name}.resolvers.go"
 
 # gqlgen will search for any type names in the schema in these go packages
 # if they match it will use them, otherwise it will generate them.
 autobind:
-  - 'github.com/odigos-io/odigos/frontend/graph/model'
+  - "github.com/odigos-io/odigos/frontend/graph/model"
 
 models:
   ID:
@@ -106,4 +106,9 @@ models:
   K8sWorkloadPodContainer:
     fields:
       processes:
+        resolver: true
+
+  K8sActualSource:
+    fields:
+      workloadOdigosHealthStatus:
         resolver: true
