@@ -19,8 +19,9 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: K8sAttributesResolver allows adding an action to collect k8s
-          attributes.
+        description: |-
+          K8sAttributesResolver allows adding an action to collect k8s attributes.
+          DEPRECATED: Use odigosv1.Action instead
         properties:
           apiVersion:
             description: |-
