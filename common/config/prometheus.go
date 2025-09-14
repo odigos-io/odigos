@@ -38,6 +38,12 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	currentConfig.Exporters[rwExporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s/api/v1/write", url),
+		"resource_to_telemetry_conversion": GenericMap{
+			"enabled": true,
+		},
+		"external_labels": map[string]string{
+			"job": "odigos-remote-write",
+		},
 	}
 
 	resourceAttributesLabels, exists := config[prometheusResourceAttributesLabelsKey]
