@@ -33,9 +33,6 @@ kubectl apply -f .github/workflows/e2e/kv-shop.yaml -n kvshop
 echo "Waiting for KV Shop to be ready..."
 kubectl wait --for=condition=Ready --timeout=100s -n kvshop pods --all
 
-# Select kvshop namespace for instrumentation
-kubectl label namespace kvshop odigos-instrumentation=enabled
-
 # Connect to Jaeger destination
 kubectl create -f .github/workflows/e2e/jaeger-dest.yaml
 

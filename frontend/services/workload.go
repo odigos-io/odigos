@@ -11,6 +11,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const generalQuery = `
@@ -595,10 +596,10 @@ func getFilterAndVerbosityFromContext(c *gin.Context) (map[string]interface{}, s
 	return filterMap, verbosity, nil
 }
 
-func DescribeWorkloadWithFilters(c *gin.Context, logger logr.Logger, gqlExecutor *executor.Executor, filter map[string]interface{}, verbosity string) {
+func DescribeWorkloadWithFilters(c *gin.Context, logger logr.Logger, gqlExecutor *executor.Executor, filter map[string]interface{}, verbosity string, k8sCacheClient client.Client) {
 	ctx := c.Request.Context()
 	// add things to the ctx
-	ctx = loaders.WithLoaders(ctx, loaders.NewLoaders(logger))
+	ctx = loaders.WithLoaders(ctx, loaders.NewLoaders(logger, k8sCacheClient))
 	ctx = graphql.StartOperationTrace(ctx)
 
 	query := getQueryForVerbosity(verbosity)
@@ -642,7 +643,7 @@ func DescribeWorkloadWithFilters(c *gin.Context, logger logr.Logger, gqlExecutor
 	c.JSON(200, workloads)
 }
 
-func DescribeWorkload(c *gin.Context, logger logr.Logger, gqlExecutor *executor.Executor, overrideVerbosity *string) {
+func DescribeWorkload(c *gin.Context, logger logr.Logger, gqlExecutor *executor.Executor, overrideVerbosity *string, k8sCacheClient client.Client) {
 	filter, verbosity, err := getFilterAndVerbosityFromContext(c)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
@@ -653,5 +654,5 @@ func DescribeWorkload(c *gin.Context, logger logr.Logger, gqlExecutor *executor.
 		verbosity = *overrideVerbosity
 	}
 
-	DescribeWorkloadWithFilters(c, logger, gqlExecutor, filter, verbosity)
+	DescribeWorkloadWithFilters(c, logger, gqlExecutor, filter, verbosity, k8sCacheClient)
 }

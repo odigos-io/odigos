@@ -186,8 +186,8 @@ spec:
               mountPath: /hostproc
           {{- end }}
              # needed to load eBPF tracepoints - used by runtime-detector
-            - name: kernel-debug
-              mountPath: /sys/kernel/debug
+            - name: sys-kernel
+              mountPath: /sys/kernel
             - name: odigos-go-offsets
               mountPath: /offsets
             - name: exchange-dir
@@ -381,9 +381,9 @@ spec:
             path: /proc
             type: Directory
       {{- end }}
-        - name: kernel-debug
+        - name: sys-kernel
           hostPath:
-            path: /sys/kernel/debug
+            path: /sys/kernel
         - name: odigos-go-offsets
           configMap:
             name: odigos-go-offsets

@@ -12,8 +12,11 @@ rules:
 # For more context, see the implementation in /cli/cmd/uninstall.go.
 - apiGroups: [""]
   resources: ["configmaps"]
-  resourceNames: ["odigos-deployment"]
+  resourceNames: ["odigos-deployment", "odigos-configuration"]
   verbs: ["get"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["list"]
 # migration-role is used to delete the legacy configmap
 - apiGroups: [""]
   resources: ["configmaps"]

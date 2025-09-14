@@ -5,14 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
-
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func kindToGql(kind string) model.K8sResourceKind {
@@ -27,15 +24,6 @@ func kindToGql(kind string) model.K8sResourceKind {
 		return model.K8sResourceKindCronJob
 	}
 	return ""
-}
-
-// Convert LastTransitionTime to a string pointer if it's not nil
-func k8sLastTransitionTimeToGql(t v1.Time) *string {
-	if t.IsZero() {
-		return nil
-	}
-	str := t.UTC().Format(time.RFC3339)
-	return &str
 }
 
 func getContainerAgentInfo(ic *v1alpha1.InstrumentationConfig, containerName string) (bool, string, string) {
@@ -121,30 +109,8 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 		OtelServiceName:   &instruConfig.Spec.ServiceName,
 		NumberOfInstances: nil,
 		Containers:        containers,
-		Conditions:        convertConditions(instruConfig.Status.Conditions),
+		Conditions:        services.ConvertConditions(instruConfig.Status.Conditions),
 	}, nil
-}
-
-func convertConditions(conditions []v1.Condition) []*model.Condition {
-	var result []*model.Condition
-	for _, c := range conditions {
-		if c.Type != "AppliedInstrumentationDevice" {
-			reason := c.Reason
-			message := c.Message
-			if message == "" {
-				message = string(c.Reason)
-			}
-
-			result = append(result, &model.Condition{
-				Status:             services.TransformConditionStatus(c.Status, c.Type, reason),
-				Type:               c.Type,
-				Reason:             &reason,
-				Message:            &message,
-				LastTransitionTime: k8sLastTransitionTimeToGql(c.LastTransitionTime),
-			})
-		}
-	}
-	return result
 }
 
 func convertOdigosConfigToK8s(cfg *model.OdigosConfigurationInput) (*common.OdigosConfiguration, error) {
