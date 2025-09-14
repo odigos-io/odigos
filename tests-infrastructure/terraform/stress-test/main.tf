@@ -176,6 +176,11 @@ resource "null_resource" "install_prometheus_crds" {
       # Wait for cluster to be ready
       kubectl wait --for=condition=Ready nodes --all --timeout=300s
       
+      # Add Prometheus Helm repository
+      echo "Adding Prometheus Helm repository..."
+      helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || echo "Repository already exists"
+      helm repo update
+      
       # Install Prometheus Operator CRDs
       echo "Installing Prometheus Operator CRDs..."
       helm upgrade --install prometheus-crds prometheus-community/prometheus-operator-crds
@@ -197,6 +202,11 @@ resource "null_resource" "install_kube_prometheus_stack" {
   provisioner "local-exec" {
     command = <<-EOT
       set -e
+      
+      # Add Prometheus Helm repository (in case it wasn't added in previous step)
+      echo "Adding Prometheus Helm repository..."
+      helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || echo "Repository already exists"
+      helm repo update
       
       # Install kube-prometheus-stack with values file
       echo "Installing kube-prometheus-stack..."
