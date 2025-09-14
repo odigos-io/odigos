@@ -25,6 +25,7 @@ spec:
           LatencySampler is the Schema for defining latency-based trace sampling rules.
           It supports targeting specific services and HTTP routes and applying latency thresholds
           to determine sampling eligibility.
+          DEPRECATED: Use odigosv1.Action instead
         properties:
           apiVersion:
             description: |-

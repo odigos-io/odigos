@@ -33,6 +33,8 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
 
 ## Configuration Options
 
+The ServiceNameSampler action is configured using the `odigos.io/v1alpha1.Action` CRD with the `samplers` configuration section.
+
 <AccordionGroup>
   <Accordion title="actionName">
     **actionName** `string`: A human-readable name for the action.
@@ -52,28 +54,40 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
   </Accordion>
 
   <Accordion title="signals *">
-    **signals** `string[]`: The signal types this sampler applies to.
+    **signals** `string[]`: The signal types this action will operate on.
     - *Required*
     - Only `TRACES` is supported.
   </Accordion>
 
-  <Accordion title="services_name_filters *">
-    **services_name_filters** `object[]` : An array of objects representing the filters for the services.
-    - This field is *required*
+  <Accordion title="samplers *">
+    **samplers** `object` : Configuration for sampling actions.
+    - This field is *required* for this action type
     <AccordionGroup>
-      <Accordion title="service_name *">
-        **service_name** `string` : Specifies the service name to search within the trace (Across all available spans).
-        - This field is *required*
-      </Accordion>
+      <Accordion title="serviceNameSampler *">
+        **serviceNameSampler** `object` : Configuration for the ServiceNameSampler.
+        - This field is *required* for this action type
+        <AccordionGroup>
+          <Accordion title="services_name_filters *">
+            **services_name_filters** `object[]` : An array of objects representing the filters for the services.
+            - This field is *required*
+            <AccordionGroup>
+              <Accordion title="service_name *">
+                **service_name** `string` : Specifies the service name to search within the trace (Across all available spans).
+                - This field is *required*
+              </Accordion>
 
-      <Accordion title="sampling_ratio *">
-        **sampling_ratio** `float` : Specifies the sample rate for all traces that contains `service_name`.
-        - This field is *required*
-      </Accordion>
+              <Accordion title="sampling_ratio *">
+                **sampling_ratio** `float` : Specifies the sample rate for all traces that contains `service_name`.
+                - This field is *required*
+              </Accordion>
 
-      <Accordion title="fallback_sampling_ratio *">
-        **fallback_sampling_ratio** `float` : Specifies the percentage of traces that don't meet the service name filter and that you still like to retain.
-        - This field is *required*
+              <Accordion title="fallback_sampling_ratio *">
+                **fallback_sampling_ratio** `float` : Specifies the percentage of traces that don't meet the service name filter and that you still like to retain.
+                - This field is *required*
+              </Accordion>
+            </AccordionGroup>
+          </Accordion>
+        </AccordionGroup>
       </Accordion>
     </AccordionGroup>
   </Accordion>
@@ -85,15 +99,15 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
 
 ## Basic Example
 
-This example samples **100%** of traces that contain `coupon-service` and **0%** of all other traces:
+This example samples **100%** of traces that contain `coupon-service` and **0%** of all other traces using the new Action CRD:
 
 <Steps>
   <Step>
     Create a YAML file with the following content:
 
     ```yaml service-name-sampler.yaml
-    apiVersion: actions.odigos.io/v1alpha1
-    kind: ServiceNameSampler
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
     metadata:
       name: coupon-service-sampler
       namespace: odigos-system
@@ -101,10 +115,12 @@ This example samples **100%** of traces that contain `coupon-service` and **0%**
       actionName: "coupon-sampler"
       signals:
         - TRACES
-      services_name_filters:
-        - service_name: coupon-service
-          sampling_ratio: 100
-          fallback_sampling_ratio: 0
+      samplers:
+        serviceNameSampler:
+          services_name_filters:
+            - service_name: coupon-service
+              sampling_ratio: 100
+              fallback_sampling_ratio: 0
     ```
   </Step>
   <Step>
@@ -124,8 +140,8 @@ This example collects:
 - 10% of traces that include **neither** of the above
 
 ```yaml advanced-service-name-sampler.yaml
-apiVersion: actions.odigos.io/v1alpha1
-kind: ServiceNameSampler
+apiVersion: odigos.io/v1alpha1
+kind: Action
 metadata:
   name: multi-service-sampler
   namespace: odigos-system
@@ -133,13 +149,15 @@ spec:
   actionName: "multi-service-focus"
   signals:
     - TRACES
-  services_name_filters:
-    - service_name: payment-service
-      sampling_ratio: 100
-      fallback_sampling_ratio: 10
-    - service_name: auth-service
-      sampling_ratio: 50
-      fallback_sampling_ratio: 10
+  samplers:
+    serviceNameSampler:
+      services_name_filters:
+        - service_name: payment-service
+          sampling_ratio: 100
+          fallback_sampling_ratio: 10
+        - service_name: auth-service
+          sampling_ratio: 50
+          fallback_sampling_ratio: 10
 ```
 
 This setup ensures you always keep critical traces and still retain a sample of the rest for broader context.
