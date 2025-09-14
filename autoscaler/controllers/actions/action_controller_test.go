@@ -473,11 +473,10 @@ var _ = Describe("Action Controller", func() {
 				Expect(found).Should(BeTrue(), "Rule with fallback sampling ratio %f should be present", rule)
 			}
 
-			By("Verifying that the processor has owner references to all legacy objects")
-			// The processor should have owner references to all the legacy ErrorSampler objects
-			// This ensures that when legacy objects are deleted, the processor is also cleaned up
+			By("Verifying that the processor does not have owner references to all legacy objects")
+			// The processor should not have owner references to all the legacy ErrorSampler objects
 
-			// Verify that the owner references include the legacy ErrorSampler objects
+			// Verify that the owner references do not include the legacy ErrorSampler objects
 			legacyObjectNames := []string{
 				ActionName + "-legacy-error-1",
 				ActionName + "-legacy-error-2",
@@ -492,16 +491,22 @@ var _ = Describe("Action Controller", func() {
 						break
 					}
 				}
-				Expect(found).Should(BeTrue(), "Owner reference for %s should be present", legacyName)
+				Expect(found).Should(BeFalse(), "Owner reference for legacy %s should not be present", legacyName)
 			}
-			found := false
-			for _, ownerRef := range ownerRefs {
-				if ownerRef.Name == ActionName+"-merge-test" && ownerRef.Kind == "Action" {
-					found = true
-					break
+			objectNames := []string{
+				odigosv1.ActionMigratedLegacyPrefix + ActionName + "-legacy-error-1",
+				odigosv1.ActionMigratedLegacyPrefix + ActionName + "-legacy-error-2",
+			}
+			for _, objectName := range objectNames {
+				found := false
+				for _, ownerRef := range ownerRefs {
+					if ownerRef.Name == objectName && ownerRef.Kind == "Action" {
+						found = true
+						break
+					}
 				}
+				Expect(found).Should(BeTrue(), "Owner reference for %s should be present", objectName)
 			}
-			Expect(found).Should(BeTrue(), "Owner reference for %s should be present", ActionName+"-merge-test")
 		})
 
 		It("Should merge legacy LatencySampler objects into a single processor", func() {
@@ -618,10 +623,10 @@ var _ = Describe("Action Controller", func() {
 				Expect(found).Should(BeTrue(), "Rule with fallback sampling ratio %f, http route %s, service name %s, minimum latency threshold %d should be present", rule.FallbackSamplingRatio, rule.HttpRoute, rule.ServiceName, rule.MinimumLatencyThreshold)
 			}
 
-			By("Verifying that the processor has owner references to all legacy LatencySampler objects")
+			By("Verifying that the processor does not have owner references to all legacy LatencySampler objects")
 			ownerRefs := processor.GetOwnerReferences()
 
-			// Verify that the owner references include the legacy LatencySampler objects
+			// Verify that the owner references do not include the legacy LatencySampler objects
 			legacyObjectNames := []string{
 				ActionName + "-legacy-latency-1",
 				ActionName + "-legacy-latency-2",
@@ -635,17 +640,23 @@ var _ = Describe("Action Controller", func() {
 						break
 					}
 				}
-				Expect(found).Should(BeTrue(), "Owner reference for %s should be present", legacyName)
+				Expect(found).Should(BeFalse(), "Owner reference for %s should not be present", legacyName)
 			}
 
-			found := false
-			for _, ownerRef := range ownerRefs {
-				if ownerRef.Name == ActionName+"-merge-latency-test" && ownerRef.Kind == "Action" {
-					found = true
-					break
-				}
+			objectNames := []string{
+				odigosv1.ActionMigratedLegacyPrefix + ActionName + "-legacy-latency-1",
+				odigosv1.ActionMigratedLegacyPrefix + ActionName + "-legacy-latency-2",
 			}
-			Expect(found).Should(BeTrue(), "Owner reference for %s should be present", ActionName+"-merge-latency-test")
+			for _, objectName := range objectNames {
+				found := false
+				for _, ownerRef := range ownerRefs {
+					if ownerRef.Name == objectName && ownerRef.Kind == "Action" {
+						found = true
+						break
+					}
+				}
+				Expect(found).Should(BeTrue(), "Owner reference for %s should be present", objectName)
+			}
 		})
 
 		It("Should merge legacy ServiceNameSampler objects into a single processor", func() {
@@ -757,10 +768,10 @@ var _ = Describe("Action Controller", func() {
 				Expect(found).Should(BeTrue(), "Rule with fallback sampling ratio %f, sampling ratio %f, service name %s should be present", rule.FallbackSamplingRatio, rule.SamplingRatio, rule.ServiceName)
 			}
 
-			By("Verifying that the processor has owner references to all legacy ServiceNameSampler objects")
+			By("Verifying that the processor does not have owner references to all legacy ServiceNameSampler objects")
 			ownerRefs := processor.GetOwnerReferences()
 
-			// Verify that the owner references include the legacy ServiceNameSampler objects
+			// Verify that the owner references do not include the legacy ServiceNameSampler objects
 			legacyObjectNames := []string{
 				ActionName + "-legacy-service-1",
 				ActionName + "-legacy-service-2",
@@ -774,17 +785,23 @@ var _ = Describe("Action Controller", func() {
 						break
 					}
 				}
-				Expect(found).Should(BeTrue(), "Owner reference for %s should be present", legacyName)
+				Expect(found).Should(BeFalse(), "Owner reference for %s should not be present", legacyName)
 			}
 
-			found := false
-			for _, ownerRef := range ownerRefs {
-				if ownerRef.Name == ActionName+"-merge-service-test" && ownerRef.Kind == "Action" {
-					found = true
-					break
-				}
+			objectNames := []string{
+				odigosv1.ActionMigratedLegacyPrefix + ActionName + "-legacy-service-1",
+				odigosv1.ActionMigratedLegacyPrefix + ActionName + "-legacy-service-2",
 			}
-			Expect(found).Should(BeTrue(), "Owner reference for %s should be present", ActionName+"-merge-service-test")
+			for _, objectName := range objectNames {
+				found := false
+				for _, ownerRef := range ownerRefs {
+					if ownerRef.Name == objectName && ownerRef.Kind == "Action" {
+						found = true
+						break
+					}
+				}
+				Expect(found).Should(BeTrue(), "Owner reference for %s should be present", objectName)
+			}
 		})
 
 		It("Should merge legacy SpanAttributeSampler objects into a single processor", func() {
@@ -888,10 +905,10 @@ var _ = Describe("Action Controller", func() {
 			Expect(processor.Spec.Type).Should(Equal("odigossampling"))
 			Expect(processor.Spec.OrderHint).Should(Equal(-24))
 
-			By("Verifying that the processor has owner references to all legacy SpanAttributeSampler objects")
+			By("Verifying that the processor does not have owner references to all legacy SpanAttributeSampler objects")
 			ownerRefs := processor.GetOwnerReferences()
 
-			// Verify that the owner references include the legacy SpanAttributeSampler objects
+			// Verify that the owner references do not include the legacy SpanAttributeSampler objects
 			legacyObjectNames := []string{
 				ActionName + "-legacy-span-1",
 				ActionName + "-legacy-span-2",
@@ -905,17 +922,23 @@ var _ = Describe("Action Controller", func() {
 						break
 					}
 				}
-				Expect(found).Should(BeTrue(), "Owner reference for %s should be present", legacyName)
+				Expect(found).Should(BeFalse(), "Owner reference for %s should not be present", legacyName)
 			}
 
-			found := false
-			for _, ownerRef := range ownerRefs {
-				if ownerRef.Name == ActionName+"-merge-span-test" && ownerRef.Kind == "Action" {
-					found = true
-					break
-				}
+			objectNames := []string{
+				odigosv1.ActionMigratedLegacyPrefix + ActionName + "-legacy-span-1",
+				odigosv1.ActionMigratedLegacyPrefix + ActionName + "-legacy-span-2",
 			}
-			Expect(found).Should(BeTrue(), "Owner reference for %s should be present", ActionName+"-merge-span-test")
+			for _, objectName := range objectNames {
+				found := false
+				for _, ownerRef := range ownerRefs {
+					if ownerRef.Name == objectName && ownerRef.Kind == "Action" {
+						found = true
+						break
+					}
+				}
+				Expect(found).Should(BeTrue(), "Owner reference for %s should be present", objectName)
+			}
 
 			actualSamplingConfig := sampling.SamplingConfig{}
 			json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &actualSamplingConfig)

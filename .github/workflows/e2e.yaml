@@ -14,7 +14,7 @@ jobs:
     runs-on: depot-ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -40,7 +40,7 @@ jobs:
     runs-on: depot-ubuntu-24.04-8
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Build Odigos Images
         run: |
@@ -93,7 +93,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -101,7 +101,7 @@ jobs:
           version: v3.9.0
 
       - name: Install chainsaw
-        uses: kyverno/action-install-chainsaw@v0.2.12
+        uses: kyverno/action-install-chainsaw@v0.2.13
 
       - name: Create Kind Cluster
         uses: helm/kind-action@v1.12.0
