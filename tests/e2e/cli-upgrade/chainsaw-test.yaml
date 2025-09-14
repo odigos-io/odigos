@@ -124,7 +124,7 @@ spec:
     - name: Upgrade to HEAD version with the current compiled cli
       try:
         - script:
-            content: ../../../cli/odigos upgrade --version e2e-test --skip-version-check # since the tag e2e-test is not a valid semantic version, we need to bypass it with --skip-version-check
+            content: ../../../cli/odigos install --image.tag=e2e-test
             timeout: 3m
         - assert:
             file: ../../common/assert/odigos-upgraded.yaml
