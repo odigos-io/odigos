@@ -39,6 +39,7 @@ do
 	sed -i -E 's/0.0.0/'"${TAG#v}"'/' $chart/Chart.yaml
 done
 helm package ${CHARTDIRS[*]} -d $TMPDIR
+cp $TMPDIR/odigos-*.tgz helm/
 pushd $TMPDIR
 prefix 'helm-chart-' *.tgz
 helm repo index . --merge index.yaml --url https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/
