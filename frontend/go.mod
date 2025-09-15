@@ -13,7 +13,7 @@ require (
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/destinations v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/vektah/gqlparser/v2 v2.5.27
 	go.opentelemetry.io/collector/component v1.36.0
 	go.opentelemetry.io/collector/component/componenttest v0.130.0
@@ -44,6 +44,7 @@ require (
 	github.com/go-jose/go-jose/v4 v4.1.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/google/go-tpm v0.9.5 // indirect
+	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-sqlite3 v1.14.24 // indirect
