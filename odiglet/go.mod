@@ -3,6 +3,7 @@ module github.com/odigos-io/odigos/odiglet
 go 1.24.0
 
 require (
+	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/moby/sys/mountinfo v0.7.2
@@ -35,7 +36,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect

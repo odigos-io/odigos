@@ -101,6 +101,7 @@ receivers:
     collection_interval: 10s
     endpoint: https://${env:NODE_IP}:10250
     insecure_skip_verify: true
+  odigosebpf: {}
   otlp:
     protocols:
       grpc:
@@ -169,6 +170,7 @@ service:
       - test_type/test_processor
       receivers:
       - otlp
+      - odigosebpf
   telemetry:
     metrics:
       readers:

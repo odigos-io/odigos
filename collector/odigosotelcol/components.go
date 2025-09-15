@@ -103,6 +103,7 @@ import (
 
 	odigosrouterconnector "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
 	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
+	odigosebpfreceiver "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver"
 	odigossourcesfilterprocessor "github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor"
 )
 
@@ -138,6 +139,7 @@ func components() (otelcol.Factories, error) {
 		kubeletstatsreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
 		prometheusreceiver.NewFactory(),
+		odigosebpfreceiver.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -149,6 +151,7 @@ func components() (otelcol.Factories, error) {
 	factories.ReceiverModules[kubeletstatsreceiver.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.130.0"
 	factories.ReceiverModules[hostmetricsreceiver.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.130.0"
 	factories.ReceiverModules[prometheusreceiver.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.130.0"
+	factories.ReceiverModules[odigosebpfreceiver.NewFactory().Type()] = "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.130.0"
 
 	factories.Exporters, err = otelcol.MakeFactoryMap[exporter.Factory](
 		debugexporter.NewFactory(),
