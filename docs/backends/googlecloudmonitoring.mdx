@@ -44,8 +44,13 @@ Odigos currently supports Standard (non-Autopilot) GKE clusters. Exporting into 
   - Example: `10s`
 - **GCP_PROJECT_ID** `string` : Project ID. The project ID for the Google Cloud Monitoring API.
   - This field is optional
-- **GCP_BILLING_PROJECT** `string` : Billing Project.
+  - Example: `project-id`
+- **GCP_BILLING_PROJECT** `string` : Billing Project. The billing project ID for the Google Cloud Monitoring API. By default, this is the same as the project ID.
   - This field is optional
+  - Example: `billing-project-id`
+- **GCP_APPLICATION_CREDENTIALS** `string` : Application Credentials. The JSON GCP Application Credentials file for the GCP project. Either a Workload Identity Federation config file or Service Account Key. Required if running Odigos outside of Google Cloud.
+  - This field is optional
+  - Example: `Credentials config... (optional)`
 
 ### Adding Destination to Odigos
 
@@ -79,10 +84,25 @@ There are two primary methods for configuring destinations in Odigos:
     spec:
       data: {}
       destinationName: googlecloud
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: googlecloud-secret
       signals:
       - TRACES
       - LOGS
       type: googlecloud
+
+    ---
+
+    # The following Secret is optional. Uncomment the entire block if you need to use it.
+    # apiVersion: v1
+    # data:
+    #   GCP_APPLICATION_CREDENTIALS: <Base64 Application Credentials>
+    # kind: Secret
+    # metadata:
+    #   name: googlecloud-secret
+    #   namespace: odigos-system
+    # type: Opaque
     ```
   </Step>
   <Step>

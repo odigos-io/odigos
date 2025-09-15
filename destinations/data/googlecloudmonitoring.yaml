@@ -20,15 +20,34 @@ spec:
       componentProps:
         type: text
         placeholder: 10s
+        required: false
         tooltip: The request timeout in seconds for the Google Cloud Monitoring API.
+
     - name: GCP_PROJECT_ID
       displayName: Project ID
       componentType: input
       componentProps:
         type: text
+        required: false
+        placeholder: 'project-id'
         tooltip: The project ID for the Google Cloud Monitoring API.
+
     - name: GCP_BILLING_PROJECT
       displayName: Billing Project
       componentType: input
       componentProps:
         type: text
+        required: false
+        placeholder: 'billing-project-id'
+        tooltip: The billing project ID for the Google Cloud Monitoring API. By default, this is the same as the project ID.
+
+
+    - name: GCP_APPLICATION_CREDENTIALS
+      displayName: Application Credentials
+      componentType: textarea
+      secret: true
+      componentProps:
+        type: text
+        required: false
+        placeholder: 'Credentials config... (optional)'
+        tooltip: The JSON GCP Application Credentials file for the GCP project. Either a Workload Identity Federation config file or Service Account Key. Required if running Odigos outside of Google Cloud.
