@@ -31,7 +31,7 @@ jobs:
 
       - name: Add operator owners as reviewers if check-operator-manifests failed
         if: failure() && steps.check-manifests.outcome == 'failure'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
