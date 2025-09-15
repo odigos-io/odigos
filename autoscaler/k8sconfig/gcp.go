@@ -38,8 +38,9 @@ func (g *GoogleCloud) ModifyGatewayCollectorDeployment(dest K8sExporterConfigure
 			}
 		}
 		if containerIndex == -1 {
-			return fmt.Errorf("Gateway collector container '%s' not found", k8sconsts.OdigosClusterCollectorContainerName)
+			return fmt.Errorf("gateway collector container '%s' not found", k8sconsts.OdigosClusterCollectorContainerName)
 		}
+
 		secretRefName := strings.ReplaceAll(dest.GetSecretRef().Name, ".", "-")
 
 		// Add volume mount if it doesn't exist

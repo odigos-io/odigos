@@ -18,6 +18,7 @@ package clustercollector_test
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -25,6 +26,9 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -35,8 +39,12 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/clustercollector"
+	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
+	"github.com/odigos-io/odigos/common/consts"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -48,6 +56,8 @@ var k8sClient client.Client
 var testEnv *envtest.Environment
 var testCtx context.Context
 var cancel context.CancelFunc
+
+const DestinationNamespace = "odigos-system"
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -95,6 +105,8 @@ var _ = BeforeSuite(func() {
 	err = clustercollector.SetupWithManager(k8sManager, nil, "")
 	Expect(err).ToNot(HaveOccurred())
 
+	setupResources()
+
 	go func() {
 		defer GinkgoRecover()
 		err = k8sManager.Start(testCtx)
@@ -110,51 +122,190 @@ var _ = AfterSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 })
 
-func cleanupResources() {
-	// Clean up all Destinations
-	destinationList := &odigosv1.DestinationList{}
-	k8sClient.List(testCtx, destinationList)
-	for _, destination := range destinationList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &destination)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
+func setupResources() {
+	intPtr := func(n int32) *int32 {
+		return &n
 	}
 
-	// Clean up all CollectorsGroups
-	collectorsGroupList := &odigosv1.CollectorsGroupList{}
-	k8sClient.List(testCtx, collectorsGroupList)
-	for _, collectorsGroup := range collectorsGroupList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &collectorsGroup)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
+	commonconfig.ControllerConfig = &controllerconfig.ControllerConfig{
+		K8sVersion:     version.MustParseSemantic("0.0.0"),
+		CollectorImage: "otelcol",
+		OnGKE:          false,
 	}
 
-	secretList := &corev1.SecretList{}
-	k8sClient.List(testCtx, secretList)
-	for _, secret := range secretList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &secret)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
+	By("Creating the odigos-system namespace")
+	namespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: DestinationNamespace,
+		},
 	}
+	Expect(k8sClient.Create(context.Background(), namespace)).Should(Succeed())
 
-	deploymentList := &appsv1.DeploymentList{}
-	k8sClient.List(testCtx, deploymentList)
-	for _, deployment := range deploymentList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &deployment)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
+	By("Creating the effective config")
+	effectiveConfig := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.OdigosEffectiveConfigName,
+			Namespace: DestinationNamespace,
+		},
+		Data: map[string]string{},
 	}
+	Expect(k8sClient.Create(context.Background(), effectiveConfig)).Should(Succeed())
 
-	namespaceList := &corev1.NamespaceList{}
-	k8sClient.List(testCtx, namespaceList)
-	for _, namespace := range namespaceList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &namespace)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
+	By("Creating the odiglet daemonset")
+	odigletDaemonset := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigletDaemonSetName,
+			Namespace: DestinationNamespace,
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": k8sconsts.OdigletDaemonSetName,
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": k8sconsts.OdigletDaemonSetName,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  k8sconsts.OdigletContainerName,
+							Image: "odigos/odiglet:latest",
+						},
+					},
+				},
+			},
+		},
 	}
+	Expect(k8sClient.Create(context.Background(), odigletDaemonset)).Should(Succeed())
+
+	By("Creating the autoscaler deployment")
+	autoscalerDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.AutoScalerDeploymentName,
+			Namespace: DestinationNamespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: intPtr(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": k8sconsts.AutoScalerDeploymentName,
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": k8sconsts.AutoScalerDeploymentName,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  k8sconsts.AutoScalerContainerName,
+							Image: "odigos/autoscaler:latest",
+						},
+					},
+				},
+			},
+		},
+	}
+	Expect(k8sClient.Create(context.Background(), autoscalerDeployment)).Should(Succeed())
+
+	createCollectorsGroupAndDeployment()
+}
+
+func defaultCollectorDeployment(replicas int32) *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
+			Namespace: DestinationNamespace,
+			Labels: map[string]string{
+				k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
+			},
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:    "gateway",
+							Image:   "odigos/odigosotelcol:latest",
+							Command: []string{"/odigosotelcol"},
+							Args: []string{fmt.Sprintf("--config=%s:%s/%s/%s",
+								k8sconsts.OdigosCollectorConfigMapProviderScheme,
+								DestinationNamespace,
+								k8sconsts.OdigosClusterCollectorConfigMapName,
+								k8sconsts.OdigosClusterCollectorConfigMapKey),
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceMemory: resource.MustParse("256Mi"),
+									corev1.ResourceCPU:    resource.MustParse("250m"),
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceMemory: resource.MustParse("512Mi"),
+									corev1.ResourceCPU:    resource.MustParse("500m"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func createCollectorsGroupAndDeployment() {
+	By("Creating a CollectorsGroup for cluster collector")
+	collectorsGroup := &odigosv1.CollectorsGroup{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigosClusterCollectorConfigMapName,
+			Namespace: DestinationNamespace,
+		},
+		Spec: odigosv1.CollectorsGroupSpec{
+			Role: odigosv1.CollectorsGroupRoleClusterGateway,
+			ResourcesSettings: odigosv1.CollectorsGroupResourcesSettings{
+				MemoryRequestMiB:     256,
+				MemoryLimitMiB:       512,
+				CpuRequestMillicores: 250,
+				CpuLimitMillicores:   500,
+				GomemlimitMiB:        200,
+			},
+			CollectorOwnMetricsPort: 8888,
+		},
+	}
+	Expect(k8sClient.Create(context.Background(), collectorsGroup)).Should(Succeed())
+
+	By("Creating the cluster collector deployment")
+	deployment := defaultCollectorDeployment(1)
+	Expect(k8sClient.Create(context.Background(), deployment)).Should(Succeed())
+}
+
+func resetCollectorDeployment() {
+	deployment := defaultCollectorDeployment(1)
+	Expect(k8sClient.Update(context.Background(), deployment)).Should(Succeed())
 }

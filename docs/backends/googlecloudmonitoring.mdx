@@ -24,7 +24,26 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
-Odigos currently supports Standard (non-Autopilot) GKE clusters. Exporting into Google Cloud does not require credentials as the Kubernetes nodes are permissioned to access the Google Cloud Monitoring APIs by default.
+Odigos currently supports Standard (non-Autopilot) GKE clusters.
+
+### Authenticating with Google Cloud
+
+When running the Google Cloud Exporter on GKE, by default the OpenTelemetry Collector will attempt to use
+[Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials)
+to authenticate to the Google Cloud Observability backend. This means that for most use cases running on GCP,
+there is not authentication or service account token required as your workloads are automatically authenticated.
+
+However, to authenticate with Cloud Observability when running off-GKE (for example, on a local machine for another
+cloud provider) you must provide a [service account key](https://cloud.google.com/iam/docs/keys-create-delete#iam-service-account-keys-create-console)
+for the OpenTelemetry Collector Exporter. In Odigos, this can be provided in the Application Credentials field of the
+Google Cloud destination.
+
+When the Application Credentials field is set, the Odigos UI will save the contents of that field as a Kubernetes Secret
+which is mounted as a volume into the Collector Pod. The location of that volume is then set as the `GOOGLE_APPLICATION_CREDENTIALS`
+environment variable, instructing the Google Cloud Exporter where to look for its credentials.
+
+See the [Google Cloud OpenTelemetry Collector Exporter docs](https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/tree/1ea43a4534606df1d91ee1754e6c5bc31ee8664d/exporter/collector#prerequisite-authenticating)
+for more information on authentication.
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!

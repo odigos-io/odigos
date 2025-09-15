@@ -41,7 +41,6 @@ spec:
         placeholder: 'billing-project-id'
         tooltip: The billing project ID for the Google Cloud Monitoring API. By default, this is the same as the project ID.
 
-
     - name: GCP_APPLICATION_CREDENTIALS
       displayName: Application Credentials
       componentType: textarea
