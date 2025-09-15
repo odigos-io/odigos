@@ -2,6 +2,7 @@ package centralodigos
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
@@ -29,6 +30,7 @@ func (m *centralUIResourceManager) Name() string { return k8sconsts.CentralUIApp
 func (m *centralUIResourceManager) InstallFromScratch(ctx context.Context) error {
 	return m.client.ApplyResources(ctx, 1, []kube.Object{
 		NewCentralUIDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralUIImage, m.odigosVersion),
+		NewCentralUIService(m.ns),
 	}, m.managerOpts)
 }
 
@@ -73,6 +75,40 @@ func NewCentralUIDeployment(ns, imagePrefix, imageName, version string) *appsv1.
 						},
 					},
 				},
+			},
+		},
+	}
+}
+
+func NewCentralUIService(ns string) *corev1.Service {
+	portInt, err := strconv.Atoi(k8sconsts.CentralUIPort)
+	if err != nil {
+		portInt = 3000
+	}
+
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.CentralUIServiceName,
+			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.CentralUILabelAppValue,
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeClusterIP,
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "ui",
+					Port:       int32(portInt),
+					TargetPort: intstrFromInt(portInt),
+				},
+			},
+			Selector: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.CentralUILabelAppValue,
 			},
 		},
 	}
