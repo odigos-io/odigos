@@ -25,6 +25,7 @@ spec:
             content: |
               ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               ../../common/verify_odigos_installation.sh odigos-test
+              kubectl label namespace odigos-test odigos.io/system-object="true"
             timeout: 4m
         - assert:
             timeout: 3m

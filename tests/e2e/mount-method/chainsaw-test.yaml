@@ -26,7 +26,7 @@ spec:
               else
                 ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set instrumentor.mountMethod=k8s-init-container
               fi
-
+              kubectl label namespace odigos-test odigos.io/system-object="true"
               ../../common/verify_odigos_installation.sh odigos-test
         - assert:
             timeout: 3m
