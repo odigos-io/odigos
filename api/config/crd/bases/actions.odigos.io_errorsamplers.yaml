@@ -25,6 +25,7 @@ spec:
           ErrorSampler is the Schema for the ErrorSampler CRD.
           It defines sampling logic that always retains traces with errors, and optionally samples
           non-error traces based on the fallback ratio.
+          DEPRECATED: Use odigosv1.Action instead
         properties:
           apiVersion:
             description: |-

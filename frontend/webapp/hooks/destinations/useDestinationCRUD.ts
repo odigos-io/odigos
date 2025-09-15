@@ -28,7 +28,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
   const { selectedStreamName } = useDataStreamStore();
-  const { destinationsLoading, setEntitiesLoading, destinations, addEntities, removeEntities } = useEntityStore();
+  const { destinationsLoading, setEntitiesLoading, destinations, setEntities } = useEntityStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, id?: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: EntityTypes.Destination, target: id ? getSseTargetFromId(id, EntityTypes.Destination) : undefined, hideFromHistory });
@@ -54,7 +54,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
     } else if (data?.computePlatform?.destinations) {
       const { destinations: items } = data.computePlatform;
-      addEntities(EntityTypes.Destination, mapFetchedDestinations(items));
+      setEntities(EntityTypes.Destination, mapFetchedDestinations(items));
       setEntitiesLoading(EntityTypes.Destination, false);
     }
   };
@@ -63,13 +63,9 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
-      const { data } = await mutateCreate({ variables: { destination: mapNoUndefinedFields(destination, selectedStreamName) } });
-
-      if (data?.createNewDestination) {
-        const destination = data.createNewDestination;
-        notifyUser(StatusType.Success, Crud.Create, `Successfully created "${destination.destinationType.type}" destination`, destination.id);
-        addEntities(EntityTypes.Destination, mapFetchedDestinations([destination]));
-      }
+      await mutateCreate({ variables: { destination: mapNoUndefinedFields(destination, selectedStreamName) } });
+      // !! no "fetch", and no "notifyUser"
+      // !! we should wait for SSE to handle that
     }
   };
 
@@ -80,9 +76,9 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       const { data } = await mutateUpdate({ variables: { id, destination: mapNoUndefinedFields(destination, selectedStreamName) } });
 
       if (data?.updateDestination) {
-        const destination: Destination = destinations.find((r) => r.id === id);
-        notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${destination?.destinationType?.type || id}" destination`, id);
-        fetchDestinations();
+        notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${destination.type}" destination`, id);
+        // !! no "fetch"
+        // !! we should wait for SSE to handle that
       }
     }
   };
@@ -91,13 +87,9 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
-      const { data } = await mutateDelete({ variables: { id, currentStreamName: selectedStreamName } });
-
-      if (data?.deleteDestination) {
-        const destination: Destination = destinations.find((r) => r.id === id);
-        notifyUser(StatusType.Success, Crud.Delete, `Successfully deleted "${destination?.destinationType?.type || id}" destination`, id);
-        fetchDestinations();
-      }
+      await mutateDelete({ variables: { id, currentStreamName: selectedStreamName } });
+      // !! no "fetch", and no "notifyUser"
+      // !! we should wait for SSE to handle that
     }
   };
 

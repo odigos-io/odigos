@@ -15,8 +15,9 @@ const (
 	OdigletEnterpriseImageUBI9       = "odigos-enterprise-odiglet-ubi9"
 	OdigletImageUBI9                 = "odigos-odiglet-ubi9"
 
-	GrpcHealthProbePath  = "unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic"
-	GrpcHealthBinaryPath = "/root/grpc_health_probe"
+	GrpcHealthProbePath    = "unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic"
+	GrpcHealthBinaryPath   = "/root/grpc_health_probe"
+	GrpcHealthProbeTimeout = 10
 
 	// Used to indicate that the odiglet is installed on a node.
 	OdigletOSSInstalledLabel          = "odigos.io/odiglet-oss-installed"
@@ -33,7 +34,32 @@ const (
 
 	OdigletLocalTrafficServiceName = "odiglet-local"
 	OdigletMetricsServerPort       = 8080
+	OdigletWaspServicePort         = 4040
 )
+
+// OffsetCronJobMode represents the mode for the Go offsets cron job
+type OffsetCronJobMode string
+
+const (
+	OffsetCronJobModeDirect OffsetCronJobMode = "direct"
+	OffsetCronJobModeImage  OffsetCronJobMode = "image"
+	OffsetCronJobModeOff    OffsetCronJobMode = "off"
+)
+
+// IsValid returns true if the mode is a valid OffsetCronJobMode
+func (m OffsetCronJobMode) IsValid() bool {
+	switch m {
+	case OffsetCronJobModeDirect, OffsetCronJobModeImage, OffsetCronJobModeOff:
+		return true
+	default:
+		return false
+	}
+}
+
+// String returns the string representation of the mode
+func (m OffsetCronJobMode) String() string {
+	return string(m)
+}
 
 var OdigletOSSInstalled = map[string]string{
 	OdigletOSSInstalledLabel: OdigletInstalledLabelValue,

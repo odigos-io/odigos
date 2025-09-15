@@ -14,14 +14,17 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/99designs/gqlgen/graphql/executor"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph"
+	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/kube/watchers"
 	"github.com/odigos-io/odigos/frontend/middlewares"
@@ -82,14 +85,23 @@ func initKubernetesClient(flags *Flags) error {
 }
 
 func startWatchers(ctx context.Context) error {
+	odigosNs := env.GetCurrentNamespace()
+
 	err := watchers.StartInstrumentationConfigWatcher(ctx, "")
 	if err != nil {
 		return fmt.Errorf("error starting InstrumentationConfig watcher: %v", err)
 	}
+
+	err = watchers.StartDestinationWatcher(ctx, odigosNs)
+	if err != nil {
+		return fmt.Errorf("error starting Destination watcher: %v", err)
+	}
+
 	return nil
 }
 
 func startDatabase() error {
+
 	database, err := db.NewSQLiteDB("/data/data.db")
 
 	if err != nil {
@@ -132,7 +144,7 @@ func serveClientFiles(ctx context.Context, r *gin.Engine, dist fs.FS) {
 	})
 }
 
-func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer) (*gin.Engine, error) {
+func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer, k8sCacheClient client.Client) (*gin.Engine, error) {
 	var r *gin.Engine
 	if flags.Debug {
 		r = gin.Default()
@@ -144,6 +156,12 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 
 	// Enable CORS
 	r.Use(cors.Default())
+
+	// Add security headers middleware
+	r.Use(middlewares.SecurityHeadersMiddleware)
+
+	// Add CSRF protection middleware
+	r.Use(middlewares.CSRFMiddleware())
 
 	// Readiness and Liveness probes
 	r.GET("/readyz", func(c *gin.Context) {
@@ -161,17 +179,55 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
 
+	// CSRF token endpoint
+	r.GET("/auth/csrf-token", middlewares.CSRFTokenHandler())
 	// OIDC/OAuth2 handlers
-	r.GET("/auth/callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c) })
+	r.GET("/auth/oidc-callback", func(c *gin.Context) { services.OidcAuthCallback(ctx, c) })
+
+	gqlExecutableSchema := graph.NewExecutableSchema(graph.Config{
+		Resolvers: &graph.Resolver{
+			MetricsConsumer: odigosMetrics,
+			Logger:          logger,
+		},
+	})
+	gqlExecutor := executor.New(gqlExecutableSchema)
+
 	// GraphQL handlers
-	r.POST("/graphql", func(c *gin.Context) { graph.GetGQLHandler(ctx, logger, odigosMetrics).ServeHTTP(c.Writer, c.Request) })
+	r.POST("/graphql", func(c *gin.Context) {
+		loader := loaders.NewLoaders(logger, k8sCacheClient)
+		c.Request = c.Request.WithContext(loaders.WithLoaders(c.Request.Context(), loader))
+		graph.GetGQLHandler(c.Request.Context(), gqlExecutableSchema).ServeHTTP(c.Writer, c.Request)
+	})
 	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
 	// SSE handler
 	r.GET("/api/events", sse.HandleSSEConnections)
+
 	// Remote CLI handlers
 	r.POST("/token/update", services.UpdateToken)
 	r.GET("/describe/odigos", services.DescribeOdigos)
 	r.GET("/describe/source/namespace/:namespace/kind/:kind/name/:name", services.DescribeSource)
+	r.GET("/workload", func(c *gin.Context) {
+		services.DescribeWorkload(c, logger, gqlExecutor, nil, k8sCacheClient)
+	})
+	r.GET("/workload/overview", func(c *gin.Context) {
+		verbosity := "overview"
+		services.DescribeWorkload(c, logger, gqlExecutor, &verbosity, k8sCacheClient)
+	})
+	r.GET("/workload/health-summary", func(c *gin.Context) {
+		verbosity := "healthSummary"
+		services.DescribeWorkload(c, logger, gqlExecutor, &verbosity, k8sCacheClient)
+	})
+	r.GET("/workload/:namespace", func(c *gin.Context) {
+		services.DescribeWorkload(c, logger, gqlExecutor, nil, k8sCacheClient)
+	})
+	r.GET("/workload/:namespace/:kind/:name", func(c *gin.Context) {
+		services.DescribeWorkload(c, logger, gqlExecutor, nil, k8sCacheClient)
+	})
+	r.GET("/workload/:namespace/:kind/:name/pods", func(c *gin.Context) {
+		verbosity := "pods"
+		services.DescribeWorkload(c, logger, gqlExecutor, &verbosity, k8sCacheClient)
+	})
+
 	r.POST("/source/namespace/:namespace/kind/:kind/name/:name", services.CreateSourceWithAPI)
 	r.DELETE("/source/namespace/:namespace/kind/:kind/name/:name", services.DeleteSourceWithAPI)
 
@@ -216,6 +272,13 @@ func main() {
 		log.Fatalf("Error creating Kubernetes client: %s", err)
 	}
 
+	// Setup Source cache - this initializes a controller-runtime cache for Source resources
+	// from all namespaces, providing fast read access without hitting the Kubernetes API
+	k8sCacheClient, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext)
+	if err != nil {
+		log.Fatalf("Error setting up Source cache: %s", err)
+	}
+
 	odigosMetrics := collectormetrics.NewOdigosMetrics()
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -231,7 +294,7 @@ func main() {
 	}
 
 	// Start server
-	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics)
+	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient)
 	if err != nil {
 		log.Fatalf("Error starting server: %s", err)
 	}

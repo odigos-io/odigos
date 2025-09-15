@@ -24,10 +24,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/version"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -37,6 +37,11 @@ const (
 	WorkloadKindDaemonSet   model.K8sResourceKind = "DaemonSet"
 	WorkloadKindCronJob     model.K8sResourceKind = "CronJob"
 )
+
+type InstanceCounts struct {
+	TotalInstances   int
+	HealthyInstances int
+}
 
 func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
 	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, nsName, metav1.GetOptions{})
@@ -266,25 +271,24 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 }
 
 func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind model.K8sResourceKind) (*v1alpha1.Source, error) {
-	list, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labels.Set{
-			k8sconsts.WorkloadNamespaceLabel: nsName,
-			k8sconsts.WorkloadNameLabel:      workloadName,
-			k8sconsts.WorkloadKindLabel:      string(workloadKind),
-		}).String(),
-	})
-
+	labels := map[string]string{
+		k8sconsts.WorkloadNamespaceLabel: nsName,
+		k8sconsts.WorkloadNameLabel:      workloadName,
+		k8sconsts.WorkloadKindLabel:      string(workloadKind),
+	}
+	sourceList := &v1alpha1.SourceList{}
+	err := kube.CacheClient.List(ctx, sourceList, ctrlClient.InNamespace(nsName), ctrlClient.MatchingLabels(labels))
 	if err != nil {
 		return nil, err
 	}
-	if len(list.Items) == 0 {
+	if len(sourceList.Items) == 0 {
 		return nil, apierrors.NewNotFound(schema.GroupResource{Group: "", Resource: "source"}, workloadName)
 	}
-	if len(list.Items) > 1 {
-		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(list.Items))
+	if len(sourceList.Items) > 1 {
+		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(sourceList.Items))
 	}
 
-	return &list.Items[0], err
+	return &sourceList.Items[0], nil
 }
 
 func DeleteSourceWithAPI(c *gin.Context) {
@@ -501,18 +505,10 @@ func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 	}
 }
 
-type InstanceCounts struct {
-	TotalInstances   int
-	HealthyInstances int
-}
-
-func getInstrumentationInstancesConditions(ctx context.Context, namespace string, name string, kind string) ([]*model.SourceConditions, error) {
-	result := make([]*model.SourceConditions, 0)
-	conditionsMap := make(map[string]*model.SourceConditions)
-	instanceCountsMap := make(map[string]*InstanceCounts)
+func GetInstrumentationInstances(ctx context.Context, namespace string, name string, kind string) ([]*v1alpha1.InstrumentationInstance, error) {
+	result := make([]*v1alpha1.InstrumentationInstance, 0)
 
 	listOptions := metav1.ListOptions{}
-
 	if namespace != "" && name != "" && kind != "" {
 		objectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
 		if len(objectName) > 63 {
@@ -528,8 +524,25 @@ func getInstrumentationInstancesConditions(ctx context.Context, namespace string
 		return nil, err
 	}
 
-	// Count instances and group by workload
 	for _, instance := range list.Items {
+		result = append(result, &instance)
+	}
+
+	return result, nil
+}
+
+func getInstrumentationInstancesConditions(ctx context.Context, namespace string, name string, kind string) ([]*model.SourceConditions, error) {
+	result := make([]*model.SourceConditions, 0)
+	conditionsMap := make(map[string]*model.SourceConditions)
+	instanceCountsMap := make(map[string]*InstanceCounts)
+
+	items, err := GetInstrumentationInstances(ctx, namespace, name, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	// Count instances and group by workload
+	for _, instance := range items {
 		objectName, exists := instance.Labels[consts.InstrumentedAppNameLabel]
 		if !exists {
 			continue
@@ -758,23 +771,59 @@ func GetOtherConditionsForSources(ctx context.Context, namespace string, name st
 		}
 	}
 
-	workloadsConditions, err := getWorkloadsConditions(ctx, namespace, name, kind)
-	if err != nil {
-		return nil, err
-	}
-	for _, workloadItem := range workloadsConditions {
-		key := fmt.Sprintf("%s/%s/%s", workloadItem.Namespace, workloadItem.Name, workloadItem.Kind)
-		if _, exists := conditionsMap[key]; !exists {
-			conditionsMap[key] = workloadItem
-		} else {
-			conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, workloadItem.Conditions...)
-			SortConditions(conditionsMap[key].Conditions)
-		}
-	}
+	// TODO: uncomment this when we have a better way to differentiate between errors
+	// workloadsConditions, err := getWorkloadsConditions(ctx, namespace, name, kind)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// for _, workloadItem := range workloadsConditions {
+	// 	key := fmt.Sprintf("%s/%s/%s", workloadItem.Namespace, workloadItem.Name, workloadItem.Kind)
+	// 	if _, exists := conditionsMap[key]; !exists {
+	// 		conditionsMap[key] = workloadItem
+	// 	} else {
+	// 		conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, workloadItem.Conditions...)
+	// 		SortConditions(conditionsMap[key].Conditions)
+	// 	}
+	// }
 
 	for _, item := range conditionsMap {
 		result = append(result, item)
 	}
 
 	return result, nil
+}
+
+func UninstrumentCluster(ctx context.Context) error {
+	// use the non-cached client to make sure we don't miss any one
+	list, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	namespaceSources := make([]v1alpha1.Source, 0)
+	workloadSources := make([]v1alpha1.Source, 0)
+
+	for _, source := range list.Items {
+		if source.Spec.Workload.Kind == k8sconsts.WorkloadKind(WorkloadKindNamespace) {
+			namespaceSources = append(namespaceSources, source)
+		} else {
+			workloadSources = append(workloadSources, source)
+		}
+	}
+
+	for _, source := range namespaceSources {
+		err = kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, source := range workloadSources {
+		err = kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

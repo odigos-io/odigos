@@ -3,10 +3,7 @@ name: E2E Tests
 on:
   merge_group:
   pull_request:
-    branches:
-      - main
-      - 'releases/**'
-
+    branches: [ main, 'releases/**' ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -14,10 +11,10 @@ concurrency:
 
 jobs:
   build-cli:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -33,17 +30,17 @@ jobs:
           cd cli
           go build -tags=embed_manifests -o odigos
 
-      - name: Upload CLI
-        uses: actions/upload-artifact@v4
+      - name: Save CLI binary to cache
+        uses: actions/cache/save@v4
         with:
-          name: odigos-cli
           path: cli/odigos
+          key: ${{ github.run_id }}-odigos-cli
 
   build-odigos-images:
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    runs-on: depot-ubuntu-24.04-8
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Build Odigos Images
         run: |
@@ -57,34 +54,30 @@ jobs:
           TAG=e2e-test make build-cli-image
           docker save registry.odigos.io/odigos-cli:e2e-test -o cli-image.tar
 
-      - name: Upload Odigos Images
-        uses: actions/upload-artifact@v4
+      - name: Save Odigos images to cache
+        uses: actions/cache/save@v4
         with:
-          name: odigos-images
           path: |
             odigos-images.tar
             cli-image.tar
+          key: ${{ github.run_id }}-odigos-images
 
   kubernetes-test:
-    needs:
-      - build-odigos-images
-      - build-cli
-    # workload-lifecycle test scenario requires more resources, so we use a different instance type
-    # all other test scenarios use the default instance type which is free and fast
-    runs-on: ${{ matrix.test-scenario == 'workload-lifecycle' && 'warp-ubuntu-latest-x64-8x-spot' || 'ubuntu-latest' }}
+    needs: [ build-odigos-images, build-cli ]
+    runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
       matrix:
-        kube-version:
-          - "1.20.15"
-          - "1.23"
-          - "1.32"
+        kube-version: [ "1.32", "1.23", "1.20.15" ]
         test-scenario:
           - "ui"
           - "helm-chart"
           - "cli-upgrade"
           - "helm-upgrade"
-          - "workload-lifecycle"
+          - "runtime-detection"
+          - "instrumentation-lifecycle"
+          - "environment-variables"
+          - "trace-collection"
           - "source"
           - "webhooks"
           - "env-injection"
@@ -97,9 +90,10 @@ jobs:
             kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
           - kube-version: "1.32"
             kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -107,7 +101,7 @@ jobs:
           version: v3.9.0
 
       - name: Install chainsaw
-        uses: kyverno/action-install-chainsaw@v0.2.12
+        uses: kyverno/action-install-chainsaw@v0.2.13
 
       - name: Create Kind Cluster
         uses: helm/kind-action@v1.12.0
@@ -117,41 +111,80 @@ jobs:
           cluster_name: kind
           config: tests/common/apply/kind-config.yaml
 
-      - name: Download Odigos Images
-        uses: actions/download-artifact@v4
+      - name: wait for cluster readiness
+        run: |
+          kubectl wait --for=condition=Ready node --all --timeout=180s
+          kubectl wait -n kube-system --for=condition=Ready pod --all --timeout=300s
+          kubectl rollout status -n kube-system deployment/coredns --timeout=300s
+
+      - name: Restore cached Odigos images
+        id: restore-images-cache
+        uses: actions/cache/restore@v4
         with:
-          name: odigos-images
-        timeout-minutes: 5
+          path: |
+            odigos-images.tar
+            cli-image.tar
+          fail-on-cache-miss: true
+          key: ${{ github.run_id }}-odigos-images
+
+      - name: Check if images cache was restored
+        if: steps.restore-images-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "❌ Cache miss for Odigos images - this should not happen!"
+          echo "Expected cache key: ${{ github.run_id }}-odigos-images"
+          exit 1
 
       - name: Load Odigos Images to Kind Cluster
         run: |
           kind load image-archive odigos-images.tar
           kind load image-archive cli-image.tar
 
-      - name: Download CLI binary
-        uses: actions/download-artifact@v4
+      - name: Restore cached CLI binary
+        id: restore-cli-cache
+        uses: actions/cache/restore@v4
         with:
-          name: odigos-cli
-        timeout-minutes: 1
+          path: cli/odigos
+          fail-on-cache-miss: true
+          key: ${{ github.run_id }}-odigos-cli
+
+      - name: Check if CLI cache was restored
+        if: steps.restore-cli-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "❌ Cache miss for CLI binary - this should not happen!"
+          echo "Expected cache key: ${{ github.run_id }}-odigos-cli"
+          exit 1
 
       - name: Move CLI binary & set permissions
-        run: |
-          mv odigos cli/odigos
-          chmod +x cli/odigos
+        run: chmod +x cli/odigos
 
       - name: Run E2E Tests
         run: |
           MINOR_VERSION=$(echo ${{ matrix.kube-version }} | sed -E 's/^1\.([0-9]+).*$/\1/')
-
           chainsaw test tests/e2e/${{ matrix.test-scenario }} --values - <<EOF
           k8sMinorVersion: ${MINOR_VERSION}
           isHelm: ${{ matrix.test-scenario == 'helm-chart' || matrix.test-scenario == 'helm-upgrade' }}
           EOF
 
+      - name: Cluster diagnostics
+        if: failure()
+        run: |
+          echo "==== Nodes ===="; kubectl get nodes -o wide
+          echo "==== Pods (all namespaces) ===="; kubectl get pods -A -o wide
+          echo "==== Events (last 10m) ===="; kubectl get events -A --sort-by=.lastTimestamp | tail -n 200
+          echo "==== Deployments not ready ===="
+            kubectl get deploy -A -o json | \
+            jq -r '.items[]
+              | select((.status.readyReplicas // 0) != (.status.replicas // 0))
+              | "\(.metadata.namespace) \(.metadata.name)"' \
+            | while read ns name; do
+              echo "--- describe deploy $ns/$name ---"
+              kubectl -n "$ns" describe deploy "$name" || true
+          done
+
+      ################### Diagnose and collect logs ###################
       - name: Run diagnose command
         if: ${{ failure() && matrix.test-scenario != 'ui' }}
-        run: |
-          ./cli/odigos diagnose
+        run: ./cli/odigos diagnose
         continue-on-error: true
 
       - name: Upload diagnose artifact
@@ -177,3 +210,14 @@ jobs:
           name: ui-videos-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
           path: frontend/webapp/cypress/videos
         continue-on-error: true
+
+      - name: Delete pipeline build caches on success
+        if: ${{ success() }}
+        run: |
+          echo "Deleting pipeline build caches..."
+          gh extension install actions/gh-actions-cache || true
+          # Only delete caches created by this workflow run
+          gh actions-cache delete odigos-build-${{ matrix.test-scenario }}-${{ matrix.kube-version }} --confirm || true
+          gh actions-cache delete odigos-deps-${{ matrix.test-scenario }}-${{ matrix.kube-version }} --confirm || true
+        continue-on-error: true
+

@@ -63,6 +63,8 @@ spec:
                       - attributeStringValue
                       type: object
                     type: array
+                  overwriteExistingValues:
+                    type: boolean
                 required:
                 - clusterAttributes
                 type: object
@@ -99,6 +101,12 @@ spec:
                           description: |-
                             The attribute key to be used for the resource attribute created from the label.
                             e.g. "kubectl.kubernetes.restartedAte"
+                          type: string
+                        from:
+                          default: pod
+                          description: |-
+                            The source of the annotation.
+                            e.g. "pod" or "namespace"
                           type: string
                       required:
                       - annotationKey
@@ -142,6 +150,15 @@ spec:
                             The attribute key to be used for the resource attribute created from the label.
                             e.g. "app.kubernetes.name"
                           type: string
+                        from:
+                          default: pod
+                          description: |-
+                            The source of the label.
+                            e.g. "pod" or "namespace"
+                          enum:
+                          - pod
+                          - namespace
+                          type: string
                         labelKey:
                           description: |-
                             The label name to be extracted from the pod.
@@ -180,6 +197,321 @@ spec:
                     type: object
                 required:
                 - renames
+                type: object
+              samplers:
+                description: Samplers is the config for the Samplers Action.
+                properties:
+                  errorSampler:
+                    description: ErrorSamplerSpec defines the desired state of ErrorSampler
+                    properties:
+                      fallback_sampling_ratio:
+                        description: |-
+                          FallbackSamplingRatio determines the percentage (0–100) of non-error traces
+                          that should be sampled. Error traces are always sampled.
+                        type: number
+                    required:
+                    - fallback_sampling_ratio
+                    type: object
+                  latencySampler:
+                    description: LatencySamplerSpec defines the desired state of LatencySampler
+                    properties:
+                      endpoints_filters:
+                        description: |-
+                          EndpointsFilters defines the list of route-based latency sampling filters.
+                          Each filter targets a specific service and HTTP route with a latency threshold.
+                        items:
+                          description: HttpRouteFilter defines a single latency-based
+                            sampling rule for an HTTP route.
+                          properties:
+                            fallback_sampling_ratio:
+                              description: |-
+                                FallbackSamplingRatio is the percentage (0–100) of traces to sample if the route
+                                and service match but the span latency is below the threshold.
+                              type: number
+                            http_route:
+                              description: HttpRoute is the route name (from span
+                                attribute "http.route") that this rule applies to.
+                              type: string
+                            minimum_latency_threshold:
+                              description: |-
+                                MinimumLatencyThreshold is the latency in milliseconds that spans must exceed
+                                to be considered for sampling. Spans with latency >= this value are eligible.
+                              type: integer
+                            service_name:
+                              description: |-
+                                ServiceName specifies the service that must emit the span for this rule to apply.
+                                Matches the value of the "service.name" attribute in the span.
+                              type: string
+                          required:
+                          - fallback_sampling_ratio
+                          - http_route
+                          - minimum_latency_threshold
+                          - service_name
+                          type: object
+                        type: array
+                    required:
+                    - endpoints_filters
+                    type: object
+                  probabilisticSampler:
+                    description: ProbabilisticSamplerSpec defines the desired state
+                      of ProbabilisticSampler
+                    properties:
+                      sampling_percentage:
+                        description: SamplingPercentage determines the percentage
+                          (0–100) of traces to sample.
+                        type: string
+                    required:
+                    - sampling_percentage
+                    type: object
+                  serviceNameSampler:
+                    description: ServiceNameSamplerSpec defines the desired state
+                      of ServiceNameSampler
+                    properties:
+                      services_name_filters:
+                        description: |-
+                          ServicesNameFilters defines rules for sampling traces based on the presence
+                          of specific service names. If a trace contains a span from one of the listed
+                          services, the associated sampling ratio is applied.
+                        items:
+                          description: ServiceNameFilter defines a single rule that
+                            maps a service name to a sampling decision.
+                          properties:
+                            fallback_sampling_ratio:
+                              default: 100
+                              description: |-
+                                FallbackSamplingRatio is the percentage (0–100) of traces to sample
+                                if the specified service is not present in the trace.
+                              maximum: 100
+                              minimum: 0
+                              type: number
+                            sampling_ratio:
+                              default: 100
+                              description: |-
+                                SamplingRatio determines the percentage (0–100) of traces to sample
+                                when the specified service is present in the trace.
+
+                                For example, a value of 100 means all such traces will be kept,
+                                while a value of 0 means all will be dropped.
+                              maximum: 100
+                              minimum: 0
+                              type: number
+                            service_name:
+                              description: |-
+                                ServiceName specifies the name of the service to look for within a trace.
+                                If any span in the trace comes from this service, the rule will apply.
+                              type: string
+                          required:
+                          - fallback_sampling_ratio
+                          - sampling_ratio
+                          - service_name
+                          type: object
+                        type: array
+                    required:
+                    - services_name_filters
+                    type: object
+                  spanAttributeSampler:
+                    description: SpanAttributeSamplerSpec defines the desired state
+                      of SpanAttributeSampler
+                    properties:
+                      attribute_filters:
+                        description: |-
+                          AttributeFilters defines a list of criteria to decide how spans should be
+                          sampled based on their attributes. At least one filter is required.
+                        items:
+                          description: SpanAttributeFilter allows sampling traces
+                            based on specific span attributes and conditions.
+                          properties:
+                            attribute_key:
+                              description: AttributeKey indicates which attribute
+                                on the span to evaluate.
+                              type: string
+                            condition:
+                              description: |-
+                                Condition is the rule or expression that will be used to evaluate
+                                the attribute's value. Exactly one of the condition types must be set:
+                                  - StringCondition
+                                  - NumberCondition
+                                  - BooleanCondition
+                                  - JsonCondition
+                              properties:
+                                boolean_condition:
+                                  description: BooleanCondition applies to boolean
+                                    attributes.
+                                  properties:
+                                    expected_value:
+                                      description: ExpectedValue is only used if Operation
+                                        == "equals".
+                                      type: boolean
+                                    operation:
+                                      description: |-
+                                        Operation can be:
+                                          - "exists": Checks that the boolean attribute is present.
+                                          - "equals": Checks if the attribute exactly matches ExpectedValue.
+
+                                        ExpectedValue is required only for the "equals" operation.
+                                      enum:
+                                      - exists
+                                      - equals
+                                      type: string
+                                  required:
+                                  - operation
+                                  type: object
+                                json_condition:
+                                  description: JsonCondition applies to attributes
+                                    that are JSON-encoded strings.
+                                  properties:
+                                    expected_value:
+                                      description: |-
+                                        ExpectedValue is required for:
+                                          - equals
+                                          - not_equals
+                                          - key_equals
+                                          - key_not_equals
+
+                                        The value to compare against during evaluation.
+                                      type: string
+                                    json_path:
+                                      description: |-
+                                        JsonPath is required for:
+                                          - jsonpath_exists
+                                          - key_equals
+                                          - key_not_equals
+
+                                        It is a JSONPath expression used to navigate the JSON structure.
+                                        Example: $.user.role or $.events[0].code
+                                      type: string
+                                    operation:
+                                      description: |-
+                                        Operation defines the evaluation logic applied to the JSON value.
+
+                                        Supported values:
+                                          - is_valid_json
+                                          - is_invalid_json
+                                          - equals
+                                          - not_equals
+                                          - jsonpath_exists
+                                          - key_equals
+                                          - key_not_equals
+                                      enum:
+                                      - is_valid_json
+                                      - is_invalid_json
+                                      - equals
+                                      - not_equals
+                                      - jsonpath_exists
+                                      - key_equals
+                                      - key_not_equals
+                                      type: string
+                                  required:
+                                  - operation
+                                  type: object
+                                number_condition:
+                                  description: NumberCondition applies to numeric
+                                    attributes (int, long, float, double).
+                                  properties:
+                                    expected_value:
+                                      description: ExpectedValue is required for all
+                                        operations except "exists".
+                                      type: number
+                                    operation:
+                                      description: |-
+                                        Operation determines the numeric comparison to perform.
+
+                                        Valid operations:
+
+                                          - "exists": Checks that the numeric attribute is present (non-null).
+                                          - "equals": Checks if the attribute equals ExpectedValue.
+                                          - "not_equals": Checks if the attribute does not equal ExpectedValue.
+                                          - "greater_than": Checks if attribute > ExpectedValue.
+                                          - "less_than": Checks if attribute < ExpectedValue.
+                                          - "greater_than_or_equal": Checks if attribute >= ExpectedValue.
+                                          - "less_than_or_equal": Checks if attribute <= ExpectedValue.
+
+                                        For operations other than "exists", ExpectedValue must be specified.
+                                      enum:
+                                      - exists
+                                      - equals
+                                      - not_equals
+                                      - greater_than
+                                      - less_than
+                                      - greater_than_or_equal
+                                      - less_than_or_equal
+                                      type: string
+                                  required:
+                                  - operation
+                                  type: object
+                                string_condition:
+                                  description: StringCondition applies to string-type
+                                    attributes.
+                                  properties:
+                                    expected_value:
+                                      description: |-
+                                        ExpectedValue is required for all operations except "exists". Its usage
+                                        depends on the chosen Operation, e.g. it may represent an exact string
+                                        to match, a substring, or a regular expression.
+                                      type: string
+                                    operation:
+                                      description: |-
+                                        Operation determines what comparison or check should be performed.
+
+                                        The valid operations are:
+
+                                          - "exists": Checks that the attribute is present (and not an empty string).
+                                          - "equals": String equality comparison with ExpectedValue.
+                                          - "not_equals": String inequality comparison with ExpectedValue.
+                                          - "contains": Checks if the attribute contains ExpectedValue as a substring.
+                                          - "not_contains": Checks if the attribute does not contain ExpectedValue.
+                                          - "regex": Interprets ExpectedValue as a regular expression (RE2 syntax)
+                                              and checks for a match within the attribute.
+
+                                        For operations other than "exists", ExpectedValue must be provided.
+                                      enum:
+                                      - exists
+                                      - equals
+                                      - not_equals
+                                      - contains
+                                      - not_contains
+                                      - regex
+                                      type: string
+                                  required:
+                                  - operation
+                                  type: object
+                              type: object
+                            fallback_sampling_ratio:
+                              default: 100
+                              description: |-
+                                FallbackSamplingRatio is the percentage (0–100) of spans to sample
+                                when the condition does not explicitly match. For example, if set to 50,
+                                then half of non-matching spans would be sampled.
+                              maximum: 100
+                              minimum: 0
+                              type: number
+                            sampling_ratio:
+                              default: 100
+                              description: |-
+                                SamplingRatio determines the percentage (0–100) of traces to sample
+                                when the specified attribute satisfies the filter.
+
+                                For example, a value of 100 means all such traces will be kept,
+                                while a value of 0 means all will be dropped.
+                              maximum: 100
+                              minimum: 0
+                              type: number
+                            service_name:
+                              description: |-
+                                ServiceName specifies which service this filter applies to. Only spans
+                                originating from the given service will be evaluated against this filter.
+                              type: string
+                          required:
+                          - attribute_key
+                          - condition
+                          - fallback_sampling_ratio
+                          - sampling_ratio
+                          - service_name
+                          type: object
+                        type: array
+                    required:
+                    - attribute_filters
+                    type: object
                 type: object
               signals:
                 description: Which signals should this action operate on.

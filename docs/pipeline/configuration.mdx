@@ -22,16 +22,16 @@ Odigos offers two main options for configuring the pipeline:
   Using both methods will result in configurations overwriting each other, potentially leading to unexpected behavior.
 </Warning>
 
-#### 1. Using Profiles
+#### 1. Using Sizing Configuration
 
-To use profiles, you need to use the [Odigos CLI Command for Profiles](/cli/odigos_profile).<br />
+To set the sizing config, you need to use the [Odigos CLI Command for ](/cli/odigos_config_set).<br />
 This simplifies the setup process and ensures optimized settings for typical use cases.
 
-Sizing Profiles `size_s`, `size_m`, `size_l` are pre-defined configurations designed to simplify pipeline configurations. Each profile specifies the following parameters:
+Available Sizing config `size_s`, `size_m`, `size_l` are pre-defined configurations designed to simplify pipeline configurations. Each profile specifies the following parameters:
 
 **Cluster Gateway Collector**:
 
-| Profile  | Minimum Replicas      | HPA Maximum Replicas      | Request CPU (m)      | Limit CPU (m)      | Request Memory (Mi) | Limit Memory (Mi) |
+| Size     | Minimum Replicas      | HPA Maximum Replicas      | Request CPU (m)      | Limit CPU (m)      | Request Memory (Mi) | Limit Memory (Mi) |
 |----------|-----------------------|----------------------|-----------------|---------------|----------------------|-------------------|
 | `size_s` | **1**                 | **5**                | **150m**        | **300m**      | **300Mi**            | **300Mi**         |
 | `size_m` | **2**                 | **8**                | **500m**        | **1000m**     | **500Mi**            | **600Mi**         |
@@ -39,7 +39,7 @@ Sizing Profiles `size_s`, `size_m`, `size_l` are pre-defined configurations desi
 
 **Node Data Collection Collector**:
 
-| Profile  | Request Memory (Mi)  | Limit Memory (Mi) | Request CPU (m)      | Limit CPU (m)
+| Size     | Request Memory (Mi)  | Limit Memory (Mi) | Request CPU (m)      | Limit CPU (m)
 |----------|----------------------|-------------------| ---------------------|-------------------|
 | `size_s` | **150Mi**            | **300Mi**         | **150m**             | **300m**         |
 | `size_m` | **250Mi**            | **500Mi**         | **250m**             | **500m**         |
@@ -79,12 +79,12 @@ collectorGateway:
   # MemoryLimiterLimitMiB sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
   # This is the hard limit after which a force garbage collection will be performed.
   # Default: 50Mi below the memory request.
-  memoryLimiterLimitMiB: 
+  memoryLimiterLimitMiB:
 
   # MemoryLimiterSpikeLimitMiB sets the "spike_limit_mib" parameter in the memory limiter configuration.
   # This is the diff in MiB between the hard limit and the soft limit.
   # Default: 20% of the hard limit (soft limit will be 80% of the hard limit).
-  memoryLimiterSpikeLimitMiB: 
+  memoryLimiterSpikeLimitMiB:
 
   # GoMemLimitMib sets the GOMEMLIMIT environment variable value for the collector gateway deployment.
   # This is when the Go runtime will start garbage collection.
@@ -115,17 +115,17 @@ collectorNode:
   # this parameter sets the "limit_mib" parameter in the memory limiter configuration for the node collector.
   # it is the hard limit after which a force garbage collection will be performed.
   # if not set, it will be 50Mi below the memory request.
-  memoryLimiterLimitMiB: 
+  memoryLimiterLimitMiB:
 
   # this parameter sets the "spike_limit_mib" parameter in the memory limiter configuration for the node collector.
   # note that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.
   # if not set, this will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
-  memoryLimiterSpikeLimitMiB: 
+  memoryLimiterSpikeLimitMiB:
 
   # the GOMEMLIMIT environment variable value for the node collector daemonset.
   # this is when go runtime will start garbage collection.
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
-  goMemLimitMiB: 
+  goMemLimitMiB:
 ```
 
 <GettingHelp />

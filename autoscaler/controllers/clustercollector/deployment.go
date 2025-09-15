@@ -13,6 +13,8 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/consts"
+	odigosconsts "github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -119,6 +121,21 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 		gatewayReplicas = int32(*gateway.Spec.ResourcesSettings.MinReplicas)
 	}
 
+	extraEnvVars := []corev1.EnvVar{}
+	if gateway.Spec.HttpsProxyAddress != nil {
+		odigosNs := env.GetCurrentNamespace()
+		extraEnvVars = append(extraEnvVars, corev1.EnvVar{
+			Name:  "HTTPS_PROXY",
+			Value: *gateway.Spec.HttpsProxyAddress,
+		}, corev1.EnvVar{
+			// prevent the own telemetry metrics from using the https proxy if set.
+			// gRPC uses the HTTPS_PROXY even for non tls connections
+			// since it's always uses HTTP CONNECT, so we need to blacklist the ui service.
+			Name:  "NO_PROXY",
+			Value: fmt.Sprintf("%s.%s:%d", k8sconsts.UIServiceName, odigosNs, odigosconsts.OTLPPort),
+		})
+	}
+
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
@@ -159,7 +176,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 							},
 							EnvFrom: getSecretsFromDests(dests),
 							// Add the ODIGOS_VERSION environment variable from the ConfigMap
-							Env: []corev1.EnvVar{
+							Env: append([]corev1.EnvVar{
 								{
 									Name: consts.OdigosVersionEnvVarName,
 									ValueFrom: &corev1.EnvVarSource{
@@ -196,7 +213,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 										},
 									},
 								},
-							},
+							}, extraEnvVars...),
 							SecurityContext: &corev1.SecurityContext{
 								AllowPrivilegeEscalation: boolPtr(false),
 							},
@@ -207,6 +224,10 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 										Port: intstr.FromInt(13133),
 									},
 								},
+								FailureThreshold: 3,
+								PeriodSeconds:    10,
+								SuccessThreshold: 1,
+								TimeoutSeconds:   5,
 							},
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -215,6 +236,10 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 										Port: intstr.FromInt(13133),
 									},
 								},
+								FailureThreshold: 3,
+								PeriodSeconds:    10,
+								SuccessThreshold: 1,
+								TimeoutSeconds:   5,
 							},
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{

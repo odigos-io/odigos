@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -34,7 +35,8 @@ type OtelAttributeWithValue struct {
 const ActionNameAddClusterInfo = "AddClusterInfo"
 
 type AddClusterInfoConfig struct {
-	ClusterAttributes []OtelAttributeWithValue `json:"clusterAttributes"`
+	ClusterAttributes       []OtelAttributeWithValue `json:"clusterAttributes"`
+	OverwriteExistingValues bool                     `json:"overwriteExistingValues,omitempty"`
 }
 
 func (AddClusterInfoConfig) ProcessorType() string {
@@ -45,6 +47,13 @@ func (AddClusterInfoConfig) OrderHint() int {
 	return 1
 }
 
+func (AddClusterInfoConfig) CollectorRoles() []k8sconsts.CollectorRole {
+	return []k8sconsts.CollectorRole{
+		k8sconsts.CollectorsRoleClusterGateway,
+	}
+}
+
+
 // AddClusterInfoSpec defines the desired state of AddClusterInfo action
 type AddClusterInfoSpec struct {
 	ActionName string                       `json:"actionName,omitempty"`
@@ -53,6 +62,8 @@ type AddClusterInfoSpec struct {
 	Signals    []common.ObservabilitySignal `json:"signals"`
 
 	ClusterAttributes []OtelAttributeWithValue `json:"clusterAttributes"`
+
+	OverwriteExistingValues bool `json:"overwriteExistingValues,omitempty"`
 }
 
 // AddClusterInfoStatus defines the observed state of AddClusterInfo action
@@ -73,6 +84,7 @@ type AddClusterInfoStatus struct {
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // AddClusterInfo is the Schema for the addclusterinfo odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type AddClusterInfo struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -84,6 +96,7 @@ type AddClusterInfo struct {
 //+kubebuilder:object:root=true
 
 // AddClusterInfoList contains a list of AddClusterInfo
+// DEPRECATED: Use odigosv1.ActionList instead
 type AddClusterInfoList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

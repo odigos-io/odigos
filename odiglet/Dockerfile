@@ -7,43 +7,7 @@ COPY agents/python ./agents/configurator
 RUN pip install ./agents/configurator/  --target workspace
 RUN echo "VERSION = \"$ODIGOS_VERSION\";" > /python-instrumentation/workspace/initializer/version.py
 
-######### Node.js Native Community Agent #########
-#
-# The Node.js agent is built in multiple stages so it can be built with either upstream
-# @odigos/opentelemetry-node or with a local clone to test changes during development.
-# The implementation is based on the following blog post:
-# https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
-
-# The first build stage 'nodejs-agent-clone' clones the agent sources from github main branch.
-FROM alpine AS nodejs-agent-clone
-RUN apk add git
-WORKDIR /src
-ARG NODEJS_AGENT_VERSION=main
-RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentelemetry-node && git checkout $NODEJS_AGENT_VERSION
-
-# The second build stage 'nodejs-agent-src' prepares the actual code we are going to compile and embed in odiglet.
-# By default, it uses the previous 'nodejs-agent-clone' stage, but one can override it by setting the
-# --build-context nodejs-agent-src=../opentelemetry-node flag in the docker build command.
-# This allows us to use the agent sources and test changes during development.
-# The output of this stage is the resolved source code to be used in the next stage.
-FROM scratch AS nodejs-agent-src
-COPY --from=nodejs-agent-clone /src/opentelemetry-node /
-
-# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for
-# being dependency of the native-community agent.
-FROM node:18 AS nodejs-agent-build
-# Run yarn install to generate the production node_modules directory
-WORKDIR /opentelemetry-node-prod
-COPY --from=nodejs-agent-src package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --production
-# Build the agent from typescript sources
-ARG ODIGOS_VERSION
-WORKDIR /opentelemetry-node
-COPY --from=nodejs-agent-src package.json yarn.lock ./
-RUN yarn --frozen-lockfile
-COPY --from=nodejs-agent-src / .
-RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
-RUN yarn compile
+FROM public.ecr.aws/odigos/agents/nodejs-community:v0.0.4 AS nodejs-community
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
@@ -112,6 +76,32 @@ RUN for v in ${RUBY_VERSIONS}; do \
     done
 
 
+# Compile rsync statically for distroless image
+# don't specify the platform here, since we want to compile for multi architecture natively with gcc
+FROM registry.odigos.io/odiglet-base:v1.8 AS rsync-builder
+ARG RSYNC_VERSION=3.2.7
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    wget \
+    ca-certificates \
+    libacl1-dev \
+    libattr1-dev \
+    libpopt-dev \
+    liblz4-dev \
+    libzstd-dev \
+    libxxhash-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN wget https://download.samba.org/pub/rsync/src/rsync-${RSYNC_VERSION}.tar.gz \
+    && tar -xzf rsync-${RSYNC_VERSION}.tar.gz \
+    && cd rsync-${RSYNC_VERSION} \
+    && ./configure --prefix=/usr LDFLAGS="-static" \
+    && make \
+    && make install DESTDIR=/rsync-install \
+    && cd .. \
+    && rm -rf rsync-${RSYNC_VERSION}*
+
 ######### ODIGLET #########
 FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
@@ -150,32 +140,6 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
     wget -O /tmp/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-${GRPC_ARCH} && \
     chmod +x /tmp/grpc_health_probe
 
-
-# Compile rsync statically for distroless image
-ARG RSYNC_VERSION=3.2.7
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    wget \
-    ca-certificates \
-    libacl1-dev \
-    libattr1-dev \
-    libpopt-dev \
-    liblz4-dev \
-    libzstd-dev \
-    libxxhash-dev \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN wget https://download.samba.org/pub/rsync/src/rsync-${RSYNC_VERSION}.tar.gz \
-    && tar -xzf rsync-${RSYNC_VERSION}.tar.gz \
-    && cd rsync-${RSYNC_VERSION} \
-    && ./configure --prefix=/usr LDFLAGS="-static" \
-    && make \
-    && make install DESTDIR=/rsync-install \
-    && cd .. \
-    && rm -rf rsync-${RSYNC_VERSION}*
-
-
 WORKDIR /instrumentations
 
 # Java
@@ -187,13 +151,8 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
-COPY --from=nodejs-agent-build /opentelemetry-node/package.json /instrumentations/opentelemetry-node/package.json
-COPY --from=nodejs-agent-build /opentelemetry-node/LICENSE /instrumentations/opentelemetry-node/LICENSE
-COPY --from=nodejs-agent-build /opentelemetry-node/build /instrumentations/opentelemetry-node/build
-COPY --from=nodejs-agent-build /opentelemetry-node-prod/node_modules /instrumentations/opentelemetry-node/node_modules
-
-# nodejs-community
-COPY --from=nodejs-agent-build /opentelemetry-node/build/src/nodejs-community/autoinstrumentation.js /instrumentations/nodejs-community/autoinstrumentation.js
+COPY --from=nodejs-community /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=nodejs-community /instrumentations/nodejs-community /instrumentations/nodejs-community
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
@@ -212,7 +171,7 @@ COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.3 /instrumentations/ru
 COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.4 /instrumentations/ruby/3.4
 
 # loader
-ARG ODIGOS_LOADER_VERSION=v0.0.4
+ARG ODIGOS_LOADER_VERSION=v0.0.5
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
 FROM gcr.io/distroless/base:latest
@@ -220,7 +179,7 @@ COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/od
 COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
 # Copy statically compiled rsync (no shared libraries needed)
-COPY --from=builder /rsync-install/usr/bin/rsync /usr/bin/rsync
+COPY --from=rsync-builder /rsync-install/usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 CMD ["/root/odiglet"]

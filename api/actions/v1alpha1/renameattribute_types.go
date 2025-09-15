@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -34,6 +35,12 @@ func (RenameAttributeConfig) ProcessorType() string {
 
 func (RenameAttributeConfig) OrderHint() int {
 	return -50
+}
+
+func (RenameAttributeConfig) CollectorRoles() []k8sconsts.CollectorRole {
+	return []k8sconsts.CollectorRole{
+		k8sconsts.CollectorsRoleClusterGateway,
+	}
 }
 
 // RenameAttributeSpec defines the desired state of RenameAttribute action
@@ -65,6 +72,7 @@ type RenameAttributeStatus struct {
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // RenameAttribute is the Schema for the RenameAttribute odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type RenameAttribute struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -76,6 +84,7 @@ type RenameAttribute struct {
 //+kubebuilder:object:root=true
 
 // RenameAttributeList contains a list of RenameAttribute
+// DEPRECATED: Use odigosv1.ActionList instead
 type RenameAttributeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

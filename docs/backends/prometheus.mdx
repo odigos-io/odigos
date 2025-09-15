@@ -46,6 +46,8 @@ Currently, Odigos supports Prometheus via the Remote Write API. In order to enab
 
 - **PROMETHEUS_REMOTEWRITE_URL** `string` : Remote Write URL.
   - This field is required
+- **PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS** `string[]` : Resource Attributes Labels. use these OpenTelemetry resource attributes as prometheus labels for each metric data point
+  - This field is optional and defaults to `["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]`
 
 ### Adding Destination to Odigos
 
@@ -79,6 +81,8 @@ There are two primary methods for configuring destinations in Odigos:
     spec:
       data:
         PROMETHEUS_REMOTEWRITE_URL: <Remote Write URL>
+        # Note: The commented fields below are optional.
+        # PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS: <Resource Attributes Labels (default: ["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"])>
       destinationName: prometheus
       signals:
       - METRICS

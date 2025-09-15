@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,6 +34,12 @@ func (DeleteAttributeConfig) ProcessorType() string {
 
 func (DeleteAttributeConfig) OrderHint() int {
 	return -100
+}
+
+func (DeleteAttributeConfig) CollectorRoles() []k8sconsts.CollectorRole {
+	return []k8sconsts.CollectorRole{
+		k8sconsts.CollectorsRoleClusterGateway,
+	}
 }
 
 // DeleteAttributeSpec defines the desired state of DeleteAttribute action
@@ -63,6 +70,7 @@ type DeleteAttributeStatus struct {
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // DeleteAttribute is the Schema for the DeleteAttribute odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type DeleteAttribute struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -74,6 +82,7 @@ type DeleteAttribute struct {
 //+kubebuilder:object:root=true
 
 // DeleteAttributeList contains a list of DeleteAttribute
+// DEPRECATED: Use odigosv1.ActionList instead
 type DeleteAttributeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

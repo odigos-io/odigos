@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -15,7 +16,6 @@ import (
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
-	distroTypes "github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -130,6 +130,14 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	return res, err
 }
 
+func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfig, newValue string) {
+	if ic.Spec.AgentsMetaHash == newValue {
+		return
+	}
+	ic.Spec.AgentsMetaHash = newValue
+	ic.Spec.AgentsMetaHashChangedTime = &metav1.Time{Time: time.Now()}
+}
+
 // this function receives a workload object, and updates the instrumentation config object ptr.
 // if the function returns without an error, it means the instrumentation config object was updated.
 // caller should persist the object to the API server.
@@ -147,7 +155,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	prerequisiteCompleted, reason, message := isReadyForInstrumentation(cg, ic)
 	if !prerequisiteCompleted {
 		ic.Spec.AgentInjectionEnabled = false
-		ic.Spec.AgentsMetaHash = ""
+		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		ic.Spec.Containers = []odigosv1.ContainerAgentConfig{}
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionUnknown,
@@ -211,7 +219,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		if err != nil {
 			return nil, err
 		}
-		ic.Spec.AgentsMetaHash = string(agentsDeploymentHash)
+		updateInstrumentationConfigAgentsMetaHash(ic, string(agentsDeploymentHash))
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
 			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
@@ -221,7 +229,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// if none of the containers are instrumented, we can set the status to false
 		// to signal to the webhook that those pods should not be processed.
 		ic.Spec.AgentInjectionEnabled = false
-		ic.Spec.AgentsMetaHash = ""
+		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		return aggregatedCondition, nil
 	}
 }
@@ -284,11 +292,11 @@ func getEnabledSignalsForContainer(nodeCollectorsGroup *odigosv1.CollectorsGroup
 	return tracesEnabled, metricsEnabled, logsEnabled
 }
 
-func getEnvVarFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContainer, envVarName string) (string, bool) {
+func getEnvVarFromList(envVars []odigosv1.EnvVar, envVarName string) (string, bool) {
 	// here we check for the value of LD_PRELOAD in the EnvVars list,
 	// which returns the env as read from /proc to make sure if there is any value set,
 	// via any mechanism (manifest, device, script, other agent, etc.) then we are aware.
-	for _, envVar := range runtimeDetails.EnvVars {
+	for _, envVar := range envVars {
 		if envVar.Name == envVarName {
 			return envVar.Value, true
 		}
@@ -315,7 +323,7 @@ func isLoaderInjectionSupportedByRuntimeDetails(containerName string, runtimeDet
 	}
 
 	odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
-	ldPreloadVal, ldPreloadFoundInInspection := getEnvVarFromRuntimeDetails(runtimeDetails, commonconsts.LdPreloadEnvVarName)
+	ldPreloadVal, ldPreloadFoundInInspection := getEnvVarFromList(runtimeDetails.EnvVars, commonconsts.LdPreloadEnvVarName)
 	ldPreloadUnsetOrExpected := !ldPreloadFoundInInspection || strings.Contains(ldPreloadVal, odigosLoaderPath)
 	if !ldPreloadUnsetOrExpected {
 		return &odigosv1.ContainerAgentConfig{
@@ -335,12 +343,12 @@ func isLoaderInjectionSupportedByRuntimeDetails(containerName string, runtimeDet
 // - a container agent config to signal any failures in using the loader in these conditions.
 //
 // second returned value acts as an "error" value, user should first check if it's not nil and handle any errors accordingly.
-func getEnvInjectionMethod(
+func getEnvInjectionDecision(
 	containerName string,
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
 	distro *distro.OtelDistro,
-) (*common.EnvInjectionMethod, *odigosv1.ContainerAgentConfig) {
+) (*common.EnvInjectionDecision, *odigosv1.ContainerAgentConfig) {
 
 	if effectiveConfig.AgentEnvVarsInjectionMethod == nil {
 		// this should never happen, as the config is reconciled with default value.
@@ -369,40 +377,25 @@ func getEnvInjectionMethod(
 		} else {
 			// loader is requested by config and distro, and supported by the runtime details.
 			// thus, we can use the loader injection method in webhook.
-			loaderInjectionMethod := common.LoaderEnvInjectionMethod
+			loaderInjectionMethod := common.EnvInjectionDecisionLoader
 			return &loaderInjectionMethod, nil
 		}
 	}
 
-	// at this point, we know that if loader is requested supported, or required and not supported,
-	// the function has already returned.
-	// everything else from this point onwards is for using pod manifest injection.
-
+	// at this point, we know that either:
+	// - user configured to use pod manifest injection, or
+	// - user requested loader fallback to pod manifest, and we are at the fallback stage.
 	distroHasAppendEnvVar := len(distro.EnvironmentVariables.AppendOdigosVariables) > 0
 	if !distroHasAppendEnvVar {
 		// this is a common case, where a distro doesn't support nor loader or append env var injection.
 		// at the time of writing, this is golang, dotnet, php, ruby.
-		// for those we don't mark env injection as nil to denote "no injection"
+		// for those we mark env injection as nil to denote "no injection"
 		// and return err as nil to denote "no error".
 		return nil, nil
 	}
 
-	// at this point we know there are "append env vars" and that they should be used.
-	// we return the injection method accordingly.
-	if loaderRequested {
-		// loader is requested by config, but we falled-back to pod-maifest.
-		// return the 'loader-fallback-to-pod-manifest' to indicate that we tried loader and fallbacked to using pod-manifest.
-		// webhook should interpret this as "use pod-manifest injection method".
-		// ui and describe can enhance to show reason why use pod-manifest.
-		manifestInjectionMethod := common.LoaderFallbackToPodManifestInjectionMethod
-		return &manifestInjectionMethod, nil
-	} else {
-		// return the pod-manifest injection method to signal that:
-		// - this is what pod webhook should use to inject the agent.
-		// - this is the value configured by the user in the config.
-		manifestInjectionMethod := common.PodManifestEnvInjectionMethod
-		return &manifestInjectionMethod, nil
-	}
+	envInjectionDecision := common.EnvInjectionDecisionPodManifest
+	return &envInjectionDecision, nil
 }
 
 func calculateContainerInstrumentationConfig(containerName string,
@@ -488,7 +481,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	envInjectionMethod, unsupportedDetails := getEnvInjectionMethod(containerName, effectiveConfig, runtimeDetails, distro)
+	envInjectionDecision, unsupportedDetails := getEnvInjectionDecision(containerName, effectiveConfig, runtimeDetails, distro)
 	if unsupportedDetails != nil {
 		// if we have a container agent config with reason and message, we return it.
 		// this is a failure to inject the agent, and we should not proceed with other checks.
@@ -537,57 +530,9 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	distroParameters := map[string]string{}
-	for _, parameterName := range distro.RequireParameters {
-		switch parameterName {
-		case common.LibcTypeDistroParameterName:
-			if runtimeDetails.LibCType == nil {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-					AgentEnabledMessage: fmt.Sprintf("missing required parameter '%s' for distro '%s'", common.LibcTypeDistroParameterName, distroName),
-				}
-			}
-			distroParameters[common.LibcTypeDistroParameterName] = string(*runtimeDetails.LibCType)
-
-		case distroTypes.RuntimeVersionMajorMinorDistroParameterName:
-			if runtimeDetails.RuntimeVersion == "" {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-					AgentEnabledMessage: fmt.Sprintf("missing required parameter '%s' for distro '%s'", distroTypes.RuntimeVersionMajorMinorDistroParameterName, distroName),
-				}
-			}
-			version, err := version.NewVersion(runtimeDetails.RuntimeVersion)
-			if err != nil {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-					AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version: %s", runtimeDetails.RuntimeVersion),
-				}
-			}
-			versionAsMajorMinor, err := common.MajorMinorStringOnly(version)
-			if err != nil {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-					AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version as major.minor: %s", runtimeDetails.RuntimeVersion),
-				}
-			}
-			distroParameters[distroTypes.RuntimeVersionMajorMinorDistroParameterName] = versionAsMajorMinor
-
-		default:
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-				AgentEnabledMessage: fmt.Sprintf("unsupported parameter '%s' for distro '%s'", parameterName, distroName),
-			}
-		}
+	distroParameters, err := calculateDistroParams(distro, runtimeDetails, envInjectionDecision)
+	if err != nil {
+		return *err
 	}
 
 	if crashDetected {
@@ -619,7 +564,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 				AgentEnabledMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
 				OtelDistroName:      distroName,
 				DistroParams:        distroParameters,
-				EnvInjectionMethod:  envInjectionMethod,
+				EnvInjectionMethod:  envInjectionDecision,
 				Traces:              tracesConfig,
 				Metrics:             metricsConfig,
 				Logs:                logsConfig,
@@ -632,7 +577,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		AgentEnabled:       true,
 		OtelDistroName:     distroName,
 		DistroParams:       distroParameters,
-		EnvInjectionMethod: envInjectionMethod,
+		EnvInjectionMethod: envInjectionDecision,
 		Traces:             tracesConfig,
 		Metrics:            metricsConfig,
 		Logs:               logsConfig,

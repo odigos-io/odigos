@@ -17,8 +17,19 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const ActionNameK8sAttributes = "K8sAttributes"
+
+// +kubebuilder:validation:Enum=pod;namespace
+type K8sAttributeSource string
+
+const (
+	PodAttributeSource       K8sAttributeSource = "pod"
+	NamespaceAttributeSource K8sAttributeSource = "namespace"
 )
 
 type K8sLabelAttribute struct {
@@ -30,6 +41,11 @@ type K8sLabelAttribute struct {
 	// e.g. "app.kubernetes.name"
 	// +kubebuilder:validation:Required
 	AttributeKey string `json:"attributeKey"`
+	// The source of the label.
+	// e.g. "pod" or "namespace"
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=pod
+	From *K8sAttributeSource `json:"from,omitempty"`
 }
 
 type K8sAnnotationAttribute struct {
@@ -41,6 +57,11 @@ type K8sAnnotationAttribute struct {
 	// e.g. "kubectl.kubernetes.restartedAte"
 	// +kubebuilder:validation:Required
 	AttributeKey string `json:"attributeKey"`
+	// The source of the annotation.
+	// e.g. "pod" or "namespace"
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=pod
+	From *string `json:"from,omitempty"`
 }
 
 type K8sAttributesConfig struct {
@@ -81,6 +102,12 @@ func (K8sAttributesConfig) ProcessorType() string {
 
 func (K8sAttributesConfig) OrderHint() int {
 	return 0
+}
+
+func (K8sAttributesConfig) CollectorRoles() []k8sconsts.CollectorRole {
+	return []k8sconsts.CollectorRole{
+		k8sconsts.CollectorsRoleNodeCollector,
+	}
 }
 
 type K8sAttributesSpec struct {
@@ -138,6 +165,7 @@ type K8sAttributesStatus struct {
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // K8sAttributesResolver allows adding an action to collect k8s attributes.
+// DEPRECATED: Use odigosv1.Action instead
 type K8sAttributesResolver struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -149,6 +177,7 @@ type K8sAttributesResolver struct {
 //+kubebuilder:object:root=true
 
 // K8sAttributesResolverList contains a list of K8sAttributes
+// DEPRECATED: Use odigosv1.ActionList instead
 type K8sAttributesResolverList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

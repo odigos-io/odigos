@@ -116,14 +116,6 @@ build-collector:
 build-ui:
 	$(MAKE) build-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
-.PHONY: build-odiglet-with-agents
-build-odiglet-with-agents:
-	docker build -t $(ORG)/odigos-odiglet$(IMG_SUFFIX):$(TAG) . -f odiglet/$(DOCKERFILE) --build-arg ODIGOS_VERSION=$(TAG) --build-context nodejs-agent-src=../opentelemetry-node \
-	--build-arg VERSION=$(TAG) \
-	--build-arg RELEASE=$(TAG) \
-	--build-arg SUMMARY="Odiglet for Odigos" \
-	--build-arg DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation."
-
 .PHONY: verify-nodejs-agent
 verify-nodejs-agent:
 	@if [ ! -f ../opentelemetry-node/package.json ]; then \
@@ -228,12 +220,6 @@ deploy-%:
 .PHONY: deploy
 deploy:
 	make deploy-odiglet && make deploy-autoscaler && make deploy-collector && make deploy-instrumentor && make deploy-scheduler && make deploy-ui
-
-# Use this target to deploy odiglet with local clones of the agents.
-# To work, the agents must be cloned in the same directory as the odigos (e.g. in '../opentelemetry-node')
-# There you can make code changes to the agents and deploy them with the odiglet.
-.PHONY: deploy-odiglet-with-agents
-deploy-odiglet-with-agents: verify-nodejs-agent build-odiglet-with-agents load-to-kind-odiglet restart-odiglet
 
 .PHONY: debug-odiglet
 debug-odiglet:
@@ -434,6 +420,7 @@ push-workload-lifecycle-images:
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-alpine:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-alpine tests/e2e/workload-lifecycle/services/python-http-server
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-not-supported:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-not-supported-version tests/e2e/workload-lifecycle/services/python-http-server
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-min-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-min-version tests/e2e/workload-lifecycle/services/python-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-gunicorn-server:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-gunicorn-server/Dockerfile.python-gunicorn-server tests/e2e/workload-lifecycle/services/python-gunicorn-server
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet8-musl:v0.0.1 -f tests/e2e/workload-lifecycle/services/dotnet-http-server/net8-musl.Dockerfile tests/e2e/workload-lifecycle/services/dotnet-http-server
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet6-musl:v0.0.1 -f tests/e2e/workload-lifecycle/services/dotnet-http-server/net6-musl.Dockerfile tests/e2e/workload-lifecycle/services/dotnet-http-server
 	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet8-glibc:v0.0.1 -f tests/e2e/workload-lifecycle/services/dotnet-http-server/net8-glibc.Dockerfile tests/e2e/workload-lifecycle/services/dotnet-http-server
@@ -468,7 +455,7 @@ publish-to-ecr:
 	make -j 3 build-tag-push-ecr-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-	make -j 3 build-tag-push-ecr-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=collector SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	make -j 3 build-tag-push-ecr-image/collector DOCKERFILE=collector/$(DOCKERFILE) SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	echo "✅ Deployed Odigos to EKS, now install the CLI"
 
@@ -480,4 +467,26 @@ build-cli-image:
 	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
 	DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S') \
 	ko build --bare --tags $(TAG) --local .
+
+# install gatekeeper to prevent:
+# 1. privileged containers
+# 2. hostPath volumes (except for some specific paths which are allowed on most clusters)
+# 3. hostNamespace (hostNetwork, hostPID, hostIPC)
+install-gatekeeper:
+	helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
+	helm repo update
+	helm install gatekeeper gatekeeper/gatekeeper --namespace gatekeeper-system --create-namespace
+	@max_retries=5; \
+	backoff=2; \
+	attempt=1; \
+	until kubectl apply -f tests/gatekeeper/constraints/; do \
+		if [ $$attempt -ge $$max_retries ]; then \
+			echo "kubectl apply failed after $$attempt attempts."; \
+			exit 1; \
+		fi; \
+		echo "kubectl apply failed. Retrying in $$backoff seconds..."; \
+		sleep $$backoff; \
+		backoff=$$((backoff * 2)); \
+		attempt=$$((attempt + 1)); \
+	done
 

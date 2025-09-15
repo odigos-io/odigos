@@ -41,10 +41,10 @@
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${workspaceFolder}/autoscaler",
+      "program": "${workspaceFolder}/autoscaler/cmd",
       "cwd": "${workspaceFolder}/autoscaler",
       "env": {
-        "ODIGOS_VERSION": "v1.0.90"
+        "ODIGOS_VERSION": "v1.3.0"
       }
     },
     {

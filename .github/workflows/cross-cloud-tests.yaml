@@ -12,13 +12,21 @@ on:
           - aks
           - eks
       test_scenario:
-        description: 'The test suite to run (e.g. helm-chart, multi-apps)'
+        description: 'The test suite to run (e.g. helm-chart, source)'
         required: true
         type: choice
         options:
           - all
           - helm-chart
-          - multi-apps
+          - source
+      platform:
+        description: 'CPU arch for EKS instances'
+        required: true
+        type: choice
+        options:
+          - all
+          - amd
+          - arm
 
 permissions:
   id-token: write
@@ -40,13 +48,19 @@ jobs:
       fail-fast: false
       matrix:
         provider: ${{ fromJSON(inputs.provider == 'all' && '["eks", "aks"]' || format('["{0}"]', inputs.provider)) }}
-        test_scenario: ${{ fromJSON(inputs.test_scenario == 'all' && '["multi-apps", "helm-chart"]' || format('["{0}"]', inputs.test_scenario)) }}
+        platform: ${{ fromJSON(inputs.provider == 'all' && '["arm", "amd"]' || format('["{0}"]', inputs.provider)) }}
+        test_scenario: ${{ fromJSON(inputs.test_scenario == 'all' && '["source", "helm-chart"]' || format('["{0}"]', inputs.test_scenario)) }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
       - name: Cross-Cloud Tests
+        if: ${{ !(matrix.provider == 'aks' && matrix.platform == 'arm') }}
         uses: ./.github/actions/cross-cloud-tests
         with:
           provider: ${{ matrix.provider }}
           test_scenario: ${{ matrix.test_scenario }}
+          platform: ${{ matrix.platform }}
         env:
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_SHA: ${{ github.sha }}

@@ -119,6 +119,10 @@ func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, signals []
 	return &desired, nil
 }
 
+// using the k8sattributes processor to add deployment, statefulset and daemonset metadata
+// has a high memory consumption in large clusters since it brings all the replicasets in the cluster into the cache.
+// this has been disabled for logs, until further investigation is done on how to reduce memory consumption.
+// The side effect is that logs record will lack deployment/statefulset/daemonset names and service name that could have been derived from them.
 func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
 
 	_, k8sProcessorExists := cfg.Processors[k8sAttributesProcessorName]
@@ -190,7 +194,10 @@ func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
 	return nil
 }
 
-func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal,
+func calculateConfigMapData(
+	nodeCG *odigosv1.CollectorsGroup,
+	sources *odigosv1.InstrumentationConfigList,
+	signals []odigoscommon.ObservabilitySignal,
 	processors []*odigosv1.Processor) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
@@ -219,7 +226,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	}
 	// This is a workaround to avoid adding the gcp detector if not running on a gke environment
 	// once https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/issues/1026 is resolved, we can always put the gcp detector
-	if commonconf.ControllerConfig.OnGKE {
+	if commonconf.ControllerConfig != nil && commonconf.ControllerConfig.OnGKE {
 		resourceDetectionProcessor["detectors"] = append(resourceDetectionProcessor["detectors"].([]string), "gcp")
 	}
 	processorsCfg["resourcedetection"] = resourceDetectionProcessor
@@ -267,8 +274,16 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	// by sending all traces from a node collector to the same gateway instance.
 	tracesEnabled := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
 	if tracesEnabled {
+
+		compression := "none"
+		internalDataCompressionDisabled := nodeCG.Spec.EnableDataCompression
+
+		if internalDataCompressionDisabled != nil && *internalDataCompressionDisabled == true {
+			compression = "gzip"
+		}
+
 		exporters["loadbalancing"] = config.GenericMap{
-			"protocol": config.GenericMap{"otlp": config.GenericMap{"tls": config.GenericMap{"insecure": true}}},
+			"protocol": config.GenericMap{"otlp": config.GenericMap{"compression": compression, "tls": config.GenericMap{"insecure": true}}},
 			"resolver": config.GenericMap{"k8s": config.GenericMap{"service": fmt.Sprintf("odigos-gateway.%s", env.GetCurrentNamespace())}},
 		}
 		tracesPipelineExporter = []string{"loadbalancing"}
@@ -286,6 +301,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 					},
 				},
 			},
+			"odigosebpf": config.GenericMap{},
 			"prometheus/self-metrics": config.GenericMap{
 				"config": config.GenericMap{
 					"scrape_configs": []config.GenericMap{
@@ -403,39 +419,44 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 			},
 		}
 
-		err := updateOrCreateK8sAttributesForLogs(&cfg)
-		if err != nil {
-			return "", err
-		}
-		// remove logs processors from CRD logsProcessors in case it is there so not to add it twice
-		for i, processor := range logsProcessors {
-			if processor == k8sAttributesProcessorName {
-				logsProcessors = append(logsProcessors[:i], logsProcessors[i+1:]...)
-				break
-			}
-		}
+		// err := updateOrCreateK8sAttributesForLogs(&cfg)
+		// if err != nil {
+		// 	return "", err
+		// }
+		// // remove logs processors from CRD logsProcessors in case it is there so not to add it twice
+		// for i, processor := range logsProcessors {
+		// 	if processor == k8sAttributesProcessorName {
+		// 		logsProcessors = append(logsProcessors[:i], logsProcessors[i+1:]...)
+		// 		break
+		// 	}
+		// }
 
 		// set "service.name" for logs same as the workload name.
 		// note: this does not respect the override service name a user can set in sources.
-		cfg.Processors[logsServiceNameProcessorName] = config.GenericMap{
-			"attributes": []config.GenericMap{
-				{
-					"key":            string(semconv.ServiceNameKey),
-					"from_attribute": string(semconv.K8SDeploymentNameKey),
-					"action":         "insert", // avoid overwriting existing value
-				},
-				{
-					"key":            string(semconv.ServiceNameKey),
-					"from_attribute": string(semconv.K8SStatefulSetNameKey),
-					"action":         "insert", // avoid overwriting existing value
-				},
-				{
-					"key":            string(semconv.ServiceNameKey),
-					"from_attribute": string(semconv.K8SDaemonSetNameKey),
-					"action":         "insert", // avoid overwriting existing value
-				},
-			},
-		}
+		// cfg.Processors[logsServiceNameProcessorName] = config.GenericMap{
+		// 	"attributes": []config.GenericMap{
+		// 		{
+		// 			"key":            string(semconv.ServiceNameKey),
+		// 			"from_attribute": string(semconv.K8SDeploymentNameKey),
+		// 			"action":         "insert", // avoid overwriting existing value
+		// 		},
+		// 		{
+		// 			"key":            string(semconv.ServiceNameKey),
+		// 			"from_attribute": string(semconv.K8SStatefulSetNameKey),
+		// 			"action":         "insert", // avoid overwriting existing value
+		// 		},
+		// 		{
+		// 			"key":            string(semconv.ServiceNameKey),
+		// 			"from_attribute": string(semconv.K8SDaemonSetNameKey),
+		// 			"action":         "insert", // avoid overwriting existing value
+		// 		},
+		// 		{
+		// 			"key":            string(semconv.ServiceNameKey),
+		// 			"from_attribute": string(semconv.K8SCronJobNameKey),
+		// 			"action":         "insert", // avoid overwriting existing value
+		// 		},
+		// 	},
+		// }
 
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
@@ -447,7 +468,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	collectTraces := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
-			Receivers:  []string{"otlp"},
+			Receivers:  []string{"otlp", "odigosebpf"},
 			Processors: append(getAgentPipelineCommonProcessors(), tracesProcessors...),
 			Exporters:  tracesPipelineExporter,
 		}
@@ -457,7 +478,7 @@ func calculateConfigMapData(nodeCG *odigosv1.CollectorsGroup, sources *odigosv1.
 	if collectMetrics {
 		cfg.Receivers["kubeletstats"] = config.GenericMap{
 			"auth_type":            "serviceAccount",
-			"endpoint":             "https://${env:NODE_NAME}:10250",
+			"endpoint":             "https://${env:NODE_IP}:10250",
 			"insecure_skip_verify": true,
 			"collection_interval":  "10s",
 		}
@@ -581,7 +602,7 @@ func getFileLogPipelineProcessors() []string {
 	// no need to batch, as the stanza receiver already batches the data, and so is the gateway.
 	// batch processor will also mask and hide any back-pressure from receivers which we want propagated to the source.
 	return append(
-		[]string{"memory_limiter", k8sAttributesProcessorName, logsServiceNameProcessorName},
+		[]string{"memory_limiter" /*k8sAttributesProcessorName, logsServiceNameProcessorName*/},
 		getCommonProcessors()...,
 	)
 }

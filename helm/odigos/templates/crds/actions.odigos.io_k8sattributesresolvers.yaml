@@ -19,8 +19,9 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: K8sAttributesResolver allows adding an action to collect k8s
-          attributes.
+        description: |-
+          K8sAttributesResolver allows adding an action to collect k8s attributes.
+          DEPRECATED: Use odigosv1.Action instead
         properties:
           apiVersion:
             description: |-
@@ -58,6 +59,12 @@ spec:
                       description: |-
                         The attribute key to be used for the resource attribute created from the label.
                         e.g. "kubectl.kubernetes.restartedAte"
+                      type: string
+                    from:
+                      default: pod
+                      description: |-
+                        The source of the annotation.
+                        e.g. "pod" or "namespace"
                       type: string
                   required:
                   - annotationKey
@@ -102,6 +109,15 @@ spec:
                       description: |-
                         The attribute key to be used for the resource attribute created from the label.
                         e.g. "app.kubernetes.name"
+                      type: string
+                    from:
+                      default: pod
+                      description: |-
+                        The source of the label.
+                        e.g. "pod" or "namespace"
+                      enum:
+                      - pod
+                      - namespace
                       type: string
                     labelKey:
                       description: |-

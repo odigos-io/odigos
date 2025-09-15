@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -40,6 +41,12 @@ func (PiiMaskingConfig) ProcessorType() string {
 
 func (PiiMaskingConfig) OrderHint() int {
 	return 1
+}
+
+func (PiiMaskingConfig) CollectorRoles() []k8sconsts.CollectorRole {
+	return []k8sconsts.CollectorRole{
+		k8sconsts.CollectorsRoleClusterGateway,
+	}
 }
 
 // PiiMaskingSpec defines the desired state of PiiMasking action
@@ -70,6 +77,7 @@ type PiiMaskingStatus struct {
 //+kubebuilder:metadata:labels=odigos.io/system-object=true
 
 // PiiMasking is the Schema for the PiiMasking odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type PiiMasking struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -81,6 +89,7 @@ type PiiMasking struct {
 //+kubebuilder:object:root=true
 
 // PiiMaskingList contains a list of PiiMasking
+// DEPRECATED: Use odigosv1.ActionList instead
 type PiiMaskingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

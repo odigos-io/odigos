@@ -1,22 +1,57 @@
 exporters:
+  loadbalancing:
+    protocol:
+      otlp:
+        compression: none
+        tls:
+          insecure: true
+    resolver:
+      k8s:
+        service: odigos-gateway.odigos-system
   otlp/gateway:
-    endpoint: odigos-gateway.odigos-system:4317
+    balancer_name: round_robin
+    endpoint: dns:///odigos-gateway.odigos-system:4317
+    tls:
+      insecure: true
+  otlp/odigos-own-telemetry-ui:
+    endpoint: ui.odigos-system:4317
+    retry_on_failure:
+      enabled: false
     tls:
       insecure: true
 extensions:
-  health_check: {}
+  health_check:
+    endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 0.0.0.0:1777
 processors:
   batch: {}
+  memory_limiter:
+    check_interval: 500ms
+    limit_mib: 0
+    spike_limit_mib: 0
+  odigostrafficmetrics:
+    res_attributes_keys:
+    - service.name
+    - k8s.namespace.name
+    - k8s.deployment.name
+    - k8s.statefulset.name
+    - k8s.daemonset.name
   resource:
     attributes:
     - action: upsert
       key: k8s.node.name
       value: ${NODE_NAME}
+  resource/pod-name:
+    attributes:
+    - action: upsert
+      key: k8s.pod.name
+      value: ${POD_NAME}
   resourcedetection:
     detectors:
     - ec2
-    - gcp
     - azure
+    timeout: 2s
   test_type/test_processor:
     key: val
 receivers:
@@ -31,77 +66,119 @@ receivers:
     include_file_name: false
     include_file_path: true
     operators:
-    - id: get-format
-      routes:
-      - expr: body matches "^\\{"
-        output: parser-docker
-      - expr: body matches "^[^ Z]+ "
-        output: parser-crio
-      - expr: body matches "^[^ Z]+Z"
-        output: parser-containerd
-      type: router
-    - id: parser-crio
-      output: extract_metadata_from_filepath
-      regex: ^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$
-      timestamp:
-        layout: 2006-01-02T15:04:05.999999999Z07:00
-        layout_type: gotime
-        parse_from: attributes.time
-      type: regex_parser
-    - id: parser-containerd
-      output: extract_metadata_from_filepath
-      regex: ^(?P<time>[^ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$
-      timestamp:
-        layout: '%Y-%m-%dT%H:%M:%S.%LZ'
-        parse_from: attributes.time
-      type: regex_parser
-    - id: parser-docker
-      output: extract_metadata_from_filepath
-      timestamp:
-        layout: '%Y-%m-%dT%H:%M:%S.%LZ'
-        parse_from: attributes.time
-      type: json_parser
-    - from: attributes.log
-      to: body
-      type: move
-    - id: extract_metadata_from_filepath
-      parse_from: attributes["log.file.path"]
-      regex: ^.*\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\-]{36})\/(?P<container_name>[^\._]+)\/(?P<restart_count>\d+)\.log$
-      type: regex_parser
-    - from: attributes.stream
-      to: attributes["log.iostream"]
-      type: move
-    - from: attributes.container_name
-      to: attributes["k8s.container.name"]
-      type: move
-    - from: attributes.namespace
-      to: attributes["k8s.namespace.name"]
-      type: move
-    - from: attributes.pod_name
-      to: attributes["k8s.pod.name"]
-      type: move
-    - from: attributes.restart_count
-      to: attributes["k8s.container.restart_count"]
-      type: move
-    - from: attributes.uid
-      to: attributes["k8s.pod.uid"]
-      type: move
-    start_at: beginning
+    - id: container-parser
+      type: container
+    retry_on_failure:
+      enabled: true
+    start_at: end
+  hostmetrics:
+    collection_interval: 10s
+    root_path: /hostfs
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      disk: {}
+      filesystem:
+        exclude_mount_points:
+          match_type: regexp
+          mount_points:
+          - /var/lib/kubelet/*
+        metrics:
+          system.filesystem.utilization:
+            enabled: true
+      load: {}
+      memory: {}
+      network: {}
+      paging:
+        metrics:
+          system.paging.utilization:
+            enabled: true
+      processes: {}
+  kubeletstats:
+    auth_type: serviceAccount
+    collection_interval: 10s
+    endpoint: https://${env:NODE_IP}:10250
+    insecure_skip_verify: true
+  odigosebpf: {}
   otlp:
     protocols:
-      grpc: {}
-      http: {}
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  prometheus/self-metrics:
+    config:
+      scrape_configs:
+      - job_name: otelcol
+        metric_relabel_configs:
+        - action: keep
+          regex: (.*odigos.*)
+          source_labels:
+          - __name__
+        scrape_interval: 10s
+        static_configs:
+        - targets:
+          - 127.0.0.1:4317
 service:
   extensions:
   - health_check
+  - pprof
   pipelines:
     logs:
       exporters:
       - otlp/gateway
       processors:
-      - batch
+      - memory_limiter
       - resource
       - resourcedetection
+      - odigostrafficmetrics
       - test_type/test_processor
       receivers:
       - filelog
+    metrics:
+      exporters:
+      - otlp/gateway
+      processors:
+      - batch
+      - memory_limiter
+      - resource
+      - resourcedetection
+      - odigostrafficmetrics
+      - test_type/test_processor
+      receivers:
+      - otlp
+      - kubeletstats
+      - hostmetrics
+    metrics/otelcol:
+      exporters:
+      - otlp/odigos-own-telemetry-ui
+      processors:
+      - resource/pod-name
+      receivers:
+      - prometheus/self-metrics
+    traces:
+      exporters:
+      - loadbalancing
+      processors:
+      - batch
+      - memory_limiter
+      - resource
+      - resourcedetection
+      - odigostrafficmetrics
+      - test_type/test_processor
+      receivers:
+      - otlp
+      - odigosebpf
+  telemetry:
+    metrics:
+      readers:
+      - pull:
+          exporter:
+            prometheus:
+              host: 0.0.0.0
+              port: 4317
+    resource:
+      service.name: null
+      service.version: null

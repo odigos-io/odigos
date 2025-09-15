@@ -19,7 +19,8 @@
 
 ## `AddClusterInfo` <a id="AddClusterInfo"></a>
     
-<p>AddClusterInfo is the Schema for the addclusterinfo odigos action API</p>
+<p>AddClusterInfo is the Schema for the addclusterinfo odigos action API
+DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -68,7 +69,8 @@
 
 ## `DeleteAttribute` <a id="DeleteAttribute"></a>
     
-<p>DeleteAttribute is the Schema for the DeleteAttribute odigos action API</p>
+<p>DeleteAttribute is the Schema for the DeleteAttribute odigos action API
+DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -119,7 +121,8 @@
     
 <p>ErrorSampler is the Schema for the ErrorSampler CRD.
 It defines sampling logic that always retains traces with errors, and optionally samples
-non-error traces based on the fallback ratio.</p>
+non-error traces based on the fallback ratio.
+DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -168,7 +171,8 @@ non-error traces based on the fallback ratio.</p>
 
 ## `K8sAttributesResolver` <a id="K8sAttributesResolver"></a>
     
-<p>K8sAttributesResolver allows adding an action to collect k8s attributes.</p>
+<p>K8sAttributesResolver allows adding an action to collect k8s attributes.
+DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -219,7 +223,8 @@ non-error traces based on the fallback ratio.</p>
     
 <p>LatencySampler is the Schema for defining latency-based trace sampling rules.
 It supports targeting specific services and HTTP routes and applying latency thresholds
-to determine sampling eligibility.</p>
+to determine sampling eligibility.
+DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -268,7 +273,8 @@ to determine sampling eligibility.</p>
 
 ## `PiiMasking` <a id="PiiMasking"></a>
     
-<p>PiiMasking is the Schema for the PiiMasking odigos action API</p>
+<p>PiiMasking is the Schema for the PiiMasking odigos action API
+DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -317,7 +323,8 @@ to determine sampling eligibility.</p>
 
 ## `ProbabilisticSampler` <a id="ProbabilisticSampler"></a>
     
-<p>ProbabilisticSampler is the Schema for the ProbabilisticSampler odigos action API</p>
+<p>ProbabilisticSampler is the Schema for the ProbabilisticSampler odigos action API
+DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -366,7 +373,8 @@ to determine sampling eligibility.</p>
 
 ## `RenameAttribute` <a id="RenameAttribute"></a>
     
-<p>RenameAttribute is the Schema for the RenameAttribute odigos action API</p>
+<p>RenameAttribute is the Schema for the RenameAttribute odigos action API
+DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -416,7 +424,8 @@ to determine sampling eligibility.</p>
 ## `ServiceNameSampler` <a id="ServiceNameSampler"></a>
     
 <p>ServiceNameSampler is the Schema for the servicenamesamplers API.
-It enables trace sampling based on whether specific services appear within a trace.</p>
+It enables trace sampling based on whether specific services appear within a trace.
+DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -467,7 +476,8 @@ It enables trace sampling based on whether specific services appear within a tra
     
 <p>SpanAttributeSampler is the Schema for the spanattributesamplers API.
 It holds the specification for sampling spans based on attribute conditions,
-as well as the sampler's current status.</p>
+as well as the sampler's current status.
+DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -532,6 +542,17 @@ as well as the sampler's current status.</p>
 </td>
 <td>
 <a href="#OtelAttributeWithValue"><code>[]OtelAttributeWithValue</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>overwriteExistingValues</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -604,6 +625,17 @@ as well as the sampler's current status.</p>
 </td>
 <td>
 <a href="#OtelAttributeWithValue"><code>[]OtelAttributeWithValue</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>overwriteExistingValues</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -748,6 +780,17 @@ the attribute is expected to have.</p>
 </tbody>
 </table>
 
+## `DefaultSamplerConfig` <a id="DefaultSamplerConfig"></a>
+    
+
+**Appears in:**
+
+- [SamplersConfig](#SamplersConfig)
+
+<p>DefaultSamplerConfig is a base config for all samplers.</p>
+
+
+
 ## `DeleteAttributeConfig` <a id="DeleteAttributeConfig"></a>
     
 
@@ -875,6 +918,35 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
+## `ErrorSamplerConfig` <a id="ErrorSamplerConfig"></a>
+    
+
+**Appears in:**
+
+- [SamplersConfig](#SamplersConfig)
+
+<p>ErrorSamplerConfig defines the configuration for the ErrorSampler action.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>fallback_sampling_ratio</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>FallbackSamplingRatio determines the percentage (0–100) of non-error traces
+that should be sampled. Error traces are always sampled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `ErrorSamplerSpec` <a id="ErrorSamplerSpec"></a>
     
 
@@ -987,6 +1059,7 @@ It may include conditions such as &quot;Available&quot; or &quot;Progressing&quo
 
 **Appears in:**
 
+- [LatencySamplerConfig](#LatencySamplerConfig)
 - [LatencySamplerSpec](#LatencySamplerSpec)
 
 <p>HttpRouteFilter defines a single latency-based sampling rule for an HTTP route.</p>
@@ -1169,8 +1242,30 @@ e.g. &quot;kubectl.kubernetes.io/restartedAt&quot;</p>
 e.g. &quot;kubectl.kubernetes.restartedAte&quot;</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>from</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The source of the annotation.
+e.g. &quot;pod&quot; or &quot;namespace&quot;</p>
+</td>
+</tr>
 </tbody>
 </table>
+
+## `K8sAttributeSource` <a id="K8sAttributeSource"></a>
+    
+(Alias of `string`)
+
+**Appears in:**
+
+- [K8sLabelAttribute](#K8sLabelAttribute)
+
+
 
 ## `K8sAttributesConfig` <a id="K8sAttributesConfig"></a>
     
@@ -1462,6 +1557,47 @@ e.g. &quot;app.kubernetes.io/name&quot;</p>
 <td>
    <p>The attribute key to be used for the resource attribute created from the label.
 e.g. &quot;app.kubernetes.name&quot;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>from</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#K8sAttributeSource"><code>K8sAttributeSource</code></a>
+</td>
+<td>
+   <p>The source of the label.
+e.g. &quot;pod&quot; or &quot;namespace&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `LatencySamplerConfig` <a id="LatencySamplerConfig"></a>
+    
+
+**Appears in:**
+
+- [SamplersConfig](#SamplersConfig)
+
+<p>LatencySamplerConfig defines the configuration for the LatencySampler action.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>endpoints_filters</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#HttpRouteFilter"><code>[]HttpRouteFilter</code></a>
+</td>
+<td>
+   <p>EndpointsFilters defines the list of route-based latency sampling filters.
+Each filter targets a specific service and HTTP route with a latency threshold.</p>
 </td>
 </tr>
 </tbody>
@@ -1802,6 +1938,34 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
+## `ProbabilisticSamplerConfig` <a id="ProbabilisticSamplerConfig"></a>
+    
+
+**Appears in:**
+
+- [SamplersConfig](#SamplersConfig)
+
+<p>ProbabilisticSamplerConfig defines the configuration for the ProbabilisticSampler action.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>sampling_percentage</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>SamplingPercentage determines the percentage (0–100) of traces to sample.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `ProbabilisticSamplerSpec` <a id="ProbabilisticSamplerSpec"></a>
     
 
@@ -2030,11 +2194,93 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
+## `SamplersConfig` <a id="SamplersConfig"></a>
+    
+
+**Appears in:**
+
+- [ActionSpec](#odigos-io-v1alpha1-ActionSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>DefaultSamplerConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#DefaultSamplerConfig"><code>DefaultSamplerConfig</code></a>
+</td>
+<td>(Members of <code>DefaultSamplerConfig</code> are embedded into this type.)
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>errorSampler</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ErrorSamplerConfig"><code>ErrorSamplerConfig</code></a>
+</td>
+<td>
+   <p>ErrorSamplerSpec defines the desired state of ErrorSampler</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>latencySampler</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#LatencySamplerConfig"><code>LatencySamplerConfig</code></a>
+</td>
+<td>
+   <p>LatencySamplerSpec defines the desired state of LatencySampler</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>serviceNameSampler</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ServiceNameSamplerConfig"><code>ServiceNameSamplerConfig</code></a>
+</td>
+<td>
+   <p>ServiceNameSamplerSpec defines the desired state of ServiceNameSampler</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>spanAttributeSampler</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#SpanAttributeSamplerConfig"><code>SpanAttributeSamplerConfig</code></a>
+</td>
+<td>
+   <p>SpanAttributeSamplerSpec defines the desired state of SpanAttributeSampler</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>probabilisticSampler</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ProbabilisticSamplerConfig"><code>ProbabilisticSamplerConfig</code></a>
+</td>
+<td>
+   <p>ProbabilisticSamplerSpec defines the desired state of ProbabilisticSampler</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `ServiceNameFilter` <a id="ServiceNameFilter"></a>
     
 
 **Appears in:**
 
+- [ServiceNameSamplerConfig](#ServiceNameSamplerConfig)
 - [ServiceNameSamplerSpec](#ServiceNameSamplerSpec)
 
 <p>ServiceNameFilter defines a single rule that maps a service name to a sampling decision.</p>
@@ -2080,6 +2326,36 @@ while a value of 0 means all will be dropped.</p>
 <td>
    <p>FallbackSamplingRatio is the percentage (0–100) of traces to sample
 if the specified service is not present in the trace.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `ServiceNameSamplerConfig` <a id="ServiceNameSamplerConfig"></a>
+    
+
+**Appears in:**
+
+- [SamplersConfig](#SamplersConfig)
+
+<p>ServiceNameSamplerConfig defines the configuration for the ServiceNameSampler action.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>services_name_filters</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ServiceNameFilter"><code>[]ServiceNameFilter</code></a>
+</td>
+<td>
+   <p>ServicesNameFilters defines rules for sampling traces based on the presence
+of specific service names. If a trace contains a span from one of the listed
+services, the associated sampling ratio is applied.</p>
 </td>
 </tr>
 </tbody>
@@ -2198,6 +2474,7 @@ following the standard Kubernetes conventions.</p>
 
 **Appears in:**
 
+- [SpanAttributeSamplerConfig](#SpanAttributeSamplerConfig)
 - [SpanAttributeSamplerSpec](#SpanAttributeSamplerSpec)
 
 <p>SpanAttributeFilter allows sampling traces based on specific span attributes and conditions.</p>
@@ -2273,6 +2550,35 @@ while a value of 0 means all will be dropped.</p>
    <p>FallbackSamplingRatio is the percentage (0–100) of spans to sample
 when the condition does not explicitly match. For example, if set to 50,
 then half of non-matching spans would be sampled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `SpanAttributeSamplerConfig` <a id="SpanAttributeSamplerConfig"></a>
+    
+
+**Appears in:**
+
+- [SamplersConfig](#SamplersConfig)
+
+<p>SpanAttributeSamplerConfig defines the configuration for the SpanAttributeSampler action.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>attribute_filters</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#SpanAttributeFilter"><code>[]SpanAttributeFilter</code></a>
+</td>
+<td>
+   <p>AttributeFilters defines a list of criteria to decide how spans should be
+sampled based on their attributes. At least one filter is required.</p>
 </td>
 </tr>
 </tbody>

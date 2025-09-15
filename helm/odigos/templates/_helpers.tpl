@@ -92,26 +92,35 @@ true
 */ -}}
   {{- printf "%d%sB" $val $unit -}}
 {{- else }}
-   {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q" $raw) -}} 
+   {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q" $raw) -}}
 {{- end }}
 {{- end }}
 
 {{- define "odigos.odiglet.sizing.resources" -}}
-{{- $profiles := .Values.profiles | default list -}}
-{{- $profile := "" -}}
-{{- range $profiles }}
-  {{- if or (eq . "size_s") (eq . "size_m") (eq . "size_l") }}
-    {{- $profile = . -}}
-  {{- end }}
+{{- $s := default "size_m" .Values.ResourceSizePreset -}}
+{{- $sizes := dict
+  "size_s" (dict "cpu" "150m" "memory" "300Mi")
+  "size_m" (dict "cpu" "500m" "memory" "500Mi")
+  "size_l" (dict "cpu" "750m" "memory" "750Mi")
+-}}
+{{- with (get $sizes $s) -}}
+{{ toYaml . }}
+{{- end -}}
 {{- end }}
 
-{{- if eq $profile "size_s" }}
-  {{- dict "cpu" "150m" "memory" "300Mi" | toYaml }}
-{{- else if eq $profile "size_m" }}
-  {{- dict "cpu" "500m" "memory" "500Mi" | toYaml }}
-{{- else if eq $profile "size_l" }}
-  {{- dict "cpu" "750m" "memory" "750Mi" | toYaml }}
-{{- else }}
-  {{- "" }}
+{{/* Comma-join pull secret names for CLI args */}}
+{{- define "odigos.joinPullSecrets" -}}
+{{- if .Values.imagePullSecrets -}}
+{{- join "," .Values.imagePullSecrets -}}
+{{- end -}}
+{{- end }}
+
+{{/* Render imagePullSecrets in K8s shape from a list of strings */}}
+{{- define "odigos.renderPullSecrets" -}}
+{{- if .Values.imagePullSecrets }}
+imagePullSecrets:
+{{- range .Values.imagePullSecrets }}
+  - name: {{ . | quote }}
+{{- end }}
 {{- end }}
 {{- end }}

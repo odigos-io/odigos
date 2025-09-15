@@ -57,6 +57,10 @@ type CollectorNodeConfiguration struct {
 	// This field is used to specify this target directory in these cases.
 	// A common target directory is '/mnt/var/log'.
 	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
+
+	// EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	EnableDataCompression *bool `json:"enableDataCompression,omitempty"`
 }
 
 type CollectorGatewayConfiguration struct {
@@ -111,6 +115,9 @@ type CollectorGatewayConfiguration struct {
 	// It is disabled by default and can be enabled by setting the enabled flag to true.
 	// This feature is only available when metrics destination is configured.
 	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
+
+	// for destinations that uses https for exporting data, this value can be used to set the value for the https proxy.
+	HttpsProxyAddress *string `json:"httpsProxyAddress,omitempty"`
 }
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
@@ -178,5 +185,11 @@ type OdigosConfiguration struct {
 	Oidc                              *OidcConfiguration       `json:"oidc,omitempty" yaml:"oidc"`
 	OdigletHealthProbeBindPort        int                      `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
 	GoAutoOffsetsCron                 string                   `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
+	GoAutoOffsetsMode                 string                   `json:"goAutoOffsetsMode,omitempty" yaml:"goAutoOffsetsMode"`
 	ClickhouseJsonTypeEnabledProperty *bool                    `json:"clickhouseJsonTypeEnabled,omitempty"`
+	CheckDeviceHealthBeforeInjection  *bool                    `json:"checkDeviceHealthBeforeInjection,omitempty"`
+	ResourceSizePreset                string                   `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
+	WaspEnabled                       *bool                    `json:"waspEnabled,omitempty" yaml:"waspEnabled"`
+
+	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
 }

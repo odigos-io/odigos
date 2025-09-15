@@ -116,7 +116,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 									},
 								},
 								InitialDelaySeconds: 15,
-								TimeoutSeconds:      0,
+								TimeoutSeconds:      5,
 								PeriodSeconds:       20,
 								SuccessThreshold:    0,
 								FailureThreshold:    0,
@@ -131,7 +131,8 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 										},
 									},
 								},
-								PeriodSeconds: 10,
+								PeriodSeconds:  10,
+								TimeoutSeconds: 5,
 							},
 							SecurityContext: &corev1.SecurityContext{},
 						},
@@ -197,9 +198,9 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"collectorsgroups"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed for CRUD on pipeline actions
-				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"*"},
+			{ // Needed for CRUD on actions
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"actions"},
 				Verbs:     []string{"get", "list"},
 			},
 		}
@@ -230,9 +231,9 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"collectorsgroups"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed for CRUD on pipeline actions
-				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"*"},
+			{ // Needed for CRUD on actions
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"actions"},
 				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
 			},
 		}
