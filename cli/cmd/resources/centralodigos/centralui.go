@@ -48,13 +48,13 @@ func NewCentralUIDeployment(ns, imagePrefix, imageName, version string) *appsv1.
 			Replicas: ptrint32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": k8sconsts.CentralUILabelAppValue,
+					"app": k8sconsts.CentralUIAppName,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": k8sconsts.CentralUILabelAppValue,
+						"app": k8sconsts.CentralUIAppName,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -95,7 +95,7 @@ func NewCentralUIService(ns string) *corev1.Service {
 			Name:      k8sconsts.CentralUIServiceName,
 			Namespace: ns,
 			Labels: map[string]string{
-				"app.kubernetes.io/name": k8sconsts.CentralUILabelAppValue,
+				"app.kubernetes.io/name": k8sconsts.CentralUIAppName,
 			},
 		},
 		Spec: corev1.ServiceSpec{
@@ -108,7 +108,7 @@ func NewCentralUIService(ns string) *corev1.Service {
 				},
 			},
 			Selector: map[string]string{
-				"app.kubernetes.io/name": k8sconsts.CentralUILabelAppValue,
+				"app": k8sconsts.CentralUIAppName,
 			},
 		},
 	}

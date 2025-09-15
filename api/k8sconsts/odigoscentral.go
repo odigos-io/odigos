@@ -36,7 +36,6 @@ const (
 	//Odigos Central UI
 	CentralUI               = "central-ui"
 	CentralUIAppName        = "central-ui"
-	CentralUILabelAppValue  = "central-ui"
 	CentralUIDeploymentName = "central-ui"
 	CentralUIContainerName  = "central-ui"
 	CentralUIServiceName    = "central-ui"
