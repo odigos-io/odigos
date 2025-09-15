@@ -234,7 +234,7 @@ Now that our new vendor can be persisted/loaded in the Kubernetes data store, we
 ### Kubernetes-Specific Collector Configuration
 
 If your destination configures Kubernetes settings, for example you have a config field that accepts a value that should be mounted
-in the Collector Pod, create a `K8sConfiger` object in [`destinations.k8sconfig`](https://github.com/odigos-io/odigos/tree/main/destinations/k8sconfig).
+in the Collector Pod, create a `K8sConfiger` object in [`destinations.k8sconfig`](https://github.com/odigos-io/odigos/tree/main/autoscaler/k8sconfig).
 
 This interface provides an additional function, `ModifyGatewayCollectorDeployment`, which accepts a Destination and Collector Deployment.
 Your implementation can use this function to modify the Deployment as necessary based on the Destination config.
@@ -247,7 +247,7 @@ of common Destination that this Kubernetes implementation relies on. This is use
 only for the matching Destination.
 
 When it is implemented, add your `K8sConfiger` implementation to the `availableConfigers` list in
-[`destinations/k8sconfig/root.go`](https://github.com/odigos-io/odigos/tree/main/destinations/k8sconfig/root.go)
+[`destinations/k8sconfig/root.go`](https://github.com/odigos-io/odigos/tree/main/autoscaler/k8sconfig/root.go)
 
 ### Generating Documentation
 
