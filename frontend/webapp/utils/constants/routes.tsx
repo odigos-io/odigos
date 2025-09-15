@@ -14,8 +14,12 @@ export const ROUTES = {
 
 export const SKIP_TO_SUMMERY_QUERY_PARAM = 'skipToSummary';
 
+const IS_PROD = process.env.NODE_ENV === 'production';
+const HOSTNAME = typeof window !== 'undefined' ? window.location.hostname : '';
+const IS_INGRESSED_DOMAIN = IS_PROD && HOSTNAME && HOSTNAME !== 'localhost';
+
 const BACKEND_PORT = 8085;
-const BACKEND_HTTP_ORIGIN = `http://localhost:${BACKEND_PORT}`;
+const BACKEND_HTTP_ORIGIN = IS_INGRESSED_DOMAIN ? `https://${HOSTNAME}` : `http://localhost:${BACKEND_PORT}`;
 
 export const API = {
   GRAPHQL: `${BACKEND_HTTP_ORIGIN}/graphql`,
