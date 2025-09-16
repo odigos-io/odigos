@@ -18,7 +18,7 @@ const PROTOCOL = typeof window !== 'undefined' ? window.location.protocol : 'htt
 const HOSTNAME = typeof window !== 'undefined' ? window.location.hostname : '';
 const IS_INGRESSED_DOMAIN = HOSTNAME && HOSTNAME !== 'localhost';
 
-const BACKEND_PORT = process.env.PORT || 8085;
+const BACKEND_PORT = 3000;
 const BACKEND_HTTP_ORIGIN = IS_INGRESSED_DOMAIN ? `${PROTOCOL}//${HOSTNAME}` : `http://localhost:${BACKEND_PORT}`;
 
 export const API = {
