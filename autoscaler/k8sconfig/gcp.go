@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	gcpApplicationCredentialsKey = "GCP_APPLICATION_CREDENTIALS"
-	gcpCredentialsMountPath      = "/secrets"
+	gcpApplicationCredentialsKey    = "GCP_APPLICATION_CREDENTIALS"
+	gcpApplicationCredentialsEnvVar = "GOOGLE_APPLICATION_CREDENTIALS"
+	gcpCredentialsMountPath         = "/secrets"
 )
 
 type GoogleCloud struct{}
@@ -79,13 +80,13 @@ func (g *GoogleCloud) ModifyGatewayCollectorDeployment(dest K8sExporterConfigure
 
 		// Add environment variable pointing to the mounted credentials if it doesn't exist
 		for _, env := range currentDeployment.Spec.Template.Spec.Containers[containerIndex].Env {
-			if env.Name == gcpApplicationCredentialsKey {
+			if env.Name == gcpApplicationCredentialsEnvVar {
 				return fmt.Errorf("GCP credentials environment variable %s already exists."+
 					"Only one GCP Destination may have Application Credentials configured", env.Name)
 			}
 		}
 		currentDeployment.Spec.Template.Spec.Containers[containerIndex].Env = append(currentDeployment.Spec.Template.Spec.Containers[containerIndex].Env, corev1.EnvVar{
-			Name:  gcpApplicationCredentialsKey,
+			Name:  gcpApplicationCredentialsEnvVar,
 			Value: gcpCredentialsMountPath + "/" + gcpApplicationCredentialsKey,
 		})
 	}

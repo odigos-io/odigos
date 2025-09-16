@@ -127,7 +127,7 @@ var _ = Describe("Destination Controller", func() {
 			hasName := false
 			hasValue := false
 			for _, envVar := range container.Env {
-				if envVar.Name == "GCP_APPLICATION_CREDENTIALS" {
+				if envVar.Name == "GOOGLE_APPLICATION_CREDENTIALS" {
 					hasName = true
 				}
 				if envVar.Value == "/secrets/GCP_APPLICATION_CREDENTIALS" {
@@ -242,7 +242,7 @@ var _ = Describe("Destination Controller", func() {
 			hasName := 0
 			hasValue := 0
 			for _, envVar := range container.Env {
-				if envVar.Name == "GCP_APPLICATION_CREDENTIALS" {
+				if envVar.Name == "GOOGLE_APPLICATION_CREDENTIALS" {
 					hasName++
 				}
 				if envVar.Value == "/secrets/GCP_APPLICATION_CREDENTIALS" {
@@ -325,7 +325,7 @@ var _ = Describe("Destination Controller", func() {
 			hasName := 0
 			hasValue := 0
 			for _, envVar := range container.Env {
-				if envVar.Name == "GCP_APPLICATION_CREDENTIALS" {
+				if envVar.Name == "GOOGLE_APPLICATION_CREDENTIALS" {
 					hasName++
 				}
 			}

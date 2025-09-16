@@ -22,10 +22,10 @@ func (g *GoogleCloud) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		exporterName := "googlecloud/" + dest.GetID()
 		exporterConfig := GenericMap{}
 		if projectId, exists := dest.GetConfig()[gcpProjectIdKey]; exists {
-			exporterConfig["project_id"] = projectId
+			exporterConfig["project"] = projectId
 		}
 		if billingProjectId, exists := dest.GetConfig()[gcpBillingProjectIdKey]; exists {
-			exporterConfig["billing_project_id"] = billingProjectId
+			exporterConfig["destination_project_quota"] = billingProjectId
 		}
 		if timeout, exists := dest.GetConfig()[gcpTimeoutKey]; exists {
 			exporterConfig["timeout"] = timeout
@@ -52,10 +52,10 @@ func (g *GoogleCloud) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		}
 
 		if projectId, exists := dest.GetConfig()[gcpProjectIdKey]; exists {
-			exporterConfig["project_id"] = projectId
+			exporterConfig["project"] = projectId
 		}
 		if billingProjectId, exists := dest.GetConfig()[gcpBillingProjectIdKey]; exists {
-			exporterConfig["billing_project_id"] = billingProjectId
+			exporterConfig["destination_project_quota"] = billingProjectId
 		}
 
 		currentConfig.Exporters[exporterName] = exporterConfig
