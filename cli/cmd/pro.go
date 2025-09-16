@@ -412,7 +412,7 @@ var portForwardCentralCmd = &cobra.Command{
 		}
 		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend")
 
-		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUILabelAppValue)
+		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUIAppName)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find UI pod: %v\n", err)
 			cancel()
