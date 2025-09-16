@@ -62,6 +62,7 @@ func runInstallOrUpgrade() error {
 	// if Helm changes its error messages in the future, we may need to update these checks.
 	rel, err := runUpgrade(actionConfig, ch, vals)
 	if err != nil {
+		fmt.Printf("Error: %v\n", err)
 		// Fallback if release does not exist
 		if strings.Contains(err.Error(), "not found") ||
 			strings.Contains(err.Error(), "no deployed") {
