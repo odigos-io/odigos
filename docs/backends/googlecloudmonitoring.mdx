@@ -42,6 +42,8 @@ When the Application Credentials field is set, the Odigos UI will save the conte
 which is mounted as a volume into the Collector Pod. The location of that volume is then set as the `GOOGLE_APPLICATION_CREDENTIALS`
 environment variable, instructing the Google Cloud Exporter where to look for its credentials.
 
+Currently, only one Google Cloud destination can be configured with Application Credentials.
+
 See the [Google Cloud OpenTelemetry Collector Exporter docs](https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/tree/1ea43a4534606df1d91ee1754e6c5bc31ee8664d/exporter/collector#prerequisite-authenticating)
 for more information on authentication.
 

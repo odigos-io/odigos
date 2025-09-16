@@ -157,7 +157,9 @@ func TransformFieldsToDataAndSecrets(destTypeConfig *destinations.Destination, f
 			if fieldName == fieldConfig.Name {
 				if fieldConfig.Secret {
 					secretFields[fieldName] = fieldValue
-					// Preserve the fact that the field is set so that we can act on that once it has been processed to a Destination.
+					// Persist the fact that the field is set so that we can act on that once it has been processed to a Destination.
+					// For example, the GCP exporter applies different config if the "Application Credentials" secret field is set.
+					// But we still do not want to persist the actual credentials in the Destination, so we replace the value with "redacted".
 					fieldValue = "redacted"
 				}
 				dataFields[fieldName] = fieldValue

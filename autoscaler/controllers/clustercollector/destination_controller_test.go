@@ -42,6 +42,7 @@ var _ = Describe("Destination Controller", func() {
 		DestinationName      = "test-destination"
 		DestinationNamespace = "odigos-system"
 		SecretName           = "test-secret"
+		SecretMountName      = "gcp-credentials-secret"
 	)
 
 	AfterEach(func() {
@@ -108,7 +109,7 @@ var _ = Describe("Destination Controller", func() {
 			By("Verifying the deployment has the expected volume")
 			Expect(deployment.Spec.Template.Spec.Volumes).To(HaveLen(1))
 			volume := deployment.Spec.Template.Spec.Volumes[0]
-			Expect(volume.Name).To(Equal(SecretName))
+			Expect(volume.Name).To(Equal(SecretMountName))
 			Expect(volume.VolumeSource.Secret).NotTo(BeNil())
 			Expect(volume.VolumeSource.Secret.SecretName).To(Equal(SecretName))
 			Expect(volume.VolumeSource.Secret.Items).To(HaveLen(1))
@@ -120,7 +121,7 @@ var _ = Describe("Destination Controller", func() {
 			container := deployment.Spec.Template.Spec.Containers[0]
 			Expect(container.VolumeMounts).To(HaveLen(1))
 			volumeMount := container.VolumeMounts[0]
-			Expect(volumeMount.Name).To(Equal(SecretName))
+			Expect(volumeMount.Name).To(Equal(SecretMountName))
 			Expect(volumeMount.MountPath).To(Equal("/secrets"))
 
 			By("Verifying the deployment has the expected environment variable")
@@ -229,14 +230,14 @@ var _ = Describe("Destination Controller", func() {
 			By("Verifying the deployment has only one volume (no duplicates)")
 			Expect(deployment.Spec.Template.Spec.Volumes).To(HaveLen(1))
 			volume := deployment.Spec.Template.Spec.Volumes[0]
-			Expect(volume.Name).To(Equal(SecretName))
+			Expect(volume.Name).To(Equal(SecretMountName))
 
 			By("Verifying the deployment has only one volume mount (no duplicates)")
 			Expect(deployment.Spec.Template.Spec.Containers).To(HaveLen(1))
 			container := deployment.Spec.Template.Spec.Containers[0]
 			Expect(container.VolumeMounts).To(HaveLen(1))
 			volumeMount := container.VolumeMounts[0]
-			Expect(volumeMount.Name).To(Equal(SecretName))
+			Expect(volumeMount.Name).To(Equal(SecretMountName))
 
 			By("Verifying the deployment has only one environment variable (no duplicates)")
 			hasName := 0
@@ -322,15 +323,13 @@ var _ = Describe("Destination Controller", func() {
 			Expect(container.VolumeMounts).To(HaveLen(0))
 
 			By("Verifying the deployment has no GCP environment variables")
-			hasName := 0
-			hasValue := 0
+			hasName := false
 			for _, envVar := range container.Env {
 				if envVar.Name == "GOOGLE_APPLICATION_CREDENTIALS" {
-					hasName++
+					hasName = true
 				}
 			}
-			Expect(hasName).To(Equal(0))
-			Expect(hasValue).To(Equal(0))
+			Expect(hasName).To(BeFalse())
 		})
 	})
 })

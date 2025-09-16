@@ -21,7 +21,7 @@ spec:
         type: text
         placeholder: 10s
         required: false
-        tooltip: The request timeout in seconds for the Google Cloud Monitoring API.
+        tooltip: The request timeout in seconds for the Google Cloud Monitoring API. Defaults to 10 seconds. Increasing this value can help with deadline exceeded errors.
 
     - name: GCP_PROJECT_ID
       displayName: Project ID
@@ -30,7 +30,7 @@ spec:
         type: text
         required: false
         placeholder: 'project-id'
-        tooltip: The project ID for the Google Cloud Monitoring API.
+        tooltip: The project ID for the Google Cloud Monitoring API to send data to. Required if running Odigos outside of Google Cloud. Defaults to the detected project ID when running on GCP.
 
     - name: GCP_BILLING_PROJECT
       displayName: Billing Project
@@ -39,7 +39,7 @@ spec:
         type: text
         required: false
         placeholder: 'billing-project-id'
-        tooltip: The billing project ID for the Google Cloud Monitoring API. By default, this is the same as the project ID.
+        tooltip: The billing project ID for the Google Cloud Monitoring API. Allows you to specify a different project ID for billing and quota consumption. By default, this is the same as the project ID.
 
     - name: GCP_APPLICATION_CREDENTIALS
       displayName: Application Credentials

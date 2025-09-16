@@ -2,7 +2,6 @@ package k8sconfig
 
 import (
 	"fmt"
-	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -15,6 +14,7 @@ const (
 	gcpApplicationCredentialsKey    = "GCP_APPLICATION_CREDENTIALS"
 	gcpApplicationCredentialsEnvVar = "GOOGLE_APPLICATION_CREDENTIALS"
 	gcpCredentialsMountPath         = "/secrets"
+	gcpSecretVolumeName             = "gcp-credentials-secret"
 )
 
 type GoogleCloud struct{}
@@ -23,6 +23,13 @@ func (g *GoogleCloud) DestType() common.DestinationType {
 	return common.GoogleCloudDestinationType
 }
 
+// ModifyGatewayCollectorDeployment modifies the gateway collector deployment to mount the GCP credentials secret and set the environment variable.
+// When running on GCP, the credentials are automatically mounted by the GCP Collector Exporter.
+// However, when running outside of GCP, credentials need to be supplied in the form of a JSON file to the Collector Pod.
+// The location of this file then needs to be set as the GOOGLE_APPLICATION_CREDENTIALS environment variable.
+// This function adds the volume mount and environment variable to the Collector Pod.
+// This is also required for on-GCP deployments where the user wants to use a different project ID for billing and quota consumption
+// (by providing a Service Account credentials file with access to the different project).
 func (g *GoogleCloud) ModifyGatewayCollectorDeployment(dest K8sExporterConfigurer, currentDeployment *appsv1.Deployment) error {
 	config := dest.GetConfig()
 	// If GCP_APPLICATION_CREDENTIALS is set, mount the secret and set the environment variable
@@ -42,29 +49,27 @@ func (g *GoogleCloud) ModifyGatewayCollectorDeployment(dest K8sExporterConfigure
 			return fmt.Errorf("gateway collector container '%s' not found", k8sconsts.OdigosClusterCollectorContainerName)
 		}
 
-		secretRefName := strings.ReplaceAll(dest.GetSecretRef().Name, ".", "-")
-
 		// Add volume mount if it doesn't exist
 		for _, volumeMount := range currentDeployment.Spec.Template.Spec.Containers[containerIndex].VolumeMounts {
-			if volumeMount.Name == secretRefName {
+			if volumeMount.Name == gcpSecretVolumeName {
 				return fmt.Errorf("GCP credentials volume mount %s already exists."+
 					"Only one GCP Destination may have Application Credentials configured", volumeMount.Name)
 			}
 		}
 		currentDeployment.Spec.Template.Spec.Containers[containerIndex].VolumeMounts = append(currentDeployment.Spec.Template.Spec.Containers[containerIndex].VolumeMounts, corev1.VolumeMount{
-			Name:      secretRefName,
+			Name:      gcpSecretVolumeName,
 			MountPath: gcpCredentialsMountPath,
 		})
 
 		// Add volume if it doesn't exist
 		for i := range currentDeployment.Spec.Template.Spec.Volumes {
-			if currentDeployment.Spec.Template.Spec.Volumes[i].Name == secretRefName {
+			if currentDeployment.Spec.Template.Spec.Volumes[i].Name == gcpSecretVolumeName {
 				return fmt.Errorf("GCP credentials volume %s already exists."+
 					"Only one GCP Destination may have Application Credentials configured", currentDeployment.Spec.Template.Spec.Volumes[i].Name)
 			}
 		}
 		currentDeployment.Spec.Template.Spec.Volumes = append(currentDeployment.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: secretRefName,
+			Name: gcpSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: dest.GetSecretRef().Name,
