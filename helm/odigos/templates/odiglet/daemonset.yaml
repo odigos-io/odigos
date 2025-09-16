@@ -117,6 +117,9 @@ spec:
           {{- if .Values.odiglet.traceIdSuffix }}
             - --trace-id-suffix={{ .Values.odiglet.traceIdSuffix }}
           {{- end }}
+          {{- if .Values.wasp.enabled }}
+            - --wasp-enabled
+          {{- end }}
           command:
             - /root/odiglet
           imagePullPolicy: IfNotPresent
