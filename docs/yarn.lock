@@ -2,13 +2,13 @@
 # yarn lockfile v1
 
 
-"@alcalzone/ansi-tokenize@^0.1.3":
-  version "0.1.3"
-  resolved "https://registry.yarnpkg.com/@alcalzone/ansi-tokenize/-/ansi-tokenize-0.1.3.tgz#9f89839561325a8e9a0c32360b8d17e48489993f"
-  integrity sha512-3yWxPTq3UQ/FY9p1ErPxIyfT64elWaMvM9lIHnaqpyft63tkxodF5aUElYHrdisWve5cETkh1+KBw1yJuW0aRw==
+"@alcalzone/ansi-tokenize@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@alcalzone/ansi-tokenize/-/ansi-tokenize-0.2.0.tgz#52c67d4ebd0b9c6555d4719104aa949f8539fbe5"
+  integrity sha512-qI/5TaaaCZE4yeSZ83lu0+xi1r88JSxUjnH4OP/iZF7+KKZ75u3ee5isd0LxX+6N8U0npL61YrpbthILHB6BnA==
   dependencies:
     ansi-styles "^6.2.1"
-    is-fullwidth-code-point "^4.0.0"
+    is-fullwidth-code-point "^5.0.0"
 
 "@alloc/quick-lru@^5.2.0":
   version "5.2.0"
@@ -420,38 +420,38 @@
   dependencies:
     "@types/mdx" "^2.0.0"
 
-"@mintlify/cli@4.0.708":
-  version "4.0.708"
-  resolved "https://registry.yarnpkg.com/@mintlify/cli/-/cli-4.0.708.tgz#91e62f4d77428a81882b188c7414464f2280e8bb"
-  integrity sha512-MtbxWBo+QrkuVCyHpxGbuUvMG6iQPenKP9Zx67uFcOIRYz+LVnSSIlHEQ14/dHZdAeRahm0qEMSu6i9+HahdEA==
+"@mintlify/cli@4.0.717":
+  version "4.0.717"
+  resolved "https://registry.yarnpkg.com/@mintlify/cli/-/cli-4.0.717.tgz#dc0262df7b65615124256cb3687f069bf68e5849"
+  integrity sha512-jSb1Rs3Ag9CBPjjIQ91xXSJ5wrgG+eSCGeAZ/tKF4HmxtKt/sgK4LoIXUze7VUNOVb+rf0Q6uGHaMwxiaCf3pw==
   dependencies:
-    "@mintlify/common" "1.0.519"
-    "@mintlify/link-rot" "3.0.655"
-    "@mintlify/models" "0.0.225"
-    "@mintlify/prebuild" "1.0.643"
-    "@mintlify/previewing" "4.0.691"
-    "@mintlify/validation" "0.1.459"
+    "@mintlify/common" "1.0.527"
+    "@mintlify/link-rot" "3.0.664"
+    "@mintlify/models" "0.0.227"
+    "@mintlify/prebuild" "1.0.651"
+    "@mintlify/previewing" "4.0.700"
+    "@mintlify/validation" "0.1.466"
     chalk "^5.2.0"
     detect-port "^1.5.1"
     fs-extra "^11.2.0"
     gray-matter "^4.0.3"
-    ink "^5.2.1"
+    ink "^6.0.1"
     inquirer "^12.3.0"
     js-yaml "^4.1.0"
-    react "^18.3.1"
+    react "^19.1.0"
     semver "^7.7.2"
     yargs "^17.6.0"
 
-"@mintlify/common@1.0.519":
-  version "1.0.519"
-  resolved "https://registry.yarnpkg.com/@mintlify/common/-/common-1.0.519.tgz#c904a211a7525975b3b693d5eb8ca7d51e13401c"
-  integrity sha512-pXBsJsTT7W2F8fUOKHycWlN/Oh8GfaWtvHyARr/HkXy+Kec27OFXW539kdEHKDqFFdacJUc/iYcGb4Ehqnghog==
+"@mintlify/common@1.0.527":
+  version "1.0.527"
+  resolved "https://registry.yarnpkg.com/@mintlify/common/-/common-1.0.527.tgz#d4905459785a43c7ef05421a3c2546a9f795c142"
+  integrity sha512-rqCe3zoXlTpSuMYj7eKRtAGh/RciiWActt1XMgJdZ+aryzr/5HSe4YsuJwuUfU2c3wkJ1oDTjJMOu8VC9qjxcA==
   dependencies:
     "@asyncapi/parser" "^3.4.0"
     "@mintlify/mdx" "^2.0.5"
-    "@mintlify/models" "0.0.225"
+    "@mintlify/models" "0.0.227"
     "@mintlify/openapi-parser" "^0.0.7"
-    "@mintlify/validation" "0.1.459"
+    "@mintlify/validation" "0.1.466"
     "@sindresorhus/slugify" "^2.1.1"
     acorn "^8.11.2"
     acorn-jsx "^5.3.2"
@@ -489,15 +489,15 @@
     unist-util-visit-parents "^6.0.1"
     vfile "^6.0.3"
 
-"@mintlify/link-rot@3.0.655":
-  version "3.0.655"
-  resolved "https://registry.yarnpkg.com/@mintlify/link-rot/-/link-rot-3.0.655.tgz#2943e0eeeaef297207ec5f190df419cf8cae6660"
-  integrity sha512-eZENPsnMLk/lmi+uFD9c65Devbz4zN2Tqd61qK6FPzX7IULljHFWBzQdzxBs5c9lFqs1poLjvxcVDDZ0Fu/ngw==
+"@mintlify/link-rot@3.0.664":
+  version "3.0.664"
+  resolved "https://registry.yarnpkg.com/@mintlify/link-rot/-/link-rot-3.0.664.tgz#7f58ffe56f15729ef3500bbee6d102cad9b0bb89"
+  integrity sha512-2J2R7B9gH9W+yBlORcRWuAcccfEA0B+Z+CLN41jwHQrGwnwvIGGG/YZCLdvNV/V7kMFaL8gkkypbjGjR9uVxmw==
   dependencies:
-    "@mintlify/common" "1.0.519"
-    "@mintlify/prebuild" "1.0.643"
-    "@mintlify/previewing" "4.0.691"
-    "@mintlify/validation" "0.1.459"
+    "@mintlify/common" "1.0.527"
+    "@mintlify/prebuild" "1.0.651"
+    "@mintlify/previewing" "4.0.700"
+    "@mintlify/validation" "0.1.466"
     fs-extra "^11.1.0"
     unist-util-visit "^4.1.1"
 
@@ -518,10 +518,10 @@
     unified "^11.0.0"
     unist-util-visit "^5.0.0"
 
-"@mintlify/models@0.0.225":
-  version "0.0.225"
-  resolved "https://registry.yarnpkg.com/@mintlify/models/-/models-0.0.225.tgz#c749f6cff5b8b8afb7d44abb4caa65bd91f4a309"
-  integrity sha512-ICo0TWcPJU5tCLHkYqBm+TMnBLG+wmAwGUENh6H62faKecKQqyzIHujqoIzTjBpWDs4aEBwdB2zOWjHkjWHtjg==
+"@mintlify/models@0.0.227":
+  version "0.0.227"
+  resolved "https://registry.yarnpkg.com/@mintlify/models/-/models-0.0.227.tgz#c6f3f0a4252389bb6f8032b63c09d5d771759bb7"
+  integrity sha512-rRoSA8Sikpi+r5hJJ06c5KanVg5flu3/7Tl30Bc4JSb2PXcoHAxwzzxYS1c8qFu6QaqPRBxlav+55m6kQMIiaA==
   dependencies:
     axios "^1.8.3"
     openapi-types "^12.0.0"
@@ -538,15 +538,15 @@
     leven "^4.0.0"
     yaml "^2.4.5"
 
-"@mintlify/prebuild@1.0.643":
-  version "1.0.643"
-  resolved "https://registry.yarnpkg.com/@mintlify/prebuild/-/prebuild-1.0.643.tgz#95483edeff3e41501774f2a1389c9ae6adb4e1e1"
-  integrity sha512-J+1l86YZ58/aRe1pTf3GAw92jEW0Xbdp2zSssD9hupsGY+vHojFgvTbT21oTBlhOyiu0wvBitDUDRPB/jksNkw==
+"@mintlify/prebuild@1.0.651":
+  version "1.0.651"
+  resolved "https://registry.yarnpkg.com/@mintlify/prebuild/-/prebuild-1.0.651.tgz#27bc0fd01727d734daa777ca904b041cba16abb6"
+  integrity sha512-MnA+HyehQGodViYYojbOvuvkctvLRQnRmrf9XBur/J5VKgWJ10AgTxTb3BLWEc6Jy++WYGvEzlwaHFT5dk0kwA==
   dependencies:
-    "@mintlify/common" "1.0.519"
+    "@mintlify/common" "1.0.527"
     "@mintlify/openapi-parser" "^0.0.7"
-    "@mintlify/scraping" "4.0.378"
-    "@mintlify/validation" "0.1.459"
+    "@mintlify/scraping" "4.0.386"
+    "@mintlify/validation" "0.1.466"
     chalk "^5.3.0"
     favicons "^7.2.0"
     fs-extra "^11.1.0"
@@ -556,14 +556,14 @@
     openapi-types "^12.0.0"
     unist-util-visit "^4.1.1"
 
-"@mintlify/previewing@4.0.691":
-  version "4.0.691"
-  resolved "https://registry.yarnpkg.com/@mintlify/previewing/-/previewing-4.0.691.tgz#b841b39b59974f77dcca39aef00c882ed393b674"
-  integrity sha512-wFprdcphr3pb3S8S3B/tYr+qyhQBsQpcevrSqybElhZJAbhE3nkpiekTfGj3FQhd6LGopwYr/Krd03+vanYzng==
+"@mintlify/previewing@4.0.700":
+  version "4.0.700"
+  resolved "https://registry.yarnpkg.com/@mintlify/previewing/-/previewing-4.0.700.tgz#26939f8e5b95a8e40d538a0b49f60af1f2a9f7ff"
+  integrity sha512-ExN1mfYKH92Rm9lzbwVMKF/mJgkYD8Fv/IPZniEnLPWd1SOk35IWC6z8ck3rTFcSHNbPGGG2WlVap1X7kpDDew==
   dependencies:
-    "@mintlify/common" "1.0.519"
-    "@mintlify/prebuild" "1.0.643"
-    "@mintlify/validation" "0.1.459"
+    "@mintlify/common" "1.0.527"
+    "@mintlify/prebuild" "1.0.651"
+    "@mintlify/validation" "0.1.466"
     better-opn "^3.0.2"
     chalk "^5.1.0"
     chokidar "^3.5.3"
@@ -571,24 +571,24 @@
     fs-extra "^11.1.0"
     got "^13.0.0"
     gray-matter "^4.0.3"
-    ink "^5.2.1"
+    ink "^6.0.1"
     ink-spinner "^5.0.0"
     is-online "^10.0.0"
     js-yaml "^4.1.0"
     mdast "^3.0.0"
     openapi-types "^12.0.0"
-    react "^18.3.1"
+    react "^19.1.0"
     socket.io "^4.7.2"
     tar "^6.1.15"
     unist-util-visit "^4.1.1"
     yargs "^17.6.0"
 
-"@mintlify/scraping@4.0.378":
-  version "4.0.378"
-  resolved "https://registry.yarnpkg.com/@mintlify/scraping/-/scraping-4.0.378.tgz#85c7b1d754955c8cc216ed43c07fa8afb9a0b007"
-  integrity sha512-sh2qkLiVVit/6yyfOjqCqSNsS3URMxX0W/j5hJaz0o4FNdygRFfQUjg6f9KyBK/382rv38zGd9zwR3kLfQG3SA==
+"@mintlify/scraping@4.0.386":
+  version "4.0.386"
+  resolved "https://registry.yarnpkg.com/@mintlify/scraping/-/scraping-4.0.386.tgz#02d717faad4611da852c70428c492133967d72ad"
+  integrity sha512-ScPDnHo8bGv1dedVZV6ttNxeuzpFO6D+wh5kBPN5fAvfuIZPIsFLjLdTvbvCA+jkkwsWKoktYlcuLZzAZEedpg==
   dependencies:
-    "@mintlify/common" "1.0.519"
+    "@mintlify/common" "1.0.527"
     "@mintlify/openapi-parser" "^0.0.7"
     fs-extra "^11.1.1"
     hast-util-to-mdast "^10.1.0"
@@ -606,12 +606,12 @@
     yargs "^17.6.0"
     zod "^3.20.6"
 
-"@mintlify/validation@0.1.459":
-  version "0.1.459"
-  resolved "https://registry.yarnpkg.com/@mintlify/validation/-/validation-0.1.459.tgz#406e5c779d9ab33ad2e649d13873a286548cefa3"
-  integrity sha512-fZJKNP5Tks9EtPkpSvE4kLwQEV2r5HH5T2DLea5LUEag4X+ruL+F6caA+/plvfwNGP0x2O5eohebidnKEOVvRg==
+"@mintlify/validation@0.1.466":
+  version "0.1.466"
+  resolved "https://registry.yarnpkg.com/@mintlify/validation/-/validation-0.1.466.tgz#73d1a889307e8a904ac3cd34921ad983d86f5f68"
+  integrity sha512-UbbRcTfKWDKQxusOUHLScGqNZybyf06NeoQakmjWqmmAxTqMZXTc71mkiEP7Kt2UliKsb/tRVQPx39Yj3NWGxg==
   dependencies:
-    "@mintlify/models" "0.0.225"
+    "@mintlify/models" "0.0.227"
     arktype "^2.1.20"
     lcm "^0.0.3"
     lodash "^4.17.21"
@@ -1538,6 +1538,11 @@ chalk@^5.1.0, chalk@^5.2.0, chalk@^5.3.0:
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.4.1.tgz#1b48bf0963ec158dce2aacf69c093ae2dd2092d8"
   integrity sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w==
 
+chalk@^5.6.0:
+  version "5.6.2"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.6.2.tgz#b1238b6e23ea337af71c7f8a295db5af0c158aea"
+  integrity sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==
+
 character-entities-html4@^2.0.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/character-entities-html4/-/character-entities-html4-2.1.0.tgz#1f1adb940c971a4b22ba39ddca6b618dc6e56b2b"
@@ -2150,10 +2155,10 @@ es-to-primitive@^1.3.0:
     is-date-object "^1.0.5"
     is-symbol "^1.0.4"
 
-es-toolkit@^1.22.0:
-  version "1.39.7"
-  resolved "https://registry.yarnpkg.com/es-toolkit/-/es-toolkit-1.39.7.tgz#961b80a11c922c1a6dca5ca4089c1de7f9937be7"
-  integrity sha512-ek/wWryKouBrZIjkwW2BFf91CWOIMvoy2AE5YYgUrfWsJQM2Su1LoLtrw8uusEpN9RfqLlV/0FVNjT0WMv8Bxw==
+es-toolkit@^1.39.10:
+  version "1.39.10"
+  resolved "https://registry.yarnpkg.com/es-toolkit/-/es-toolkit-1.39.10.tgz#513407af73e79f9940e7ec7650f2e6dceeaf1d81"
+  integrity sha512-E0iGnTtbDhkeczB0T+mxmoVlT4YNweEKBLq7oaU4p11mecdsZpNWOglI4895Vh4usbQ+LsJiuLuI2L0Vdmfm2w==
 
 esast-util-from-estree@^2.0.0:
   version "2.0.0"
@@ -3029,26 +3034,25 @@ ink-spinner@^5.0.0:
   dependencies:
     cli-spinners "^2.7.0"
 
-ink@^5.2.1:
-  version "5.2.1"
-  resolved "https://registry.yarnpkg.com/ink/-/ink-5.2.1.tgz#b9ea59f0d1eab2b4566903b35b54fd34323d1694"
-  integrity sha512-BqcUyWrG9zq5HIwW6JcfFHsIYebJkWWb4fczNah1goUO0vv5vneIlfwuS85twyJ5hYR/y18FlAYUxrO9ChIWVg==
+ink@^6.0.1:
+  version "6.3.0"
+  resolved "https://registry.yarnpkg.com/ink/-/ink-6.3.0.tgz#9be9c3f550bd4e356249653504f6d974a0cddd13"
+  integrity sha512-2CbJAa7XeziZYe6pDS5RVLirRY28iSGMQuEV8jRU5NQsONQNfcR/BZHHc9vkMg2lGYTHTM2pskxC1YmY28p6bQ==
   dependencies:
-    "@alcalzone/ansi-tokenize" "^0.1.3"
+    "@alcalzone/ansi-tokenize" "^0.2.0"
     ansi-escapes "^7.0.0"
     ansi-styles "^6.2.1"
     auto-bind "^5.0.1"
-    chalk "^5.3.0"
+    chalk "^5.6.0"
     cli-boxes "^3.0.0"
     cli-cursor "^4.0.0"
     cli-truncate "^4.0.0"
     code-excerpt "^4.0.0"
-    es-toolkit "^1.22.0"
+    es-toolkit "^1.39.10"
     indent-string "^5.0.0"
-    is-in-ci "^1.0.0"
+    is-in-ci "^2.0.0"
     patch-console "^2.0.0"
-    react-reconciler "^0.29.0"
-    scheduler "^0.23.0"
+    react-reconciler "^0.32.0"
     signal-exit "^3.0.7"
     slice-ansi "^7.1.0"
     stack-utils "^2.0.6"
@@ -3264,10 +3268,10 @@ is-hexadecimal@^2.0.0:
   resolved "https://registry.yarnpkg.com/is-hexadecimal/-/is-hexadecimal-2.0.1.tgz#86b5bf668fca307498d319dfc03289d781a90027"
   integrity sha512-DgZQp241c8oO6cA1SbTEWiXeoxV42vlcJxgH+B3hi1AiqqKruZR3ZGF8In3fj4+/y/7rHvlOZLZtgJ/4ttYGZg==
 
-is-in-ci@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/is-in-ci/-/is-in-ci-1.0.0.tgz#9a86bbda7e42c6129902e0574c54b018fbb6ab88"
-  integrity sha512-eUuAjybVTHMYWm/U+vBO1sY/JOCgoPCXRxzdju0K+K0BiGW0SChEL1MLC0PoCIR1OlPo5YAp8HuQoUlsWEICwg==
+is-in-ci@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/is-in-ci/-/is-in-ci-2.0.0.tgz#e4b3471c555b47509a8311869c377c234967079f"
+  integrity sha512-cFeerHriAnhrQSbpAxL37W1wcJKUUX07HyLWZCW1URJT/ra3GyUTzBgUnh24TMVfNTV2Hij2HLxkPHFZfOZy5w==
 
 is-ip@^3.1.0:
   version "3.1.0"
@@ -3411,7 +3415,7 @@ jiti@^1.21.6:
   resolved "https://registry.yarnpkg.com/jiti/-/jiti-1.21.7.tgz#9dd81043424a3d28458b193d965f0d18a2300ba9"
   integrity sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==
 
-"js-tokens@^3.0.0 || ^4.0.0", js-tokens@^4.0.0:
+js-tokens@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
   integrity sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==
@@ -3544,13 +3548,6 @@ longest-streak@^3.0.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/longest-streak/-/longest-streak-3.1.0.tgz#62fa67cd958742a1574af9f39866364102d90cd4"
   integrity sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g==
-
-loose-envify@^1.1.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/loose-envify/-/loose-envify-1.4.0.tgz#71ee51fa7be4caec1a63839f7e682d8132d30caf"
-  integrity sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==
-  dependencies:
-    js-tokens "^3.0.0 || ^4.0.0"
 
 lowercase-keys@^3.0.0:
   version "3.0.0"
@@ -4292,12 +4289,12 @@ minizlib@^2.1.1:
     minipass "^3.0.0"
     yallist "^4.0.0"
 
-mintlify@^4.2.104:
-  version "4.2.104"
-  resolved "https://registry.yarnpkg.com/mintlify/-/mintlify-4.2.104.tgz#16e86ba002cd151ecd8abc52614c05361206d132"
-  integrity sha512-eb3fo0kHuc7IaxweNwGSK5O8sApFLY6qOV+Dj2uVvj+3NfgvHDYfxRjkgqfFBQFIB0+YvA9j3AD6+or0tkXWuQ==
+mintlify@^4.2.113:
+  version "4.2.113"
+  resolved "https://registry.yarnpkg.com/mintlify/-/mintlify-4.2.113.tgz#0c0a487fa8840dcd26f9e88b271692b8f34f1358"
+  integrity sha512-tjXICMCKrTNvYVpBCWTs5gm+4j/cppce/Eaf7Mz3GO7CMMNXoqCoNAvixcRlKvFwzMkbPpQrorjAI5+rATXS/w==
   dependencies:
-    "@mintlify/cli" "4.0.708"
+    "@mintlify/cli" "4.0.717"
 
 mitt@3.0.1:
   version "3.0.1"
@@ -4854,20 +4851,17 @@ raw-body@2.5.2:
     iconv-lite "0.4.24"
     unpipe "1.0.0"
 
-react-reconciler@^0.29.0:
-  version "0.29.2"
-  resolved "https://registry.yarnpkg.com/react-reconciler/-/react-reconciler-0.29.2.tgz#8ecfafca63549a4f4f3e4c1e049dd5ad9ac3a54f"
-  integrity sha512-zZQqIiYgDCTP/f1N/mAR10nJGrPD2ZR+jDSEsKWJHYC7Cm2wodlwbR3upZRdC3cjIjSlTLNVyO7Iu0Yy7t2AYg==
+react-reconciler@^0.32.0:
+  version "0.32.0"
+  resolved "https://registry.yarnpkg.com/react-reconciler/-/react-reconciler-0.32.0.tgz#a08bcd8c454a4cd839164d6e05926e30a7a7fac2"
+  integrity sha512-2NPMOzgTlG0ZWdIf3qG+dcbLSoAc/uLfOwckc3ofy5sSK0pLJqnQLpUFxvGcN2rlXSjnVtGeeFLNimCQEj5gOQ==
   dependencies:
-    loose-envify "^1.1.0"
-    scheduler "^0.23.2"
+    scheduler "^0.26.0"
 
-react@^18.3.1:
-  version "18.3.1"
-  resolved "https://registry.yarnpkg.com/react/-/react-18.3.1.tgz#49ab892009c53933625bd16b2533fc754cab2891"
-  integrity sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==
-  dependencies:
-    loose-envify "^1.1.0"
+react@^19.1.0:
+  version "19.1.1"
+  resolved "https://registry.yarnpkg.com/react/-/react-19.1.1.tgz#06d9149ec5e083a67f9a1e39ce97b06a03b644af"
+  integrity sha512-w8nqGImo45dmMIfljjMwOGtbmC/mk4CMYhWIicdSflH91J9TyCyczcPFXJzrZ/ZXcgGRFeP6BU0BEJTw6tZdfQ==
 
 read-cache@^1.0.0:
   version "1.0.0"
@@ -5262,12 +5256,10 @@ sax@>=0.6.0:
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.4.1.tgz#44cc8988377f126304d3b3fc1010c733b929ef0f"
   integrity sha512-+aWOz7yVScEGoKNd4PA10LZ8sk0A/z5+nXQG5giUO5rprX9jgYsTdov9qCchZiPIZezbZH+jRut8nPodFAX4Jg==
 
-scheduler@^0.23.0, scheduler@^0.23.2:
-  version "0.23.2"
-  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.23.2.tgz#414ba64a3b282892e944cf2108ecc078d115cdc3"
-  integrity sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==
-  dependencies:
-    loose-envify "^1.1.0"
+scheduler@^0.26.0:
+  version "0.26.0"
+  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.26.0.tgz#4ce8a8c2a2095f13ea11bf9a445be50c555d6337"
+  integrity sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==
 
 section-matter@^1.0.0:
   version "1.0.0"

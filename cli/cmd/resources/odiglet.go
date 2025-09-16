@@ -382,9 +382,15 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 			},
 		},
 		{
-			Name: "kernel-debug",
+			Name: "sys-kernel",
 			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{Path: "/sys/kernel/debug"},
+				HostPath: &corev1.HostPathVolumeSource{Path: "/sys/kernel"},
+			},
+		},
+		{
+			Name: "exchange-dir",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 	}
@@ -418,7 +424,9 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 	}
 
 	// Build the data-collection container mounts (only for its container)
-	dataCollectionMounts := []corev1.VolumeMount{}
+	dataCollectionMounts := []corev1.VolumeMount{
+		{Name: "exchange-dir", MountPath: consts.ExchangeDir},
+	}
 	if logsEnabled {
 		dataCollectionMounts = append(dataCollectionMounts,
 			corev1.VolumeMount{Name: "varlog", MountPath: "/var/log", ReadOnly: true},
@@ -646,8 +654,12 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 									ReadOnly:  true,
 								},
 								{
-									Name:      "kernel-debug",
-									MountPath: "/sys/kernel/debug",
+									Name:      "sys-kernel",
+									MountPath: "/sys/kernel",
+								},
+								{
+									Name:      "exchange-dir",
+									MountPath: consts.ExchangeDir,
 								},
 							}, additionalVolumeMounts...),
 							ImagePullPolicy: "IfNotPresent",
@@ -897,6 +909,11 @@ func NewOdigletLocalTrafficService(ns string) *corev1.Service {
 					Name:       "metrics",
 					Port:       8080,
 					TargetPort: intstr.FromInt(8080),
+				},
+				{
+					Name:       "wasp",
+					Port:       int32(k8sconsts.OdigletWaspServicePort),
+					TargetPort: intstr.FromInt(k8sconsts.OdigletWaspServicePort),
 				},
 			},
 			InternalTrafficPolicy: &localTrafficPolicy,

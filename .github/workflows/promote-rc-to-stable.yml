@@ -34,7 +34,7 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # need to fetch all tags for goreleaser to calculate the changelog
           ref: ${{ env.RC_TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
@@ -79,7 +79,7 @@ jobs:
 
       - id: gcp-auth
         name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           token_format: 'access_token'
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
@@ -105,21 +105,17 @@ jobs:
 
       - name: Retag existing images to stable
         run: |
-            IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor" "odigos-operator")
-            REPOS=(${GCR_REPO} ${GHCR_REPO} ${DOCKERHUB_REPO})
+            ALL_REGISTRIES_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator")
+            ONLY_GCR_IMAGE_NAMES=("odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui")
+
+            ALL_REGISTRIES=(${GCR_REPO} ${GHCR_REPO} ${DOCKERHUB_REPO})
             UBI9_SUFFIXES=("" "-ubi9")
             # Track failed copies for potential rollback
             FAILED_COPIES=()
-            for REPO in "${REPOS[@]}"; do
-              for IMAGE_NAME in "${IMAGE_NAMES[@]}"; do
 
-                # Skip enterprise images for GHCR temporarily - they should be added in the release process and this check should be removed after that.
-                if [[ "${REPO}" == "${GHCR_REPO}" && ( "${IMAGE_NAME}" == "odigos-enterprise-odiglet" || "${IMAGE_NAME}" == "odigos-enterprise-instrumentor" ) ]]; then
-                  echo "Skipping ${IMAGE_NAME} for ${REPO}"
-                  continue
-                fi
-
-                for SUFFIX in "${UBI9_SUFFIXES[@]}"; do
+            for SUFFIX in "${UBI9_SUFFIXES[@]}"; do
+              for IMAGE_NAME in "${ALL_REGISTRIES_IMAGE_NAMES[@]}"; do
+                for REPO in "${ALL_REGISTRIES[@]}"; do
                   echo "Copying ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} to ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
                   if ! crane copy ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
                     echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME}${SUFFIX}"
@@ -128,6 +124,17 @@ jobs:
                     echo "Successfully copied ${REPO}/${IMAGE_NAME}${SUFFIX}"
                   fi
                 done
+              done
+
+              for IMAGE_NAME in "${ONLY_GCR_IMAGE_NAMES[@]}"; do
+                REPO=${GCR_REPO}
+                echo "Copying ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} to ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
+                if ! crane copy ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
+                  echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                  FAILED_COPIES+=("${REPO}/${IMAGE_NAME}${SUFFIX}")
+                else
+                  echo "Successfully copied ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                fi
               done
             done
 

@@ -57,7 +57,7 @@ runs:
     # 5) Configure AWS Credentials for EKS
     - name: Configure AWS Credentials for EKS
       if: ${{ inputs.provider == 'eks' }}
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v5
       with:
         role-to-assume: arn:aws:iam::061717858829:role/GitHubActionsEKSCreatorRole
         aws-region: us-east-1

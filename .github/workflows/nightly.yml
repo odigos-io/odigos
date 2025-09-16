@@ -44,7 +44,7 @@ jobs:
     needs: build-images
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Run Chaos Tests
         uses: ./.github/actions/chaos-tests
@@ -71,7 +71,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Run Cross-Cloud Tests
         if: ${{ !(matrix.provider == 'aks' && matrix.platform == 'arm') }}

@@ -18,15 +18,6 @@ const (
 	OTLPHttpPort                = 4318
 	PprofOdigosPort             = 6060
 
-	// Deprecated: Sources are used to mark workloads for instrumentation.
-	OdigosInstrumentationLabel = "odigos-instrumentation"
-
-	// Deprecated: Sources are used to mark workloads for instrumentation.
-	InstrumentationEnabled = "enabled"
-
-	// Deprecated: Sources are used to mark workloads for instrumentation.
-	InstrumentationDisabled = "disabled"
-
 	// DefaultDataStream is the default data stream name used for telemetry data.
 	DefaultDataStream = "default"
 
@@ -103,6 +94,7 @@ const (
 	AllowedTestConnectionHostsProperty = "allowed-test-connection-hosts"
 	EnableDataCompressionProperty      = "enable-data-compression"
 	ResourceSizePresetProperty         = "resource-size-preset"
+	WaspEnabledProperty                = "wasp-enabled"
 )
 
 var (
@@ -140,4 +132,9 @@ const (
 const (
 	DefaultAutoRollbackGraceTime       = "5m"
 	DefaultAutoRollbackStabilityWindow = "1h"
+)
+
+// UnixFD related consts
+const (
+	ExchangeDir = "/var/exchange"
 )
