@@ -321,11 +321,16 @@ odiglet:
       periodSeconds: 10
     # capabilities to add to the odiglet container when running as unPrivileged - this will be ignored when running as privileged.
     capabilities:
+      # SYS_ADMIN required when running in unprivileged mode if one of the following is true:
+      #  1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
+      #  2. kernel.perf_event_paranoid sysctl is set to 2 or higher
       - SYS_ADMIN
       - BPF
       - PERFMON
       - SYS_PTRACE
       - DAC_READ_SEARCH
+      # required for mmap of perf buffers
+      - IPC_LOCK
   nodeSelector:
     kubernetes.io/os: linux
   tolerations:
