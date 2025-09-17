@@ -295,6 +295,9 @@ func calculateConfigMapData(
 				"protocols": config.GenericMap{
 					"grpc": config.GenericMap{
 						"endpoint": "0.0.0.0:4317",
+						// data collection collectors will drop data instead of backpressuring the senders (odiglet or agents),
+						// we don't want the applications to build up memory in the runtime if the pipeline is overloaded.
+						"drop_on_overload": true,
 					},
 					"http": config.GenericMap{
 						"endpoint": "0.0.0.0:4318",

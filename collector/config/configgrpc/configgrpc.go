@@ -43,8 +43,16 @@ import (
 )
 
 var (
-	errMetadataNotFound   = errors.New("no request metadata found")
-	errMemoryLimitReached = status.Error(codes.ResourceExhausted, "Memory limit has been reached, too many requests.")
+	errMetadataNotFound = errors.New("no request metadata found")
+
+	// using "Unavailable" instead of "ResourceExhausted" since the collector,
+	// does not "retry" on "ResourceExhausted" errors without "retryInfo" in the response.
+	// when I tried to set it here, it did not work so using "Unavailable" instead until we figure it out.
+	errMemoryLimitReached = status.Error(codes.Unavailable, "Memory limit has been reached, too many requests.")
+
+	// return "FailedPrecondition" to not retry the request by the sender.
+	// TODO: should we move the "not retry" logic to the agents? and return resource exhausted or unavailable here instead?
+	errMemoryLimitReachedDataDropped = status.Error(codes.FailedPrecondition, "Memory limit reached, data dropped in grpc receiver.")
 )
 
 // KeepaliveClientConfig exposes the keepalive.ClientParameters to be used by the exporter.
@@ -116,9 +124,6 @@ type ClientConfig struct {
 
 	// Middlewares for the gRPC client.
 	Middlewares []configmiddleware.Config `mapstructure:"middlewares,omitempty"`
-
-	// MemoryLimiter is memory limiter this receiver will use to restrict incoming requests
-	MemoryLimiter *component.ID `mapstructure:"memory_limiter"`
 }
 
 // NewDefaultClientConfig returns a new instance of ClientConfig with default values.
@@ -212,10 +217,14 @@ type ServerConfig struct {
 	// Include propagates the incoming connection's metadata to downstream consumers.
 	IncludeMetadata bool `mapstructure:"include_metadata,omitempty"`
 
-	MemoryLimiter *component.ID `mapstructure:"memory_limiter"`
-
 	// Middlewares for the gRPC server.
 	Middlewares []configmiddleware.Config `mapstructure:"middlewares,omitempty"`
+
+	// DropOnOverload determines whether to drop or reject requests when overloaded.
+	// If true (data-collection collectors), requests will be dropped when the system is overloaded.
+	// If false (gateway collectors), requests will be rejected with backpressure when overloaded.
+	// Gateway will reject requests while node-collector will drop them.
+	DropOnOverload bool `mapstructure:"drop_on_overload,omitempty"`
 
 	// prevent unkeyed literal initialization
 	_ struct{}
@@ -549,7 +558,12 @@ func (gss *ServerConfig) getGrpcServerOptions(
 
 	opts = append(opts, grpc.InTapHandle(func(ctx context.Context, info *tap.Info) (context.Context, error) {
 		if rtml.IsMemLimitReached() {
-			return ctx, errMemoryLimitReached
+			if gss.DropOnOverload {
+				settings.Logger.Info("OTLP gRPC receiver detected memory limit reached, dropping a batch")
+				return ctx, errMemoryLimitReachedDataDropped
+			} else {
+				return ctx, errMemoryLimitReached
+			}
 		}
 		return ctx, nil
 	}))
