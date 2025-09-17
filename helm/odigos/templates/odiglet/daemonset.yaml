@@ -110,10 +110,9 @@ spec:
             privileged: false
             capabilities:
               add:
-                - BPF
-                - PERFMON
-                - SYS_PTRACE
-                - DAC_READ_SEARCH
+              {{- with .Values.odiglet.odiglet.capabilities }}
+              {{- toYaml . | nindent 14 }}
+              {{- end }}
               drop:
                 - ALL
             {{- end }}
@@ -371,8 +370,6 @@ spec:
         - name: odigos
           hostPath:
             path: /var/odigos
-        - name: exchange-dir
-          emptyDir: {}
       {{- end }} # end of hostPath mounts that are not mandatory
         # needed to load eBPF tracepoints - used by runtime-detector
       {{- if .Values.odiglet.noHostPid }}
@@ -387,6 +384,8 @@ spec:
         - name: odigos-go-offsets
           configMap:
             name: odigos-go-offsets
+        - name: exchange-dir
+          emptyDir: {}
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.odiglet }}
   {{- if .nodeSelector }}
