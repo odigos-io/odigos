@@ -1,17 +1,17 @@
 {{/*
-    This ConfigMap is special:
+  This ConfigMap is special:
 
-    - Normally Helm would re-apply (and overwrite) ConfigMaps on every upgrade.
-    - But this ConfigMap (`odigos-data-collection`) is managed dynamically at runtime
-      by the Odigos autoscaler / controller. It needs to be created once so the
-      collector can start, but then it must not be touched by Helm again.
-    - To achieve this, we use `lookup` to check if the ConfigMap already exists:
-        * If it does not exist → Helm creates a minimal stub ConfigMap.
-        * If it already exists → Helm does nothing, so the autoscaler’s config
-          remains untouched.
+  - Needed initially so the collector pods don’t crash before the controller
+    replaces it with the actual configuration.
+  - Created/managed by Helm only until the controller takes ownership.
+  - Once the controller replaces it (adds ownerReferences), Helm must stop managing it.
+  - On uninstall: if Helm still owns the stub, Helm deletes it.
+    If the controller owns it, controller’s GC will clean it up.
 */}}
-{{- $existing := lookup "v1" "ConfigMap" .Release.Namespace "odigos-data-collection" }}
-{{- if not $existing }}
+
+{{- $cm := lookup "v1" "ConfigMap" .Release.Namespace "odigos-data-collection" }}
+{{- if not $cm }}
+# Case 1: ConfigMap does not exist → create stub (Helm owns it)
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -20,6 +20,7 @@ metadata:
   labels:
     odigos.io/system-object: "true"
     odigos.io/preserve: "true"
+    app.kubernetes.io/managed-by: Helm
 data:
   conf: |
     receivers:
@@ -41,4 +42,43 @@ data:
         traces:
           receivers: [otlp]
           exporters: [nop]
+
+{{- else if not (hasKey $cm.metadata "ownerReferences") }}
+# Case 2: ConfigMap exists but has no ownerReferences → still Helm-owned stub
+# This means the user hasn’t configured sources/destinations yet and the
+# controller hasn’t replaced it. We must keep rendering the stub so Helm
+# doesn’t delete it on upgrade.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-data-collection
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+    odigos.io/preserve: "true"
+    app.kubernetes.io/managed-by: Helm
+data:
+  conf: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+
+    exporters:
+      nop:
+
+    service:
+      extensions: [health_check]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [nop]
+
+{{- else }}
+# Case 3: ConfigMap exists and has ownerReferences (controller-managed) → skip rendering so Helm won’t override it
 {{- end }}
