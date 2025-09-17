@@ -84,9 +84,7 @@ var _ = Describe("Destination Controller", func() {
 				Spec: odigosv1.DestinationSpec{
 					Type:            common.GoogleCloudDestinationType,
 					DestinationName: "test-gcp-destination",
-					Data: map[string]string{
-						"GCP_APPLICATION_CREDENTIALS": "fake-gcp-credentials",
-					},
+					Data:            map[string]string{},
 					SecretRef: &corev1.LocalObjectReference{
 						Name: SecretName,
 					},
@@ -174,9 +172,7 @@ var _ = Describe("Destination Controller", func() {
 				Spec: odigosv1.DestinationSpec{
 					Type:            common.GoogleCloudDestinationType,
 					DestinationName: "test-gcp-destination-1",
-					Data: map[string]string{
-						"GCP_APPLICATION_CREDENTIALS": "fake-gcp-credentials",
-					},
+					Data:            map[string]string{},
 					SecretRef: &corev1.LocalObjectReference{
 						Name: SecretName,
 					},
@@ -205,9 +201,7 @@ var _ = Describe("Destination Controller", func() {
 				Spec: odigosv1.DestinationSpec{
 					Type:            common.GoogleCloudDestinationType,
 					DestinationName: "test-gcp-destination-2",
-					Data: map[string]string{
-						"GCP_APPLICATION_CREDENTIALS": "fake-gcp-credentials",
-					},
+					Data:            map[string]string{},
 					SecretRef: &corev1.LocalObjectReference{
 						Name: SecretName,
 					},
@@ -278,9 +272,7 @@ var _ = Describe("Destination Controller", func() {
 				Spec: odigosv1.DestinationSpec{
 					Type:            common.GoogleCloudDestinationType,
 					DestinationName: "test-gcp-destination",
-					Data: map[string]string{
-						"GCP_APPLICATION_CREDENTIALS": "fake-gcp-credentials",
-					},
+					Data:            map[string]string{},
 					SecretRef: &corev1.LocalObjectReference{
 						Name: SecretName,
 					},

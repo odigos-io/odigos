@@ -259,7 +259,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 	k8sConfigers := k8sconfig.LoadK8sConfigers()
 	for _, dest := range enabledDests.Items {
 		if k8sConfiger, exists := k8sConfigers[dest.GetType()]; exists {
-			err := k8sConfiger.ModifyGatewayCollectorDeployment(dest, desiredDeployment)
+			err := k8sConfiger.ModifyGatewayCollectorDeployment(ctx, c, dest, desiredDeployment)
 			if err != nil {
 				return nil, errors.Join(err, errors.New("failed to modify gateway collector deployment"))
 			}

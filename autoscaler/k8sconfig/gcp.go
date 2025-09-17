@@ -1,10 +1,12 @@
 package k8sconfig
 
 import (
+	"context"
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
@@ -30,14 +32,33 @@ func (g *GoogleCloud) DestType() common.DestinationType {
 // This function adds the volume mount and environment variable to the Collector Pod.
 // This is also required for on-GCP deployments where the user wants to use a different project ID for billing and quota consumption
 // (by providing a Service Account credentials file with access to the different project).
-func (g *GoogleCloud) ModifyGatewayCollectorDeployment(dest K8sExporterConfigurer, currentDeployment *appsv1.Deployment) error {
-	config := dest.GetConfig()
+func (g *GoogleCloud) ModifyGatewayCollectorDeployment(ctx context.Context, k8sClient client.Client, dest K8sExporterConfigurer, currentDeployment *appsv1.Deployment) error {
+	// Check if destination has a non-empty secret ref for Application Credentials
+	if dest.GetSecretRef() == nil || dest.GetSecretRef().Name == "" {
+		return nil
+	}
+
+	// Try to get the secret
+	secret := &corev1.Secret{}
+	err := k8sClient.Get(ctx, client.ObjectKey{
+		Name:      dest.GetSecretRef().Name,
+		Namespace: currentDeployment.Namespace,
+	}, secret)
+	if err != nil {
+		return fmt.Errorf("failed to get secret %s: %w", dest.GetSecretRef().Name, err)
+	}
+
+	// Check if the application credentials key is set in the secret
+	if secret.Data == nil {
+		return nil
+	}
+
 	// If GCP_APPLICATION_CREDENTIALS is set, mount the secret and set the environment variable
 	// NOTE: Currently, only one GCP Destination may have Application Credentials configured. This is a limitation of the GCP Collector Exporter,
 	// which relies on the GOOGLE_APPLICATION_CREDENTIALS environment variable to be set.
 	// To support multiple GCP Destinations with different credentials (which is uncommon but not totally unreasonable), we would need to
 	// create multiple Gateway Collector Deployments, one for each GCP Destination.
-	if val, exists := config[gcpApplicationCredentialsKey]; exists && val != "" && dest.GetSecretRef() != nil {
+	if _, keyExists := secret.Data[gcpApplicationCredentialsKey]; keyExists {
 		containerIndex := -1
 		for i := 0; i < len(currentDeployment.Spec.Template.Spec.Containers); i++ {
 			if currentDeployment.Spec.Template.Spec.Containers[i].Name == k8sconsts.OdigosClusterCollectorContainerName {
@@ -95,5 +116,6 @@ func (g *GoogleCloud) ModifyGatewayCollectorDeployment(dest K8sExporterConfigure
 			Value: gcpCredentialsMountPath + "/" + gcpApplicationCredentialsKey,
 		})
 	}
+
 	return nil
 }
