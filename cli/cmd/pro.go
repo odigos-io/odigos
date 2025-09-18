@@ -19,6 +19,7 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -276,6 +277,37 @@ var centralInstallCmd = &cobra.Command{
 	},
 }
 
+var centralUninstallCmd = &cobra.Command{
+	Use:   "uninstall",
+	Short: "Uninstall Odigos Tower backend and UI components",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		_ = cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		nsFlag, err := cmd.Flags().GetString("namespace")
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
+			os.Exit(1)
+		}
+		ns := nsFlag
+		if ns == "" {
+			ns = consts.DefaultOdigosCentralNamespace
+		}
+
+		if !cmd.Flag("yes").Changed {
+			fmt.Printf("About to uninstall Odigos Tower from namespace %s\n", ns)
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting uninstall")
+				return
+			}
+		}
+
+		// Uninstall logic will be implemented in subsequent steps
+		fmt.Println("Starting Odigos Tower uninstallation...")
+	},
+}
+
 var activateCmd = &cobra.Command{
 	Use:   "activate",
 	Short: "Activate the Odigos Enterprise tier from the Community Edition",
@@ -498,10 +530,15 @@ func init() {
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
+    centralCmd.AddCommand(centralUninstallCmd)
 	centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower installation")
+
+    // central uninstall flags
+    centralUninstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower uninstallation")
+    centralUninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 
 	// Central configuration flags
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
