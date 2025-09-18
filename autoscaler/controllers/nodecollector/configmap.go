@@ -15,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,14 +39,14 @@ func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigos
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
 
-	desired, err := getDesiredConfigMap(sources, signals, processors, datacollection, scheme)
+	desired, err := getDesiredConfigMap(ctx, sources, signals, processors, datacollection, scheme, c)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
 	}
 
 	existing := &v1.ConfigMap{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: datacollection.Namespace, Name: datacollection.Name}, existing); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(0).Info("creating config map")
 			_, err := createConfigMap(desired, ctx, c)
@@ -95,24 +96,85 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 	return desired, nil
 }
 
-func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
-	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme) (*v1.ConfigMap, error) {
-	cmData, err := calculateConfigMapData(datacollection, sources, signals, processors)
+func noopConfigMap() (string, error) {
+	config := config.Config{
+		Extensions: config.GenericMap{
+			"health_check": config.GenericMap{
+				"endpoint": "0.0.0.0:13133",
+			},
+		},
+		Receivers: config.GenericMap{
+			"otlp": config.GenericMap{
+				"protocols": config.GenericMap{
+					"grpc": config.GenericMap{
+						"endpoint": "0.0.0.0:4317",
+					},
+					"http": config.GenericMap{
+						"endpoint": "0.0.0.0:4318",
+					},
+				},
+			},
+		},
+		Exporters: config.GenericMap{
+			"nop": config.GenericMap{},
+		},
+		Service: config.Service{
+			Extensions: []string{"health_check"},
+			Pipelines: map[string]config.Pipeline{
+				"traces": {
+					Receivers:  []string{"otlp"},
+					Processors: []string{},
+					Exporters:  []string{"nop"},
+				},
+			},
+		},
+	}
+
+	yamlData, err := yaml.Marshal(config)
+	if err != nil {
+		return "", err
+	}
+
+	return string(yamlData), nil
+}
+
+func getDesiredConfigMap(ctx context.Context,sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
+	cg *odigosv1.CollectorsGroup, scheme *runtime.Scheme, c client.Client) (*v1.ConfigMap, error) {
+	var err error
+	var cmData string
+
+	if cg == nil || len(signals) == 0 {
+		// if collectors group is not created yet, or there are no signals to collect, return a no-op configmap
+		// this can happen if no sources are instrumented yet or no destinations are added.
+		cmData, err = noopConfigMap()
+	} else {
+		cmData, err = calculateConfigMapData(cg, sources, signals, processors)
+	}
+
 	if err != nil {
 		return nil, err
 	}
 
 	desired := v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      datacollection.Name,
-			Namespace: datacollection.Namespace,
+			Name:      k8sconsts.OdigosNodeCollectorConfigMapName,
+			Namespace: env.GetCurrentNamespace(),
 		},
 		Data: map[string]string{
 			k8sconsts.OdigosNodeCollectorConfigMapKey: cmData,
 		},
 	}
 
-	if err := ctrl.SetControllerReference(datacollection, &desired, scheme); err != nil {
+	autoscalerDeployment := appsv1.Deployment{}
+	err = c.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.AutoScalerDeploymentName}, &autoscalerDeployment)
+	if err != nil {
+		return nil, err
+	}
+
+	// set the autoscaler deployment as the owner of the configmap
+	// since it is the one creating it and updating it.
+	// cg might not yet exist and failing to have an owner will lead to un-cleaned resources on uninstall.
+	if err := ctrl.SetControllerReference(&autoscalerDeployment, &desired, scheme); err != nil {
 		return nil, err
 	}
 

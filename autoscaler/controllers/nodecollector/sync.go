@@ -8,6 +8,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,17 +29,15 @@ func reconcileNodeCollector(ctx context.Context, c client.Client, scheme *runtim
 		return ctrl.Result{}, err
 	}
 
-	if len(ics.Items) == 0 {
-		logger.V(3).Info("No odigos sources found, skipping data collection sync")
-		return ctrl.Result{}, nil
-	}
-
 	odigosNs := env.GetCurrentNamespace()
 
-	var dataCollectionCollectorGroup odigosv1.CollectorsGroup
-	err := c.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, &dataCollectionCollectorGroup)
+	dataCollectionCollectorGroup := new(odigosv1.CollectorsGroup)
+	err := c.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, dataCollectionCollectorGroup)
 	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+		dataCollectionCollectorGroup = nil
 	}
 
 	var clusterCollectorCollectorGroup odigosv1.CollectorsGroup
@@ -53,7 +52,7 @@ func reconcileNodeCollector(ctx context.Context, c client.Client, scheme *runtim
 		return ctrl.Result{}, err
 	}
 
-	err = syncDataCollection(&ics, clusterCollectorCollectorGroup.Status.ReceiverSignals, &processors, &dataCollectionCollectorGroup, ctx, c, scheme)
+	err = syncDataCollection(&ics, clusterCollectorCollectorGroup.Status.ReceiverSignals, &processors, dataCollectionCollectorGroup, ctx, c, scheme)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

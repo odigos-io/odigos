@@ -25,6 +25,11 @@ func syncService(ctx context.Context, c client.Client, scheme *runtime.Scheme, d
 	if !feature.ServiceInternalTrafficPolicy(feature.GA) {
 		return nil
 	}
+	if dc == nil {
+		// it is valid to not have a data collection collector group until it is created by the scheduler
+		return nil
+	}
+
 	logger := log.FromContext(ctx)
 
 	localTrafficPolicy := v1.ServiceInternalTrafficPolicyLocal
