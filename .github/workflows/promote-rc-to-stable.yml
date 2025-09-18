@@ -157,8 +157,18 @@ jobs:
             fi
 
             git tag ${{ env.STABLE_TAG }}
-            git push origin ${{ env.STABLE_TAG }}
-            echo "Successfully created and pushed stable tag ${{ env.STABLE_TAG }}"
+            echo "Successfully created stable tag ${{ env.STABLE_TAG }} (not pushed yet)"
+
+      - name: Tag Modules
+        uses: ./.github/actions/tag-modules
+        with:
+          tag: ${{ env.STABLE_TAG }}
+
+      - name: Push All Tags
+        run: |
+            echo "Pushing all tags (stable + module tags) at once"
+            git push origin --tags
+            echo "Successfully pushed all tags"
 
       - name: Trigger CLI Release
         run: |
