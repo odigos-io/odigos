@@ -2,17 +2,16 @@ package kube
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8slabels "k8s.io/apimachinery/pkg/labels"
 )
 
 func DeleteDeploymentsByLabel(ctx context.Context, client *Client, ns string, labelKey string) error {
-	list, err := client.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", labelKey, k8sconsts.OdigosSystemLabelValue),
-	})
+	selector := k8slabels.SelectorFromSet(map[string]string{labelKey: k8sconsts.OdigosSystemLabelValue}).String()
+	list, err := client.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {
 		return err
 	}
@@ -25,9 +24,8 @@ func DeleteDeploymentsByLabel(ctx context.Context, client *Client, ns string, la
 }
 
 func DeleteServicesByLabel(ctx context.Context, client *Client, ns string, labelKey string) error {
-	list, err := client.CoreV1().Services(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", labelKey, k8sconsts.OdigosSystemLabelValue),
-	})
+	selector := k8slabels.SelectorFromSet(map[string]string{labelKey: k8sconsts.OdigosSystemLabelValue}).String()
+	list, err := client.CoreV1().Services(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {
 		return err
 	}
@@ -40,9 +38,8 @@ func DeleteServicesByLabel(ctx context.Context, client *Client, ns string, label
 }
 
 func DeleteRolesByLabel(ctx context.Context, client *Client, ns string, labelKey string) error {
-	list, err := client.RbacV1().Roles(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", labelKey, k8sconsts.OdigosSystemLabelValue),
-	})
+	selector := k8slabels.SelectorFromSet(map[string]string{labelKey: k8sconsts.OdigosSystemLabelValue}).String()
+	list, err := client.RbacV1().Roles(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {
 		return err
 	}
@@ -55,9 +52,8 @@ func DeleteRolesByLabel(ctx context.Context, client *Client, ns string, labelKey
 }
 
 func DeleteRoleBindingsByLabel(ctx context.Context, client *Client, ns string, labelKey string) error {
-	list, err := client.RbacV1().RoleBindings(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", labelKey, k8sconsts.OdigosSystemLabelValue),
-	})
+	selector := k8slabels.SelectorFromSet(map[string]string{labelKey: k8sconsts.OdigosSystemLabelValue}).String()
+	list, err := client.RbacV1().RoleBindings(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {
 		return err
 	}
@@ -70,9 +66,8 @@ func DeleteRoleBindingsByLabel(ctx context.Context, client *Client, ns string, l
 }
 
 func DeleteServiceAccountsByLabel(ctx context.Context, client *Client, ns string, labelKey string) error {
-	list, err := client.CoreV1().ServiceAccounts(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", labelKey, k8sconsts.OdigosSystemLabelValue),
-	})
+	selector := k8slabels.SelectorFromSet(map[string]string{labelKey: k8sconsts.OdigosSystemLabelValue}).String()
+	list, err := client.CoreV1().ServiceAccounts(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {
 		return err
 	}
@@ -85,9 +80,8 @@ func DeleteServiceAccountsByLabel(ctx context.Context, client *Client, ns string
 }
 
 func DeleteSecretsByLabel(ctx context.Context, client *Client, ns string, labelKey string) error {
-	list, err := client.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", labelKey, k8sconsts.OdigosSystemLabelValue),
-	})
+	selector := k8slabels.SelectorFromSet(map[string]string{labelKey: k8sconsts.OdigosSystemLabelValue}).String()
+	list, err := client.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {
 		return err
 	}
