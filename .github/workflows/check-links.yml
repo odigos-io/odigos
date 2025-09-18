@@ -2,6 +2,8 @@ name: Check links
 
 on:
   pull_request:
+    branches:
+      - releases/**
   workflow_dispatch:
 
 jobs:
