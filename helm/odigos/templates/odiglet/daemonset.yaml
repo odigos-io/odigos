@@ -3,6 +3,9 @@
 {{- $collectLogs := has "logs" $signals -}}
 {{- $collectMetrics := has "metrics" $signals -}}
 {{- $privilegedRequired := or $collectLogs $collectMetrics -}}
+{{- if and $privilegedRequired .Values.odiglet.unPrivileged }}
+{{ fail "privileged mode is required when collecting logs or metrics, this is currently not supported in unprivileged mode" }}
+{{- end }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -199,7 +202,18 @@ spec:
           args:
             - --config=k8scm:{{ .Release.Namespace }}/odigos-data-collection/conf
           securityContext:
-            privileged: {{ $privilegedRequired | toYaml }}
+            {{- if $privilegedRequired }}
+            privileged: true
+            {{- else }}
+            privileged: false
+            capabilities:
+              add:
+              {{- with .Values.odiglet.dataCollection.capabilities }}
+              {{- toYaml . | nindent 14 }}
+              {{- end }}
+              drop:
+                - ALL
+            {{- end }}
           env:
             - name: NODE_NAME
               valueFrom:
