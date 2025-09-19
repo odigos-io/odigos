@@ -4,24 +4,19 @@ import (
 	"context"
 
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 type ProcessorReconciler struct {
-	client.Client
-	Scheme           *runtime.Scheme
-	ImagePullSecrets []string
-	OdigosVersion    string
+	nodeCollectorBaseReconciler
 }
 
 func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling Processor")
-	return reconcileNodeCollector(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
+	return r.reconcileNodeCollector(ctx)
 }
 
 func (r *ProcessorReconciler) SetupWithManager(mgr ctrl.Manager) error {

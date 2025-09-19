@@ -29,6 +29,11 @@ type DelayManager struct {
 // RunSyncDaemonSetWithDelayAndSkipNewCalls runs the function with the specified delay and skips new calls until the function execution is finished
 func (dm *DelayManager) RunSyncDaemonSetWithDelayAndSkipNewCalls(delay time.Duration, retries int, signals []odigoscommon.ObservabilitySignal,
 	collection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client) {
+	if collection == nil {
+		// it is valid to not have a collectors group until it is created by the scheduler
+		return
+	}
+
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 

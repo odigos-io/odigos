@@ -93,9 +93,9 @@ metadata:
   name: odigos-data-collection
   namespace: odigos-test
   ownerReferences:
-    - apiVersion: odigos.io/v1alpha1
+    - apiVersion: apps/v1
       blockOwnerDeletion: true
       controller: true
-      kind: CollectorsGroup
-      name: odigos-data-collection
+      kind: Deployment
+      name: odigos-autoscaler
 (data != null): true

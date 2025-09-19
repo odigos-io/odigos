@@ -265,13 +265,9 @@ func main() {
 
 	err = g.Wait()
 	if err != nil {
-		setupLog.Error(err, "Instrumentor exited with error")
-	}
-
-	setupLog.Info("starting manager")
-	if err := mgr.Start(ctx); err != nil {
-		setupLog.Error(err, "problem running manager")
-		os.Exit(1)
+		setupLog.Error(err, "autoscaler exited with error")
+	} else {
+		setupLog.V(0).Info("autoscaler exiting")
 	}
 }
 
