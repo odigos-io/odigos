@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion string) error {
+func SetupWithManager(mgr ctrl.Manager) error {
 	err := builder.
 		ControllerManagedBy(mgr).
 		Named("nodecollector-collectorsgroup").
@@ -28,8 +28,6 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
 				Client:           mgr.GetClient(),
 				scheme:           mgr.GetScheme(),
-				imagePullSecrets: imagePullSecrets,
-				odigosVersion:    odigosVersion,
 			},
 		})
 	if err != nil {
@@ -47,8 +45,6 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
 				Client:           mgr.GetClient(),
 				scheme:           mgr.GetScheme(),
-				imagePullSecrets: imagePullSecrets,
-				odigosVersion:    odigosVersion,
 			},
 		})
 	if err != nil {
@@ -66,8 +62,6 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
 				Client:           mgr.GetClient(),
 				scheme:           mgr.GetScheme(),
-				imagePullSecrets: imagePullSecrets,
-				odigosVersion:    odigosVersion,
 			},
 		})
 	if err != nil {

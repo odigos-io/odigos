@@ -25,8 +25,6 @@ const (
 type nodeCollectorBaseReconciler struct {
 	client.Client
 	scheme               *runtime.Scheme
-	imagePullSecrets     []string
-	odigosVersion        string
 	autoscalerDeployment *appsv1.Deployment
 }
 
