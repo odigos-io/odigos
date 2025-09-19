@@ -3,7 +3,6 @@ package nodecollector
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -15,7 +14,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("nodecollector-collectorsgroup").
 		For(&odigosv1.CollectorsGroup{}).
-		Owns(&appsv1.DaemonSet{}). // in case the node-collector ds is deleted or modified for any reason, this will reconcile and recreate it
 		Owns(&corev1.ConfigMap{}). // in case the configmap of the node-collector is deleted or modified for any reason, this will reconcile and recreate it
 		// we assume everything in the collectorsgroup spec is the configuration for the collectors to generate.
 		// thus, we need to monitor any change to the spec which is what the generation field is for.
