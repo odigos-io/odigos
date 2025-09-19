@@ -31,7 +31,7 @@ func reconcileNodeCollector(ctx context.Context, c client.Client, scheme *runtim
 
 	odigosNs := env.GetCurrentNamespace()
 
-	dataCollectionCollectorGroup := new(odigosv1.CollectorsGroup)
+	dataCollectionCollectorGroup := &odigosv1.CollectorsGroup{}
 	err := c.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, dataCollectionCollectorGroup)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {

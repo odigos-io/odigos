@@ -266,8 +266,9 @@ func main() {
 	err = g.Wait()
 	if err != nil {
 		setupLog.Error(err, "autoscaler exited with error")
+	} else {
+		setupLog.V(0).Info("autoscaler exiting")
 	}
-	setupLog.V(0).Info("autoscaler exiting")
 }
 
 // based on https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/blob/19c4db6ea12211308fbd2cba12cc8665a5b7c890/detectors/gcp/gke.go#L34

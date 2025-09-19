@@ -126,6 +126,16 @@ func noopConfigMap() (string, error) {
 					Processors: []string{},
 					Exporters:  []string{"nop"},
 				},
+				"metrics": {
+					Receivers:  []string{"otlp"},
+					Processors: []string{},
+					Exporters:  []string{"nop"},
+				},
+				"logs": {
+					Receivers:  []string{"otlp"},
+					Processors: []string{},
+					Exporters:  []string{"nop"},
+				},
 			},
 		},
 	}
