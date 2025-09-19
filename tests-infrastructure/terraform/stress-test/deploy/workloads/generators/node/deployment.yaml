@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-span-generator
+  namespace: load-test
+  labels:
+    app: node-span-generator
+    odigos-target: "true"
+spec:
+  replicas: 6
+  selector:
+    matchLabels:
+      app: node-span-generator
+      odigos-target: "true"
+  template:
+    metadata:
+      labels:
+        app: node-span-generator
+        odigos-target: "true"
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+        - name: node-span-generator
+          image: public.ecr.aws/odigos/node-span-gen:v0.0.1
+          imagePullPolicy: Always
+          env:
+            - name: OTEL_SERVICE_NAME
+              value: node-span-generator
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.name=node-span-generator,service.version=v1.0.0
+            - name: SPANS_PER_SEC
+              value: "3000"
+            - name: SPAN_BYTES
+              value: "2000"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "128Mi" 
+            limits:
+              cpu: "1500m"
+              memory: "512Mi"
+          livenessProbe:
+            exec:
+              command:
+                - pgrep
+                - node
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - pgrep
+                - node
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-span-generator-service
+  namespace: load-test
+  labels:
+    app: node-span-generator
+spec:
+  selector:
+    app: node-span-generator
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
