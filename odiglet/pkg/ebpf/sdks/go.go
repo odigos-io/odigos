@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 
@@ -43,7 +42,7 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 
 	initialConfig, err := convertToGoInstrumentationConfig(settings.InitialConfig)
 	if err != nil {
-		return nil, fmt.Errorf("invalid initial config type, expected *odigosv1.SdkConfig, got %T", settings.InitialConfig)
+		return nil, fmt.Errorf("invalid initial config type, expected *ebpf.ExtConfig, got %T", settings.InitialConfig)
 	}
 
 	cp := ebpf.NewConfigProvider(initialConfig)
@@ -88,9 +87,9 @@ func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, sdkConfig instrumentati
 }
 
 func convertToGoInstrumentationConfig(sdkConfig instrumentation.Config) (auto.InstrumentationConfig, error) {
-	initialConfig, ok := sdkConfig.(*odigosv1.SdkConfig)
+	initialConfig, ok := sdkConfig.(*ebpf.ExtConfig)
 	if !ok {
-		return auto.InstrumentationConfig{}, fmt.Errorf("invalid initial config type, expected *odigosv1.SdkConfig, got %T", sdkConfig)
+		return auto.InstrumentationConfig{}, fmt.Errorf("invalid initial config type, expected *ebpf.ExtConfig, got %T", sdkConfig)
 	}
 	ic := auto.InstrumentationConfig{}
 	if sdkConfig == nil {
