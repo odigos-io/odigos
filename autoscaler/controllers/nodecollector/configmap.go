@@ -2,6 +2,7 @@ package nodecollector
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"slices"
@@ -19,7 +20,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -32,24 +32,34 @@ const (
 	logsServiceNameProcessorName = "resource/service-name"
 )
 
-func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
-	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme) error {
+func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
+	datacollection *odigosv1.CollectorsGroup) error {
 	logger := log.FromContext(ctx)
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
 
-	desired, err := getDesiredConfigMap(ctx, sources, signals, processors, datacollection, scheme, c)
+	if b.autoscalerDeployment == nil {
+		// we only need to get the autoscaler deployment once since it can't change while this code is running
+		// (since we are running in the autoscaler pod)
+		autoscalerDeployment := &appsv1.Deployment{}
+		err := b.Client.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.AutoScalerDeploymentName}, autoscalerDeployment)
+		if err != nil {
+			return err
+		}
+		b.autoscalerDeployment = autoscalerDeployment
+	}
+
+	desired, err := b.getDesiredConfigMap(sources, signals, processors, datacollection)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
 	}
 
 	existing := &v1.ConfigMap{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, existing); err != nil {
+	if err := b.Client.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(0).Info("creating config map")
-			_, err := createConfigMap(desired, ctx, c)
+			_, err := b.createConfigMap(desired, ctx)
 			if err != nil {
 				logger.Error(err, "failed to create config map")
 				return err
@@ -62,7 +72,7 @@ func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigos
 	}
 
 	logger.V(0).Info("Patching config map")
-	_, err = patchConfigMap(ctx, existing, desired, c)
+	_, err = b.patchConfigMap(ctx, existing, desired)
 	if err != nil {
 		logger.Error(err, "failed to patch config map")
 		return err
@@ -71,7 +81,7 @@ func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigos
 	return nil
 }
 
-func patchConfigMap(ctx context.Context, existing *v1.ConfigMap, desired *v1.ConfigMap, c client.Client) (*v1.ConfigMap, error) {
+func (b *nodeCollectorBaseReconciler) patchConfigMap(ctx context.Context, existing *v1.ConfigMap, desired *v1.ConfigMap) (*v1.ConfigMap, error) {
 	if reflect.DeepEqual(existing.Data, desired.Data) &&
 		reflect.DeepEqual(existing.ObjectMeta.OwnerReferences, desired.ObjectMeta.OwnerReferences) {
 		log.FromContext(ctx).V(0).Info("Config maps already match")
@@ -81,15 +91,15 @@ func patchConfigMap(ctx context.Context, existing *v1.ConfigMap, desired *v1.Con
 	updated.Data = desired.Data
 	updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
 	patch := client.MergeFrom(existing)
-	if err := c.Patch(ctx, updated, patch); err != nil {
+	if err := b.Client.Patch(ctx, updated, patch); err != nil {
 		return nil, err
 	}
 
 	return updated, nil
 }
 
-func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {
-	if err := c.Create(ctx, desired); err != nil {
+func (b *nodeCollectorBaseReconciler) createConfigMap(desired *v1.ConfigMap, ctx context.Context) (*v1.ConfigMap, error) {
+	if err := b.Client.Create(ctx, desired); err != nil {
 		return nil, err
 	}
 
@@ -148,8 +158,11 @@ func noopConfigMap() (string, error) {
 	return string(yamlData), nil
 }
 
-func getDesiredConfigMap(ctx context.Context,sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
-	cg *odigosv1.CollectorsGroup, scheme *runtime.Scheme, c client.Client) (*v1.ConfigMap, error) {
+func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
+	cg *odigosv1.CollectorsGroup) (*v1.ConfigMap, error) {
+	if b.autoscalerDeployment == nil {
+		return nil, errors.New("autoscaler deployment is not set in the reconciler, cannot set owner reference")
+	}
 	var err error
 	var cmData string
 
@@ -175,16 +188,10 @@ func getDesiredConfigMap(ctx context.Context,sources *odigosv1.InstrumentationCo
 		},
 	}
 
-	autoscalerDeployment := appsv1.Deployment{}
-	err = c.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.AutoScalerDeploymentName}, &autoscalerDeployment)
-	if err != nil {
-		return nil, err
-	}
-
 	// set the autoscaler deployment as the owner of the configmap
 	// since it is the one creating it and updating it.
 	// cg might not yet exist and failing to have an owner will lead to un-cleaned resources on uninstall.
-	if err := ctrl.SetControllerReference(&autoscalerDeployment, &desired, scheme); err != nil {
+	if err := ctrl.SetControllerReference(b.autoscalerDeployment, &desired, b.scheme); err != nil {
 		return nil, err
 	}
 

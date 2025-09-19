@@ -25,10 +25,12 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 				predicate.And(&odigospredicate.OdigosCollectorsGroupClusterPredicate, &odigospredicate.ReceiverSignalsChangedPredicate{}),
 			)).
 		Complete(&CollectorsGroupReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
+				Client:           mgr.GetClient(),
+				scheme:           mgr.GetScheme(),
+				imagePullSecrets: imagePullSecrets,
+				odigosVersion:    odigosVersion,
+			},
 		})
 	if err != nil {
 		return err
@@ -42,11 +44,16 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		// when it is created or removed, the node collector config map needs to be updated to scrape logs for it's pods.
 		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&InstrumentationConfigReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
+				Client:           mgr.GetClient(),
+				scheme:           mgr.GetScheme(),
+				imagePullSecrets: imagePullSecrets,
+				odigosVersion:    odigosVersion,
+			},
 		})
+	if err != nil {
+		return err
+	}
 
 	err = builder.
 		ControllerManagedBy(mgr).
@@ -56,10 +63,12 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		// filter out events on resource status and metadata changes.
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(&ProcessorReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
+				Client:           mgr.GetClient(),
+				scheme:           mgr.GetScheme(),
+				imagePullSecrets: imagePullSecrets,
+				odigosVersion:    odigosVersion,
+			},
 		})
 	if err != nil {
 		return err

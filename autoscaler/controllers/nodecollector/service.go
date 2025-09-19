@@ -8,7 +8,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,7 +20,7 @@ var (
 	}
 )
 
-func syncService(ctx context.Context, c client.Client, scheme *runtime.Scheme, dc *odigosv1.CollectorsGroup) error {
+func (b *nodeCollectorBaseReconciler) syncService(ctx context.Context, dc *odigosv1.CollectorsGroup) error {
 	if !feature.ServiceInternalTrafficPolicy(feature.GA) {
 		return nil
 	}
@@ -67,11 +66,11 @@ func syncService(ctx context.Context, c client.Client, scheme *runtime.Scheme, d
 		},
 	}
 
-	if err := ctrl.SetControllerReference(dc, dcService, scheme); err != nil {
+	if err := ctrl.SetControllerReference(dc, dcService, b.scheme); err != nil {
 		logger.Error(err, "failed to set controller reference")
 		return err
 	}
 
-	err := c.Create(ctx, dcService)
+	err := b.Client.Create(ctx, dcService)
 	return client.IgnoreAlreadyExists(err)
 }
