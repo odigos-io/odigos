@@ -10,7 +10,8 @@ import (
 )
 
 var availableK8sConfigers = map[common.DestinationType]K8sConfiger{
-	common.GoogleCloudDestinationType: &GoogleCloud{},
+	common.GoogleCloudDestinationType:     &GoogleCloud{},
+	common.GoogleCloudOTLPDestinationType: &GoogleCloud{},
 }
 
 // K8sConfiger is the interface for modifying the gateway collector deployment.
