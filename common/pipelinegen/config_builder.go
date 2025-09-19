@@ -257,6 +257,14 @@ func insertServiceGraphPipeline(currentConfig *config.Config) {
 	}
 	pipeline.Exporters = append(pipeline.Exporters, consts.ServiceGraphConnectorName)
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
+
+	// Add ServiceGraphConnectorName receiver to every prometheus pipeline starts with metrics/prometheus-
+	for pipelineName, pipeline := range currentConfig.Service.Pipelines {
+		if strings.HasPrefix(pipelineName, "metrics/prometheus-") {
+			pipeline.Receivers = append(pipeline.Receivers, consts.ServiceGraphConnectorName)
+			currentConfig.Service.Pipelines[pipelineName] = pipeline
+		}
+	}
 }
 
 func GetBasicConfig() *config.Config {
