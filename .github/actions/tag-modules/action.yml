@@ -1,0 +1,25 @@
+name: "Tag Odigos Modules"
+description: "It is needed so they can be consumed as libraries in other projects in the go.mod"
+
+inputs:
+  tag:
+    description: "The tag to use for all modules"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Tag Modules
+      shell: bash
+      run: |
+        git tag api/${{ inputs.tag }}
+        git tag common/${{ inputs.tag }}
+        git tag instrumentation/${{ inputs.tag }}
+        git tag k8sutils/${{ inputs.tag }}
+        git tag odiglet/${{ inputs.tag }}
+        git tag opampserver/${{ inputs.tag }}
+        git tag procdiscovery/${{ inputs.tag }}
+        git tag profiles/${{ inputs.tag }}
+        git tag distros/${{ inputs.tag }}
+        git tag instrumentor/${{ inputs.tag }}
+        git push origin --tags
