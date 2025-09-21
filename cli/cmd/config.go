@@ -171,6 +171,15 @@ var setConfigCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		// central proxy depends on central-backend-url / cluster-name, ensure it restarts when those change
+		if (property == consts.CentralBackendURLProperty || property == consts.ClusterNameProperty) &&
+			currentTier == common.OnPremOdigosTier &&
+			config.CentralBackendURL != "" && config.ClusterName != "" {
+			if err := kube.RestartDeployment(ctx, client, ns, k8sconsts.CentralProxyDeploymentName); err != nil {
+				fmt.Printf("Warning: failed to restart central-proxy: %v\n", err)
+			}
+		}
+
 		l.Success()
 
 	},

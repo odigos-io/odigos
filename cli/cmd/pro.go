@@ -11,7 +11,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -29,7 +28,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -469,19 +467,7 @@ func findPodWithAppLabel(ctx context.Context, client *kube.Client, ns, appLabel 
 }
 
 func restartOdiglet(ctx context.Context, client *kube.Client, ns string) error {
-	// Create patch to add/update the restartedAt annotation
-	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`,
-		time.Now().Format(time.RFC3339))
-
-	// Patch the Odiglet daemonset
-	_, err := client.AppsV1().DaemonSets(ns).Patch(
-		ctx,
-		k8sconsts.OdigletDaemonSetName,
-		types.StrategicMergePatchType,
-		[]byte(patch),
-		metav1.PatchOptions{},
-	)
-	return err
+	return kube.RestartDaemonSet(ctx, client, ns, k8sconsts.OdigletDaemonSetName)
 }
 
 func init() {

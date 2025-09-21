@@ -1,0 +1,55 @@
+package kube
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
+)
+
+func RestartDeployment(ctx context.Context, client *Client, namespace string, deploymentName string) error {
+	_, err := client.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`,
+		time.Now().Format(time.RFC3339))
+
+	_, err = client.AppsV1().Deployments(namespace).Patch(
+		ctx,
+		deploymentName,
+		k8stypes.StrategicMergePatchType,
+		[]byte(patch),
+		metav1.PatchOptions{},
+	)
+	return err
+}
+
+func RestartDaemonSet(ctx context.Context, client *Client, namespace string, daemonSetName string) error {
+	_, err := client.AppsV1().DaemonSets(namespace).Get(ctx, daemonSetName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`,
+		time.Now().Format(time.RFC3339))
+
+	_, err = client.AppsV1().DaemonSets(namespace).Patch(
+		ctx,
+		daemonSetName,
+		k8stypes.StrategicMergePatchType,
+		[]byte(patch),
+		metav1.PatchOptions{},
+	)
+	return err
+}
