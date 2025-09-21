@@ -18,7 +18,7 @@ const (
 	ownMetricsReceiverName = "prometheus/self-metrics"
 )
 
-func calculateProcessorsConfigForOwnMetrics() config.GenericMap {
+func processorsConfigForOwnMetrics() config.GenericMap {
 	processorsCfg := config.GenericMap{}
 
 	processorsCfg[OdigosTrafficMetricsProcessorName] = config.GenericMap{
@@ -43,7 +43,7 @@ func calculateProcessorsConfigForOwnMetrics() config.GenericMap {
 	return processorsCfg
 }
 
-func calculateReceiversConfigForOwnMetrics(ownMetricsPort int32) config.GenericMap {
+func receiversConfigForOwnMetrics(ownMetricsPort int32) config.GenericMap {
 	receiversCfg := config.GenericMap{}
 
 	receiversCfg[ownMetricsReceiverName] = config.GenericMap{
@@ -72,7 +72,7 @@ func calculateReceiversConfigForOwnMetrics(ownMetricsPort int32) config.GenericM
 	return receiversCfg
 }
 
-func calculateExportersConfigForOwnMetrics(odigosNamespace string) config.GenericMap {
+func exportersConfigForOwnMetrics(odigosNamespace string) config.GenericMap {
 	exportersCfg := config.GenericMap{}
 
 	endpoint := fmt.Sprintf("ui.%s:%d", odigosNamespace, consts.OTLPPort)
@@ -89,7 +89,7 @@ func calculateExportersConfigForOwnMetrics(odigosNamespace string) config.Generi
 	return exportersCfg
 }
 
-func calculatePipelinesConfigForOwnMetrics() map[string]config.Pipeline {
+func pipelinesConfigForOwnMetrics() map[string]config.Pipeline {
 	return map[string]config.Pipeline{
 		"metrics/otelcol": config.Pipeline{
 			Receivers:  []string{ownMetricsReceiverName},
@@ -99,7 +99,7 @@ func calculatePipelinesConfigForOwnMetrics() map[string]config.Pipeline {
 	}
 }
 
-func calculateServiceTelemetryConfigForOwnMetrics(ownMetricsPort int32) config.Telemetry {
+func serviceTelemetryConfigForOwnMetrics(ownMetricsPort int32) config.Telemetry {
 	return config.Telemetry{
 		Metrics: config.GenericMap{
 			"readers": []config.GenericMap{
@@ -129,14 +129,14 @@ func calculateServiceTelemetryConfigForOwnMetrics(ownMetricsPort int32) config.T
 // merge it with other configs to get the full collector config
 // Notice: this config part requires that you add the OdigosTrafficMetricsProcessorName processor
 // to any pipeline for user telemetry to work correctly
-func CalculateOwnMetricsConfig(ownMetricsPort int32, odigosNamespace string) config.Config {
+func OwnMetricsConfig(ownMetricsPort int32, odigosNamespace string) config.Config {
 	return config.Config{
-		Receivers:  calculateReceiversConfigForOwnMetrics(ownMetricsPort),
-		Exporters:  calculateExportersConfigForOwnMetrics(odigosNamespace),
-		Processors: calculateProcessorsConfigForOwnMetrics(),
+		Receivers:  receiversConfigForOwnMetrics(ownMetricsPort),
+		Exporters:  exportersConfigForOwnMetrics(odigosNamespace),
+		Processors: processorsConfigForOwnMetrics(),
 		Service: config.Service{
-			Pipelines: calculatePipelinesConfigForOwnMetrics(),
-			Telemetry: calculateServiceTelemetryConfigForOwnMetrics(ownMetricsPort),
+			Pipelines: pipelinesConfigForOwnMetrics(),
+			Telemetry: serviceTelemetryConfigForOwnMetrics(ownMetricsPort),
 		},
 	}
 }

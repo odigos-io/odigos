@@ -14,7 +14,6 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector/collectorconfig"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -204,26 +203,19 @@ func calculateConfigMapData(
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
 	odigosNamespace := env.GetCurrentNamespace()
 
-	ownMetricsConfig := collectorconfig.CalculateOwnMetricsConfig(ownMetricsPort, odigosNamespace)
+	commonConfig := collectorconfig.CommonConfig(odigosNamespace, nodeCG)
+	ownMetricsConfig := collectorconfig.OwnMetricsConfig(ownMetricsPort, odigosNamespace)
 
-	empty := struct{}{}
+	mergedConfig, err := config.MergeConfigs(commonConfig, ownMetricsConfig)
+	if err != nil {
+		return "", err
+	}
 
 	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(commonconf.ToProcessorConfigurerArray(processors))
 	for name, err := range errs {
 		log.Log.V(0).Error(err, "processor", name)
 	}
 
-	memoryLimiterConfiguration := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
-
-	processorsCfg["batch"] = empty
-	processorsCfg["memory_limiter"] = memoryLimiterConfiguration
-	processorsCfg["resource"] = config.GenericMap{
-		"attributes": []config.GenericMap{{
-			"key":    "k8s.node.name",
-			"value":  "${NODE_NAME}",
-			"action": "upsert",
-		}},
-	}
 	resourceDetectionProcessor := config.GenericMap{
 		"detectors": []string{"ec2", "azure"},
 		"timeout":   "2s",
@@ -234,32 +226,12 @@ func calculateConfigMapData(
 		resourceDetectionProcessor["detectors"] = append(resourceDetectionProcessor["detectors"].([]string), "gcp")
 	}
 	processorsCfg["resourcedetection"] = resourceDetectionProcessor
-	for name, processor := range ownMetricsConfig.Processors {
+	for name, processor := range mergedConfig.Processors {
 		processorsCfg[name] = processor
 	}
 
-	exporters := config.GenericMap{
-		"otlp/gateway": config.GenericMap{
-			"endpoint": fmt.Sprintf("dns:///odigos-gateway.%s:4317", odigosNamespace),
-			"tls": config.GenericMap{
-				"insecure": true,
-			},
-			"balancer_name": "round_robin",
-		},
-		"otlp/odigos-own-telemetry-ui": config.GenericMap{
-			"endpoint": fmt.Sprintf("ui.%s:%d", odigosNamespace, consts.OTLPPort),
-			"tls": config.GenericMap{
-				"insecure": true,
-			},
-			"retry_on_failure": config.GenericMap{
-				"enabled": false,
-			},
-		},
-	}
-	for name, exporter := range ownMetricsConfig.Exporters {
-		exporters[name] = exporter
-	}
-	tracesPipelineExporter := []string{"otlp/gateway"}
+	exporters := mergedConfig.Exporters
+	tracesPipelineExporter := []string{collectorconfig.ClusterCollectorExporterName}
 
 	// Add loadbalancing exporter for traces to ensure consistent gateway routing.
 	// This allows the servicegraph connector to properly aggregate trace data
@@ -282,47 +254,25 @@ func calculateConfigMapData(
 	}
 
 	receivers := config.GenericMap{
-		"otlp": config.GenericMap{
-			"protocols": config.GenericMap{
-				"grpc": config.GenericMap{
-					"endpoint": "0.0.0.0:4317",
-					// data collection collectors will drop data instead of backpressuring the senders (odiglet or agents),
-					// we don't want the applications to build up memory in the runtime if the pipeline is overloaded.
-					"drop_on_overload": true,
-				},
-				"http": config.GenericMap{
-					"endpoint": "0.0.0.0:4318",
-				},
-			},
-		},
 		"odigosebpf": config.GenericMap{},
 	}
-	for name, receiver := range ownMetricsConfig.Receivers {
+	for name, receiver := range mergedConfig.Receivers {
 		receivers[name] = receiver
 	}
 
 	pipelines := map[string]config.Pipeline{}
-	for name, pipeline := range ownMetricsConfig.Service.Pipelines {
+	for name, pipeline := range mergedConfig.Service.Pipelines {
 		pipelines[name] = pipeline
 	}
+
+	extensions := mergedConfig.Extensions
 
 	cfg := config.Config{
 		Receivers:  receivers,
 		Exporters:  exporters,
 		Processors: processorsCfg,
-		Extensions: config.GenericMap{
-			"health_check": config.GenericMap{
-				"endpoint": "0.0.0.0:13133",
-			},
-			"pprof": config.GenericMap{
-				"endpoint": "0.0.0.0:1777",
-			},
-		},
-		Service: config.Service{
-			Pipelines:  pipelines,
-			Extensions: []string{"health_check", "pprof"},
-			Telemetry:  ownMetricsConfig.Service.Telemetry,
-		},
+		Extensions: extensions,
+		Service:    mergedConfig.Service,
 	}
 
 	collectLogs := slices.Contains(signals, odigoscommon.LogsObservabilitySignal)
@@ -415,14 +365,14 @@ func calculateConfigMapData(
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
 			Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
-			Exporters:  []string{"otlp/gateway"},
+			Exporters:  []string{collectorconfig.ClusterCollectorExporterName},
 		}
 	}
 
 	collectTraces := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
 	if collectTraces {
 		cfg.Service.Pipelines["traces"] = config.Pipeline{
-			Receivers:  []string{"otlp", "odigosebpf"},
+			Receivers:  []string{collectorconfig.OTLPInReceiverName, "odigosebpf"},
 			Processors: append(getAgentPipelineCommonProcessors(), tracesProcessors...),
 			Exporters:  tracesPipelineExporter,
 		}
@@ -475,9 +425,9 @@ func calculateConfigMapData(
 		}
 
 		cfg.Service.Pipelines["metrics"] = config.Pipeline{
-			Receivers:  []string{"otlp", "kubeletstats", "hostmetrics"},
+			Receivers:  []string{collectorconfig.OTLPInReceiverName, "kubeletstats", "hostmetrics"},
 			Processors: append(getAgentPipelineCommonProcessors(), metricsProcessors...),
-			Exporters:  []string{"otlp/gateway"},
+			Exporters:  []string{collectorconfig.ClusterCollectorExporterName},
 		}
 	}
 
@@ -511,7 +461,7 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 	for pipelineName, pipeline := range config.Service.Pipelines {
 		// only consider pipelines with `otlp` receiver
 		// which are the ones that can actually receive data
-		if !slices.Contains(pipeline.Receivers, "otlp") {
+		if !slices.Contains(pipeline.Receivers, collectorconfig.OTLPInReceiverName) {
 			continue
 		}
 		if strings.HasPrefix(pipelineName, "traces") {
@@ -545,7 +495,7 @@ func getAgentPipelineCommonProcessors() []string {
 	// Read more about it here: https://github.com/open-telemetry/opentelemetry-collector/issues/11726
 	// Also related: https://github.com/open-telemetry/opentelemetry-collector/issues/9591
 	return append(
-		[]string{"batch", "memory_limiter"},
+		[]string{collectorconfig.BatchProcessorName, collectorconfig.MemoryLimiterProcessorName},
 		getCommonProcessors()...,
 	)
 }
@@ -556,11 +506,11 @@ func getFileLogPipelineProcessors() []string {
 	// no need to batch, as the stanza receiver already batches the data, and so is the gateway.
 	// batch processor will also mask and hide any back-pressure from receivers which we want propagated to the source.
 	return append(
-		[]string{"memory_limiter" /*k8sAttributesProcessorName, logsServiceNameProcessorName*/},
+		[]string{collectorconfig.MemoryLimiterProcessorName /*k8sAttributesProcessorName, logsServiceNameProcessorName*/},
 		getCommonProcessors()...,
 	)
 }
 
 func getCommonProcessors() []string {
-	return []string{"resource", "resourcedetection", collectorconfig.OdigosTrafficMetricsProcessorName}
+	return []string{collectorconfig.NodeNameProcessorName, "resourcedetection", collectorconfig.OdigosTrafficMetricsProcessorName}
 }
