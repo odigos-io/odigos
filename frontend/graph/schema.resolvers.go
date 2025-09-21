@@ -410,6 +410,13 @@ func (r *mutationResolver) UpdateOdigosConfig(ctx context.Context, odigosConfig 
 		return false, fmt.Errorf("failed to get odigos configuration: %v", err)
 	}
 
+	var prevCfg common.OdigosConfiguration
+	if cm.Data != nil && cm.Data[consts.OdigosConfigurationFileName] != "" {
+		if err := yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &prevCfg); err != nil {
+			prevCfg = common.OdigosConfiguration{}
+		}
+	}
+
 	cfg, err := convertOdigosConfigToK8s(&odigosConfig)
 	if err != nil {
 		return false, fmt.Errorf("failed to convert odigos configuration: %v", err)
@@ -430,7 +437,6 @@ func (r *mutationResolver) UpdateOdigosConfig(ctx context.Context, odigosConfig 
 		return false, fmt.Errorf("failed to marshal odigos configuration: %v", err)
 	}
 
-	// Update the config map
 	if cm.Data == nil {
 		cm.Data = make(map[string]string)
 	}
@@ -439,6 +445,20 @@ func (r *mutationResolver) UpdateOdigosConfig(ctx context.Context, odigosConfig 
 	_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
 	if err != nil {
 		return false, fmt.Errorf("failed to update odigos configuration: %v", err)
+	}
+
+	// restart central-proxy when central-backend-url or cluster-name changed and both are set in on-prem tier
+	// determine tier
+	depCM, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+	if err == nil {
+		tier := depCM.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
+		if tier == string(common.OnPremOdigosTier) {
+			changed := prevCfg.CentralBackendURL != cfg.CentralBackendURL || prevCfg.ClusterName != cfg.ClusterName
+			bothSet := cfg.CentralBackendURL != "" && cfg.ClusterName != ""
+			if changed && bothSet {
+				_ = services.RestartDeployment(ctx, k8sconsts.CentralProxyDeploymentName)
+			}
+		}
 	}
 
 	return true, nil
