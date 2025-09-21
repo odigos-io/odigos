@@ -22,11 +22,12 @@ type DistroParam = map[string]string
 
 func addLibcDistroParamFromRuntimeDetails(params DistroParam, distroName string, runtimeDetails *odigosv1.RuntimeDetailsByContainer) (err *odigosv1.ContainerAgentConfig) {
 	if runtimeDetails.LibCType == nil {
+		message := fmt.Sprintf("⚙️ OpenTelemetry distribution '%s' requires a libc type, but none was detected. Instrumentation disabled.", distroName)
 		return &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
 			AgentEnabled:        false,
 			AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-			AgentEnabledMessage: fmt.Sprintf("failed to detect libc type for opentelemetry distribution '%s' which is required for instrumentation", distroName),
+			AgentEnabledMessage: message,
 		}
 	}
 	params[common.LibcTypeDistroParameterName] = string(*runtimeDetails.LibCType)
@@ -36,29 +37,32 @@ func addLibcDistroParamFromRuntimeDetails(params DistroParam, distroName string,
 
 func addRuntimeVersionMajorMinorDistroParamFromRuntimeDetails(params DistroParam, distroName string, runtimeDetails *odigosv1.RuntimeDetailsByContainer) *odigosv1.ContainerAgentConfig {
 	if runtimeDetails.RuntimeVersion == "" {
+		message := fmt.Sprintf("⚙️ OpenTelemetry distribution '%s' requires a runtime version, but none was detected. Instrumentation disabled.", distroName)
 		return &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
 			AgentEnabled:        false,
 			AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-			AgentEnabledMessage: fmt.Sprintf("failed to detect runtime version for opentelemetry distribution '%s' which is required for instrumentation", distroName),
+			AgentEnabledMessage: message,
 		}
 	}
 	version, err := version.NewVersion(runtimeDetails.RuntimeVersion)
 	if err != nil {
+		message := fmt.Sprintf("⚙️ OpenTelemetry distribution '%s' requires a runtime version, but the detected version '%s' is invalid. Instrumentation disabled.", distroName, runtimeDetails.RuntimeVersion)
 		return &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
 			AgentEnabled:        false,
 			AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-			AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version from detection: %s", runtimeDetails.RuntimeVersion),
+			AgentEnabledMessage: message,
 		}
 	}
 	versionAsMajorMinor, err := common.MajorMinorStringOnly(version)
 	if err != nil {
+		message := fmt.Sprintf("⚙️ OpenTelemetry distribution '%s' requires a runtime version, but the detected version '%s' is invalid. Instrumentation disabled.", distroName, runtimeDetails.RuntimeVersion)
 		return &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
 			AgentEnabled:        false,
 			AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
-			AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version as major.minor: %s", runtimeDetails.RuntimeVersion),
+			AgentEnabledMessage: message,
 		}
 	}
 	params[distroTypes.RuntimeVersionMajorMinorDistroParameterName] = versionAsMajorMinor
