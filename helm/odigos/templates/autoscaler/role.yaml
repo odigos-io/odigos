@@ -138,6 +138,7 @@ rules:
       - get
       - list
       - watch
+      - update
   - apiGroups:
       - actions.odigos.io
     resources:

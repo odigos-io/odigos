@@ -110,10 +110,10 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				Resources: []string{"processors"},
 				Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
 			},
-			{ // Needed to read actions transform them to processors
+			{ // Needed to read actions transform them to processors and to update to generic CRDS
 				APIGroups: []string{"actions.odigos.io"},
 				Resources: []string{"*"},
-				Verbs:     []string{"get", "list", "watch"},
+				Verbs:     []string{"get", "list", "watch", "update"},
 			},
 			{ // Needed to updated the status of the actions (confirms the user-made-changes)
 				APIGroups: []string{"actions.odigos.io"},
