@@ -3,9 +3,11 @@ package collectorconfig
 import (
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
@@ -24,87 +26,83 @@ const (
 
 func commonProcessors(nodeCG *odigosv1.CollectorsGroup) config.GenericMap {
 
-	empty := struct{}{}
-
-	processors := config.GenericMap{}
-
-	processors[BatchProcessorName] = empty
+	allProcessors := config.GenericMap{}
+	for k, v := range staticProcessors {
+		allProcessors[k] = v
+	}
 
 	memoryLimiterConfig := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
-	processors[MemoryLimiterProcessorName] = memoryLimiterConfig
+	allProcessors[MemoryLimiterProcessorName] = memoryLimiterConfig
 
-	processors[NodeNameProcessorName] = config.GenericMap{
-		"attributes": []config.GenericMap{{
-			"key":    string(semconv.K8SNodeNameKey),
-			"value":  "${NODE_NAME}",
-			"action": "upsert",
-		}},
-	}
-
-	return processors
+	return allProcessors
 }
 
-func commonExporters(odigosNamespace string) config.GenericMap {
-	exporters := config.GenericMap{}
+var staticProcessors config.GenericMap
+var commonExporters config.GenericMap
+var commonReceivers config.GenericMap
+var commonExtensions config.GenericMap
+var commonService config.Service
 
-	endpoint := fmt.Sprintf("dns:///odigos-gateway.%s:4317", odigosNamespace)
-	exporters[ClusterCollectorExporterName] = config.GenericMap{
-		"endpoint": endpoint,
-		"tls": config.GenericMap{
-			"insecure": true,
-		},
-		"balancer_name": "round_robin",
-	}
+func init() {
+	odigosNamespace := env.GetCurrentNamespace()
 
-	return exporters
-}
-
-func commonReceivers() config.GenericMap {
-	receivers := config.GenericMap{}
-
-	receivers[OTLPInReceiverName] = config.GenericMap{
-		"protocols": config.GenericMap{
-			"grpc": config.GenericMap{
-				"endpoint": "0.0.0.0:4317",
-				// data collection collectors will drop data instead of backpressuring the senders (odiglet or agents),
-				// we don't want the applications to build up memory in the runtime if the pipeline is overloaded.
-				"drop_on_overload": true,
-			},
-			"http": config.GenericMap{
-				"endpoint": "0.0.0.0:4318",
-			},
+	staticProcessors = config.GenericMap{
+		BatchProcessorName: config.GenericMap{},
+		NodeNameProcessorName: config.GenericMap{
+			"attributes": []config.GenericMap{{
+				"key":    string(semconv.K8SNodeNameKey),
+				"value":  "${NODE_NAME}",
+				"action": "upsert",
+			}},
 		},
 	}
 
-	return receivers
-}
-
-func commonExtensions() config.GenericMap {
-	extensions := config.GenericMap{}
-
-	extensions[healthCheckExtensionName] = config.GenericMap{
-		"endpoint": "0.0.0.0:13133",
+	commonExporters = config.GenericMap{
+		ClusterCollectorExporterName: config.GenericMap{
+			"endpoint": fmt.Sprintf("dns:///%s.%s:4317", k8sconsts.OdigosClusterCollectorDeploymentName, odigosNamespace),
+			"tls": config.GenericMap{
+				"insecure": true,
+			},
+			"balancer_name": "round_robin",
+		},
 	}
 
-	extensions[pprofExtensionName] = config.GenericMap{
-		"endpoint": "0.0.0.0:1777",
+	commonReceivers = config.GenericMap{
+		OTLPInReceiverName: config.GenericMap{
+			"protocols": config.GenericMap{
+				"grpc": config.GenericMap{
+					"endpoint": "0.0.0.0:4317",
+					// data collection collectors will drop data instead of backpressuring the senders (odiglet or agents),
+					// we don't want the applications to build up memory in the runtime if the pipeline is overloaded.
+					"drop_on_overload": true,
+				},
+				"http": config.GenericMap{
+					"endpoint": "0.0.0.0:4318",
+				},
+			},
+		},
 	}
 
-	return extensions
-}
+	commonExtensions = config.GenericMap{
+		healthCheckExtensionName: config.GenericMap{
+			"endpoint": "0.0.0.0:13133",
+		},
+		pprofExtensionName: config.GenericMap{
+			"endpoint": "0.0.0.0:1777",
+		},
+	}
 
-func commonService() config.Service {
-	return config.Service{
+	commonService = config.Service{
 		Extensions: []string{healthCheckExtensionName, pprofExtensionName},
 	}
 }
 
-func CommonConfig(odigosNamespace string, nodeCG *odigosv1.CollectorsGroup) config.Config {
+func CommonConfig(nodeCG *odigosv1.CollectorsGroup) config.Config {
 	return config.Config{
-		Receivers:  commonReceivers(),
-		Exporters:  commonExporters(odigosNamespace),
+		Receivers:  commonReceivers,
+		Exporters:  commonExporters,
 		Processors: commonProcessors(nodeCG),
-		Extensions: commonExtensions(),
-		Service:    commonService(),
+		Extensions: commonExtensions,
+		Service:    commonService,
 	}
 }

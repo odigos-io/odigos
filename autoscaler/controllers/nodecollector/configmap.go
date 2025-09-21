@@ -203,8 +203,8 @@ func calculateConfigMapData(
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
 	odigosNamespace := env.GetCurrentNamespace()
 
-	commonConfig := collectorconfig.CommonConfig(odigosNamespace, nodeCG)
-	ownMetricsConfig := collectorconfig.OwnMetricsConfig(ownMetricsPort, odigosNamespace)
+	commonConfig := collectorconfig.CommonConfig(nodeCG)
+	ownMetricsConfig := collectorconfig.OwnMetricsConfig(ownMetricsPort)
 
 	mergedConfig, err := config.MergeConfigs(commonConfig, ownMetricsConfig)
 	if err != nil {
