@@ -240,10 +240,18 @@ spec:
             httpGet:
               path: /
               port: 13133
+            initialDelaySeconds: 10
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /
               port: 13133
+            initialDelaySeconds: 10
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 5
           resources:
             requests:
               memory: "{{ include "collector.node.memoryRequest" . }}Mi"

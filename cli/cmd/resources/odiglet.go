@@ -727,6 +727,10 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 										Port: intstr.FromInt(13133),
 									},
 								},
+								InitialDelaySeconds: 10,
+								FailureThreshold:    3,
+								PeriodSeconds:       10,
+								TimeoutSeconds:      5,
 							},
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -735,6 +739,10 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 										Port: intstr.FromInt(13133),
 									},
 								},
+								InitialDelaySeconds: 10,
+								FailureThreshold:    3,
+								PeriodSeconds:       10,
+								TimeoutSeconds:      5,
 							},
 							// For PoC we leave Resources empty or set simple defaults; you can thread values later.
 							Resources: corev1.ResourceRequirements{
