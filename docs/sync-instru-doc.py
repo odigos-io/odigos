@@ -24,7 +24,8 @@ documentation_ending_block = '\n{/* END OF FILE */}'
 supported_languages = {
     'nodejs': {
         'native': {
-            'package_json_url': 'https://raw.githubusercontent.com/odigos-io/opentelemetry-node/refs/heads/main/package.json',
+            # Use raw GitHub URL pointing directly to the branch name
+            'package_json_url': 'https://raw.githubusercontent.com/odigos-io/opentelemetry-node/main/package.json',
             'categories': {
                 'Node.js Core Modules': {
                     'description': '',
@@ -152,8 +153,9 @@ def fetch(url, retry_url=None):
         if retry_url:
             return fetch(retry_url, None)
         else:
-            if e.response.status_code == 429:
-                retry_after = int(e.response.headers.get('Retry-After', 10))
+            status = getattr(getattr(e, 'response', None), 'status_code', None)
+            if status == 429:
+                retry_after = int(getattr(getattr(e, 'response', None), 'headers', {}).get('Retry-After', 10))
                 print(
                     f'\nRate limited ({url})',
                     f'\nRetrying after {retry_after} seconds\n'
