@@ -51,6 +51,7 @@ webhooks:
     rules:
       - operations:
           - CREATE
+          - UPDATE
         apiGroups: ["odigos.io"]
         apiVersions: ["v1alpha1"]
         resources: ["sources"]
