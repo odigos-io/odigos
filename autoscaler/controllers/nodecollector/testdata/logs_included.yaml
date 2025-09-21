@@ -105,6 +105,7 @@ receivers:
   otlp:
     protocols:
       grpc:
+        drop_on_overload: true
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318

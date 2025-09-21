@@ -4,18 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"errors"
-
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/autoscaler/controllers/common"
-	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
-	"github.com/odigos-io/odigos/common/consts"
-	odigosconsts "github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,17 +14,27 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	"errors"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/autoscaler/k8sconfig"
+	odigosconsts "github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
 const (
-	containerName        = "gateway"
 	containerCommand     = "/odigosotelcol"
 	confDir              = "/conf"
 	configHashAnnotation = "odigos.io/config-hash"
 )
 
-func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup,
+func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup,
 	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
 
@@ -52,14 +50,14 @@ func syncDeployment(dests *odigosv1.DestinationList, gateway *odigosv1.Collector
 	}
 	autoScalerTopologySpreadConstraints := autoscalerDeployment.Spec.Template.Spec.TopologySpreadConstraints
 
-	secretsVersionHash, err := destinationsSecretsVersionsHash(ctx, c, dests)
+	secretsVersionHash, err := destinationsSecretsVersionsHash(ctx, c, enabledDests)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get secrets hash"))
 	}
 
 	// Use the hash of the secrets  to make sure the gateway will restart when the secrets (mounted as environment variables) changes
-	configDataHash := common.Sha256Hash(secretsVersionHash)
-	desiredDeployment, err := getDesiredDeployment(ctx, c, dests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, odigletNodeSelector, autoScalerTopologySpreadConstraints)
+	configDataHash := commonconfig.Sha256Hash(secretsVersionHash)
+	desiredDeployment, err := getDesiredDeployment(ctx, c, enabledDests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, odigletNodeSelector, autoScalerTopologySpreadConstraints)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
 	}
@@ -102,7 +100,7 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 	return existing, nil
 }
 
-func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.DestinationList, configDataHash string,
+func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *odigosv1.DestinationList, configDataHash string,
 	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, nodeSelector map[string]string, topologySpreadConstraints []corev1.TopologySpreadConstraint) (*appsv1.Deployment, error) {
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
@@ -165,7 +163,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 					},
 					Containers: []corev1.Container{
 						{
-							Name:    containerName,
+							Name:    k8sconsts.OdigosClusterCollectorContainerName,
 							Image:   commonconfig.ControllerConfig.CollectorImage,
 							Command: []string{containerCommand},
 							Args: []string{fmt.Sprintf("--config=%s:%s/%s/%s",
@@ -174,11 +172,11 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 								k8sconsts.OdigosClusterCollectorConfigMapName,
 								k8sconsts.OdigosClusterCollectorConfigMapKey),
 							},
-							EnvFrom: getSecretsFromDests(dests),
+							EnvFrom: getSecretsFromDests(enabledDests),
 							// Add the ODIGOS_VERSION environment variable from the ConfigMap
 							Env: append([]corev1.EnvVar{
 								{
-									Name: consts.OdigosVersionEnvVarName,
+									Name: odigosconsts.OdigosVersionEnvVarName,
 									ValueFrom: &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
@@ -206,7 +204,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 									Name: "GOMAXPROCS",
 									ValueFrom: &corev1.EnvVarSource{
 										ResourceFieldRef: &corev1.ResourceFieldSelector{
-											ContainerName: containerName,
+											ContainerName: k8sconsts.OdigosClusterCollectorContainerName,
 											// limitCPU, Kubernetes automatically rounds up the value to an integer
 											// (700m -> 1, 1200m -> 2)
 											Resource: "limits.cpu",
@@ -256,6 +254,16 @@ func getDesiredDeployment(ctx context.Context, c client.Client, dests *odigosv1.
 				},
 			},
 		},
+	}
+
+	k8sConfigers := k8sconfig.LoadK8sConfigers()
+	for _, dest := range enabledDests.Items {
+		if k8sConfiger, exists := k8sConfigers[dest.GetType()]; exists {
+			err := k8sConfiger.ModifyGatewayCollectorDeployment(ctx, c, dest, desiredDeployment)
+			if err != nil {
+				return nil, errors.Join(err, errors.New("failed to modify gateway collector deployment"))
+			}
+		}
 	}
 
 	if len(imagePullSecrets) > 0 {

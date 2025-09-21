@@ -26,3 +26,12 @@ spec:
       componentProps:
         tooltip: 'use these OpenTelemetry resource attributes as prometheus labels for each metric data point'
       initialValue: '["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]'
+    - name: PROMETHEUS_BEARER_TOKEN
+      displayName: Bearer Token
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: false
+        tooltip: 'use this bearer token if your prometheus remote write endpoint requires authentication'
+        placeholder: 'your-bearer-token'

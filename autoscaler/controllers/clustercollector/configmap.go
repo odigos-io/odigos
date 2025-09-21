@@ -129,17 +129,8 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 	return nil
 }
 
-func syncConfigMap(dests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) ([]odigoscommon.ObservabilitySignal, error) {
+func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) ([]odigoscommon.ObservabilitySignal, error) {
 	logger := log.FromContext(ctx)
-
-	enabledDests := &odigosv1.DestinationList{Items: []odigosv1.Destination{}}
-	for _, dest := range dests.Items {
-		// skip disabled destinations
-		if dest.Spec.Disabled != nil && *dest.Spec.Disabled {
-			continue
-		}
-		enabledDests.Items = append(enabledDests.Items, dest)
-	}
 
 	dataStreams, err := calculateDataStreams(ctx, c, enabledDests)
 	if err != nil {

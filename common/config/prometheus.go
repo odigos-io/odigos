@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	promRWurlKey = "PROMETHEUS_REMOTEWRITE_URL"
+	promRWurlKey      = "PROMETHEUS_REMOTEWRITE_URL"
+	promAuthHeaderKey = "PROMETHEUS_BEARER_TOKEN"
 )
 
 type Prometheus struct{}
@@ -36,9 +37,19 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	rwExporterName := "prometheusremotewrite/" + uniqueUri
 	spanMetricNames := applySpanMetricsConnector(currentConfig, uniqueUri)
 
-	currentConfig.Exporters[rwExporterName] = GenericMap{
+	exporterConfig := GenericMap{
 		"endpoint": fmt.Sprintf("%s/api/v1/write", url),
 	}
+
+	// In order to support both basic auth and bearer token, we use the Authorization header
+	authHeader, authExists := config[promAuthHeaderKey]
+	if authExists && authHeader != "" {
+		exporterConfig["headers"] = GenericMap{
+			"Authorization": "Bearer ${PROMETHEUS_BEARER_TOKEN}",
+		}
+	}
+
+	currentConfig.Exporters[rwExporterName] = exporterConfig
 
 	resourceAttributesLabels, exists := config[prometheusResourceAttributesLabelsKey]
 	processors, err := promResourceAttributesProcessors(resourceAttributesLabels, exists, uniqueUri)
