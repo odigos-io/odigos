@@ -397,7 +397,6 @@ func NewSourceMutatingWebhookConfiguration(ns string) *admissionregistrationv1.M
 					{
 						Operations: []admissionregistrationv1.OperationType{
 							admissionregistrationv1.Create,
-							admissionregistrationv1.Update,
 						},
 						Rule: admissionregistrationv1.Rule{
 							APIGroups:   []string{"odigos.io"},
@@ -408,7 +407,7 @@ func NewSourceMutatingWebhookConfiguration(ns string) *admissionregistrationv1.M
 					},
 				},
 				FailurePolicy:      ptrGeneric(admissionregistrationv1.Fail),
-				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.IfNeededReinvocationPolicy),
+				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.NeverReinvocationPolicy),
 				SideEffects:        ptrGeneric(admissionregistrationv1.SideEffectClassNone),
 				TimeoutSeconds:     intPtr(10),
 				AdmissionReviewVersions: []string{
@@ -452,7 +451,6 @@ func NewPodMutatingWebhookConfiguration(ns string) *admissionregistrationv1.Muta
 					{
 						Operations: []admissionregistrationv1.OperationType{
 							admissionregistrationv1.Create,
-							admissionregistrationv1.Update,
 						},
 						Rule: admissionregistrationv1.Rule{
 							APIGroups:   []string{""},
@@ -463,7 +461,7 @@ func NewPodMutatingWebhookConfiguration(ns string) *admissionregistrationv1.Muta
 					},
 				},
 				FailurePolicy:      ptrGeneric(admissionregistrationv1.Ignore),
-				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.IfNeededReinvocationPolicy),
+				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.NeverReinvocationPolicy),
 				SideEffects:        ptrGeneric(admissionregistrationv1.SideEffectClassNone),
 				TimeoutSeconds:     intPtr(10),
 				AdmissionReviewVersions: []string{
