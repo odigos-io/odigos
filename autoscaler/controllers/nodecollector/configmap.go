@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector/collectorconfig"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
@@ -201,6 +202,9 @@ func calculateConfigMapData(
 	processors []*odigosv1.Processor) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
+	odigosNamespace := env.GetCurrentNamespace()
+
+	ownMetricsConfig := collectorconfig.CalculateOwnMetricsConfig(ownMetricsPort, odigosNamespace)
 
 	empty := struct{}{}
 
@@ -230,35 +234,20 @@ func calculateConfigMapData(
 		resourceDetectionProcessor["detectors"] = append(resourceDetectionProcessor["detectors"].([]string), "gcp")
 	}
 	processorsCfg["resourcedetection"] = resourceDetectionProcessor
-
-	processorsCfg["odigostrafficmetrics"] = config.GenericMap{
-		// adding the following resource attributes to the metrics allows to aggregate the metrics by source.
-		"res_attributes_keys": []string{
-			string(semconv.ServiceNameKey),
-			string(semconv.K8SNamespaceNameKey),
-			string(semconv.K8SDeploymentNameKey),
-			string(semconv.K8SStatefulSetNameKey),
-			string(semconv.K8SDaemonSetNameKey),
-		},
-	}
-	processorsCfg["resource/pod-name"] = config.GenericMap{
-		"attributes": []config.GenericMap{{
-			"key":    "k8s.pod.name",
-			"value":  "${POD_NAME}",
-			"action": "upsert",
-		}},
+	for name, processor := range ownMetricsConfig.Processors {
+		processorsCfg[name] = processor
 	}
 
 	exporters := config.GenericMap{
 		"otlp/gateway": config.GenericMap{
-			"endpoint": fmt.Sprintf("dns:///odigos-gateway.%s:4317", env.GetCurrentNamespace()),
+			"endpoint": fmt.Sprintf("dns:///odigos-gateway.%s:4317", odigosNamespace),
 			"tls": config.GenericMap{
 				"insecure": true,
 			},
 			"balancer_name": "round_robin",
 		},
 		"otlp/odigos-own-telemetry-ui": config.GenericMap{
-			"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), consts.OTLPPort),
+			"endpoint": fmt.Sprintf("ui.%s:%d", odigosNamespace, consts.OTLPPort),
 			"tls": config.GenericMap{
 				"insecure": true,
 			},
@@ -266,6 +255,9 @@ func calculateConfigMapData(
 				"enabled": false,
 			},
 		},
+	}
+	for name, exporter := range ownMetricsConfig.Exporters {
+		exporters[name] = exporter
 	}
 	tracesPipelineExporter := []string{"otlp/gateway"}
 
@@ -284,50 +276,38 @@ func calculateConfigMapData(
 
 		exporters["loadbalancing"] = config.GenericMap{
 			"protocol": config.GenericMap{"otlp": config.GenericMap{"compression": compression, "tls": config.GenericMap{"insecure": true}}},
-			"resolver": config.GenericMap{"k8s": config.GenericMap{"service": fmt.Sprintf("odigos-gateway.%s", env.GetCurrentNamespace())}},
+			"resolver": config.GenericMap{"k8s": config.GenericMap{"service": fmt.Sprintf("odigos-gateway.%s", odigosNamespace)}},
 		}
 		tracesPipelineExporter = []string{"loadbalancing"}
 	}
 
-	cfg := config.Config{
-		Receivers: config.GenericMap{
-			"otlp": config.GenericMap{
-				"protocols": config.GenericMap{
-					"grpc": config.GenericMap{
-						"endpoint": "0.0.0.0:4317",
-						// data collection collectors will drop data instead of backpressuring the senders (odiglet or agents),
-						// we don't want the applications to build up memory in the runtime if the pipeline is overloaded.
-						"drop_on_overload": true,
-					},
-					"http": config.GenericMap{
-						"endpoint": "0.0.0.0:4318",
-					},
+	receivers := config.GenericMap{
+		"otlp": config.GenericMap{
+			"protocols": config.GenericMap{
+				"grpc": config.GenericMap{
+					"endpoint": "0.0.0.0:4317",
+					// data collection collectors will drop data instead of backpressuring the senders (odiglet or agents),
+					// we don't want the applications to build up memory in the runtime if the pipeline is overloaded.
+					"drop_on_overload": true,
 				},
-			},
-			"odigosebpf": config.GenericMap{},
-			"prometheus/self-metrics": config.GenericMap{
-				"config": config.GenericMap{
-					"scrape_configs": []config.GenericMap{
-						{
-							"job_name":        "otelcol",
-							"scrape_interval": "10s",
-							"static_configs": []config.GenericMap{
-								{
-									"targets": []string{fmt.Sprintf("127.0.0.1:%d", ownMetricsPort)},
-								},
-							},
-							"metric_relabel_configs": []config.GenericMap{
-								{
-									"source_labels": []string{"__name__"},
-									"regex":         "(.*odigos.*)",
-									"action":        "keep",
-								},
-							},
-						},
-					},
+				"http": config.GenericMap{
+					"endpoint": "0.0.0.0:4318",
 				},
 			},
 		},
+		"odigosebpf": config.GenericMap{},
+	}
+	for name, receiver := range ownMetricsConfig.Receivers {
+		receivers[name] = receiver
+	}
+
+	pipelines := map[string]config.Pipeline{}
+	for name, pipeline := range ownMetricsConfig.Service.Pipelines {
+		pipelines[name] = pipeline
+	}
+
+	cfg := config.Config{
+		Receivers:  receivers,
 		Exporters:  exporters,
 		Processors: processorsCfg,
 		Extensions: config.GenericMap{
@@ -339,37 +319,9 @@ func calculateConfigMapData(
 			},
 		},
 		Service: config.Service{
-			Pipelines: map[string]config.Pipeline{
-				"metrics/otelcol": {
-					Receivers:  []string{"prometheus/self-metrics"},
-					Processors: []string{"resource/pod-name"},
-					Exporters:  []string{"otlp/odigos-own-telemetry-ui"},
-				},
-			},
+			Pipelines:  pipelines,
 			Extensions: []string{"health_check", "pprof"},
-			Telemetry: config.Telemetry{
-				Metrics: config.GenericMap{
-					"readers": []config.GenericMap{
-						{
-							"pull": config.GenericMap{
-								"exporter": config.GenericMap{
-									"prometheus": config.GenericMap{
-										"host": "0.0.0.0",
-										"port": ownMetricsPort,
-									},
-								},
-							},
-						},
-					},
-				},
-				Resource: map[string]*string{
-					// The collector add "otelcol" as a service name, so we need to remove it
-					// to avoid duplication, since we are interested in the instrumented services.
-					string(semconv.ServiceNameKey): nil,
-					// The collector adds its own version as a service version, which is not needed currently.
-					string(semconv.ServiceVersionKey): nil,
-				},
-			},
+			Telemetry:  ownMetricsConfig.Service.Telemetry,
 		},
 	}
 
@@ -396,10 +348,9 @@ func calculateConfigMapData(
 			includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
 		}
 
-		odigosSystemNamespaceName := env.GetCurrentNamespace()
 		cfg.Receivers["filelog"] = config.GenericMap{
 			"include":           includes,
-			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosSystemNamespaceName + "_*/**/*"},
+			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosNamespace + "_*/**/*"},
 			"start_at":          "end",
 			"include_file_path": true,
 			"include_file_name": false,
@@ -611,5 +562,5 @@ func getFileLogPipelineProcessors() []string {
 }
 
 func getCommonProcessors() []string {
-	return []string{"resource", "resourcedetection", "odigostrafficmetrics"}
+	return []string{"resource", "resourcedetection", collectorconfig.OdigosTrafficMetricsProcessorName}
 }
