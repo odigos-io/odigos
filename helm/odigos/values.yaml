@@ -302,6 +302,11 @@ instrumentor:
   # loader-fallback-to-pod-manifest: try using the odigos loader first, and if it fails, fallback to adding the environment variables to the container manifest.
   agentEnvVarsInjectionMethod: ''
 
+  # the timeout in seconds for the pods webhook.
+  # default is 10 seconds and it is recommended to keep it as is unless you are experiencing issues with the webhook.
+  # value must be 30 seconds max (inforced by kubernetes)
+  # podsWebhookTimeoutSeconds: 25
+
 odiglet:
   odiglet:
     livenessProbe:

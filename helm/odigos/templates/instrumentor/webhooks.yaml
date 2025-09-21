@@ -27,7 +27,7 @@ webhooks:
     failurePolicy: Ignore
     reinvocationPolicy: Never
     sideEffects: None
-    timeoutSeconds: 10
+    timeoutSeconds: {{ .Values.instrumentor.podsWebhookTimeoutSeconds }}
     admissionReviewVersions: ["v1"]
 ---
 apiVersion: admissionregistration.k8s.io/v1
