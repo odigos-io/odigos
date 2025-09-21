@@ -19,6 +19,7 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -338,6 +339,49 @@ var activateCmd = &cobra.Command{
 	},
 }
 
+var centralUpgradeCmd = &cobra.Command{
+	Use:   "upgrade",
+	Short: "Upgrade Odigos Tower UI in the central namespace",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		nsFlag, err := cmd.Flags().GetString("namespace")
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
+			os.Exit(1)
+		}
+		ns := nsFlag
+		if ns == "" {
+			ns = consts.DefaultOdigosCentralNamespace
+		}
+
+		if !cmd.Flag("yes").Changed {
+			fmt.Printf("About to upgrade Odigos Tower UI in namespace %s to version %s\n", ns, versionFlag)
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting upgrade")
+				return
+			}
+		}
+
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences:      GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+			SystemObjectLabelKey: k8sconsts.OdigosSystemLabelCentralKey,
+		}
+
+		uiManager := centralodigos.NewCentralUIResourceManager(client, ns, managerOpts, versionFlag)
+		backendManager := centralodigos.NewCentralBackendResourceManager(client, ns, versionFlag, managerOpts)
+		if err := resources.ApplyResourceManagers(ctx, client, []resourcemanager.ResourceManager{uiManager, backendManager}, "Upgrading"); err != nil {
+			fmt.Println("\033[31mERROR\033[0m Failed to upgrade Odigos Tower UI/Backend:")
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Tower UI and Backend upgraded to %s.\n", versionFlag)
+	},
+}
+
 func createOdigosCentralSecret(ctx context.Context, client *kube.Client, ns, token string) error {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -498,10 +542,14 @@ func init() {
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
+	centralCmd.AddCommand(centralUpgradeCmd)
 	centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
+	centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower installation")
+	centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower upgrade")
+	centralUpgradeCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 
 	// Central configuration flags
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
