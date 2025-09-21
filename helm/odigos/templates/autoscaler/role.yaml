@@ -170,6 +170,9 @@ rules:
       - get
       - list
       - watch
+      - create
+      - patch
+      - update
   - apiGroups:
       - odigos.io
     resources:

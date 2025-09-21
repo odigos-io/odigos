@@ -130,10 +130,10 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 				Resources: []string{"collectorsgroups/status"},
 				Verbs:     []string{"get", "patch", "update"},
 			},
-			{ // Needed to watch actions in order to transform them to processors
+			{ // Needed to watch and manage actions in order to transform them to processors
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"actions"},
-				Verbs:     []string{"get", "list", "watch"},
+				Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
 			},
 			{ // Update conditions of the action after transforming it to a processor
 				APIGroups: []string{"odigos.io"},
