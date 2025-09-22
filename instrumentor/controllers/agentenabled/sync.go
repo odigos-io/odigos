@@ -469,7 +469,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		if runtimeDetails.Language == common.UnknownProgrammingLanguage {
 			message = "language cannot be detected, no instrumentation agent is available"
 		} else {
-			message = fmt.Sprintf("🚧 %s isn't supported yet or not available in this odigos tier", runtimeDetails.Language)
+			message = fmt.Sprintf("🚧 support for %s is comming soon. no instrumentation agent available at the moment", runtimeDetails.Language)
 		}
 		return odigosv1.ContainerAgentConfig{
 			ContainerName:       containerName,
