@@ -39,7 +39,7 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 			Type:               v1alpha1.RuntimeDetectionStatusConditionType,
 			Status:             metav1.ConditionFalse,
 			Reason:             string(v1alpha1.RuntimeDetectionReasonNoRunningPods),
-			Message:            "No running pods available to detect source runtime",
+			Message:            "💤 No running pods - runtime inspection pending pods to be available",
 			LastTransitionTime: metav1.NewTime(time.Now()),
 		})
 		return true
