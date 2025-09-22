@@ -12,11 +12,12 @@ import (
 )
 
 const (
-	BatchProcessorName           = "batch"
-	MemoryLimiterProcessorName   = "memory_limiter"
-	NodeNameProcessorName        = "resource/node-name"
-	ClusterCollectorExporterName = "otlp/out-cluster-collector"
-	OTLPInReceiverName           = "otlp/in"
+	BatchProcessorName             = "batch"
+	MemoryLimiterProcessorName     = "memory_limiter"
+	NodeNameProcessorName          = "resource/node-name"
+	ClusterCollectorExporterName   = "otlp/out-cluster-collector"
+	OTLPInReceiverName             = "otlp/in"
+	ResourceDetectionProcessorName = "resourcedetection"
 )
 
 const (
@@ -24,7 +25,7 @@ const (
 	pprofExtensionName       = "pprof"
 )
 
-func commonProcessors(nodeCG *odigosv1.CollectorsGroup) config.GenericMap {
+func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.GenericMap {
 
 	allProcessors := config.GenericMap{}
 	for k, v := range staticProcessors {
@@ -33,6 +34,19 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup) config.GenericMap {
 
 	memoryLimiterConfig := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
 	allProcessors[MemoryLimiterProcessorName] = memoryLimiterConfig
+
+	var detectors []string
+	// This is a workaround to avoid adding the gcp detector if not running on a gke environment
+	// once https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/issues/1026 is resolved, we can always put the gcp detector
+	if runningOnGKE {
+		detectors = []string{"gcp"}
+	} else {
+		detectors = []string{"ec2", "azure"}
+	}
+	allProcessors[ResourceDetectionProcessorName] = config.GenericMap{
+		"detectors": detectors,
+		"timeout":   "2s",
+	}
 
 	return allProcessors
 }
@@ -97,11 +111,11 @@ func init() {
 	}
 }
 
-func CommonConfig(nodeCG *odigosv1.CollectorsGroup) config.Config {
+func CommonConfig(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.Config {
 	return config.Config{
 		Receivers:  commonReceivers,
 		Exporters:  commonExporters,
-		Processors: commonProcessors(nodeCG),
+		Processors: commonProcessors(nodeCG, runningOnGKE),
 		Extensions: commonExtensions,
 		Service:    commonService,
 	}
