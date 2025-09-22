@@ -39,7 +39,7 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 			Type:               v1alpha1.RuntimeDetectionStatusConditionType,
 			Status:             metav1.ConditionFalse,
 			Reason:             string(v1alpha1.RuntimeDetectionReasonNoRunningPods),
-			Message:            "💤 No running pods - runtime inspection pending pods to be available",
+			Message:            "No running pods - runtime inspection pending for pods to be available",
 			LastTransitionTime: metav1.NewTime(time.Now()),
 		})
 		return true
@@ -57,7 +57,7 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 			Type:               v1alpha1.RuntimeDetectionStatusConditionType,
 			Status:             metav1.ConditionUnknown,
 			Reason:             string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
-			Message:            "Runtime detection pending Job to start",
+			Message:            "No running pods - runtime inspection pending for job to start",
 			LastTransitionTime: metav1.NewTime(time.Now()),
 		})
 	} else {
@@ -65,7 +65,7 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 			Type:               v1alpha1.RuntimeDetectionStatusConditionType,
 			Status:             metav1.ConditionUnknown,
 			Reason:             string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
-			Message:            "Waiting for odiglet to initiate runtime detection in a node with running pod",
+			Message:            "Waiting for odiglet to initiate runtime inspection",
 			LastTransitionTime: metav1.NewTime(time.Now()),
 		})
 	}
