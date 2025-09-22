@@ -79,10 +79,7 @@ func MergeConfigs(configs ...Config) (Config, error) {
 			return Config{}, err
 		}
 
-		mergedConfig.Service.Extensions, err = mergeExtensions(mergedConfig.Service.Extensions, config.Service.Extensions)
-		if err != nil {
-			return Config{}, err
-		}
+		mergedConfig.Service.Extensions = mergeExtensions(mergedConfig.Service.Extensions, config.Service.Extensions)
 		mergedConfig.Service.Pipelines, err = mergePipelines(mergedConfig.Service.Pipelines, config.Service.Pipelines)
 		if err != nil {
 			return Config{}, err
@@ -95,10 +92,9 @@ func MergeConfigs(configs ...Config) (Config, error) {
 	return mergedConfig, nil
 }
 
-func mergeExtensions(extensions1 []string, extensions2 []string) ([]string, error) {
+func mergeExtensions(extensions1 []string, extensions2 []string) []string {
 	// TODO: check for duplicates and return an error
-	mergedExtensions := append(extensions1, extensions2...)
-	return mergedExtensions, nil
+	return append(extensions1, extensions2...)
 }
 
 func mergePipelines(pipelines1 map[string]Pipeline, pipelines2 map[string]Pipeline) (map[string]Pipeline, error) {
