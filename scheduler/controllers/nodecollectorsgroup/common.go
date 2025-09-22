@@ -128,7 +128,7 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration) *odig
 			APIVersion: "odigos.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
+			Name:      k8sconsts.OdigosNodeCollectorCollectorGroupName,
 			Namespace: env.GetCurrentNamespace(),
 		},
 		Spec: odigosv1.CollectorsGroupSpec{
