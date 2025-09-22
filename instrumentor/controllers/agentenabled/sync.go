@@ -467,7 +467,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	if !ok {
 		var message string
 		if runtimeDetails.Language == common.UnknownProgrammingLanguage {
-			message = "language cannot be detected, no instrumentation agent is available"
+			message = "🤔 runtime language/platform cannot be detected, no instrumentation agent is available"
 		} else {
 			message = fmt.Sprintf("🚧 support for %s is comming soon. no instrumentation agent available at the moment", runtimeDetails.Language)
 		}
