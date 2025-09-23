@@ -83,13 +83,63 @@ type SpanMetricsSettings struct {
 	// here so we can add span to metrics settings in the future without breaking backwards compatibility
 }
 
+type HostMetricsSettings struct {
+	// here so we can add host metrics settings in the future without breaking backwards compatibility
+}
+
+type KubeletStatsSettings struct {
+	// here so we can add kubelet stats settings in the future without breaking backwards compatibility
+}
+
+type ServiceGraphSettings struct {
+	// here so we can add service graph settings in the future without breaking backwards compatibility
+}
+
+type OdigosOwnMetricsSettings struct {
+	// here so we can add odigos own metrics settings in the future without breaking backwards compatibility
+}
+
+type AgentsTelemetrySettings struct {
+	// here so we can add agents telemetry settings in the future without breaking backwards compatibility
+	// since the collector receives these data points in push mode, and does not record or collect them itself,
+	// it is not expected to have many or any settings here.
+}
+
 type CollectorsGroupMetricsCollectionSettings struct {
 
-	// if not nil, it means span to metrics is enabled,
+	// if not nil for node collector, it means span to metrics is enabled,
 	// and the node collector should set it up in the pipeline.
 	// span to metrics is the ability to calculate metrics like http requests/errors/duration etc
 	// from the individual spans recorded for relevant operation.
 	SpanMetrics *SpanMetricsSettings `json:"spanMetrics,omitempty"`
+
+	// if not nil for node collector, it means host metrics is enabled,
+	// and the opentelemetry collector "hostmetrics" receiver should be included in the pipeline.
+	// host metrics are metrics that are collected from the host node,
+	// such as cpu, memory, disk, network, etc.
+	HostMetrics *HostMetricsSettings `json:"hostMetrics,omitempty"`
+
+	// if not nil for node collector, it means kubelet stats is enabled,
+	// and the opentelemetry collector "kubeletstats" receiver should be included in the pipeline.
+	// kubelet stats are metrics that are collected from the kubelet point of view,
+	// such as cpu, memory, disk, network, per pod, node and more.
+	KubeletStats *KubeletStatsSettings `json:"kubeletStats,omitempty"`
+
+	// if not nil for cluster collector, it means service graph is enabled,
+	// and metrics for the "connectivity" between services should be calculated
+	// to be exported to metrics destinations.
+	ServiceGraph *ServiceGraphSettings `json:"serviceGraph,omitempty"`
+
+	// if not nil for node collector, it means that some metric destinations are
+	// intresseted in collecting metrics about: odigos, the collected data, and the pipeline itself.
+	// this allows for users to monitor and operate odigos within their existing system,
+	// create dashboards, alerting, and more.
+	OdigosOwnMetrics *OdigosOwnMetricsSettings `json:"odigosOwnMetrics,omitempty"`
+
+	// this part controls the metrics which are received from agents in the otlp receiver.
+	// it is generally enabled when we want to record metrics, and listed here for completeness.
+	// any "otlp receiver" specific settings can go here
+	AgentsTelemetry *AgentsTelemetrySettings `json:"agentsTelemetry,omitempty"`
 }
 
 // CollectorsGroupSpec defines the desired state of Collector
