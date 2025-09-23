@@ -115,6 +115,11 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				ResourceNames: []string{k8sconsts.SchedulerDeploymentName},
 				Verbs:         []string{"get", "list", "watch"},
 			},
+			{ // for calculating collectors group config based on the active destinations
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"destinations"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
 		},
 	}
 }
