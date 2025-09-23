@@ -59,6 +59,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.ContainerOverrideApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Destination"):
 		return &odigosv1alpha1.DestinationApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("DestinationMetricsSettings"):
+		return &odigosv1alpha1.DestinationMetricsSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DestinationSpec"):
 		return &odigosv1alpha1.DestinationSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DestinationStatus"):
