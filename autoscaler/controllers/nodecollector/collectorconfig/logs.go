@@ -190,12 +190,12 @@ func getReceivers(sources *odigosv1.InstrumentationConfigList, odigosNamespace s
 func LogsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, sources *odigosv1.InstrumentationConfigList) config.Config {
 
 	pipelineProcessors := append([]string{
-		MemoryLimiterProcessorName,
-		NodeNameProcessorName,
-		ResourceDetectionProcessorName,
+		memoryLimiterProcessorName,
+		nodeNameProcessorName,
+		resourceDetectionProcessorName,
 	}, manifestProcessorNames...)
 	// append odigos traffic metrics processor last (after manifest processors)
-	pipelineProcessors = append(pipelineProcessors, OdigosTrafficMetricsProcessorName)
+	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
 
 	return config.Config{
 		Receivers: getReceivers(sources, odigosNamespace),
@@ -204,7 +204,7 @@ func LogsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manife
 				logsPipelineName: {
 					Receivers:  []string{filelogReceiverName},
 					Processors: pipelineProcessors,
-					Exporters:  []string{ClusterCollectorExporterName},
+					Exporters:  []string{clusterCollectorExporterName},
 				},
 			},
 		},

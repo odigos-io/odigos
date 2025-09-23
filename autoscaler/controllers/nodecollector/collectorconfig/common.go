@@ -12,17 +12,17 @@ import (
 )
 
 const (
-	BatchProcessorName             = "batch"
-	MemoryLimiterProcessorName     = "memory_limiter"
-	NodeNameProcessorName          = "resource/node-name"
-	ClusterCollectorExporterName   = "otlp/out-cluster-collector"
-	OTLPInReceiverName             = "otlp/in"
-	ResourceDetectionProcessorName = "resourcedetection"
+	OTLPInReceiverName = "otlp/in"
 )
 
 const (
-	healthCheckExtensionName = "health_check"
-	pprofExtensionName       = "pprof"
+	healthCheckExtensionName       = "health_check"
+	pprofExtensionName             = "pprof"
+	batchProcessorName             = "batch"
+	memoryLimiterProcessorName     = "memory_limiter"
+	nodeNameProcessorName          = "resource/node-name"
+	clusterCollectorExporterName   = "otlp/out-cluster-collector"
+	resourceDetectionProcessorName = "resourcedetection"
 )
 
 func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.GenericMap {
@@ -33,7 +33,7 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) confi
 	}
 
 	memoryLimiterConfig := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
-	allProcessors[MemoryLimiterProcessorName] = memoryLimiterConfig
+	allProcessors[memoryLimiterProcessorName] = memoryLimiterConfig
 
 	var detectors []string
 	// This is a workaround to avoid adding the gcp detector if not running on a gke environment
@@ -43,7 +43,7 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) confi
 	} else {
 		detectors = []string{"ec2", "azure"}
 	}
-	allProcessors[ResourceDetectionProcessorName] = config.GenericMap{
+	allProcessors[resourceDetectionProcessorName] = config.GenericMap{
 		"detectors": detectors,
 		"timeout":   "2s",
 	}
@@ -61,8 +61,8 @@ func init() {
 	odigosNamespace := env.GetCurrentNamespace()
 
 	staticProcessors = config.GenericMap{
-		BatchProcessorName: config.GenericMap{},
-		NodeNameProcessorName: config.GenericMap{
+		batchProcessorName: config.GenericMap{},
+		nodeNameProcessorName: config.GenericMap{
 			"attributes": []config.GenericMap{{
 				"key":    string(semconv.K8SNodeNameKey),
 				"value":  "${NODE_NAME}",
@@ -72,7 +72,7 @@ func init() {
 	}
 
 	commonExporters = config.GenericMap{
-		ClusterCollectorExporterName: config.GenericMap{
+		clusterCollectorExporterName: config.GenericMap{
 			"endpoint": fmt.Sprintf("dns:///%s.%s:4317", k8sconsts.OdigosClusterCollectorDeploymentName, odigosNamespace),
 			"tls": config.GenericMap{
 				"insecure": true,

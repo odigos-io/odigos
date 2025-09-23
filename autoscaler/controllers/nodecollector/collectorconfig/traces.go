@@ -67,12 +67,12 @@ func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, mani
 	pipelineExporterNames = append(pipelineExporterNames, additionalTraceExporters...)
 
 	tracePipelineProcessors := append([]string{
-		BatchProcessorName,         // always start with batch
-		MemoryLimiterProcessorName, // memory limiter is temporary, until we migrate all inputs to rtml based memory protection
-		NodeNameProcessorName,
-		ResourceDetectionProcessorName,
+		batchProcessorName,         // always start with batch
+		memoryLimiterProcessorName, // memory limiter is temporary, until we migrate all inputs to rtml based memory protection
+		nodeNameProcessorName,
+		resourceDetectionProcessorName,
 	}, manifestProcessorNames...)
-	tracePipelineProcessors = append(tracePipelineProcessors, OdigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
+	tracePipelineProcessors = append(tracePipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
 	return config.Config{
 		Receivers: staticTracesReceivers,

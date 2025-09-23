@@ -142,12 +142,12 @@ func metricsConnectors(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCol
 func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) (config.Config, []string) {
 
 	metricsPipelineProcessors := append([]string{
-		BatchProcessorName,         // always start with batch
-		MemoryLimiterProcessorName, // consider removing this for metrics, as they have footprint anyway
-		NodeNameProcessorName,
-		ResourceDetectionProcessorName,
+		batchProcessorName,         // always start with batch
+		memoryLimiterProcessorName, // consider removing this for metrics, as they have footprint anyway
+		nodeNameProcessorName,
+		resourceDetectionProcessorName,
 	}, manifestProcessorNames...)
-	metricsPipelineProcessors = append(metricsPipelineProcessors, OdigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
+	metricsPipelineProcessors = append(metricsPipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
 	receivers, pipelineReceiverNames := metricsReceivers(metricsConfigSettings)
 	if len(pipelineReceiverNames) == 0 {
@@ -170,7 +170,7 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, man
 				odigosMetricsPipelineName: {
 					Receivers:  pipelineReceiverNames,
 					Processors: metricsPipelineProcessors,
-					Exporters:  []string{ClusterCollectorExporterName},
+					Exporters:  []string{clusterCollectorExporterName},
 				},
 			},
 		},
