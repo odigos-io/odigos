@@ -3,7 +3,6 @@ package nodecollectorsgroup
 import (
 	"context"
 	"errors"
-	"fmt"
 	"slices"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -118,7 +117,6 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 		}
 
 		destinationType := string(destination.Spec.Type)
-		fmt.Println("=========================== destinationType", destinationType)
 		destinationTypeManifest, ok := destinations.GetDestinationByType(destinationType)
 		if !ok {
 			// ignore unknown destinations here for now (should not happen)
