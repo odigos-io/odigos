@@ -130,6 +130,11 @@ func TestCalculateConfigMapData(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
 			Spec: odigosv1.CollectorsGroupSpec{
 				CollectorOwnMetricsPort: 4317,
+				Metrics: &odigosv1.CollectorsGroupMetricsCollectionSettings{
+					HostMetrics:     &odigosv1.HostMetricsSettings{},
+					KubeletStats:    &odigosv1.KubeletStatsSettings{},
+					AgentsTelemetry: &odigosv1.AgentsTelemetrySettings{},
+				},
 			},
 		},
 		&odigosv1.InstrumentationConfigList{
