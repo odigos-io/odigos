@@ -294,11 +294,18 @@ func calculateConfigMapData(
 		collectorconfig.OwnMetricsConfig(ownMetricsPort),
 	}
 
-	// traces config domain
+	// traces
 	tracesEnabled := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
 	if tracesEnabled {
 		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, tracesProcessors)
 		activeConfigDomains = append(activeConfigDomains, tracesConfig)
+	}
+	// metrics
+	metricsEnabled := slices.Contains(signals, odigoscommon.MetricsObservabilitySignal)
+	metricsConfigSettings := nodeCG.Spec.Metrics
+	if metricsEnabled && metricsConfigSettings != nil {
+		metricsConfig := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, metricsProcessors, metricsConfigSettings)
+		activeConfigDomains = append(activeConfigDomains, metricsConfig)
 	}
 
 	mergedConfig, err := config.MergeConfigs(activeConfigDomains...)
@@ -409,59 +416,6 @@ func calculateConfigMapData(
 		cfg.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
 			Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
-			Exporters:  []string{collectorconfig.ClusterCollectorExporterName},
-		}
-	}
-
-	collectMetrics := slices.Contains(signals, odigoscommon.MetricsObservabilitySignal)
-	if collectMetrics {
-		cfg.Receivers["kubeletstats"] = config.GenericMap{
-			"auth_type":            "serviceAccount",
-			"endpoint":             "https://${env:NODE_IP}:10250",
-			"insecure_skip_verify": true,
-			"collection_interval":  "10s",
-		}
-
-		cfg.Receivers["hostmetrics"] = config.GenericMap{
-			"collection_interval": "10s",
-			"root_path":           "/hostfs",
-			"scrapers": config.GenericMap{
-				"paging": config.GenericMap{
-					"metrics": config.GenericMap{
-						"system.paging.utilization": config.GenericMap{
-							"enabled": true,
-						},
-					},
-				},
-				"cpu": config.GenericMap{
-					"metrics": config.GenericMap{
-						"system.cpu.utilization": config.GenericMap{
-							"enabled": true,
-						},
-					},
-				},
-				"disk": struct{}{},
-				"filesystem": config.GenericMap{
-					"metrics": config.GenericMap{
-						"system.filesystem.utilization": config.GenericMap{
-							"enabled": true,
-						},
-					},
-					"exclude_mount_points": config.GenericMap{
-						"match_type":   "regexp",
-						"mount_points": []string{"/var/lib/kubelet/*"},
-					},
-				},
-				"load":      struct{}{},
-				"memory":    struct{}{},
-				"network":   struct{}{},
-				"processes": struct{}{},
-			},
-		}
-
-		cfg.Service.Pipelines["metrics"] = config.Pipeline{
-			Receivers:  []string{collectorconfig.OTLPInReceiverName, "kubeletstats", "hostmetrics"},
-			Processors: append(getAgentPipelineCommonProcessors(), metricsProcessors...),
 			Exporters:  []string{collectorconfig.ClusterCollectorExporterName},
 		}
 	}
