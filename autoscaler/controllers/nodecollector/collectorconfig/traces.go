@@ -77,9 +77,3 @@ func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, mani
 		},
 	}
 }
-
-// cfg.Service.Pipelines["traces"] = config.Pipeline{
-// 	Receivers:  []string{collectorconfig.OTLPInReceiverName, "odigosebpf"},
-// 	Processors: append(getAgentPipelineCommonProcessors(), tracesProcessors...),
-// 	Exporters:  tracesPipelineExporter,
-// }
