@@ -283,15 +283,17 @@ func calculateConfigMapData(
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
 	odigosNamespace := env.GetCurrentNamespace()
 
-	manifestProcessosrs, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(commonconf.ToProcessorConfigurerArray(processors))
+	manifestProcessosrsConfig, additionalTraceProcessors, additionalMetricsProcessors, additionalLogsProcessors, errs := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
 	for name, err := range errs {
-		log.Log.V(0).Error(err, "processor", name)
+		log.Log.V(0).Error(err, "failed to convert processor manifest to config", "processor", name)
+		return "", err
 	}
 
 	// common config domains - always set and active
 	activeConfigDomains := []config.Config{
 		collectorconfig.CommonConfig(nodeCG, onGKE),
 		collectorconfig.OwnMetricsConfig(ownMetricsPort),
+		manifestProcessosrsConfig,
 	}
 
 	// metrics
@@ -299,35 +301,28 @@ func calculateConfigMapData(
 	metricsConfigSettings := nodeCG.Spec.Metrics
 	var additionalTraceExporters []string
 	if metricsEnabled && metricsConfigSettings != nil {
-		metricsConfig, metricsAdditionalTraceExporters := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, metricsProcessors, metricsConfigSettings)
+		metricsConfig, metricsAdditionalTraceExporters := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, additionalMetricsProcessors, metricsConfigSettings)
 		activeConfigDomains = append(activeConfigDomains, metricsConfig)
+
+		// due to spanmetrics connector, adding a metrics pipeline can result in needing to also collect
+		// traces which are fed into the collector and generate metrics from spans.
+		// additionalTraceExporters will be populated if traces need to be exportered to any additional place.
 		additionalTraceExporters = append(additionalTraceExporters, metricsAdditionalTraceExporters...)
 	}
 
 	// traces
 	tracesEnabledInClusterCollector := slices.Contains(clusterCollectorSignals, odigoscommon.TracesObservabilitySignal)
-	if len(additionalTraceExporters) > 0 || tracesEnabledInClusterCollector {
-		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, tracesProcessors, additionalTraceExporters, tracesEnabledInClusterCollector)
+	// create traces pipeline if either:
+	// - cluster collector has traces enabled (trace destination is enabled)
+	// - there are additional trace exporters (e.g. spanmetrics connector)
+	if tracesEnabledInClusterCollector || len(additionalTraceExporters) > 0 {
+		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, additionalTraceProcessors, additionalTraceExporters, tracesEnabledInClusterCollector)
 		activeConfigDomains = append(activeConfigDomains, tracesConfig)
 	}
 
 	mergedConfig, err := config.MergeConfigs(activeConfigDomains...)
 	if err != nil {
 		return "", err
-	}
-
-	allProcessors := manifestProcessosrs
-	for name, processor := range mergedConfig.Processors {
-		allProcessors[name] = processor
-	}
-
-	cfg := config.Config{
-		Receivers:  mergedConfig.Receivers,
-		Processors: allProcessors,
-		Connectors: mergedConfig.Connectors,
-		Exporters:  mergedConfig.Exporters,
-		Extensions: mergedConfig.Extensions,
-		Service:    mergedConfig.Service,
 	}
 
 	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
@@ -353,7 +348,7 @@ func calculateConfigMapData(
 			includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
 		}
 
-		cfg.Receivers["filelog"] = config.GenericMap{
+		mergedConfig.Receivers["filelog"] = config.GenericMap{
 			"include":           includes,
 			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosNamespace + "_*/**/*"},
 			"start_at":          "end",
@@ -417,14 +412,14 @@ func calculateConfigMapData(
 		// 	},
 		// }
 
-		cfg.Service.Pipelines["logs"] = config.Pipeline{
+		mergedConfig.Service.Pipelines["logs"] = config.Pipeline{
 			Receivers:  []string{"filelog"},
-			Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
+			Processors: append(getFileLogPipelineProcessors(), additionalLogsProcessors...),
 			Exporters:  []string{collectorconfig.ClusterCollectorExporterName},
 		}
 	}
 
-	data, err := yaml.Marshal(cfg)
+	data, err := yaml.Marshal(mergedConfig)
 	if err != nil {
 		return "", err
 	}

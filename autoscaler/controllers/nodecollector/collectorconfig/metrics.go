@@ -159,6 +159,9 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, man
 	connectors, connectorNames := metricsConnectors(metricsConfigSettings)
 	pipelineReceiverNames = append(pipelineReceiverNames, connectorNames...)
 
+	// currently used for spanmetrics - which is needed to be added as a trace exporter in trace pipeline
+	additionalTraceExporters := connectorNames
+
 	return config.Config{
 		Receivers:  receivers,
 		Connectors: connectors,
@@ -171,5 +174,5 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, man
 				},
 			},
 		},
-	}, connectorNames
+	}, additionalTraceExporters
 }

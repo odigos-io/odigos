@@ -85,6 +85,10 @@ func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, so
 		return err
 	}
 
+	// enabled signals also takes into account spanmetrics connector
+	// e.g - cluster collector can accept only metrics,
+	// while node collector collects both metrics and traces, which it converts to metrics and does not forward downstream.
+	// the enabled signals represents what's actually collected from agents in node collector.
 	enabledSignals := clusterCollectorSignals
 	spanMetricsEnabled := dataCollection.Spec.Metrics != nil && dataCollection.Spec.Metrics.SpanMetrics != nil
 	if spanMetricsEnabled {
