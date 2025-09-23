@@ -35,7 +35,6 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	url = addProtocol(url)
 	url = strings.TrimSuffix(url, "/api/v1/write")
 	rwExporterName := "prometheusremotewrite/" + uniqueUri
-	spanMetricNames := applySpanMetricsConnector(currentConfig, uniqueUri)
 
 	exporterConfig := GenericMap{
 		"endpoint": fmt.Sprintf("%s/api/v1/write", url),
@@ -64,10 +63,9 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	metricsPipelineName := "metrics/" + uniqueUri
 	currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
-		Receivers:  []string{spanMetricNames.SpanMetricsConnector},
 		Exporters:  []string{rwExporterName},
 		Processors: processorNames,
 	}
 
-	return []string{metricsPipelineName, spanMetricNames.TracesPipeline}, nil
+	return []string{metricsPipelineName}, nil
 }

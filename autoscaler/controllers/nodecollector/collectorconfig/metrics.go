@@ -9,6 +9,7 @@ const (
 	kubeletstatsReceiverName  = "kubeletstats"
 	hostmetricsReceiverName   = "hostmetrics"
 	odigosMetricsPipelineName = "metrics"
+	spanMetricsConnectorName  = "spanmetrics"
 )
 
 func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) (config.GenericMap, []string) {
@@ -72,7 +73,73 @@ func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsColl
 	return receivers, pipelineReceiverNames
 }
 
-func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) config.Config {
+func metricsConnectors(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) (config.GenericMap, []string) {
+	connectors := config.GenericMap{}
+	connectorNamesToAdd := []string{}
+
+	if metricsConfigSettings.SpanMetrics != nil {
+		// asumming that is span metrics is enabled, then traces are enabled as well (not reponsiblity of this function to check)
+		connectorNamesToAdd = append(connectorNamesToAdd, spanMetricsConnectorName)
+		connectors[spanMetricsConnectorName] = config.GenericMap{
+			"histogram": config.GenericMap{
+				"explicit": config.GenericMap{
+					"buckets": []string{"100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"},
+				},
+			},
+			// Taking into account changes in the semantic conventions, to support a range of instrumentation libraries
+			"dimensions": []config.GenericMap{
+				{
+					"name": "http.method",
+				},
+				{
+					"name": "http.request.method",
+				},
+				{
+					"name": "http.status_code",
+				},
+				{
+					"name": "http.response.status_code",
+				},
+				{
+					"name": "http.route",
+				},
+				{
+					"name": "k8s.pod.name",
+				},
+				{
+					"name": "k8s.namespace.name",
+				},
+				{
+					"name": "k8s.container.name",
+				},
+			},
+			"exemplars": config.GenericMap{
+				"enabled": true,
+			},
+			"exclude_dimensions":              []string{"status.code"},
+			"dimensions_cache_size":           1000,
+			"aggregation_temporality":         "AGGREGATION_TEMPORALITY_CUMULATIVE",
+			"metrics_flush_interval":          "15s",
+			"metrics_expiration":              "5m",
+			"resource_metrics_key_attributes": []string{"service.name", "telemetry.sdk.language", "telemetry.sdk.name"},
+			"events": config.GenericMap{
+				"enabled": true,
+				"dimensions": []config.GenericMap{
+					{
+						"name": "exception.type",
+					},
+					{
+						"name": "exception.message",
+					},
+				},
+			},
+		}
+	}
+
+	return connectors, connectorNamesToAdd
+}
+
+func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) (config.Config, []string) {
 
 	metricsPipelineProcessors := append([]string{
 		BatchProcessorName,         // always start with batch
@@ -85,11 +152,16 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, man
 	receivers, pipelineReceiverNames := metricsReceivers(metricsConfigSettings)
 	if len(pipelineReceiverNames) == 0 {
 		// if all metrics sources are not enabled, skip the metrics pipeline generation as it has no receivers and will fail the collector
-		return config.Config{}
+		return config.Config{}, []string{}
 	}
 
+	// add connectors for span to metrics
+	connectors, connectorNames := metricsConnectors(metricsConfigSettings)
+	pipelineReceiverNames = append(pipelineReceiverNames, connectorNames...)
+
 	return config.Config{
-		Receivers: receivers,
+		Receivers:  receivers,
+		Connectors: connectors,
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
 				odigosMetricsPipelineName: {
@@ -99,5 +171,5 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, man
 				},
 			},
 		},
-	}
+	}, connectorNames
 }

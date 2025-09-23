@@ -22,20 +22,25 @@ func init() {
 	}
 }
 
-func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string) config.GenericMap {
-	compression := "none"
-	dataCompressionEnabled := nodeCG.Spec.EnableDataCompression
-	if dataCompressionEnabled != nil && *dataCompressionEnabled {
-		compression = "gzip"
-	}
+func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, tracesEnabledInClusterCollector bool) (config.GenericMap, []string) {
 
-	service := fmt.Sprintf("%s.%s", k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace)
+	exporters := config.GenericMap{}
+	exporterNames := []string{}
 
-	// Add loadbalancing exporter for traces to ensure consistent gateway routing.
-	// This allows the servicegraph connector to properly aggregate trace data
-	// by sending all traces from a node collector to the same gateway instance.
-	return config.GenericMap{
-		odigosTracesLoadbalancingExporterName: config.GenericMap{
+	// add loadbalancing exporter only if we are sending traces to the cluster collector
+	if tracesEnabledInClusterCollector {
+		compression := "none"
+		dataCompressionEnabled := nodeCG.Spec.EnableDataCompression
+		if dataCompressionEnabled != nil && *dataCompressionEnabled {
+			compression = "gzip"
+		}
+
+		service := fmt.Sprintf("%s.%s", k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace)
+
+		// Add loadbalancing exporter for traces to ensure consistent gateway routing.
+		// This allows the servicegraph connector to properly aggregate trace data
+		// by sending all traces from a node collector to the same gateway instance.
+		exporters[odigosTracesLoadbalancingExporterName] = config.GenericMap{
 			"protocol": config.GenericMap{
 				"otlp": config.GenericMap{
 					"compression": compression,
@@ -49,11 +54,17 @@ func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string) c
 					"service": service,
 				},
 			},
-		},
+		}
+		exporterNames = append(exporterNames, odigosTracesLoadbalancingExporterName)
 	}
+
+	return exporters, exporterNames
 }
 
-func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string) config.Config {
+func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, additionalTraceExporters []string, tracesEnabledInClusterCollector bool) config.Config {
+
+	exporters, pipelineExporterNames := tracesExporters(nodeCG, odigosNamespace, tracesEnabledInClusterCollector)
+	pipelineExporterNames = append(pipelineExporterNames, additionalTraceExporters...)
 
 	tracePipelineProcessors := append([]string{
 		BatchProcessorName,         // always start with batch
@@ -65,13 +76,13 @@ func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, mani
 
 	return config.Config{
 		Receivers: staticTracesReceivers,
-		Exporters: tracesExporters(nodeCG, odigosNamespace),
+		Exporters: exporters,
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
 				odigosTracesPipelineName: {
 					Receivers:  []string{OTLPInReceiverName, odigosEbpfReceiverName},
 					Processors: tracePipelineProcessors,
-					Exporters:  []string{odigosTracesLoadbalancingExporterName},
+					Exporters:  pipelineExporterNames,
 				},
 			},
 		},
