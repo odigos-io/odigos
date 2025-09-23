@@ -134,8 +134,8 @@ service:
       - memory_limiter
       - resource/node-name
       - resourcedetection
-      - odigostrafficmetrics
       - test_type/test_processor
+      - odigostrafficmetrics
       receivers:
       - filelog
     metrics:
