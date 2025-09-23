@@ -320,8 +320,9 @@ func calculateConfigMapData(
 
 	cfg := config.Config{
 		Receivers:  mergedConfig.Receivers,
-		Exporters:  mergedConfig.Exporters,
 		Processors: allProcessors,
+		Connectors: mergedConfig.Connectors,
+		Exporters:  mergedConfig.Exporters,
 		Extensions: mergedConfig.Extensions,
 		Service:    mergedConfig.Service,
 	}
