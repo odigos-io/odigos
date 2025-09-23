@@ -3,10 +3,12 @@ package nodecollectorsgroup
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/scheduler/utils"
@@ -105,7 +107,44 @@ func getResourceSettings(odigosConfiguration common.OdigosConfiguration) odigosv
 	}
 }
 
-func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration) *odigosv1.CollectorsGroup {
+func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDestinations odigosv1.DestinationList) *odigosv1.CollectorsGroup {
+
+	var metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings
+	for _, destination := range allDestinations.Items {
+		if destination.Spec.Disabled != nil && *destination.Spec.Disabled {
+			// skip disabled destinations
+			continue
+		}
+
+		destinationType := string(destination.Spec.Type)
+		destinationTypeManifest, ok := destinations.GetDestinationByType(destinationType)
+		if !ok {
+			// ignore unknown destinations here for now (should not happen)
+			continue
+		}
+
+		if !slices.Contains(destination.Spec.Signals, common.MetricsObservabilitySignal) {
+			continue
+		}
+		if metricsConfig == nil {
+			// setting it to non null is an indicator that metrics are enabled
+			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{
+				HostMetrics:      &odigosv1.HostMetricsSettings{},     // currently enabled by default for all metrics destinations
+				SpanMetrics:      nil,                                 // start as nil and overwritten if any destination enables it
+				KubeletStats:     &odigosv1.KubeletStatsSettings{},    // currently enabled by default for all metrics destinations
+				ServiceGraph:     nil,                                 // currently disabled by default for all metrics destinations
+				OdigosOwnMetrics: nil,                                 // currently disabled by default for all metrics destinations
+				AgentsTelemetry:  &odigosv1.AgentsTelemetrySettings{}, // always enabled
+			}
+		}
+
+		if destinationTypeManifest.Spec.Signals.Metrics.SpanMetricsEnabledByDefault {
+			// if any enabled metrics destination has span metrics enabled by default,
+			// the enable it here.
+			// in the future, we may want to add settings here as well (what to collect, frequency, dimentions, etc.)
+			metricsConfig.SpanMetrics = &odigosv1.SpanMetricsSettings{}
+		}
+	}
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
 	if odigosConfiguration.CollectorNode != nil && odigosConfiguration.CollectorNode.CollectorOwnMetricsPort != 0 {
@@ -137,6 +176,7 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration) *odig
 			K8sNodeLogsDirectory:    k8sNodeLogsDirectory,
 			EnableDataCompression:   &enableDataCompression,
 			ResourcesSettings:       getResourceSettings(odigosConfiguration),
+			Metrics:                 metricsConfig, // not nil if any destination has metrics enabled
 		},
 	}
 }
@@ -167,7 +207,13 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 		return err
 	}
 
-	nodeCollectorGroup := newNodeCollectorGroup(odigosConfiguration)
+	allDestinations := odigosv1.DestinationList{}
+	err = c.List(ctx, &allDestinations)
+	if err != nil {
+		return err // list will return empty list if no destinations are found and not error
+	}
+
+	nodeCollectorGroup := newNodeCollectorGroup(odigosConfiguration, allDestinations)
 	err = utils.SetOwnerControllerToSchedulerDeployment(ctx, c, nodeCollectorGroup, scheme)
 	if err != nil {
 		return err

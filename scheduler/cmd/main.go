@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"flag"
+	"log"
 	"os"
 	"time"
 
@@ -36,6 +37,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/k8sutils/pkg/configmaps"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
@@ -93,6 +95,11 @@ func main() {
 	tier := env.GetOdigosTierFromEnv()
 	odigosVersion := os.Getenv(consts.OdigosVersionEnvVarName)
 
+	err := destinations.Load()
+	if err != nil {
+		log.Fatalf("Error loading destinations data: %s", err)
+	}
+
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 
 	schedulerDeploymentNameSelector := fields.OneTermEqualSelector("metadata.name", k8sconsts.SchedulerDeploymentName)
@@ -124,6 +131,9 @@ func main() {
 					Field: nsSelector,
 				},
 				&odigosv1.Action{}: {
+					Field: nsSelector,
+				},
+				&odigosv1.Destination{}: {
 					Field: nsSelector,
 				},
 			},
