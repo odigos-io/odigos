@@ -107,6 +107,54 @@ func getResourceSettings(odigosConfiguration common.OdigosConfiguration) odigosv
 	}
 }
 
+func calculateSpanMetricsEnabled(userSettings *bool, destinationTypeManifest destinations.Destination) bool {
+	if userSettings == nil {
+		return destinationTypeManifest.Spec.Signals.Metrics.SpanMetricsEnabledByDefault
+	}
+	return *userSettings
+}
+
+func updateMetricsSettingsForDestination(metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings, destination odigosv1.Destination, destinationTypeManifest destinations.Destination) {
+	metricsSettings := destination.Spec.MetricsSettings
+	if metricsSettings == nil {
+		// apply those that are enabled by default if no settings are set
+		// consider making it a global configuration in the future
+		metricsConfig.AgentsTelemetry = &odigosv1.AgentsTelemetrySettings{}
+		metricsConfig.HostMetrics = &odigosv1.HostMetricsSettings{}
+		metricsConfig.KubeletStats = &odigosv1.KubeletStatsSettings{}
+		if calculateSpanMetricsEnabled(nil, destinationTypeManifest) {
+			metricsConfig.SpanMetrics = &odigosv1.SpanMetricsSettings{}
+		}
+		return
+	}
+
+	// is span metrics not set, use the destination manifest default
+	if calculateSpanMetricsEnabled(metricsSettings.CollectSpanMetrics, destinationTypeManifest) {
+		metricsConfig.SpanMetrics = &odigosv1.SpanMetricsSettings{}
+	}
+
+	// default host metrics collection to "true"
+	if metricsSettings.CollectHostMetrics == nil || *metricsSettings.CollectHostMetrics {
+		metricsConfig.HostMetrics = &odigosv1.HostMetricsSettings{}
+	}
+	// default kubelet stats collection to "true"
+	if metricsSettings.CollectKubeletStats == nil || *metricsSettings.CollectKubeletStats {
+		metricsConfig.KubeletStats = &odigosv1.KubeletStatsSettings{}
+	}
+	// default service graph collection to "false" unless explicitly enabled
+	if metricsSettings.CollectServiceGraph != nil && *metricsSettings.CollectServiceGraph {
+		metricsConfig.ServiceGraph = &odigosv1.ServiceGraphSettings{}
+	}
+	// default odigos own metrics collection to "false" unless explicitly enabled
+	if metricsSettings.CollectOdigosOwnMetrics != nil && *metricsSettings.CollectOdigosOwnMetrics {
+		metricsConfig.OdigosOwnMetrics = &odigosv1.OdigosOwnMetricsSettings{}
+	}
+	// default agents telemetry collection to "true"
+	if metricsSettings.CollectAgentsTelemetry == nil || *metricsSettings.CollectAgentsTelemetry {
+		metricsConfig.AgentsTelemetry = &odigosv1.AgentsTelemetrySettings{}
+	}
+}
+
 func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDestinations odigosv1.DestinationList) *odigosv1.CollectorsGroup {
 
 	var metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings
@@ -128,22 +176,10 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 		}
 		if metricsConfig == nil {
 			// setting it to non null is an indicator that metrics are enabled
-			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{
-				HostMetrics:      &odigosv1.HostMetricsSettings{},     // currently enabled by default for all metrics destinations
-				SpanMetrics:      nil,                                 // start as nil and overwritten if any destination enables it
-				KubeletStats:     &odigosv1.KubeletStatsSettings{},    // currently enabled by default for all metrics destinations
-				ServiceGraph:     nil,                                 // currently disabled by default for all metrics destinations
-				OdigosOwnMetrics: nil,                                 // currently disabled by default for all metrics destinations
-				AgentsTelemetry:  &odigosv1.AgentsTelemetrySettings{}, // always enabled
-			}
+			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
 		}
 
-		if destinationTypeManifest.Spec.Signals.Metrics.SpanMetricsEnabledByDefault {
-			// if any enabled metrics destination has span metrics enabled by default,
-			// the enable it here.
-			// in the future, we may want to add settings here as well (what to collect, frequency, dimentions, etc.)
-			metricsConfig.SpanMetrics = &odigosv1.SpanMetricsSettings{}
-		}
+		updateMetricsSettingsForDestination(metricsConfig, destination, destinationTypeManifest)
 	}
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
