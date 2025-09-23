@@ -32,7 +32,7 @@ const (
 	logsServiceNameProcessorName = "resource/service-name"
 )
 
-func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
+func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorSignals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup) error {
 	logger := log.FromContext(ctx)
 
@@ -49,7 +49,7 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		b.autoscalerDeployment = autoscalerDeployment
 	}
 
-	desired, err := b.getDesiredConfigMap(sources, signals, processors, datacollection)
+	desired, err := b.getDesiredConfigMap(sources, clusterCollectorSignals, processors, datacollection)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
@@ -158,7 +158,7 @@ func noopConfigMap() (string, error) {
 	return string(yamlData), nil
 }
 
-func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
+func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, clusterCollectorSignals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
 	cg *odigosv1.CollectorsGroup) (*v1.ConfigMap, error) {
 	if b.autoscalerDeployment == nil {
 		return nil, errors.New("autoscaler deployment is not set in the reconciler, cannot set owner reference")
@@ -166,12 +166,12 @@ func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(sources *odigosv1.Inst
 	var err error
 	var cmData string
 
-	if cg == nil || len(signals) == 0 {
+	if cg == nil || len(clusterCollectorSignals) == 0 {
 		// if collectors group is not created yet, or there are no signals to collect, return a no-op configmap
 		// this can happen if no sources are instrumented yet or no destinations are added.
 		cmData, err = noopConfigMap()
 	} else {
-		cmData, err = calculateConfigMapData(cg, sources, signals, processors, commonconf.ControllerConfig.OnGKE)
+		cmData, err = calculateConfigMapData(cg, sources, clusterCollectorSignals, processors, commonconf.ControllerConfig.OnGKE)
 	}
 
 	if err != nil {
@@ -276,7 +276,7 @@ func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
 func calculateConfigMapData(
 	nodeCG *odigosv1.CollectorsGroup,
 	sources *odigosv1.InstrumentationConfigList,
-	signals []odigoscommon.ObservabilitySignal,
+	clusterCollectorSignals []odigoscommon.ObservabilitySignal,
 	processors []*odigosv1.Processor,
 	onGKE bool) (string, error) {
 
@@ -294,18 +294,21 @@ func calculateConfigMapData(
 		collectorconfig.OwnMetricsConfig(ownMetricsPort),
 	}
 
-	// traces
-	tracesEnabled := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
-	if tracesEnabled {
-		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, tracesProcessors)
-		activeConfigDomains = append(activeConfigDomains, tracesConfig)
-	}
 	// metrics
-	metricsEnabled := slices.Contains(signals, odigoscommon.MetricsObservabilitySignal)
+	metricsEnabled := slices.Contains(clusterCollectorSignals, odigoscommon.MetricsObservabilitySignal)
 	metricsConfigSettings := nodeCG.Spec.Metrics
+	var additionalTraceExporters []string
 	if metricsEnabled && metricsConfigSettings != nil {
-		metricsConfig := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, metricsProcessors, metricsConfigSettings)
+		metricsConfig, metricsAdditionalTraceExporters := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, metricsProcessors, metricsConfigSettings)
 		activeConfigDomains = append(activeConfigDomains, metricsConfig)
+		additionalTraceExporters = append(additionalTraceExporters, metricsAdditionalTraceExporters...)
+	}
+
+	// traces
+	tracesEnabledInClusterCollector := slices.Contains(clusterCollectorSignals, odigoscommon.TracesObservabilitySignal)
+	if len(additionalTraceExporters) > 0 {
+		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, tracesProcessors, additionalTraceExporters, tracesEnabledInClusterCollector)
+		activeConfigDomains = append(activeConfigDomains, tracesConfig)
 	}
 
 	mergedConfig, err := config.MergeConfigs(activeConfigDomains...)
@@ -327,7 +330,7 @@ func calculateConfigMapData(
 		Service:    mergedConfig.Service,
 	}
 
-	collectLogs := slices.Contains(signals, odigoscommon.LogsObservabilitySignal)
+	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
 		includes := make([]string, 0)
 		for _, element := range sources.Items {

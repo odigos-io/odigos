@@ -78,6 +78,7 @@ func metricsConnectors(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCol
 	connectorNamesToAdd := []string{}
 
 	if metricsConfigSettings.SpanMetrics != nil {
+		// asumming that is span metrics is enabled, then traces are enabled as well (not reponsiblity of this function to check)
 		connectorNamesToAdd = append(connectorNamesToAdd, spanMetricsConnectorName)
 		connectors[spanMetricsConnectorName] = config.GenericMap{
 			"histogram": config.GenericMap{
@@ -138,7 +139,7 @@ func metricsConnectors(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCol
 	return connectors, connectorNamesToAdd
 }
 
-func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) config.Config {
+func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) (config.Config, []string) {
 
 	metricsPipelineProcessors := append([]string{
 		BatchProcessorName,         // always start with batch
@@ -151,13 +152,12 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, man
 	receivers, pipelineReceiverNames := metricsReceivers(metricsConfigSettings)
 	if len(pipelineReceiverNames) == 0 {
 		// if all metrics sources are not enabled, skip the metrics pipeline generation as it has no receivers and will fail the collector
-		return config.Config{}
+		return config.Config{}, []string{}
 	}
 
 	// add connectors for span to metrics
-	connectors, connectorNamesToAdd := metricsConnectors(metricsConfigSettings)
-
-	pipelineExporterNames := append(connectorNamesToAdd, ClusterCollectorExporterName)
+	connectors, connectorNames := metricsConnectors(metricsConfigSettings)
+	pipelineReceiverNames = append(pipelineReceiverNames, connectorNames...)
 
 	return config.Config{
 		Receivers:  receivers,
@@ -167,9 +167,9 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, man
 				odigosMetricsPipelineName: {
 					Receivers:  pipelineReceiverNames,
 					Processors: metricsPipelineProcessors,
-					Exporters:  pipelineExporterNames,
+					Exporters:  []string{ClusterCollectorExporterName},
 				},
 			},
 		},
-	}
+	}, connectorNames
 }
