@@ -67,6 +67,24 @@ spec:
                   Additional directory to mount in the node collector pod for logs.
                   This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.
                 type: string
+              metrics:
+                description: |-
+                  configuration for metrics handling in this collectors group
+                  if metric collection is disabled, this will be nil
+                  the content is populated only if relevant to this collectors group
+                  it's being calculated based on active destinations and their settings,
+                  and global settings provided in the odigos configuration or instrumentation rules.
+                  it allows for the collector group reconciler to be simplified,
+                  and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
+                properties:
+                  spanMetrics:
+                    description: |-
+                      if not nil, it means span to metrics is enabled,
+                      and the node collector should set it up in the pipeline.
+                      span to metrics is the ability to calculate metrics like http requests/errors/duration etc
+                      from the individual spans recorded for relevant operation.
+                    type: object
+                type: object
               resourcesSettings:
                 description: |-
                   Resources [memory/cpu] settings for the collectors group.

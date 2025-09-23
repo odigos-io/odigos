@@ -79,6 +79,19 @@ type CollectorsGroupResourcesSettings struct {
 	GomemlimitMiB int `json:"gomemlimitMiB"`
 }
 
+type SpanMetricsSettings struct {
+	// here so we can add span to metrics settings in the future without breaking backwards compatibility
+}
+
+type CollectorsGroupMetricsCollectionSettings struct {
+
+	// if not nil, it means span to metrics is enabled,
+	// and the node collector should set it up in the pipeline.
+	// span to metrics is the ability to calculate metrics like http requests/errors/duration etc
+	// from the individual spans recorded for relevant operation.
+	SpanMetrics *SpanMetricsSettings `json:"spanMetrics,omitempty"`
+}
+
 // CollectorsGroupSpec defines the desired state of Collector
 type CollectorsGroupSpec struct {
 	Role CollectorsGroupRole `json:"role"`
@@ -113,6 +126,15 @@ type CollectorsGroupSpec struct {
 	// for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
 	// when unset or empty, no proxy will be used.
 	HttpsProxyAddress *string `json:"httpsProxyAddress,omitempty"`
+
+	// configuration for metrics handling in this collectors group
+	// if metric collection is disabled, this will be nil
+	// the content is populated only if relevant to this collectors group
+	// it's being calculated based on active destinations and their settings,
+	// and global settings provided in the odigos configuration or instrumentation rules.
+	// it allows for the collector group reconciler to be simplified,
+	// and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
+	Metrics *CollectorsGroupMetricsCollectionSettings `json:"metrics,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector
