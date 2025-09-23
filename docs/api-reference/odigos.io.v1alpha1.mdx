@@ -1362,6 +1362,90 @@ and the distro to use will be calculated based on this value.</p>
 </tbody>
 </table>
 
+## `DestinationMetricsSettings` <a id="odigos-io-v1alpha1-DestinationMetricsSettings"></a>
+    
+
+**Appears in:**
+
+- [DestinationSpec](#odigos-io-v1alpha1-DestinationSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>spanMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>following settings enables/disables specific metric sources
+true - collect and send this metric source
+false - do not collect and send this metric source
+nil - use the default setting (from destination manifest, or cluster global setting)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hostMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>kubeletStatsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>serviceGraphEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>odigosOwnMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>agentsTelemetryEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
 ## `DestinationSpec` <a id="odigos-io-v1alpha1-DestinationSpec"></a>
     
 
@@ -1441,6 +1525,18 @@ and the distro to use will be calculated based on this value.</p>
 <td>
    <span class="text-muted">No description provided.</span>
    </td>
+</tr>
+<tr>
+<td>
+<code>metricsSettings</code>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-DestinationMetricsSettings"><code>DestinationMetricsSettings</code></a>
+</td>
+<td>
+   <p>MetricsSettings defines the metrics settings for this destination.
+ignored if destination does not support metrics or metrics are not enabled in signals</p>
+</td>
 </tr>
 <tr>
 <td>
