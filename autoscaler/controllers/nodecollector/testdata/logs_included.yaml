@@ -1,5 +1,5 @@
 exporters:
-  loadbalancing:
+  loadbalancing/traces:
     protocol:
       otlp:
         compression: none
@@ -161,14 +161,14 @@ service:
       - prometheus/self-metrics
     traces:
       exporters:
-      - loadbalancing
+      - loadbalancing/traces
       processors:
       - batch
       - memory_limiter
       - resource/node-name
       - resourcedetection
-      - odigostrafficmetrics
       - test_type/test_processor
+      - odigostrafficmetrics
       receivers:
       - otlp/in
       - odigosebpf

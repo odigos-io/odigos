@@ -158,7 +158,9 @@ func TestCalculateConfigMapData(t *testing.T) {
 					},
 				},
 			},
-		})
+		},
+		false, /* onGKE */
+	)
 
 	assert.Equal(t, err, nil)
 	assert.Equal(t, want, got)

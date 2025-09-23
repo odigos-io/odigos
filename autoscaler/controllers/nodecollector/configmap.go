@@ -171,7 +171,7 @@ func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(sources *odigosv1.Inst
 		// this can happen if no sources are instrumented yet or no destinations are added.
 		cmData, err = noopConfigMap()
 	} else {
-		cmData, err = calculateConfigMapData(cg, sources, signals, processors)
+		cmData, err = calculateConfigMapData(cg, sources, signals, processors, commonconf.ControllerConfig.OnGKE)
 	}
 
 	if err != nil {
@@ -277,80 +277,45 @@ func calculateConfigMapData(
 	nodeCG *odigosv1.CollectorsGroup,
 	sources *odigosv1.InstrumentationConfigList,
 	signals []odigoscommon.ObservabilitySignal,
-	processors []*odigosv1.Processor) (string, error) {
+	processors []*odigosv1.Processor,
+	onGKE bool) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
 	odigosNamespace := env.GetCurrentNamespace()
 
-	commonConfig := collectorconfig.CommonConfig(nodeCG)
-	ownMetricsConfig := collectorconfig.OwnMetricsConfig(ownMetricsPort)
-
-	mergedConfig, err := config.MergeConfigs(commonConfig, ownMetricsConfig)
-	if err != nil {
-		return "", err
-	}
-
-	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(commonconf.ToProcessorConfigurerArray(processors))
+	manifestProcessosrs, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(commonconf.ToProcessorConfigurerArray(processors))
 	for name, err := range errs {
 		log.Log.V(0).Error(err, "processor", name)
 	}
 
-	resourceDetectionProcessor := config.GenericMap{
-		"detectors": []string{"ec2", "azure"},
-		"timeout":   "2s",
-	}
-	// This is a workaround to avoid adding the gcp detector if not running on a gke environment
-	// once https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/issues/1026 is resolved, we can always put the gcp detector
-	if commonconf.ControllerConfig != nil && commonconf.ControllerConfig.OnGKE {
-		resourceDetectionProcessor["detectors"] = append(resourceDetectionProcessor["detectors"].([]string), "gcp")
-	}
-	processorsCfg["resourcedetection"] = resourceDetectionProcessor
-	for name, processor := range mergedConfig.Processors {
-		processorsCfg[name] = processor
+	// common config domains - always set and active
+	activeConfigDomains := []config.Config{
+		collectorconfig.CommonConfig(nodeCG, onGKE),
+		collectorconfig.OwnMetricsConfig(ownMetricsPort),
 	}
 
-	exporters := mergedConfig.Exporters
-	tracesPipelineExporter := []string{collectorconfig.ClusterCollectorExporterName}
-
-	// Add loadbalancing exporter for traces to ensure consistent gateway routing.
-	// This allows the servicegraph connector to properly aggregate trace data
-	// by sending all traces from a node collector to the same gateway instance.
+	// traces config domain
 	tracesEnabled := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
 	if tracesEnabled {
-
-		compression := "none"
-		internalDataCompressionDisabled := nodeCG.Spec.EnableDataCompression
-
-		if internalDataCompressionDisabled != nil && *internalDataCompressionDisabled == true {
-			compression = "gzip"
-		}
-
-		exporters["loadbalancing"] = config.GenericMap{
-			"protocol": config.GenericMap{"otlp": config.GenericMap{"compression": compression, "tls": config.GenericMap{"insecure": true}}},
-			"resolver": config.GenericMap{"k8s": config.GenericMap{"service": fmt.Sprintf("odigos-gateway.%s", odigosNamespace)}},
-		}
-		tracesPipelineExporter = []string{"loadbalancing"}
+		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, tracesProcessors)
+		activeConfigDomains = append(activeConfigDomains, tracesConfig)
 	}
 
-	receivers := config.GenericMap{
-		"odigosebpf": config.GenericMap{},
-	}
-	for name, receiver := range mergedConfig.Receivers {
-		receivers[name] = receiver
+	mergedConfig, err := config.MergeConfigs(activeConfigDomains...)
+	if err != nil {
+		return "", err
 	}
 
-	pipelines := map[string]config.Pipeline{}
-	for name, pipeline := range mergedConfig.Service.Pipelines {
-		pipelines[name] = pipeline
+	allProcessors := manifestProcessosrs
+	for name, processor := range mergedConfig.Processors {
+		allProcessors[name] = processor
 	}
-
-	extensions := mergedConfig.Extensions
 
 	cfg := config.Config{
-		Receivers:  receivers,
-		Exporters:  exporters,
-		Processors: processorsCfg,
-		Extensions: extensions,
+		Receivers:  mergedConfig.Receivers,
+		Exporters:  mergedConfig.Exporters,
+		Processors: allProcessors,
+		Extensions: mergedConfig.Extensions,
 		Service:    mergedConfig.Service,
 	}
 
@@ -445,15 +410,6 @@ func calculateConfigMapData(
 			Receivers:  []string{"filelog"},
 			Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
 			Exporters:  []string{collectorconfig.ClusterCollectorExporterName},
-		}
-	}
-
-	collectTraces := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
-	if collectTraces {
-		cfg.Service.Pipelines["traces"] = config.Pipeline{
-			Receivers:  []string{collectorconfig.OTLPInReceiverName, "odigosebpf"},
-			Processors: append(getAgentPipelineCommonProcessors(), tracesProcessors...),
-			Exporters:  tracesPipelineExporter,
 		}
 	}
 
@@ -591,5 +547,5 @@ func getFileLogPipelineProcessors() []string {
 }
 
 func getCommonProcessors() []string {
-	return []string{collectorconfig.NodeNameProcessorName, "resourcedetection", collectorconfig.OdigosTrafficMetricsProcessorName}
+	return []string{collectorconfig.NodeNameProcessorName, collectorconfig.ResourceDetectionProcessorName, collectorconfig.OdigosTrafficMetricsProcessorName}
 }
