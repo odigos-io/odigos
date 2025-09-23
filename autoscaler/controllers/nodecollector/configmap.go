@@ -306,7 +306,7 @@ func calculateConfigMapData(
 
 	// traces
 	tracesEnabledInClusterCollector := slices.Contains(clusterCollectorSignals, odigoscommon.TracesObservabilitySignal)
-	if len(additionalTraceExporters) > 0 {
+	if len(additionalTraceExporters) > 0 || tracesEnabledInClusterCollector {
 		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, tracesProcessors, additionalTraceExporters, tracesEnabledInClusterCollector)
 		activeConfigDomains = append(activeConfigDomains, tracesConfig)
 	}
