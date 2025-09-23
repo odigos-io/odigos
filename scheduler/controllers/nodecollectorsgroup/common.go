@@ -141,10 +141,6 @@ func updateMetricsSettingsForDestination(metricsConfig *odigosv1.CollectorsGroup
 	if metricsSettings.CollectKubeletStats == nil || *metricsSettings.CollectKubeletStats {
 		metricsConfig.KubeletStats = &odigosv1.KubeletStatsSettings{}
 	}
-	// default service graph collection to "false" unless explicitly enabled
-	if metricsSettings.CollectServiceGraph != nil && *metricsSettings.CollectServiceGraph {
-		metricsConfig.ServiceGraph = &odigosv1.ServiceGraphSettings{}
-	}
 	// default odigos own metrics collection to "false" unless explicitly enabled
 	if metricsSettings.CollectOdigosOwnMetrics != nil && *metricsSettings.CollectOdigosOwnMetrics {
 		metricsConfig.OdigosOwnMetrics = &odigosv1.OdigosOwnMetricsSettings{}
