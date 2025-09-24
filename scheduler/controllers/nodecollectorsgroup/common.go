@@ -167,6 +167,9 @@ func getSpanMetricsConfiguration(odigosConfiguration *common.OdigosConfiguration
 	if spanMetricsCopy.Interval == "" {
 		spanMetricsCopy.Interval = "60s"
 	}
+	if spanMetricsCopy.MetricsExpiration == "" {
+		spanMetricsCopy.MetricsExpiration = "5m"
+	}
 	if len(spanMetricsCopy.ExplicitHistogramBuckets) == 0 {
 		spanMetricsCopy.ExplicitHistogramBuckets = []string{"2ms", "4ms", "6ms", "8ms", "10ms", "50ms", "100ms", "200ms", "400ms", "800ms", "1s", "1400ms", "2s", "5s", "10s", "15s"}
 	}
