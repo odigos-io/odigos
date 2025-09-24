@@ -770,7 +770,7 @@ If the fraction is 1, all spans are sampled.</p>
 <code>spanMetrics</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-SpanMetricsSettings"><code>SpanMetricsSettings</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceSpanMetricsConfiguration"><code>common.MetricsSourceSpanMetricsConfiguration</code></a>
 </td>
 <td>
    <p>if not nil for node collector, it means span to metrics is enabled,
@@ -784,7 +784,7 @@ from the individual spans recorded for relevant operation.</p>
 <code>hostMetrics</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-HostMetricsSettings"><code>HostMetricsSettings</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceHostMetricsConfiguration"><code>common.MetricsSourceHostMetricsConfiguration</code></a>
 </td>
 <td>
    <p>if not nil for node collector, it means host metrics is enabled,
@@ -798,7 +798,7 @@ such as cpu, memory, disk, network, etc.</p>
 <code>kubeletStats</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-KubeletStatsSettings"><code>KubeletStatsSettings</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceKubeletStatsConfiguration"><code>common.MetricsSourceKubeletStatsConfiguration</code></a>
 </td>
 <td>
    <p>if not nil for node collector, it means kubelet stats is enabled,
@@ -1662,15 +1662,6 @@ a value of 0 means no spans are sampled if none of the rules evaluate to true.</
 </tbody>
 </table>
 
-## `HostMetricsSettings` <a id="odigos-io-v1alpha1-HostMetricsSettings"></a>
-    
-
-**Appears in:**
-
-- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
-
-
-
 ## `InstrumentationConfigSpec` <a id="odigos-io-v1alpha1-InstrumentationConfigSpec"></a>
     
 
@@ -2428,15 +2419,6 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `KubeletStatsSettings` <a id="odigos-io-v1alpha1-KubeletStatsSettings"></a>
-    
-
-**Appears in:**
-
-- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
-
-
-
 ## `OdigosOwnMetricsSettings` <a id="odigos-io-v1alpha1-OdigosOwnMetricsSettings"></a>
     
 
@@ -2998,13 +2980,4 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tr>
 </tbody>
 </table>
-
-## `SpanMetricsSettings` <a id="odigos-io-v1alpha1-SpanMetricsSettings"></a>
-    
-
-**Appears in:**
-
-- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
-
-
   

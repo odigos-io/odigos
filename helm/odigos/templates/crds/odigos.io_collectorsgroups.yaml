@@ -89,6 +89,17 @@ spec:
                       and the opentelemetry collector "hostmetrics" receiver should be included in the pipeline.
                       host metrics are metrics that are collected from the host node,
                       such as cpu, memory, disk, network, etc.
+                    properties:
+                      disabled:
+                        description: |-
+                          control beahvior for when to collect host metrics.
+                          - true - host metrics will never be collected, even if destinations require it.
+                          - false / nil - host metrics will be collected if destinations require it (can be opt-in and out in destination level).
+                        type: boolean
+                      interval:
+                        description: 'time interval for scraping metrics (format:
+                          15s, 1m etc). defaults: 60s (one minute).'
+                        type: string
                     type: object
                   kubeletStats:
                     description: |-
@@ -96,6 +107,17 @@ spec:
                       and the opentelemetry collector "kubeletstats" receiver should be included in the pipeline.
                       kubelet stats are metrics that are collected from the kubelet point of view,
                       such as cpu, memory, disk, network, per pod, node and more.
+                    properties:
+                      disabled:
+                        description: |-
+                          control beahvior for when to collect kubelet stats.
+                          - true - kubelet stats will never be collected, even if destinations require it.
+                          - false / nil - kubelet stats will be collected if destinations require it (can be opt-in and out in destination level).
+                        type: boolean
+                      interval:
+                        description: 'time interval for scraping metrics (format:
+                          15s, 1m etc). defaults: 60s (one minute).'
+                        type: string
                     type: object
                   odigosOwnMetrics:
                     description: |-
@@ -116,6 +138,42 @@ spec:
                       and the node collector should set it up in the pipeline.
                       span to metrics is the ability to calculate metrics like http requests/errors/duration etc
                       from the individual spans recorded for relevant operation.
+                    properties:
+                      additionalDimensions:
+                        description: |-
+                          additional dimensions to add to the span metrics.
+                          these are span attributes that you want to convert to metrics attributes during collection.
+                          the values of the attributes must have low cardinality.
+                          it can increase the number of series in the destination.
+                          some dimensions are already added by default, regardless of this setting.
+                        items:
+                          type: string
+                        type: array
+                      disabled:
+                        description: |-
+                          control beahvior for when to collect span metrics.
+                          - true - span metrics will never be collected, even if destinations require it.
+                          - false / nil - span metrics will be collected if destinations require it (can be opt-in and out in destination level).
+                        type: boolean
+                      histogramBuckets:
+                        description: |-
+                          explicit buckets list for the histogram metrics.
+                          format is duration string (`1us`, `2ms`, `3s`, `4m`, `5h`, `6d` etc).
+                          if not set, the default buckets list will be used.
+                          the buckets must be in ascending order.
+                          example: ["100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"]
+                          Default value when unset: ["2ms", "4ms", "6ms", "8ms", "10ms", "50ms", "100ms", "200ms", "400ms", "800ms", "1s", "1400ms", "2s", "5s", "10s", "15s"]
+                          notice that more granular buckets are recommended for better precision for cost more by producing more metric series.
+                        items:
+                          type: string
+                        type: array
+                      histogramDisabled:
+                        description: if true, histogram metrics will not be collected.
+                        type: boolean
+                      interval:
+                        description: 'time interval for flusing metrics (format: 15s,
+                          1m etc). defaults: 60s (one minute).'
+                        type: string
                     type: object
                 type: object
               resourcesSettings:

@@ -79,18 +79,6 @@ type CollectorsGroupResourcesSettings struct {
 	GomemlimitMiB int `json:"gomemlimitMiB"`
 }
 
-type SpanMetricsSettings struct {
-	// here so we can add span to metrics settings in the future without breaking backwards compatibility
-}
-
-type HostMetricsSettings struct {
-	// here so we can add host metrics settings in the future without breaking backwards compatibility
-}
-
-type KubeletStatsSettings struct {
-	// here so we can add kubelet stats settings in the future without breaking backwards compatibility
-}
-
 type ServiceGraphSettings struct {
 	// here so we can add service graph settings in the future without breaking backwards compatibility
 }
@@ -111,19 +99,19 @@ type CollectorsGroupMetricsCollectionSettings struct {
 	// and the node collector should set it up in the pipeline.
 	// span to metrics is the ability to calculate metrics like http requests/errors/duration etc
 	// from the individual spans recorded for relevant operation.
-	SpanMetrics *SpanMetricsSettings `json:"spanMetrics,omitempty"`
+	SpanMetrics *common.MetricsSourceSpanMetricsConfiguration `json:"spanMetrics,omitempty"`
 
 	// if not nil for node collector, it means host metrics is enabled,
 	// and the opentelemetry collector "hostmetrics" receiver should be included in the pipeline.
 	// host metrics are metrics that are collected from the host node,
 	// such as cpu, memory, disk, network, etc.
-	HostMetrics *HostMetricsSettings `json:"hostMetrics,omitempty"`
+	HostMetrics *common.MetricsSourceHostMetricsConfiguration `json:"hostMetrics,omitempty"`
 
 	// if not nil for node collector, it means kubelet stats is enabled,
 	// and the opentelemetry collector "kubeletstats" receiver should be included in the pipeline.
 	// kubelet stats are metrics that are collected from the kubelet point of view,
 	// such as cpu, memory, disk, network, per pod, node and more.
-	KubeletStats *KubeletStatsSettings `json:"kubeletStats,omitempty"`
+	KubeletStats *common.MetricsSourceKubeletStatsConfiguration `json:"kubeletStats,omitempty"`
 
 	// if not nil for cluster collector, it means service graph is enabled,
 	// and metrics for the "connectivity" between services should be calculated

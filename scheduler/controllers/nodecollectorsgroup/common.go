@@ -114,32 +114,93 @@ func calculateSpanMetricsEnabled(userSettings *bool, destinationTypeManifest des
 	return *userSettings
 }
 
-func updateMetricsSettingsForDestination(metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings, destination odigosv1.Destination, destinationTypeManifest destinations.Destination) {
+func getHostMetricsConfiguration(odigosConfiguration *common.OdigosConfiguration) *common.MetricsSourceHostMetricsConfiguration {
+
+	var hostMetricsCopy common.MetricsSourceHostMetricsConfiguration
+	if odigosConfiguration.MetricsSources != nil && odigosConfiguration.MetricsSources.HostMetrics != nil {
+		hostMetricsCopy = *odigosConfiguration.MetricsSources.HostMetrics
+	}
+
+	if hostMetricsCopy.Disabled != nil && *hostMetricsCopy.Disabled {
+		return nil
+	}
+
+	// defaults
+	if hostMetricsCopy.Interval == "" {
+		hostMetricsCopy.Interval = "10s"
+	}
+
+	return &hostMetricsCopy
+}
+
+func getKubeletStatsConfiguration(odigosConfiguration *common.OdigosConfiguration) *common.MetricsSourceKubeletStatsConfiguration {
+
+	var kubeletStatsCopy common.MetricsSourceKubeletStatsConfiguration
+	if odigosConfiguration.MetricsSources != nil && odigosConfiguration.MetricsSources.KubeletStats != nil {
+		kubeletStatsCopy = *odigosConfiguration.MetricsSources.KubeletStats
+	}
+
+	if kubeletStatsCopy.Disabled != nil && *kubeletStatsCopy.Disabled {
+		return nil
+	}
+
+	// defaults
+	if kubeletStatsCopy.Interval == "" {
+		kubeletStatsCopy.Interval = "10s"
+	}
+
+	return &kubeletStatsCopy
+}
+
+func getSpanMetricsConfiguration(odigosConfiguration *common.OdigosConfiguration) *common.MetricsSourceSpanMetricsConfiguration {
+
+	var spanMetricsCopy common.MetricsSourceSpanMetricsConfiguration
+	if odigosConfiguration.MetricsSources != nil && odigosConfiguration.MetricsSources.SpanMetrics != nil {
+		spanMetricsCopy = *odigosConfiguration.MetricsSources.SpanMetrics
+	}
+
+	if spanMetricsCopy.Disabled != nil && *spanMetricsCopy.Disabled {
+		return nil
+	}
+
+	// defaults
+	if spanMetricsCopy.Interval == "" {
+		spanMetricsCopy.Interval = "60s"
+	}
+	if len(spanMetricsCopy.ExplicitHistogramBuckets) == 0 {
+		spanMetricsCopy.ExplicitHistogramBuckets = []string{"2ms", "4ms", "6ms", "8ms", "10ms", "50ms", "100ms", "200ms", "400ms", "800ms", "1s", "1400ms", "2s", "5s", "10s", "15s"}
+	}
+
+	return &spanMetricsCopy
+}
+
+func updateMetricsSettingsForDestination(metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings, odigosConfiguration *common.OdigosConfiguration, destination odigosv1.Destination, destinationTypeManifest destinations.Destination) {
+
 	metricsSettings := destination.Spec.MetricsSettings
 	if metricsSettings == nil {
 		// apply those that are enabled by default if no settings are set
 		// consider making it a global configuration in the future
 		metricsConfig.AgentsTelemetry = &odigosv1.AgentsTelemetrySettings{}
-		metricsConfig.HostMetrics = &odigosv1.HostMetricsSettings{}
-		metricsConfig.KubeletStats = &odigosv1.KubeletStatsSettings{}
+		metricsConfig.HostMetrics = getHostMetricsConfiguration(odigosConfiguration)
+		metricsConfig.KubeletStats = getKubeletStatsConfiguration(odigosConfiguration)
 		if calculateSpanMetricsEnabled(nil, destinationTypeManifest) {
-			metricsConfig.SpanMetrics = &odigosv1.SpanMetricsSettings{}
+			metricsConfig.SpanMetrics = getSpanMetricsConfiguration(odigosConfiguration)
 		}
 		return
 	}
 
 	// is span metrics not set, use the destination manifest default
 	if calculateSpanMetricsEnabled(metricsSettings.CollectSpanMetrics, destinationTypeManifest) {
-		metricsConfig.SpanMetrics = &odigosv1.SpanMetricsSettings{}
+		metricsConfig.SpanMetrics = getSpanMetricsConfiguration(odigosConfiguration)
 	}
 
 	// default host metrics collection to "true"
 	if metricsSettings.CollectHostMetrics == nil || *metricsSettings.CollectHostMetrics {
-		metricsConfig.HostMetrics = &odigosv1.HostMetricsSettings{}
+		metricsConfig.HostMetrics = getHostMetricsConfiguration(odigosConfiguration)
 	}
 	// default kubelet stats collection to "true"
 	if metricsSettings.CollectKubeletStats == nil || *metricsSettings.CollectKubeletStats {
-		metricsConfig.KubeletStats = &odigosv1.KubeletStatsSettings{}
+		metricsConfig.KubeletStats = getKubeletStatsConfiguration(odigosConfiguration)
 	}
 	// default odigos own metrics collection to "false" unless explicitly enabled
 	if metricsSettings.CollectOdigosOwnMetrics != nil && *metricsSettings.CollectOdigosOwnMetrics {
@@ -175,7 +236,7 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
 		}
 
-		updateMetricsSettingsForDestination(metricsConfig, destination, destinationTypeManifest)
+		updateMetricsSettingsForDestination(metricsConfig, &odigosConfiguration, destination, destinationTypeManifest)
 	}
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
