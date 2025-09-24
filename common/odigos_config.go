@@ -179,7 +179,7 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// the buckets must be in ascending order.
 	// example: ["100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"]
 	// Default value when unset: ["2ms", "4ms", "6ms", "8ms", "10ms", "50ms", "100ms", "200ms", "400ms", "800ms", "1s", "1400ms", "2s", "5s", "10s", "15s"]
-	// notice that more granular buckets are recommended for better precision for cost more by producing more metric series.
+	// notice that more granular buckets are recommended for better precision but costs more since more metric series are produced.
 	ExplicitHistogramBuckets []string `json:"histogramBuckets,omitempty"`
 }
 
