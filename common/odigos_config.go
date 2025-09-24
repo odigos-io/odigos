@@ -163,6 +163,13 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// time interval for flusing metrics (format: 15s, 1m etc). defaults: 60s (one minute).
 	Interval string `json:"interval,omitempty"`
 
+	// used to remove metrics after time that they are not reporting.
+	// if an app only generates metrics once in a while, this parameter can tune
+	// how much gap is allowed.
+	// format: duration string (15s, 1m, etc).
+	// default is 5m (five minutes).
+	MetricsExpiration string `json:"metricsExpiration,omitempty"`
+
 	// additional dimensions to add to the span metrics.
 	// these are span attributes that you want to convert to metrics attributes during collection.
 	// the values of the attributes must have low cardinality.

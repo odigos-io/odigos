@@ -122,7 +122,7 @@ func metricsConnectors(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCol
 			"dimensions_cache_size":           1000,
 			"aggregation_temporality":         "AGGREGATION_TEMPORALITY_CUMULATIVE",
 			"metrics_flush_interval":          metricsConfigSettings.SpanMetrics.Interval,
-			"metrics_expiration":              "5m",
+			"metrics_expiration":              metricsConfigSettings.SpanMetrics.MetricsExpiration,
 			"resource_metrics_key_attributes": []string{"service.name", "telemetry.sdk.language", "telemetry.sdk.name"},
 			"events": config.GenericMap{
 				"enabled": true,
