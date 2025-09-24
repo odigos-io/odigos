@@ -156,14 +156,16 @@ spec:
                           - false / nil - span metrics will be collected if destinations require it (can be opt-in and out in destination level).
                         type: boolean
                       histogramBuckets:
-                        description: |-
-                          explicit buckets list for the histogram metrics.
-                          format is duration string (`1us`, `2ms`, `3s`, `4m`, `5h`, `6d` etc).
-                          if not set, the default buckets list will be used.
-                          the buckets must be in ascending order.
-                          example: ["100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"]
-                          Default value when unset: ["2ms", "4ms", "6ms", "8ms", "10ms", "50ms", "100ms", "200ms", "400ms", "800ms", "1s", "1400ms", "2s", "5s", "10s", "15s"]
-                          notice that more granular buckets are recommended for better precision but costs more since more metric series are produced.
+                        description: "explicit buckets list for the histogram metrics.\nformat
+                          is duration string (`1us`, `2ms`, `3s`, `4m`, `5h`, `6d`
+                          etc).\nif not set, the default buckets list will be used.\nthe
+                          buckets must be in ascending order.\nexample: [\"100us\",
+                          \"1ms\", \"2ms\", \"6ms\", \"10ms\", \"100ms\", \"250ms\"]\nDefault
+                          value when unset:\n\t\t[\"2ms\", \"4ms\", \"6ms\", \"8ms\",
+                          \"10ms\", \"50ms\", \"100ms\", \"200ms\", \"400ms\", \"800ms\",
+                          \"1s\", \"1400ms\", \"2s\", \"5s\", \"10s\", \"15s\"]\nnotice
+                          that more granular buckets are recommended for better precision
+                          but costs more since more metric series are produced."
                         items:
                           type: string
                         type: array
