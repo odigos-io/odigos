@@ -21,12 +21,12 @@ spec:
       componentProps:
         type: text
         required: true
-    - name: PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS
-      displayName: Resource Attributes Labels
+    - name: PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS # Notice: deprecated. not used anymore. will be removed soon.
+      displayName: Resource Attributes Labels (Deprecated)
       componentType: multiInput
       componentProps:
-        tooltip: 'use these OpenTelemetry resource attributes as prometheus labels for each metric data point'
-      initialValue: '["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]'
+        tooltip: 'deprecated. will be removed soon.'
+      # initialValue: '["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]'
     - name: PROMETHEUS_BEARER_TOKEN
       displayName: Bearer Token
       componentType: input

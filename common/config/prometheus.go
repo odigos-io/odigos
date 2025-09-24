@@ -38,6 +38,9 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	exporterConfig := GenericMap{
 		"endpoint": fmt.Sprintf("%s/api/v1/write", url),
+		"resource_to_telemetry_conversion": GenericMap{
+			"enabled": true,
+		},
 	}
 
 	// In order to support both basic auth and bearer token, we use the Authorization header
@@ -50,21 +53,9 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	currentConfig.Exporters[rwExporterName] = exporterConfig
 
-	resourceAttributesLabels, exists := config[prometheusResourceAttributesLabelsKey]
-	processors, err := promResourceAttributesProcessors(resourceAttributesLabels, exists, uniqueUri)
-	if err != nil {
-		return nil, errors.Join(err, errors.New("failed to parse prometheus resource attributes labels, gateway will not be configured for prometheus"))
-	}
-	processorNames := []string{}
-	for k, v := range processors {
-		currentConfig.Processors[k] = v
-		processorNames = append(processorNames, k)
-	}
-
 	metricsPipelineName := "metrics/" + uniqueUri
 	currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
-		Exporters:  []string{rwExporterName},
-		Processors: processorNames,
+		Exporters: []string{rwExporterName},
 	}
 
 	return []string{metricsPipelineName}, nil
