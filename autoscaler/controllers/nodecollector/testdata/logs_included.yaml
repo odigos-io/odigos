@@ -72,7 +72,7 @@ receivers:
       enabled: true
     start_at: end
   hostmetrics:
-    collection_interval: 10s
+    collection_interval: 33s
     root_path: /hostfs
     scrapers:
       cpu:
@@ -98,7 +98,7 @@ receivers:
       processes: {}
   kubeletstats:
     auth_type: serviceAccount
-    collection_interval: 10s
+    collection_interval: 44s
     endpoint: https://${env:NODE_IP}:10250
     insecure_skip_verify: true
   odigosebpf: {}
@@ -134,8 +134,8 @@ service:
       - memory_limiter
       - resource/node-name
       - resourcedetection
-      - odigostrafficmetrics
       - test_type/test_processor
+      - odigostrafficmetrics
       receivers:
       - filelog
     metrics:

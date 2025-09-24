@@ -4,10 +4,10 @@ import (
 	"fmt"
 )
 
-func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap,
+func CrdProcessorToConfig(processors []ProcessorConfigurer) (cfg Config,
 	tracesProcessors []string, metricsProcessors []string, logsProcessors []string, errs map[string]error) {
 	errs = make(map[string]error)
-	cfg = GenericMap{}
+	processorsMap := GenericMap{}
 	for _, processor := range processors {
 		processorKey := fmt.Sprintf("%s/%s", processor.GetType(), processor.GetID())
 		processorsConfig, err := processor.GetConfig()
@@ -20,7 +20,7 @@ func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap
 		if processorKey == "" || processorsConfig == nil {
 			continue
 		}
-		cfg[processorKey] = processorsConfig
+		processorsMap[processorKey] = processorsConfig
 
 		if isTracingEnabled(processor) {
 			tracesProcessors = append(tracesProcessors, processorKey)
@@ -32,8 +32,12 @@ func GetCrdProcessorsConfigMap(processors []ProcessorConfigurer) (cfg GenericMap
 			logsProcessors = append(logsProcessors, processorKey)
 		}
 	}
-	if len(errs) == 0 {
-		return cfg, tracesProcessors, metricsProcessors, logsProcessors, nil
+	cfg = Config{
+		Processors: processorsMap,
 	}
+	if len(errs) != 0 {
+		return cfg, tracesProcessors, metricsProcessors, logsProcessors, errs
+	}
+
 	return cfg, tracesProcessors, metricsProcessors, logsProcessors, errs
 }
