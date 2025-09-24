@@ -19,17 +19,18 @@ package v1alpha1
 
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	common "github.com/odigos-io/odigos/common"
 )
 
 // CollectorsGroupMetricsCollectionSettingsApplyConfiguration represents a declarative configuration of the CollectorsGroupMetricsCollectionSettings type for use
 // with apply.
 type CollectorsGroupMetricsCollectionSettingsApplyConfiguration struct {
-	SpanMetrics      *odigosv1alpha1.SpanMetricsSettings      `json:"spanMetrics,omitempty"`
-	HostMetrics      *odigosv1alpha1.HostMetricsSettings      `json:"hostMetrics,omitempty"`
-	KubeletStats     *odigosv1alpha1.KubeletStatsSettings     `json:"kubeletStats,omitempty"`
-	ServiceGraph     *odigosv1alpha1.ServiceGraphSettings     `json:"serviceGraph,omitempty"`
-	OdigosOwnMetrics *odigosv1alpha1.OdigosOwnMetricsSettings `json:"odigosOwnMetrics,omitempty"`
-	AgentsTelemetry  *odigosv1alpha1.AgentsTelemetrySettings  `json:"agentsTelemetry,omitempty"`
+	SpanMetrics      *common.MetricsSourceSpanMetricsConfiguration  `json:"spanMetrics,omitempty"`
+	HostMetrics      *common.MetricsSourceHostMetricsConfiguration  `json:"hostMetrics,omitempty"`
+	KubeletStats     *common.MetricsSourceKubeletStatsConfiguration `json:"kubeletStats,omitempty"`
+	ServiceGraph     *odigosv1alpha1.ServiceGraphSettings           `json:"serviceGraph,omitempty"`
+	OdigosOwnMetrics *odigosv1alpha1.OdigosOwnMetricsSettings       `json:"odigosOwnMetrics,omitempty"`
+	AgentsTelemetry  *odigosv1alpha1.AgentsTelemetrySettings        `json:"agentsTelemetry,omitempty"`
 }
 
 // CollectorsGroupMetricsCollectionSettingsApplyConfiguration constructs a declarative configuration of the CollectorsGroupMetricsCollectionSettings type for use with
@@ -41,7 +42,7 @@ func CollectorsGroupMetricsCollectionSettings() *CollectorsGroupMetricsCollectio
 // WithSpanMetrics sets the SpanMetrics field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SpanMetrics field is set to the value of the last call.
-func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithSpanMetrics(value odigosv1alpha1.SpanMetricsSettings) *CollectorsGroupMetricsCollectionSettingsApplyConfiguration {
+func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithSpanMetrics(value common.MetricsSourceSpanMetricsConfiguration) *CollectorsGroupMetricsCollectionSettingsApplyConfiguration {
 	b.SpanMetrics = &value
 	return b
 }
@@ -49,7 +50,7 @@ func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithSpanMet
 // WithHostMetrics sets the HostMetrics field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the HostMetrics field is set to the value of the last call.
-func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithHostMetrics(value odigosv1alpha1.HostMetricsSettings) *CollectorsGroupMetricsCollectionSettingsApplyConfiguration {
+func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithHostMetrics(value common.MetricsSourceHostMetricsConfiguration) *CollectorsGroupMetricsCollectionSettingsApplyConfiguration {
 	b.HostMetrics = &value
 	return b
 }
@@ -57,7 +58,7 @@ func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithHostMet
 // WithKubeletStats sets the KubeletStats field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the KubeletStats field is set to the value of the last call.
-func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithKubeletStats(value odigosv1alpha1.KubeletStatsSettings) *CollectorsGroupMetricsCollectionSettingsApplyConfiguration {
+func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithKubeletStats(value common.MetricsSourceKubeletStatsConfiguration) *CollectorsGroupMetricsCollectionSettingsApplyConfiguration {
 	b.KubeletStats = &value
 	return b
 }

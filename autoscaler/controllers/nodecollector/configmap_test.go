@@ -131,8 +131,12 @@ func TestCalculateConfigMapData(t *testing.T) {
 			Spec: odigosv1.CollectorsGroupSpec{
 				CollectorOwnMetricsPort: 4317,
 				Metrics: &odigosv1.CollectorsGroupMetricsCollectionSettings{
-					HostMetrics:     &odigosv1.HostMetricsSettings{},
-					KubeletStats:    &odigosv1.KubeletStatsSettings{},
+					HostMetrics: &common.MetricsSourceHostMetricsConfiguration{
+						Interval: "33s",
+					},
+					KubeletStats: &common.MetricsSourceKubeletStatsConfiguration{
+						Interval: "44s",
+					},
 					AgentsTelemetry: &odigosv1.AgentsTelemetrySettings{},
 				},
 			},
