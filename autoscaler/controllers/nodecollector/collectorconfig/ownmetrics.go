@@ -9,11 +9,12 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.5.0"
 )
 
-// this processor should be added to any user telemetry pipeline to track the amount of data being exported by each source
-const OdigosTrafficMetricsProcessorName = "odigostrafficmetrics"
-
+// internal, not meant to be used outside of this service
 const (
-	// internal, not meant to be used outside of this service
+
+	// this processor should be added to any user telemetry pipeline to track the amount of data being exported by each source
+	odigosTrafficMetricsProcessorName = "odigostrafficmetrics"
+
 	podNameProcessorName   = "resource/pod-name"
 	ownMetricsExporterName = "otlp/odigos-own-telemetry-ui"
 	ownMetricsReceiverName = "prometheus/self-metrics"
@@ -29,7 +30,7 @@ func init() {
 	odigosNamespace := env.GetCurrentNamespace()
 
 	staticOwnMetricsProcessors = config.GenericMap{
-		OdigosTrafficMetricsProcessorName: config.GenericMap{
+		odigosTrafficMetricsProcessorName: config.GenericMap{
 			"res_attributes_keys": []string{
 				string(semconv.ServiceNameKey),
 				string(semconv.K8SNamespaceNameKey),
