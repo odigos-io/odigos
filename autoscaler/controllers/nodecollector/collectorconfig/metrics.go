@@ -81,11 +81,6 @@ func metricsConnectors(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCol
 		// asumming that is span metrics is enabled, then traces are enabled as well (not reponsiblity of this function to check)
 		connectorNamesToAdd = append(connectorNamesToAdd, spanMetricsConnectorName)
 
-		metricsFlushInterval := "15s"
-		if metricsConfigSettings.SpanMetrics.Interval != "" {
-			metricsFlushInterval = metricsConfigSettings.SpanMetrics.Interval
-		}
-
 		histogramConfig := config.GenericMap{}
 
 		if metricsConfigSettings.SpanMetrics.HistogramDisabled {
@@ -126,7 +121,7 @@ func metricsConnectors(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCol
 			"exclude_dimensions":              []string{"status.code"},
 			"dimensions_cache_size":           1000,
 			"aggregation_temporality":         "AGGREGATION_TEMPORALITY_CUMULATIVE",
-			"metrics_flush_interval":          metricsFlushInterval,
+			"metrics_flush_interval":          metricsConfigSettings.SpanMetrics.Interval,
 			"metrics_expiration":              "5m",
 			"resource_metrics_key_attributes": []string{"service.name", "telemetry.sdk.language", "telemetry.sdk.name"},
 			"events": config.GenericMap{
