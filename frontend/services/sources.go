@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -284,10 +285,15 @@ func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workl
 	if len(sourceList.Items) == 0 {
 		return nil, apierrors.NewNotFound(schema.GroupResource{Group: "", Resource: "source"}, workloadName)
 	}
+
+	// Only sort if there are multiple sources
 	if len(sourceList.Items) > 1 {
-		return nil, fmt.Errorf(`expected to get 1 source "%s", got %d`, workloadName, len(sourceList.Items))
+		sort.Slice(sourceList.Items, func(i, j int) bool {
+			return sourceList.Items[i].CreationTimestamp.Before(&sourceList.Items[j].CreationTimestamp)
+		})
 	}
 
+	// Return the first (oldest) active source
 	return &sourceList.Items[0], nil
 }
 
