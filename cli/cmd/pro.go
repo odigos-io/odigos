@@ -164,7 +164,7 @@ odigos pro update-offsets --from-file /path/to/local/offsets.json
 
 		data, err := getLatestOffsets(useDefault)
 		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m %+s\n", err)
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m %+s", err))
 			os.Exit(1)
 		}
 
@@ -172,7 +172,7 @@ odigos pro update-offsets --from-file /path/to/local/offsets.json
 		if downloadFile != "" {
 			err = os.WriteFile(downloadFile, data, 0644)
 			if err != nil {
-				fmt.Printf("\033[31mERROR\033[0m Unable to write offsets file: %s\n", err)
+				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to write offsets file: %s", err))
 				os.Exit(1)
 			}
 			fmt.Printf("Successfully downloaded offsets to %s\n", downloadFile)
@@ -181,7 +181,7 @@ odigos pro update-offsets --from-file /path/to/local/offsets.json
 
 		cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
 		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Unable to get Go offsets ConfigMap: %s\n", err)
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to get Go offsets ConfigMap: %s", err))
 			os.Exit(1)
 		}
 
@@ -195,7 +195,7 @@ odigos pro update-offsets --from-file /path/to/local/offsets.json
 		} else {
 			escaped, err = json.Marshal(string(data))
 			if err != nil {
-				fmt.Printf("\033[31mERROR\033[0m Unable to encode json string: %s\n", err)
+				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to encode json string: %s", err))
 				os.Exit(1)
 			}
 		}
@@ -203,14 +203,14 @@ odigos pro update-offsets --from-file /path/to/local/offsets.json
 		cm.Data[k8sconsts.GoOffsetsFileName] = string(escaped)
 		_, err = client.Clientset.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
 		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Unable to update Go offsets ConfigMap: %s\n", err)
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Go offsets ConfigMap: %s", err))
 			os.Exit(1)
 		}
 
 		fmt.Println("Updated Go Offsets, restarting Odiglet to use the new offsets.")
 		err = restartOdiglet(ctx, client, ns)
 		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Unable to restart Odiglet: %s\n", err)
+			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to restart Odiglet: %s", err))
 			os.Exit(1)
 		}
 		fmt.Println("Odiglet restarted successfully.")
