@@ -71,51 +71,6 @@ func NewDataCollectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-// NewDataCollectionConfigMap returns a safe "nop" OTEL config that lets the
-// data-collection container start before the autoscaler/UI writes the real config.
-func NewDataCollectionConfigMap(ns string) *corev1.ConfigMap {
-	return &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ConfigMap",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.OdigosNodeCollectorConfigMapName,
-			Namespace: ns,
-			Labels: map[string]string{
-				k8sconsts.OdigosPreserveLabelKey: "true",
-			},
-		},
-		Data: map[string]string{
-			// Minimal config: health_check + OTLP receiver to nop.
-			// Its harmless and gets replaced by the controller later.
-			"conf": `
-extensions:
-  health_check:
-    endpoint: 0.0.0.0:13133
-
-receivers:
-  otlp:
-    protocols:
-      grpc:
-      http:
-
-exporters:
-  nop: {}
-
-
-service:
-  extensions: [health_check]
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors: []
-      exporters: [nop]
-`,
-		},
-	}
-}
-
 type dataCollectionResourceManager struct {
 	client      *kube.Client
 	ns          string
@@ -134,12 +89,6 @@ func (a *dataCollectionResourceManager) InstallFromScratch(ctx context.Context) 
 		NewDataCollectionServiceAccount(a.ns),
 		NewDataCollectionRole(a.ns),
 		NewDataCollectionRoleBinding(a.ns),
-	}
-
-	// Create-once bootstrap CM (only if missing)
-	bootstrapCM := NewDataCollectionConfigMap(a.ns)
-	if err := a.client.ApplyResourceIfAbsent(ctx, a.config.ConfigVersion, bootstrapCM, a.managerOpts); err != nil {
-		return err
 	}
 
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)

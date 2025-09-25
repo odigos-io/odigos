@@ -606,6 +606,15 @@ The presence of this struct (as opposed to nil) means that trace collection is e
 
 
 
+## `AgentsTelemetrySettings` <a id="odigos-io-v1alpha1-AgentsTelemetrySettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
+
+
+
 ## `Attribute` <a id="odigos-io-v1alpha1-Attribute"></a>
     
 
@@ -739,6 +748,103 @@ This entity is refered to a rule in Odigos terminology for head-sampling.</p>
    <p>The fraction of spans to sample, in the range [0, 1].
 If the fraction is 0, no spans are sampled.
 If the fraction is 1, all spans are sampled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CollectorsGroupMetricsCollectionSettings` <a id="odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupSpec](#odigos-io-v1alpha1-CollectorsGroupSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>spanMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceSpanMetricsConfiguration"><code>common.MetricsSourceSpanMetricsConfiguration</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, it means span to metrics is enabled,
+and the node collector should set it up in the pipeline.
+span to metrics is the ability to calculate metrics like http requests/errors/duration etc
+from the individual spans recorded for relevant operation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hostMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceHostMetricsConfiguration"><code>common.MetricsSourceHostMetricsConfiguration</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, it means host metrics is enabled,
+and the opentelemetry collector &quot;hostmetrics&quot; receiver should be included in the pipeline.
+host metrics are metrics that are collected from the host node,
+such as cpu, memory, disk, network, etc.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>kubeletStats</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceKubeletStatsConfiguration"><code>common.MetricsSourceKubeletStatsConfiguration</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, it means kubelet stats is enabled,
+and the opentelemetry collector &quot;kubeletstats&quot; receiver should be included in the pipeline.
+kubelet stats are metrics that are collected from the kubelet point of view,
+such as cpu, memory, disk, network, per pod, node and more.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>serviceGraph</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ServiceGraphSettings"><code>ServiceGraphSettings</code></a>
+</td>
+<td>
+   <p>if not nil for cluster collector, it means service graph is enabled,
+and metrics for the &quot;connectivity&quot; between services should be calculated
+to be exported to metrics destinations.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>odigosOwnMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-OdigosOwnMetricsSettings"><code>OdigosOwnMetricsSettings</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, it means that some metric destinations are
+intresseted in collecting metrics about: odigos, the collected data, and the pipeline itself.
+this allows for users to monitor and operate odigos within their existing system,
+create dashboards, alerting, and more.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentsTelemetry</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentsTelemetrySettings"><code>AgentsTelemetrySettings</code></a>
+</td>
+<td>
+   <p>this part controls the metrics which are received from agents in the otlp receiver.
+it is generally enabled when we want to record metrics, and listed here for completeness.
+any &quot;otlp receiver&quot; specific settings can go here</p>
 </td>
 </tr>
 </tbody>
@@ -1008,6 +1114,23 @@ It is disabled by default and can be enabled by setting the enabled flag to true
 when unset or empty, no proxy will be used.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>metrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings"><code>CollectorsGroupMetricsCollectionSettings</code></a>
+</td>
+<td>
+   <p>configuration for metrics handling in this collectors group
+if metric collection is disabled, this will be nil
+the content is populated only if relevant to this collectors group
+it's being calculated based on active destinations and their settings,
+and global settings provided in the odigos configuration or instrumentation rules.
+it allows for the collector group reconciler to be simplified,
+and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -1239,6 +1362,90 @@ and the distro to use will be calculated based on this value.</p>
 </tbody>
 </table>
 
+## `DestinationMetricsSettings` <a id="odigos-io-v1alpha1-DestinationMetricsSettings"></a>
+    
+
+**Appears in:**
+
+- [DestinationSpec](#odigos-io-v1alpha1-DestinationSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>spanMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>following settings enables/disables specific metric sources
+true - collect and send this metric source
+false - do not collect and send this metric source
+nil - use the default setting (from destination manifest, or cluster global setting)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hostMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>kubeletStatsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>serviceGraphEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>odigosOwnMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>agentsTelemetryEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
 ## `DestinationSpec` <a id="odigos-io-v1alpha1-DestinationSpec"></a>
     
 
@@ -1318,6 +1525,18 @@ and the distro to use will be calculated based on this value.</p>
 <td>
    <span class="text-muted">No description provided.</span>
    </td>
+</tr>
+<tr>
+<td>
+<code>metricsSettings</code>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-DestinationMetricsSettings"><code>DestinationMetricsSettings</code></a>
+</td>
+<td>
+   <p>MetricsSettings defines the metrics settings for this destination.
+ignored if destination does not support metrics or metrics are not enabled in signals</p>
+</td>
 </tr>
 <tr>
 <td>
@@ -2200,6 +2419,15 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
+## `OdigosOwnMetricsSettings` <a id="odigos-io-v1alpha1-OdigosOwnMetricsSettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
+
+
+
 ## `Operator` <a id="odigos-io-v1alpha1-Operator"></a>
     
 (Alias of `string`)
@@ -2607,6 +2835,15 @@ In the Future we might add another level of configuration base on the parent spa
 </tr>
 </tbody>
 </table>
+
+## `ServiceGraphSettings` <a id="odigos-io-v1alpha1-ServiceGraphSettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
+
+
 
 ## `SourceSelector` <a id="odigos-io-v1alpha1-SourceSelector"></a>
     

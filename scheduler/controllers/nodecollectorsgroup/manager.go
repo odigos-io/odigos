@@ -46,5 +46,18 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&odigosv1.Destination{}).
+		Named("nodecollectorgroup-destinations").
+		// we care if destinations are created or deleted, or enabled/disabled
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
+		Complete(&DestinationsReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

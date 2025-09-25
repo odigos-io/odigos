@@ -23,6 +23,11 @@ type Spec struct {
 		}
 		Metrics struct {
 			Supported bool `yaml:"supported"`
+			// if true, it means that this destination will add spanmetrics connector by default
+			// which will aggregate the spans for various opeartion and calculate metrics based on them.
+			// some destinations are already doing this by default, and thus odigos does not need to do it again.
+			// on-prem destinations, or those that only accept metrics and not traces, should set this to true.
+			SpanMetricsEnabledByDefault bool `yaml:"spanMetricsEnabledByDefault"`
 		}
 		Logs struct {
 			Supported bool `yaml:"supported"`
