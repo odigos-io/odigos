@@ -305,6 +305,7 @@ instrumentor:
   # the timeout in seconds for the pods webhook.
   # default is 10 seconds and it is recommended to keep it as is unless you are experiencing issues with the webhook.
   # value must be 30 seconds max (inforced by kubernetes)
+  # a shorter timeout will relieve API pressure, but may result in more pods failing to instrument
   # podsWebhookTimeoutSeconds: 25
 
 odiglet:
