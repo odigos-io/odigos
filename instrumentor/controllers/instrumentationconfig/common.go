@@ -14,12 +14,15 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 		return err
 	}
 
-	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ic.Status.RuntimeDetailsByContainer))
+	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ic.Spec.Containers))
+	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
 
-	// create an empty sdk config for each detected programming language
-	for _, container := range ic.Status.RuntimeDetailsByContainer {
-		containerLanguage := container.Language
-		if containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.UnknownProgrammingLanguage {
+	for _, runtimeDetails := range(runtimeDetailsByContainer) {
+		if runtimeDetails == nil {
+			continue
+		}
+		containerLanguage := runtimeDetails.Language
+		if containerLanguage == "" || containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.UnknownProgrammingLanguage {
 			continue
 		}
 		sdkConfigs = createDefaultSdkConfig(sdkConfigs, containerLanguage)

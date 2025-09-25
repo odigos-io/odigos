@@ -5,45 +5,72 @@ import (
 
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	semconv "go.opentelemetry.io/otel/semconv/v1.5.0"
 )
 
-// this processor should be added to any user telemetry pipeline to track the amount of data being exported by each source
-const OdigosTrafficMetricsProcessorName = "odigostrafficmetrics"
-
+// internal, not meant to be used outside of this service
 const (
-	// internal, not meant to be used outside of this service
+
+	// this processor should be added to any user telemetry pipeline to track the amount of data being exported by each source
+	odigosTrafficMetricsProcessorName = "odigostrafficmetrics"
+
 	podNameProcessorName   = "resource/pod-name"
 	ownMetricsExporterName = "otlp/odigos-own-telemetry-ui"
 	ownMetricsReceiverName = "prometheus/self-metrics"
+	ownMetricsPipelineName = "metrics/own-metrics"
 )
 
-func calculateProcessorsConfigForOwnMetrics() config.GenericMap {
-	processorsCfg := config.GenericMap{}
+var staticOwnMetricsProcessors config.GenericMap
+var staticOwnMetricsExporters config.GenericMap
+var staticOwnMetricsPipelines map[string]config.Pipeline
 
-	processorsCfg[OdigosTrafficMetricsProcessorName] = config.GenericMap{
-		// adding the following resource attributes to the metrics allows to aggregate the metrics by source.
-		"res_attributes_keys": []string{
-			string(semconv.ServiceNameKey),
-			string(semconv.K8SNamespaceNameKey),
-			string(semconv.K8SDeploymentNameKey),
-			string(semconv.K8SStatefulSetNameKey),
-			string(semconv.K8SDaemonSetNameKey),
+func init() {
+
+	odigosNamespace := env.GetCurrentNamespace()
+
+	staticOwnMetricsProcessors = config.GenericMap{
+		odigosTrafficMetricsProcessorName: config.GenericMap{
+			"res_attributes_keys": []string{
+				string(semconv.ServiceNameKey),
+				string(semconv.K8SNamespaceNameKey),
+				string(semconv.K8SDeploymentNameKey),
+				string(semconv.K8SStatefulSetNameKey),
+				string(semconv.K8SDaemonSetNameKey),
+			},
+		},
+		podNameProcessorName: config.GenericMap{
+			"attributes": []config.GenericMap{{
+				"key":    string(semconv.K8SPodNameKey),
+				"value":  "${POD_NAME}",
+				"action": "upsert",
+			}},
 		},
 	}
-	// this processor is used to add the pod name to the own metrics in the own metrics pipeline
-	processorsCfg[podNameProcessorName] = config.GenericMap{
-		"attributes": []config.GenericMap{{
-			"key":    string(semconv.K8SPodNameKey),
-			"value":  "${POD_NAME}",
-			"action": "upsert",
-		}},
+
+	endpoint := fmt.Sprintf("ui.%s:%d", odigosNamespace, consts.OTLPPort)
+	staticOwnMetricsExporters = config.GenericMap{
+		ownMetricsExporterName: config.GenericMap{
+			"endpoint": endpoint,
+			"retry_on_failure": config.GenericMap{
+				"enabled": false,
+			},
+			"tls": config.GenericMap{
+				"insecure": true,
+			},
+		},
 	}
 
-	return processorsCfg
+	staticOwnMetricsPipelines = map[string]config.Pipeline{
+		ownMetricsPipelineName: {
+			Receivers:  []string{ownMetricsReceiverName},
+			Processors: []string{podNameProcessorName},
+			Exporters:  []string{ownMetricsExporterName},
+		},
+	}
 }
 
-func calculateReceiversConfigForOwnMetrics(ownMetricsPort int32) config.GenericMap {
+func receiversConfigForOwnMetrics(ownMetricsPort int32) config.GenericMap {
 	receiversCfg := config.GenericMap{}
 
 	receiversCfg[ownMetricsReceiverName] = config.GenericMap{
@@ -72,34 +99,7 @@ func calculateReceiversConfigForOwnMetrics(ownMetricsPort int32) config.GenericM
 	return receiversCfg
 }
 
-func calculateExportersConfigForOwnMetrics(odigosNamespace string) config.GenericMap {
-	exportersCfg := config.GenericMap{}
-
-	endpoint := fmt.Sprintf("ui.%s:%d", odigosNamespace, consts.OTLPPort)
-	exportersCfg[ownMetricsExporterName] = config.GenericMap{
-		"endpoint": endpoint,
-		"retry_on_failure": config.GenericMap{
-			"enabled": false,
-		},
-		"tls": config.GenericMap{
-			"insecure": true,
-		},
-	}
-
-	return exportersCfg
-}
-
-func calculatePipelinesConfigForOwnMetrics() map[string]config.Pipeline {
-	return map[string]config.Pipeline{
-		"metrics/otelcol": config.Pipeline{
-			Receivers:  []string{ownMetricsReceiverName},
-			Processors: []string{podNameProcessorName},
-			Exporters:  []string{ownMetricsExporterName},
-		},
-	}
-}
-
-func calculateServiceTelemetryConfigForOwnMetrics(ownMetricsPort int32) config.Telemetry {
+func serviceTelemetryConfigForOwnMetrics(ownMetricsPort int32) config.Telemetry {
 	return config.Telemetry{
 		Metrics: config.GenericMap{
 			"readers": []config.GenericMap{
@@ -129,14 +129,14 @@ func calculateServiceTelemetryConfigForOwnMetrics(ownMetricsPort int32) config.T
 // merge it with other configs to get the full collector config
 // Notice: this config part requires that you add the OdigosTrafficMetricsProcessorName processor
 // to any pipeline for user telemetry to work correctly
-func CalculateOwnMetricsConfig(ownMetricsPort int32, odigosNamespace string) config.Config {
+func OwnMetricsConfig(ownMetricsPort int32) config.Config {
 	return config.Config{
-		Receivers:  calculateReceiversConfigForOwnMetrics(ownMetricsPort),
-		Exporters:  calculateExportersConfigForOwnMetrics(odigosNamespace),
-		Processors: calculateProcessorsConfigForOwnMetrics(),
+		Receivers:  receiversConfigForOwnMetrics(ownMetricsPort),
+		Exporters:  staticOwnMetricsExporters,
+		Processors: staticOwnMetricsProcessors,
 		Service: config.Service{
-			Pipelines: calculatePipelinesConfigForOwnMetrics(),
-			Telemetry: calculateServiceTelemetryConfigForOwnMetrics(ownMetricsPort),
+			Pipelines: staticOwnMetricsPipelines,
+			Telemetry: serviceTelemetryConfigForOwnMetrics(ownMetricsPort),
 		},
 	}
 }

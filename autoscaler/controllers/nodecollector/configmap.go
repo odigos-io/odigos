@@ -2,7 +2,7 @@ package nodecollector
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"reflect"
 	"slices"
 	"strings"
@@ -14,42 +14,44 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector/collectorconfig"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
-const (
-	k8sAttributesProcessorName   = "k8sattributes/odigos-k8sattributes"
-	logsServiceNameProcessorName = "resource/service-name"
-)
-
-func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
-	datacollection *odigosv1.CollectorsGroup, ctx context.Context,
-	c client.Client, scheme *runtime.Scheme) error {
+func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorSignals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
+	datacollection *odigosv1.CollectorsGroup) error {
 	logger := log.FromContext(ctx)
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
 
-	desired, err := getDesiredConfigMap(sources, signals, processors, datacollection, scheme)
+	if b.autoscalerDeployment == nil {
+		// we only need to get the autoscaler deployment once since it can't change while this code is running
+		// (since we are running in the autoscaler pod)
+		autoscalerDeployment := &appsv1.Deployment{}
+		err := b.Client.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.AutoScalerDeploymentName}, autoscalerDeployment)
+		if err != nil {
+			return err
+		}
+		b.autoscalerDeployment = autoscalerDeployment
+	}
+
+	desired, err := b.getDesiredConfigMap(sources, clusterCollectorSignals, processors, datacollection)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
 	}
 
 	existing := &v1.ConfigMap{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: datacollection.Namespace, Name: datacollection.Name}, existing); err != nil {
+	if err := b.Client.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(0).Info("creating config map")
-			_, err := createConfigMap(desired, ctx, c)
+			_, err := b.createConfigMap(desired, ctx)
 			if err != nil {
 				logger.Error(err, "failed to create config map")
 				return err
@@ -62,7 +64,7 @@ func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigos
 	}
 
 	logger.V(0).Info("Patching config map")
-	_, err = patchConfigMap(ctx, existing, desired, c)
+	_, err = b.patchConfigMap(ctx, existing, desired)
 	if err != nil {
 		logger.Error(err, "failed to patch config map")
 		return err
@@ -71,7 +73,7 @@ func SyncConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigos
 	return nil
 }
 
-func patchConfigMap(ctx context.Context, existing *v1.ConfigMap, desired *v1.ConfigMap, c client.Client) (*v1.ConfigMap, error) {
+func (b *nodeCollectorBaseReconciler) patchConfigMap(ctx context.Context, existing *v1.ConfigMap, desired *v1.ConfigMap) (*v1.ConfigMap, error) {
 	if reflect.DeepEqual(existing.Data, desired.Data) &&
 		reflect.DeepEqual(existing.ObjectMeta.OwnerReferences, desired.ObjectMeta.OwnerReferences) {
 		log.FromContext(ctx).V(0).Info("Config maps already match")
@@ -81,407 +83,174 @@ func patchConfigMap(ctx context.Context, existing *v1.ConfigMap, desired *v1.Con
 	updated.Data = desired.Data
 	updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
 	patch := client.MergeFrom(existing)
-	if err := c.Patch(ctx, updated, patch); err != nil {
+	if err := b.Client.Patch(ctx, updated, patch); err != nil {
 		return nil, err
 	}
 
 	return updated, nil
 }
 
-func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {
-	if err := c.Create(ctx, desired); err != nil {
+func (b *nodeCollectorBaseReconciler) createConfigMap(desired *v1.ConfigMap, ctx context.Context) (*v1.ConfigMap, error) {
+	if err := b.Client.Create(ctx, desired); err != nil {
 		return nil, err
 	}
 
 	return desired, nil
 }
 
-func getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, signals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
-	datacollection *odigosv1.CollectorsGroup, scheme *runtime.Scheme) (*v1.ConfigMap, error) {
-	cmData, err := calculateConfigMapData(datacollection, sources, signals, processors)
+func noopConfigMap() (string, error) {
+	config := config.Config{
+		Extensions: config.GenericMap{
+			"health_check": config.GenericMap{
+				"endpoint": "0.0.0.0:13133",
+			},
+		},
+		Receivers: config.GenericMap{
+			"otlp": config.GenericMap{
+				"protocols": config.GenericMap{
+					"grpc": config.GenericMap{
+						"endpoint": "0.0.0.0:4317",
+					},
+					"http": config.GenericMap{
+						"endpoint": "0.0.0.0:4318",
+					},
+				},
+			},
+		},
+		Exporters: config.GenericMap{
+			"nop": config.GenericMap{},
+		},
+		Service: config.Service{
+			Extensions: []string{"health_check"},
+			Pipelines: map[string]config.Pipeline{
+				"traces": {
+					Receivers:  []string{"otlp"},
+					Processors: []string{},
+					Exporters:  []string{"nop"},
+				},
+				"metrics": {
+					Receivers:  []string{"otlp"},
+					Processors: []string{},
+					Exporters:  []string{"nop"},
+				},
+				"logs": {
+					Receivers:  []string{"otlp"},
+					Processors: []string{},
+					Exporters:  []string{"nop"},
+				},
+			},
+		},
+	}
+
+	yamlData, err := yaml.Marshal(config)
+	if err != nil {
+		return "", err
+	}
+
+	return string(yamlData), nil
+}
+
+func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, clusterCollectorSignals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
+	cg *odigosv1.CollectorsGroup) (*v1.ConfigMap, error) {
+	if b.autoscalerDeployment == nil {
+		return nil, errors.New("autoscaler deployment is not set in the reconciler, cannot set owner reference")
+	}
+	var err error
+	var cmData string
+
+	if cg == nil || len(clusterCollectorSignals) == 0 {
+		// if collectors group is not created yet, or there are no signals to collect, return a no-op configmap
+		// this can happen if no sources are instrumented yet or no destinations are added.
+		cmData, err = noopConfigMap()
+	} else {
+		cmData, err = calculateConfigMapData(cg, sources, clusterCollectorSignals, processors, commonconf.ControllerConfig.OnGKE)
+	}
+
 	if err != nil {
 		return nil, err
 	}
 
 	desired := v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      datacollection.Name,
-			Namespace: datacollection.Namespace,
+			Name:      k8sconsts.OdigosNodeCollectorConfigMapName,
+			Namespace: env.GetCurrentNamespace(),
 		},
 		Data: map[string]string{
 			k8sconsts.OdigosNodeCollectorConfigMapKey: cmData,
 		},
 	}
 
-	if err := ctrl.SetControllerReference(datacollection, &desired, scheme); err != nil {
+	// set the autoscaler deployment as the owner of the configmap
+	// since it is the one creating it and updating it.
+	// cg might not yet exist and failing to have an owner will lead to un-cleaned resources on uninstall.
+	if err := ctrl.SetControllerReference(b.autoscalerDeployment, &desired, b.scheme); err != nil {
 		return nil, err
 	}
 
 	return &desired, nil
 }
 
-// using the k8sattributes processor to add deployment, statefulset and daemonset metadata
-// has a high memory consumption in large clusters since it brings all the replicasets in the cluster into the cache.
-// this has been disabled for logs, until further investigation is done on how to reduce memory consumption.
-// The side effect is that logs record will lack deployment/statefulset/daemonset names and service name that could have been derived from them.
-func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
-
-	_, k8sProcessorExists := cfg.Processors[k8sAttributesProcessorName]
-
-	if k8sProcessorExists {
-		// make sure it includes the workload names attributes in the processor "extract" section.
-		// this is added automatically for logs regardless of any action configuration.
-		k8sAttributesCfg, ok := cfg.Processors[k8sAttributesProcessorName].(config.GenericMap)
-		if !ok {
-			return fmt.Errorf("failed to cast k8s attributes processor config to GenericMap")
-		}
-		if _, exists := k8sAttributesCfg["extract"]; !exists {
-			k8sAttributesCfg["extract"] = config.GenericMap{}
-		}
-		extract, ok := k8sAttributesCfg["extract"].(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("failed to cast k8s attributes processor extract config to GenericMap")
-		}
-		if _, exists := extract["metadata"]; !exists {
-			extract["metadata"] = []interface{}{}
-		}
-		metadata, ok := extract["metadata"].([]interface{})
-		if !ok {
-			return fmt.Errorf("failed to cast k8s attributes processor metadata config to []interface{}")
-		}
-		// convert the metadata to a string array to compare it's values
-		asStrArray := make([]string, len(metadata))
-		for i, v := range metadata {
-			asStrArray[i] = v.(string)
-		}
-		// add the workload names attributes to the metadata list
-		if !slices.Contains(asStrArray, string(semconv.K8SDeploymentNameKey)) {
-			metadata = append(metadata, string(semconv.K8SDeploymentNameKey))
-		}
-		if !slices.Contains(asStrArray, string(semconv.K8SStatefulSetNameKey)) {
-			metadata = append(metadata, string(semconv.K8SStatefulSetNameKey))
-		}
-		if !slices.Contains(asStrArray, string(semconv.K8SDaemonSetNameKey)) {
-			metadata = append(metadata, string(semconv.K8SDaemonSetNameKey))
-		}
-		extract["metadata"] = metadata                                // set the copy back to the config
-		k8sAttributesCfg["extract"] = extract                         // set the copy back to the config
-		cfg.Processors[k8sAttributesProcessorName] = k8sAttributesCfg // set the copy back to the config
-	} else {
-		// if the processor does not exist, create it with the default configuration
-		cfg.Processors[k8sAttributesProcessorName] = config.GenericMap{
-			"auth_type": "serviceAccount",
-			"filter": config.GenericMap{
-				"node_from_env_var": k8sconsts.NodeNameEnvVar,
-			},
-			"extract": config.GenericMap{
-				"metadata": []string{
-					string(semconv.K8SDeploymentNameKey),
-					string(semconv.K8SStatefulSetNameKey),
-					string(semconv.K8SDaemonSetNameKey),
-				},
-			},
-			"pod_association": []config.GenericMap{
-				{
-					"sources": []config.GenericMap{
-						{"from": "resource_attribute", "name": string(semconv.K8SPodNameKey)},
-						{"from": "resource_attribute", "name": string(semconv.K8SNamespaceNameKey)},
-					},
-				},
-			},
-		}
-	}
-
-	return nil
-}
-
 func calculateConfigMapData(
 	nodeCG *odigosv1.CollectorsGroup,
 	sources *odigosv1.InstrumentationConfigList,
-	signals []odigoscommon.ObservabilitySignal,
-	processors []*odigosv1.Processor) (string, error) {
+	clusterCollectorSignals []odigoscommon.ObservabilitySignal,
+	processors []*odigosv1.Processor,
+	onGKE bool) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
 	odigosNamespace := env.GetCurrentNamespace()
 
-	ownMetricsConfig := collectorconfig.CalculateOwnMetricsConfig(ownMetricsPort, odigosNamespace)
-
-	empty := struct{}{}
-
-	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(commonconf.ToProcessorConfigurerArray(processors))
+	manifestProcessosrsConfig, additionalTraceProcessors, additionalMetricsProcessors, additionalLogsProcessors, errs := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
 	for name, err := range errs {
-		log.Log.V(0).Error(err, "processor", name)
+		log.Log.V(0).Error(err, "failed to convert processor manifest to config", "processor", name)
+		return "", err
 	}
 
-	memoryLimiterConfiguration := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
-
-	processorsCfg["batch"] = empty
-	processorsCfg["memory_limiter"] = memoryLimiterConfiguration
-	processorsCfg["resource"] = config.GenericMap{
-		"attributes": []config.GenericMap{{
-			"key":    "k8s.node.name",
-			"value":  "${NODE_NAME}",
-			"action": "upsert",
-		}},
-	}
-	resourceDetectionProcessor := config.GenericMap{
-		"detectors": []string{"ec2", "azure"},
-		"timeout":   "2s",
-	}
-	// This is a workaround to avoid adding the gcp detector if not running on a gke environment
-	// once https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/issues/1026 is resolved, we can always put the gcp detector
-	if commonconf.ControllerConfig != nil && commonconf.ControllerConfig.OnGKE {
-		resourceDetectionProcessor["detectors"] = append(resourceDetectionProcessor["detectors"].([]string), "gcp")
-	}
-	processorsCfg["resourcedetection"] = resourceDetectionProcessor
-	for name, processor := range ownMetricsConfig.Processors {
-		processorsCfg[name] = processor
+	// common config domains - always set and active
+	activeConfigDomains := []config.Config{
+		collectorconfig.CommonConfig(nodeCG, onGKE),
+		collectorconfig.OwnMetricsConfig(ownMetricsPort),
+		manifestProcessosrsConfig,
 	}
 
-	exporters := config.GenericMap{
-		"otlp/gateway": config.GenericMap{
-			"endpoint": fmt.Sprintf("dns:///odigos-gateway.%s:4317", odigosNamespace),
-			"tls": config.GenericMap{
-				"insecure": true,
-			},
-			"balancer_name": "round_robin",
-		},
-		"otlp/odigos-own-telemetry-ui": config.GenericMap{
-			"endpoint": fmt.Sprintf("ui.%s:%d", odigosNamespace, consts.OTLPPort),
-			"tls": config.GenericMap{
-				"insecure": true,
-			},
-			"retry_on_failure": config.GenericMap{
-				"enabled": false,
-			},
-		},
-	}
-	for name, exporter := range ownMetricsConfig.Exporters {
-		exporters[name] = exporter
-	}
-	tracesPipelineExporter := []string{"otlp/gateway"}
+	// metrics
+	metricsEnabled := slices.Contains(clusterCollectorSignals, odigoscommon.MetricsObservabilitySignal)
+	metricsConfigSettings := nodeCG.Spec.Metrics
+	var additionalTraceExporters []string
+	if metricsEnabled && metricsConfigSettings != nil {
+		metricsConfig, metricsAdditionalTraceExporters := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, additionalMetricsProcessors, metricsConfigSettings)
+		activeConfigDomains = append(activeConfigDomains, metricsConfig)
 
-	// Add loadbalancing exporter for traces to ensure consistent gateway routing.
-	// This allows the servicegraph connector to properly aggregate trace data
-	// by sending all traces from a node collector to the same gateway instance.
-	tracesEnabled := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
-	if tracesEnabled {
-
-		compression := "none"
-		internalDataCompressionDisabled := nodeCG.Spec.EnableDataCompression
-
-		if internalDataCompressionDisabled != nil && *internalDataCompressionDisabled == true {
-			compression = "gzip"
-		}
-
-		exporters["loadbalancing"] = config.GenericMap{
-			"protocol": config.GenericMap{"otlp": config.GenericMap{"compression": compression, "tls": config.GenericMap{"insecure": true}}},
-			"resolver": config.GenericMap{"k8s": config.GenericMap{"service": fmt.Sprintf("odigos-gateway.%s", odigosNamespace)}},
-		}
-		tracesPipelineExporter = []string{"loadbalancing"}
+		// due to spanmetrics connector, adding a metrics pipeline can result in needing to also collect
+		// traces which are fed into the collector and generate metrics from spans.
+		// additionalTraceExporters will be populated if traces need to be exportered to any additional place.
+		additionalTraceExporters = append(additionalTraceExporters, metricsAdditionalTraceExporters...)
 	}
 
-	receivers := config.GenericMap{
-		"otlp": config.GenericMap{
-			"protocols": config.GenericMap{
-				"grpc": config.GenericMap{
-					"endpoint": "0.0.0.0:4317",
-					// data collection collectors will drop data instead of backpressuring the senders (odiglet or agents),
-					// we don't want the applications to build up memory in the runtime if the pipeline is overloaded.
-					"drop_on_overload": true,
-				},
-				"http": config.GenericMap{
-					"endpoint": "0.0.0.0:4318",
-				},
-			},
-		},
-		"odigosebpf": config.GenericMap{},
-	}
-	for name, receiver := range ownMetricsConfig.Receivers {
-		receivers[name] = receiver
+	// traces
+	tracesEnabledInClusterCollector := slices.Contains(clusterCollectorSignals, odigoscommon.TracesObservabilitySignal)
+	// create traces pipeline if either:
+	// - cluster collector has traces enabled (trace destination is enabled)
+	// - there are additional trace exporters (e.g. spanmetrics connector)
+	if tracesEnabledInClusterCollector || len(additionalTraceExporters) > 0 {
+		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, additionalTraceProcessors, additionalTraceExporters, tracesEnabledInClusterCollector)
+		activeConfigDomains = append(activeConfigDomains, tracesConfig)
 	}
 
-	pipelines := map[string]config.Pipeline{}
-	for name, pipeline := range ownMetricsConfig.Service.Pipelines {
-		pipelines[name] = pipeline
-	}
-
-	cfg := config.Config{
-		Receivers:  receivers,
-		Exporters:  exporters,
-		Processors: processorsCfg,
-		Extensions: config.GenericMap{
-			"health_check": config.GenericMap{
-				"endpoint": "0.0.0.0:13133",
-			},
-			"pprof": config.GenericMap{
-				"endpoint": "0.0.0.0:1777",
-			},
-		},
-		Service: config.Service{
-			Pipelines:  pipelines,
-			Extensions: []string{"health_check", "pprof"},
-			Telemetry:  ownMetricsConfig.Service.Telemetry,
-		},
-	}
-
-	collectLogs := slices.Contains(signals, odigoscommon.LogsObservabilitySignal)
+	// logs
+	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
-		includes := make([]string, 0)
-		for _, element := range sources.Items {
-			// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
-			// Pod specifiers
-			// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[~10]>-<pod suffix[~5]>_<pod ID>
-			// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[~5]            >_<pod ID>
-			// 	StatefulSet: <namespace>_<statefulset name>-<        ordinal index integer        >_<pod ID>
-			// The suffixes are not the same lenght always, so we cannot match the pattern reliably.
-			// We expect there to exactly one OwnerReference
-			if len(element.OwnerReferences) != 1 {
-				log.Log.V(0).Error(
-					fmt.Errorf("Unexpected number of OwnerReferences: %d", len(element.OwnerReferences)),
-					"failed to compile include list for configmap",
-				)
-				continue
-			}
-			owner := element.OwnerReferences[0]
-			name := owner.Name
-			includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
-		}
-
-		cfg.Receivers["filelog"] = config.GenericMap{
-			"include":           includes,
-			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosNamespace + "_*/**/*"},
-			"start_at":          "end",
-			"include_file_path": true,
-			"include_file_name": false,
-			"operators": []config.GenericMap{
-				{
-					"id":   "container-parser",
-					"type": "container",
-				},
-			},
-			"retry_on_failure": config.GenericMap{
-				// From documentation:
-				// When true, the receiver will pause reading a file and attempt to resend the current batch of logs
-				//  if it encounters an error from downstream components.
-				//
-				// filelog might get overwhelmed when it just starts and there are already a lot of logs to process in the node.
-				// when downstream components (cluster collector and receiving destination) are under too much pressure,
-				// they will reject the data, slowing down the filelog receiver and allowing it to retry the data and adjust to
-				// downstream pressure.
-				"enabled": true,
-			},
-		}
-
-		// err := updateOrCreateK8sAttributesForLogs(&cfg)
-		// if err != nil {
-		// 	return "", err
-		// }
-		// // remove logs processors from CRD logsProcessors in case it is there so not to add it twice
-		// for i, processor := range logsProcessors {
-		// 	if processor == k8sAttributesProcessorName {
-		// 		logsProcessors = append(logsProcessors[:i], logsProcessors[i+1:]...)
-		// 		break
-		// 	}
-		// }
-
-		// set "service.name" for logs same as the workload name.
-		// note: this does not respect the override service name a user can set in sources.
-		// cfg.Processors[logsServiceNameProcessorName] = config.GenericMap{
-		// 	"attributes": []config.GenericMap{
-		// 		{
-		// 			"key":            string(semconv.ServiceNameKey),
-		// 			"from_attribute": string(semconv.K8SDeploymentNameKey),
-		// 			"action":         "insert", // avoid overwriting existing value
-		// 		},
-		// 		{
-		// 			"key":            string(semconv.ServiceNameKey),
-		// 			"from_attribute": string(semconv.K8SStatefulSetNameKey),
-		// 			"action":         "insert", // avoid overwriting existing value
-		// 		},
-		// 		{
-		// 			"key":            string(semconv.ServiceNameKey),
-		// 			"from_attribute": string(semconv.K8SDaemonSetNameKey),
-		// 			"action":         "insert", // avoid overwriting existing value
-		// 		},
-		// 		{
-		// 			"key":            string(semconv.ServiceNameKey),
-		// 			"from_attribute": string(semconv.K8SCronJobNameKey),
-		// 			"action":         "insert", // avoid overwriting existing value
-		// 		},
-		// 	},
-		// }
-
-		cfg.Service.Pipelines["logs"] = config.Pipeline{
-			Receivers:  []string{"filelog"},
-			Processors: append(getFileLogPipelineProcessors(), logsProcessors...),
-			Exporters:  []string{"otlp/gateway"},
-		}
+		logsConfig := collectorconfig.LogsConfig(nodeCG, odigosNamespace, additionalLogsProcessors, sources)
+		activeConfigDomains = append(activeConfigDomains, logsConfig)
 	}
 
-	collectTraces := slices.Contains(signals, odigoscommon.TracesObservabilitySignal)
-	if collectTraces {
-		cfg.Service.Pipelines["traces"] = config.Pipeline{
-			Receivers:  []string{"otlp", "odigosebpf"},
-			Processors: append(getAgentPipelineCommonProcessors(), tracesProcessors...),
-			Exporters:  tracesPipelineExporter,
-		}
+	// merge all config domains into one collector config
+	mergedConfig, err := config.MergeConfigs(activeConfigDomains...)
+	if err != nil {
+		return "", err
 	}
 
-	collectMetrics := slices.Contains(signals, odigoscommon.MetricsObservabilitySignal)
-	if collectMetrics {
-		cfg.Receivers["kubeletstats"] = config.GenericMap{
-			"auth_type":            "serviceAccount",
-			"endpoint":             "https://${env:NODE_IP}:10250",
-			"insecure_skip_verify": true,
-			"collection_interval":  "10s",
-		}
-
-		cfg.Receivers["hostmetrics"] = config.GenericMap{
-			"collection_interval": "10s",
-			"root_path":           "/hostfs",
-			"scrapers": config.GenericMap{
-				"paging": config.GenericMap{
-					"metrics": config.GenericMap{
-						"system.paging.utilization": config.GenericMap{
-							"enabled": true,
-						},
-					},
-				},
-				"cpu": config.GenericMap{
-					"metrics": config.GenericMap{
-						"system.cpu.utilization": config.GenericMap{
-							"enabled": true,
-						},
-					},
-				},
-				"disk": struct{}{},
-				"filesystem": config.GenericMap{
-					"metrics": config.GenericMap{
-						"system.filesystem.utilization": config.GenericMap{
-							"enabled": true,
-						},
-					},
-					"exclude_mount_points": config.GenericMap{
-						"match_type":   "regexp",
-						"mount_points": []string{"/var/lib/kubelet/*"},
-					},
-				},
-				"load":      struct{}{},
-				"memory":    struct{}{},
-				"network":   struct{}{},
-				"processes": struct{}{},
-			},
-		}
-
-		cfg.Service.Pipelines["metrics"] = config.Pipeline{
-			Receivers:  []string{"otlp", "kubeletstats", "hostmetrics"},
-			Processors: append(getAgentPipelineCommonProcessors(), metricsProcessors...),
-			Exporters:  []string{"otlp/gateway"},
-		}
-	}
-
-	data, err := yaml.Marshal(cfg)
+	data, err := yaml.Marshal(mergedConfig)
 	if err != nil {
 		return "", err
 	}
@@ -511,7 +280,7 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 	for pipelineName, pipeline := range config.Service.Pipelines {
 		// only consider pipelines with `otlp` receiver
 		// which are the ones that can actually receive data
-		if !slices.Contains(pipeline.Receivers, "otlp") {
+		if !slices.Contains(pipeline.Receivers, collectorconfig.OTLPInReceiverName) {
 			continue
 		}
 		if strings.HasPrefix(pipelineName, "traces") {
@@ -535,32 +304,4 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 	}
 
 	return signals, nil
-}
-
-func getAgentPipelineCommonProcessors() []string {
-	// for agents, we never want to upstream backpressure, as we don't want memory to build up
-	// in the sending application.
-	// this is why batch processor is first to always accept data and then memory limiter
-	// is used to drop the data if the collector is overloaded in memory.
-	// Read more about it here: https://github.com/open-telemetry/opentelemetry-collector/issues/11726
-	// Also related: https://github.com/open-telemetry/opentelemetry-collector/issues/9591
-	return append(
-		[]string{"batch", "memory_limiter"},
-		getCommonProcessors()...,
-	)
-}
-
-func getFileLogPipelineProcessors() []string {
-	// filelog pipeline processors
-	// memory_limiter is first processor, it will reject data if the collectors memory is full.
-	// no need to batch, as the stanza receiver already batches the data, and so is the gateway.
-	// batch processor will also mask and hide any back-pressure from receivers which we want propagated to the source.
-	return append(
-		[]string{"memory_limiter" /*k8sAttributesProcessorName, logsServiceNameProcessorName*/},
-		getCommonProcessors()...,
-	)
-}
-
-func getCommonProcessors() []string {
-	return []string{"resource", "resourcedetection", collectorconfig.OdigosTrafficMetricsProcessorName}
 }
