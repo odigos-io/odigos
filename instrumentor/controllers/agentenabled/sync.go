@@ -467,9 +467,9 @@ func calculateContainerInstrumentationConfig(containerName string,
 	if !ok {
 		var message string
 		if runtimeDetails.Language == common.UnknownProgrammingLanguage {
-			message = "🤔 runtime language/platform cannot be detected, no instrumentation agent is available"
+			message = "runtime language/platform cannot be detected, no instrumentation agent is available"
 		} else {
-			message = fmt.Sprintf("🚧 support for %s is comming soon. no instrumentation agent available at the moment", runtimeDetails.Language)
+			message = fmt.Sprintf("support for %s is coming soon. no instrumentation agent available at the moment", runtimeDetails.Language)
 		}
 		return odigosv1.ContainerAgentConfig{
 			ContainerName:       containerName,
@@ -481,7 +481,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 
 	distro := distroGetter.GetDistroByName(distroName)
 	if distro == nil { // no expected to happen, here for safety net
-		message := fmt.Sprintf("🚧 the requested otel distro %s is not available in this odigos tier", distroName)
+		message := fmt.Sprintf("otel distro %s is not available in this odigos tier", distroName)
 		return odigosv1.ContainerAgentConfig{
 			ContainerName:       containerName,
 			AgentEnabled:        false,
