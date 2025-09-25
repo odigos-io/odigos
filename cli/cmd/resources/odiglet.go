@@ -798,11 +798,11 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 			},
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
-					"cpu":    resource.MustParse("10m"),
+					"cpu":    resource.MustParse("30m"),
 					"memory": resource.MustParse("50Mi"),
 				},
 				Requests: corev1.ResourceList{
-					"cpu":    resource.MustParse("10m"),
+					"cpu":    resource.MustParse("30m"),
 					"memory": resource.MustParse("50Mi"),
 				},
 			},

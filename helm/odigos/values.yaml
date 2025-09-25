@@ -360,10 +360,10 @@ odiglet:
   deviceplugin:
     resources:
       requests:
-        cpu: 10m
+        cpu: 30m
         memory: 50Mi
       limits:
-        cpu: 10m
+        cpu: 30m
         memory: 50Mi
     goMemLimit: 40MiB
 
