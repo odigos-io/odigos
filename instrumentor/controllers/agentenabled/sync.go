@@ -171,22 +171,9 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	// instrumentating it and to disable future instrumentation of this service
 	crashDetected := ic.Status.RollbackOccurred
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
-	// ContainersOverrides will always list all containers of the workloads, so we can use it to iterate.
-	for i := range ic.Spec.ContainersOverrides {
-		containerName := ic.Spec.ContainersOverrides[i].ContainerName
-		var containerRuntimeDetails *odigosv1.RuntimeDetailsByContainer
-		// always take the override if it exists, before taking the automatic runtime detection.
-		if ic.Spec.ContainersOverrides[i].RuntimeInfo != nil {
-			containerRuntimeDetails = ic.Spec.ContainersOverrides[i].RuntimeInfo
-		} else {
-			// find this container by name in the automatic runtime detection
-			for j := range ic.Status.RuntimeDetailsByContainer {
-				if ic.Status.RuntimeDetailsByContainer[j].ContainerName == containerName {
-					containerRuntimeDetails = &ic.Status.RuntimeDetailsByContainer[j]
-					break
-				}
-			}
-		}
+	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
+
+	for containerName, containerRuntimeDetails := range runtimeDetailsByContainer {
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
 		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected, cg, irls)
@@ -465,19 +452,28 @@ func calculateContainerInstrumentationConfig(containerName string,
 	// get relevant distroName for the detected language
 	distroName, ok := distroPerLanguage[runtimeDetails.Language]
 	if !ok {
+		var message string
+		if runtimeDetails.Language == common.UnknownProgrammingLanguage {
+			message = "runtime language/platform cannot be detected, no instrumentation agent is available. use the container override to manually specify the programming language."
+		} else {
+			message = fmt.Sprintf("support for %s is coming soon. no instrumentation agent available at the moment", runtimeDetails.Language)
+		}
 		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonNoAvailableAgent,
+			ContainerName:       containerName,
+			AgentEnabled:        false,
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+			AgentEnabledMessage: message,
 		}
 	}
 
 	distro := distroGetter.GetDistroByName(distroName)
-	if distro == nil {
+	if distro == nil { // no expected to happen, here for safety net
+		message := fmt.Sprintf("otel distro %s is not available in this odigos tier", distroName)
 		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonNoAvailableAgent,
+			ContainerName:       containerName,
+			AgentEnabled:        false,
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+			AgentEnabledMessage: message,
 		}
 	}
 

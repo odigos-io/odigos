@@ -152,6 +152,82 @@ type OidcConfiguration struct {
 	ClientSecret string `json:"clientSecret,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+type MetricsSourceSpanMetricsConfiguration struct {
+
+	// control beahvior for when to collect span metrics.
+	// - true - span metrics will never be collected, even if destinations require it.
+	// - false / nil - span metrics will be collected if destinations require it (can be opt-in and out in destination level).
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// time interval for flusing metrics (format: 15s, 1m etc). defaults: 60s (one minute).
+	Interval string `json:"interval,omitempty"`
+
+	// used to remove metrics after time that they are not reporting.
+	// if an app only generates metrics once in a while, this parameter can tune
+	// how much gap is allowed.
+	// format: duration string (15s, 1m, etc).
+	// default is 5m (five minutes).
+	MetricsExpiration string `json:"metricsExpiration,omitempty"`
+
+	// additional dimensions to add to the span metrics.
+	// these are span attributes that you want to convert to metrics attributes during collection.
+	// the values of the attributes must have low cardinality.
+	// it can increase the number of series in the destination.
+	// some dimensions are already added by default, regardless of this setting.
+	AdditionalDimensions []string `json:"additionalDimensions,omitempty"`
+
+	// if true, histogram metrics will not be collected.
+	HistogramDisabled bool `json:"histogramDisabled,omitempty"`
+
+	// explicit buckets list for the histogram metrics.
+	// format is duration string (`1us`, `2ms`, `3s`, `4m`, `5h`, `6d` etc).
+	// if not set, the default buckets list will be used.
+	// the buckets must be in ascending order.
+	// example: ["100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"]
+	// Default value when unset:
+	// 		["2ms", "4ms", "6ms", "8ms", "10ms", "50ms", "100ms", "200ms", "400ms", "800ms", "1s", "1400ms", "2s", "5s", "10s", "15s"]
+	// notice that more granular buckets are recommended for better precision but costs more since more metric series are produced.
+	ExplicitHistogramBuckets []string `json:"histogramBuckets,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceHostMetricsConfiguration struct {
+
+	// control beahvior for when to collect host metrics.
+	// - true - host metrics will never be collected, even if destinations require it.
+	// - false / nil - host metrics will be collected if destinations require it (can be opt-in and out in destination level).
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// time interval for scraping metrics (format: 15s, 1m etc). defaults: 10s.
+	Interval string `json:"interval,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceKubeletStatsConfiguration struct {
+
+	// control beahvior for when to collect kubelet stats.
+	// - true - kubelet stats will never be collected, even if destinations require it.
+	// - false / nil - kubelet stats will be collected if destinations require it (can be opt-in and out in destination level).
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// time interval for scraping metrics (format: 15s, 1m etc). defaults: 10s.
+	Interval string `json:"interval,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceConfiguration struct {
+
+	// configuration for span metrics.
+	SpanMetrics *MetricsSourceSpanMetricsConfiguration `json:"spanMetrics,omitempty"`
+
+	// configuration for host metrics.
+	HostMetrics *MetricsSourceHostMetricsConfiguration `json:"hostMetrics,omitempty"`
+
+	// configuration for kubelet stats.
+	KubeletStats *MetricsSourceKubeletStatsConfiguration `json:"kubeletStats,omitempty"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
 	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
@@ -173,23 +249,24 @@ type OdigosConfiguration struct {
 	ClusterName               string                         `json:"clusterName,omitempty" yaml:"clusterName"`
 	MountMethod               *MountMethod                   `json:"mountMethod,omitempty" yaml:"mountMethod"`
 	//nolint:lll // CustomContainerRuntimeSocketPath line is long due to struct tag requirements
-	CustomContainerRuntimeSocketPath  string                   `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
-	AgentEnvVarsInjectionMethod       *EnvInjectionMethod      `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
-	UserInstrumentationEnvs           *UserInstrumentationEnvs `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
-	NodeSelector                      map[string]string        `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
-	KarpenterEnabled                  *bool                    `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
-	Rollout                           *RolloutConfiguration    `json:"rollout,omitempty" yaml:"rollout"`
-	RollbackDisabled                  *bool                    `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
-	RollbackGraceTime                 string                   `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
-	RollbackStabilityWindow           string                   `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
-	Oidc                              *OidcConfiguration       `json:"oidc,omitempty" yaml:"oidc"`
-	OdigletHealthProbeBindPort        int                      `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
-	GoAutoOffsetsCron                 string                   `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
-	GoAutoOffsetsMode                 string                   `json:"goAutoOffsetsMode,omitempty" yaml:"goAutoOffsetsMode"`
-	ClickhouseJsonTypeEnabledProperty *bool                    `json:"clickhouseJsonTypeEnabled,omitempty"`
-	CheckDeviceHealthBeforeInjection  *bool                    `json:"checkDeviceHealthBeforeInjection,omitempty"`
-	ResourceSizePreset                string                   `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
-	WaspEnabled                       *bool                    `json:"waspEnabled,omitempty" yaml:"waspEnabled"`
+	CustomContainerRuntimeSocketPath  string                      `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
+	AgentEnvVarsInjectionMethod       *EnvInjectionMethod         `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
+	UserInstrumentationEnvs           *UserInstrumentationEnvs    `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
+	NodeSelector                      map[string]string           `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
+	KarpenterEnabled                  *bool                       `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
+	Rollout                           *RolloutConfiguration       `json:"rollout,omitempty" yaml:"rollout"`
+	RollbackDisabled                  *bool                       `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
+	RollbackGraceTime                 string                      `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
+	RollbackStabilityWindow           string                      `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
+	Oidc                              *OidcConfiguration          `json:"oidc,omitempty" yaml:"oidc"`
+	OdigletHealthProbeBindPort        int                         `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
+	GoAutoOffsetsCron                 string                      `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
+	GoAutoOffsetsMode                 string                      `json:"goAutoOffsetsMode,omitempty" yaml:"goAutoOffsetsMode"`
+	ClickhouseJsonTypeEnabledProperty *bool                       `json:"clickhouseJsonTypeEnabled,omitempty"`
+	CheckDeviceHealthBeforeInjection  *bool                       `json:"checkDeviceHealthBeforeInjection,omitempty"`
+	ResourceSizePreset                string                      `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
+	WaspEnabled                       *bool                       `json:"waspEnabled,omitempty" yaml:"waspEnabled"`
+	MetricsSources                    *MetricsSourceConfiguration `json:"metricsSources,omitempty" yaml:"metricsSources"`
 
 	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
 }

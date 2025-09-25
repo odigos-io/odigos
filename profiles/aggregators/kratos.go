@@ -18,7 +18,7 @@ var KratosProfile = profile.Profile{
 		"hostname-as-podname",
 		"code-attributes",
 		"query-operation-detector",
-		"small-batches",
+		// "small-batches", - issue is fixed in receiver. can now handle 85MB
 		"allow_concurrent_agents",
 		"mount-method-k8s-host-path",
 		"reduce-span-name-cardinality",

@@ -63,11 +63,11 @@ func CalculateGatewayConfig(
 	logsEnabled := false
 
 	// Configure processors
-	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.GetCrdProcessorsConfigMap(processors)
+	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.CrdProcessorToConfig(processors)
 	if errs != nil {
 		status.Processor = errs
 	}
-	for processorKey, processorCfg := range processorsCfg {
+	for processorKey, processorCfg := range processorsCfg.Processors {
 		currentConfig.Processors[processorKey] = processorCfg
 	}
 
