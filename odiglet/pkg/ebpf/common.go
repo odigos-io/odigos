@@ -2,7 +2,10 @@ package ebpf
 
 import (
 	"errors"
+	"fmt"
 	"strings"
+
+	"github.com/cilium/ebpf/rlimit"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -45,6 +48,10 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	// creating ebpf map for traces
 	// later this can be expanded to other maps [e.g., metrics, logs]
 	// Create the eBPF map
+	if err := rlimit.RemoveMemlock(); err != nil {
+		return nil, fmt.Errorf("failed to remove memlock rlimit: %w", err)
+	}
+
 	spec := &cilumebpf.MapSpec{
 		Type: cilumebpf.PerfEventArray,
 		Name: "traces",
