@@ -20,15 +20,14 @@ webhooks:
     rules:
       - operations:
           - CREATE
-          - UPDATE
         apiGroups: [""]
         apiVersions: ["v1"]
         resources: ["pods"]
         scope: Namespaced
     failurePolicy: Ignore
-    reinvocationPolicy: IfNeeded
+    reinvocationPolicy: Never
     sideEffects: None
-    timeoutSeconds: 10
+    timeoutSeconds: {{ default 10 .Values.instrumentor.podsWebhookTimeoutSeconds }}
     admissionReviewVersions: ["v1"]
 ---
 apiVersion: admissionregistration.k8s.io/v1
@@ -58,7 +57,7 @@ webhooks:
         resources: ["sources"]
         scope: Namespaced
     failurePolicy: Fail
-    reinvocationPolicy: IfNeeded
+    reinvocationPolicy: Never
     sideEffects: None
     timeoutSeconds: 10
     admissionReviewVersions: ["v1"]
