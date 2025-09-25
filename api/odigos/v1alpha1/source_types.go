@@ -139,14 +139,15 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 			}
 		}
 
-		sort.Slice(activeSources, func(i, j int) bool {
-			return activeSources[i].CreationTimestamp.Before(&activeSources[j].CreationTimestamp)
-		})
-
-		// Allow multiple active sources - just take the first one
-		if len(activeSources) >= 1 {
-			workloadSources.Workload = &activeSources[0]
+		// Only sort if there are multiple sources
+		if len(activeSources) > 1 {
+			sort.Slice(activeSources, func(i, j int) bool {
+				return activeSources[i].CreationTimestamp.Before(&activeSources[j].CreationTimestamp)
+			})
 		}
+
+		workloadSources.Workload = &activeSources[0]
+		
 	}
 
 	namespaceSourceList := SourceList{}
@@ -166,6 +167,13 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 		if source.DeletionTimestamp == nil || source.DeletionTimestamp.IsZero() {
 			activeNamespaceSources = append(activeNamespaceSources, source)
 		}
+	}
+
+	// Only sort if there are multiple namespace sources
+	if len(activeNamespaceSources) > 1 {
+		sort.Slice(activeNamespaceSources, func(i, j int) bool {
+			return activeNamespaceSources[i].CreationTimestamp.Before(&activeNamespaceSources[j].CreationTimestamp)
+		})
 	}
 
 	// Allow multiple active namespace sources - just take the first one
