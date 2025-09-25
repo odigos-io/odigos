@@ -228,14 +228,17 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 			fmt.Sprintf("Source must have at least one %s* label to indicate a data stream group", k8sconsts.SourceDataStreamLabelPrefix),
 		))
 	}
-
-	err := s.validateSourceUniqueness(ctx, source)
-	if err != nil {
-		allErrs = append(allErrs, field.Invalid(
-			field.NewPath("spec").Child("workload"),
-			source.Spec.Workload,
-			err.Error(),
-		))
+	
+	// Skip uniqueness validation if source is being deleted
+	if source.DeletionTimestamp == nil || source.DeletionTimestamp.IsZero() {
+		err := s.validateSourceUniqueness(ctx, source)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(
+				field.NewPath("spec").Child("workload"),
+				source.Spec.Workload,
+				err.Error(),
+			))
+		}
 	}
 
 	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace &&
