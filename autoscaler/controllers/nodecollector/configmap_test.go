@@ -130,6 +130,15 @@ func TestCalculateConfigMapData(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
 			Spec: odigosv1.CollectorsGroupSpec{
 				CollectorOwnMetricsPort: 4317,
+				Metrics: &odigosv1.CollectorsGroupMetricsCollectionSettings{
+					HostMetrics: &common.MetricsSourceHostMetricsConfiguration{
+						Interval: "33s",
+					},
+					KubeletStats: &common.MetricsSourceKubeletStatsConfiguration{
+						Interval: "44s",
+					},
+					AgentsTelemetry: &odigosv1.AgentsTelemetrySettings{},
+				},
 			},
 		},
 		&odigosv1.InstrumentationConfigList{
@@ -158,7 +167,9 @@ func TestCalculateConfigMapData(t *testing.T) {
 					},
 				},
 			},
-		})
+		},
+		false, /* onGKE */
+	)
 
 	assert.Equal(t, err, nil)
 	assert.Equal(t, want, got)

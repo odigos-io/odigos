@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"go.opentelemetry.io/collector/confmap"
 	"go.uber.org/zap"
@@ -47,6 +48,27 @@ func newProvider(set confmap.ProviderSettings) confmap.Provider {
 	}
 }
 
+func (p *provider) waitForConfigMap(ctx context.Context) (*corev1.ConfigMap, error) {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+			cm, err := p.clientset.CoreV1().ConfigMaps(p.namespace).Get(ctx, p.cmName, metav1.GetOptions{})
+			if err == nil {
+				return cm, nil
+			}
+			p.logger.Info("waiting for configmap to be created...",
+				zap.String("name", p.cmName),
+				zap.String("namespace", p.namespace),
+			)
+		}
+	}
+}
+
 func (p *provider) Retrieve(ctx context.Context, uri string, wf confmap.WatcherFunc) (*confmap.Retrieved, error) {
 	// Parse URI: k8scm:namespace/name/key
 	if !strings.HasPrefix(uri, schemeName+":") {
@@ -83,16 +105,26 @@ func (p *provider) Retrieve(ctx context.Context, uri string, wf confmap.WatcherF
 	}
 
 	var cm *corev1.ConfigMap
-	retryErr := retry.OnError(retry.DefaultRetry, func(err error) bool {
-		return true
-	}, func() error {
-		var err error
-		cm, err = p.clientset.CoreV1().ConfigMaps(p.namespace).Get(ctx, p.cmName, metav1.GetOptions{})
-		return err
-	})
+	var err error
 
-	if retryErr != nil {
-		return nil, fmt.Errorf("failed to get configmap: %w", retryErr)
+	if !p.running {
+		// if this is the first time we get the config, wait until the configmap is available
+		cm, err = p.waitForConfigMap(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get configmap: %w", err)
+		}
+	} else {
+		retryErr := retry.OnError(retry.DefaultRetry, func(err error) bool {
+			return true
+		}, func() error {
+			var err error
+			cm, err = p.clientset.CoreV1().ConfigMaps(p.namespace).Get(ctx, p.cmName, metav1.GetOptions{})
+			return err
+		})
+
+		if retryErr != nil {
+			return nil, fmt.Errorf("failed to get configmap: %w", retryErr)
+		}
 	}
 
 	if cm == nil {

@@ -49,6 +49,29 @@ spec:
                 type: string
               disabled:
                 type: boolean
+              metricsSettings:
+                description: |-
+                  MetricsSettings defines the metrics settings for this destination.
+                  ignored if destination does not support metrics or metrics are not enabled in signals
+                properties:
+                  agentsTelemetryEnabled:
+                    type: boolean
+                  hostMetricsEnabled:
+                    type: boolean
+                  kubeletStatsEnabled:
+                    type: boolean
+                  odigosOwnMetricsEnabled:
+                    type: boolean
+                  serviceGraphEnabled:
+                    type: boolean
+                  spanMetricsEnabled:
+                    description: |-
+                      following settings enables/disables specific metric sources
+                      true - collect and send this metric source
+                      false - do not collect and send this metric source
+                      nil - use the default setting (from destination manifest, or cluster global setting)
+                    type: boolean
+                type: object
               secretRef:
                 description: |-
                   LocalObjectReference contains enough information to let you locate the
