@@ -155,6 +155,16 @@ spec:
                           - true - span metrics will never be collected, even if destinations require it.
                           - false / nil - span metrics will be collected if destinations require it (can be opt-in and out in destination level).
                         type: boolean
+                      excludedResourceAttributes:
+                        description: |-
+                          exclude resource attributes from being added to span metrics.
+                          for example - if you don't care about the process granularity,
+                          and prefer the metrics to be aggregated for all processes in a pod container,
+                          you can list all "process.*" attributes here to exclude them from being added to span metrics.
+                          any other resource attribute can be set, either for senetation or to reduce dimenssions for generate metrics.
+                        items:
+                          type: string
+                        type: array
                       histogramBuckets:
                         description: "explicit buckets list for the histogram metrics.\nformat
                           is duration string (`1us`, `2ms`, `3s`, `4m`, `5h`, `6d`
@@ -171,6 +181,15 @@ spec:
                         type: array
                       histogramDisabled:
                         description: if true, histogram metrics will not be collected.
+                        type: boolean
+                      includedProcessInDimensions:
+                        description: |-
+                          by default, odigos will aggregate base on pod container.
+                          if you have multiple processes in the same container,
+                          you will get each metrics aggregatint all processes measurements.
+                          to have more granularity, you can set this to true.
+                          this will create more dimensions for metrics, including process info,
+                          but with cost of more metrics series and costs.
                         type: boolean
                       interval:
                         description: 'time interval for flusing metrics (format: 15s,

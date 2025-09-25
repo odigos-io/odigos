@@ -189,6 +189,21 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// 		["2ms", "4ms", "6ms", "8ms", "10ms", "50ms", "100ms", "200ms", "400ms", "800ms", "1s", "1400ms", "2s", "5s", "10s", "15s"]
 	// notice that more granular buckets are recommended for better precision but costs more since more metric series are produced.
 	ExplicitHistogramBuckets []string `json:"histogramBuckets,omitempty"`
+
+	// by default, odigos will aggregate base on pod container.
+	// if you have multiple processes in the same container,
+	// you will get each metrics aggregatint all processes measurements.
+	// to have more granularity, you can set this to true.
+	// this will create more dimensions for metrics, including process info,
+	// but with cost of more metrics series and costs.
+	IncludedProcessInDimensions *bool `json:"includedProcessInDimensions,omitempty"`
+
+	// exclude resource attributes from being added to span metrics.
+	// for example - if you don't care about the process granularity,
+	// and prefer the metrics to be aggregated for all processes in a pod container,
+	// you can list all "process.*" attributes here to exclude them from being added to span metrics.
+	// any other resource attribute can be set, either for senetation or to reduce dimenssions for generate metrics.
+	ExcludedResourceAttributes []string `json:"excludedResourceAttributes,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

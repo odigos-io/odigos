@@ -218,13 +218,18 @@ func calculateConfigMapData(
 	metricsConfigSettings := nodeCG.Spec.Metrics
 	var additionalTraceExporters []string
 	if metricsEnabled && metricsConfigSettings != nil {
-		metricsConfig, metricsAdditionalTraceExporters := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, additionalMetricsProcessors, metricsConfigSettings)
-		activeConfigDomains = append(activeConfigDomains, metricsConfig)
 
-		// due to spanmetrics connector, adding a metrics pipeline can result in needing to also collect
-		// traces which are fed into the collector and generate metrics from spans.
-		// additionalTraceExporters will be populated if traces need to be exportered to any additional place.
-		additionalTraceExporters = append(additionalTraceExporters, metricsAdditionalTraceExporters...)
+		// span metrics
+		additionalMetricsRecivers := []string{}
+		if metricsConfigSettings.SpanMetrics != nil {
+			spanMetricsConfig, additionalSpanMetricsTraceExporters, additionalSpanMetricsMetricsRecivers := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics)
+			additionalTraceExporters = append(additionalTraceExporters, additionalSpanMetricsTraceExporters...)
+			additionalMetricsRecivers = append(additionalMetricsRecivers, additionalSpanMetricsMetricsRecivers...)
+			activeConfigDomains = append(activeConfigDomains, spanMetricsConfig)
+		}
+
+		metricsConfig := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, additionalMetricsProcessors, additionalMetricsRecivers, metricsConfigSettings)
+		activeConfigDomains = append(activeConfigDomains, metricsConfig)
 	}
 
 	// traces
