@@ -14,17 +14,14 @@ export const ROUTES = {
 
 export const SKIP_TO_SUMMERY_QUERY_PARAM = 'skipToSummary';
 
-const IS_PROD = process.env.NODE_ENV === 'production';
+const PROTOCOL = typeof window !== 'undefined' ? window.location.protocol : 'http';
+const HOSTNAME = typeof window !== 'undefined' ? window.location.hostname : '';
+const IS_INGRESSED_DOMAIN = HOSTNAME && HOSTNAME !== 'localhost';
 
-// set base URLs for all environments
-const DEV_API_URL = 'http://localhost:8085';
-const PROD_API_URL = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+const BACKEND_PORT = 3000;
+const BACKEND_HTTP_ORIGIN = IS_INGRESSED_DOMAIN ? `${PROTOCOL}//${HOSTNAME}` : `http://localhost:${BACKEND_PORT}`;
 
-// construct final base URL based on environment
-const API_BASE_URL = IS_PROD ? PROD_API_URL : DEV_API_URL;
-
-// add paths to base URL
 export const API = {
-  GRAPHQL: `${API_BASE_URL}/graphql`,
-  EVENTS: `${API_BASE_URL}/api/events`,
+  GRAPHQL: `${BACKEND_HTTP_ORIGIN}/graphql`,
+  EVENTS: `${BACKEND_HTTP_ORIGIN}/api/events`,
 };

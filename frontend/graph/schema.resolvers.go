@@ -16,9 +16,10 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/graph/status"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
-	actionservices "github.com/odigos-io/odigos/frontend/services/actions"
+	frontendcommon "github.com/odigos-io/odigos/frontend/services/common"
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
@@ -184,191 +185,8 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 }
 
 // Actions is the resolver for the actions field.
-func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.ComputePlatform) ([]*model.PipelineAction, error) {
-	var response []*model.PipelineAction
-	ns := env.GetCurrentNamespace()
-
-	// K8sAttributes actions
-	kaActions, err := kube.DefaultClient.ActionsClient.K8sAttributesResolvers(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, action := range kaActions.Items {
-		specStr, err := json.Marshal(action.Spec)
-		if err != nil {
-			return nil, err
-		}
-		response = append(response, &model.PipelineAction{
-			ID:         action.Name,
-			Type:       action.Kind,
-			Spec:       string(specStr),
-			Conditions: convertConditions(action.Status.Conditions),
-		})
-	}
-
-	// AddClusterInfos actions
-	icaActions, err := kube.DefaultClient.ActionsClient.AddClusterInfos(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, action := range icaActions.Items {
-		specStr, err := json.Marshal(action.Spec)
-		if err != nil {
-			return nil, err
-		}
-		response = append(response, &model.PipelineAction{
-			ID:         action.Name,
-			Type:       action.Kind,
-			Spec:       string(specStr),
-			Conditions: convertConditions(action.Status.Conditions),
-		})
-	}
-
-	// DeleteAttributes actions
-	daActions, err := kube.DefaultClient.ActionsClient.DeleteAttributes(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, action := range daActions.Items {
-		specStr, err := json.Marshal(action.Spec)
-		if err != nil {
-			return nil, err
-		}
-		response = append(response, &model.PipelineAction{
-			ID:         action.Name,
-			Type:       action.Kind,
-			Spec:       string(specStr),
-			Conditions: convertConditions(action.Status.Conditions),
-		})
-	}
-
-	// RenameAttributes actions
-	raActions, err := kube.DefaultClient.ActionsClient.RenameAttributes(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, action := range raActions.Items {
-		specStr, err := json.Marshal(action.Spec)
-		if err != nil {
-			return nil, err
-		}
-		response = append(response, &model.PipelineAction{
-			ID:         action.Name,
-			Type:       action.Kind,
-			Spec:       string(specStr),
-			Conditions: convertConditions(action.Status.Conditions),
-		})
-	}
-
-	// PiiMaskings actions
-	piActions, err := kube.DefaultClient.ActionsClient.PiiMaskings(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, action := range piActions.Items {
-		specStr, err := json.Marshal(action.Spec)
-		if err != nil {
-			return nil, err
-		}
-		response = append(response, &model.PipelineAction{
-			ID:         action.Name,
-			Type:       action.Kind,
-			Spec:       string(specStr),
-			Conditions: convertConditions(action.Status.Conditions),
-		})
-	}
-
-	// ErrorSamplers actions
-	esActions, err := kube.DefaultClient.ActionsClient.ErrorSamplers(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, action := range esActions.Items {
-		specStr, err := json.Marshal(action.Spec)
-		if err != nil {
-			return nil, err
-		}
-		response = append(response, &model.PipelineAction{
-			ID:         action.Name,
-			Type:       action.Kind,
-			Spec:       string(specStr),
-			Conditions: convertConditions(action.Status.Conditions),
-		})
-	}
-
-	// LatencySamplers actions
-	lsActions, err := kube.DefaultClient.ActionsClient.LatencySamplers(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, action := range lsActions.Items {
-		specStr, err := json.Marshal(action.Spec)
-		if err != nil {
-			return nil, err
-		}
-		response = append(response, &model.PipelineAction{
-			ID:         action.Name,
-			Type:       action.Kind,
-			Spec:       string(specStr),
-			Conditions: convertConditions(action.Status.Conditions),
-		})
-	}
-
-	// ProbabilisticSamplers actions
-	psActions, err := kube.DefaultClient.ActionsClient.ProbabilisticSamplers(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, action := range psActions.Items {
-		specStr, err := json.Marshal(action.Spec)
-		if err != nil {
-			return nil, err
-		}
-		response = append(response, &model.PipelineAction{
-			ID:         action.Name,
-			Type:       action.Kind,
-			Spec:       string(specStr),
-			Conditions: convertConditions(action.Status.Conditions),
-		})
-	}
-
-	// ServiceNameSamplers actions
-	snsActions, err := kube.DefaultClient.ActionsClient.ServiceNameSamplers(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, action := range snsActions.Items {
-		specStr, err := json.Marshal(action.Spec)
-		if err != nil {
-			return nil, err
-		}
-		response = append(response, &model.PipelineAction{
-			ID:         action.Name,
-			Type:       action.Kind,
-			Spec:       string(specStr),
-			Conditions: convertConditions(action.Status.Conditions),
-		})
-	}
-
-	// SpanAttributeSamplers actions
-	sasActions, err := kube.DefaultClient.ActionsClient.SpanAttributeSamplers(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, action := range sasActions.Items {
-		specStr, err := json.Marshal(action.Spec)
-		if err != nil {
-			return nil, err
-		}
-		response = append(response, &model.PipelineAction{
-			ID:         action.Name,
-			Type:       action.Kind,
-			Spec:       string(specStr),
-			Conditions: convertConditions(action.Status.Conditions),
-		})
-	}
-
-	return response, nil
+func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.ComputePlatform) ([]*model.Action, error) {
+	return services.GetActions(ctx)
 }
 
 // InstrumentationRules is the resolver for the instrumentationRules field.
@@ -465,6 +283,116 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 	}
 
 	return sources, nil
+}
+
+// WorkloadOdigosHealthStatus is the resolver for the workloadOdigosHealthStatus field.
+func (r *k8sActualSourceResolver) WorkloadOdigosHealthStatus(ctx context.Context, obj *model.K8sActualSource) (*model.DesiredConditionStatus, error) {
+	// Create a workload ID from the K8sActualSource
+	workloadID := &model.K8sWorkloadID{
+		Namespace: obj.Namespace,
+		Kind:      obj.Kind,
+		Name:      obj.Name,
+	}
+
+	// Set up loaders with a filter for this specific workload
+	l := loaders.For(ctx)
+	filter := &model.WorkloadFilter{
+		Namespace: &obj.Namespace,
+		Kind:      &obj.Kind,
+		Name:      &obj.Name,
+	}
+	err := l.SetFilters(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the instrumentation config
+	ic, err := l.GetInstrumentationConfig(ctx, *workloadID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the pods
+	pods, err := l.GetWorkloadPods(ctx, *workloadID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate the health status using the same logic as K8sWorkload resolver
+	conditions := []*model.DesiredConditionStatus{}
+	if ic != nil {
+		conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
+		conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
+		conditions = append(conditions, status.CalculateRolloutStatus(ic))
+	} else {
+		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
+		conditions = append(conditions, &model.DesiredConditionStatus{
+			Name:       status.WorkloadOdigosHealthStatus,
+			Status:     model.DesiredStateProgressDisabled,
+			ReasonEnum: &reasonStr,
+			Message:    "workload is not marked for instrumentation",
+		})
+	}
+
+	// always report if agent is injected or not, even if the workload is not marked for instrumentation.
+	// this is to detect if uninstrumented pods have agent injected when it should not.
+	conditions = append(conditions, status.CalculateAgentInjectedStatus(ic, pods))
+	aggregateContainerProcessesHealth, err := aggregateProcessesHealthForWorkload(ctx, workloadID)
+	if err != nil {
+		return nil, err
+	}
+	conditions = append(conditions, aggregateContainerProcessesHealth)
+
+	mostSevereCondition := aggregateConditionsBySeverity(conditions)
+	if mostSevereCondition == nil {
+		mostSevereCondition = &model.DesiredConditionStatus{
+			Name:       status.WorkloadOdigosHealthStatus,
+			Status:     model.DesiredStateProgressUnknown,
+			ReasonEnum: nil,
+			Message:    "",
+		}
+	}
+
+	// exception, if all is well, we return a special condition to denote it
+	if mostSevereCondition.Status == model.DesiredStateProgressSuccess {
+
+		workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(frontendcommon.SourceID{
+			Namespace: obj.Namespace,
+			Kind:      k8sconsts.WorkloadKind(obj.Kind),
+			Name:      obj.Name,
+		})
+		var totalDataSent *int
+		if ok {
+			tds := int(workloadMetrics.TotalDataSent())
+			totalDataSent = &tds
+		}
+
+		// consider the telemetry metrics status if relevant.
+		telemetryMetrics := status.CalculateExpectingTelemetryStatus(ic, pods, totalDataSent)
+		expectingTelemetry := telemetryMetrics != nil && telemetryMetrics.IsExpectingTelemetry != nil && *telemetryMetrics.IsExpectingTelemetry
+
+		var reasonStr, message string
+		if expectingTelemetry {
+			if telemetryMetrics.TelemetryObservedStatus.Status == model.DesiredStateProgressSuccess {
+				reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry)
+				message = "source is instrumented, healthy and telemetry has been observed"
+			} else {
+				reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccess)
+				message = "source is instrumented and healthy, no telemetry recorded yet"
+			}
+		} else {
+			reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccess)
+			message = "source is healthy, no telemetry is expected"
+		}
+		return &model.DesiredConditionStatus{
+			Name:       status.WorkloadOdigosHealthStatus,
+			Status:     model.DesiredStateProgressSuccess,
+			ReasonEnum: &reasonStr,
+			Message:    message,
+		}, nil
+	}
+
+	return mostSevereCondition, nil
 }
 
 // UpdateAPIToken is the resolver for the updateApiToken field.
@@ -921,122 +849,18 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 }
 
 // CreateAction is the resolver for the createAction field.
-func (r *mutationResolver) CreateAction(ctx context.Context, action model.ActionInput) (model.Action, error) {
-	switch action.Type {
-	case actionservices.ActionTypeK8sAttributes:
-		return actionservices.CreateK8sAttributes(ctx, action)
-	case actionservices.ActionTypeAddClusterInfo:
-		return actionservices.CreateAddClusterInfo(ctx, action)
-	case actionservices.ActionTypeDeleteAttribute:
-		return actionservices.CreateDeleteAttribute(ctx, action)
-	case actionservices.ActionTypePiiMasking:
-		return actionservices.CreatePiiMasking(ctx, action)
-	case actionservices.ActionTypeRenameAttribute:
-		return actionservices.CreateRenameAttribute(ctx, action)
-	case actionservices.ActionTypeErrorSampler:
-		return actionservices.CreateErrorSampler(ctx, action)
-	case actionservices.ActionTypeLatencySampler:
-		return actionservices.CreateLatencySampler(ctx, action)
-	case actionservices.ActionTypeProbabilisticSampler:
-		return actionservices.CreateProbabilisticSampler(ctx, action)
-	case actionservices.ActionTypeServiceNameSampler:
-		return actionservices.CreateServiceNameSampler(ctx, action)
-	case actionservices.ActionTypeSpanAttributeSampler:
-		return actionservices.CreateSpanAttributeSampler(ctx, action)
-	default:
-		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
-	}
+func (r *mutationResolver) CreateAction(ctx context.Context, action model.ActionInput) (*model.Action, error) {
+	return services.CreateAction(ctx, action)
 }
 
 // UpdateAction is the resolver for the updateAction field.
-func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action model.ActionInput) (model.Action, error) {
-	switch action.Type {
-	case actionservices.ActionTypeK8sAttributes:
-		return actionservices.UpdateK8sAttributes(ctx, id, action)
-	case actionservices.ActionTypeAddClusterInfo:
-		return actionservices.UpdateAddClusterInfo(ctx, id, action)
-	case actionservices.ActionTypeDeleteAttribute:
-		return actionservices.UpdateDeleteAttribute(ctx, id, action)
-	case actionservices.ActionTypePiiMasking:
-		return actionservices.UpdatePiiMasking(ctx, id, action)
-	case actionservices.ActionTypeRenameAttribute:
-		return actionservices.UpdateRenameAttribute(ctx, id, action)
-	case actionservices.ActionTypeErrorSampler:
-		return actionservices.UpdateErrorSampler(ctx, id, action)
-	case actionservices.ActionTypeLatencySampler:
-		return actionservices.UpdateLatencySampler(ctx, id, action)
-	case actionservices.ActionTypeProbabilisticSampler:
-		return actionservices.UpdateProbabilisticSampler(ctx, id, action)
-	case actionservices.ActionTypeSpanAttributeSampler:
-		return actionservices.UpdateSpanAttributeSampler(ctx, id, action)
-	case actionservices.ActionTypeServiceNameSampler:
-		return actionservices.UpdateServiceNameSampler(ctx, id, action)
-	default:
-		return nil, fmt.Errorf("unsupported action type: %s", action.Type)
-	}
+func (r *mutationResolver) UpdateAction(ctx context.Context, id string, action model.ActionInput) (*model.Action, error) {
+	return services.UpdateAction(ctx, id, action)
 }
 
 // DeleteAction is the resolver for the deleteAction field.
 func (r *mutationResolver) DeleteAction(ctx context.Context, id string, actionType string) (bool, error) {
-	switch actionType {
-	case actionservices.ActionTypeK8sAttributes:
-		err := actionservices.DeleteK8sAttributes(ctx, id)
-		if err != nil {
-			return false, fmt.Errorf("failed to delete K8sAttributes: %v", err)
-		}
-
-	case actionservices.ActionTypeAddClusterInfo:
-		err := actionservices.DeleteAddClusterInfo(ctx, id)
-		if err != nil {
-			return false, fmt.Errorf("failed to delete AddClusterInfo: %v", err)
-		}
-
-	case actionservices.ActionTypeDeleteAttribute:
-		err := actionservices.DeleteDeleteAttribute(ctx, id)
-		if err != nil {
-			return false, fmt.Errorf("failed to delete DeleteAttribute: %v", err)
-		}
-	case actionservices.ActionTypeRenameAttribute:
-		err := actionservices.DeleteRenameAttribute(ctx, id)
-		if err != nil {
-			return false, fmt.Errorf("failed to delete RenameAttribute: %v", err)
-		}
-	case actionservices.ActionTypePiiMasking:
-		err := actionservices.DeletePiiMasking(ctx, id)
-		if err != nil {
-			return false, fmt.Errorf("failed to delete PiiMasking: %v", err)
-		}
-	case actionservices.ActionTypeErrorSampler:
-		err := actionservices.DeleteErrorSampler(ctx, id)
-		if err != nil {
-			return false, fmt.Errorf("failed to delete ErrorSampler: %v", err)
-		}
-	case actionservices.ActionTypeLatencySampler:
-		err := actionservices.DeleteLatencySampler(ctx, id)
-		if err != nil {
-			return false, fmt.Errorf("failed to delete LatencySampler: %v", err)
-		}
-	case actionservices.ActionTypeProbabilisticSampler:
-		err := actionservices.DeleteProbabilisticSampler(ctx, id)
-		if err != nil {
-			return false, fmt.Errorf("failed to delete ProbabilisticSampler: %v", err)
-		}
-	case actionservices.ActionTypeServiceNameSampler:
-		err := actionservices.DeleteServiceNameSampler(ctx, id)
-		if err != nil {
-			return false, fmt.Errorf("failed to delete ServiceNameSampler: %v", err)
-		}
-	case actionservices.ActionTypeSpanAttributeSampler:
-		err := actionservices.DeleteSpanAttributeSampler(ctx, id)
-		if err != nil {
-			return false, fmt.Errorf("failed to delete SpanAttributeSampler: %v", err)
-		}
-	default:
-		return false, fmt.Errorf("unsupported action type: %s", actionType)
-	}
-
-	// Return true if the deletion was successful
-	return true, nil
+	return services.DeleteAction(ctx, id)
 }
 
 // CreateInstrumentationRule is the resolver for the createInstrumentationRule field.
@@ -1350,6 +1174,9 @@ func (r *Resolver) K8sActualNamespace() K8sActualNamespaceResolver {
 	return &k8sActualNamespaceResolver{r}
 }
 
+// K8sActualSource returns K8sActualSourceResolver implementation.
+func (r *Resolver) K8sActualSource() K8sActualSourceResolver { return &k8sActualSourceResolver{r} }
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
@@ -1358,5 +1185,6 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type computePlatformResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
+type k8sActualSourceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

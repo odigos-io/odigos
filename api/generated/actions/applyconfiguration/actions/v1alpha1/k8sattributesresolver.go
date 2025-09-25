@@ -42,6 +42,7 @@ func K8sAttributesResolver(name, namespace string) *K8sAttributesResolverApplyCo
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
+func (b K8sAttributesResolverApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
@@ -217,8 +218,24 @@ func (b *K8sAttributesResolverApplyConfiguration) WithStatus(value *K8sAttribute
 	return b
 }
 
+// GetKind retrieves the value of the Kind field in the declarative configuration.
+func (b *K8sAttributesResolverApplyConfiguration) GetKind() *string {
+	return b.TypeMetaApplyConfiguration.Kind
+}
+
+// GetAPIVersion retrieves the value of the APIVersion field in the declarative configuration.
+func (b *K8sAttributesResolverApplyConfiguration) GetAPIVersion() *string {
+	return b.TypeMetaApplyConfiguration.APIVersion
+}
+
 // GetName retrieves the value of the Name field in the declarative configuration.
 func (b *K8sAttributesResolverApplyConfiguration) GetName() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
 	return b.ObjectMetaApplyConfiguration.Name
+}
+
+// GetNamespace retrieves the value of the Namespace field in the declarative configuration.
+func (b *K8sAttributesResolverApplyConfiguration) GetNamespace() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.ObjectMetaApplyConfiguration.Namespace
 }

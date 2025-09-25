@@ -473,7 +473,7 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 }
 
 func getInitContainerImage(config common.OdigosConfiguration) string {
-	initContainerImage := k8sconsts.OdigosInitContainerImageName
+	initContainerImage := k8sconsts.OdigosInitContainerImage
 	imageVersion := os.Getenv(consts.OdigosVersionEnvVarName)
 
 	// In the installation/upgrade we always set the init container image as env var, so we can use it here

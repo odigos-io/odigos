@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: central-ui
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    odigos.io/system-object: "true"
+    app.kubernetes.io/name: central-ui
+spec:
+  ports:
+    - name: ui
+      port: 3000
+      targetPort: 3000
+  selector:
+    app: central-ui

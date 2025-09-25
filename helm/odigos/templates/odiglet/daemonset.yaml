@@ -3,6 +3,9 @@
 {{- $collectLogs := has "logs" $signals -}}
 {{- $collectMetrics := has "metrics" $signals -}}
 {{- $privilegedRequired := or $collectLogs $collectMetrics -}}
+{{- if and $privilegedRequired .Values.odiglet.unPrivileged }}
+{{ fail "privileged mode is required when collecting logs or metrics, this is currently not supported in unprivileged mode" }}
+{{- end }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -110,10 +113,9 @@ spec:
             privileged: false
             capabilities:
               add:
-                - BPF
-                - PERFMON
-                - SYS_PTRACE
-                - DAC_READ_SEARCH
+              {{- with .Values.odiglet.odiglet.capabilities }}
+              {{- toYaml . | nindent 14 }}
+              {{- end }}
               drop:
                 - ALL
             {{- end }}
@@ -190,6 +192,8 @@ spec:
               mountPath: /sys/kernel
             - name: odigos-go-offsets
               mountPath: /offsets
+            - name: exchange-dir
+              mountPath: /var/exchange
         - name: data-collection
           image: '{{ template "utils.imageName" (dict "Values" .Values "Component" "collector" "Tag" $imageTag) }}'
           imagePullPolicy: IfNotPresent
@@ -198,7 +202,18 @@ spec:
           args:
             - --config=k8scm:{{ .Release.Namespace }}/odigos-data-collection/conf
           securityContext:
-            privileged: {{ $privilegedRequired | toYaml }}
+            {{- if $privilegedRequired }}
+            privileged: true
+            {{- else }}
+            privileged: false
+            capabilities:
+              add:
+              {{- with .Values.odiglet.dataCollection.capabilities }}
+              {{- toYaml . | nindent 14 }}
+              {{- end }}
+              drop:
+                - ALL
+            {{- end }}
           env:
             - name: NODE_NAME
               valueFrom:
@@ -229,6 +244,12 @@ spec:
             httpGet:
               path: /
               port: 13133
+          startupProbe:
+            httpGet:
+              path: /
+              port: 13133
+            failureThreshold: 30
+            periodSeconds: 10
           resources:
             requests:
               memory: "{{ include "collector.node.memoryRequest" . }}Mi"
@@ -256,6 +277,8 @@ spec:
               mountPath: /hostfs
               readOnly: true
             {{- end }}
+            - name: exchange-dir
+              mountPath: /var/exchange
 # if hostMounts are not allowed we must use mountMethod of "k8s-init-container"
 {{- if and (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) (.Values.odiglet.noHostPathMounts) }}
 {{ fail "if HostPath mounts are not allowed mount method must be k8s-init-container" }}
@@ -376,6 +399,8 @@ spec:
         - name: odigos-go-offsets
           configMap:
             name: odigos-go-offsets
+        - name: exchange-dir
+          emptyDir: {}
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.odiglet }}
   {{- if .nodeSelector }}

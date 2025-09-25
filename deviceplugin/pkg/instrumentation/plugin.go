@@ -10,9 +10,13 @@ import (
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
+type LangSpecificFunc func(deviceId string) *v1beta1.ContainerAllocateResponse
+
 type plugin struct {
-	idsManager devices.DeviceManager
-	stopCh     chan struct{}
+	v1beta1.UnimplementedDevicePluginServer
+	idsManager       devices.DeviceManager
+	stopCh           chan struct{}
+	LangSpecificFunc LangSpecificFunc
 }
 
 func NewGenericPlugin(initialSize int64) dpm.PluginInterface {
@@ -65,22 +69,13 @@ func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest)
 	log.Logger.V(0).Info("Serving Allocate request for devices", "numContainers", len(request.ContainerRequests))
 
 	for _, req := range request.ContainerRequests {
-		if len(req.DevicesIDs) != 1 {
-			log.Logger.V(0).Info("got instrumentation device not equal to 1, skipping", "devices", req.DevicesIDs)
+		if len(req.DevicesIds) != 1 {
+			log.Logger.V(0).Info("got instrumentation device not equal to 1, skipping", "devices", req.DevicesIds)
 			continue
 		}
 
-		genericPluginResponse := &v1beta1.ContainerAllocateResponse{
-			Mounts: []*v1beta1.Mount{
-				{
-					ContainerPath: OdigosAgentsDirectory,
-					HostPath:      OdigosAgentsDirectory,
-					ReadOnly:      true,
-				},
-			},
-		}
-
-		res.ContainerResponses = append(res.ContainerResponses, genericPluginResponse)
+		deviceId := req.DevicesIds[0]
+		res.ContainerResponses = append(res.ContainerResponses, p.LangSpecificFunc(deviceId))
 	}
 
 	return res, nil

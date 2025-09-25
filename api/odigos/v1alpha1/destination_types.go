@@ -23,6 +23,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type DestinationMetricsSettings struct {
+	// following settings enables/disables specific metric sources
+	// true - collect and send this metric source
+	// false - do not collect and send this metric source
+	// nil - use the default setting (from destination manifest, or cluster global setting)
+	CollectSpanMetrics      *bool `json:"spanMetricsEnabled,omitempty"`
+	CollectHostMetrics      *bool `json:"hostMetricsEnabled,omitempty"`
+	CollectKubeletStats     *bool `json:"kubeletStatsEnabled,omitempty"`
+	CollectServiceGraph     *bool `json:"serviceGraphEnabled,omitempty"`
+	CollectOdigosOwnMetrics *bool `json:"odigosOwnMetricsEnabled,omitempty"`
+	CollectAgentsTelemetry  *bool `json:"agentsTelemetryEnabled,omitempty"`
+}
+
 // DestinationSpec defines the desired state of Destination
 type DestinationSpec struct {
 	Type            common.DestinationType       `json:"type"`
@@ -31,6 +44,11 @@ type DestinationSpec struct {
 	SecretRef       *v1.LocalObjectReference     `json:"secretRef,omitempty"`
 	Signals         []common.ObservabilitySignal `json:"signals"`
 	Disabled        *bool                        `json:"disabled,omitempty"`
+
+	// MetricsSettings defines the metrics settings for this destination.
+	// ignored if destination does not support metrics or metrics are not enabled in signals
+	// +optional
+	MetricsSettings *DestinationMetricsSettings `json:"metricsSettings,omitempty"`
 
 	// SourceSelector defines which sources can send data to this destination.
 	// If not specified, defaults to "all".
@@ -85,6 +103,10 @@ func (dest Destination) GetConfig() map[string]string {
 }
 func (dest Destination) GetSignals() []common.ObservabilitySignal {
 	return dest.Spec.Signals
+}
+
+func (dest Destination) GetSecretRef() *v1.LocalObjectReference {
+	return dest.Spec.SecretRef
 }
 
 type SourceSelector struct {

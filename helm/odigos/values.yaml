@@ -141,6 +141,7 @@ collectorGateway:
   # when unset or empty, no proxy will be used.
   # httpsProxyAddress: ''
 
+# Settings for Odigos data-collection (node) Collectors
 collectorNode:
   # The port to use for exposing the collector's own metrics as a prometheus endpoint.
   # This can be used to resolve conflicting ports when a collector is using the host network.
@@ -318,6 +319,28 @@ odiglet:
         path: /readyz
         port: 55683
       periodSeconds: 10
+    # capabilities to add to the odiglet container when running as unPrivileged - this will be ignored when running as privileged.
+    capabilities:
+      # SYS_ADMIN required when running in unprivileged mode if one of the following is true:
+      #  1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
+      #  2. kernel.perf_event_paranoid sysctl is set to 2 or higher
+      - SYS_ADMIN
+      - BPF
+      - PERFMON
+      - SYS_PTRACE
+      - DAC_READ_SEARCH
+      # required for mmap of perf buffers
+      - IPC_LOCK
+  dataCollection:
+    # capabilities to add to the data-collection container when running as un privileged - this will be ignored when running as privileged.
+    capabilities:
+      # SYS_ADMIN required when running in unprivileged mode if one of the following is true:
+      #  1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
+      #  2. kernel.perf_event_paranoid sysctl is set to 2 or higher
+      - SYS_ADMIN
+      - BPF
+      - PERFMON
+      - IPC_LOCK
   nodeSelector:
     kubernetes.io/os: linux
   tolerations:
@@ -471,6 +494,46 @@ clickhouseDestinationJsonType:
 # controls the wasp settings
 wasp:
   enabled: false
+
+# configuration for metrics sources (where odigos collects metrics from)
+# only relevant when a metrics destination is enabled
+metricsSources:
+  hostMetrics:
+    ## uncomment the next line to disable host metrics collection globally
+    #disabled: false
+
+    ## set time interval for host metrics scraping
+    ## format is duration string (15s, 1m, etc)
+    # interval: '10s'
+
+  kubeletStats:
+    ## uncomment the next line to disable kubelet stats collection globally
+    #disabled: false
+
+    ## set time interval for kubelet stats scraping
+    ## format is duration string (15s, 1m, etc)
+    # interval: '10s'
+
+  spanMetrics:
+    # uncomment the next line to disable span metrics collection globally
+    #disabled: false
+
+    ## set time interval for span metrics flushing
+    ## format is duration string (15s, 1m, etc)
+    ## default is 60s
+    # interval: '60s'
+
+    ## set additional dimensions for span metrics
+    ## format is a list of strings
+    # additionalDimensions: ['some.attribute']
+
+    ## uncomment the next line to disable histogram metrics collection (while still recording non-histogram span metrics)
+    # histogramDisabled: true
+
+    ## set explicit histogram buckets for span metrics
+    ## format is duration string (1us, 2ms, 3s, 4m, 5h, 6d, etc)
+    # explicitHistogramBuckets: ['2ms', '4ms', '6ms', '8ms', '10ms', '50ms', '100ms', '200ms', '400ms', '800ms', '1s', '1400ms', '2s', '5s', '10s', '15s']
+
 
 # Enable automatic Go library offsets updates.
 # See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.

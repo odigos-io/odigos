@@ -23,7 +23,7 @@ import (
 	v1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	testing "k8s.io/client-go/testing"
+	managedfields "k8s.io/apimachinery/pkg/util/managedfields"
 )
 
 // ForKind returns an apply configuration type for the given GroupVersionKind, or nil if no
@@ -45,6 +45,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.AttributesAndSamplerRuleApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroup"):
 		return &odigosv1alpha1.CollectorsGroupApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupMetricsCollectionSettings"):
+		return &odigosv1alpha1.CollectorsGroupMetricsCollectionSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupResourcesSettings"):
 		return &odigosv1alpha1.CollectorsGroupResourcesSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupSpec"):
@@ -57,6 +59,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.ContainerOverrideApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Destination"):
 		return &odigosv1alpha1.DestinationApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("DestinationMetricsSettings"):
+		return &odigosv1alpha1.DestinationMetricsSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DestinationSpec"):
 		return &odigosv1alpha1.DestinationSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DestinationStatus"):
@@ -116,6 +120,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 	return nil
 }
 
-func NewTypeConverter(scheme *runtime.Scheme) *testing.TypeConverter {
-	return &testing.TypeConverter{Scheme: scheme, TypeResolver: internal.Parser()}
+func NewTypeConverter(scheme *runtime.Scheme) managedfields.TypeConverter {
+	return managedfields.NewSchemeTypeConverter(scheme, internal.Parser())
 }
