@@ -67,6 +67,125 @@ spec:
                   Additional directory to mount in the node collector pod for logs.
                   This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.
                 type: string
+              metrics:
+                description: |-
+                  configuration for metrics handling in this collectors group
+                  if metric collection is disabled, this will be nil
+                  the content is populated only if relevant to this collectors group
+                  it's being calculated based on active destinations and their settings,
+                  and global settings provided in the odigos configuration or instrumentation rules.
+                  it allows for the collector group reconciler to be simplified,
+                  and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
+                properties:
+                  agentsTelemetry:
+                    description: |-
+                      this part controls the metrics which are received from agents in the otlp receiver.
+                      it is generally enabled when we want to record metrics, and listed here for completeness.
+                      any "otlp receiver" specific settings can go here
+                    type: object
+                  hostMetrics:
+                    description: |-
+                      if not nil for node collector, it means host metrics is enabled,
+                      and the opentelemetry collector "hostmetrics" receiver should be included in the pipeline.
+                      host metrics are metrics that are collected from the host node,
+                      such as cpu, memory, disk, network, etc.
+                    properties:
+                      disabled:
+                        description: |-
+                          control beahvior for when to collect host metrics.
+                          - true - host metrics will never be collected, even if destinations require it.
+                          - false / nil - host metrics will be collected if destinations require it (can be opt-in and out in destination level).
+                        type: boolean
+                      interval:
+                        description: 'time interval for scraping metrics (format:
+                          15s, 1m etc). defaults: 10s.'
+                        type: string
+                    type: object
+                  kubeletStats:
+                    description: |-
+                      if not nil for node collector, it means kubelet stats is enabled,
+                      and the opentelemetry collector "kubeletstats" receiver should be included in the pipeline.
+                      kubelet stats are metrics that are collected from the kubelet point of view,
+                      such as cpu, memory, disk, network, per pod, node and more.
+                    properties:
+                      disabled:
+                        description: |-
+                          control beahvior for when to collect kubelet stats.
+                          - true - kubelet stats will never be collected, even if destinations require it.
+                          - false / nil - kubelet stats will be collected if destinations require it (can be opt-in and out in destination level).
+                        type: boolean
+                      interval:
+                        description: 'time interval for scraping metrics (format:
+                          15s, 1m etc). defaults: 10s.'
+                        type: string
+                    type: object
+                  odigosOwnMetrics:
+                    description: |-
+                      if not nil for node collector, it means that some metric destinations are
+                      intresseted in collecting metrics about: odigos, the collected data, and the pipeline itself.
+                      this allows for users to monitor and operate odigos within their existing system,
+                      create dashboards, alerting, and more.
+                    type: object
+                  serviceGraph:
+                    description: |-
+                      if not nil for cluster collector, it means service graph is enabled,
+                      and metrics for the "connectivity" between services should be calculated
+                      to be exported to metrics destinations.
+                    type: object
+                  spanMetrics:
+                    description: |-
+                      if not nil for node collector, it means span to metrics is enabled,
+                      and the node collector should set it up in the pipeline.
+                      span to metrics is the ability to calculate metrics like http requests/errors/duration etc
+                      from the individual spans recorded for relevant operation.
+                    properties:
+                      additionalDimensions:
+                        description: |-
+                          additional dimensions to add to the span metrics.
+                          these are span attributes that you want to convert to metrics attributes during collection.
+                          the values of the attributes must have low cardinality.
+                          it can increase the number of series in the destination.
+                          some dimensions are already added by default, regardless of this setting.
+                        items:
+                          type: string
+                        type: array
+                      disabled:
+                        description: |-
+                          control beahvior for when to collect span metrics.
+                          - true - span metrics will never be collected, even if destinations require it.
+                          - false / nil - span metrics will be collected if destinations require it (can be opt-in and out in destination level).
+                        type: boolean
+                      histogramBuckets:
+                        description: "explicit buckets list for the histogram metrics.\nformat
+                          is duration string (`1us`, `2ms`, `3s`, `4m`, `5h`, `6d`
+                          etc).\nif not set, the default buckets list will be used.\nthe
+                          buckets must be in ascending order.\nexample: [\"100us\",
+                          \"1ms\", \"2ms\", \"6ms\", \"10ms\", \"100ms\", \"250ms\"]\nDefault
+                          value when unset:\n\t\t[\"2ms\", \"4ms\", \"6ms\", \"8ms\",
+                          \"10ms\", \"50ms\", \"100ms\", \"200ms\", \"400ms\", \"800ms\",
+                          \"1s\", \"1400ms\", \"2s\", \"5s\", \"10s\", \"15s\"]\nnotice
+                          that more granular buckets are recommended for better precision
+                          but costs more since more metric series are produced."
+                        items:
+                          type: string
+                        type: array
+                      histogramDisabled:
+                        description: if true, histogram metrics will not be collected.
+                        type: boolean
+                      interval:
+                        description: 'time interval for flusing metrics (format: 15s,
+                          1m etc). defaults: 60s (one minute).'
+                        type: string
+                      metricsExpiration:
+                        description: |-
+                          used to remove metrics after time that they are not reporting.
+                          if an app only generates metrics once in a while, this parameter can tune
+                          how much gap is allowed.
+                          format: duration string (15s, 1m, etc).
+                          default is 5m (five minutes).
+                        type: string
+                    type: object
+                type: object
               resourcesSettings:
                 description: |-
                   Resources [memory/cpu] settings for the collectors group.

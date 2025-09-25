@@ -486,3 +486,32 @@ func (ic *InstrumentationConfig) Languages() map[common.ProgrammingLanguage]stru
 	}
 	return langs
 }
+
+// RuntimeDetailsByContainer will return a map containing runtime details for each container name present in the instrumented workload.
+// The keys are container names. Each value can be nil in case we have no runtime details for this container
+// from automatic runtime detection or overrides.
+// For each container, if an override is present, it will be taken into account before the automatic detection results.
+func (ic *InstrumentationConfig) RuntimeDetailsByContainer() map[string]*RuntimeDetailsByContainer {
+	detailsByContainer := make(map[string]*RuntimeDetailsByContainer)
+
+	// ContainersOverrides will always list all containers of the workloads, so we can use it to iterate.
+	for i := range ic.Spec.ContainersOverrides {
+		containerName := ic.Spec.ContainersOverrides[i].ContainerName
+		var containerRuntimeDetails *RuntimeDetailsByContainer
+		// always take the override if it exists, before taking the automatic runtime detection.
+		if ic.Spec.ContainersOverrides[i].RuntimeInfo != nil {
+			containerRuntimeDetails = ic.Spec.ContainersOverrides[i].RuntimeInfo
+		} else {
+			// find this container by name in the automatic runtime detection
+			for j := range ic.Status.RuntimeDetailsByContainer {
+				if ic.Status.RuntimeDetailsByContainer[j].ContainerName == containerName {
+					containerRuntimeDetails = &ic.Status.RuntimeDetailsByContainer[j]
+					break
+				}
+			}
+		}
+		detailsByContainer[containerName] = containerRuntimeDetails
+	}
+
+	return detailsByContainer
+}

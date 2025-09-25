@@ -24,14 +24,15 @@ import (
 // CollectorsGroupSpecApplyConfiguration represents a declarative configuration of the CollectorsGroupSpec type for use
 // with apply.
 type CollectorsGroupSpecApplyConfiguration struct {
-	Role                    *odigosv1alpha1.CollectorsGroupRole                 `json:"role,omitempty"`
-	CollectorOwnMetricsPort *int32                                              `json:"collectorOwnMetricsPort,omitempty"`
-	K8sNodeLogsDirectory    *string                                             `json:"k8sNodeLogsDirectory,omitempty"`
-	ResourcesSettings       *CollectorsGroupResourcesSettingsApplyConfiguration `json:"resourcesSettings,omitempty"`
-	ServiceGraphDisabled    *bool                                               `json:"serviceGraphDisabled,omitempty"`
-	EnableDataCompression   *bool                                               `json:"enableDataCompression,omitempty"`
-	ClusterMetricsEnabled   *bool                                               `json:"clusterMetricsEnabled,omitempty"`
-	HttpsProxyAddress       *string                                             `json:"httpsProxyAddress,omitempty"`
+	Role                    *odigosv1alpha1.CollectorsGroupRole                         `json:"role,omitempty"`
+	CollectorOwnMetricsPort *int32                                                      `json:"collectorOwnMetricsPort,omitempty"`
+	K8sNodeLogsDirectory    *string                                                     `json:"k8sNodeLogsDirectory,omitempty"`
+	ResourcesSettings       *CollectorsGroupResourcesSettingsApplyConfiguration         `json:"resourcesSettings,omitempty"`
+	ServiceGraphDisabled    *bool                                                       `json:"serviceGraphDisabled,omitempty"`
+	EnableDataCompression   *bool                                                       `json:"enableDataCompression,omitempty"`
+	ClusterMetricsEnabled   *bool                                                       `json:"clusterMetricsEnabled,omitempty"`
+	HttpsProxyAddress       *string                                                     `json:"httpsProxyAddress,omitempty"`
+	Metrics                 *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -101,5 +102,13 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithClusterMetricsEnabled(value 
 // If called multiple times, the HttpsProxyAddress field is set to the value of the last call.
 func (b *CollectorsGroupSpecApplyConfiguration) WithHttpsProxyAddress(value string) *CollectorsGroupSpecApplyConfiguration {
 	b.HttpsProxyAddress = &value
+	return b
+}
+
+// WithMetrics sets the Metrics field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Metrics field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithMetrics(value *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) *CollectorsGroupSpecApplyConfiguration {
+	b.Metrics = value
 	return b
 }

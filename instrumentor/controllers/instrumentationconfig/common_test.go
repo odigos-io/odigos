@@ -1,6 +1,7 @@
 package instrumentationconfig
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -16,7 +17,13 @@ func TestUpdateInstrumentationConfigForWorkload_SingleLanguage(t *testing.T) {
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container",
+				},
+			},
+		},
 		Status: odigosv1.InstrumentationConfigStatus{
 			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
@@ -45,7 +52,16 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleLanguages(t *testing.T) 
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container-1",
+				},
+				{
+					ContainerName: "test-container-2",
+				},
+			},
+		},
 		Status: odigosv1.InstrumentationConfigStatus{
 			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
@@ -67,11 +83,18 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleLanguages(t *testing.T) 
 	if len(ic.Spec.SdkConfigs) != 2 {
 		t.Errorf("Expected 2 sdk configs, got %d", len(ic.Spec.SdkConfigs))
 	}
-	if ic.Spec.SdkConfigs[0].Language != common.JavascriptProgrammingLanguage {
-		t.Errorf("Expected language %s, got %s", common.JavascriptProgrammingLanguage, ic.Spec.SdkConfigs[0].Language)
+
+	gotLanguages := []common.ProgrammingLanguage{}
+	for i := range ic.Spec.SdkConfigs {
+		gotLanguages = append(gotLanguages, ic.Spec.SdkConfigs[i].Language)
 	}
-	if ic.Spec.SdkConfigs[1].Language != common.PythonProgrammingLanguage {
-		t.Errorf("Expected language %s, got %s", common.PythonProgrammingLanguage, ic.Spec.SdkConfigs[1].Language)
+
+	slices.Sort(gotLanguages)
+	if slices.Compare(gotLanguages, []common.ProgrammingLanguage{
+		common.JavascriptProgrammingLanguage,
+		common.PythonProgrammingLanguage,
+	}) != 0 {
+		t.Errorf("Expected Python and Javascript as languages, got %s", gotLanguages)
 	}
 }
 
@@ -82,7 +105,19 @@ func TestUpdateInstrumentationConfigForWorkload_IgnoreUnknownLanguage(t *testing
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container-1",
+				},
+				{
+					ContainerName: "test-container-2",
+				},
+				{
+					ContainerName: "test-container-3",
+				},
+			},
+		},
 		Status: odigosv1.InstrumentationConfigStatus{
 			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
@@ -141,7 +176,16 @@ func TestUpdateInstrumentationConfigForWorkload_SameLanguageMultipleContainers(t
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container-1",
+				},
+				{
+					ContainerName: "test-container-2",
+				},
+			},
+		},
 		Status: odigosv1.InstrumentationConfigStatus{
 			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
@@ -174,7 +218,13 @@ func TestUpdateInstrumentationConfigForWorkload_SingleMatchingRule(t *testing.T)
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container",
+				},
+			},
+		},
 		Status: odigosv1.InstrumentationConfigStatus{
 			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
@@ -227,7 +277,13 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container",
+				},
+			},
+		},
 		Status: odigosv1.InstrumentationConfigStatus{
 			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
@@ -277,7 +333,13 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container",
+				},
+			},
+		},
 		Status: odigosv1.InstrumentationConfigStatus{
 			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
@@ -328,7 +390,13 @@ func TestUpdateInstrumentationConfigForWorkload_DisabledRule(t *testing.T) {
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container",
+				},
+			},
+		},
 		Status: odigosv1.InstrumentationConfigStatus{
 			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
@@ -373,7 +441,13 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleDefaultRules(t *testing.
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container",
+				},
+			},
+		},
 		Status: odigosv1.InstrumentationConfigStatus{
 			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
@@ -465,7 +539,13 @@ func TestUpdateInstrumentationConfigForWorkload_RuleForLibrary(t *testing.T) {
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container",
+				},
+			},
+		},
 		Status: odigosv1.InstrumentationConfigStatus{
 			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
@@ -521,7 +601,13 @@ func TestUpdateInstrumentationConfigForWorkload_LibraryRuleOtherLanguage(t *test
 			Name:      "deployment-test",
 			Namespace: "testns",
 		},
-		Spec: odigosv1.InstrumentationConfigSpec{},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container",
+				},
+			},
+		},
 		Status: odigosv1.InstrumentationConfigStatus{
 			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
 				{
@@ -565,6 +651,77 @@ func TestUpdateInstrumentationConfigForWorkload_LibraryRuleOtherLanguage(t *test
 	}
 	if len(ic.Spec.SdkConfigs[0].InstrumentationLibraryConfigs) != 0 { // the library specified is for different language
 		t.Errorf("Expected 0 libraries, got %d", len(ic.Spec.SdkConfigs[0].InstrumentationLibraryConfigs))
+	}
+}
+
+func TestUpdateInstrumentationConfigForWorkload_RuleFoOverrideContainer(t *testing.T) {
+	ic := odigosv1.InstrumentationConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "deployment-test",
+			Namespace: "testns",
+		},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container",
+					RuntimeInfo: &odigosv1.RuntimeDetailsByContainer{
+						ContainerName: "test-container",
+						Language:      common.GoProgrammingLanguage,
+					},
+				},
+			},
+		},
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
+				{
+					ContainerName: "test-container",
+					Language:      common.NginxProgrammingLanguage,
+				},
+			},
+		},
+	}
+
+	rules := &odigosv1.InstrumentationRuleList{
+		Items: []odigosv1.InstrumentationRule{
+			{
+				Spec: odigosv1.InstrumentationRuleSpec{
+					PayloadCollection: &instrumentationrules.PayloadCollection{
+						HttpRequest:  &instrumentationrules.HttpPayloadCollection{},
+						HttpResponse: &instrumentationrules.HttpPayloadCollection{},
+						Messaging:    &instrumentationrules.MessagingPayloadCollection{},
+						DbQuery:      &instrumentationrules.DbQueryPayloadCollection{},
+					},
+				},
+			},
+		},
+	}
+
+	err := updateInstrumentationConfigForWorkload(&ic, rules)
+	if err != nil {
+		t.Errorf("Expected nil error, got %v", err)
+	}
+	if len(ic.Spec.SdkConfigs) != 1 {
+		t.Errorf("Expected 1 sdk config, got %d", len(ic.Spec.SdkConfigs))
+	}
+	sdkConfig := ic.Spec.SdkConfigs[0]
+	// make sure the override got into account
+	if sdkConfig.Language != common.GoProgrammingLanguage {
+		t.Errorf("Expected to get golang language for sdk config, got %s", ic.Spec.SdkConfigs[0].Language)
+	}
+	if sdkConfig.DefaultPayloadCollection == nil {
+		t.Errorf("expected to have non nil default payload collection")
+	}
+	if sdkConfig.DefaultPayloadCollection.DbQuery == nil {
+		t.Error("expected to have non nil db query config")
+	}
+	if sdkConfig.DefaultPayloadCollection.HttpRequest == nil {
+		t.Errorf("expected to have non nil http request config")
+	}
+	if sdkConfig.DefaultPayloadCollection.HttpResponse == nil {
+		t.Errorf("expected to have non nil http response config")
+	}
+	if sdkConfig.DefaultPayloadCollection.Messaging == nil {
+		t.Errorf("expected to have non nil messaging config")
 	}
 }
 
