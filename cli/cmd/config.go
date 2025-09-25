@@ -19,6 +19,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
+	"github.com/odigos-io/odigos/k8sutils/pkg/restart"
 	"github.com/odigos-io/odigos/k8sutils/pkg/sizing"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
@@ -175,7 +176,7 @@ var setConfigCmd = &cobra.Command{
 		if (property == consts.CentralBackendURLProperty || property == consts.ClusterNameProperty) &&
 			currentTier == common.OnPremOdigosTier &&
 			config.CentralBackendURL != "" && config.ClusterName != "" {
-			if err := kube.RestartDeployment(ctx, client, ns, k8sconsts.CentralProxyDeploymentName); err != nil {
+			if err := restart.RestartDeployment(ctx, client.Interface, ns, k8sconsts.CentralProxyDeploymentName); err != nil {
 				fmt.Printf("Warning: failed to restart central-proxy: %v\n", err)
 			}
 		}

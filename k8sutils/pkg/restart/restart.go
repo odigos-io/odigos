@@ -1,4 +1,4 @@
-package kube
+package restart
 
 import (
 	"context"
@@ -8,9 +8,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 )
 
-func RestartDeployment(ctx context.Context, client *Client, namespace string, deploymentName string) error {
+func RestartDeployment(ctx context.Context, client kubernetes.Interface, namespace string, deploymentName string) error {
 	_, err := client.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -32,7 +33,7 @@ func RestartDeployment(ctx context.Context, client *Client, namespace string, de
 	return err
 }
 
-func RestartDaemonSet(ctx context.Context, client *Client, namespace string, daemonSetName string) error {
+func RestartDaemonSet(ctx context.Context, client kubernetes.Interface, namespace string, daemonSetName string) error {
 	_, err := client.AppsV1().DaemonSets(namespace).Get(ctx, daemonSetName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {

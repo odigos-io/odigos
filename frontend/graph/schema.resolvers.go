@@ -25,6 +25,7 @@ import (
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
+	"github.com/odigos-io/odigos/k8sutils/pkg/restart"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	yaml "gopkg.in/yaml.v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -456,7 +457,7 @@ func (r *mutationResolver) UpdateOdigosConfig(ctx context.Context, odigosConfig 
 			changed := prevCfg.CentralBackendURL != cfg.CentralBackendURL || prevCfg.ClusterName != cfg.ClusterName
 			bothSet := cfg.CentralBackendURL != "" && cfg.ClusterName != ""
 			if changed && bothSet {
-				_ = services.RestartDeployment(ctx, k8sconsts.CentralProxyDeploymentName)
+				_ = restart.RestartDeployment(ctx, kube.DefaultClient.Interface, env.GetCurrentNamespace(), k8sconsts.CentralProxyDeploymentName)
 			}
 		}
 	}
