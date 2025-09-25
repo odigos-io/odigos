@@ -46,6 +46,7 @@ export const GET_INSTRUMENTATION_RULES = gql`
             probes {
                 className
                 methodName
+                symbol
             }
          }
       }
