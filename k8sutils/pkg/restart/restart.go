@@ -20,7 +20,7 @@ func RestartDeployment(ctx context.Context, client kubernetes.Interface, namespa
 		return err
 	}
 
-	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`,
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":%q}}}}}`,
 		time.Now().Format(time.RFC3339))
 
 	_, err = client.AppsV1().Deployments(namespace).Patch(
@@ -42,7 +42,7 @@ func RestartDaemonSet(ctx context.Context, client kubernetes.Interface, namespac
 		return err
 	}
 
-	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`,
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":%q}}}}}`,
 		time.Now().Format(time.RFC3339))
 
 	_, err = client.AppsV1().DaemonSets(namespace).Patch(
