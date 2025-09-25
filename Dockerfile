@@ -8,6 +8,7 @@ COPY common/ common/
 COPY k8sutils/ k8sutils/
 COPY profiles/ profiles/
 COPY distros/ distros/
+COPY destinations/ destinations/
 
 WORKDIR /workspace/$SERVICE_NAME
 RUN mkdir -p /workspace/build
