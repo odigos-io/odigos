@@ -202,7 +202,7 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// for example - if you don't care about the process granularity,
 	// and prefer the metrics to be aggregated for all processes in a pod container,
 	// you can list all "process.*" attributes here to exclude them from being added to span metrics.
-	// any other resource attribute can be set, either for senetation or to reduce dimenssions for generate metrics.
+	// any other resource attribute can be set, either for sanitation or to reduce dimenssions for generate metrics.
 	ExcludedResourceAttributes []string `json:"excludedResourceAttributes,omitempty"`
 }
 
