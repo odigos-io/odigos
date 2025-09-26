@@ -222,9 +222,9 @@ func calculateConfigMapData(
 		// span metrics
 		additionalMetricsRecivers := []string{}
 		if metricsConfigSettings.SpanMetrics != nil {
-			spanMetricsConfig, additionalSpanMetricsTraceExporters, additionalSpanMetricsMetricsRecivers := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics)
+			spanMetricsConfig, additionalSpanMetricsTraceExporters, additionalSpanMetricsMetricsReceivers := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics)
 			additionalTraceExporters = append(additionalTraceExporters, additionalSpanMetricsTraceExporters...)
-			additionalMetricsRecivers = append(additionalMetricsRecivers, additionalSpanMetricsMetricsRecivers...)
+			additionalMetricsRecivers = append(additionalMetricsRecivers, additionalSpanMetricsMetricsReceivers...)
 			activeConfigDomains = append(activeConfigDomains, spanMetricsConfig)
 		}
 
