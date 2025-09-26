@@ -190,7 +190,7 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// notice that more granular buckets are recommended for better precision but costs more since more metric series are produced.
 	ExplicitHistogramBuckets []string `json:"histogramBuckets,omitempty"`
 
-	// by default, odigos will aggregate base on pod container.
+	// by default, Odigos will aggregate base on pod container.
 	// if you have multiple processes in the same container,
 	// you will get each metrics aggregatint all processes measurements.
 	// to have more granularity, you can set this to true.
