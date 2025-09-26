@@ -1,0 +1,120 @@
+name: 'Deploy Stress Test Infrastructure'
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Odigos tag to deploy (e.g., v1.2.0, v1.2.0-rc1)'
+        required: true
+        type: string
+      cluster_name:
+        description: 'Custom cluster name (optional)'
+        required: false
+        type: string
+      deploy_load_test_apps:
+        description: 'Deploy load test applications'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  deploy-stress-test-infrastructure:
+    runs-on: ubuntu-latest
+    outputs:
+      cluster_name: ${{ steps.cluster_name.outputs.cluster_name }}
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Tag Value
+        id: tag
+        run: |
+          echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          echo "Using Odigos tag: ${{ github.event.inputs.tag }}"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::061717858829:role/GitHubActionsEKSCreatorRole
+          aws-region: us-east-1
+
+      - name: Install Tofu (OpenTofu)
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_wrapper: false
+          tofu_version: "1.10.5"
+
+      - name: Set Cluster Name
+        id: cluster_name
+        run: |
+          # Clean tag for use in cluster name (remove v prefix and special characters)
+          CLEAN_TAG=$(echo "${{ steps.tag.outputs.tag }}" | sed 's/^v//' | sed 's/[^a-zA-Z0-9-]/-/g')
+          
+          if [[ -n "${{ inputs.cluster_name }}" ]]; then
+            echo "cluster_name=${{ inputs.cluster_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "cluster_name=stress-test-${CLEAN_TAG}-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+          fi
+          echo "Using cluster name: ${{ steps.cluster_name.outputs.cluster_name }}"
+
+      - name: Deploy Stress Test Infrastructure
+        id: deploy
+        working-directory: tests-infrastructure/terraform/stress-test
+        env:
+          TF_VAR_cluster_name: ${{ steps.cluster_name.outputs.cluster_name }}
+          TF_VAR_odigos_tag: ${{ steps.tag.outputs.tag }}
+          TF_VAR_odigos_api_key: ${{ secrets.ODIGOS_API_KEY }}
+        run: |
+          chmod +x deploy.sh
+          ./deploy.sh deploy
+
+      - name: Get Infrastructure Status
+        id: status
+        if: steps.deploy.outcome == 'success'
+        working-directory: tests-infrastructure/terraform/stress-test
+        run: |
+          echo "status_output<<EOF" >> $GITHUB_OUTPUT
+          ./deploy.sh status >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Get Final Status
+        id: final_status
+        if: steps.deploy.outcome == 'success'
+        working-directory: tests-infrastructure/terraform/stress-test
+        run: |
+          echo "final_status_output<<EOF" >> $GITHUB_OUTPUT
+          ./deploy.sh status >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Notify Slack - Deployment Complete
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with: 
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: |
+            Stress test infrastructure deployed successfully!
+            
+            **Odigos Tag:** ${{ steps.tag.outputs.tag }}
+            **Cluster:** ${{ steps.cluster_name.outputs.cluster_name }}
+            **Region:** us-east-1
+            **Load Test Apps:** ${{ inputs.deploy_load_test_apps }}
+            
+            **Infrastructure Status:**
+            ```
+            ${{ steps.final_status.outputs.final_status_output }}
+            ```
+          failure-description: |
+            ERROR: Failed to deploy stress test infrastructure
+            
+            **Odigos Tag:** ${{ steps.tag.outputs.tag }}
+            **Cluster:** ${{ steps.cluster_name.outputs.cluster_name }}
+            **Region:** us-east-1
+            
+            **Last Status Check:**
+            ```
+            ${{ steps.status.outputs.status_output }}
+            ```
+          tag: ${{ steps.tag.outputs.tag }}
