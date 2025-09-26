@@ -1,5 +1,5 @@
-cloud.google.com/go/compute/metadata v0.8.0 h1:HxMRIbao8w17ZX6wBnjhcDkW6lTFpgcaobyVfZWqRLA=
-cloud.google.com/go/compute/metadata v0.8.0/go.mod h1:sYOGTp851OV9bOFJ9CH7elVvyzopvWQFNNghtDQ/Biw=
+cloud.google.com/go/compute/metadata v0.8.4 h1:oXMa1VMQBVCyewMIOm3WQsnVd9FbKBtm8reqWRaXnHQ=
+cloud.google.com/go/compute/metadata v0.8.4/go.mod h1:E0bWwX5wTnLPedCKqk3pJmVgCBSM6qQI1yTBdEb3C10=
 github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1Xbatp0=
 github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
 github.com/agoda-com/opentelemetry-logs-go v0.4.0 h1:XLPOlLHLOND2/VrL69TWSy6blCZnypV37t1MjfILksI=
