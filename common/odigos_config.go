@@ -190,12 +190,13 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// notice that more granular buckets are recommended for better precision but costs more since more metric series are produced.
 	ExplicitHistogramBuckets []string `json:"histogramBuckets,omitempty"`
 
-	// by default, Odigos will aggregate base on pod container.
-	// if you have multiple processes in the same container,
-	// you will get each metrics aggregatint all processes measurements.
-	// to have more granularity, you can set this to true.
-	// this will create more dimensions for metrics, including process info,
-	// but with cost of more metrics series and costs.
+	// By default, Odigos does not include process labels meaning
+	// metrics will be aggregated by container as the lowest level.
+	// This means that multiple processes running in the same container
+	// will be aggregated into the same time series.
+	// For more granular metrics, set this option to true.
+	// This will include process-specific labels on metrics,
+	// which will cause more unique time series to be created.
 	IncludedProcessInDimensions *bool `json:"includedProcessInDimensions,omitempty"`
 
 	// exclude resource attributes from being added to span metrics.
