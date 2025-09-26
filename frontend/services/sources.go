@@ -24,10 +24,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/version"
-	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -271,13 +271,14 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 }
 
 func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind model.K8sResourceKind) (*v1alpha1.Source, error) {
-	labels := map[string]string{
-		k8sconsts.WorkloadNamespaceLabel: nsName,
-		k8sconsts.WorkloadNameLabel:      workloadName,
-		k8sconsts.WorkloadKindLabel:      string(workloadKind),
-	}
 	sourceList := &v1alpha1.SourceList{}
-	err := kube.CacheClient.List(ctx, sourceList, ctrlClient.InNamespace(nsName), ctrlClient.MatchingLabels(labels))
+	sourceList, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(labels.Set{
+			k8sconsts.WorkloadNamespaceLabel: nsName,
+			k8sconsts.WorkloadNameLabel:      workloadName,
+			k8sconsts.WorkloadKindLabel:      string(workloadKind),
+		}).String(),
+	})
 	if err != nil {
 		return nil, err
 	}
