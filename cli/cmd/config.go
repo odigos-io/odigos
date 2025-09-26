@@ -19,6 +19,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/getters"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
+	"github.com/odigos-io/odigos/k8sutils/pkg/restart"
 	"github.com/odigos-io/odigos/k8sutils/pkg/sizing"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
@@ -169,6 +170,15 @@ var setConfigCmd = &cobra.Command{
 		if err != nil {
 			fmt.Println("Odigos config update failed - unable to cleanup old Odigos resources.")
 			os.Exit(1)
+		}
+
+		// central proxy depends on central-backend-url / cluster-name, ensure it restarts when those change
+		if (property == consts.CentralBackendURLProperty || property == consts.ClusterNameProperty) &&
+			currentTier == common.OnPremOdigosTier &&
+			config.CentralBackendURL != "" && config.ClusterName != "" {
+			if err := restart.RestartDeployment(ctx, client.Interface, ns, k8sconsts.CentralProxyDeploymentName); err != nil {
+				fmt.Printf("Warning: failed to restart central-proxy: %v\n", err)
+			}
 		}
 
 		l.Success()
