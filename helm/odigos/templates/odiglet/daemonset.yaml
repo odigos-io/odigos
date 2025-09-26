@@ -305,18 +305,13 @@ spec:
           command:
             - /root/deviceplugin
           env:
-            - name: NODE_NAME
+            - name: GOMEMLIMIT
+              value: {{ .Values.odiglet.deviceplugin.goMemLimit }}
+            - name: GOMAXPROCS
               valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-            - name: NODE_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
-            - name: CURRENT_NS
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+                resourceFieldRef:
+                  containerName: deviceplugin
+                  resource: limits.cpu
           volumeMounts:
             - name: device-plugins-dir
               mountPath: /var/lib/kubelet/device-plugins

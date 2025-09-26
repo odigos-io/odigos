@@ -387,7 +387,7 @@ func analyzePodContainer(pod *corev1.Pod, container *corev1.Container, resources
 
 	deviceNames := make([]string, 0)
 	for resourceName := range container.Resources.Limits {
-		deviceName, found := strings.CutPrefix(resourceName.String(), common.OdigosResourceNamespace+"/")
+		deviceName, found := strings.CutPrefix(resourceName.String(), k8sconsts.OdigosResourceNamespace+"/")
 		if found {
 			deviceNames = append(deviceNames, deviceName)
 		}

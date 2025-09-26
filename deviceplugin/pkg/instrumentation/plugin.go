@@ -4,9 +4,7 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/instrumentation/devices"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/log"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
@@ -21,24 +19,13 @@ type plugin struct {
 	LangSpecificFunc LangSpecificFunc
 }
 
-func NewPlugin(initialSize int64, lsf LangSpecificFunc) dpm.PluginInterface {
+func NewGenericPlugin(initialSize int64) dpm.PluginInterface {
 	idManager := devices.NewIDManager(initialSize)
 
 	return &plugin{
-		idsManager:       idManager,
-		stopCh:           make(chan struct{}),
-		LangSpecificFunc: lsf,
+		idsManager: idManager,
+		stopCh:     make(chan struct{}),
 	}
-}
-
-func NewMuslPlugin(lang common.ProgrammingLanguage, maxPods int64, lsf LangSpecificFunc) dpm.PluginInterface {
-	wrappedLsf := func(deviceId string) *v1beta1.ContainerAllocateResponse {
-		res := lsf(deviceId)
-		libc.ModifyEnvVarsForMusl(lang, res.Envs)
-		return res
-	}
-
-	return NewPlugin(maxPods, wrappedLsf)
 }
 
 func (p *plugin) GetDevicePluginOptions(ctx context.Context, empty *v1beta1.Empty) (*v1beta1.DevicePluginOptions, error) {
@@ -79,9 +66,11 @@ func (p *plugin) GetPreferredAllocation(ctx context.Context, request *v1beta1.Pr
 func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest) (*v1beta1.AllocateResponse, error) {
 	res := &v1beta1.AllocateResponse{}
 
+	log.Logger.V(0).Info("Serving Allocate request for devices", "numContainers", len(request.ContainerRequests))
+
 	for _, req := range request.ContainerRequests {
 		if len(req.DevicesIds) != 1 {
-			log.Logger.V(0).Info("got  instrumentation device not equal to 1, skipping", "devices", req.DevicesIds)
+			log.Logger.V(0).Info("got instrumentation device not equal to 1, skipping", "devices", req.DevicesIds)
 			continue
 		}
 
