@@ -190,11 +190,11 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		customInstrumentations.Probes = make([]instrumentationrules.Probe, 0, len(input.CustomInstrumentations.Probes))
 		for _, probe := range input.CustomInstrumentations.Probes {
 			apiProbe := instrumentationrules.Probe{}
-			if probe.ClassName != nil {
+			if probe.ClassName != nil && *probe.ClassName != "" && probe.MethodName != nil && *probe.MethodName != "" {
 				apiProbe.ClassName = *probe.ClassName
-			}
-			if probe.MethodName != nil {
 				apiProbe.MethodName = *probe.MethodName
+			}else if probe.Symbol != nil && *probe.Symbol != "" {
+				apiProbe.Symbol = *probe.Symbol
 			}
 			customInstrumentations.Probes = append(customInstrumentations.Probes, apiProbe)
 		}
@@ -479,6 +479,7 @@ func convertCustomInstrumentations(custom *instrumentationrules.CustomInstrument
 		probes[i] = &model.Probe{
 			ClassName:  &probe.ClassName,
 			MethodName: &probe.MethodName,
+			Symbol:     &probe.Symbol,
 		}
 	}
 

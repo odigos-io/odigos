@@ -71,6 +71,7 @@ rbac-docs:
 
 build-image/%:
 	docker build -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+# 	--env GOINSECURE="go.opentelemetry.io*" \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg ODIGOS_VERSION=$(TAG) \
 	--build-arg VERSION=$(TAG) \

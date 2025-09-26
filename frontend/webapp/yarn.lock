@@ -460,10 +460,10 @@
   resolved "https://registry.npmjs.org/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@^0.0.108":
-  version "0.0.108"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.108.tgz#7897f35833bc08ca7700f039dcf6e378ecb1428e"
-  integrity sha512-b5F5Gvskko03TX03ePNVc1TvL7ocn903bFyNpA0MwjyIEQQom8TAj2z+iR1SgoIsjxRLlyv3KVcQ1v+e979xlg==
+"@odigos/ui-kit@^0.0.109":
+  version "0.0.109"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.109.tgz#5ff5e5e5f850e56240ba098b5a7b9f38c652a6e8"
+  integrity sha512-aDyUWZnKDKFIuOXlTzH0dw3BDngvlp7+luDHdV7N5I/tjrgk8OhuvyXrrRSKBYM1rF6dmSOwkq3QDXLMbSmD+g==
   dependencies:
     "@xyflow/react" "^12.8.4"
     javascript-time-ago "^2.5.11"
