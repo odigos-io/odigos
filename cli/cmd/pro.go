@@ -77,7 +77,7 @@ var proCmd = &cobra.Command{
 			fmt.Println("\u001B[32mSUCCESS:\u001B[0m Token updated successfully")
 		}
 	},
-	Example: `  
+	Example: `
 # Renew the on-premises token for Odigos,
 odigos pro --onprem-token <token>
 
@@ -500,13 +500,14 @@ func deleteCentralTokenSecretAdapter(ctx context.Context, client *kube.Client, n
 var portForwardCentralCmd = &cobra.Command{
 	Use:   "ui",
 	Short: "Port-forward Odigos Tower UI and Backend to localhost",
-	Long:  "Port-forward the Tower UI (port 3000) and Tower Backend (port 8081) to localhost to enable local access to Odigos UI.",
+	Long:  "Port-forward the Tower UI (port 3000) and Tower Backend (port 8081) to enable local access to Odigos UI. Use --address to bind to specific interfaces.",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithCancel(cmd.Context())
 		defer cancel()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		var wg sync.WaitGroup
+		localAddress := cmd.Flag("address").Value.String()
 
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
@@ -516,7 +517,7 @@ var portForwardCentralCmd = &cobra.Command{
 			fmt.Printf("\033[31mERROR\033[0m Cannot find backend pod: %v\n", err)
 			os.Exit(1)
 		}
-		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend")
+		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend", localAddress)
 
 		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUIAppName)
 		if err != nil {
@@ -525,7 +526,7 @@ var portForwardCentralCmd = &cobra.Command{
 			wg.Wait()
 			os.Exit(1)
 		}
-		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI")
+		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI", localAddress)
 
 		keycloakPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.KeycloakAppName)
 		if err != nil {
@@ -534,10 +535,10 @@ var portForwardCentralCmd = &cobra.Command{
 			wg.Wait()
 			os.Exit(1)
 		}
-		startPortForward(&wg, ctx, keycloakPod, client, fmt.Sprintf("%d", k8sconsts.KeycloakPort), "Keycloak")
+		startPortForward(&wg, ctx, keycloakPod, client, fmt.Sprintf("%d", k8sconsts.KeycloakPort), "Keycloak", localAddress)
 
-		fmt.Printf("Odigos Tower UI is available at: http://localhost:%s\n", k8sconsts.CentralUIPort)
-		fmt.Printf("Odigos Tower Backend is available at: http://localhost:%s\n", k8sconsts.CentralBackendPort)
+		fmt.Printf("Odigos Tower UI is available at: http://%s:%s\n", localAddress, k8sconsts.CentralUIPort)
+		fmt.Printf("Odigos Tower Backend is available at: http://%s:%s\n", localAddress, k8sconsts.CentralBackendPort)
 		fmt.Printf("Press Ctrl+C to stop\n")
 
 		<-sigCh
@@ -547,11 +548,11 @@ var portForwardCentralCmd = &cobra.Command{
 	},
 }
 
-func startPortForward(wg *sync.WaitGroup, ctx context.Context, pod *corev1.Pod, client *kube.Client, port string, name string) {
+func startPortForward(wg *sync.WaitGroup, ctx context.Context, pod *corev1.Pod, client *kube.Client, port string, name string, localAddress string) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := kube.PortForwardWithContext(ctx, pod, client, port, "localhost"); err != nil {
+		if err := kube.PortForwardWithContext(ctx, pod, client, port, localAddress); err != nil {
 			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
 		}
 	}()
@@ -609,6 +610,7 @@ func init() {
 	centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password")
 	centralInstallCmd.MarkFlagRequired("central-admin-password")
 	centralCmd.AddCommand(portForwardCentralCmd)
+	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
 	// migrate subcommand
 	proCmd.AddCommand(activateCmd)
 	activateCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
