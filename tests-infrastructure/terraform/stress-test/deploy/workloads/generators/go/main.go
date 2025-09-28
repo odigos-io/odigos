@@ -46,7 +46,11 @@ func main() {
 	payload := strings.Repeat("x", spanBytes)
 
 	// Create ticker for the specified rate
-	interval := time.Duration(1000/spansPerSec) * time.Millisecond
+	intervalMs := 1000 / spansPerSec
+	if intervalMs < 1 {
+		intervalMs = 1 // Minimum 1ms interval
+	}
+	interval := time.Duration(intervalMs) * time.Millisecond
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
@@ -57,9 +61,7 @@ func main() {
 		// Create a new context for each span to ensure individual traces
 		ctx := context.Background()
 
-		// Create a new span with a unique name for each iteration
-		spanName := "go-span-" + strconv.Itoa(iteration)
-		_, span := tracer.Start(ctx, spanName, trace.WithNewRoot())
+		_, span := tracer.Start(ctx, "go-span", trace.WithNewRoot())
 
 		// Set attributes
 		span.SetAttributes(

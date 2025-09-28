@@ -18,7 +18,7 @@ let totalSpans = 0;
 
 function emitBatch(n) {
   for (let i = 0; i < n; i++) {
-    const span = tracer.startSpan('node-span-' + (totalSpans + i));
+    const span = tracer.startSpan('node-span');
     span.setAttribute('payload', attrPayload);
     span.end();
   }

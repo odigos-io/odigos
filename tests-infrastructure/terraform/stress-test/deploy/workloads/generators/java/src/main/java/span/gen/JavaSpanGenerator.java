@@ -26,7 +26,7 @@ public class JavaSpanGenerator {
         // Generate spans continuously
         int iteration = 0;
         while (true) {
-            Span span = tracer.spanBuilder("java-span-" + iteration)
+                Span span = tracer.spanBuilder("java-span")
                 .setAttribute(AttributeKey.stringKey("payload"), payload)
                 .startSpan();
             

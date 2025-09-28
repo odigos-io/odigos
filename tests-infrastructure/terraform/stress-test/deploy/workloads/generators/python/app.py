@@ -25,7 +25,7 @@ def emit_batch(spans_per_sec: int, span_bytes: int, payload: str, span_count: in
     """Generate a batch of spans."""
     try:
         for i in range(spans_per_sec):
-            with tracer.start_as_current_span(f"python-span-{span_count + i}") as span:
+            with tracer.start_as_current_span("python-span") as span:
                 span.set_attribute("payload", payload)
     except Exception as e:
         logger.error("Error generating spans: %s", e)
