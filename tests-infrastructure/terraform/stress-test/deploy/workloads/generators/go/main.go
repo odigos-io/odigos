@@ -25,19 +25,28 @@ func getenvInt(name string, def int) int {
 	return def
 }
 
+func getenvFloat(name string, def float64) float64 {
+	if v := os.Getenv(name); v != "" {
+		if n, err := strconv.ParseFloat(v, 64); err == nil {
+			return n
+		}
+	}
+	return def
+}
+
 func main() {
 	// Get configuration from environment variables
-	spansPerMinute := getenvInt("SPANS_PER_MINUTE", 60)
-	attributeSize := getenvInt("ATTRIBUTE_SIZE", 100)
+	spansPerSec := getenvInt("SPANS_PER_SEC", 1000)
+	spanBytes := getenvInt("SPAN_BYTES", 1000)
 
 	log.Printf("Starting Go span generator...")
-	log.Printf("Configuration: %d spans/minute, %d bytes per attribute", spansPerMinute, attributeSize)
+	log.Printf("Configuration: %d spans/second, %d bytes per span", spansPerSec, spanBytes)
 
 	// Create payload for attributes
-	payload := strings.Repeat("x", attributeSize)
+	payload := strings.Repeat("x", spanBytes)
 
 	// Create ticker for the specified rate
-	interval := time.Duration(60/spansPerMinute) * time.Second
+	interval := time.Duration(1000/spansPerSec) * time.Millisecond
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
@@ -54,19 +63,15 @@ func main() {
 
 		// Set attributes
 		span.SetAttributes(
-			attribute.String("lang", "go"),
-			attribute.String("iteration", strconv.Itoa(iteration)),
 			attribute.String("payload", payload),
-			attribute.Int("attribute_size", attributeSize),
-			attribute.Int("spans_per_minute", spansPerMinute),
 		)
 
 		span.End()
 
 		iteration++
 
-		// Check if we've completed a full batch (minute's worth of spans)
-		if iteration%spansPerMinute == 0 {
+		// Check if we've completed a full batch (1000 spans)
+		if iteration%1000 == 0 {
 			batchCount++
 			log.Printf("Completed batch %d: Generated %d spans", batchCount, iteration)
 		}

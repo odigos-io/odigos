@@ -7,7 +7,7 @@ metadata:
     app: go-span-generator
     odigos-target: "true"
 spec:
-  replicas: 5
+  replicas: 5  # This will be overridden by ConfigMap
   selector:
     matchLabels:
       app: go-span-generator
@@ -29,9 +29,9 @@ spec:
             - name: OTEL_RESOURCE_ATTRIBUTES
               value: service.name=go-span-generator,service.version=v1.0.0
             - name: SPANS_PER_SEC
-              value: "5000"
+              value: "1000"
             - name: SPAN_BYTES
-              value: "2000"
+              value: "1000"
           resources:
             requests:
               cpu: "500m"
