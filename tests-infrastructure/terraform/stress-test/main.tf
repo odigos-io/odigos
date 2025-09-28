@@ -207,6 +207,10 @@ resource "null_resource" "install_kube_prometheus_stack" {
     command = <<-EOT
       set -e
       
+      # Update kubectl configuration
+      echo "Updating kubectl configuration..."
+      aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name}
+      
       # Add Prometheus Helm repository (in case it wasn't added in previous step)
       echo "Adding Prometheus Helm repository..."
       helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || echo "Repository already exists"
@@ -292,10 +296,10 @@ resource "null_resource" "install_odigos" {
       
       # Install Odigos in the cluster
       echo "Installing Odigos in the cluster..."
+      helm repo update
       helm upgrade --install odigos odigos/odigos \
         --namespace odigos-system \
         --create-namespace \
-        --set image.tag=${var.odigos_tag} \
         --set onprem-token=${var.odigos_api_key}
       
       # Note: Helm --wait flag already ensures Odigos is ready
@@ -403,8 +407,7 @@ resource "null_resource" "apply_odigos_clickhouse_destination" {
   count = var.deploy_kubernetes_apps ? 1 : 0
   depends_on = [
     null_resource.install_odigos[0],
-    null_resource.apply_odigos_sources[0],
-    data.terraform_remote_state.ec2
+    null_resource.apply_odigos_sources[0]
   ]
 
   provisioner "local-exec" {
@@ -435,6 +438,11 @@ ${templatefile("${path.module}/deploy/odigos/clickhouse-destination.yaml", {
   ec2_ip = "$EC2_IP"
 })}
 EOF
+
+      # Wait for Odigos to be fully ready before trying to restart gateway
+      echo "Waiting for Odigos to be ready..."
+      kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=odigos-gateway -n odigos-system --timeout=300s || echo "Odigos gateway not found, skipping restart"
+      
       
       # Restart odigos-gateway deployment to pick up new destination
       echo "Restarting odigos-gateway deployment..."
