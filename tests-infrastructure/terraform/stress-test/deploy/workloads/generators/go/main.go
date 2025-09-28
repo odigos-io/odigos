@@ -10,6 +10,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Best practice: use module/package name as tracer name
@@ -42,8 +43,14 @@ func main() {
 
 	// Generate spans continuously
 	iteration := 0
+	batchCount := 0
 	for range ticker.C {
-		_, span := tracer.Start(context.Background(), "configurable-span")
+		// Create a new context for each span to ensure individual traces
+		ctx := context.Background()
+
+		// Create a new span with a unique name for each iteration
+		spanName := "go-span-" + strconv.Itoa(iteration)
+		_, span := tracer.Start(ctx, spanName, trace.WithNewRoot())
 
 		// Set attributes
 		span.SetAttributes(
@@ -57,8 +64,11 @@ func main() {
 		span.End()
 
 		iteration++
-		if iteration%10 == 0 {
-			log.Printf("Generated %d spans so far...", iteration)
+
+		// Check if we've completed a full batch (minute's worth of spans)
+		if iteration%spansPerMinute == 0 {
+			batchCount++
+			log.Printf("Completed batch %d: Generated %d spans", batchCount, iteration)
 		}
 	}
 }
