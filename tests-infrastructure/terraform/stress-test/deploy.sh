@@ -45,6 +45,48 @@ check_aws() {
     fi
 }
 
+# Global array to store environment variables
+declare -a ENV_VARS=()
+
+# Parse --env arguments
+parse_env_args() {
+    local args=("$@")
+    local i=0
+    
+    while [[ $i -lt ${#args[@]} ]]; do
+        if [[ "${args[$i]}" == "--env" ]]; then
+            # Check if there's a next argument
+            if [[ $((i + 1)) -lt ${#args[@]} ]]; then
+                local env_pair="${args[$((i + 1))]}"
+                # Validate format: key=value
+                if [[ "$env_pair" =~ ^[a-zA-Z_][a-zA-Z0-9_]*=.*$ ]]; then
+                    ENV_VARS+=("$env_pair")
+                    log_info "Environment variable: $env_pair"
+                else
+                    log_error "Invalid --env format: $env_pair. Expected: key=value"
+                    exit 1
+                fi
+                i=$((i + 2))  # Skip both --env and the value
+            else
+                log_error "--env requires a value in format key=value"
+                exit 1
+            fi
+        else
+            i=$((i + 1))
+        fi
+    done
+}
+
+# Apply environment variables to current shell
+apply_env_vars() {
+    for env_var in "${ENV_VARS[@]}"; do
+        local key="${env_var%%=*}"
+        local value="${env_var#*=}"
+        export "TF_VAR_$key"="$value"
+        log_info "Set TF_VAR_$key=$value"
+    done
+}
+
 # Get Terraform variable value from terraform.tfvars or variables.tf defaults
 get_tf_var() {
     local var_name="$1"
@@ -521,12 +563,36 @@ deploy_k8s_apps() {
 
 # Main script logic
 main() {
-    case "${1:-}" in
+    # Parse --env arguments first
+    parse_env_args "$@"
+    
+    # Apply environment variables
+    if [[ ${#ENV_VARS[@]} -gt 0 ]]; then
+        log_info "Applying environment variables..."
+        apply_env_vars
+    fi
+    
+    # Remove --env arguments from the argument list for command processing
+    local filtered_args=()
+    local i=1  # Start from 1 to skip script name
+    while [[ $i -le $# ]]; do
+        if [[ "${!i}" == "--env" ]]; then
+            i=$((i + 2))  # Skip --env and its value
+        else
+            filtered_args+=("${!i}")
+            i=$((i + 1))
+        fi
+    done
+    
+    # Set the first argument as the command
+    local command="${filtered_args[0]:-}"
+    
+    case "$command" in
         "deploy")
             deploy_infrastructure
             ;;
         "k8s-apps")
-            deploy_k8s_apps "${2:-}"
+            deploy_k8s_apps "${filtered_args[1]:-}"
             ;;
         "destroy")
             destroy_infrastructure
@@ -535,7 +601,7 @@ main() {
             check_status
             ;;
         *)
-            echo "Usage: $0 {deploy|k8s-apps|destroy|status}"
+            echo "Usage: $0 {deploy|k8s-apps|destroy|status} [--env key=value] [--env key2=value2] ..."
             echo ""
             echo "Commands:"
             echo "  deploy  - Deploy the complete infrastructure (EKS + EC2 + Kubernetes apps + load-test workloads)"
@@ -543,6 +609,15 @@ main() {
             echo "    --with-load-test  - Also deploy load-test applications"
             echo "  destroy - Destroy the infrastructure with proper dependency order"
             echo "  status  - Check the current status of infrastructure"
+            echo ""
+            echo "Environment Variables:"
+            echo "  --env key=value  - Set Terraform variable (e.g., --env odigos_api_key=abc123)"
+            echo "  --env odigos_tag=v1.0.0  - Set Odigos image tag"
+            echo "  --env deploy_load_test_apps=true  - Enable load test applications"
+            echo ""
+            echo "Examples:"
+            echo "  $0 deploy --env odigos_api_key=abc123 --env odigos_tag=v1.0.0"
+            echo "  $0 k8s-apps --with-load-test --env odigos_api_key=abc123"
             exit 1
             ;;
     esac
