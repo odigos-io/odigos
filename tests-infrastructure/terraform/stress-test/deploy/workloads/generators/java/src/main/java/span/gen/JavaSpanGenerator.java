@@ -1,83 +1,56 @@
 package span.gen;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.common.Attributes;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
 public class JavaSpanGenerator {
-    private static final Logger logger = Logger.getLogger(JavaSpanGenerator.class.getName());
-    
     public static void main(String[] args) {
         // Get configuration from environment variables
-        int spansPerSec = getEnvInt("SPANS_PER_SEC", 1000);
-        int spanBytes = getEnvInt("SPAN_BYTES", 1000);
+        int spansPerMinute = getEnvInt("SPANS_PER_MINUTE", 60);
+        int attributeSize = getEnvInt("ATTRIBUTE_SIZE", 100);
         
-        // Log startup information
-        logger.info("Starting Java span generator with " + spansPerSec + " spans/sec, " + spanBytes + " bytes per span");
-        logger.info("OTEL_SERVICE_NAME: " + System.getenv("OTEL_SERVICE_NAME"));
-        logger.info("OTEL_RESOURCE_ATTRIBUTES: " + System.getenv("OTEL_RESOURCE_ATTRIBUTES"));
+        // Calculate delay between spans (in milliseconds)
+        long delayMs = 60000 / spansPerMinute; // 60 seconds / spans per minute
         
-        // Create payload
-        String payload = "x".repeat(spanBytes);
+        // Get tracer using GlobalOpenTelemetry
+        Tracer tracer = GlobalOpenTelemetry.getTracer("java-span-gen", "1.0.0");
         
-        // Get tracer
-        TracerProvider tracerProvider = TracerProvider.noop();
-        Tracer tracer = tracerProvider.get("java-span-gen");
+        System.out.println("Starting Java span generator...");
+        System.out.println("Configuration: " + spansPerMinute + " spans/minute, " + attributeSize + " bytes per attribute");
         
-        // Create scheduled executor for span generation
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        // Create payload for attributes
+        String payload = "x".repeat(attributeSize);
         
-        final int[] totalSpans = {0};
-        
-        // Schedule span generation every second
-        executor.scheduleAtFixedRate(() -> {
+        // Generate spans continuously
+        int iteration = 0;
+        while (true) {
+            Span span = tracer.spanBuilder("configurable-span")
+                .setAttribute(AttributeKey.stringKey("lang"), "java")
+                .setAttribute(AttributeKey.stringKey("iteration"), String.valueOf(iteration))
+                .setAttribute(AttributeKey.stringKey("payload"), payload)
+                .setAttribute(AttributeKey.longKey("attribute_size"), (long) attributeSize)
+                .setAttribute(AttributeKey.longKey("spans_per_minute"), (long) spansPerMinute)
+                .startSpan();
+            
             try {
-                for (int i = 0; i < spansPerSec; i++) {
-                    Span span = tracer.spanBuilder("load-span")
-                        .setAttribute(AttributeKey.stringKey("payload"), payload)
-                        .setAttribute(AttributeKey.stringKey("lang"), "java")
-                        .setAttribute(AttributeKey.stringKey("gen"), "java-span-gen")
-                        .setAttribute(AttributeKey.longKey("payload_size"), (long) spanBytes)
-                        .startSpan();
-                    
-                    // Simulate some work
-                    try {
-                        // Add small delay to reduce CPU usage
-                        if (i % 100 == 0) {
-                            Thread.sleep(1);
-                        }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    } finally {
-                        span.end();
-                    }
-                }
-                
-                totalSpans[0] += spansPerSec;
-                logger.info("Generated " + spansPerSec + " spans in this second (total: " + totalSpans[0] + ")");
-                
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, "Error generating spans", e);
+                // Wait for the calculated delay
+                Thread.sleep(delayMs);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } finally {
+                span.end();
             }
-        }, 0, 1, TimeUnit.SECONDS);
-        
-        // Keep the application running
-        try {
-            Thread.currentThread().join();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.info("Shutting down Java span generator");
-        } finally {
-            executor.shutdown();
+            
+            iteration++;
+            if (iteration % 10 == 0) {
+                System.out.println("Generated " + iteration + " spans so far...");
+            }
         }
+        
+        System.out.println("Java span generator stopped.");
     }
     
     private static int getEnvInt(String name, int defaultValue) {
@@ -87,7 +60,7 @@ public class JavaSpanGenerator {
                 return Integer.parseInt(value.trim());
             }
         } catch (NumberFormatException e) {
-            logger.warning("Invalid value for " + name + ", using default: " + defaultValue);
+            System.err.println("Invalid value for " + name + ", using default: " + defaultValue);
         }
         return defaultValue;
     }
