@@ -2203,4 +2203,17 @@ entries:
     urls:
     - https://github.com/keyval-dev/odigos-charts/releases/download/odigos-0.2.03/odigos-0.2.03.tgz
     version: 0.2.03
-generated: "2025-09-29T08:59:16.056030239Z"
+  odigos-central:
+  - apiVersion: v2
+    appVersion: v1.5.0
+    created: "2025-09-29T15:08:40.987241+03:00"
+    description: Centralized components for Odigos (UI + Backend)
+    digest: c1b3bbe62aaf14774cf74593fa753e485b053162bbdd0043ce3a896b02448427
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.20.15-0'
+    name: odigos-central
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v1.5.0/helm-chart-odigos-central-1.5.0.tgz
+    version: 1.5.0
+generated: "2025-09-29T15:08:40.986066+03:00"
