@@ -294,6 +294,12 @@ var centralUninstallCmd = &cobra.Command{
 			ns = consts.DefaultOdigosCentralNamespace
 		}
 
+		// if CLI was built without an embedded version and --version not provided
+		if versionFlag == "" {
+			fmt.Println("\033[31mERROR\033[0m No version specified and CLI was built without an embedded version. Provide --version.")
+			os.Exit(1)
+		}
+
 		if !cmd.Flag("yes").Changed {
 			fmt.Printf("About to uninstall Odigos Tower from namespace %s\n", ns)
 			confirmed, err := confirm.Ask("Are you sure?")
@@ -607,9 +613,14 @@ func init() {
 	centralCmd.AddCommand(centralInstallCmd)
 	centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
-	centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower installation")
+
+	// register and configure central upgrade command
+	centralCmd.AddCommand(centralUpgradeCmd)
+	centralUpgradeCmd.Flags().Bool("yes", false, "Confirm the upgrade without prompting")
+	centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower upgrade")
+	centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
 
 	// Central configuration flags
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
