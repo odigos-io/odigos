@@ -21,6 +21,25 @@ uncategorized_key = 'Other'
 documentation_starting_block = '## Instrumentation Libraries\n\nThe following npm packages will be auto instrumented by Odigos:'
 documentation_ending_block = '\n{/* END OF FILE */}'
 
+class Singleton:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
+
+class Cookie_store:
+    def __init__(self):
+        if not hasattr(self, 'initialized'): # Prevent re-initialization
+            self.cookies = dict()
+            self.initialized = True
+    def get_cookies(self):
+        return self.cookies
+    def set_cookies(self, cookies):
+        self.cookies = cookies
+
+
 supported_languages = {
     'nodejs': {
         'native': {
@@ -135,7 +154,6 @@ supported_languages = {
     }
 }
 
-
 def fetch(url, retry_url=None):
     """
     Fetch the content of a URL
@@ -145,8 +163,19 @@ def fetch(url, retry_url=None):
     :return: The response object
     """
     try:
-        response = requests.get(url)
+        # All these headers are required to bypass npm's cloudflare protection, as well as the cookies
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Connection': 'keep-alive',
+            'Referer': 'https://www.npmjs.com/',
+            'Origin': 'https://www.npmjs.com',
+            'pragma': 'no-cache',
+            'cache-control': 'no-cache',
+        }
+        cookie_store = Cookie_store()
+        response = requests.get(url, headers=headers, cookies=cookie_store.get_cookies())
         response.raise_for_status()
+        cookie_store.set_cookies(response.cookies)
         return response
     except requests.exceptions.RequestException as e:
         if retry_url:
@@ -273,6 +302,7 @@ def get_npm_versions(otel_dependency, otel_dependency_version):
             b'href="#usage"'
         )
     ]
+
     ul_block = content_block[
         content_block.find(
             b'<ul>'
