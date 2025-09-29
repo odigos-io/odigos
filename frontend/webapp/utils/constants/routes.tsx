@@ -14,11 +14,13 @@ export const ROUTES = {
 
 export const SKIP_TO_SUMMERY_QUERY_PARAM = 'skipToSummary';
 
-const PROTOCOL = typeof window !== 'undefined' ? window.location.protocol : 'http';
+const PROTOCOL = typeof window !== 'undefined' ? window.location.protocol : 'http:';
 const HOSTNAME = typeof window !== 'undefined' ? window.location.hostname : '';
-const IS_INGRESSED_DOMAIN = HOSTNAME && HOSTNAME !== 'localhost';
+const PORT = typeof window !== 'undefined' ? window.location.port : '';
 
-const BACKEND_HTTP_ORIGIN = IS_INGRESSED_DOMAIN ? `${PROTOCOL}//${HOSTNAME}` : typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+const IS_INGRESSED_DOMAIN = !!HOSTNAME && HOSTNAME !== 'localhost' && PORT === '';
+
+const BACKEND_HTTP_ORIGIN = typeof window !== 'undefined' ? (IS_INGRESSED_DOMAIN ? `${PROTOCOL}//${HOSTNAME}` : window.location.origin) : 'http://localhost:3000';
 
 export const API = {
   GRAPHQL: `${BACKEND_HTTP_ORIGIN}/graphql`,
