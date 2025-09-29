@@ -2206,9 +2206,9 @@ entries:
   odigos-central:
   - apiVersion: v2
     appVersion: v1.5.0
-    created: "2025-09-29T15:08:40.987241+03:00"
+    created: "2025-09-29T15:21:16.433711+03:00"
     description: Centralized components for Odigos (UI + Backend)
-    digest: c1b3bbe62aaf14774cf74593fa753e485b053162bbdd0043ce3a896b02448427
+    digest: c0460bc346377a2f00a30f8ffb6e2f27f48f03a3fbad0b73efb934ef5a2373c9
     icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
     kubeVersion: '>= 1.20.15-0'
     name: odigos-central
@@ -2216,4 +2216,4 @@ entries:
     urls:
     - https://github.com/odigos-io/odigos/releases/download/v1.5.0/helm-chart-odigos-central-1.5.0.tgz
     version: 1.5.0
-generated: "2025-09-29T15:08:40.986066+03:00"
+generated: "2025-09-29T15:21:16.432409+03:00"
