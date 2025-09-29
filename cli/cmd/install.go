@@ -315,7 +315,7 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcema
 		imageReferences = resourcemanager.ImageReferences{
 			AutoscalerImage:    k8sconsts.AutoScalerImageName,
 			CollectorImage:     k8sconsts.OdigosClusterCollectorImage,
-			InitContainerImage: k8sconsts.OdigosInitContainerImageName,
+			InitContainerImage: k8sconsts.OdigosInitContainerImage,
 			InstrumentorImage:  k8sconsts.InstrumentorImage,
 			OdigletImage:       k8sconsts.OdigletImageName,
 			KeyvalProxyImage:   k8sconsts.KeyvalProxyImage,
@@ -328,12 +328,14 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcema
 		if openshift {
 			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImageUBI9
 			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageUBI9
+			imageReferences.InitContainerImage = k8sconsts.OdigosInitContainerEnterpriseImageUBI9
 		} else {
 			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImage
 			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageName
 			imageReferences.CentralProxyImage = k8sconsts.CentralProxyImage
 			imageReferences.CentralBackendImage = k8sconsts.CentralBackendImage
 			imageReferences.CentralUIImage = k8sconsts.CentralUIImage
+			imageReferences.InitContainerImage = k8sconsts.OdigosInitContainerEnterpriseImage
 		}
 	}
 	return imageReferences

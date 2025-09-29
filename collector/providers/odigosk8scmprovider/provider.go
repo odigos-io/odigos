@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
+	"time"
 
 	"go.opentelemetry.io/collector/confmap"
 	"go.uber.org/zap"
@@ -39,11 +41,36 @@ type provider struct {
 	running                     bool
 	logger                      *zap.Logger
 	lastReportedResourceVersion string
+	debounceTimer               *time.Timer
+	debounceMutex               sync.Mutex
+	debounceDelay               time.Duration
 }
 
 func newProvider(set confmap.ProviderSettings) confmap.Provider {
 	return &provider{
-		logger: set.Logger,
+		logger:        set.Logger,
+		debounceDelay: 5 * time.Second, // Configurable debounce delay
+	}
+}
+
+func (p *provider) waitForConfigMap(ctx context.Context) (*corev1.ConfigMap, error) {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+			cm, err := p.clientset.CoreV1().ConfigMaps(p.namespace).Get(ctx, p.cmName, metav1.GetOptions{})
+			if err == nil {
+				return cm, nil
+			}
+			p.logger.Info("waiting for configmap to be created...",
+				zap.String("name", p.cmName),
+				zap.String("namespace", p.namespace),
+			)
+		}
 	}
 }
 
@@ -83,16 +110,26 @@ func (p *provider) Retrieve(ctx context.Context, uri string, wf confmap.WatcherF
 	}
 
 	var cm *corev1.ConfigMap
-	retryErr := retry.OnError(retry.DefaultRetry, func(err error) bool {
-		return true
-	}, func() error {
-		var err error
-		cm, err = p.clientset.CoreV1().ConfigMaps(p.namespace).Get(ctx, p.cmName, metav1.GetOptions{})
-		return err
-	})
+	var err error
 
-	if retryErr != nil {
-		return nil, fmt.Errorf("failed to get configmap: %w", retryErr)
+	if !p.running {
+		// if this is the first time we get the config, wait until the configmap is available
+		cm, err = p.waitForConfigMap(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get configmap: %w", err)
+		}
+	} else {
+		retryErr := retry.OnError(retry.DefaultRetry, func(err error) bool {
+			return true
+		}, func() error {
+			var err error
+			cm, err = p.clientset.CoreV1().ConfigMaps(p.namespace).Get(ctx, p.cmName, metav1.GetOptions{})
+			return err
+		})
+
+		if retryErr != nil {
+			return nil, fmt.Errorf("failed to get configmap: %w", retryErr)
+		}
 	}
 
 	if cm == nil {
@@ -153,8 +190,7 @@ func (p *provider) runInformer(wf confmap.WatcherFunc) {
 			}
 
 			if cm.ResourceVersion != p.lastReportedResourceVersion {
-				p.lastReportedResourceVersion = cm.ResourceVersion
-				wf(&confmap.ChangeEvent{})
+				p.debouncedNotify(cm.ResourceVersion, wf)
 			}
 		},
 	})
@@ -163,12 +199,44 @@ func (p *provider) runInformer(wf confmap.WatcherFunc) {
 	close(p.providerStopCh)
 }
 
+// debouncedNotify implements debouncing for configuration change notifications
+func (p *provider) debouncedNotify(resourceVersion string, wf confmap.WatcherFunc) {
+	p.debounceMutex.Lock()
+	defer p.debounceMutex.Unlock()
+
+	// Cancel existing timer if it exists
+	if p.debounceTimer != nil {
+		p.debounceTimer.Stop()
+	}
+
+	p.logger.Debug("debounced triggered with new resource version", zap.String("resourceVersion", resourceVersion))
+
+	// Store the latest resource version
+	p.lastReportedResourceVersion = resourceVersion
+
+	// Create new timer that will fire after the debounce delay
+	p.debounceTimer = time.AfterFunc(p.debounceDelay, func() {
+		p.logger.Debug("debounced configuration change notification triggered",
+			zap.String("resourceVersion", resourceVersion))
+		wf(&confmap.ChangeEvent{})
+	})
+}
+
 func (p *provider) Scheme() string {
 	return schemeName
 }
 
 func (p *provider) Shutdown(ctx context.Context) error {
 	p.logger.Info("shutting down k8s config map provider")
+
+	// Cancel pending debounce timer
+	p.debounceMutex.Lock()
+	if p.debounceTimer != nil {
+		p.debounceTimer.Stop()
+		p.debounceTimer = nil
+	}
+	p.debounceMutex.Unlock()
+
 	if p.running {
 		close(p.informerStopCh)
 		<-p.providerStopCh

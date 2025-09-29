@@ -1,0 +1,43 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: googlecloudotlp
+  displayName: Google Cloud (OTLP)
+  category: managed
+spec:
+  image: gcp.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+  fields:
+    - name: GCP_PROJECT_ID
+      displayName: Project ID
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 'project-id'
+        tooltip: The project ID for the Google Cloud Monitoring API to send data to. This defaults to the Application Credentials project ID (which is automatically detected when running on GCP). Setting this can override the Application Credentials project ID. Required if running Odigos outside of Google Cloud.
+
+    - name: GCP_BILLING_PROJECT
+      displayName: Billing Project
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 'billing-project-id'
+        tooltip: The billing project ID for the Google Cloud Monitoring API. Allows you to specify a different project ID for billing and quota consumption. By default, this is the same as the project ID.
+
+    - name: GCP_APPLICATION_CREDENTIALS
+      displayName: Application Credentials
+      componentType: textarea
+      secret: true
+      componentProps:
+        type: text
+        required: false
+        placeholder: 'Credentials config... (optional)'
+        tooltip: The JSON GCP Application Credentials file for the GCP project. Either a Workload Identity Federation config file or Service Account Key. Required if running Odigos outside of Google Cloud.
