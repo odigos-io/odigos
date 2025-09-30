@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"sync"
 	"syscall"
 
@@ -39,6 +40,8 @@ var (
 	downloadFile     string
 	fromFile         string
 )
+
+var centralVersionRegex = regexp.MustCompile(`^v\d+\.\d+\.\d+(?:-(?:pre|rc)\d+)?$`)
 
 var proCmd = &cobra.Command{
 	Use:   "pro",
@@ -286,6 +289,12 @@ var centralUninstallCmd = &cobra.Command{
 		ns, err := cmd.Flags().GetString("namespace")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
+			os.Exit(1)
+		}
+
+		// Validate version string format (e.g., v1.6.0-pre1, v1.5.0-rc2, v1.5.0)
+		if !centralVersionRegex.MatchString(versionFlag) {
+			fmt.Printf("\033[31mERROR\033[0m Invalid --version value %q. Expected formats: vX.Y.Z, vX.Y.Z-preN, or vX.Y.Z-rcN\n", versionFlag)
 			os.Exit(1)
 		}
 
