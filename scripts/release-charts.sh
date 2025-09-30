@@ -4,7 +4,7 @@ set -e
 
 # Setup
 TMPDIR="$(mktemp -d)"
-CHARTDIRS=("helm/odigos" "helm/odigos-central")
+CHARTDIRS=("helm/odigos")
 
 prefix () {
 	echo "${@:1}"
