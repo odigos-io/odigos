@@ -53,7 +53,6 @@ func getSpanMetricsConnectorConfig(spanMetricsConfig common.MetricsSourceSpanMet
 		"exemplars": config.GenericMap{
 			"enabled": true,
 		},
-		"exclude_dimensions":              []string{"status.code"},
 		"dimensions_cache_size":           1000,
 		"aggregation_temporality":         "AGGREGATION_TEMPORALITY_CUMULATIVE",
 		"metrics_flush_interval":          spanMetricsConfig.Interval,
